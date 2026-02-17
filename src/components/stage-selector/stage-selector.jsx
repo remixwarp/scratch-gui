@@ -6,7 +6,7 @@ import {defineMessages, intlShape, injectIntl, FormattedMessage} from 'react-int
 import Box from '../box/box.jsx';
 import ActionMenu from '../action-menu/action-menu.jsx';
 import styles from './stage-selector.css';
-import {isRtl} from '@Bilup/scratch-l10n';
+import {isRtl} from '@remixwarp/scratch-l10n';
 
 import backdropIcon from '../action-menu/icon--backdrop.svg';
 import {Upload, Paintbrush, Sparkles, Search} from 'lucide-react';
