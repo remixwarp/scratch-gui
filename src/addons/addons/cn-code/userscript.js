@@ -412,7 +412,7 @@ export default async function ({ addon, msg }) {
     const insertIndex = items.length; // append at end
     items.splice(insertIndex, 0, {
       enabled: !!block,
-      text: msg('cn-code/menu') || '生成中文code',
+      text: msg('') || '生成中文code',
       callback: async () => {
         try {
           const top = block.getTopBlock ? block.getTopBlock() : block;

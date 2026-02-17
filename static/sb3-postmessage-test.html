@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bilup SB3 PostMessage Test</title>
+    <title>RemixWarp SB3 PostMessage Test</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -75,11 +75,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>Bilup SB3 PostMessage Test</h1>
+        <h1>RemixWarp SB3 PostMessage Test</h1>
         
         <div class="info">
             <h3>How to use this feature:</h3>
-            <p>This page demonstrates how external applications can send SB3 files to Bilup using postMessage.</p>
+            <p>This page demonstrates how external applications can send SB3 files to RemixWarp using postMessage.</p>
             <p>The message format should be:</p>
             <div class="code">
 {<br>
@@ -110,7 +110,7 @@
         </div>
 
         <div class="iframe-container">
-            <iframe id="bilupFrame" src="http://localhost:8601/" title="Bilup Editor"></iframe>
+            <iframe id="RemixWarpFrame" src="http://localhost:8601/" title="RemixWarp Editor"></iframe>
         </div>
     </div>
 
@@ -135,7 +135,7 @@
                 message.title = title;
             }
 
-            sendMessageToBilup(message);
+            sendMessageToRemixWarp(message);
         }
 
         function handleFileSelect(event) {
@@ -158,7 +158,7 @@
                     title: title
                 };
 
-                sendMessageToBilup(message);
+                sendMessageToRemixWarp(message);
             };
             reader.readAsArrayBuffer(selectedFile);
         }
@@ -172,13 +172,13 @@
                 title: 'Sample Project - Stretch'
             };
 
-            sendMessageToBilup(message);
+            sendMessageToRemixWarp(message);
         }
 
-        function sendMessageToBilup(message) {
-            const iframe = document.getElementById('bilupFrame');
+        function sendMessageToRemixWarp(message) {
+            const iframe = document.getElementById('RemixWarpFrame');
             
-            console.log('Sending message to Bilup:', message);
+            console.log('Sending message to RemixWarp:', message);
             
             // Send message to the iframe
             iframe.contentWindow.postMessage(message, '*');
@@ -187,18 +187,18 @@
             // iframe.contentWindow.postMessage(message, 'http://localhost:8601');
         }
 
-        // Listen for messages back from Bilup (optional)
+        // Listen for messages back from RemixWarp (optional)
         window.addEventListener('message', function(event) {
             if (event.origin !== 'http://localhost:8601') {
                 return;
             }
             
-            console.log('Received message from Bilup:', event.data);
+            console.log('Received message from RemixWarp:', event.data);
         });
 
-        // Update the default Bilup URL based on the current protocol
+        // Update the default RemixWarp URL based on the current protocol
         window.addEventListener('load', function() {
-            const iframe = document.getElementById('BilupFrame');
+            const iframe = document.getElementById('RemixWarpFrame');
             const currentProtocol = window.location.protocol;
             const defaultUrl = currentProtocol === 'https:' ? 
                 'https://localhost:8601/' : 

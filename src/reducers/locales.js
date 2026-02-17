@@ -1,7 +1,7 @@
 import {addLocaleData} from 'react-intl';
 
-import {localeData, isRtl} from '@bilup/scratch-l10n';
-import editorMessages from '@bilup/scratch-l10n/locales/editor-msgs';
+import {localeData, isRtl} from '@Bilup/scratch-l10n';
+import editorMessages from '@Bilup/scratch-l10n/locales/editor-msgs';
 import addAdditionalTranslations from '../lib/tw-translations/index.js';
 
 import {LANGUAGE_KEY} from '../lib/utils/detect-locale.js';

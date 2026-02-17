@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import render from '../app-target';
 import styles from './credits.css';
+import ReactDOM from 'react-dom';
 
 import {APP_NAME} from '../../lib/constants/brand';
 import {applyGuiColors} from '../../lib/themes/guiHelpers';
@@ -93,7 +94,7 @@ const Credits = () => (
             <UserList users={UserData.addonDevelopers} />
         </section>
         {/* <section>
-            <h2>Bilup Extension Gallery</h2>
+            <h2>RemixWarp Extension Gallery</h2>
             <UserList users={UserData.extensionDevelopers} />
         </section> */}
         <section>

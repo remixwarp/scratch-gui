@@ -1,4 +1,4 @@
-scratch-gui modified for use in Bilup
+scratch-gui modified for use in RemixWarp
 
 ## Setup
 
