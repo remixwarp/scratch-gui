@@ -1,0 +1,26 @@
+import React from 'react';
+import PropTypes from 'prop-types';
+import {FormattedMessage} from 'react-intl';
+import {MenuItem} from '../menu/menu.jsx';
+import styles from './settings-menu.css';
+
+import {Computer} from 'lucide-react';
+
+const TWDesktopSettings = props => (
+    <MenuItem onClick={props.onClick}>
+        <div className={styles.option}>
+            <Computer />
+            <FormattedMessage
+                defaultMessage="Desktop Settings"
+                description="Button in menu bar under settings to open desktop app settings"
+                id="tw.menuBar.desktopSettings"
+            />
+        </div>
+    </MenuItem>
+);
+
+TWDesktopSettings.propTypes = {
+    onClick: PropTypes.func
+};
+
+export default TWDesktopSettings;

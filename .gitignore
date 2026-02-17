@@ -1,0 +1,32 @@
+# Mac OS
+.DS_Store
+
+# NPM
+/node_modules
+npm-*
+
+# bun
+bun.lock
+
+# Testing
+/.nyc_output
+/coverage
+
+# Build
+/build
+/dist
+/.opt-in
+
+# Generated translation files
+/translations
+/locale
+
+# Other generated source
+/src/generated
+
+# Downloaded during "npm install"
+/static/microbit
+/static/penguinmod
+
+# for act
+.secrets

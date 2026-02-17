@@ -1,0 +1,10 @@
+/* Windowed Modal Overrides */
+
+.windowed-modal-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overscroll-behavior: contain;
+}
+
+
