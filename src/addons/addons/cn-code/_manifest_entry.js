@@ -6,7 +6,7 @@ const manifest = {
   "tags": ["context-menu", "i18n"],
   "credits": [
     {
-      "name": "TurboWarp"
+      "name": "笑小朗"
     }
   ],
   "dynamicDisable": true,

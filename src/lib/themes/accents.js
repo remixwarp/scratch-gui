@@ -8,6 +8,9 @@ import * as accentRainbow from './accent/rainbow';
 import * as accentGreenTea from './accent/green-tea';
 import * as accentPaleBlue from './accent/pale-blue';
 import * as accentEggplantPurple from './accent/eggplant-purple';
+import * as accentoubi from './accent/oubi';
+import * as accent02e from './accent/02e';
+import * as accentae from './accent/ae';
 
 const ACCENTS = [
     {
@@ -35,19 +38,7 @@ const ACCENTS = [
         id: 'tw.accent.green'
     },
     {
-        name: 'Green Tea',
-        accent: accentGreenTea,
-        description: 'Green Tea accent color',
-        id: 'tw.accent.green-tea'
-    },
-    {
-        name: 'Pale Blue',
-        accent: accentPaleBlue,
-        description: 'Pale Blue accent color',
-        id: 'tw.accent.pale-blue'
-    },
-    {
-        name: 'Blue',
+    name: 'Blue',
         accent: accentBlue,
         description: 'Blue accent color',
         id: 'tw.accent.blue'
@@ -59,17 +50,47 @@ const ACCENTS = [
         id: 'tw.accent.purple'
     },
     {
+        name: 'Rainbow',
+        accent: accentRainbow,
+        description: 'Rainbow accent color',
+        id: 'tw.accent.rainbow'
+    },
+    {
+        name: 'RemixWarp(Pale Blue)',
+        accent: accentPaleBlue,
+        description: 'Pale Blue accent color',
+        id: 'tw.accent.pale-blue'
+    },
+    {
+        name: '02Engine',
+        accent: accent02e,
+        description: '02Engine accent color',
+        id: 'tw.accent.02e'
+    },
+    {
+        name: 'AstraEditor',
+        accent: accentae,
+        description: 'AstraEditor accent color',
+        id: 'tw.accent.ae'
+    },
+    {
+        name: 'Green Tea',
+        accent: accentGreenTea,
+        description: 'Green Tea accent color',
+        id: 'tw.accent.green-tea'
+    },
+    {
         name: 'Eggplant',
         accent: accentEggplantPurple,
         description: 'Eggplant accent color',
         id: 'tw.accent.eggplant-purple'
     },
     {
-        name: 'Rainbow',
-        accent: accentRainbow,
-        description: 'Rainbow accent color',
-        id: 'tw.accent.rainbow'
-    }
+        name: 'Oubi',
+        accent: accentoubi,
+        description: 'Oubi accent color',
+        id: 'tw.accent.oubi'
+    },
 ];
 
 const ACCENT_MAP = {};
