@@ -6,7 +6,7 @@ import {getIsShowingProject} from '../../reducers/project-state';
 
 /**
  * Higher Order Component to handle postMessage events for loading SB3 files.
- * This allows external applications to send SB3 data or URLs to Bilup for loading.
+ * This allows external applications to send SB3 data or URLs to RemixWarp for loading.
  * 
  * Expected message format:
  * {

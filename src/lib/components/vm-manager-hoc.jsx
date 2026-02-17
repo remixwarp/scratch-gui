@@ -48,7 +48,7 @@ const vmManagerHOC = function (WrappedComponent) {
                 // Expose the window manager on the VM for addons/integration.
                 if (!this.props.vm.wm) this.props.vm.wm = WindowManager;
 
-                // Expose Bilup's browser git integration on the VM.
+                // Expose RemixWarp's browser git integration on the VM.
                 if (!this.props.vm.gui) this.props.vm.gui = {};
                 if (!this.props.vm.gui.git) this.props.vm.gui.git = BrowserGit;
 

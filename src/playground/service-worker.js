@@ -1,6 +1,6 @@
 // Enhanced service worker for improved caching and performance
-const CACHE_NAME = 'bilup-cache-v1';
-const RUNTIME_CACHE = 'bilup-runtime';
+const CACHE_NAME = 'RemixWarp-cache-v1';
+const RUNTIME_CACHE = 'RemixWarp-runtime';
 
 // Assets to cache immediately
 const PRECACHE_URLS = [

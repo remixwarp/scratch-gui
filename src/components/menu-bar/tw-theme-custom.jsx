@@ -1172,7 +1172,7 @@ class CustomThemeMenu extends React.Component {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `bilup-themes-${new Date().toISOString()
+            link.download = `RemixWarp-themes-${new Date().toISOString()
                 .split('T')[0]}.json`;
             document.body.appendChild(link);
             link.click();

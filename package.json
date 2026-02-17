@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@bilup/scratch-l10n": "github:Bilup/scratch-l10n#develop",
+    "@Bilup/scratch-l10n": "github:Bilup/scratch-l10n#develop",
     "@isomorphic-git/lightning-fs": "^4.6.2",
     "@microbit/microbit-universal-hex": "0.2.2",
     "@turbowarp/jszip": "^3.11.1",
