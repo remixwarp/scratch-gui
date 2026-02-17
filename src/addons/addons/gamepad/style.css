@@ -1,0 +1,67 @@
+[dir="ltr"] .sa-gamepad-container {
+  margin-right: 0.2rem;
+}
+[dir="rtl"] .sa-gamepad-container {
+  margin-left: 0.2rem;
+}
+
+/* Prevent text selection on gamepad button */
+.sa-gamepad-container,
+.sa-gamepad-container * {
+  user-select: none;
+}
+
+/* Window system styles for gamepad settings */
+.sa-gamepad-popup-content {
+  padding: 1.5rem 2.25rem;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.sa-gamepad-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  user-select: none;
+  pointer-events: none;
+  will-change: transform;
+  image-rendering: optimizeSpeed;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+.sa-gamepad-cursor-down {
+  filter: invert(100%);
+}
+
+.sa-small-stage [class*="gui_body-wrapper_"]:not(.sa-stage-hidden) .sa-gamepad-container {
+  display: none !important;
+}
+
+.sa-gamepad-hide-cursor [class^="stage_stage_"] {
+  cursor: none;
+}
+
+.sa-gamepad-browser-support-warning {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.sa-gamepad-extra-options {
+  display: none;
+}
+.sa-gamepad-has-controller .sa-gamepad-extra-options {
+  display: block;
+}
+
+.sa-gamepad-store-settings {
+  display: block;
+}
+.sa-gamepad-store-settings > input {
+  margin-right: 4px;
+}
+
+.sa-gamepad-reset-button {
+  margin: 8px 8px 8px 0;
+}

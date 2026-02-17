@@ -1,0 +1,39 @@
+.multiWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+}
+.tab {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.activeTab {
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.12);
+}
+.close {
+  margin-left: 8px;
+  color: #888;
+}
+.addBtn {
+  margin-left: auto;
+  padding: 6px 10px;
+}
+.noMore {
+  margin-left: 8px;
+  color: #666;
+  font-size: 12px;
+}
+.blocksContainer {
+  flex: 1 1 auto;
+  min-height: 0;
+}

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="<%= htmlWebpackPlugin.options.APP_NAME %> is a powerful Scratch mod that enhances your Scratch experience with advanced features and optimizations." />
+    <!-- OpenGraph Meta Tags for Discord/Social Embeds -->
+    <meta property="og:title" content="<%= htmlWebpackPlugin.options.title %>" />
+    <meta property="og:description" content="<%= htmlWebpackPlugin.options.APP_NAME %> is a powerful Scratch mod that enhances your Scratch experience with advanced features and optimizations." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="<%= htmlWebpackPlugin.options.root %>images/apple-touch-icon.png" />
+    <meta property="og:url" content="https://warp.mistium.com/" />
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <style>
+      body[data-splash-theme="dark"] {
+        background: #111;
+      }
+
+      noscript {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <h1>This page requires JavaScript</h1>
+    </noscript>
+
+    <script>
+      (function() {
+        var theme = '';
+        var accent = '#75C1C4';
+
+        try {
+          var themeSetting = localStorage.getItem('tw:theme');
+        } catch (e) {
+          // ignore
+        }
+        if (themeSetting === 'light') {
+          theme = 'light';
+        } else if (themeSetting === 'dark') {
+          theme = 'dark';
+        } else if (themeSetting) {
+          try {
+            var parsed = JSON.parse(themeSetting);
+            theme = parsed.gui || 'light';
+            accent = parsed.accent || accent;
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        if (!theme) {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        document.body.setAttribute('data-splash-theme', theme);
+
+        // Initialize CSS variables to match the theme before React loads
+        // This ensures that addons.html has the same CSS variables as editor.html
+        var doc = document.documentElement;
+        var isDark = theme === 'dark';
+        
+        // Set basic UI colors
+        doc.style.setProperty('--ui-primary', isDark ? '#292929' : '#e5f0ff');
+        doc.style.setProperty('--ui-secondary', isDark ? '#333333' : '#ffffff');
+        doc.style.setProperty('--ui-tertiary', isDark ? '#444444' : '#f9f9f9');
+        
+        // Set looks colors
+        doc.style.setProperty('--looks-secondary', accent);
+        doc.style.setProperty('--looks-secondary-dark', isDark ? '#5a9ea1' : '#5a9ea1');
+        doc.style.setProperty('--looks-transparent', 'rgba(99, 151, 153, 0.2)');
+        doc.style.setProperty('--looks-light-transparent', 'rgba(99, 151, 153, 0.1)');
+        
+        // Set other color variables
+        doc.style.setProperty('--ui-white', isDark ? '#ffffff' : '#ffffff');
+        doc.style.setProperty('--ui-white-dim', isDark ? '#e0e0e0' : '#e0e0e0');
+        doc.style.setProperty('--ui-white-transparent', isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.1)');
+        doc.style.setProperty('--ui-transparent', isDark ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.1)');
+        doc.style.setProperty('--ui-black-transparent', isDark ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.1)');
+        
+        // Set text colors
+        doc.style.setProperty('--text-primary', isDark ? '#ffffff' : '#575e75');
+        doc.style.setProperty('--text-primary-transparent', isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(87, 94, 117, 0.7)');
+        
+        // Set modal colors
+        doc.style.setProperty('--ui-modal-overlay', isDark ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.5)');
+        doc.style.setProperty('--ui-modal-background', isDark ? '#292929' : '#ffffff');
+        doc.style.setProperty('--ui-modal-foreground', isDark ? '#ffffff' : '#575e75');
+        doc.style.setProperty('--ui-modal-header-background', accent);
+        doc.style.setProperty('--ui-modal-header-foreground', '#ffffff');
+        
+        // Set block colors
+        doc.style.setProperty('--motion-primary', '#4C97FF');
+        doc.style.setProperty('--motion-tertiary', '#3373CC');
+        doc.style.setProperty('--looks-secondary', accent);
+        doc.style.setProperty('--sound-primary', '#CF63CF');
+        doc.style.setProperty('--sound-tertiary', '#A63DA6');
+        doc.style.setProperty('--control-primary', '#FFBF00');
+        doc.style.setProperty('--data-primary', '#FF8C1A');
+        doc.style.setProperty('--pen-primary', '#0fbd8c');
+        doc.style.setProperty('--pen-transparent', 'rgba(15, 189, 140, 0.2)');
+        doc.style.setProperty('--pen-tertiary', '#0b8e69');
+        doc.style.setProperty('--error-primary', '#ff6680');
+        doc.style.setProperty('--error-light', '#ff99ab');
+        doc.style.setProperty('--error-transparent', 'rgba(255, 102, 128, 0.2)');
+      })();
+    </script>
+
+    <div id="app"></div>
+  </body>
+</html>
