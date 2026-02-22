@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
-import locales from '@bilup/scratch-l10n';
+import locales from '@remixwarp/scratch-l10n';
 
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {languageMenuOpen, openLanguageMenu} from '../../reducers/menus.js';
