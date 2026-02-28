@@ -33,6 +33,10 @@ const contributors = [
     {
         userID: '222322998',
         username: 'xiao-xiao-lang'
+    },
+    {
+        userID: '148440803',
+        username: 'RyaninCn11'
     }
 ].map(fromHardcoded);
 
@@ -48,6 +52,10 @@ const addonDevelopers = [
     {
         userID: '222322998',
         username: 'xiao-xiao-lang'
+    },
+    {
+        userID: '148440803',
+        username: 'RyaninCn11'
     }
 
 ].map(fromHardcoded);
@@ -69,6 +77,10 @@ const docs = [
     {
         userID: '222322998',
         username: 'xiao-xiao-lang'
+    },
+    {
+        userID: '148440803',
+        username: 'RyaninCn11'
     }
 ].map(fromHardcoded);
 
@@ -84,6 +96,10 @@ const translators = [
     {
         userID: '222322998',
         username: 'xiao-xiao-lang'
+    },
+    {
+        userID: '148440803',
+        username: 'RyaninCn11'
     }
 ].map(fromHardcoded);
 
