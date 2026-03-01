@@ -44,18 +44,6 @@ const ACCENTS = [
         id: 'tw.accent.blue'
     },
     {
-        name: 'Purple',
-        accent: accentPurple,
-        description: 'Purple accent color',
-        id: 'tw.accent.purple'
-    },
-    {
-        name: 'Rainbow',
-        accent: accentRainbow,
-        description: 'Rainbow accent color',
-        id: 'tw.accent.rainbow'
-    },
-    {
         name: 'RemixWarp(Pale Blue)',
         accent: accentPaleBlue,
         description: 'Pale Blue accent color',
@@ -72,6 +60,18 @@ const ACCENTS = [
         accent: accentae,
         description: 'AstraEditor accent color',
         id: 'tw.accent.ae'
+    },
+    {
+        name: 'Purple',
+        accent: accentPurple,
+        description: 'Purple accent color',
+        id: 'tw.accent.purple'
+    },
+    {
+        name: 'Rainbow',
+        accent: accentRainbow,
+        description: 'Rainbow accent color',
+        id: 'tw.accent.rainbow'
     },
     {
         name: 'Green Tea',
