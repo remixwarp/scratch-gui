@@ -1,6 +1,6 @@
 import {detectLocale} from '../../../src/lib/detect-locale.js';
 
-const supportedLocales = ['en', 'es', 'pt-br', 'de', 'it', 'zh-cn2'];
+const supportedLocales = ['en', 'es', 'pt-br', 'de', 'it', 'zh-geng'];
 
 Object.defineProperty(window.location,
     'search',

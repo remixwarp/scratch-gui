@@ -18,6 +18,11 @@ const detectLocale = supportedLocales => {
     // tw: read language from localStorage
     try {
         const storedLanguage = localStorage.getItem(LANGUAGE_KEY);
+        // Clear old zh-cn2 setting if present immediately
+        if (storedLanguage === 'zh-cn2') {
+            localStorage.removeItem(LANGUAGE_KEY);
+            return 'en'; // Return default language after clearing invalid setting
+        }
         if (storedLanguage && supportedLocales.includes(storedLanguage)) {
             return storedLanguage;
         }
