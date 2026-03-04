@@ -34,6 +34,7 @@ import ConnectionModal from '../../containers/connection-modal.jsx';
 import TelemetryModal from '../telemetry-modal/telemetry-modal.jsx';
 import TWUsernameModal from '../../containers/tw-username-modal.jsx';
 import TWSettingsModal from '../../containers/tw-settings-modal.jsx';
+import AIModal from '../../containers/ai-modal.jsx';
 import TWSecurityManager from '../../containers/tw-security-manager.jsx';
 import TWCustomExtensionModal from '../../containers/tw-custom-extension-modal.jsx';
 import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
@@ -191,6 +192,7 @@ const GUIComponent = props => {
         onRequestCloseCostumeLibrary,
         onRequestCloseExtensionLibrary,
         onRequestCloseTelemetryModal,
+        onRequestCloseAIModal,
         onSeeCommunity,
         onSetStageSize: _onSetStageSize,
         onShare,
@@ -216,6 +218,7 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
+        aiModalVisible,
         vm,
         ...componentProps
     } = omit(props, 'dispatch');
@@ -252,6 +255,7 @@ const GUIComponent = props => {
                     visible={settingsModalVisible}
                 />
             )}
+            {aiModalVisible && <AIModal visible={aiModalVisible} />}
             {customExtensionModalVisible && <TWCustomExtensionModal />}
             {fontsModalVisible && <TWFontsModal />}
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
@@ -267,7 +271,8 @@ const GUIComponent = props => {
         fontsModalVisible,
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
-        gitModalVisible
+        gitModalVisible,
+        aiModalVisible
     ]);
 
     const minDimensions = useMemo(() => ({
