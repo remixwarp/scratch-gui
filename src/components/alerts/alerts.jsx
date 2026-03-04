@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import Box from '../box/box.jsx';
 import Alert from '../../containers/alert.jsx';
+import DailyQuote from '../quotes/daily-quote.jsx';
 
 import styles from './alerts.css';
 
@@ -16,6 +17,7 @@ const AlertsComponent = ({
         className={className}
     >
         <Box className={styles.alertsInnerContainer} >
+            <DailyQuote alertsList={alertsList} />
             {alertsList.map((a, index) => (
                 <Alert
                     closeButton={a.closeButton}

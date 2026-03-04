@@ -81,6 +81,7 @@ const addons = [
     'tw-disable-cloud-variables',
     'editor-stepping',
     'autosave',
+    'daily-quote',
     'no-category-text',
     'green-flag-order',
     'remove-extension-button',

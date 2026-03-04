@@ -34,9 +34,9 @@
     }
   },
   "dependencies": {
-    "@remixwarp/scratch-l10n": "github:remixwarp/scratch-l10n#main",
     "@isomorphic-git/lightning-fs": "^4.6.2",
     "@microbit/microbit-universal-hex": "0.2.2",
+    "@remixwarp/scratch-l10n": "github:remixwarp/scratch-l10n#main",
     "@turbowarp/jszip": "^3.11.1",
     "@turbowarp/nanolog": "^1.0.1",
     "@turbowarp/scratch-storage": "^0.0.202505311821",
