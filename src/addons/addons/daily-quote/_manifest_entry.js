@@ -5,7 +5,7 @@ const manifest = {
   "description": "在编辑器状态栏显示每日一句/随机短语，并提供插件设置面板来调整切换间隔。",
   "credits": [
     {
-      "name": "你",
+      "name": "笑小朗",
       "url": ""
     }
   ],
@@ -22,6 +22,14 @@ const manifest = {
       "id": "enable_daily_quote",
       "type": "boolean",
       "default": true
+    }
+    ,
+    {
+      "dynamic": true,
+      "name": "切换间隔（秒）",
+      "id": "interval",
+      "type": "positive_integer",
+      "default": 5
     }
   ],
   "tags": [

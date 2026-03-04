@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import styles from './daily-quote.css';
 import QuotesPluginSettings from './quotes-plugin-settings.jsx';
+import SettingsStore from '../../addons/settings-store-singleton';
 
 const LOCAL_KEY = 'dailyQuoteInterval';
 
@@ -126,8 +127,14 @@ const DailyQuote = ({alertsList}) => {
     ]);
     const [index, setIndex] = useState(0);
     const [intervalSec, setIntervalSec] = useState(() => {
-        const v = parseInt(window.localStorage.getItem(LOCAL_KEY), 10);
-        return Number.isFinite(v) && v > 0 ? v : defaultInterval;
+        try {
+            const v = SettingsStore.getAddonSetting('daily-quote', 'interval');
+            if (typeof v === 'number' && v > 0) return v;
+        } catch (e) {
+            // ignore
+        }
+        const v2 = parseInt(window.localStorage.getItem(LOCAL_KEY), 10);
+        return Number.isFinite(v2) && v2 > 0 ? v2 : defaultInterval;
     });
     const timerRef = useRef(null);
 
@@ -152,12 +159,25 @@ const DailyQuote = ({alertsList}) => {
     }, [lines.length, intervalSec]);
 
     const [showSettings, setShowSettings] = useState(false);
+    const [enabled, setEnabled] = useState(() => {
+        try {
+            return SettingsStore.getAddonEnabled('daily-quote');
+        } catch (e) {
+            return true;
+        }
+    });
 
     const openSettings = () => setShowSettings(true);
 
     const handleSaveSettings = (n) => {
         if (Number.isFinite(n) && n > 0) {
-            window.localStorage.setItem(LOCAL_KEY, String(n));
+            // save to addon settings if available
+            try {
+                SettingsStore.setAddonSetting('daily-quote', 'interval', Number(n));
+            } catch (e) {
+                // fallback to localStorage
+                window.localStorage.setItem(LOCAL_KEY, String(n));
+            }
             setIntervalSec(n);
             setShowSettings(false);
         } else {
@@ -168,6 +188,7 @@ const DailyQuote = ({alertsList}) => {
     const handleCancelSettings = () => setShowSettings(false);
 
     if (hasSaveAlert) return null;
+    if (!enabled) return null;
 
     const current = lines.length ? lines[index % lines.length] : '';
 
