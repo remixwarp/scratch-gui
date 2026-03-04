@@ -47,6 +47,13 @@ import {
     openGitModal,
     openExtensionManagerModal
 } from '../../reducers/modals';
+import {openAIModal} from '../../reducers/modals';
+// AI menu state no longer needed (button only)
+import {
+    // openAIMenu,
+    // closeAIMenu,
+    // aiMenuOpen
+} from '../../reducers/menus';
 import {setPlayer} from '../../reducers/mode';
 import {
     isTimeTravel220022BC,
@@ -135,10 +142,12 @@ import {
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo
 } from 'lucide-react';
+import {Cpu} from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
 
 import SeeInsideButton from './tw-see-inside.jsx';
+import AIPanel from '../ai/ai-panel.jsx';
 
 /* const ariaMessages = defineMessages({
     tutorials: {
@@ -1402,6 +1411,21 @@ class MenuBar extends React.Component {
                                 </MenuBarMenu>
                             </MenuLabel>
                         )}
+                        <div className={styles.menuBarItem}>
+                            <Button
+                                className={styles.menuBarButton}
+                                onClick={this.props.onClickOpenAIWindow}
+                            >
+                                <Cpu size={20} />
+                                <span className={styles.collapsibleLabel}>
+                                    <FormattedMessage
+                                        defaultMessage="AI"
+                                        description="AI button"
+                                        id="gui.menuBar.ai"
+                                    />
+                                </span>
+                            </Button>
+                        </div>
                         <MenuLabel
                             open={this.props.editMenuOpen}
                             onOpen={this.props.onClickEdit}
@@ -1997,6 +2021,7 @@ const mapStateToProps = (state, ownProps) => {
         mode1990: isTimeTravel1990(state),
         mode2020: isTimeTravel2020(state),
         modeNow: isTimeTravelNow(state)
+        ,
     };
 };
 
@@ -2031,6 +2056,7 @@ const mapDispatchToProps = dispatch => ({
         dispatch(closeEditMenu());
         dispatch(openGitModal());
     },
+    onClickOpenAIWindow: () => dispatch(openAIModal()),
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onRequestCloseSettings: () => dispatch(closeSettingsMenu()),
     onClickNew: needSave => {

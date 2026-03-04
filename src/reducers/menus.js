@@ -18,6 +18,7 @@ const MENU_FONTS = 'fontsMenu';
 const MENU_ERRORS = 'errorsMenu';
 const MENU_CUSTOM_THEMES = 'customThemesMenu';
 const MENU_WORKSPACE_BOOKMARKS = 'workspaceBookmarksMenu';
+const MENU_AI = 'aiMenu';
 
 class Menu {
     constructor (id) {
@@ -95,6 +96,8 @@ const initialState = {
     [MENU_CUSTOM_THEMES]: false,
     [MENU_ERRORS]: false,
     [MENU_WORKSPACE_BOOKMARKS]: false
+    ,
+    [MENU_AI]: false
 };
 
 const reducer = function (state, action) {
@@ -198,6 +201,10 @@ const openErrorsMenu = () => openMenu(MENU_ERRORS);
 const closeErrorsMenu = () => closeMenu(MENU_ERRORS);
 const errorsMenuOpen = state => state.scratchGui.menus[MENU_ERRORS];
 
+const openAIMenu = () => openMenu(MENU_AI);
+const closeAIMenu = () => closeMenu(MENU_AI);
+const aiMenuOpen = state => state.scratchGui.menus[MENU_AI];
+
 const openCustomThemes = () => openMenu(MENU_CUSTOM_THEMES);
 const closeCustomThemes = () => closeMenu(MENU_CUSTOM_THEMES);
 const customThemesOpen = state => state.scratchGui.menus[MENU_CUSTOM_THEMES];
@@ -253,6 +260,9 @@ export {
     openErrorsMenu,
     closeErrorsMenu,
     errorsMenuOpen,
+    openAIMenu,
+    closeAIMenu,
+    aiMenuOpen,
     openCustomThemes,
     closeCustomThemes,
     customThemesOpen

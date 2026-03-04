@@ -27,6 +27,7 @@ import {
     openCustomExtensionModal,
     openExtensionManagerModal
 } from '../reducers/modals';
+import { closeAIModal, onOpenCustomExtensionModal } from '../reducers/modals';
 
 import FontLoaderHOC from '../lib/components/font-loader-hoc.jsx';
 import LocalizationHOC from '../lib/components/localization-hoc.jsx';
@@ -199,6 +200,7 @@ const mapStateToProps = state => {
         unknownPlatformModalVisible: state.scratchGui.modals.unknownPlatformModal,
         invalidProjectModalVisible: state.scratchGui.modals.invalidProjectModal,
         gitModalVisible: state.scratchGui.modals.gitModal,
+        aiModalVisible: state.scratchGui.modals.aiModal,
         vm: state.scratchGui.vm
     };
 };
@@ -215,6 +217,8 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseCostumeLibrary: () => dispatch(closeCostumeLibrary()),
     onRequestCloseExtensionLibrary: () => dispatch(closeExtensionLibrary()),
     onRequestCloseTelemetryModal: () => dispatch(closeTelemetryModal())
+    ,
+    onRequestCloseAIModal: () => dispatch(closeAIModal())
 });
 
 const ConnectedGUI = injectIntl(connect(
