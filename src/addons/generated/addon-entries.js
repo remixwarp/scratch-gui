@@ -88,5 +88,4 @@ export default {
   "green-flag-order": () => import(/* webpackChunkName: "addon-entry-green-flag-order" */ "../addons/green-flag-order/_runtime_entry.js"),
   "remove-extension-button": () => import(/* webpackChunkName: "addon-entry-remove-extension-button" */ "../addons/remove-extension-button/_runtime_entry.js"),
   "daily-quote": () => import(/* webpackChunkName: "addon-entry-daily-quote" */ "../addons/daily-quote/_runtime_entry.js"),
-  "转换为中文-code": () => import(/* webpackChunkName: "addon-entry-中文-code" */ "../addons/cn-code/_runtime_entry.js"),
 };

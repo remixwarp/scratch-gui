@@ -20,7 +20,7 @@ class AIModalContainer extends React.Component {
         return (
             <Modal
                 id="aiModal"
-                contentLabel={this.props.intl.formatMessage({defaultMessage: 'AI辅助编程', id: 'gui.aiModal.title'})}
+                contentLabel={this.props.intl.formatMessage({defaultMessage: 'AI 辅助编程', id: 'gui.aiModal.title'})}
                 visible={!!visible}
                 className="ai-modal"
                 onRequestClose={this.handleClose}
