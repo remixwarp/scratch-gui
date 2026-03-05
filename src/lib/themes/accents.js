@@ -44,7 +44,7 @@ const ACCENTS = [
         id: 'tw.accent.blue'
     },
     {
-        name: 'RemixWarp(Pale Blue)',
+        name: 'RemixWarp',
         accent: accentPaleBlue,
         description: 'Pale Blue accent color',
         id: 'tw.accent.pale-blue'
