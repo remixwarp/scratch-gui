@@ -87,7 +87,7 @@ class AIPanel extends React.PureComponent {
         return (
             <div className={styles.container}>
                 {this.props.showHeader !== false && (
-                    <div className={styles.header}>AI 辅助编程</div>
+                    <div className={styles.header}>AI chat</div>
                 )}
                 <div className={styles.messagesWrapper}>
                     <div className={styles.messages}>
