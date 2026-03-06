@@ -321,7 +321,7 @@ class MenuBar extends React.Component {
             'checkCustomExtensions',
             'handleConvertToScratch',
             'handleConvertToTurbowarp',
-            'handleConvertToO2Engine',
+            'handleConvertTo02Engine',
             'handleConvertToAstraEditor',
             'handleConvertToBilup'
         ]);
@@ -1221,7 +1221,7 @@ class MenuBar extends React.Component {
                 name: 'TurboWarp',
                 url: 'https://turbowarp.org/'
             },
-            'O2Engine': {
+            '02Engine': {
                 name: '02Engine',
                 url: 'https://02engine.02studio.xyz/'
             },
@@ -1238,18 +1238,6 @@ class MenuBar extends React.Component {
     }
     handleConvertToScratch () {
         this.handleCompatibilitySave('Scratch');
-    }
-    handleConvertToTurbowarp () {
-        this.handleCompatibilitySave('TurboWarp');
-    }
-    handleConvertToO2Engine () {
-        this.handleCompatibilitySave('O2Engine');
-    }
-    handleConvertToAstraEditor () {
-        this.handleCompatibilitySave('AstraEditor');
-    }
-    handleConvertToBilup () {
-        this.handleCompatibilitySave('Bilup');
     }
     checkCustomExtensions () {
         // Check if the project contains any custom extensions (non-builtin)
@@ -1270,19 +1258,184 @@ class MenuBar extends React.Component {
         
         return customExtensions;
     }
-    handleConvertToScratch () {
-        // Check for custom extensions before converting to Scratch
-        const customExtensions = this.checkCustomExtensions();
+    getCompatibilityIssues (targetPlatform) {
+        // Get all compatibility issues for the target platform
+        const issues = [];
         
-        if (customExtensions.length > 0) {
-            // Show warning dialog if custom extensions are found
-            const extensionList = customExtensions.join(', ');
-            alert(`警告：此项目包含Scratch不支持的自定义扩展：\n\n${extensionList}\n\n这些扩展在Scratch中将无法使用。请移除这些扩展后再尝试转换。`);
-            this.props.onRequestCloseCompatibility();
-            return;
+        if (!this.props.vm || !this.props.vm.runtime) {
+            return issues;
+        }
+        
+        const runtime = this.props.vm.runtime;
+        
+        // Check custom extensions - only for Scratch
+        if (targetPlatform === 'Scratch') {
+            const customExtensions = this.checkCustomExtensions();
+            if (customExtensions.length > 0) {
+                issues.push({
+                    type: 'extension',
+                    severity: 'error',
+                    message: `包含 ${customExtensions.length} 个自定义扩展：${customExtensions.join(', ')}`,
+                    details: '这些扩展在Scratch中无法使用'
+                });
+            }
+        }
+        
+        // Check block count
+        let totalBlocks = 0;
+        for (const target of runtime.targets) {
+            if (target.sprite && target.sprite.blocks) {
+                totalBlocks += Object.keys(target.sprite.blocks._blocks).length;
+            }
+        }
+        
+        const platformLimits = {
+            'Scratch': { maxBlocks: Infinity },
+            'TurboWarp': { maxBlocks: Infinity },
+            '02Engine': { maxBlocks: Infinity },
+            'AstraEditor': { maxBlocks: Infinity },
+            'Bilup': { maxBlocks: Infinity }
+        };
+        
+        const limits = platformLimits[targetPlatform];
+        if (limits && limits.maxBlocks !== Infinity && totalBlocks > limits.maxBlocks) {
+            issues.push({
+                type: 'blocks',
+                severity: 'warning',
+                message: `积木数量 (${totalBlocks}) 超过 ${targetPlatform} 限制 (${limits.maxBlocks})`,
+                details: '部分积木可能无法正常工作'
+            });
+        }
+        
+        // Check stage size
+        const stageWidth = runtime.stageWidth;
+        const stageHeight = runtime.stageHeight;
+        
+        if (targetPlatform === 'Scratch') {
+            if (stageWidth !== 480 || stageHeight !== 360) {
+                issues.push({
+                    type: 'stage',
+                    severity: 'warning',
+                    message: `舞台尺寸 (${stageWidth}x${stageHeight}) 与Scratch默认尺寸 (480x360) 不同`,
+                    details: '在Scratch中舞台尺寸将被重置为默认值'
+                });
+            }
+        }
+        
+        // Check for TurboWarp-specific features
+        if (targetPlatform === 'Scratch') {
+            // Check for compiled blocks or other TurboWarp-specific features
+            for (const target of runtime.targets) {
+                if (target.sprite && target.sprite.blocks) {
+                    for (const blockId in target.sprite.blocks._blocks) {
+                        const block = target.sprite.blocks._blocks[blockId];
+                        // Check for TurboWarp-specific opcodes
+                        if (block.opcode && block.opcode.startsWith('tw_')) {
+                            issues.push({
+                                type: 'feature',
+                                severity: 'error',
+                                message: `使用了 TurboWarp 特有功能: ${block.opcode}`,
+                                details: '此功能在目标平台不可用'
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        
+        return issues;
+    }
+    showCompatibilityDialog (targetPlatform, issues) {
+        // Show compatibility issues in a dialog
+        const errors = issues.filter(i => i.severity === 'error');
+        const warnings = issues.filter(i => i.severity === 'warning');
+        
+        let message = `转换到 ${targetPlatform} 的兼容性报告：\n\n`;
+        
+        if (errors.length > 0) {
+            message += `❌ 错误 (${errors.length} 项)：\n`;
+            errors.forEach((issue, index) => {
+                message += `${index + 1}. ${issue.message}\n`;
+                if (issue.details) {
+                    message += `   ${issue.details}\n`;
+                }
+            });
+            message += '\n';
+        }
+        
+        if (warnings.length > 0) {
+            message += `⚠️ 警告 (${warnings.length} 项)：\n`;
+            warnings.forEach((issue, index) => {
+                message += `${index + 1}. ${issue.message}\n`;
+                if (issue.details) {
+                    message += `   ${issue.details}\n`;
+                }
+            });
+            message += '\n';
+        }
+        
+        if (errors.length > 0) {
+            message += '存在错误，建议修复后再转换。是否仍要继续？';
+            return confirm(message);
+        } else if (warnings.length > 0) {
+            message += '存在警告，但项目仍可转换。是否继续？';
+            return confirm(message);
+        }
+        
+        return true;
+    }
+    handleConvertToScratch () {
+        // Check compatibility issues before converting to Scratch
+        const issues = this.getCompatibilityIssues('Scratch');
+        
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('Scratch', issues);
+            if (!shouldContinue) {
+                return;
+            }
         }
         
         this.handleCompatibilitySave('Scratch');
+    }
+    handleConvertToTurbowarp () {
+        const issues = this.getCompatibilityIssues('TurboWarp');
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('TurboWarp', issues);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        this.handleCompatibilitySave('TurboWarp');
+    }
+    handleConvertTo02Engine () {
+        const issues = this.getCompatibilityIssues('02Engine');
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('02Engine', issues);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        this.handleCompatibilitySave('02Engine');
+    }
+    handleConvertToAstraEditor () {
+        const issues = this.getCompatibilityIssues('AstraEditor');
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('AstraEditor', issues);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        this.handleCompatibilitySave('AstraEditor');
+    }
+    handleConvertToBilup () {
+        const issues = this.getCompatibilityIssues('Bilup');
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('Bilup', issues);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        this.handleCompatibilitySave('Bilup');
     }
     render () {
         const saveNowMessage = (
@@ -1446,7 +1599,7 @@ class MenuBar extends React.Component {
                                                     id="gui.menuBar.compatibility.turbowarp"
                                                 />
                                             </MenuItem>
-                                            <MenuItem onClick={this.handleConvertToO2Engine}>
+                                            <MenuItem onClick={this.handleConvertTo02Engine}>
                                                 <FormattedMessage
                                                     defaultMessage="02Engine"
                                                     description="Convert to 02Engine compatibility"
@@ -2245,8 +2398,10 @@ const mapStateToProps = (state, ownProps) => {
         mode1920: isTimeTravel1920(state),
         mode1990: isTimeTravel1990(state),
         mode2020: isTimeTravel2020(state),
-        modeNow: isTimeTravelNow(state)
-        ,
+        modeNow: isTimeTravelNow(state),
+        showSaveFilePicker: typeof window.showSaveFilePicker === 'function' && !navigator.userAgent.includes('Android') ?
+            window.showSaveFilePicker.bind(window) :
+            null
     };
 };
 
