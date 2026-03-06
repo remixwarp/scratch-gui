@@ -5,7 +5,8 @@
         "gui.menuBar.compatibility.scratch": "Scratch",
         "gui.menuBar.compatibility.turbowarp": "Turbowarp",
         "gui.menuBar.compatibility.o2engine": "02Engine",
-        "gui.menuBar.compatibility.astraeditor": "AstraEditor"
+        "gui.menuBar.compatibility.astraeditor": "AstraEditor",
+        "gui.menuBar.compatibility.bilup": "Bilup"
     },
     "zh-cn": {
         "gui.menuBar.compatibility": "兼容性转换",
@@ -14,6 +15,7 @@
         "gui.menuBar.compatibility.turbowarp": "Turbowarp",
         "gui.menuBar.compatibility.o2engine": "02Engine",
         "gui.menuBar.compatibility.astraeditor": "AstraEditor",
+        "gui.menuBar.compatibility.bilup": "Bilup",
         "tw.accent.blue": "蓝色",
         "tw.accent.purple": "紫色",
         "tw.accent.rainbow": "彩虹色",
