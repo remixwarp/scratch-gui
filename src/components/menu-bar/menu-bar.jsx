@@ -321,10 +321,12 @@ class MenuBar extends React.Component {
             'handleClearAllWorkspaceBookmarks',
             'handleCompatibilitySave',
             'getPlatformInfo',
+            'checkCustomExtensions',
             'handleConvertToScratch',
             'handleConvertToTurbowarp',
             'handleConvertToO2Engine',
-            'handleConvertToAstraEditor'
+            'handleConvertToAstraEditor',
+            'handleConvertToBilup'
         ]);
     }
     componentDidMount () {
@@ -1199,6 +1201,10 @@ class MenuBar extends React.Component {
             'AstraEditor': {
                 name: 'AstraEditor',
                 url: 'https://www.astras.top/'
+            },
+            'Bilup': {
+                name: 'Bilup',
+                url: 'https://editor.bilup.org/'
             }
         };
         return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
@@ -1214,6 +1220,42 @@ class MenuBar extends React.Component {
     }
     handleConvertToAstraEditor () {
         this.handleCompatibilitySave('AstraEditor');
+    }
+    handleConvertToBilup () {
+        this.handleCompatibilitySave('Bilup');
+    }
+    checkCustomExtensions () {
+        // Check if the project contains any custom extensions (non-builtin)
+        if (!this.props.vm || !this.props.vm.extensionManager) {
+            return [];
+        }
+        
+        const customExtensions = [];
+        const extensionManager = this.props.vm.extensionManager;
+        
+        // Get all loaded extensions
+        for (const extensionId of extensionManager._loadedExtensions.keys()) {
+            // Check if this is a builtin extension
+            if (!extensionManager.isBuiltinExtension(extensionId)) {
+                customExtensions.push(extensionId);
+            }
+        }
+        
+        return customExtensions;
+    }
+    handleConvertToScratch () {
+        // Check for custom extensions before converting to Scratch
+        const customExtensions = this.checkCustomExtensions();
+        
+        if (customExtensions.length > 0) {
+            // Show warning dialog if custom extensions are found
+            const extensionList = customExtensions.join(', ');
+            alert(`警告：此项目包含Scratch不支持的自定义扩展：\n\n${extensionList}\n\n这些扩展在Scratch中将无法使用。请移除这些扩展后再尝试转换。`);
+            this.props.onRequestCloseCompatibility();
+            return;
+        }
+        
+        this.handleCompatibilitySave('Scratch');
     }
     render () {
         const saveNowMessage = (
@@ -1587,6 +1629,13 @@ class MenuBar extends React.Component {
                                             defaultMessage="AstraEditor"
                                             description="Convert to AstraEditor compatibility"
                                             id="gui.menuBar.compatibility.astraeditor"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem onClick={this.handleConvertToBilup}>
+                                        <FormattedMessage
+                                            defaultMessage="Bilup"
+                                            description="Convert to Bilup compatibility"
+                                            id="gui.menuBar.compatibility.bilup"
                                         />
                                     </MenuItem>
                                 </MenuSection>
