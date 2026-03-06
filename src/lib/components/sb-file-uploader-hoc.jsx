@@ -46,7 +46,8 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                 'handleStartSelectingFileUpload',
                 'handleChange',
                 'onload',
-                'removeFileObjects'
+                'removeFileObjects',
+                'analyzeProjectCompatibility'
             ]);
             // tw: We have multiple instances of this HOC alive at a time. This flag fixes issues that arise from that.
             this.expectingFileUploadFinish = false;
@@ -188,6 +189,92 @@ const SBFileUploaderHOC = function (WrappedComponent) {
             if (!matches) return '';
             return matches[1].substring(0, 100); // truncate project title to max 100 chars
         }
+        // Analyze project compatibility before loading
+        analyzeProjectCompatibility (projectData) {
+            const issues = [];
+            
+            try {
+                // Try to parse as JSON (for .sb3 files)
+                const text = new TextDecoder().decode(projectData);
+                const json = JSON.parse(text);
+                
+                // Check for meta information
+                if (json.meta) {
+                    // Check platform
+                    if (json.meta.platform && json.meta.platform.name) {
+                        const platformName = json.meta.platform.name.toLowerCase();
+                        const compatiblePlatforms = ['scratch', 'turbowarp', '02engine', 'astraeditor', 'bilup'];
+                        
+                        if (!compatiblePlatforms.some(p => platformName.includes(p))) {
+                            issues.push({
+                                type: 'platform',
+                                severity: 'warning',
+                                message: `项目来自未验证的平台: ${json.meta.platform.name}`,
+                                details: '兼容性可能受限'
+                            });
+                        }
+                    }
+                    
+                    // Check agent
+                    if (json.meta.agent) {
+                        issues.push({
+                            type: 'agent',
+                            severity: 'info',
+                            message: `项目创建工具: ${json.meta.agent}`,
+                            details: null
+                        });
+                    }
+                }
+                
+                // Check for extensionURLs (custom extensions)
+                if (json.extensionURLs && Object.keys(json.extensionURLs).length > 0) {
+                    const extensions = Object.keys(json.extensionURLs);
+                    issues.push({
+                        type: 'extension',
+                        severity: 'info',
+                        message: `项目包含 ${extensions.length} 个自定义扩展`,
+                        details: extensions.join(', ')
+                    });
+                }
+                
+                // Check for monitors
+                if (json.monitors && json.monitors.length > 0) {
+                    issues.push({
+                        type: 'monitors',
+                        severity: 'info',
+                        message: `项目包含 ${json.monitors.length} 个监视器`,
+                        details: null
+                    });
+                }
+                
+                // Check for video or audio sensing
+                const hasVideoSensing = json.targets && json.targets.some(target => 
+                    target.blocks && Object.values(target.blocks).some(block => 
+                        block.opcode && block.opcode.includes('videoSensing')
+                    )
+                );
+                
+                if (hasVideoSensing) {
+                    issues.push({
+                        type: 'feature',
+                        severity: 'info',
+                        message: '项目使用了视频侦测功能',
+                        details: '需要摄像头权限'
+                    });
+                }
+                
+            } catch (e) {
+                // Not JSON or parse error, might be binary format (.sb2)
+                issues.push({
+                    type: 'format',
+                    severity: 'info',
+                    message: '旧版项目格式 (SB2)',
+                    details: '将自动转换'
+                });
+            }
+            
+            return issues;
+        }
         // step 6: attached as a handler on our FileReader object; called when
         // file upload raw data is available in the reader
         async onload () {
@@ -210,6 +297,48 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                         this.props.onLoadingFinished(this.props.loadingState, false);
                         this.removeFileObjects();
                         return;
+                    }
+                }
+
+                // Analyze project compatibility
+                const compatibilityIssues = this.analyzeProjectCompatibility(projectData);
+                if (compatibilityIssues.length > 0) {
+                    const warnings = compatibilityIssues.filter(i => i.severity === 'warning');
+                    const infos = compatibilityIssues.filter(i => i.severity === 'info');
+                    
+                    let message = '项目兼容性分析：\n\n';
+                    
+                    if (warnings.length > 0) {
+                        message += '⚠️ 警告：\n';
+                        warnings.forEach((issue, index) => {
+                            message += `${index + 1}. ${issue.message}\n`;
+                            if (issue.details) {
+                                message += `   ${issue.details}\n`;
+                            }
+                        });
+                        message += '\n';
+                    }
+                    
+                    if (infos.length > 0) {
+                        message += 'ℹ️ 信息：\n';
+                        infos.forEach((issue, index) => {
+                            message += `${index + 1}. ${issue.message}\n`;
+                            if (issue.details) {
+                                message += `   ${issue.details}\n`;
+                            }
+                        });
+                        message += '\n';
+                    }
+                    
+                    message += '是否继续加载项目？';
+                    
+                    if (warnings.length > 0) {
+                        const shouldContinue = confirm(message);
+                        if (!shouldContinue) {
+                            this.props.onLoadingFinished(this.props.loadingState, false);
+                            this.removeFileObjects();
+                            return;
+                        }
                     }
                 }
 
