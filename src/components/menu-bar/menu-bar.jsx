@@ -100,10 +100,7 @@ import {
     closeSettingsMenu,
     errorsMenuOpen,
     openErrorsMenu,
-    closeErrorsMenu,
-    openCompatibilityMenu,
-    closeCompatibilityMenu,
-    compatibilityMenuOpen
+    closeErrorsMenu
 } from '../../reducers/menus';
 import {setFileHandle} from '../../reducers/tw.js';
 import {
@@ -144,7 +141,7 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, ArrowRightLeft
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo
 } from 'lucide-react';
 import {Cpu} from 'lucide-react';
 
@@ -1122,7 +1119,6 @@ class MenuBar extends React.Component {
         };
     }
     async handleCompatibilitySave (agentName) {
-        this.props.onRequestCloseCompatibility();
         // Save with specific agent metadata
         if (this.props.vm && this.props.vm.saveProjectSb3DontZip) {
             try {
@@ -1168,9 +1164,40 @@ class MenuBar extends React.Component {
                     compression: 'DEFLATE'
                 });
                 
-                // Download the project as compatible file
-                const downloadFilename = `${this.props.projectTitle || 'project'}.sb3`;
-                downloadBlob(downloadFilename, content);
+                // Use showSaveFilePicker to let user choose save location and filename
+                if (this.props.showSaveFilePicker) {
+                    try {
+                        const handle = await this.props.showSaveFilePicker({
+                            suggestedName: `${this.props.projectTitle || 'project'}.sb3`,
+                            types: [
+                                {
+                                    description: 'Scratch 3 Project',
+                                    accept: {
+                                        'application/octet-stream': '.sb3'
+                                    }
+                                }
+                            ],
+                            excludeAcceptAllOption: true
+                        });
+                        
+                        // Write to the selected file
+                        const writable = await handle.createWritable();
+                        await writable.write(content);
+                        await writable.close();
+                    } catch (error) {
+                        // User cancelled or error occurred
+                        if (error.name !== 'AbortError') {
+                            console.error('Error saving file:', error);
+                            // Fallback to download
+                            const downloadFilename = `${this.props.projectTitle || 'project'}.sb3`;
+                            downloadBlob(downloadFilename, content);
+                        }
+                    }
+                } else {
+                    // Fallback to download if showSaveFilePicker is not available
+                    const downloadFilename = `${this.props.projectTitle || 'project'}.sb3`;
+                    downloadBlob(downloadFilename, content);
+                }
             } catch (error) {
                 console.error(`Error saving ${agentName} project:`, error);
                 // Fallback to standard save if something goes wrong
@@ -1392,6 +1419,56 @@ class MenuBar extends React.Component {
                                     >
                                         {newProjectMessage}
                                     </MenuItem>
+                                    <MenuItem
+                                        isRtl={this.props.isRtl}
+                                        expanded={false}
+                                    >
+                                        <div className={styles.menuItemContent}>
+                                            <FormattedMessage
+                                                defaultMessage="Compatibility Convert"
+                                                description="Convert project to different editor formats"
+                                                id="gui.menuBar.compatibility"
+                                            />
+                                            <ChevronDown size={8} />
+                                        </div>
+                                        <Submenu place={this.props.isRtl ? 'left' : 'right'}>
+                                            <MenuItem onClick={this.handleConvertToScratch}>
+                                                <FormattedMessage
+                                                    defaultMessage="Scratch"
+                                                    description="Convert to Scratch compatibility"
+                                                    id="gui.menuBar.compatibility.scratch"
+                                                />
+                                            </MenuItem>
+                                            <MenuItem onClick={this.handleConvertToTurbowarp}>
+                                                <FormattedMessage
+                                                    defaultMessage="Turbowarp"
+                                                    description="Convert to Turbowarp compatibility"
+                                                    id="gui.menuBar.compatibility.turbowarp"
+                                                />
+                                            </MenuItem>
+                                            <MenuItem onClick={this.handleConvertToO2Engine}>
+                                                <FormattedMessage
+                                                    defaultMessage="02Engine"
+                                                    description="Convert to 02Engine compatibility"
+                                                    id="gui.menuBar.compatibility.o2engine"
+                                                />
+                                            </MenuItem>
+                                            <MenuItem onClick={this.handleConvertToAstraEditor}>
+                                                <FormattedMessage
+                                                    defaultMessage="AstraEditor"
+                                                    description="Convert to AstraEditor compatibility"
+                                                    id="gui.menuBar.compatibility.astraeditor"
+                                                />
+                                            </MenuItem>
+                                            <MenuItem onClick={this.handleConvertToBilup}>
+                                                <FormattedMessage
+                                                    defaultMessage="Bilup"
+                                                    description="Convert to Bilup compatibility"
+                                                    id="gui.menuBar.compatibility.bilup"
+                                                />
+                                            </MenuItem>
+                                        </Submenu>
+                                    </MenuItem>
                                     {this.props.onClickNewWindow && (
                                         <MenuItem
                                             isRtl={this.props.isRtl}
@@ -1574,73 +1651,6 @@ class MenuBar extends React.Component {
                                 </span>
                             </Button>
                         </div>
-                        <MenuLabel
-                            open={this.props.compatibilityMenuOpen}
-                            onOpen={this.props.onClickCompatibility}
-                            onClose={this.props.onRequestCloseCompatibility}
-                        >
-                            <ArrowRightLeft size={20} />
-                            <span className={styles.collapsibleLabel}>
-                                <FormattedMessage
-                                    defaultMessage="Compatibility Convert"
-                                    description="Text for compatibility convert dropdown menu"
-                                    id="gui.menuBar.compatibility"
-                                />
-                            </span>
-                            <ChevronDown size={8} />
-                            <MenuBarMenu
-                                className={classNames(styles.menuBarMenu)}
-                                open={this.props.compatibilityMenuOpen}
-                                place={this.props.isRtl ? 'left' : 'right'}
-                            >
-                                <MenuSection>
-                                    <div className={styles.menuHeader}>
-                                        <FormattedMessage
-                                            defaultMessage="Save to:"
-                                            description="Header for compatibility convert menu"
-                                            id="gui.menuBar.compatibility.saveTo"
-                                        />
-                                    </div>
-                                </MenuSection>
-                                <MenuSection>
-                                    <MenuItem onClick={this.handleConvertToScratch}>
-                                        <FormattedMessage
-                                            defaultMessage="Scratch"
-                                            description="Convert to Scratch compatibility"
-                                            id="gui.menuBar.compatibility.scratch"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem onClick={this.handleConvertToTurbowarp}>
-                                        <FormattedMessage
-                                            defaultMessage="Turbowarp"
-                                            description="Convert to Turbowarp compatibility"
-                                            id="gui.menuBar.compatibility.turbowarp"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem onClick={this.handleConvertToO2Engine}>
-                                        <FormattedMessage
-                                            defaultMessage="02Engine"
-                                            description="Convert to 02Engine compatibility"
-                                            id="gui.menuBar.compatibility.o2engine"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem onClick={this.handleConvertToAstraEditor}>
-                                        <FormattedMessage
-                                            defaultMessage="AstraEditor"
-                                            description="Convert to AstraEditor compatibility"
-                                            id="gui.menuBar.compatibility.astraeditor"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem onClick={this.handleConvertToBilup}>
-                                        <FormattedMessage
-                                            defaultMessage="Bilup"
-                                            description="Convert to Bilup compatibility"
-                                            id="gui.menuBar.compatibility.bilup"
-                                        />
-                                    </MenuItem>
-                                </MenuSection>
-                            </MenuBarMenu>
-                        </MenuLabel>
                         <MenuLabel
                             open={this.props.editMenuOpen}
                             onOpen={this.props.onClickEdit}
@@ -2166,9 +2176,6 @@ MenuBar.propTypes = {
     onRequestCloseLogin: PropTypes.func,
     onRequestCloseMode: PropTypes.func,
     onRequestCloseSettings: PropTypes.func,
-    compatibilityMenuOpen: PropTypes.bool,
-    onClickCompatibility: PropTypes.func,
-    onRequestCloseCompatibility: PropTypes.func,
     onRequestOpenAbout: PropTypes.func,
     onSeeCommunity: PropTypes.func,
     onSetAutosaveEnabled: PropTypes.func,
@@ -2217,7 +2224,6 @@ const mapStateToProps = (state, ownProps) => {
         fileMenuOpen: fileMenuOpen(state),
         editMenuOpen: editMenuOpen(state),
         workspaceBookmarksMenuOpen: workspaceBookmarksMenuOpen(state),
-        compatibilityMenuOpen: compatibilityMenuOpen(state),
         errors: state.scratchGui.tw.compileErrors,
         errorsMenuOpen: errorsMenuOpen(state),
         isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
@@ -2254,8 +2260,6 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseFile: () => dispatch(closeFileMenu()),
     onClickWorkspaceBookmarks: () => dispatch(openWorkspaceBookmarksMenu()),
     onRequestCloseWorkspaceBookmarks: () => dispatch(closeWorkspaceBookmarksMenu()),
-    onClickCompatibility: () => dispatch(openCompatibilityMenu()),
-    onRequestCloseCompatibility: () => dispatch(closeCompatibilityMenu()),
     onClickEdit: () => dispatch(openEditMenu()),
     onRequestCloseEdit: () => dispatch(closeEditMenu()),
     onClickErrors: () => dispatch(openErrorsMenu()),
