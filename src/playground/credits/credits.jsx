@@ -112,6 +112,9 @@ const Credits = () => (
                     The order is randomized each visit.
                 </i>
             </p>
+            <p>
+                特别感谢02Engine和AstraEditor的开源代码，它们为{APP_NAME}的兼容性转换提供了可能。我们兼容了他们的主题色。非常感谢他们的贡献。
+            </p>
         </section>
     </main>
 );
