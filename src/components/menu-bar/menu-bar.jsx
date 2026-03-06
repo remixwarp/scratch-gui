@@ -1212,25 +1212,26 @@ class MenuBar extends React.Component {
     }
     getPlatformInfo (agentName) {
         // Return platform info for different editors
+        // 使用小写名称以便更好地匹配
         const platforms = {
             'Scratch': {
                 name: 'scratch',
                 url: 'https://scratch.mit.edu/'
             },
             'TurboWarp': {
-                name: 'TurboWarp',
+                name: 'turbowarp',
                 url: 'https://turbowarp.org/'
             },
             '02Engine': {
-                name: '02Engine',
+                name: '02engine',
                 url: 'https://02engine.02studio.xyz/'
             },
             'AstraEditor': {
-                name: 'AstraEditor',
+                name: 'astraeditor',
                 url: 'https://www.astras.top/'
             },
             'Bilup': {
-                name: 'Bilup',
+                name: 'bilup',
                 url: 'https://editor.bilup.org/'
             }
         };
