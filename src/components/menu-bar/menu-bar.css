@@ -285,3 +285,12 @@
 [dir="rtl"] .submenu-caret {
     transform: rotate(90deg);
 }
+
+.menu-header {
+    padding: 0.5rem 1rem;
+    font-weight: bold;
+    color: $ui-white;
+    opacity: 0.8;
+    cursor: default;
+    user-select: none;
+}

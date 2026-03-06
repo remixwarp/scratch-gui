@@ -25,6 +25,7 @@ import {MenuItem, MenuSection, Submenu} from '../menu/menu.jsx';
 import ProjectTitleInput from './project-title-input.jsx';
 import AuthorInfo from './author-info.jsx';
 import SB3Downloader from '../../containers/sb3-downloader.jsx';
+import downloadBlob from '../../lib/utils/download-blob';
 import DeletionRestorer from '../../containers/deletion-restorer.jsx';
 import TurboMode from '../../containers/turbo-mode.jsx';
 import MenuBarHOC from '../../containers/menu-bar-hoc.jsx';
@@ -99,7 +100,10 @@ import {
     closeSettingsMenu,
     errorsMenuOpen,
     openErrorsMenu,
-    closeErrorsMenu
+    closeErrorsMenu,
+    openCompatibilityMenu,
+    closeCompatibilityMenu,
+    compatibilityMenuOpen
 } from '../../reducers/menus';
 import {setFileHandle} from '../../reducers/tw.js';
 import {
@@ -140,7 +144,7 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, ArrowRightLeft
 } from 'lucide-react';
 import {Cpu} from 'lucide-react';
 
@@ -314,7 +318,13 @@ class MenuBar extends React.Component {
             'handleToggleWorkspaceBookmarkCategoryCollapsed',
             'handleExportWorkspaceBookmarks',
             'handleImportWorkspaceBookmarks',
-            'handleClearAllWorkspaceBookmarks'
+            'handleClearAllWorkspaceBookmarks',
+            'handleCompatibilitySave',
+            'getPlatformInfo',
+            'handleConvertToScratch',
+            'handleConvertToTurbowarp',
+            'handleConvertToO2Engine',
+            'handleConvertToAstraEditor'
         ]);
     }
     componentDidMount () {
@@ -1109,6 +1119,102 @@ class MenuBar extends React.Component {
             this.props.onRequestCloseAbout();
         };
     }
+    async handleCompatibilitySave (agentName) {
+        this.props.onRequestCloseCompatibility();
+        // Save with specific agent metadata
+        if (this.props.vm && this.props.vm.saveProjectSb3DontZip) {
+            try {
+                // Get project files without zipping
+                const projectFiles = this.props.vm.saveProjectSb3DontZip();
+                const jsonData = projectFiles['project.json'];
+                
+                // Parse project.json
+                const projectJson = JSON.parse(new TextDecoder().decode(jsonData));
+                
+                // Modify meta to indicate the target platform
+                if (!projectJson.meta) {
+                    projectJson.meta = {};
+                }
+                projectJson.meta.agent = agentName;
+                
+                // Modify meta.platform to match the target platform
+                // This is what AstraEditor and other editors use to identify the source platform
+                const platformInfo = this.getPlatformInfo(agentName);
+                projectJson.meta.platform = platformInfo;
+                
+                // Convert back to Uint8Array
+                const modifiedJsonData = new TextEncoder().encode(JSON.stringify(projectJson));
+                
+                // Create new project files with modified project.json
+                const modifiedProjectFiles = {
+                    ...projectFiles,
+                    'project.json': modifiedJsonData
+                };
+                
+                // Use JSZip to create the SB3 file
+                const JSZip = await import('@turbowarp/jszip');
+                const zip = new JSZip.default();
+                
+                // Add all files to zip
+                for (const [filename, data] of Object.entries(modifiedProjectFiles)) {
+                    zip.file(filename, data);
+                }
+                
+                // Generate the SB3 blob
+                const content = await zip.generateAsync({
+                    type: 'blob',
+                    compression: 'DEFLATE'
+                });
+                
+                // Download the project as compatible file
+                const downloadFilename = `${this.props.projectTitle || 'project'}.sb3`;
+                downloadBlob(downloadFilename, content);
+            } catch (error) {
+                console.error(`Error saving ${agentName} project:`, error);
+                // Fallback to standard save if something goes wrong
+                if (this.props.vm.saveProjectSb3) {
+                    this.props.vm.saveProjectSb3().then(content => {
+                        const filename = `${this.props.projectTitle || 'project'}.sb3`;
+                        downloadBlob(filename, content);
+                    });
+                }
+            }
+        }
+    }
+    getPlatformInfo (agentName) {
+        // Return platform info for different editors
+        const platforms = {
+            'Scratch': {
+                name: 'scratch',
+                url: 'https://scratch.mit.edu/'
+            },
+            'TurboWarp': {
+                name: 'TurboWarp',
+                url: 'https://turbowarp.org/'
+            },
+            'O2Engine': {
+                name: '02Engine',
+                url: 'https://02engine.02studio.xyz/'
+            },
+            'AstraEditor': {
+                name: 'AstraEditor',
+                url: 'https://www.astras.top/'
+            }
+        };
+        return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
+    }
+    handleConvertToScratch () {
+        this.handleCompatibilitySave('Scratch');
+    }
+    handleConvertToTurbowarp () {
+        this.handleCompatibilitySave('TurboWarp');
+    }
+    handleConvertToO2Engine () {
+        this.handleCompatibilitySave('O2Engine');
+    }
+    handleConvertToAstraEditor () {
+        this.handleCompatibilitySave('AstraEditor');
+    }
     render () {
         const saveNowMessage = (
             <FormattedMessage
@@ -1426,6 +1532,66 @@ class MenuBar extends React.Component {
                                 </span>
                             </Button>
                         </div>
+                        <MenuLabel
+                            open={this.props.compatibilityMenuOpen}
+                            onOpen={this.props.onClickCompatibility}
+                            onClose={this.props.onRequestCloseCompatibility}
+                        >
+                            <ArrowRightLeft size={20} />
+                            <span className={styles.collapsibleLabel}>
+                                <FormattedMessage
+                                    defaultMessage="Compatibility Convert"
+                                    description="Text for compatibility convert dropdown menu"
+                                    id="gui.menuBar.compatibility"
+                                />
+                            </span>
+                            <ChevronDown size={8} />
+                            <MenuBarMenu
+                                className={classNames(styles.menuBarMenu)}
+                                open={this.props.compatibilityMenuOpen}
+                                place={this.props.isRtl ? 'left' : 'right'}
+                            >
+                                <MenuSection>
+                                    <div className={styles.menuHeader}>
+                                        <FormattedMessage
+                                            defaultMessage="Save to:"
+                                            description="Header for compatibility convert menu"
+                                            id="gui.menuBar.compatibility.saveTo"
+                                        />
+                                    </div>
+                                </MenuSection>
+                                <MenuSection>
+                                    <MenuItem onClick={this.handleConvertToScratch}>
+                                        <FormattedMessage
+                                            defaultMessage="Scratch"
+                                            description="Convert to Scratch compatibility"
+                                            id="gui.menuBar.compatibility.scratch"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem onClick={this.handleConvertToTurbowarp}>
+                                        <FormattedMessage
+                                            defaultMessage="Turbowarp"
+                                            description="Convert to Turbowarp compatibility"
+                                            id="gui.menuBar.compatibility.turbowarp"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem onClick={this.handleConvertToO2Engine}>
+                                        <FormattedMessage
+                                            defaultMessage="02Engine"
+                                            description="Convert to 02Engine compatibility"
+                                            id="gui.menuBar.compatibility.o2engine"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem onClick={this.handleConvertToAstraEditor}>
+                                        <FormattedMessage
+                                            defaultMessage="AstraEditor"
+                                            description="Convert to AstraEditor compatibility"
+                                            id="gui.menuBar.compatibility.astraeditor"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
+                            </MenuBarMenu>
+                        </MenuLabel>
                         <MenuLabel
                             open={this.props.editMenuOpen}
                             onOpen={this.props.onClickEdit}
@@ -1951,6 +2117,9 @@ MenuBar.propTypes = {
     onRequestCloseLogin: PropTypes.func,
     onRequestCloseMode: PropTypes.func,
     onRequestCloseSettings: PropTypes.func,
+    compatibilityMenuOpen: PropTypes.bool,
+    onClickCompatibility: PropTypes.func,
+    onRequestCloseCompatibility: PropTypes.func,
     onRequestOpenAbout: PropTypes.func,
     onSeeCommunity: PropTypes.func,
     onSetAutosaveEnabled: PropTypes.func,
@@ -1999,6 +2168,7 @@ const mapStateToProps = (state, ownProps) => {
         fileMenuOpen: fileMenuOpen(state),
         editMenuOpen: editMenuOpen(state),
         workspaceBookmarksMenuOpen: workspaceBookmarksMenuOpen(state),
+        compatibilityMenuOpen: compatibilityMenuOpen(state),
         errors: state.scratchGui.tw.compileErrors,
         errorsMenuOpen: errorsMenuOpen(state),
         isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
@@ -2035,6 +2205,8 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseFile: () => dispatch(closeFileMenu()),
     onClickWorkspaceBookmarks: () => dispatch(openWorkspaceBookmarksMenu()),
     onRequestCloseWorkspaceBookmarks: () => dispatch(closeWorkspaceBookmarksMenu()),
+    onClickCompatibility: () => dispatch(openCompatibilityMenu()),
+    onRequestCloseCompatibility: () => dispatch(closeCompatibilityMenu()),
     onClickEdit: () => dispatch(openEditMenu()),
     onRequestCloseEdit: () => dispatch(closeEditMenu()),
     onClickErrors: () => dispatch(openErrorsMenu()),

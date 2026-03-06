@@ -19,6 +19,7 @@ const MENU_ERRORS = 'errorsMenu';
 const MENU_CUSTOM_THEMES = 'customThemesMenu';
 const MENU_WORKSPACE_BOOKMARKS = 'workspaceBookmarksMenu';
 const MENU_AI = 'aiMenu';
+const MENU_COMPATIBILITY = 'compatibilityMenu';
 
 class Menu {
     constructor (id) {
@@ -76,7 +77,8 @@ const rootMenu = new Menu('root')
     .addChild(new Menu(MENU_SETTINGS))
     .addChild(new Menu(MENU_LOGIN))
     .addChild(new Menu(MENU_ACCOUNT))
-    .addChild(new Menu(MENU_ABOUT));
+    .addChild(new Menu(MENU_ABOUT))
+    .addChild(new Menu(MENU_COMPATIBILITY));
 
 const initialState = {
     [MENU_ABOUT]: false,
@@ -97,7 +99,8 @@ const initialState = {
     [MENU_ERRORS]: false,
     [MENU_WORKSPACE_BOOKMARKS]: false
     ,
-    [MENU_AI]: false
+    [MENU_AI]: false,
+    [MENU_COMPATIBILITY]: false
 };
 
 const reducer = function (state, action) {
@@ -205,6 +208,10 @@ const openAIMenu = () => openMenu(MENU_AI);
 const closeAIMenu = () => closeMenu(MENU_AI);
 const aiMenuOpen = state => state.scratchGui.menus[MENU_AI];
 
+const openCompatibilityMenu = () => openMenu(MENU_COMPATIBILITY);
+const closeCompatibilityMenu = () => closeMenu(MENU_COMPATIBILITY);
+const compatibilityMenuOpen = state => state.scratchGui.menus[MENU_COMPATIBILITY];
+
 const openCustomThemes = () => openMenu(MENU_CUSTOM_THEMES);
 const closeCustomThemes = () => closeMenu(MENU_CUSTOM_THEMES);
 const customThemesOpen = state => state.scratchGui.menus[MENU_CUSTOM_THEMES];
@@ -263,6 +270,9 @@ export {
     openAIMenu,
     closeAIMenu,
     aiMenuOpen,
+    openCompatibilityMenu,
+    closeCompatibilityMenu,
+    compatibilityMenuOpen,
     openCustomThemes,
     closeCustomThemes,
     customThemesOpen

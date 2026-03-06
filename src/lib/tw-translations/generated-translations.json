@@ -1,5 +1,19 @@
 {
+    "en": {
+        "gui.menuBar.compatibility": "Compatibility Convert",
+        "gui.menuBar.compatibility.saveTo": "Save to:",
+        "gui.menuBar.compatibility.scratch": "Scratch",
+        "gui.menuBar.compatibility.turbowarp": "Turbowarp",
+        "gui.menuBar.compatibility.o2engine": "02Engine",
+        "gui.menuBar.compatibility.astraeditor": "AstraEditor"
+    },
     "zh-cn": {
+        "gui.menuBar.compatibility": "兼容性转换",
+        "gui.menuBar.compatibility.saveTo": "保存至：",
+        "gui.menuBar.compatibility.scratch": "Scratch",
+        "gui.menuBar.compatibility.turbowarp": "Turbowarp",
+        "gui.menuBar.compatibility.o2engine": "02Engine",
+        "gui.menuBar.compatibility.astraeditor": "AstraEditor",
         "tw.accent.blue": "蓝色",
         "tw.accent.purple": "紫色",
         "tw.accent.rainbow": "彩虹色",
@@ -27,7 +41,7 @@
         "tw.accent.green-tea": "绿茶",
         "tw.accent.pale-blue": "重构跃迁",
         "tw.accent.02e": "02引擎",
-        "tw.accent.ae": "AstraEditor",
+        "tw.accent.ae": "Astra编辑器",
         "tw.accent.oubi": "氢碧",
         "tw.alerts.creatingRestorePoint": "新建还原点中...",
         "tw.alerts.lostPeripheralConnection": "与 {extensionName} 的连接中断了。",
