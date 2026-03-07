@@ -48,12 +48,15 @@ import {
     openGitModal,
     openExtensionManagerModal
 } from '../../reducers/modals';
-import {openAIModal} from '../../reducers/modals';
-// AI menu state no longer needed (button only)
 import {
-    // openAIMenu,
-    // closeAIMenu,
-    // aiMenuOpen
+    openAIModal,
+    openAIChatModal,
+    openAIAgentModal
+} from '../../reducers/modals';
+import {
+    openAIMenu,
+    closeAIMenu,
+    aiMenuOpen
 } from '../../reducers/menus';
 import {setPlayer} from '../../reducers/mode';
 import {
@@ -1790,21 +1793,53 @@ class MenuBar extends React.Component {
                                 </MenuBarMenu>
                             </MenuLabel>
                         )}
-                        <div className={styles.menuBarItem}>
-                            <Button
-                                className={styles.menuBarButton}
-                                onClick={this.props.onClickOpenAIWindow}
+                        <MenuLabel
+                            open={this.props.aiMenuOpen}
+                            onOpen={this.props.onRequestOpenAI}
+                            onClose={this.props.onRequestCloseAI}
+                        >
+                            <Cpu size={20} />
+                            <span className={styles.collapsibleLabel}>
+                                <FormattedMessage
+                                    defaultMessage="AI"
+                                    description="AI button"
+                                    id="gui.menuBar.ai"
+                                />
+                            </span>
+                            <ChevronDown size={8} />
+                            <MenuBarMenu
+                                className={classNames(styles.menuBarMenu)}
+                                open={this.props.aiMenuOpen}
+                                place={this.props.isRtl ? 'left' : 'right'}
                             >
-                                <Cpu size={20} />
-                                <span className={styles.collapsibleLabel}>
+                                <MenuItem
+                                    isRtl={this.props.isRtl}
+                                    onClick={() => {
+                                        this.props.onClickOpenAIChat();
+                                        this.props.onRequestCloseAI();
+                                    }}
+                                >
                                     <FormattedMessage
-                                        defaultMessage="AI"
-                                        description="AI button"
-                                        id="gui.menuBar.ai"
+                                        defaultMessage="AI Chat"
+                                        description="AI chat menu item"
+                                        id="gui.menuBar.ai.chat"
                                     />
-                                </span>
-                            </Button>
-                        </div>
+                                </MenuItem>
+                                <MenuItem
+                                    isRtl={this.props.isRtl}
+                                    onClick={() => {
+                                        this.props.onClickOpenAIAgent();
+                                        this.props.onRequestCloseAI();
+                                    }}
+                                >
+                                    <FormattedMessage
+                                        defaultMessage="AI Agent"
+                                        description="AI agent menu item"
+                                        id="gui.menuBar.ai.agent"
+                                    />
+                                </MenuItem>
+                            </MenuBarMenu>
+                        </MenuLabel>
                         <MenuLabel
                             open={this.props.editMenuOpen}
                             onOpen={this.props.onClickEdit}
@@ -2372,6 +2407,7 @@ const mapStateToProps = (state, ownProps) => {
         projectId: state.scratchGui.projectState.projectId,
         aboutMenuOpen: aboutMenuOpen(state),
         accountMenuOpen: accountMenuOpen(state),
+        aiMenuOpen: aiMenuOpen(state),
         autosaveEnabled: state.scratchGui.autosave.enabled,
         autosaveInterval: state.scratchGui.autosave.interval,
         currentLocale: state.locales.locale,
@@ -2437,7 +2473,10 @@ const mapDispatchToProps = dispatch => ({
         dispatch(closeEditMenu());
         dispatch(openGitModal());
     },
-    onClickOpenAIWindow: () => dispatch(openAIModal()),
+    onClickOpenAIChat: () => dispatch(openAIChatModal()),
+    onClickOpenAIAgent: () => dispatch(openAIAgentModal()),
+    onRequestOpenAI: () => dispatch(openAIMenu()),
+    onRequestCloseAI: () => dispatch(closeAIMenu()),
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onRequestCloseSettings: () => dispatch(closeSettingsMenu()),
     onClickNew: needSave => {

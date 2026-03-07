@@ -21,6 +21,8 @@ const MODAL_INVALID_PROJECT = 'invalidProjectModal';
 const MODAL_EXTENSION_MANAGER = 'extensionManagerModal';
 const MODAL_GIT = 'gitModal';
 const MODAL_AI = 'aiModal';
+const MODAL_AI_CHAT = 'aiChatModal';
+const MODAL_AI_AGENT = 'aiAgentModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -41,9 +43,10 @@ const initialState = {
     [MODAL_UNKNOWN_PLATFORM]: false,
     [MODAL_INVALID_PROJECT]: false,
     [MODAL_EXTENSION_MANAGER]: false,
-    [MODAL_GIT]: false
-    ,
-    [MODAL_AI]: false
+    [MODAL_GIT]: false,
+    [MODAL_AI]: false,
+    [MODAL_AI_CHAT]: false,
+    [MODAL_AI_AGENT]: false
 };
 
 const reducer = function (state, action) {
@@ -51,7 +54,7 @@ const reducer = function (state, action) {
     switch (action.type) {
     case OPEN_MODAL:
         return Object.assign({}, state, {
-            [action.modal]: true
+            [action.modal]: action.props || true
         });
     case CLOSE_MODAL:
         return Object.assign({}, state, {
@@ -61,10 +64,11 @@ const reducer = function (state, action) {
         return state;
     }
 };
-const openModal = function (modal) {
+const openModal = function (modal, props) {
     return {
         type: OPEN_MODAL,
-        modal: modal
+        modal: modal,
+        props: props
     };
 };
 const closeModal = function (modal) {
@@ -130,8 +134,14 @@ const openExtensionManagerModal = function () {
 const openGitModal = function () {
     return openModal(MODAL_GIT);
 };
-const openAIModal = function () {
-    return openModal(MODAL_AI);
+const openAIModal = function (type = 'chat') {
+    return openModal(MODAL_AI, {type});
+};
+const openAIChatModal = function () {
+    return openModal(MODAL_AI_CHAT);
+};
+const openAIAgentModal = function () {
+    return openModal(MODAL_AI_AGENT);
 };
 const closeBackdropLibrary = function () {
     return closeModal(MODAL_BACKDROP_LIBRARY);
@@ -193,9 +203,17 @@ const closeGitModal = function () {
 const closeAIModal = function () {
     return closeModal(MODAL_AI);
 };
+const closeAIChatModal = function () {
+    return closeModal(MODAL_AI_CHAT);
+};
+const closeAIAgentModal = function () {
+    return closeModal(MODAL_AI_AGENT);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
+    MODAL_AI_CHAT,
+    MODAL_AI_AGENT,
     openBackdropLibrary,
     openCostumeLibrary,
     openExtensionLibrary,
@@ -216,6 +234,8 @@ export {
     openExtensionManagerModal,
     openGitModal,
     openAIModal,
+    openAIChatModal,
+    openAIAgentModal,
     closeBackdropLibrary,
     closeCostumeLibrary,
     closeExtensionLibrary,
@@ -234,7 +254,8 @@ export {
     closeUnknownPlatformModal,
     closeInvalidProjectModal,
     closeExtensionManagerModal,
-    closeGitModal
-    ,
-    closeAIModal
+    closeGitModal,
+    closeAIModal,
+    closeAIChatModal,
+    closeAIAgentModal
 };

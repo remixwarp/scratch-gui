@@ -3,11 +3,11 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {injectIntl} from 'react-intl';
 import bindAll from 'lodash.bindall';
-import {closeAIModal, MODAL_AI} from '../reducers/modals';
+import {closeAIChatModal, MODAL_AI_CHAT} from '../reducers/modals';
 import Modal from './windowed-modal.jsx';
 import AIPanel from '../components/ai/ai-panel.jsx';
 
-class AIModalContainer extends React.Component {
+class AIChatModalContainer extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, ['handleClose']);
@@ -16,16 +16,12 @@ class AIModalContainer extends React.Component {
         this.props.onClose();
     }
     render () {
-        const {visible, isRtl, aiModalProps} = this.props;
-        const type = aiModalProps?.type || 'chat';
-        const title = type === 'chat' 
-            ? this.props.intl.formatMessage({defaultMessage: 'AI Chat', id: 'gui.aiModal.chatTitle'})
-            : this.props.intl.formatMessage({defaultMessage: 'AI Agent', id: 'gui.aiModal.agentTitle'});
+        const {visible, isRtl} = this.props;
         
         return (
             <Modal
-                id="aiModal"
-                contentLabel={title}
+                id="aiChatModal"
+                contentLabel={this.props.intl.formatMessage({defaultMessage: 'AI Chat', id: 'gui.aiModal.chatTitle'})}
                 visible={!!visible}
                 className="ai-modal"
                 onRequestClose={this.handleClose}
@@ -34,14 +30,14 @@ class AIModalContainer extends React.Component {
                 <AIPanel 
                     onRequestClose={this.handleClose} 
                     showHeader={false} 
-                    type={type}
+                    type="chat"
                 />
             </Modal>
         );
     }
 }
 
-AIModalContainer.propTypes = {
+AIChatModalContainer.propTypes = {
     visible: PropTypes.bool,
     onClose: PropTypes.func,
     intl: PropTypes.object,
@@ -49,19 +45,17 @@ AIModalContainer.propTypes = {
 };
 
 const mapStateToProps = state => {
-    const aiModalState = state.scratchGui.modals.aiModal;
     return {
-        visible: !!aiModalState,
-        aiModalProps: typeof aiModalState === 'object' ? aiModalState : null,
+        visible: !!state.scratchGui.modals.aiChatModal,
         isRtl: state.locales.isRtl
     };
 };
 
 const mapDispatchToProps = dispatch => ({
-    onClose: () => dispatch(closeAIModal())
+    onClose: () => dispatch(closeAIChatModal())
 });
 
 export default injectIntl(connect(
     mapStateToProps,
     mapDispatchToProps
-)(AIModalContainer));
+)(AIChatModalContainer));
