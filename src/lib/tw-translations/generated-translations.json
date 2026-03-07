@@ -59,6 +59,8 @@
         "tw.accent.02e": "02引擎",
         "tw.accent.ae": "Astra编辑器",
         "tw.accent.oubi": "氢碧",
+        "gui.menuBar.ai": "AI",
+        "mw.menuBar.git": "Git",
         "tw.alerts.creatingRestorePoint": "新建还原点中...",
         "tw.alerts.lostPeripheralConnection": "与 {extensionName} 的连接中断了。",
         "tw.alerts.restorePointError": "无法创建还原点",
