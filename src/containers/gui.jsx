@@ -59,11 +59,76 @@ const setProjectIdMetadata = projectId => {
 };
 
 class GUI extends React.Component {
+    constructor (props) {
+        super(props);
+        this.bridge = null;
+        this.bridgeUnsubscribers = [];
+    }
+    
     componentDidMount () {
         setIsScratchDesktop(this.props.isScratchDesktop);
         this.props.onStorageInit(storage);
         this.props.onVmInit(this.props.vm);
         setProjectIdMetadata(this.props.projectId);
+        
+        // 初始化微信小程序 Bridge
+        this.initWechatBridge();
+    }
+    
+    initWechatBridge () {
+        // 检查是否在微信小程序环境中
+        if (typeof window !== 'undefined' && window.WechatWebViewBridge) {
+            this.bridge = window.WechatWebViewBridge;
+            
+            // 监听来自小程序的消息
+            const unsubInit = this.bridge.on('init', this.handleBridgeInit);
+            const unsubSwitchTab = this.bridge.on('switchTab', this.handleBridgeSwitchTab);
+            const unsubRunProject = this.bridge.on('runProject', this.handleBridgeRunProject);
+            
+            this.bridgeUnsubscribers = [unsubInit, unsubSwitchTab, unsubRunProject];
+            
+            // 通知小程序编辑器已就绪
+            this.bridge.postMessage({
+                type: 'editorReady',
+                data: {
+                    version: '1.0.0',
+                    features: ['blocks', 'costumes', 'sounds']
+                }
+            });
+            
+            console.log('[GUI] WeChat Bridge initialized');
+        }
+    }
+    
+    handleBridgeInit = (data) => {
+        console.log('[GUI] Received init from mini program:', data);
+    };
+    
+    handleBridgeSwitchTab = (data) => {
+        const {tab} = data;
+        console.log('[GUI] Switch to tab:', tab);
+        
+        // 根据标签名切换到对应的标签页
+        const tabIndex = tab === 'costume' ? COSTUMES_TAB_INDEX : 
+                        tab === 'sound' ? SOUNDS_TAB_INDEX : 
+                        BLOCKS_TAB_INDEX;
+        this.props.onActivateTab(tabIndex);
+    };
+    
+    handleBridgeRunProject = () => {
+        console.log('[GUI] Run project from mini program');
+        if (this.props.vm) {
+            this.props.vm.greenFlag();
+        }
+    };
+    
+    componentWillUnmount () {
+        // 清理 Bridge 监听器
+        this.bridgeUnsubscribers.forEach(unsub => {
+            if (typeof unsub === 'function') {
+                unsub();
+            }
+        });
     }
     componentDidUpdate (prevProps) {
         if (this.props.projectId !== prevProps.projectId) {
