@@ -1167,10 +1167,10 @@ class MenuBar extends React.Component {
                     compression: 'DEFLATE'
                 });
                 
-                // Use showSaveFilePicker to let user choose save location and filename
-                if (this.props.showSaveFilePicker) {
+                // Always show save location picker
+                if (window.showSaveFilePicker) {
                     try {
-                        const handle = await this.props.showSaveFilePicker({
+                        const handle = await window.showSaveFilePicker({
                             suggestedName: `${this.props.projectTitle || 'project'}.sb3`,
                             types: [
                                 {
@@ -1589,6 +1589,13 @@ class MenuBar extends React.Component {
                                             <ChevronDown size={8} />
                                         </div>
                                         <Submenu place={this.props.isRtl ? 'left' : 'right'}>
+                                            <div className={styles.menuSectionTitle}>
+                                                <FormattedMessage
+                                                    defaultMessage="Save to"
+                                                    description="Save to compatibility editors"
+                                                    id="gui.menuBar.compatibility.saveTo"
+                                                />
+                                            </div>
                                             <MenuItem onClick={this.handleConvertToScratch}>
                                                 <FormattedMessage
                                                     defaultMessage="Scratch"
@@ -1818,6 +1825,7 @@ class MenuBar extends React.Component {
                                         this.props.onClickOpenAIChat();
                                         this.props.onRequestCloseAI();
                                     }}
+                                    title={this.props.locale.startsWith('zh-') ? "与AI共话，浅吟低唱间灵感绽放" : undefined}
                                 >
                                     <FormattedMessage
                                         defaultMessage="AI Chat"
@@ -1831,6 +1839,7 @@ class MenuBar extends React.Component {
                                         this.props.onClickOpenAIAgent();
                                         this.props.onRequestCloseAI();
                                     }}
+                                    title={this.props.locale.startsWith('zh-') ? "思绪为墨，AI代笔写就创意篇章" : undefined}
                                 >
                                     <FormattedMessage
                                         defaultMessage="AI Agent"

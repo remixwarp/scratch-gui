@@ -538,7 +538,7 @@ class AIPanel extends React.PureComponent {
                 compression: 'DEFLATE'
             });
             
-            // 使用showSaveFilePicker让用户选择保存位置
+            // 总是显示保存位置选择
             if (window.showSaveFilePicker) {
                 try {
                     const handle = await window.showSaveFilePicker({
@@ -591,7 +591,7 @@ class AIPanel extends React.PureComponent {
         const isAgent = type === 'agent';
         const placeholder = isAgent ? '告诉AI你想做什么？' : '聊聊你的代码...';
         const warningText = isAgent 
-            ? '内容为AI生成,请注意仔细鉴别' 
+            ? '内容为AI生成,请注意仔细鉴别<br/>Bata测试版：有极大的概率会导致作品崩溃或生成积木错误。<br/>如果项目较复杂，等待时间可能较长,请耐心等待。' 
             : '内容为AI生成,请注意仔细鉴别<br/>此功能仅作为AI辅助编程,不能帮你编写代码。';
         
         return (

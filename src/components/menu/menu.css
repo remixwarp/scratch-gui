@@ -87,6 +87,15 @@
     border-top: 1px solid $ui-black-transparent;
 }
 
+.menuSectionTitle {
+    padding: 5px 10px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    color: $text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .submenu {
     display: none;
     position: absolute;
