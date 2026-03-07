@@ -35,6 +35,8 @@ import TelemetryModal from '../telemetry-modal/telemetry-modal.jsx';
 import TWUsernameModal from '../../containers/tw-username-modal.jsx';
 import TWSettingsModal from '../../containers/tw-settings-modal.jsx';
 import AIModal from '../../containers/ai-modal.jsx';
+import AIChatModal from '../../containers/ai-chat-modal.jsx';
+import AIAgentModal from '../../containers/ai-agent-modal.jsx';
 import TWSecurityManager from '../../containers/tw-security-manager.jsx';
 import TWCustomExtensionModal from '../../containers/tw-custom-extension-modal.jsx';
 import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
@@ -256,6 +258,8 @@ const GUIComponent = props => {
                 />
             )}
             {aiModalVisible && <AIModal visible={aiModalVisible} />}
+            <AIChatModal />
+            <AIAgentModal />
             {customExtensionModalVisible && <TWCustomExtensionModal />}
             {fontsModalVisible && <TWFontsModal />}
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}

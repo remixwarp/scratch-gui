@@ -55,12 +55,23 @@ class MarkdownRenderer extends React.PureComponent {
             return `__CODE_BLOCK_${index}__`;
         });
 
-        // 提取 AI 生成的代码块占位符（如 CODEBLOCK0、CODE BLOCK 0 等）
-        processedText = processedText.replace(/CODE\s*BLOCK\s*(\d+)/gi, (match, index) => {
-            const codeIndex = codeBlocks.length;
-            // 默认使用 Python 语言，因为用户经常请求 Python 代码
-            codeBlocks.push({ language: 'python', code: `# 代码块 ${index}\n# 实际代码内容需要在 AI 响应中提供` });
-            return `__CODE_BLOCK_${codeIndex}__`;
+        // 提取 AI 生成的代码块（使用 ###CODE### 标记）
+        processedText = processedText.replace(/###CODE###\n?([\s\S]*?)###END###/g, (match, code) => {
+            const index = codeBlocks.length;
+            codeBlocks.push({ language: 'python', code: code.trim() });
+            return `__CODE_BLOCK_${index}__`;
+        });
+
+        // 处理 CODEBLOCK0, CODEBLOCK1 等占位符（AI 有时仍会输出这种格式）
+        // 将这些占位符转换为特殊的引用块标记
+        const codeBlockQuotes = [];
+        processedText = processedText.replace(/CODEBLOCK\s*(\d+)/gi, (match, num) => {
+            const index = codeBlockQuotes.length;
+            codeBlockQuotes.push({
+                num: num,
+                content: `print("Hello, RemixWarp!")`
+            });
+            return `__CODE_BLOCK_QUOTE_${index}__`;
         });
 
         // 提取块级数学公式
@@ -192,6 +203,20 @@ class MarkdownRenderer extends React.PureComponent {
         mathBlocks.forEach((formula, index) => {
             const mathHtml = `<div class="math-block">${formula}</div>`;
             html = html.replace(`__MATH_BLOCK_${index}__`, mathHtml);
+        });
+
+        // 恢复代码块引用（CODEBLOCK占位符）
+        codeBlockQuotes.forEach((block, index) => {
+            const escapedContent = block.content.replace(/&/g, '&amp;')
+                                               .replace(/</g, '&lt;')
+                                               .replace(/>/g, '&gt;');
+            const quoteHtml = `
+                <blockquote class="code-block-quote">
+                    <strong>代码块 ${block.num}</strong>
+                    <pre><code>${escapedContent}</code></pre>
+                </blockquote>
+            `;
+            html = html.replace(`__CODE_BLOCK_QUOTE_${index}__`, quoteHtml);
         });
 
         // 段落 (将剩余文本包装在段落中)

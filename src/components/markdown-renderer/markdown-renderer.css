@@ -83,13 +83,13 @@
     color: #e6e6e6;
 }
 
-/* 代码块 */
+/* 代码块 - 绿色主题，类似引用块样式 */
 .code-block-wrapper {
     margin: 16px 0;
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
-    background: #1e1e1e;
-    border: 1px solid #333;
+    background: rgba(76, 175, 80, 0.1);
+    border-left: 4px solid #4caf50;
 }
 
 .code-block-header {
@@ -97,14 +97,15 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background: #2d2d2d;
-    border-bottom: 1px solid #333;
+    background: rgba(76, 175, 80, 0.15);
+    border-bottom: 1px solid rgba(76, 175, 80, 0.2);
 }
 
 .code-language {
     font-size: 12px;
-    color: #888;
+    color: #4caf50;
     text-transform: uppercase;
+    font-weight: 600;
 }
 
 .code-actions {
@@ -113,33 +114,33 @@
 }
 
 .code-action-btn {
-    background: #3d3d3d;
+    background: rgba(76, 175, 80, 0.2);
     border: none;
-    color: #ccc;
+    color: #4caf50;
     padding: 4px 10px;
     border-radius: 4px;
     font-size: 11px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
 }
 
 .code-action-btn:hover {
-    background: #4d4d4d;
-    color: #fff;
+    background: rgba(76, 175, 80, 0.3);
+    color: #66bb6a;
 }
 
 .code-block {
     margin: 0;
     padding: 16px;
     overflow-x: auto;
-    background: #1e1e1e;
+    background: rgba(76, 175, 80, 0.05);
 }
 
 .code-block code {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 13px;
     line-height: 1.5;
-    color: #e6e6e6;
+    color: #e8f5e9;
     white-space: pre;
 }
 
@@ -150,6 +151,65 @@
     border-left: 4px solid #4a9eff;
     background: rgba(74, 158, 255, 0.1);
     color: #ccc;
+}
+
+/* 代码块引用 - 绿色主题 */
+.markdown-renderer blockquote code {
+    background: rgba(76, 175, 80, 0.15);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    color: #81c784;
+}
+
+/* 代码块引用中的多行代码 */
+.markdown-renderer blockquote pre {
+    background: rgba(76, 175, 80, 0.1);
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 8px 0;
+}
+
+.markdown-renderer blockquote pre code {
+    background: transparent;
+    padding: 0;
+    white-space: pre;
+}
+
+/* CODEBLOCK占位符的特殊引用块样式 */
+.markdown-renderer .code-block-quote {
+    margin: 12px 0;
+    padding: 12px 16px;
+    border-left: 4px solid #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+    color: #e8f5e9;
+}
+
+.markdown-renderer .code-block-quote strong {
+    color: #4caf50;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.markdown-renderer .code-block-quote pre {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 0;
+}
+
+.markdown-renderer .code-block-quote code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #a5d6a7;
+    white-space: pre;
+    background: transparent;
+    padding: 0;
 }
 
 /* 列表 */

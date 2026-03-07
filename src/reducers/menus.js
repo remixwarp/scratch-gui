@@ -78,7 +78,8 @@ const rootMenu = new Menu('root')
     .addChild(new Menu(MENU_LOGIN))
     .addChild(new Menu(MENU_ACCOUNT))
     .addChild(new Menu(MENU_ABOUT))
-    .addChild(new Menu(MENU_COMPATIBILITY));
+    .addChild(new Menu(MENU_COMPATIBILITY))
+    .addChild(new Menu(MENU_AI));
 
 const initialState = {
     [MENU_ABOUT]: false,
@@ -97,8 +98,7 @@ const initialState = {
     [MENU_BLOCKS_THEME]: false,
     [MENU_CUSTOM_THEMES]: false,
     [MENU_ERRORS]: false,
-    [MENU_WORKSPACE_BOOKMARKS]: false
-    ,
+    [MENU_WORKSPACE_BOOKMARKS]: false,
     [MENU_AI]: false,
     [MENU_COMPATIBILITY]: false
 };

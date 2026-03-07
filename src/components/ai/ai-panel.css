@@ -87,6 +87,25 @@
   padding: 8px 12px;
 }
 
+.convertButton {
+  background: #4caf50;
+  color: white;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+/* 禁用状态 - 使用透明效果让用户看到背景 */
+.convertButtonDisabled,
+.convertButtonDisabled:disabled,
+.convertButtonDisabled[disabled] {
+  background: rgba(76, 175, 80, 0.08) !important;
+  color: rgba(76, 175, 80, 0.5) !important;
+  border: 1px dashed rgba(76, 175, 80, 0.4) !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
 /* 警告消息样式 */
 .warningBanner {
   background: rgba(255, 107, 107, 0.15);
