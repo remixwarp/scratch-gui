@@ -38,11 +38,11 @@
 }
 .assistantMsg {
   align-self: flex-start;
-  background: #eee;
-  color: #222;
-  padding: 8px 12px;
+  background: #2d2d2d;
+  color: #e0e0e0;
+  padding: 12px 16px;
   border-radius: 14px 14px 14px 0;
-  max-width: 80%;
+  max-width: 85%;
   word-break: break-word;
 }
 .error {
@@ -85,5 +85,40 @@
   color: white;
   border-radius: 6px;
   padding: 8px 12px;
+}
+
+/* 警告消息样式 */
+.warningBanner {
+  background: rgba(255, 107, 107, 0.15);
+  color: #ff6b6b;
+  padding: 12px 16px;
+  margin: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-left: 4px solid #ff6b6b;
+}
+
+.warningIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.warningIcon svg {
+  color: #ff6b6b;
+  width: 20px;
+  height: 20px;
+}
+
+.warningContent {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.warningContent strong {
+  font-weight: 600;
+  margin-right: 4px;
 }
 

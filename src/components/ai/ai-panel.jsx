@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import styles from './ai-panel.css';
 import Button from '../button/button.jsx';
+import MarkdownRenderer from '../markdown-renderer/markdown-renderer.jsx';
 
 const API_ENDPOINT = 'https://api.siliconflow.cn/v1/chat/completions';
 const API_KEY = 'sk-ytpuhxsxxuhmlnqelpvviiuvbvodluirsfsiyrbsvesosbti';
@@ -73,8 +74,20 @@ class AIPanel extends React.PureComponent {
                 else if (choice.text) reply = choice.text;
             }
             if (!reply) reply = JSON.stringify(data);
+            
+            console.log('Original AI reply:', reply);
+            
+            // 处理 AI 返回的代码块占位符
+            // 将 CODEBLOCK0, CODEBLOCK1 等替换为标准的 Markdown 代码块格式
+            const replacedReply = reply.replace(/CODEBLOCK(\d+)/gi, (match, index) => {
+                console.log('Found CODEBLOCK:', match);
+                return '```python\n# 代码块 ' + index + '\n# 实际代码内容需要在 AI 响应中提供\n```';
+            });
+            
+            console.log('Replaced reply:', replacedReply);
+            
             this.setState(state => ({
-                messages: [...state.messages, {from: 'assistant', text: reply}],
+                messages: [...state.messages, {from: 'assistant', text: replacedReply}],
                 loading: false
             }), this.scrollToBottom);
         })
@@ -93,7 +106,11 @@ class AIPanel extends React.PureComponent {
                     <div className={styles.messages}>
                         {this.state.messages.map((m, i) => (
                             <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
-                                {m.text}
+                                {m.from === 'user' ? (
+                                    m.text
+                                ) : (
+                                    <MarkdownRenderer content={m.text} />
+                                )}
                             </div>
                         ))}
                         <div ref={this.messagesEnd} />
@@ -109,7 +126,19 @@ class AIPanel extends React.PureComponent {
                         </Button>
                     </div>
                 </div>
-                <div class="collaboration-modal_alphaBanner_2EF3j"><div class="collaboration-modal_bannerIcon_1kDJ0"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg></div><div class="collaboration-modal_bannerContent_1o6n7"><strong><span>警告：</span></strong> <span>内容为AI生成,请注意仔细鉴别<br></br>此功能仅作为AI辅助编程,不能帮你编写代码。</span></div></div>
+                <div className={styles.warningBanner}>
+                    <div className={styles.warningIcon}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+                            <path d="M12 9v4"></path>
+                            <path d="M12 17h.01"></path>
+                        </svg>
+                    </div>
+                    <div className={styles.warningContent}>
+                        <strong><span>警告：</span></strong>
+                        <span>内容为AI生成,请注意仔细鉴别<br/>此功能仅作为AI辅助编程,不能帮你编写代码。</span>
+                    </div>
+                </div>
             </div>
         );
     }

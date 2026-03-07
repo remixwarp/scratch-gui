@@ -1,0 +1,328 @@
+.markdown-renderer {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #e0e0e0;
+    font-size: 14px;
+}
+
+/* 标题样式 */
+.markdown-renderer h1,
+.markdown-renderer h2,
+.markdown-renderer h3,
+.markdown-renderer h4,
+.markdown-renderer h5,
+.markdown-renderer h6 {
+    margin: 16px 0 12px 0;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #ffffff;
+}
+
+.markdown-renderer h1 {
+    font-size: 24px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+}
+
+.markdown-renderer h2 {
+    font-size: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 6px;
+}
+
+.markdown-renderer h3 {
+    font-size: 18px;
+}
+
+.markdown-renderer h4 {
+    font-size: 16px;
+}
+
+.markdown-renderer h5 {
+    font-size: 14px;
+}
+
+.markdown-renderer h6 {
+    font-size: 12px;
+    color: #888;
+}
+
+/* 段落 */
+.markdown-renderer p {
+    margin: 8px 0;
+}
+
+/* 加粗和斜体 */
+.markdown-renderer strong {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.markdown-renderer em {
+    font-style: italic;
+}
+
+/* 删除线 */
+.markdown-renderer del {
+    text-decoration: line-through;
+    color: #888;
+}
+
+/* 下划线 */
+.markdown-renderer u {
+    text-decoration: underline;
+}
+
+/* 行内代码 */
+.markdown-renderer .inline-code {
+    background: #2d2d2d;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    color: #e6e6e6;
+}
+
+/* 代码块 */
+.code-block-wrapper {
+    margin: 16px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1e1e1e;
+    border: 1px solid #333;
+}
+
+.code-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #2d2d2d;
+    border-bottom: 1px solid #333;
+}
+
+.code-language {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.code-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.code-action-btn {
+    background: #3d3d3d;
+    border: none;
+    color: #ccc;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.code-action-btn:hover {
+    background: #4d4d4d;
+    color: #fff;
+}
+
+.code-block {
+    margin: 0;
+    padding: 16px;
+    overflow-x: auto;
+    background: #1e1e1e;
+}
+
+.code-block code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #e6e6e6;
+    white-space: pre;
+}
+
+/* 引用块 */
+.markdown-renderer blockquote {
+    margin: 12px 0;
+    padding: 8px 16px;
+    border-left: 4px solid #4a9eff;
+    background: rgba(74, 158, 255, 0.1);
+    color: #ccc;
+}
+
+/* 列表 */
+.markdown-renderer ul,
+.markdown-renderer ol {
+    margin: 8px 0;
+    padding-left: 24px;
+}
+
+.markdown-renderer li {
+    margin: 4px 0;
+}
+
+.markdown-renderer ul li {
+    list-style-type: disc;
+}
+
+.markdown-renderer ol li {
+    list-style-type: decimal;
+}
+
+/* 任务列表 */
+.task-list {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.task-list input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: default;
+}
+
+/* 表格 */
+.markdown-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+}
+
+.markdown-table th,
+.markdown-table td {
+    padding: 10px 12px;
+    border: 1px solid #333;
+    text-align: left;
+}
+
+.markdown-table th {
+    background: #2d2d2d;
+    font-weight: 600;
+    color: #fff;
+}
+
+.markdown-table td {
+    background: #1e1e1e;
+}
+
+.markdown-table tr:nth-child(even) td {
+    background: #252525;
+}
+
+/* 链接 */
+.markdown-renderer a {
+    color: #4a9eff;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.markdown-renderer a:hover {
+    color: #6ab2ff;
+    text-decoration: underline;
+}
+
+/* 图片 */
+.markdown-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 12px 0;
+}
+
+/* 水平线 */
+.markdown-hr {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 20px 0;
+}
+
+/* 数学公式 */
+.math-inline {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    padding: 0 4px;
+    color: #e6e6e6;
+}
+
+.math-block {
+    font-family: 'Times New Roman', serif;
+    text-align: center;
+    padding: 16px;
+    margin: 12px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+/* 脚注 */
+.footnote {
+    color: #4a9eff;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+/* 注释 */
+.comment {
+    color: #6a9955;
+    font-style: italic;
+}
+
+/* 支持的 HTML 标签 */
+.markdown-renderer span,
+.markdown-renderer div {
+    display: inline;
+}
+
+/* 确保 span 和 div 能正常显示 */
+.markdown-renderer div[style] {
+    display: block;
+    margin: 8px 0;
+    padding: 8px;
+}
+
+/* 滚动条样式 */
+.code-block::-webkit-scrollbar {
+    height: 8px;
+}
+
+.code-block::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+.code-block::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+.code-block::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* 响应式 */
+@media (max-width: 600px) {
+    .markdown-renderer {
+        font-size: 13px;
+    }
+
+    .markdown-renderer h1 {
+        font-size: 20px;
+    }
+
+    .markdown-renderer h2 {
+        font-size: 18px;
+    }
+
+    .code-block {
+        padding: 12px;
+    }
+
+    .markdown-table th,
+    .markdown-table td {
+        padding: 8px;
+    }
+}
