@@ -1018,7 +1018,7 @@ class AIPanel extends React.PureComponent {
                                 block.inputs = {};
                             }
                             
-                            // 修复inputs中的输入值 - 确保数组第一个元素是数字
+                            // 修复inputs中的输入值 - 确保数组第一个元素是数字，第二个元素是字符串
                             if (block.inputs && typeof block.inputs === 'object') {
                                 for (const [inputName, inputValue] of Object.entries(block.inputs)) {
                                     if (Array.isArray(inputValue) && inputValue.length > 0) {
@@ -1035,6 +1035,20 @@ class AIPanel extends React.PureComponent {
                                                 // 如果无法转换或值无效，默认为1（文字输入）
                                                 inputValue[0] = 1;
                                                 console.warn(`修复block ${blockId}的${inputName}输入类型: ${inputType} -> 1 (默认)`);
+                                            }
+                                        }
+                                        
+                                        // 第二个元素（输入值）必须是字符串或null
+                                        if (inputValue.length > 1) {
+                                            const inputVal = inputValue[1];
+                                            if (typeof inputVal === 'number') {
+                                                // 如果是数字，转换为字符串
+                                                inputValue[1] = String(inputVal);
+                                                console.warn(`修复block ${blockId}的${inputName}输入值: 从数字 ${inputVal} 转换为字符串`);
+                                            } else if (inputVal !== null && typeof inputVal !== 'string') {
+                                                // 如果是其他类型，转换为字符串
+                                                inputValue[1] = String(inputVal);
+                                                console.warn(`修复block ${blockId}的${inputName}输入值: 从${typeof inputVal} 转换为字符串`);
                                             }
                                         }
                                     } else if (inputValue !== undefined && inputValue !== null) {
