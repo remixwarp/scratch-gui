@@ -1,4 +1,6 @@
 .modal-content {
   background-color: var(--ui-modal-background);
   color: var(--ui-modal-foreground);
+  z-index: 8000;
+  position: relative;
 }

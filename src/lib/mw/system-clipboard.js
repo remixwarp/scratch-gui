@@ -116,11 +116,11 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
             if (meta) {
                 const encoded = encodeBase64Utf8(JSON.stringify(meta));
                 if (encoded) {
-                    return `<!--RemixWarp-extensions-base64:${encoded}-->${xmlText}`;
+                    return `<!--bilup-extensions-base64:${encoded}-->${xmlText}`;
                 }
             }
 
-            return `<!--RemixWarp-->${xmlText}`;
+            return `<!--bilup-->${xmlText}`;
         } catch (e) {
             return null;
         }
@@ -174,7 +174,7 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
         const trimmed = text.trim();
         if (!trimmed) return null;
 
-        if (!trimmed.startsWith('<!--RemixWarp')) return null;
+        if (!trimmed.startsWith('<!--bilup')) return null;
 
         try {
             const xmlDom = ScratchBlocks.Xml.textToDom(`<xml>${trimmed}</xml>`);

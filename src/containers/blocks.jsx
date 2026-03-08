@@ -47,6 +47,7 @@ import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.jsx';
 import {findTopBlock} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
+import CollaborationService from '../lib/collaboration-service.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
@@ -141,6 +142,7 @@ class Blocks extends React.Component {
 
         this.handleAddonSettingChanged = this.handleAddonSettingChanged.bind(this);
         this.applyPaletteResizeEnabledState = this.applyPaletteResizeEnabledState.bind(this);
+        this.updateBlockColors = this.updateBlockColors.bind(this);
 
         this.handlePaletteHoverEnter = this.handlePaletteHoverEnter.bind(this);
         this.handlePaletteHoverLeave = this.handlePaletteHoverLeave.bind(this);
@@ -273,6 +275,12 @@ class Blocks extends React.Component {
             this.setLocale();
         }
 
+        // Attach collaboration service to workspace if connected
+        const collaborationService = CollaborationService.getInstance();
+        if (collaborationService.isConnected) {
+            collaborationService.attachToWorkspace(this.workspace);
+        }
+
         // tw: Handle when extensions are added when Blocks isn't mounted
         for (const category of this.props.vm.runtime._blockInfo) {
             this.handleExtensionAdded(category);
@@ -297,10 +305,28 @@ class Blocks extends React.Component {
             this.props.locale !== nextProps.locale ||
             this.props.anyModalVisible !== nextProps.anyModalVisible ||
             this.props.stageSize !== nextProps.stageSize ||
-            this.props.customStageSize !== nextProps.customStageSize
+            this.props.customStageSize !== nextProps.customStageSize ||
+            this.props.theme !== nextProps.theme
         );
     }
     componentDidUpdate (prevProps) {
+        // Update block colors when theme changes (check properties, not just reference)
+        const prevTheme = prevProps.theme;
+        const currentTheme = this.props.theme;
+        const themeChanged = !prevTheme ||
+            !currentTheme ||
+            prevTheme.id !== currentTheme.id ||
+            prevTheme.accent !== currentTheme.accent ||
+            prevTheme.gui !== currentTheme.gui ||
+            prevTheme.blocks !== currentTheme.blocks ||
+            prevTheme.menuBarAlign !== currentTheme.menuBarAlign ||
+            prevTheme.iconPack !== currentTheme.iconPack ||
+            prevTheme.name !== currentTheme.name;
+
+        if (themeChanged) {
+            this.updateBlockColors(currentTheme);
+        }
+
         // If any modals are open, call hideChaff to close z-indexed field editors
         if (this.props.anyModalVisible && !prevProps.anyModalVisible) {
             this.ScratchBlocks.hideChaff();
@@ -329,16 +355,16 @@ class Blocks extends React.Component {
             // Set workspace visibility with performance optimization
             if (this.workspace) {
                 this.workspace.setVisible(true);
-                
+
                 // Check for pending procedure returns request
                 if (this.props.vm && this.props.vm._pendingProcedureReturns) {
                     console.log('Blocks: Detected pending procedure returns request, enabling...');
                     this.props.vm._pendingProcedureReturns = false;
-                    
+
                     // Enable procedure returns after workspace is ready
                     setTimeout(() => {
                         this.handleEnableProcedureReturns();
-                        
+
                         // Also handle pending category selection
                         if (this.props.vm._pendingCategorySelection) {
                             const categoryId = this.props.vm._pendingCategorySelection;
@@ -389,6 +415,10 @@ class Blocks extends React.Component {
 
         // Clear the flyout blocks so that they can be recreated on mount.
         this.props.vm.clearFlyoutBlocks();
+
+        // Detach collaboration service from workspace
+        const collaborationService = CollaborationService.getInstance();
+        collaborationService.detachFromWorkspace();
 
         AddonHooks.blocklyWorkspace = null;
     }
@@ -683,6 +713,213 @@ class Blocks extends React.Component {
             });
     }
 
+    updateBlockColors (theme) {
+        if (!this.workspace || !this.ScratchBlocks) return;
+
+        const newColors = theme.getBlockColors();
+
+        try {
+            // Try to override the ScratchBlocks color definitions
+            if (this.ScratchBlocks.Colours && this.ScratchBlocks.Colours.overrideColours) {
+                this.ScratchBlocks.Colours.overrideColours(newColors);
+            }
+
+            // Update flyout background constant (Blockly sets this, not CSS)
+            const flyout = this.workspace.getFlyout && this.workspace.getFlyout();
+            if (flyout && newColors.flyout && typeof flyout.setBackgroundColour_ === 'function') {
+                flyout.setBackgroundColour_(newColors.flyout);
+            }
+
+            // Force update of all cached color lookups
+            if (this.ScratchBlocks.workspace && this.ScratchBlocks.workspace.Workspace) {
+                // Force Blockly to recalculate theme colors
+                if (this.workspace.getAllBlocks) {
+                    const blocks = this.workspace.getAllBlocks();
+                    blocks.forEach(block => {
+                        if (block.updateColour) {
+                            block.updateColour();
+                        }
+                    });
+                }
+            }
+
+            // Update workspace-specific colors directly if available
+            const workspace = this.workspace;
+            if (workspace) {
+                // Update workspace background
+                const blocksSvg = this.blocks && this.blocks.querySelector('svg.blocklySvg');
+                if (blocksSvg && newColors.workspace) {
+                    blocksSvg.style.backgroundColor = newColors.workspace;
+                }
+
+                // Update grid color if available
+                if (newColors.gridColor && workspace.grid_ && workspace.grid_.pattern) {
+                    workspace.grid_.pattern.setAttribute('fill', newColors.gridColor);
+                }
+
+                // Update scrollbar colors if available
+                if (workspace.scrollbar) {
+                    const scrollbar = workspace.scrollbar;
+                    if (scrollbar.vScroll && scrollbar.vScroll.outerSvg_) {
+                        const vSvg = scrollbar.vScroll.outerSvg_;
+                        if (vSvg && newColors.scrollbar) {
+                            vSvg.style.fill = newColors.scrollbar;
+                        }
+                    }
+                    if (scrollbar.hScroll && scrollbar.hScroll.outerSvg_) {
+                        const hSvg = scrollbar.hScroll.outerSvg_;
+                        if (hSvg && newColors.scrollbar) {
+                            hSvg.style.fill = newColors.scrollbar;
+                        }
+                    }
+                }
+            }
+
+            // Update flyout background element (the path element ScratchBlocks creates)
+            if (newColors.flyout) {
+                const flyoutBackground = document.querySelector('svg.blocklyFlyout > path.blocklyFlyoutBackground, svg.blocklyFlyout > rect.blocklyFlyoutBackground');
+                if (flyoutBackground) {
+                    flyoutBackground.setAttribute('fill', newColors.flyout);
+                }
+                // Also update the SVG background
+                const flyoutSvg = document.querySelector('svg.blocklyFlyout');
+                if (flyoutSvg) {
+                    flyoutSvg.style.backgroundColor = newColors.flyout;
+                }
+            }
+
+            // Update toolbox/palette background element
+            if (newColors.toolbox) {
+                const toolboxBackground = document.querySelector('svg.blocklyToolbox > path.blocklyToolboxBackground');
+                if (toolboxBackground) {
+                    toolboxBackground.setAttribute('fill', newColors.toolbox);
+                }
+                const toolboxSvg = document.querySelector('svg.blocklyToolbox');
+                if (toolboxSvg) {
+                    toolboxSvg.style.backgroundColor = newColors.toolbox;
+                }
+            }
+
+            // Update toolbox text colors
+            if (newColors.toolboxText || newColors.flyoutLabelColor) {
+                const textColor = newColors.toolboxText || newColors.flyoutLabelColor;
+                const labels = document.querySelectorAll('.blocklyTreeLabel, .blocklyFlyoutLabelText');
+                labels.forEach(label => {
+                    label.style.fill = textColor;
+                });
+            }
+
+            // Update separator lines in toolbox
+            if (newColors.toolboxText) {
+                const separators = document.querySelectorAll('.blocklyTreeSeparator');
+                separators.forEach(separator => {
+                    separator.style.borderColor = newColors.toolboxText;
+                });
+            }
+
+            // Update category icons in toolbox
+            const categoryIcons = document.querySelectorAll('.blocklyTreeIcon');
+            categoryIcons.forEach(icon => {
+                const parentRow = icon.closest('.blocklyTreeRow');
+                if (parentRow && newColors.toolboxText) {
+                    const label = parentRow.querySelector('.blocklyTreeLabel');
+                    if (label) {
+                        const categoryType = label.getAttribute('data-category');
+                        // Get the color for this category
+                        let categoryColor;
+                        try {
+                            categoryColor = this.ScratchBlocks.Colours.categoryTypeToColorMap[categoryType];
+                            if (categoryColor) {
+                                icon.style.backgroundColor = categoryColor.colorPrimary;
+                            }
+                        } catch (e) {
+                            // Ignore errors getting category colors
+                        }
+                    }
+                }
+            });
+
+            if (this.workspace.getFlyout && this.workspace.setVisible) {
+                this.workspace.setVisible(false);
+                this.workspace.setVisible(this.props.isVisible);
+            }
+
+            this.requestToolboxUpdate();
+
+            setTimeout(() => {
+                if (this.workspace && !this.unmounted) {
+                    this.workspace.refreshToolboxSelection_();
+                    if (typeof this.workspace.markDraggedBlockAsDirty === 'function') {
+                        this.workspace.markDraggedBlockAsDirty();
+                    }
+
+                    // Update toolbox and flyout elements again after they re-render
+                    if (newColors.toolbox) {
+                        const toolboxSvg = document.querySelector('svg.blocklyToolbox');
+                        const toolboxBackground = document.querySelector('svg.blocklyToolbox > path.blocklyToolboxBackground');
+                        if (toolboxSvg) {
+                            toolboxSvg.style.setProperty('background-color', newColors.toolbox, 'important');
+                        }
+                        if (toolboxBackground) {
+                            toolboxBackground.setAttribute('fill', newColors.toolbox);
+                        }
+                    }
+                    if (newColors.flyout) {
+                        const flyoutSvg = document.querySelector('svg.blocklyFlyout');
+                        const flyoutBackground = document.querySelector('svg.blocklyFlyout > rect.blocklyFlyoutBackground, svg.blocklyFlyout > path.blocklyFlyoutBackground');
+                        if (flyoutSvg) {
+                            flyoutSvg.style.setProperty('background-color', newColors.flyout, 'important');
+                        }
+                        if (flyoutBackground) {
+                            flyoutBackground.setAttribute('fill', newColors.flyout);
+                        }
+                    }
+                    if (newColors.toolboxText || newColors.flyoutLabelColor) {
+                        const textColor = newColors.toolboxText || newColors.flyoutLabelColor;
+                        const labels = document.querySelectorAll('.blocklyTreeLabel, .blocklyFlyoutLabelText');
+                        labels.forEach(label => {
+                            label.style.setProperty('fill', textColor, 'important');
+                        });
+                    }
+                    if (newColors.scrollbar) {
+                        const scrollbarElements = document.querySelectorAll('.blocklyScrollbarBackground, .blocklyScrollbarThumb');
+                        scrollbarElements.forEach(el => {
+                            el.style.setProperty('fill', newColors.scrollbar, 'important');
+                        });
+                    }
+                }
+            }, 100);
+
+            // Additional retry to ensure colors stick after all re-renders
+            setTimeout(() => {
+                if (this.workspace && !this.unmounted) {
+                    if (newColors.toolbox) {
+                        const toolboxSvg = document.querySelector('svg.blocklyToolbox');
+                        const toolboxBackground = document.querySelector('svg.blocklyToolbox > path.blocklyToolboxBackground');
+                        if (toolboxSvg) {
+                            toolboxSvg.style.setProperty('background-color', newColors.toolbox, 'important');
+                        }
+                        if (toolboxBackground) {
+                            toolboxBackground.setAttribute('fill', newColors.toolbox);
+                        }
+                    }
+                    if (newColors.flyout) {
+                        const flyoutSvg = document.querySelector('svg.blocklyFlyout');
+                        const flyoutBackground = document.querySelector('svg.blocklyFlyout > rect.blocklyFlyoutBackground, svg.blocklyFlyout > path.blocklyFlyoutBackground');
+                        if (flyoutSvg) {
+                            flyoutSvg.style.setProperty('background-color', newColors.flyout, 'important');
+                        }
+                        if (flyoutBackground) {
+                            flyoutBackground.setAttribute('fill', newColors.flyout);
+                        }
+                    }
+                }
+            }, 300);
+        } catch (e) {
+            console.error('Error updating block colors:', e);
+        }
+    }
+
     updateToolbox () {
         this.toolboxUpdateTimeout = false;
 
@@ -801,7 +1038,7 @@ class Blocks extends React.Component {
         this.workspace.glowBlock(data.id, false);
     }
     onVisualReport (data) {
-        this.workspace.reportValue(data.id, data.value);
+        this.workspace.reportValue(data.id, data.value, data.fullValue);
     }
     getToolboxXML () {
         // Use try/catch because this requires digging pretty deep into the VM
@@ -1002,6 +1239,7 @@ class Blocks extends React.Component {
         this.setState({prompt: null});
     }
     handleCustomProceduresClose (data) {
+        const collaborationService = CollaborationService.getInstance();
         const newProcedureBlocks = [];
         const allBlocks = this.workspace.getAllBlocks(true);
         
@@ -1018,6 +1256,55 @@ class Blocks extends React.Component {
                 }
             }
         });
+        
+        if (collaborationService && collaborationService.isConnected) {
+            console.log('[Blocks] Collaboration connected, syncing', newProcedureBlocks.length, 'procedure blocks');
+            
+            if (newProcedureBlocks.length > 0) {
+                newProcedureBlocks.forEach(block => {
+                    try {
+                        const xml = this.ScratchBlocks.Xml.blockToDom(block);
+                        const xmlText = this.ScratchBlocks.Xml.domToText(xml);
+                        
+                        const event = {
+                            type: 'create',
+                            blockId: block.id,
+                            xml: xmlText,
+                            workspaceId: this.workspace.id,
+                            recordUndo: false
+                        };
+                        
+                        const eventOrigin = (collaborationService.peer && collaborationService.peer.id) ?
+                            collaborationService.peer.id : 'local';
+                        
+                        const localTarget = this.props.vm.editingTarget ? this.props.vm.editingTarget : null;
+                        const targetName = localTarget ? localTarget.getName() : null;
+                        
+                        const randomPart = Math.random().toString(36)
+                            .slice(2, 8);
+
+                        const eid = `${eventOrigin}-${Date.now()}-${randomPart}`;
+                        
+                        console.log('[Blocks] Sending procedure block to collaborators:', {
+                            blockId: block.id,
+                            eventId: eid,
+                            xmlLength: xmlText.length
+                        });
+                        
+                        collaborationService.sendMessage('block-event', {
+                            event: event,
+                            targetName: targetName,
+                            eventId: eid,
+                            eventOrigin: eventOrigin,
+                            timestamp: Date.now()
+                        });
+                        
+                    } catch (e) {
+                        console.error('[Blocks] Error syncing procedure block:', e);
+                    }
+                });
+            }
+        }
         
         this.props.onRequestCloseCustomProcedures(data);
         const ws = this.workspace;

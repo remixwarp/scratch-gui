@@ -31,8 +31,9 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 100px;
+    height: 300px;
     background-color: $control-primary;
+    overflow: hidden;
 }
 
 [dir="rtl"] .illustration {
@@ -40,8 +41,9 @@
 }
 
 .illustration img {
-    height: 80%;
+    height: 100%;
     width: auto;
+    object-fit: contain;
 }
 
 .body {

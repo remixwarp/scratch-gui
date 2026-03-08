@@ -3,7 +3,6 @@ import React from 'react';
 import classNames from 'classnames';
 
 import styles from './close-button.css';
-import {ArrowLeft, X} from 'lucide-react';
 
 const CloseButton = props => {
     const iconSize = props.size === CloseButton.SIZE_SMALL ? 12 : 20;
@@ -23,18 +22,13 @@ const CloseButton = props => {
             tabIndex="0"
             onClick={props.onClick}
         >
-            {props.buttonType === 'back' ?
-                <ArrowLeft size={20} /> :
-                <X
-                    className={classNames(
-                        styles.closeIcon,
-                        {
-                            [styles[props.color]]: (props.color !== CloseButton.COLOR_NEUTRAL)
-                        }
-                    )}
-                    size={iconSize}
-                />
-            }
+            {props.buttonType === 'back' ? (
+                <span className={styles.closeText}>←</span>
+            ) : (
+                <span className={classNames(styles.closeText, styles.closeIcon, {
+                    [styles[props.color]]: (props.color !== CloseButton.COLOR_NEUTRAL)
+                })}>✕</span>
+            )}
         </div>
     );
 };

@@ -522,9 +522,12 @@ const StoreProjectOptions = ({
             <p>
                 <FormattedMessage
                     // eslint-disable-next-line max-len
-                    defaultMessage='When enabled, clicking "Store settings in project" will also store the current MistWarp theme so it can be applied when this project is loaded.'
+                    defaultMessage='When enabled, clicking "Store settings in project" will also store the current {APP_NAME} theme so it can be applied when this project is loaded.'
                     description="Help text for the store theme in project checkbox"
                     id="mw.settingsModal.storeThemeInProjectHelp"
+                    values={{
+                        APP_NAME
+                    }}
                 />
             </p>
         </div>

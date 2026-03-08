@@ -5,25 +5,24 @@ import classNames from 'classnames';
 import styles from './delete-button.css';
 import deleteIcon from './icon--delete.svg';
 
-import {Trash} from 'lucide-react';
-
-const DeleteButton = props => (
-    <div
-        aria-label="Delete"
-        className={classNames(
-            styles.deleteButton,
-            props.className
-        )}
-        role="button"
-        tabIndex={props.tabIndex}
-        onClick={props.onClick}
-    >
-        <div className={styles.deleteButtonVisible}>
-            <Trash size={15} color="white" />
+const DeleteButton = props => {
+    return (
+        <div
+            aria-label="Delete"
+            className={classNames(
+                styles.deleteButton,
+                props.className
+            )}
+            role="button"
+            tabIndex={props.tabIndex}
+            onClick={props.onClick}
+        >
+            <div className={styles.deleteButtonVisible}>
+                <span className={styles.deleteText}>✕</span>
+            </div>
         </div>
-    </div>
-
-);
+    );
+};
 
 DeleteButton.propTypes = {
     className: PropTypes.string,

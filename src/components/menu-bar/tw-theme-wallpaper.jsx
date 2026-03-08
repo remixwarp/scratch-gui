@@ -33,7 +33,11 @@ const WallpaperMenuItem = ({url, isSelected, onClick, onRemove}) => (
                     />
                 ) : (
                     <div className={styles.noWallpaper}>
-                        X
+                        <FormattedMessage
+                            defaultMessage="None"
+                            description="Label for no wallpaper option"
+                            id="tw.wallpaper.none"
+                        />
                     </div>
                 )}
             </div>
@@ -57,7 +61,11 @@ const WallpaperMenuItem = ({url, isSelected, onClick, onRemove}) => (
                         onRemove(url);
                     }}
                 >
-                    <Trash size={20} className={styles.removeWallpaperIcon} style={{margin: '0'}} />
+                    <Trash
+                        className={styles.removeWallpaperIcon}
+                        style={{margin: '0'}}
+                        size={20}
+                    />
                 </button>
             ) : null}
         </div>
@@ -71,7 +79,7 @@ WallpaperMenuItem.propTypes = {
     onRemove: PropTypes.func
 };
 
-const WallpaperInputForm = ({intl, onSubmit, onOpacityChange, onDarknessChange, onGridVisibilityChange, currentOpacity, currentDarkness, currentGridVisible}) => {
+const WallpaperInputForm = injectIntl(({intl, onSubmit, onOpacityChange, onDarknessChange, onGridVisibilityChange, currentOpacity, currentDarkness, currentGridVisible}) => {
     const [url, setUrl] = React.useState('');
     const [opacity, setOpacity] = React.useState(currentOpacity);
     const [darkness, setDarkness] = React.useState(currentDarkness);
@@ -105,15 +113,21 @@ const WallpaperInputForm = ({intl, onSubmit, onOpacityChange, onDarknessChange, 
     };
 
     return (
-        <div className={styles.wallpaperForm} onClick={e => e.stopPropagation()}>
-            <form onSubmit={handleSubmit} onClick={e => e.stopPropagation()}>
+        <div
+            className={styles.wallpaperForm}
+            onClick={e => e.stopPropagation()}
+        >
+            <form
+                onSubmit={handleSubmit}
+                onClick={e => e.stopPropagation()}
+            >
                 <input
                     type="url"
                     placeholder={intl.formatMessage({
-                            defaultMessage: 'Enter image URL...',
-                            description: 'Placeholder for wallpaper URL input',
-                            id: 'tw.wallpaper.urlPlaceholder'
-                        })}
+                        defaultMessage: 'Enter image URL...',
+                        description: 'Placeholder for wallpaper URL input',
+                        id: 'tw.wallpaper.urlPlaceholder'
+                    })}
                     value={url}
                     onChange={e => setUrl(e.target.value)}
                     onClick={e => e.stopPropagation()}
@@ -134,8 +148,14 @@ const WallpaperInputForm = ({intl, onSubmit, onOpacityChange, onDarknessChange, 
                     </button>
                 </div>
             </form>
-            <div className={styles.opacityControl} onClick={e => e.stopPropagation()}>
-                <label htmlFor="wallpaper-opacity" onClick={e => e.stopPropagation()}>
+            <div
+                className={styles.opacityControl}
+                onClick={e => e.stopPropagation()}
+            >
+                <label
+                    htmlFor="wallpaper-opacity"
+                    onClick={e => e.stopPropagation()}
+                >
                     <FormattedMessage
                         defaultMessage="Opacity:"
                         description="Label for wallpaper opacity slider"
@@ -173,10 +193,19 @@ const WallpaperInputForm = ({intl, onSubmit, onOpacityChange, onDarknessChange, 
                     onPointerCancel={e => e.stopPropagation()}
                     className={styles.opacitySlider}
                 />
-                <span className={styles.opacityValue} onClick={e => e.stopPropagation()}>{Math.round(opacity * 100)}%</span>
+                <span
+                    className={styles.opacityValue}
+                    onClick={e => e.stopPropagation()}
+                >{Math.round(opacity * 100)}%</span>
             </div>
-            <div className={styles.opacityControl} onClick={e => e.stopPropagation()}>
-                <label htmlFor="wallpaper-darkness" onClick={e => e.stopPropagation()}>
+            <div
+                className={styles.opacityControl}
+                onClick={e => e.stopPropagation()}
+            >
+                <label
+                    htmlFor="wallpaper-darkness"
+                    onClick={e => e.stopPropagation()}
+                >
                     <FormattedMessage
                         defaultMessage="Darkness:"
                         description="Label for wallpaper darkness slider"
@@ -214,10 +243,19 @@ const WallpaperInputForm = ({intl, onSubmit, onOpacityChange, onDarknessChange, 
                     onPointerCancel={e => e.stopPropagation()}
                     className={styles.opacitySlider}
                 />
-                <span className={styles.opacityValue} onClick={e => e.stopPropagation()}>{Math.round(darkness * 100)}%</span>
+                <span
+                    className={styles.opacityValue}
+                    onClick={e => e.stopPropagation()}
+                >{Math.round(darkness * 100)}%</span>
             </div>
-            <div className={styles.opacityControl} onClick={e => e.stopPropagation()}>
-                <label htmlFor="wallpaper-grid-visible" onClick={e => e.stopPropagation()}>
+            <div
+                className={styles.opacityControl}
+                onClick={e => e.stopPropagation()}
+            >
+                <label
+                    htmlFor="wallpaper-grid-visible"
+                    onClick={e => e.stopPropagation()}
+                >
                     <FormattedMessage
                         defaultMessage="Show Grid:"
                         description="Label for wallpaper grid visibility toggle"
@@ -235,10 +273,10 @@ const WallpaperInputForm = ({intl, onSubmit, onOpacityChange, onDarknessChange, 
             </div>
         </div>
     );
-};
+});
 
 WallpaperInputForm.propTypes = {
-    intl: PropTypes.object,
+    intl: intlShape.isRequired,
     onSubmit: PropTypes.func,
     onOpacityChange: PropTypes.func,
     onDarknessChange: PropTypes.func,
@@ -248,7 +286,7 @@ WallpaperInputForm.propTypes = {
     currentGridVisible: PropTypes.bool
 };
 
-const WallpaperMenu = ({
+const WallpaperMenu = injectIntl(({
     intl,
     isOpen,
     isRtl,
@@ -280,7 +318,6 @@ const WallpaperMenu = ({
 
         onPreviewTheme(theme.set('wallpaper', newWallpaper));
     };
-
     
 
     const handleRemoveWallpaper = urlToRemove => {
@@ -345,7 +382,6 @@ const WallpaperMenu = ({
                 className={styles.submenu}
             >
                 <WallpaperInputForm
-                    intl={intl}
                     onSubmit={handleWallpaperAdd}
                     onOpacityChange={handleOpacityChange}
                     onDarknessChange={handleDarknessChange}
@@ -372,7 +408,7 @@ const WallpaperMenu = ({
             </Submenu>
         </MenuItem>
     );
-};
+});
 
 WallpaperMenu.propTypes = {
     intl: intlShape.isRequired,
@@ -403,7 +439,7 @@ const mapDispatchToProps = dispatch => ({
     onOpen: () => dispatch(openWallpaperMenu())
 });
 
-export default injectIntl(connect(
+export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(WallpaperMenu));
+)(WallpaperMenu);

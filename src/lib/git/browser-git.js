@@ -9,7 +9,7 @@ import {
     writeProjectToWorkingTree
 } from './project-working-tree.js';
 
-const FS_NAME = 'RemixWarp-git';
+const FS_NAME = 'bilup-git';
 
 // Global formatter function and intl object (can be set by calling code)
 let globalFormatMessage = null;
@@ -605,12 +605,12 @@ const getRemotes = async vm => {
     const remotes = await git.listRemotes({fs, dir: REPO_DIR});
 
     return remotes.map(remote => ({
-        name: remote.name,
+        name: remote.remote || remote.name,
         url: remote.url
     }));
 };
 
-const push = async ({vm, remote, branch, ...options}) => {
+const push = async ({vm, remote, branch, onAuth, onAuthFailure, disableCorsProxy, ...options}) => {
     if (!vm) {
         throw new Error('VM is required');
     }
@@ -621,7 +621,31 @@ const push = async ({vm, remote, branch, ...options}) => {
         await initRepo({defaultBranch: 'main', vm: vm});
     }
 
-    await git.push({fs, http, corsProxy: 'https://cors.isomorphic-git.org', dir: REPO_DIR, remote, branch, ...options});
+    const pushOptions = {
+        fs, 
+        http, 
+        dir: REPO_DIR, 
+        remote, 
+        branch,
+        ...options
+    };
+    
+    // Use CORS proxy for public repos, but it may not work with authentication
+    // For authenticated pushes, we rely on the server having proper CORS headers
+    // User can disable CORS proxy if needed
+    if (!disableCorsProxy) {
+        pushOptions.corsProxy = 'https://cors.isomorphic-git.org';
+    }
+    
+    if (onAuth) {
+        pushOptions.onAuth = onAuth;
+    }
+    
+    if (onAuthFailure) {
+        pushOptions.onAuthFailure = onAuthFailure;
+    }
+
+    await git.push(pushOptions);
 };
 
 const commitProject = async ({vm, message, author, onProgress} = {}) => {

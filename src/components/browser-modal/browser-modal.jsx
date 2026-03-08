@@ -11,7 +11,7 @@ import {
 import styles from './browser-modal.css';
 import {APP_NAME} from '../../lib/constants/brand.js';
 
-import unhappyBrowser from './unsupported-browser.svg';
+import unhappyBrowser from './april-fools.png';
 
 const messages = defineMessages({
     browserNotSupported: {

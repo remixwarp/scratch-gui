@@ -121,7 +121,7 @@
 .menu-bar-menu {
     margin-top: $menu-bar-height;
     z-index: $z-index-menu-bar;
-    border-radius: 5px;
+    border-radius: 10px;
 }
 
 .feedback-link {
@@ -247,6 +247,12 @@
     vertical-align: middle;
 }
 
+.collaboration-icon {
+    height: 1.25rem;
+    margin: 0.5rem;
+    vertical-align: middle;
+}
+
 .collapsible-label {
     margin: 0 .25rem;
 }
@@ -286,11 +292,25 @@
     transform: rotate(90deg);
 }
 
-.menu-header {
-    padding: 0.5rem 1rem;
-    font-weight: bold;
-    color: $ui-white;
-    opacity: 0.8;
-    cursor: default;
-    user-select: none;
+/* AI submenu styles */
+.icon {
+    width: 1.5rem;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+}
+
+.submenu-label {
+    flex: 1;
+}
+
+.expandCaret {
+    transform: rotate(-90deg);
+    vertical-align: middle;
+}
+
+[dir="rtl"] .expandCaret {
+    transform: rotate(90deg);
 }

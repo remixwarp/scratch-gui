@@ -10,7 +10,6 @@ import tabStyles from 'react-tabs/style/react-tabs.css';
 import VM from 'scratch-vm';
 
 import Blocks from '../../containers/blocks.jsx';
-import MultiWorkspaces from '../blocks/multi-workspaces.jsx';
 import CostumeTab from '../../containers/costume-tab.jsx';
 import SoundTab from '../../containers/sound-tab.jsx';
 import ExtensionLibrary from '../../containers/extension-library.jsx';
@@ -20,6 +19,7 @@ import Loader from '../loader/loader.jsx';
 import Box from '../box/box.jsx';
 import MenuBar from '../menu-bar/menu-bar.jsx';
 import CostumeLibrary from '../../containers/costume-library.jsx';
+import SoundLibrary from '../../containers/sound-library.jsx';
 import BackdropLibrary from '../../containers/backdrop-library.jsx';
 import Watermark from '../../containers/watermark.jsx';
 
@@ -31,12 +31,11 @@ import Alerts from '../../containers/alerts.jsx';
 import NotificationsProvider from '../../lib/notifications-provider.jsx';
 import DragLayer from '../../containers/drag-layer.jsx';
 import ConnectionModal from '../../containers/connection-modal.jsx';
+import CollaborationContainer from '../../containers/collaboration-container.jsx';
+import CollabLoader from '../collab-loader/collab-loader.jsx';
 import TelemetryModal from '../telemetry-modal/telemetry-modal.jsx';
 import TWUsernameModal from '../../containers/tw-username-modal.jsx';
 import TWSettingsModal from '../../containers/tw-settings-modal.jsx';
-import AIModal from '../../containers/ai-modal.jsx';
-import AIChatModal from '../../containers/ai-chat-modal.jsx';
-import AIAgentModal from '../../containers/ai-agent-modal.jsx';
 import TWSecurityManager from '../../containers/tw-security-manager.jsx';
 import TWCustomExtensionModal from '../../containers/tw-custom-extension-modal.jsx';
 import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
@@ -46,14 +45,21 @@ import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx
 import TWGitModal from '../../containers/mw-git-modal.jsx';
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
+import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
+import AIModal from '../../containers/ai-modal.jsx';
+import AIChatModal from '../../containers/ai-chat-modal.jsx';
+import AIAgentModal from '../../containers/ai-agent-modal.jsx';
+import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
+import Onboarding from '../../containers/onboarding.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
 import {Theme} from '../../lib/themes';
 
 import {setStageSize} from '../../reducers/stage-size';
+import {showOnboarding} from '../../reducers/onboarding';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
@@ -126,6 +132,252 @@ const GUIComponent = props => {
             console.error('Error enabling procedure returns:', error);
         }
     }, []);
+
+    const editorWrapperRef = useRef(null);
+    const stageAndTargetWrapperRef = useRef(null);
+    const stageResizeRafRef = useRef(null);
+    const measureRafRef = useRef(null);
+    const autoSmallStageRequestedRef = useRef(false);
+    const autoSmallStageActiveRef = useRef(false);
+    const lastNonSmallStageSizeModeRef = useRef(STAGE_SIZE_MODES.large);
+    const [stagePanelWidth, setStagePanelWidth] = useState(null);
+    const [stageContainerWidth, setStageContainerWidth] = useState(null);
+
+    const handleStagePanelResizeDoubleClick = useCallback(() => {
+        setStagePanelWidth(null);
+    }, []);
+
+    const getStageBorderExtraWidth = useCallback(containerEl => {
+        if (!containerEl || typeof window === 'undefined') return 0;
+        
+        const stageEl = containerEl.querySelector('[class*="stage_stage"]');
+        if (!stageEl) return 2;
+        
+        return getCachedBorderWidth(stageEl);
+    }, []);
+
+    const measureStageContainerWidth = useCallback(() => {
+        if (measureRafRef.current) return;
+        
+        measureRafRef.current = requestAnimationFrame(() => {
+            measureRafRef.current = null;
+            
+            const el = stageAndTargetWrapperRef.current;
+            if (!el) return;
+
+            const rect = el.getBoundingClientRect();
+            if (!Number.isFinite(rect.width)) return;
+
+            const computedStyle = window.getComputedStyle(el);
+            const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
+            const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
+            const borderExtra = getStageBorderExtraWidth(el);
+
+            const innerWidth = Math.max(
+                0,
+                rect.width - paddingLeft - paddingRight - borderExtra
+            );
+
+            setStageContainerWidth(prev => {
+                if (typeof prev === 'number' && Math.abs(prev - innerWidth) < 2) {
+                    return prev;
+                }
+                return innerWidth;
+            });
+        });
+    }, [getStageBorderExtraWidth]);
+
+    const lastResizeWidthRef = useRef(null);
+    useEffect(() => {
+        if (typeof stageContainerWidth !== 'number') return;
+
+        const rounded = Math.round(stageContainerWidth);
+        if (lastResizeWidthRef.current === rounded) return;
+
+        lastResizeWidthRef.current = rounded;
+
+        if (stageResizeRafRef.current) return;
+        stageResizeRafRef.current = requestAnimationFrame(() => {
+            stageResizeRafRef.current = null;
+            window.dispatchEvent(new Event('resize'));
+        });
+    }, [stageContainerWidth]);
+
+    useEffect(() => {
+        if (props.isFullScreen) return;
+        if (typeof stageContainerWidth !== 'number') return;
+
+        if (props.stageSizeMode !== STAGE_SIZE_MODES.small) {
+            lastNonSmallStageSizeModeRef.current = props.stageSizeMode;
+        }
+
+        if (stageContainerWidth < AUTO_SMALL_STAGE_INNER_WIDTH) {
+            if (props.stageSizeMode !== STAGE_SIZE_MODES.small) {
+                if (autoSmallStageRequestedRef.current) return;
+                autoSmallStageRequestedRef.current = true;
+                autoSmallStageActiveRef.current = true;
+                if (typeof props.onSetStageSize === 'function') {
+                    props.onSetStageSize(STAGE_SIZE_MODES.small);
+                }
+            }
+        } else {
+            autoSmallStageRequestedRef.current = false;
+
+            if (autoSmallStageActiveRef.current &&
+                props.stageSizeMode === STAGE_SIZE_MODES.small &&
+                stageContainerWidth >= AUTO_RESTORE_STAGE_INNER_WIDTH &&
+                typeof props.onSetStageSize === 'function') {
+                autoSmallStageActiveRef.current = false;
+                props.onSetStageSize(lastNonSmallStageSizeModeRef.current);
+            }
+        }
+    }, [stageContainerWidth, props.isFullScreen, props.onSetStageSize, props.stageSizeMode]);
+
+    useEffect(() => {
+        measureStageContainerWidth();
+        const el = stageAndTargetWrapperRef.current;
+        if (!el || typeof ResizeObserver === 'undefined') return;
+        const observer = new ResizeObserver(() => {
+            measureStageContainerWidth();
+        });
+        observer.observe(el);
+        return () => {
+            observer.disconnect();
+            if (measureRafRef.current) {
+                cancelAnimationFrame(measureRafRef.current);
+                measureRafRef.current = null;
+            }
+        };
+    }, [measureStageContainerWidth]);
+
+    const handleStagePanelResizePointerDown = useCallback(e => {
+        if (typeof e.button !== 'undefined' && e.button !== 0) return;
+        e.preventDefault();
+
+        const el = stageAndTargetWrapperRef.current;
+        if (!el) return;
+        const editorEl = editorWrapperRef.current;
+        const startRect = el.getBoundingClientRect();
+        const computedStyle = window.getComputedStyle(el);
+        const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
+        const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
+        const borderExtra = getStageBorderExtraWidth(el);
+        const editorRect = editorEl ? editorEl.getBoundingClientRect() : null;
+        const startX = (typeof e.clientX === 'number') ? e.clientX : 0;
+        const startWidth = startRect.width;
+        const startInnerWidth = Math.max(0, startWidth - paddingLeft - paddingRight - borderExtra);
+
+        setStageContainerWidth(Math.round(startInnerWidth));
+
+        if (e.currentTarget &&
+            typeof e.currentTarget.setPointerCapture === 'function' &&
+            typeof e.pointerId === 'number') {
+            try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+            } catch (err) {
+                // ignore
+            }
+        }
+
+        const minWidth = Math.max(0, (FIXED_WIDTH * 0.5) + paddingLeft + paddingRight + borderExtra);
+
+        const containerEl = editorEl ? editorEl.parentElement : null;
+        const containerRect = containerEl ? containerEl.getBoundingClientRect() : null;
+        const containerWidth = (containerRect && Number.isFinite(containerRect.width)) ?
+            containerRect.width :
+            window.innerWidth;
+        const resizerRect = (e.currentTarget && typeof e.currentTarget.getBoundingClientRect === 'function') ?
+            e.currentTarget.getBoundingClientRect() : null;
+        const resizerWidth = (resizerRect && Number.isFinite(resizerRect.width)) ? resizerRect.width : 6;
+
+        const maxWidthByEditor = Math.max(minWidth, containerWidth - MIN_EDITOR_PANE_WIDTH - resizerWidth);
+
+        let stageWrapperEl = el.querySelector('[class*="stage-wrapper_stage-wrapper"]');
+        if (!stageWrapperEl) {
+            const candidates = Array.from(el.querySelectorAll('[class*="stage-wrapper"]'));
+            stageWrapperEl = candidates.find(candidate => candidate.querySelector('[class*="stage-header"]'));
+        }
+        const stageCanvasEl = stageWrapperEl ? stageWrapperEl.querySelector('[class*="stage_stage"]') : null;
+
+        const stageWrapperRect = stageWrapperEl ? stageWrapperEl.getBoundingClientRect() : null;
+        const stageCanvasRect = stageCanvasEl ? stageCanvasEl.getBoundingClientRect() : null;
+        const stageOverheadHeight = (stageWrapperRect && stageCanvasRect) ?
+            Math.max(0, stageWrapperRect.height - stageCanvasRect.height) :
+            88;
+
+        const maxStageCanvasHeight = Math.max(
+            0,
+            startRect.height - MIN_TARGET_PANE_HEIGHT - stageOverheadHeight
+        );
+
+        const customSize = props.customStageSize;
+        const widthPerHeight = (customSize && customSize.height > 0) ?
+            (customSize.width / customSize.height) :
+            (4 / 3);
+        const maxInnerWidthByHeight = (maxStageCanvasHeight * widthPerHeight) + 2;
+        const maxWidthByHeight = Math.max(
+            minWidth,
+            maxInnerWidthByHeight + paddingLeft + paddingRight + borderExtra
+        );
+
+        const maxWidth = Math.min(maxWidthByEditor, maxWidthByHeight);
+
+        const stageIsLeft = editorRect ? (startRect.left < editorRect.left) : false;
+        const directionFactor = stageIsLeft ? 1 : -1;
+
+        let moveRaf = null;
+        const onMove = ev => {
+            if (moveRaf) return;
+            
+            moveRaf = requestAnimationFrame(() => {
+                moveRaf = null;
+                
+                const x = (typeof ev.clientX === 'number') ? ev.clientX : 0;
+                const dx = x - startX;
+                const nextWidth = Math.min(maxWidth, Math.max(minWidth, startWidth + (dx * directionFactor)));
+                const nextInnerWidth = Math.max(0, nextWidth - paddingLeft - paddingRight - borderExtra);
+                
+                setStagePanelWidth(nextWidth);
+                setStageContainerWidth(prev => {
+                    if (typeof prev === 'number' && Math.abs(prev - nextInnerWidth) < 0.5) {
+                        return prev;
+                    }
+                    return nextInnerWidth;
+                });
+
+                if (!props.isFullScreen &&
+                    props.stageSizeMode !== STAGE_SIZE_MODES.small &&
+                    typeof props.onSetStageSize === 'function' &&
+                    nextInnerWidth < AUTO_SMALL_STAGE_INNER_WIDTH) {
+                    autoSmallStageActiveRef.current = true;
+                    props.onSetStageSize(STAGE_SIZE_MODES.small);
+                }
+            });
+        };
+
+        const onUp = () => {
+            if (moveRaf) {
+                cancelAnimationFrame(moveRaf);
+                moveRaf = null;
+            }
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+        };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+    }, [
+        getStageBorderExtraWidth,
+        props.customStageSize,
+        props.isFullScreen,
+        props.onSetStageSize,
+        props.stageSizeMode
+    ]);
+
     const {
         accountNavOpen,
         activeTabIndex,
@@ -153,6 +405,7 @@ const GUIComponent = props => {
         children,
         connectionModalVisible,
         costumeLibraryVisible,
+        soundLibraryVisible,
         costumesTabVisible,
         customStageSize,
         enableCommunity,
@@ -193,10 +446,11 @@ const GUIComponent = props => {
         onRequestCloseBackdropLibrary,
         onRequestCloseCostumeLibrary,
         onRequestCloseExtensionLibrary,
+        onRequestCloseSoundLibrary,
         onRequestCloseTelemetryModal,
-        onRequestCloseAIModal,
         onSeeCommunity,
         onSetStageSize: _onSetStageSize,
+        onSetFullScreen: _onSetFullScreen,
         onShare,
         onShowPrivacyPolicy,
         onStartSelectingFileUpload,
@@ -213,6 +467,8 @@ const GUIComponent = props => {
         telemetryModalVisible,
         theme,
         tipsLibraryVisible,
+        onOpenOnboarding,
+        onboardingVisible,
         usernameModalVisible,
         settingsModalVisible,
         customExtensionModalVisible,
@@ -220,13 +476,67 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
-        aiModalVisible,
+        shortcutManagerModalVisible,
         vm,
         ...componentProps
     } = omit(props, 'dispatch');
     if (children) {
         return <Box {...componentProps}>{children}</Box>;
     }
+
+    useEffect(() => {
+        const hasSeenOnboarding = localStorage.getItem('mw:has-seen-onboarding');
+        if (!hasSeenOnboarding && !isEmbedded && !isPlayerOnly && typeof onOpenOnboarding === 'function') {
+            const timer = setTimeout(() => {
+                onOpenOnboarding();
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [isEmbedded, isPlayerOnly, onOpenOnboarding]);
+
+    useEffect(() => {
+        // Initialize shortcut system
+        const {initialize: initShortcuts, updateCallbacks: updateShortcutsCallbacks} = require('../../lib/shortcuts/event-router.js');
+        
+        // Create dispatch wrapper with available actions
+        const dispatchWrapper = {
+            manualUpdateProject: () => props.dispatch && props.dispatch({type: 'scratch-gui/project-state/MANUAL_UPDATE_PROJECT'}),
+            saveProjectAsCopy: () => props.dispatch && props.dispatch({type: 'scratch-gui/project-state/SAVE_PROJECT_AS_COPY'}),
+            requestNewProject: (loadingState) => props.dispatch && props.dispatch({type: 'scratch-gui/project-state/START_FETCHING_NEW', loadingState}),
+            openSettingsModal: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'settingsModal'}),
+            openRestorePointModal: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'restorePointModal'}),
+            openSpriteLibrary: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'spriteLibrary'}),
+            openCostumeLibrary: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'costumeLibrary'}),
+            openSoundLibrary: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'soundLibrary'}),
+            openExtensionLibrary: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'extensionLibrary'}),
+            openExtensionManagerModal: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'extensionManagerModal'}),
+            openAIChatModal: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'aiChatModal'}),
+            openAIAgentModal: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'aiAgentModal'}),
+            activateTab: (tabIndex) => props.dispatch && props.dispatch({type: 'scratch-gui/navigation/ACTIVATE_TAB', activeTabIndex: tabIndex})
+        };
+        
+        // Create callbacks
+        const callbacks = {};
+        if (onStartSelectingFileUpload) {
+            callbacks.loadFromComputer = onStartSelectingFileUpload;
+        }
+        if (onClickPackager) {
+            callbacks.openPackager = onClickPackager;
+        }
+        callbacks.toggleBackpack = () => props.dispatch && props.dispatch({type: 'scratch-gui/backpack/TOGGLE_BACKPACK'});
+        callbacks.toggleStageSize = () => props.dispatch && props.dispatch({type: 'scratch-gui/stage-size/TOGGLE_STAGE_SIZE'});
+        callbacks.setFullScreen = (isFullScreen) => props.dispatch && props.dispatch({type: 'scratch-gui/mode/SET_FULL_SCREEN', isFullScreen});
+        
+        // Initialize shortcuts with dispatch, vm, and callbacks
+        initShortcuts(dispatchWrapper, vm, callbacks);
+        updateShortcutsCallbacks(callbacks);
+        
+        // Cleanup on unmount
+        return () => {
+            const {dispose: disposeShortcuts} = require('../../lib/shortcuts/event-router.js');
+            disposeShortcuts();
+        };
+    }, [onStartSelectingFileUpload, onClickPackager, vm, props.dispatch]);
 
     const tabClassNames = useMemo(() => ({
         tabs: styles.tabs,
@@ -250,6 +560,7 @@ const GUIComponent = props => {
             <TWRestorePointManager />
             <MWExtensionManagerModal />
             <MWProjectThemeModal />
+            <ShortcutManager visible={shortcutManagerModalVisible} />
             {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
             {settingsModalVisible && (
                 <TWSettingsModal
@@ -257,14 +568,16 @@ const GUIComponent = props => {
                     visible={settingsModalVisible}
                 />
             )}
-            {aiModalVisible && <AIModal visible={aiModalVisible} />}
-            <AIChatModal />
-            <AIAgentModal />
             {customExtensionModalVisible && <TWCustomExtensionModal />}
             {fontsModalVisible && <TWFontsModal />}
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
             {gitModalVisible && <TWGitModal />}
+            <AIModal />
+            <AIChatModal />
+            <AIAgentModal />
+            <SimpleDialog />
+            {onboardingVisible && <Onboarding />}
         </React.Fragment>
     ), [
         securityManager,
@@ -276,13 +589,25 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
-        aiModalVisible
+        shortcutManagerModalVisible,
+        onboardingVisible
     ]);
 
     const minDimensions = useMemo(() => ({
-        minWidth: 1024 + Math.max(0, customStageSize.width - 480),
+        minWidth: typeof stagePanelWidth === 'number' ?
+            MIN_EDITOR_PANE_WIDTH + stagePanelWidth + 6 + 16 :
+            1024 + Math.max(0, customStageSize.width - 480),
         minHeight: 640 + Math.max(0, customStageSize.height - 360)
-    }), [customStageSize.width, customStageSize.height]);
+    }), [customStageSize.width, customStageSize.height, stagePanelWidth]);
+
+    const stagePanelStyle = useMemo(() => {
+        if (!stagePanelWidth) return null;
+        return {
+            width: `${stagePanelWidth}px`,
+            flexBasis: `${stagePanelWidth}px`,
+            flexShrink: 0
+        };
+    }, [stagePanelWidth]);
 
     return (<MediaQuery minWidth={unconstrainedWidth}>{isUnconstrained => {
         const stageSize = resolveStageSize(stageSizeMode, isUnconstrained);
@@ -340,6 +665,7 @@ const GUIComponent = props => {
                         messageId="gui.loader.creating"
                     />
                 ) : null}
+                <CollabLoader />
                 {isBrowserSupported() ? null : (
                     <BrowserModal
                         isRtl={isRtl}
@@ -360,6 +686,7 @@ const GUIComponent = props => {
                         vm={vm}
                     />
                 ) : null}
+                <CollaborationContainer />
                 {costumeLibraryVisible ? (
                     <CostumeLibrary
                         vm={vm}
@@ -370,6 +697,12 @@ const GUIComponent = props => {
                     <BackdropLibrary
                         vm={vm}
                         onRequestClose={onRequestCloseBackdropLibrary}
+                    />
+                ) : null}
+                {soundLibraryVisible ? (
+                    <SoundLibrary
+                        vm={vm}
+                        onRequestClose={onRequestCloseSoundLibrary}
                     />
                 ) : null}
                 <MenuBar
@@ -417,6 +750,7 @@ const GUIComponent = props => {
                     <Box className={styles.flexWrapper}>
                         <Box
                             className={styles.editorWrapper}
+                            ref={editorWrapperRef}
                         >
                             <NativeFindBar
                                 activeTabIndex={activeTabIndex}
@@ -474,9 +808,14 @@ const GUIComponent = props => {
                                 </TabList>
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     <Box className={styles.blocksWrapper}>
-                                        <MultiWorkspaces
+                                        <Blocks
                                             key={`${blocksId}/${theme.id}`}
                                             canUseCloud={canUseCloud}
+                                            grow={1}
+                                            isVisible={blocksTabVisible}
+                                            options={{
+                                                media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
+                                            }}
                                             stageSize={stageSize}
                                             onOpenCustomExtensionModal={onOpenCustomExtensionModal}
                                             theme={theme}
@@ -514,7 +853,18 @@ const GUIComponent = props => {
                         </Box>
 
                         <Box
+                            className={styles.stagePaneResizer}
+                            onPointerDown={handleStagePanelResizePointerDown}
+                            onDoubleClick={handleStagePanelResizeDoubleClick}
+                            role="separator"
+                            aria-orientation="vertical"
+                            tabIndex={-1}
+                        />
+
+                        <Box
                             className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}
+                            ref={stageAndTargetWrapperRef}
+                            style={stagePanelStyle}
                         >
                             <StageWrapper
                                 isFullScreen={isFullScreen}
@@ -575,6 +925,7 @@ GUIComponent.propTypes = {
     cardsVisible: PropTypes.bool,
     children: PropTypes.node,
     costumeLibraryVisible: PropTypes.bool,
+    soundLibraryVisible: PropTypes.bool,
     costumesTabVisible: PropTypes.bool,
     customStageSize: PropTypes.shape({
         width: PropTypes.number,
@@ -599,8 +950,8 @@ GUIComponent.propTypes = {
     onClickAccountNav: PropTypes.func,
     onClickAddonSettings: PropTypes.func,
     onClickDesktopSettings: PropTypes.func,
-    onClickNewWindow: PropTypes.func,
     onClickPackager: PropTypes.func,
+    onClickNewWindow: PropTypes.func,
     onClickLogo: PropTypes.func,
     onCloseAccountNav: PropTypes.func,
     onExtensionButtonClick: PropTypes.func,
@@ -611,6 +962,7 @@ GUIComponent.propTypes = {
     onOpenRegistration: PropTypes.func,
     onRequestCloseBackdropLibrary: PropTypes.func,
     onRequestCloseCostumeLibrary: PropTypes.func,
+    onRequestCloseSoundLibrary: PropTypes.func,
     onRequestCloseExtensionLibrary: PropTypes.func,
     onRequestCloseTelemetryModal: PropTypes.func,
     onSeeCommunity: PropTypes.func,
@@ -623,6 +975,7 @@ GUIComponent.propTypes = {
     onTelemetryModalOptOut: PropTypes.func,
     onToggleLoginOpen: PropTypes.func,
     onSetStageSize: PropTypes.func,
+    onSetFullScreen: PropTypes.func,
     renderLogin: PropTypes.func,
     securityManager: PropTypes.shape({}),
     showComingSoon: PropTypes.bool,
@@ -634,8 +987,11 @@ GUIComponent.propTypes = {
     telemetryModalVisible: PropTypes.bool,
     theme: PropTypes.instanceOf(Theme),
     tipsLibraryVisible: PropTypes.bool,
+    onOpenOnboarding: PropTypes.func,
+    onboardingVisible: PropTypes.bool,
     usernameModalVisible: PropTypes.bool,
     settingsModalVisible: PropTypes.bool,
+    shortcutManagerModalVisible: PropTypes.bool,
     customExtensionModalVisible: PropTypes.bool,
     fontsModalVisible: PropTypes.bool,
     unknownPlatformModalVisible: PropTypes.bool,
@@ -673,11 +1029,15 @@ const mapStateToProps = state => ({
     blocksId: state.scratchGui.timeTravel.year.toString(),
     stageSizeMode: state.scratchGui.stageSize.stageSize,
     theme: state.scratchGui.theme.theme,
-    locale: state.locales.locale
+    locale: state.locales.locale,
+    onboardingVisible: state.scratchGui.onboarding.visible,
+    shortcutManagerModalVisible: state.scratchGui.modals.shortcutManagerModal
 });
 
 const mapDispatchToProps = dispatch => ({
-    onSetStageSize: stageSize => dispatch(setStageSize(stageSize))
+    dispatch: dispatch,
+    onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
+    onOpenOnboarding: () => dispatch(showOnboarding())
 });
 
 export default injectIntl(connect(

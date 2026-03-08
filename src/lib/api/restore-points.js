@@ -309,9 +309,13 @@ const createRestorePoint = (
         throw new Error('There are no assets in this project');
     }
 
+    // Signal start of restore point creation (pauses sync)
+    vm.emit('RESTORE_POINT_START');
+
     generateThumbnail(vm).then(thumbnailData => {
         const transaction = db.transaction(ALL_STORES, 'readwrite');
         transaction.onerror = event => {
+            vm.emit('RESTORE_POINT_END'); // Ensure end is emitted on error
             rejectTransaction(new Error(`Creating restore point: ${event.target.error}`));
         };
 
