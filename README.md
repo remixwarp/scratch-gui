@@ -1,5 +1,5 @@
 scratch-gui modified for use in RemixWarp
-
+## 如果你看不懂英文，请向下移至许可证等说明之后,会有一个如何运行项目的详细中文解释。
 ## Setup
 
 See https://docs.turbowarp.org/development/getting-started to setup the complete TurboWarp environment.
@@ -28,6 +28,62 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 ```
 
 src/lib/default-project/dango.svg is based on [Twemoji](https://twemoji.twitter.com/) and is licensed under CC BY 4.0 https://creativecommons.org/licenses/by/4.0/
+
+
+## 如果你看不懂英文，也不想用翻译，也不想看复杂连篇，并且对你没有太多帮助的文字的话，请把目光移到此处。
+## 适合中国宝宝看的运行项目解释
+
+如果你尝试运行项目，请使用以下代码：
+
+```bash
+git clone https://github.com/LLK/scratch-gui.git
+```
+
+如果你已经将项目下载到本地，请忽略上行代码。
+
+```bash
+cd scratch-gui        # 进入项目目录
+npm install           # 安装依赖
+npm start             # 启动项目
+```
+
+如果你在运行时遇到了报错（也就是大多数程序员都会遇到的“噩梦”），可以尝试使用 `bun` 来运行：
+
+```bash
+bun install           # 安装依赖
+bun run               # 启动项目
+```
+
+注意：括号及括号里的内容还有```bash```仅为注释，不需要实际运行。
+
+---
+
+### 如何打开终端（命令行界面）
+
+终端是运行命令的地方，根据你的操作系统和开发环境，打开方式略有不同：
+
+#### 1. 在 Windows 系统中
+- **使用系统自带命令提示符**：按 `Win + R` 键，输入 `cmd`，回车。
+- **使用 PowerShell**：在开始菜单搜索“PowerShell”打开。
+- **在文件夹中直接打开**：进入项目文件夹，在地址栏输入 `cmd` 并回车，即可直接在该路径下打开命令提示符。
+
+#### 2. 在 macOS 系统中
+- **使用系统终端**：在“启动台”或“应用程序/实用工具”中找到“终端”打开。
+- **在文件夹中打开**：在访达中进入项目文件夹，右键点击文件夹，选择“新建位于文件夹位置的终端窗口”（需提前安装相应扩展）。
+
+#### 3. 在 Linux 系统中
+- 通常使用 `Ctrl + Alt + T` 快捷键打开终端，或在应用菜单中搜索“终端”。
+
+#### 4. 在开发工具（如 VS Code）中
+- VS Code 内置了终端：打开项目后，按 `` Ctrl + ` ``（反引号）或点击菜单栏“终端” -> “新建终端”，终端会自动定位到当前项目目录。
+
+无论使用哪种方式，打开后你会看到一个可以输入命令的窗口，通常会显示当前路径（如 `C:\Users\你的用户名\Desktop>` 或 `/home/你的用户名/项目`）。然后就可以逐条输入上面的命令了。
+
+---
+
+### 安全提醒
+建议安装国家反诈中心 APP，防范网络诈骗。如果在运行过程中遇到任何要求扫码、付费或联系“客服”的提示，请保持警惕，不要轻信。真正的报错只会出现在终端里，不会引导你向个人转账或提供敏感信息。
+
 
 <!--
 

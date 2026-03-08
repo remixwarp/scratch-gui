@@ -16,11 +16,19 @@ class AIPanel extends React.PureComponent {
             input: '',
             messages: [],
             loading: false,
-            error: null
+            error: null,
+            // 多步骤AI Agent状态
+            multiStepMode: false,
+            currentStep: 0,
+            totalSteps: 4,
+            stepStatus: ['pending', 'pending', 'pending', 'pending'], // pending, running, completed, error
+            stepContext: {}, // 存储各步骤的上下文
+            progressExpanded: true // 创作进度展开/收起状态
         };
         this.handleChange = this.handleChange.bind(this);
         this.handleSend = this.handleSend.bind(this);
         this.handleConvertToProject = this.handleConvertToProject.bind(this);
+        this.handleMultiStepStart = this.handleMultiStepStart.bind(this);
         this.messagesEnd = React.createRef();
         this.inputRef = React.createRef();
     }
@@ -260,6 +268,10 @@ class AIPanel extends React.PureComponent {
     - SUBSTACK不能指向包含它的积木
     - 确保积木连接关系是单向的，从绿旗开始，到结束积木结束
     - 检查每个积木的连接，确保没有形成环
+18. 禁止使用扩展：
+    - 不要使用任何Scratch扩展（如events、sensing等）
+    - 只使用基础积木（运动、外观、声音、画笔、数据、控制、侦测、运算）
+    - 不要在项目中添加extensions配置
 
 用户问题：`;
 
@@ -314,25 +326,449 @@ class AIPanel extends React.PureComponent {
         });
     }
 
-    async handleConvertToProject () {
-        // 获取最后一条AI回复
-        const lastMessage = this.state.messages
-            .filter(m => m.from === 'assistant')
-            .pop();
+    // 多步骤AI Agent处理方法
+    async handleMultiStepStart () {
+        const {input} = this.state;
+        if (!input) return;
         
-        if (!lastMessage) {
-            alert('请先让AI生成代码');
-            return;
+        this.setState({
+            multiStepMode: true,
+            currentStep: 1,
+            stepStatus: ['running', 'pending', 'pending', 'pending'],
+            stepContext: {userRequirement: input}
+        });
+        
+        // 开始第1步：设计结构
+        await this.executeStep1(input);
+    }
+    
+    // 第1步：设计程序结构
+    async executeStep1 (userRequirement) {
+        this.setState({
+            messages: [...this.state.messages, {from: 'system', text: '🚀 开始多步骤创作...\n\n📋 步骤1/4: 设计程序结构'}]
+        });
+        
+        const step1Prompt = `【任务】设计Scratch项目结构
+需求：${userRequirement}
+
+【输出格式】JSON对象，包含：
+{
+  "projectName": "项目名称",
+  "description": "项目描述",
+  "targets": [
+    {
+      "name": "角色名",
+      "isStage": false,
+      "variables": [{"name": "变量名", "id": 0}],
+      "lists": [{"name": "列表名"}],
+      "broadcasts": ["广播名"],
+      "blocks": [
+        {
+          "opcode": "积木类型",
+          "description": "功能描述",
+          "inputs": ["输入参数"],
+          "fields": ["字段"]
         }
+      ],
+      "costumes": [{"name": "造型名", "type": "svg"}],
+      "sounds": [{"name": "声音名"}]
+    }
+  ],
+  "stageVariables": [],
+  "stageLists": [],
+  "stageBroadcasts": []
+}
+
+【要求】
+- 详细列出每个角色需要的积木块
+- 明确每个积木的功能
+- 只输出JSON，不要解释文字`;
 
         try {
-            // 尝试解析JSON
-            let projectJson = lastMessage.text;
+            const response = await this.callAI(step1Prompt);
+            console.log('步骤1 AI响应:', response);
+            const structure = this.extractJSON(response);
+            console.log('步骤1 提取的结构:', structure);
             
+            this.setState(state => ({
+                stepContext: {...state.stepContext, structure},
+                stepStatus: ['completed', 'running', 'pending', 'pending'],
+                currentStep: 2,
+                messages: [...state.messages, {from: 'assistant', text: '✅ 步骤1完成：程序结构设计完成\n\n' + structure}]
+            }));
+            
+            // 自动进入第2步
+            await this.executeStep2(structure, userRequirement);
+        } catch (err) {
+            this.setState({
+                stepStatus: ['error', 'pending', 'pending', 'pending'],
+                error: '步骤1失败: ' + err.message
+            });
+        }
+    }
+    
+    // 第2步：编写代码
+    async executeStep2 (structure, userRequirement) {
+        this.setState(state => ({
+            messages: [...state.messages, {from: 'system', text: '💻 步骤2/4: 编写代码...'}]
+        }));
+        
+        const step2Prompt = `【任务】根据结构生成完整的Scratch project.json
+需求：${userRequirement}
+结构：${structure}
+
+【重要】必须输出完整的project.json格式，包含以下字段：
+{
+  "targets": [
+    {
+      "isStage": true,
+      "name": "Stage",
+      "variables": {},
+      "lists": {},
+      "broadcasts": {},
+      "blocks": {},
+      "comments": {},
+      "currentCostume": 0,
+      "costumes": [],
+      "sounds": [],
+      "volume": 100,
+      "layerOrder": 0
+    },
+    {
+      "isStage": false,
+      "name": "角色名",
+      "variables": {},
+      "lists": {},
+      "broadcasts": {},
+      "blocks": {
+        "blockId": {
+          "opcode": "event_whenflagclicked",
+          "next": "下一个blockId或null",
+          "parent": "上一个blockId或null",
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": true,
+          "x": 0,
+          "y": 0
+        }
+      },
+      "comments": {},
+      "currentCostume": 0,
+      "costumes": [
+        {
+          "name": "造型名",
+          "bitmapResolution": 1,
+          "dataFormat": "svg",
+          "assetId": "32位十六进制字符串",
+          "md5ext": "assetId.svg",
+          "rotationCenterX": 240,
+          "rotationCenterY": 180
+        }
+      ],
+      "sounds": [],
+      "volume": 100,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "size": 100,
+      "direction": 90,
+      "draggable": false,
+      "rotationStyle": "all around",
+      "layerOrder": 1
+    }
+  ],
+  "meta": {
+    "semver": "3.0.0",
+    "vm": "0.2.0",
+    "agent": "Mozilla/5.0"
+  }
+}
+
+【积木格式规则】
+1. inputs格式: "INPUT_NAME": [类型, [值类型, 值]] 或 [类型, "blockId"]
+   - 类型1: 数字/字符串输入
+   - 类型2: 积木输入（如SUBSTACK）
+   - 类型3: 广播输入
+   
+2. fields格式: "FIELD_NAME": ["值", null]
+
+3. 常见opcode示例：
+   - event_whenflagclicked: 事件类-当绿旗被点击
+   - control_forever: 控制类-重复执行
+   - motion_movesteps: 运动类-移动步数
+   - looks_say: 外观类-说
+
+4. 连接规则：
+   - next: 下一个积木的ID，没有则为null
+   - parent: 上一个积木的ID，没有则为null
+   - topLevel: 是否是积木链的顶部（第一个积木）
+
+【要求】
+- 严格按照结构设计生成代码
+- 确保所有积木连接正确
+- 循环积木必须有SUBSTACK输入
+- 直接输出完整JSON，不要代码块标记
+- 不要任何解释文字`;
+
+        try {
+            const response = await this.callAI(step2Prompt);
+            console.log('步骤2 AI响应长度:', response.length);
+            console.log('步骤2 AI响应前500字符:', response.substring(0, 500));
+            const code = this.extractJSON(response);
+            console.log('步骤2 提取的代码长度:', code.length);
+            console.log('步骤2 提取的代码前500字符:', code.substring(0, 500));
+            
+            // 验证提取的代码是否是有效的JSON
+            try {
+                const testParsed = JSON.parse(code);
+                console.log('步骤2 代码JSON验证通过，targets数量:', testParsed.targets ? testParsed.targets.length : 0);
+            } catch (e) {
+                console.error('步骤2 代码JSON验证失败:', e.message);
+            }
+            
+            this.setState(state => ({
+                stepContext: {...state.stepContext, code},
+                stepStatus: ['completed', 'completed', 'running', 'pending'],
+                currentStep: 3,
+                messages: [...state.messages, {from: 'assistant', text: '✅ 步骤2完成：代码编写完成'}]
+            }));
+            
+            // 自动进入第3步
+            await this.executeStep3(code, structure);
+        } catch (err) {
+            this.setState({
+                stepStatus: ['completed', 'error', 'pending', 'pending'],
+                error: '步骤2失败: ' + err.message
+            });
+        }
+    }
+    
+    // 第3步：修复代码
+    async executeStep3 (code, structure) {
+        this.setState(state => ({
+            messages: [...state.messages, {from: 'system', text: '🔧 步骤3/4: 修复代码...'}]
+        }));
+        
+        const step3Prompt = `【任务】检查并修复project.json中的错误
+代码：${code}
+
+【必须检查的问题】
+1. targets字段是否存在且是数组
+2. 每个target是否包含必需字段：
+   - isStage, name, variables, lists, broadcasts, blocks
+   - costumes, sounds, volume, layerOrder
+3. 积木连接是否正确：
+   - next/parent是否匹配
+   - 是否存在循环引用
+   - topLevel是否正确设置
+4. inputs/fields格式是否正确：
+   - inputs: [类型, [值类型, 值]] 或 [类型, "blockId"]
+   - fields: ["值", null]
+5. assetId是否是32位十六进制字符串
+6. 循环积木(control_forever等)是否有SUBSTACK输入
+
+【输出要求】
+- 直接输出修复后的完整JSON
+- 不要输出修复列表
+- 不要任何解释文字
+- 确保JSON格式正确`;
+
+        try {
+            const response = await this.callAI(step3Prompt);
+            console.log('步骤3 AI响应长度:', response.length);
+            console.log('步骤3 AI响应前500字符:', response.substring(0, 500));
+            const fixedCode = this.extractJSON(response);
+            console.log('步骤3 提取的代码长度:', fixedCode.length);
+            console.log('步骤3 提取的代码前500字符:', fixedCode.substring(0, 500));
+            
+            // 验证提取的代码是否是有效的JSON
+            try {
+                const testParsed = JSON.parse(fixedCode);
+                console.log('步骤3 代码JSON验证通过，targets数量:', testParsed.targets ? testParsed.targets.length : 0);
+            } catch (e) {
+                console.error('步骤3 代码JSON验证失败:', e.message);
+                console.log('步骤3 将使用原始代码');
+                // 如果修复失败，使用原始代码
+                this.setState(state => ({
+                    stepContext: {...state.stepContext, fixedCode: code},
+                    stepStatus: ['completed', 'completed', 'completed', 'running'],
+                    currentStep: 4,
+                    messages: [...state.messages, {from: 'assistant', text: '⚠️ 步骤3修复失败，使用原始代码继续'}]
+                }));
+                await this.executeStep4(structure, code);
+                return;
+            }
+            
+            this.setState(state => ({
+                stepContext: {...state.stepContext, fixedCode},
+                stepStatus: ['completed', 'completed', 'completed', 'running'],
+                currentStep: 4,
+                messages: [...state.messages, {from: 'assistant', text: '✅ 步骤3完成：代码修复完成'}]
+            }));
+            
+            // 自动进入第4步（SVG绘制可与代码生成并行）
+            await this.executeStep4(structure, fixedCode);
+        } catch (err) {
+            this.setState({
+                stepStatus: ['completed', 'completed', 'error', 'pending'],
+                error: '步骤3失败: ' + err.message
+            });
+        }
+    }
+    
+    // 第4步：绘制SVG
+    async executeStep4 (structure, code) {
+        this.setState(state => ({
+            messages: [...state.messages, {from: 'system', text: '🎨 步骤4/4: 绘制图形...'}]
+        }));
+        
+        const step4Prompt = `【任务】根据代码需求绘制SVG造型
+代码：${code}
+
+【从代码中提取信息】
+1. 找到所有角色的costumes字段
+2. 提取每个造型的name和assetId
+3. 根据角色功能设计合适的图形
+
+【SVG格式要求】
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 简洁的矢量图形 -->
+</svg>
+
+【输出格式】
+为每个造型输出：
+---造型名称---
+<svg>...</svg>
+
+【要求】
+- 图形要符合角色功能
+- 使用简洁的矢量图形
+- viewBox统一使用"0 0 100 100"
+- 直接输出SVG代码，不要解释`;
+
+        try {
+            const response = await this.callAI(step4Prompt);
+            console.log('步骤4 AI响应:', response);
+            
+            this.setState(state => ({
+                stepContext: {...state.stepContext, svg: response},
+                stepStatus: ['completed', 'completed', 'completed', 'completed'],
+                currentStep: 4,
+                multiStepMode: false,
+                messages: [...state.messages, 
+                    {from: 'assistant', text: '✅ 步骤4完成：图形绘制完成'},
+                    {from: 'system', text: '🎉 所有步骤完成！您可以点击"转换为作品"按钮下载项目。'}
+                ]
+            }));
+        } catch (err) {
+            this.setState({
+                stepStatus: ['completed', 'completed', 'completed', 'error'],
+                error: '步骤4失败: ' + err.message
+            });
+        }
+    }
+    
+    // 调用AI的通用方法
+    async callAI (prompt) {
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + API_KEY
+            },
+            body: JSON.stringify({
+                model: MODEL,
+                messages: [
+                    {role: 'system', content: '你是Scratch专家，只输出代码，不解释。'},
+                    {role: 'user', content: prompt}
+                ]
+            })
+        });
+        
+        const data = await response.json();
+        if (data && data.choices && data.choices[0] && data.choices[0].message) {
+            return data.choices[0].message.content;
+        }
+        throw new Error('AI响应格式错误');
+    }
+    
+    // 提取JSON
+    extractJSON (text) {
+        // 首先尝试提取markdown代码块
+        const codeBlockMatch = text.match(/```(?:json)?\n?([\s\S]*?)```/);
+        if (codeBlockMatch) {
+            const extracted = codeBlockMatch[1].trim();
+            // 验证提取的内容是否是有效的JSON开头
+            if (extracted.startsWith('{') || extracted.startsWith('[')) {
+                return extracted;
+            }
+        }
+        
+        // 如果没有代码块或提取的内容无效，尝试直接找JSON对象
+        // 找第一个 { 和最后一个 }
+        const firstBrace = text.indexOf('{');
+        const lastBrace = text.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            return text.substring(firstBrace, lastBrace + 1).trim();
+        }
+        
+        // 如果还是没有找到，返回原始文本
+        return text.trim();
+    }
+
+    async handleConvertToProject () {
+        console.log('=== 开始转换为作品 ===');
+        console.log('stepContext:', this.state.stepContext);
+        console.log('multiStepMode:', this.state.multiStepMode);
+        console.log('stepStatus:', this.state.stepStatus);
+        
+        // 首先检查stepContext中是否有修复后的代码
+        let projectJson = null;
+        let codeSource = '';
+        
+        if (this.state.stepContext && this.state.stepContext.fixedCode) {
+            projectJson = this.state.stepContext.fixedCode;
+            codeSource = 'stepContext.fixedCode';
+            console.log('使用stepContext.fixedCode');
+        } else if (this.state.stepContext && this.state.stepContext.code) {
+            projectJson = this.state.stepContext.code;
+            codeSource = 'stepContext.code';
+            console.log('使用stepContext.code');
+        } else {
+            // 如果stepContext中没有代码，从messages中查找包含JSON的消息
+            console.log('从messages中查找JSON代码');
+            const jsonMessage = this.state.messages
+                .filter(m => m.from === 'assistant' && m.text && m.text.includes('{'))
+                .pop();
+            
+            if (!jsonMessage) {
+                console.error('没有找到包含JSON的消息');
+                alert('请先让AI生成代码');
+                return;
+            }
+            
+            projectJson = jsonMessage.text;
+            codeSource = 'messages';
+            console.log('使用messages中的代码');
+        }
+        
+        if (!projectJson) {
+            console.error('projectJson为空');
+            alert('没有可用的代码');
+            return;
+        }
+        
+        console.log(`代码来源: ${codeSource}`);
+        console.log('代码长度:', projectJson.length);
+        console.log('代码前200字符:', projectJson.substring(0, 200));
+
+        try {
             // 如果包含markdown代码块，尝试提取
             const codeBlockMatch = projectJson.match(/```(?:json)?\n?([\s\S]*?)```/);
             if (codeBlockMatch) {
                 projectJson = codeBlockMatch[1].trim();
+                console.log('从markdown代码块中提取JSON');
             }
             
             // 清理可能的非法字符
@@ -353,6 +789,9 @@ class AIPanel extends React.PureComponent {
             let parsed;
             try {
                 parsed = JSON.parse(projectJson);
+                console.log('JSON解析成功');
+                console.log('parsed对象类型:', typeof parsed);
+                console.log('parsed对象键:', Object.keys(parsed));
             } catch (parseError) {
                 console.error('JSON解析错误:', parseError);
                 console.error('问题JSON内容:', projectJson.substring(0, 500));
@@ -371,9 +810,15 @@ class AIPanel extends React.PureComponent {
             
             // 确保是有效的Scratch项目格式
             if (!parsed.targets || !Array.isArray(parsed.targets)) {
-                alert('无效的Scratch项目格式');
+                console.error('无效的Scratch项目格式');
+                console.error('parsed.targets:', parsed.targets);
+                console.error('parsed完整内容:', JSON.stringify(parsed, null, 2));
+                alert('无效的Scratch项目格式：缺少targets字段或格式不正确\n\n请查看控制台了解详细信息');
                 return;
             }
+            
+            console.log('targets数量:', parsed.targets.length);
+            console.log('targets:', parsed.targets.map(t => ({name: t.name, isStage: t.isStage, blocks: Object.keys(t.blocks || {}).length})));
 
             // 检查积木结构是否存在循环引用
             const checkForCircularReferences = (target) => {
@@ -464,7 +909,226 @@ class AIPanel extends React.PureComponent {
                 return /^[a-f0-9]{32}$/.test(id);
             };
 
+            // 确保每个target都有至少1个costume
             for (const target of parsed.targets) {
+                if (!target.costumes || target.costumes.length === 0) {
+                    const assetId = generateValidAssetId();
+                    target.costumes = [
+                        {
+                            name: target.isStage ? 'backdrop1' : 'costume1',
+                            bitmapResolution: 1,
+                            dataFormat: 'svg',
+                            assetId: assetId,
+                            md5ext: `${assetId}.svg`,
+                            rotationCenterX: target.isStage ? 240 : 50,
+                            rotationCenterY: target.isStage ? 180 : 50
+                        }
+                    ];
+                    console.log(`为${target.name}添加了默认costume`);
+                }
+            }
+
+            // 修复扩展配置 - 移除不存在的events扩展
+            if (parsed.extensions) {
+                if (Array.isArray(parsed.extensions)) {
+                    // 如果是数组，过滤掉events扩展
+                    parsed.extensions = parsed.extensions.filter(ext => ext !== 'events' && ext !== 'sensing');
+                    console.log('从extensions数组中移除了events扩展');
+                } else if (typeof parsed.extensions === 'object') {
+                    // 如果是对象，删除events属性
+                    if (parsed.extensions.events) {
+                        delete parsed.extensions.events;
+                        console.log('从extensions对象中移除了events扩展');
+                    }
+                    if (parsed.extensions.sensing) {
+                        delete parsed.extensions.sensing;
+                        console.log('从extensions对象中移除了sensing扩展');
+                    }
+                }
+            }
+
+            // 确保所有costumes都有必需的字段
+            for (const target of parsed.targets) {
+                if (target.costumes) {
+                    for (const costume of target.costumes) {
+                        // 确保dataFormat存在
+                        if (!costume.dataFormat) {
+                            costume.dataFormat = 'svg';
+                            console.warn(`为${target.name}的costume ${costume.name} 添加默认dataFormat: svg`);
+                        }
+                        // 确保assetId存在且有效
+                        if (!costume.assetId || !isValidAssetId(costume.assetId)) {
+                            const newAssetId = generateValidAssetId();
+                            costume.assetId = newAssetId;
+                            console.warn(`为${target.name}的costume ${costume.name} 修复assetId`);
+                        }
+                        // 确保md5ext存在且格式正确
+                        const md5extPattern = /^[a-fA-F0-9]{32}\.[a-zA-Z]+$/;
+                        if (!costume.md5ext || !md5extPattern.test(costume.md5ext)) {
+                            // 生成正确格式的md5ext
+                            costume.md5ext = `${costume.assetId}.${costume.dataFormat}`;
+                            console.warn(`为${target.name}的costume ${costume.name} 修复md5ext: ${costume.md5ext}`);
+                        }
+                        // 确保rotationCenterX和rotationCenterY存在
+                        if (costume.rotationCenterX === undefined || costume.rotationCenterX === null) {
+                            costume.rotationCenterX = target.isStage ? 240 : 50;
+                        }
+                        if (costume.rotationCenterY === undefined || costume.rotationCenterY === null) {
+                            costume.rotationCenterY = target.isStage ? 180 : 50;
+                        }
+                    }
+                }
+            }
+
+            // 确保所有sounds都有正确的md5ext格式
+            for (const target of parsed.targets) {
+                if (target.sounds) {
+                    for (const sound of target.sounds) {
+                        // 确保assetId存在且有效
+                        if (!sound.assetId || !isValidAssetId(sound.assetId)) {
+                            const newAssetId = generateValidAssetId();
+                            sound.assetId = newAssetId;
+                            console.warn(`为${target.name}的sound 修复assetId`);
+                        }
+                        // 确保md5ext存在且格式正确
+                        const md5extPattern = /^[a-fA-F0-9]{32}\.[a-zA-Z]+$/;
+                        if (!sound.md5ext || !md5extPattern.test(sound.md5ext)) {
+                            // 生成正确格式的md5ext
+                            sound.md5ext = `${sound.assetId}.wav`;
+                            console.warn(`为${target.name}的sound 修复md5ext: ${sound.md5ext}`);
+                        }
+                    }
+                }
+            }
+
+            for (const target of parsed.targets) {
+                // 修复blocks中的inputs字段 - 确保是对象而不是数组或其他类型
+                if (target.blocks) {
+                    for (const [blockId, block] of Object.entries(target.blocks)) {
+                        if (block && typeof block === 'object') {
+                            // 确保inputs是对象
+                            if (block.inputs === undefined || block.inputs === null) {
+                                block.inputs = {};
+                            } else if (Array.isArray(block.inputs)) {
+                                // 如果inputs是数组，转换为对象
+                                console.warn(`修复block ${blockId}的inputs: 从数组转换为对象`);
+                                block.inputs = {};
+                            } else if (typeof block.inputs !== 'object') {
+                                console.warn(`修复block ${blockId}的inputs: 从${typeof block.inputs}转换为对象`);
+                                block.inputs = {};
+                            }
+                            
+                            // 修复inputs中的输入值 - 确保数组第一个元素是数字
+                            if (block.inputs && typeof block.inputs === 'object') {
+                                for (const [inputName, inputValue] of Object.entries(block.inputs)) {
+                                    if (Array.isArray(inputValue) && inputValue.length > 0) {
+                                        // 第一个元素必须是数字（输入类型：1=文字，2=积木，3=变量）
+                                        // 注意：SB3规范只允许1、2、3，4是无效的
+                                        const inputType = inputValue[0];
+                                        if (typeof inputType !== 'number' || ![1, 2, 3].includes(inputType)) {
+                                            // 尝试将字符串转换为数字
+                                            const numType = Number(inputType);
+                                            if (!isNaN(numType) && [1, 2, 3].includes(numType)) {
+                                                inputValue[0] = numType;
+                                                console.warn(`修复block ${blockId}的${inputName}输入类型: ${inputType} -> ${numType}`);
+                                            } else {
+                                                // 如果无法转换或值无效，默认为1（文字输入）
+                                                inputValue[0] = 1;
+                                                console.warn(`修复block ${blockId}的${inputName}输入类型: ${inputType} -> 1 (默认)`);
+                                            }
+                                        }
+                                    } else if (inputValue !== undefined && inputValue !== null) {
+                                        // 如果输入值不是数组，转换为适当的数组格式
+                                        console.warn(`修复block ${blockId}的${inputName}输入值: 从${typeof inputValue}转换为数组`);
+                                        // 默认为文字输入类型 (1)，值设置为空字符串
+                                        block.inputs[inputName] = [1, ''];
+                                    }
+                                }
+                            }
+                            
+                            // 确保fields是对象
+                            if (block.fields === undefined || block.fields === null) {
+                                block.fields = {};
+                            } else if (Array.isArray(block.fields)) {
+                                console.warn(`修复block ${blockId}的fields: 从数组转换为对象`);
+                                block.fields = {};
+                            } else if (typeof block.fields !== 'object') {
+                                console.warn(`修复block ${blockId}的fields: 从${typeof block.fields}转换为对象`);
+                                block.fields = {};
+                            }
+                        }
+                    }
+                }
+                
+                // 修复variables - 确保是对象且值为数组格式
+                if (target.variables === undefined || target.variables === null) {
+                    target.variables = {};
+                } else if (Array.isArray(target.variables)) {
+                    console.warn(`修复${target.name}的variables: 从数组转换为对象`);
+                    target.variables = {};
+                } else if (typeof target.variables !== 'object') {
+                    console.warn(`修复${target.name}的variables: 从${typeof target.variables}转换为对象`);
+                    target.variables = {};
+                } else {
+                    // 确保每个变量值都是数组格式: ["变量名", 初始值]
+                    for (const [varId, varValue] of Object.entries(target.variables)) {
+                        if (!Array.isArray(varValue) || varValue.length < 2) {
+                            console.warn(`修复${target.name}的变量 ${varId}: 从${typeof varValue}转换为数组格式`);
+                            // 尝试提取变量名和初始值
+                            let varName = varId;
+                            let initialValue = 0;
+                            
+                            if (typeof varValue === 'string') {
+                                varName = varValue;
+                            } else if (typeof varValue === 'number') {
+                                initialValue = varValue;
+                            } else if (Array.isArray(varValue) && varValue.length > 0) {
+                                varName = varValue[0];
+                                initialValue = varValue[1] || 0;
+                            }
+                            
+                            target.variables[varId] = [varName, initialValue];
+                        }
+                    }
+                }
+                
+                // 修复lists - 确保是对象且值为数组格式
+                if (target.lists === undefined || target.lists === null) {
+                    target.lists = {};
+                } else if (Array.isArray(target.lists)) {
+                    console.warn(`修复${target.name}的lists: 从数组转换为对象`);
+                    target.lists = {};
+                } else if (typeof target.lists !== 'object') {
+                    console.warn(`修复${target.name}的lists: 从${typeof target.lists}转换为对象`);
+                    target.lists = {};
+                } else {
+                    // 确保每个列表值都是数组格式: ["列表名", []]
+                    for (const [listId, listValue] of Object.entries(target.lists)) {
+                        if (!Array.isArray(listValue) || listValue.length < 2) {
+                            console.warn(`修复${target.name}的列表 ${listId}: 从${typeof listValue}转换为数组格式`);
+                            // 尝试提取列表名
+                            let listName = listId;
+                            if (typeof listValue === 'string') {
+                                listName = listValue;
+                            } else if (Array.isArray(listValue) && listValue.length > 0) {
+                                listName = listValue[0];
+                            }
+                            target.lists[listId] = [listName, []];
+                        }
+                    }
+                }
+                
+                // 修复broadcasts - 确保是对象
+                if (target.broadcasts === undefined || target.broadcasts === null) {
+                    target.broadcasts = {};
+                } else if (Array.isArray(target.broadcasts)) {
+                    console.warn(`修复${target.name}的broadcasts: 从数组转换为对象`);
+                    target.broadcasts = {};
+                } else if (typeof target.broadcasts !== 'object') {
+                    console.warn(`修复${target.name}的broadcasts: 从${typeof target.broadcasts}转换为对象`);
+                    target.broadcasts = {};
+                }
+                
                 // 修复costumes的assetId
                 if (target.costumes) {
                     for (const costume of target.costumes) {
@@ -591,7 +1255,7 @@ class AIPanel extends React.PureComponent {
         const isAgent = type === 'agent';
         const placeholder = isAgent ? '告诉AI你想做什么？' : '聊聊你的代码...';
         const warningText = isAgent 
-            ? '内容为AI生成,请注意仔细鉴别<br/>Bata测试版：有极大的概率会导致作品崩溃或生成积木错误。<br/>如果项目较复杂，等待时间可能较长,请耐心等待。' 
+            ? '内容为AI生成,请注意仔细鉴别<br/>Bata测试版：有极大的概率会导致作品崩溃或生成积木错误。<br/>分布式创作目前还未完善，建议进行直接发送。<br/>如果项目较复杂，等待时间可能较长,请耐心等待。' 
             : '内容为AI生成,请注意仔细鉴别<br/>此功能仅作为AI辅助编程,不能帮你编写代码。';
         
         return (
@@ -599,7 +1263,8 @@ class AIPanel extends React.PureComponent {
                 {this.props.showHeader !== false && (
                     <div className={styles.header}>{isAgent ? 'AI Agent' : 'AI Chat'}</div>
                 )}
-                <div className={styles.messagesWrapper}>
+                <div className={styles.scrollableContent}>
+                    <div className={styles.messagesWrapper}>
                     <div className={styles.messages}>
                         {this.state.messages.map((m, i) => (
                             <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
@@ -613,27 +1278,150 @@ class AIPanel extends React.PureComponent {
                         <div ref={this.messagesEnd} />
                     </div>
                 </div>
-                {this.state.loading && <div className={styles.loading}>思考中...</div>}
+                {/* 多步骤进度显示 */}
+                {isAgent && this.state.multiStepMode && (
+                    <div className={classNames(styles.progressContainer, {
+                        [styles.progressCollapsed]: !this.state.progressExpanded
+                    })}>
+                        {this.state.progressExpanded ? (
+                            // 展开状态
+                            <>
+                                <div 
+                                    className={styles.progressHeader}
+                                    onClick={() => this.setState({progressExpanded: false})}
+                                    style={{cursor: 'pointer'}}
+                                >
+                                    <span className={styles.progressTitle}>🚀 多步骤创作进度</span>
+                                    <div className={styles.progressHeaderRight}>
+                                        <span className={styles.progressCounter}>步骤 {this.state.currentStep}/4</span>
+                                        <button 
+                                            className={styles.progressToggle}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                this.setState({progressExpanded: false});
+                                            }}
+                                        >
+                                            ▼
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className={styles.progressBar}>
+                                    <div 
+                                        className={styles.progressFill} 
+                                        style={{width: `${(this.state.currentStep / this.state.totalSteps) * 100}%`}}
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            // 收缩状态 - 窄条显示
+                            <div 
+                                className={styles.progressHeaderCollapsed}
+                                onClick={() => this.setState({progressExpanded: true})}
+                                style={{cursor: 'pointer'}}
+                            >
+                                <span className={styles.progressStepIndicator}>第{this.state.currentStep}步</span>
+                                <div className={styles.progressBarCollapsed}>
+                                    <div 
+                                        className={styles.progressFillCollapsed} 
+                                        style={{width: `${(this.state.currentStep / this.state.totalSteps) * 100}%`}}
+                                    />
+                                </div>
+                                <button 
+                                    className={styles.progressToggle}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        this.setState({progressExpanded: true});
+                                    }}
+                                >
+                                    ▶
+                                </button>
+                            </div>
+                        )}
+                        {this.state.progressExpanded && (
+                            <div className={styles.stepList}>
+                                {[
+                                    {icon: '📋', name: '设计程序结构'},
+                                    {icon: '💻', name: '编写代码'},
+                                    {icon: '🔧', name: '修复代码'},
+                                    {icon: '🎨', name: '绘制图形'}
+                                ].map((step, index) => {
+                                    const status = this.state.stepStatus[index];
+                                    const isActive = index + 1 === this.state.currentStep;
+                                    return (
+                                        <div 
+                                            key={index} 
+                                            className={classNames(styles.stepItem, {
+                                                [styles.stepActive]: isActive,
+                                                [styles.stepCompleted]: status === 'completed',
+                                                [styles.stepError]: status === 'error'
+                                            })}
+                                        >
+                                            <span className={styles.stepIcon}>
+                                                {status === 'completed' ? '✅' : 
+                                                 status === 'error' ? '❌' : 
+                                                 status === 'running' ? '⏳' : 
+                                                 step.icon}
+                                            </span>
+                                            <span className={styles.stepName}>{step.name}</span>
+                                            {isActive && <span className={styles.stepStatus}>进行中...</span>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+                
+                {this.state.loading && !this.state.multiStepMode && <div className={styles.loading}>思考中...</div>}
                 {this.state.error && <div className={styles.error}>{this.state.error}</div>}
                 <div className={styles.controls}>
-                    <textarea ref={this.inputRef} className={styles.input} value={this.state.input} onChange={this.handleChange} placeholder={placeholder} />
+                    <textarea 
+                        ref={this.inputRef} 
+                        className={styles.input} 
+                        value={this.state.input} 
+                        onChange={this.handleChange} 
+                        placeholder={placeholder} 
+                        disabled={this.state.multiStepMode}
+                    />
                     <div className={styles.actions}>
-                        <Button onClick={this.handleSend} className={styles.sendButton} disabled={this.state.loading}>
+                        {isAgent && !this.state.multiStepMode && (
+                            <Button 
+                                onClick={this.handleMultiStepStart} 
+                                className={classNames(styles.multiStepButton, {
+                                    [styles.multiStepButtonDisabled]: this.state.loading || !this.state.input
+                                })}
+                                disabled={this.state.loading || !this.state.input}
+                            >
+                                🚀 多步骤创作
+                            </Button>
+                        )}
+                        <Button 
+                            onClick={this.handleSend} 
+                            className={styles.sendButton} 
+                            disabled={this.state.loading || this.state.multiStepMode}
+                        >
                             发送
                         </Button>
                         {isAgent && (
                             <Button 
                                 onClick={this.handleConvertToProject} 
                                 className={classNames(styles.convertButton, {
-                                    [styles.convertButtonDisabled]: this.state.loading || !this.state.messages.some(m => m.from === 'assistant')
+                                    [styles.convertButtonDisabled]: this.state.loading || 
+                                        (this.state.multiStepMode ? 
+                                            !this.state.stepStatus.every(s => s === 'completed') : 
+                                            !this.state.messages.some(m => m.from === 'assistant'))
                                 })}
-                                disabled={this.state.loading || !this.state.messages.some(m => m.from === 'assistant')}
+                                disabled={this.state.loading || 
+                                    (this.state.multiStepMode ? 
+                                        !this.state.stepStatus.every(s => s === 'completed') : 
+                                        !this.state.messages.some(m => m.from === 'assistant'))}
                             >
                                 转换为作品
                             </Button>
                         )}
                     </div>
                 </div>
+                {/* 警告消息 - 放在底部 */}
                 <div className={styles.warningBanner}>
                     <div className={styles.warningIcon}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -647,6 +1435,7 @@ class AIPanel extends React.PureComponent {
                         <span dangerouslySetInnerHTML={{__html: warningText}} />
                     </div>
                 </div>
+            </div>
             </div>
         );
     }
