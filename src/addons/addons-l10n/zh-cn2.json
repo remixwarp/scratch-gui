@@ -391,5 +391,19 @@
   "": "生成中文code",
   "转换为中文-code/copied": "中文 code 已复制到剪贴板",
   "转换为中文-code/copy_prompt": "复制中文 code:",
-  "转换为中文-code/error": "生成中文code 时出错"
+  "转换为中文-code/error": "生成中文code 时出错",
+  "stage-camera/@name": "舞台相机控制",
+  "stage-camera/@description": "为舞台添加相机控制功能，支持缩放、平移和全屏。在使用视频侦测或人脸检测扩展时特别有用。",
+  "stage-camera/@settings-showControls": "显示相机控制",
+  "stage-camera/@settings-autoHide": "不使用时自动隐藏",
+  "stage-camera/camera-title": "相机",
+  "stage-camera/hide": "隐藏",
+  "stage-camera/zoom-in": "放大",
+  "stage-camera/zoom-out": "缩小",
+  "stage-camera/reset": "重置",
+  "stage-camera/fullscreen": "全屏",
+  "stage-camera/window-mode": "窗口模式",
+  "stage-camera/fixed-mode": "固定模式",
+  "stage-camera/stage-window": "舞台窗口",
+  "stage-camera/show-camera": "显示相机控制"
 }

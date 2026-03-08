@@ -8,6 +8,7 @@ import AddonHooks from '../../addons/hooks.js';
 import localesReducer, {initLocale, localesInitialState} from '../../reducers/locales.js';
 
 import {setPlayer, setFullScreen} from '../../reducers/mode.js';
+
 import locales from '@remixwarp/scratch-l10n';
 import {detectLocale} from '../utils/detect-locale';
 

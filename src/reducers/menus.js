@@ -18,8 +18,10 @@ const MENU_FONTS = 'fontsMenu';
 const MENU_ERRORS = 'errorsMenu';
 const MENU_CUSTOM_THEMES = 'customThemesMenu';
 const MENU_WORKSPACE_BOOKMARKS = 'workspaceBookmarksMenu';
+const MENU_EDITOR = 'editorMenu';
+const MENU_TOOLS = 'toolsMenu';
 const MENU_AI = 'aiMenu';
-const MENU_COMPATIBILITY = 'compatibilityMenu';
+const MENU_ICON_PACK = 'iconPackMenu';
 
 class Menu {
     constructor (id) {
@@ -69,17 +71,19 @@ const rootMenu = new Menu('root')
             .addChild(new Menu(MENU_WALLPAPER))
             .addChild(new Menu(MENU_FONTS))
             .addChild(new Menu(MENU_BLOCKS_THEME))
+            .addChild(new Menu(MENU_ICON_PACK))
     )
     .addChild(new Menu(MENU_FILE))
     .addChild(new Menu(MENU_WORKSPACE_BOOKMARKS))
     .addChild(new Menu(MENU_EDIT))
+    .addChild(new Menu(MENU_EDITOR))
+    .addChild(new Menu(MENU_TOOLS))
+    .addChild(new Menu(MENU_AI))
     .addChild(new Menu(MENU_MODE))
     .addChild(new Menu(MENU_SETTINGS))
     .addChild(new Menu(MENU_LOGIN))
     .addChild(new Menu(MENU_ACCOUNT))
-    .addChild(new Menu(MENU_ABOUT))
-    .addChild(new Menu(MENU_COMPATIBILITY))
-    .addChild(new Menu(MENU_AI));
+    .addChild(new Menu(MENU_ABOUT));
 
 const initialState = {
     [MENU_ABOUT]: false,
@@ -99,8 +103,10 @@ const initialState = {
     [MENU_CUSTOM_THEMES]: false,
     [MENU_ERRORS]: false,
     [MENU_WORKSPACE_BOOKMARKS]: false,
+    [MENU_EDITOR]: false,
+    [MENU_TOOLS]: false,
     [MENU_AI]: false,
-    [MENU_COMPATIBILITY]: false
+    [MENU_ICON_PACK]: false
 };
 
 const reducer = function (state, action) {
@@ -204,17 +210,25 @@ const openErrorsMenu = () => openMenu(MENU_ERRORS);
 const closeErrorsMenu = () => closeMenu(MENU_ERRORS);
 const errorsMenuOpen = state => state.scratchGui.menus[MENU_ERRORS];
 
+const openCustomThemes = () => openMenu(MENU_CUSTOM_THEMES);
+const closeCustomThemes = () => closeMenu(MENU_CUSTOM_THEMES);
+const customThemesOpen = state => state.scratchGui.menus[MENU_CUSTOM_THEMES];
+
+const openEditorMenu = () => openMenu(MENU_EDITOR);
+const closeEditorMenu = () => closeMenu(MENU_EDITOR);
+const editorMenuOpen = state => state.scratchGui.menus[MENU_EDITOR];
+
+const openToolsMenu = () => openMenu(MENU_TOOLS);
+const closeToolsMenu = () => closeMenu(MENU_TOOLS);
+const toolsMenuOpen = state => state.scratchGui.menus[MENU_TOOLS];
+
 const openAIMenu = () => openMenu(MENU_AI);
 const closeAIMenu = () => closeMenu(MENU_AI);
 const aiMenuOpen = state => state.scratchGui.menus[MENU_AI];
 
-const openCompatibilityMenu = () => openMenu(MENU_COMPATIBILITY);
-const closeCompatibilityMenu = () => closeMenu(MENU_COMPATIBILITY);
-const compatibilityMenuOpen = state => state.scratchGui.menus[MENU_COMPATIBILITY];
-
-const openCustomThemes = () => openMenu(MENU_CUSTOM_THEMES);
-const closeCustomThemes = () => closeMenu(MENU_CUSTOM_THEMES);
-const customThemesOpen = state => state.scratchGui.menus[MENU_CUSTOM_THEMES];
+const openIconPackMenu = () => openMenu(MENU_ICON_PACK);
+const closeIconPackMenu = () => closeMenu(MENU_ICON_PACK);
+const iconPackMenuOpen = state => state.scratchGui.menus[MENU_ICON_PACK];
 
 export {
     reducer as default,
@@ -267,13 +281,19 @@ export {
     openErrorsMenu,
     closeErrorsMenu,
     errorsMenuOpen,
+    openCustomThemes,
+    closeCustomThemes,
+    customThemesOpen,
+    openEditorMenu,
+    closeEditorMenu,
+    editorMenuOpen,
+    openToolsMenu,
+    closeToolsMenu,
+    toolsMenuOpen,
     openAIMenu,
     closeAIMenu,
     aiMenuOpen,
-    openCompatibilityMenu,
-    closeCompatibilityMenu,
-    compatibilityMenuOpen,
-    openCustomThemes,
-    closeCustomThemes,
-    customThemesOpen
+    openIconPackMenu,
+    closeIconPackMenu,
+    iconPackMenuOpen
 };

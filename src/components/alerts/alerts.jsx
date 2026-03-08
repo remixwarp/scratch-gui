@@ -3,21 +3,20 @@ import PropTypes from 'prop-types';
 
 import Box from '../box/box.jsx';
 import Alert from '../../containers/alert.jsx';
-import DailyQuote from '../quotes/daily-quote.jsx';
 
 import styles from './alerts.css';
 
 const AlertsComponent = ({
     alertsList,
     className,
-    onCloseAlert
+    onCloseAlert,
+    children
 }) => (
     <Box
         bounds="parent"
         className={className}
     >
         <Box className={styles.alertsInnerContainer} >
-            <DailyQuote alertsList={alertsList} />
             {alertsList.map((a, index) => (
                 <Alert
                     closeButton={a.closeButton}
@@ -36,6 +35,7 @@ const AlertsComponent = ({
                     onCloseAlert={onCloseAlert}
                 />
             ))}
+            {children}
         </Box>
     </Box>
 );
@@ -43,7 +43,8 @@ const AlertsComponent = ({
 AlertsComponent.propTypes = {
     alertsList: PropTypes.arrayOf(PropTypes.object),
     className: PropTypes.string,
-    onCloseAlert: PropTypes.func
+    onCloseAlert: PropTypes.func,
+    children: PropTypes.node
 };
 
 export default AlertsComponent;

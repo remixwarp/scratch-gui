@@ -88,4 +88,5 @@ export default {
   "green-flag-order": () => import(/* webpackChunkName: "addon-entry-green-flag-order" */ "../addons/green-flag-order/_runtime_entry.js"),
   "remove-extension-button": () => import(/* webpackChunkName: "addon-entry-remove-extension-button" */ "../addons/remove-extension-button/_runtime_entry.js"),
   "daily-quote": () => import(/* webpackChunkName: "addon-entry-daily-quote" */ "../addons/daily-quote/_runtime_entry.js"),
+  "stage-camera": () => import(/* webpackChunkName: "addon-entry-stage-camera" */ "../addons/stage-camera/_runtime_entry.js"),
 };

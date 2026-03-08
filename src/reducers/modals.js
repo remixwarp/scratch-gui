@@ -20,6 +20,10 @@ const MODAL_UNKNOWN_PLATFORM = 'unknownPlatformModal';
 const MODAL_INVALID_PROJECT = 'invalidProjectModal';
 const MODAL_EXTENSION_MANAGER = 'extensionManagerModal';
 const MODAL_GIT = 'gitModal';
+const MODAL_PREFERENCES = 'preferencesModal';
+const MODAL_SIMPLE_DIALOG = 'simpleDialog';
+const MODAL_ONBOARDING = 'onboardingModal';
+const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
 const MODAL_AI = 'aiModal';
 const MODAL_AI_CHAT = 'aiChatModal';
 const MODAL_AI_AGENT = 'aiAgentModal';
@@ -44,6 +48,10 @@ const initialState = {
     [MODAL_INVALID_PROJECT]: false,
     [MODAL_EXTENSION_MANAGER]: false,
     [MODAL_GIT]: false,
+    [MODAL_PREFERENCES]: false,
+    [MODAL_SIMPLE_DIALOG]: false,
+    [MODAL_ONBOARDING]: false,
+    [MODAL_SHORTCUT_MANAGER]: false,
     [MODAL_AI]: false,
     [MODAL_AI_CHAT]: false,
     [MODAL_AI_AGENT]: false
@@ -54,21 +62,26 @@ const reducer = function (state, action) {
     switch (action.type) {
     case OPEN_MODAL:
         return Object.assign({}, state, {
-            [action.modal]: action.props || true
+            [action.modal]: true
         });
     case CLOSE_MODAL:
         return Object.assign({}, state, {
-            [action.modal]: false
+            [action.modal]: false,
+            simpleDialogConfig: null
+        });
+    case 'scratch-gui/modals/SHOW_SIMPLE_DIALOG':
+        return Object.assign({}, state, {
+            [MODAL_SIMPLE_DIALOG]: true,
+            simpleDialogConfig: action.dialogConfig
         });
     default:
         return state;
     }
 };
-const openModal = function (modal, props) {
+const openModal = function (modal) {
     return {
         type: OPEN_MODAL,
-        modal: modal,
-        props: props
+        modal: modal
     };
 };
 const closeModal = function (modal) {
@@ -134,14 +147,50 @@ const openExtensionManagerModal = function () {
 const openGitModal = function () {
     return openModal(MODAL_GIT);
 };
-const openAIModal = function (type = 'chat') {
-    return openModal(MODAL_AI, {type});
+const openPreferencesModal = function () {
+    return openModal(MODAL_PREFERENCES);
 };
-const openAIChatModal = function () {
-    return openModal(MODAL_AI_CHAT);
+const openOnboardingModal = function () {
+    return openModal(MODAL_ONBOARDING);
 };
-const openAIAgentModal = function () {
-    return openModal(MODAL_AI_AGENT);
+const openShortcutManagerModal = function () {
+    return openModal(MODAL_SHORTCUT_MANAGER);
+};
+const openAIModal = function (config) {
+    return {
+        type: OPEN_MODAL,
+        modal: MODAL_AI,
+        aiConfig: config
+    };
+};
+const closeAIModal = function () {
+    return closeModal(MODAL_AI);
+};
+const openAIChatModal = function (config) {
+    return {
+        type: OPEN_MODAL,
+        modal: MODAL_AI_CHAT,
+        aiConfig: config
+    };
+};
+const closeAIChatModal = function () {
+    return closeModal(MODAL_AI_CHAT);
+};
+const openAIAgentModal = function (config) {
+    return {
+        type: OPEN_MODAL,
+        modal: MODAL_AI_AGENT,
+        aiConfig: config
+    };
+};
+const closeAIAgentModal = function () {
+    return closeModal(MODAL_AI_AGENT);
+};
+const openSimpleDialog = function (dialogConfig) {
+    return {
+        type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
+        dialogConfig
+    };
 };
 const closeBackdropLibrary = function () {
     return closeModal(MODAL_BACKDROP_LIBRARY);
@@ -200,20 +249,19 @@ const closeExtensionManagerModal = function () {
 const closeGitModal = function () {
     return closeModal(MODAL_GIT);
 };
-const closeAIModal = function () {
-    return closeModal(MODAL_AI);
+const closePreferencesModal = function () {
+    return closeModal(MODAL_PREFERENCES);
 };
-const closeAIChatModal = function () {
-    return closeModal(MODAL_AI_CHAT);
+const closeOnboardingModal = function () {
+    return closeModal(MODAL_ONBOARDING);
 };
-const closeAIAgentModal = function () {
-    return closeModal(MODAL_AI_AGENT);
+const closeShortcutManagerModal = function () {
+    return closeModal(MODAL_SHORTCUT_MANAGER);
 };
 export {
     reducer as default,
     initialState as modalsInitialState,
-    MODAL_AI_CHAT,
-    MODAL_AI_AGENT,
+    closeModal,
     openBackdropLibrary,
     openCostumeLibrary,
     openExtensionLibrary,
@@ -233,9 +281,16 @@ export {
     openInvalidProjectModal,
     openExtensionManagerModal,
     openGitModal,
+    openPreferencesModal,
+    openOnboardingModal,
+    openShortcutManagerModal,
     openAIModal,
+    closeAIModal,
     openAIChatModal,
+    closeAIChatModal,
     openAIAgentModal,
+    closeAIAgentModal,
+    openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,
     closeExtensionLibrary,
@@ -255,7 +310,7 @@ export {
     closeInvalidProjectModal,
     closeExtensionManagerModal,
     closeGitModal,
-    closeAIModal,
-    closeAIChatModal,
-    closeAIAgentModal
+    closePreferencesModal,
+    closeOnboardingModal,
+    closeShortcutManagerModal
 };

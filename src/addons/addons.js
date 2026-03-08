@@ -85,7 +85,8 @@ const addons = [
     'no-category-text',
     'green-flag-order',
     'remove-extension-button',
-    'workspace-tabs'
+    'workspace-tabs',
+    'stage-camera'
 ];
 
 const newAddons = [

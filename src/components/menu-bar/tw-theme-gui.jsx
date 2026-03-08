@@ -12,55 +12,41 @@ import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
 
-import {Check} from 'lucide-react';
-
-const ThemeIcon = ({id}) => {
-    return (
-        <svg
-            className={classNames(styles.icon, "lucide")}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            dangerouslySetInnerHTML={{ __html: GUI_MAP[id].icon }}
-        />
-    );
-};
+const ThemeIcon = ({id}) => (
+    <svg
+        className={classNames(styles.icon, 'lucide')}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        dangerouslySetInnerHTML={{__html: GUI_MAP[id].icon}}
+    />
+);
 
 ThemeIcon.propTypes = {
     id: PropTypes.string
 };
 
-const ThemeMenuItem = props => (
-    <MenuItem onClick={props.onClick}>
-        <div className={styles.option}>
-            <Check
-                className={classNames(styles.check, {[styles.selected]: props.isSelected})}
-                size={15}
-            />
-            <ThemeIcon id={props.id} />
-            <span className={styles.themeName}>
-                {typeof props.name === 'string' ? (
+const ThemeMenuItem = props => {
+    return (
+        <MenuItem onClick={props.onClick}>
+            <div className={styles.option}>
+                <span className={classNames(styles.check, {[styles.selected]: props.isSelected}, styles.checkText)}>✓</span>
+                <ThemeIcon id={props.id} />
+                <span className={styles.name}>
                     <FormattedMessage
-                        defaultMessage="{theme}"
-                        description="Label for theme option"
-                        id="tw.theme.option"
-                        values={{
-                            theme: props.name
-                        }}
+                        {...props.name}
                     />
-                ) : (
-                    <FormattedMessage {...props.name} />
-                )}
-            </span>
-        </div>
-    </MenuItem>
-);
+                </span>
+            </div>
+        </MenuItem>
+    );
+};
 
 ThemeMenuItem.propTypes = {
     id: PropTypes.string,
     isSelected: PropTypes.bool,
     onClick: PropTypes.func,
-    name: PropTypes.oneOfType([PropTypes.string, PropTypes.object])
+    name: PropTypes.string
 };
 
 const GuiThemeMenu = ({

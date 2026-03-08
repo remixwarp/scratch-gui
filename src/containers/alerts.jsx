@@ -8,6 +8,7 @@ import {
 } from '../reducers/alerts';
 
 import AlertsComponent from '../components/alerts/alerts.jsx';
+import DailyQuote from '../components/quotes/daily-quote.jsx';
 
 const Alerts = ({
     alertsList,
@@ -15,11 +16,12 @@ const Alerts = ({
     onCloseAlert
 }) => (
     <AlertsComponent
-        // only display standard and extension alerts here
         alertsList={filterPopupAlerts(alertsList)}
         className={className}
         onCloseAlert={onCloseAlert}
-    />
+    >
+        <DailyQuote alertsList={alertsList} />
+    </AlertsComponent>
 );
 
 Alerts.propTypes = {

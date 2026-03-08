@@ -47,6 +47,9 @@ const startDrag = (index, e, dragging, setGradientColors, previewRef) => {
         dragging.current = {index: null, rect: null};
     };
 
+    dragging.current.moveHandler = move;
+    dragging.current.upHandler = up;
+
     document.addEventListener('mousemove', move);
     document.addEventListener('mouseup', up);
     document.addEventListener('touchmove', move, {passive: false});
@@ -55,7 +58,8 @@ const startDrag = (index, e, dragging, setGradientColors, previewRef) => {
 
 // Self-contained gradient creator/editor components so dialogs continue to
 // function independently of the parent menu component's mounted state.
-const GradientCreatorApp = props => {
+const GradientCreatorApp = injectIntl(props => {
+    const {intl} = props;
     const [name, setName] = React.useState(props.initialName || '');
     const [description, setDescription] = React.useState(props.initialDescription || '');
     const [gradientColors, setGradientColors] = React.useState(props.initialGradientColors || [
@@ -64,12 +68,53 @@ const GradientCreatorApp = props => {
     ]);
     const [direction, setDirection] = React.useState(props.initialDirection || 90);
     const [primaryColor, setPrimaryColor] = React.useState(props.initialPrimaryColor || '#ff6b6b');
+    const [selectedPreset, setSelectedPreset] = React.useState('');
+    const [hoveredPreset, setHoveredPreset] = React.useState('');
+    const [isDragging, setIsDragging] = React.useState(null);
+    const [isPreviewActive, setIsPreviewActive] = React.useState(false);
+
+    const previewRef = React.useRef(null);
+    const dragging = React.useRef({index: null, rect: null});
+
+    const presetNameToKey = {
+        'Sunset': 'tw.customThemes.preset.sunset',
+        'Ocean': 'tw.customThemes.preset.ocean',
+        'Forest': 'tw.customThemes.preset.forest',
+        'Purple Rain': 'tw.customThemes.preset.purpleRain',
+        'Fire': 'tw.customThemes.preset.fire',
+        'Aurora': 'tw.customThemes.preset.aurora',
+        'Space': 'tw.customThemes.preset.space',
+        'Cherry': 'tw.customThemes.preset.cherry'
+    };
+
+    const handlePreview = async () => {
+        if (isPreviewActive) {
+            setIsPreviewActive(false);
+            if (props.onPreview) {
+                props.onPreview('', [], '', 90);
+            }
+            return;
+        }
+
+        if (!name.trim()) {
+            await showAlert(intl.formatMessage({defaultMessage: 'Please enter a theme name first', id: 'tw.customThemes.error.themeNameRequired'}));
+            return;
+        }
+
+        if (props.onPreview) {
+            props.onPreview(
+                name,
+                gradientColors,
+                primaryColor,
+                direction
+            );
+            setIsPreviewActive(true);
+        }
+    };
 
     const handleAddColorStop = () => {
-        const newPosition = Math.round(
-            gradientColors.reduce((sum, stop) => sum + stop.position, 0) / gradientColors.length
-        );
-        const next = [...gradientColors, {color: '#ffffff', position: Math.max(0, Math.min(100, newPosition))}];
+        const newPosition = 50;
+        const next = [...gradientColors, {color: '#ffffff', position: newPosition}];
         next.sort((a, b) => a.position - b.position);
         setGradientColors(next);
     };
@@ -86,362 +131,360 @@ const GradientCreatorApp = props => {
         if (index === 0) setPrimaryColor(color);
     };
 
-    const previewRef = React.useRef(null);
-    const dragging = React.useRef({index: null, rect: null});
-
-    return (
-        <div
-            className={styles.customThemeDialogContent}
-            style={{width: '100%', height: '100%', boxSizing: 'border-box', overflow: 'auto'}}
-        >
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Name"
-                    id="tw.customThemes.gradientDialog.name"
-                /></label>
-                <input
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder={props.intl.formatMessage({
-                        defaultMessage: 'My Gradient Theme',
-                        id: 'tw.customThemes.placeholder.gradientName'
-                    })}
-                    maxLength={50}
-                />
-            </div>
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Description (optional)"
-                    id="tw.customThemes.createDialog.description"
-                /></label>
-                <textarea
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    placeholder={props.intl.formatMessage({
-                        defaultMessage: 'A custom gradient theme',
-                        id: 'tw.customThemes.placeholder.gradientDescription'
-                    })}
-                    maxLength={200}
-                    rows={2}
-                />
-            </div>
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Preview"
-                    id="tw.customThemes.gradientCreator.preview"
-                /></label>
-                <div
-                    ref={previewRef}
-                    style={{position: 'relative', width: '100%', height: 120}}
-                >
-                    <div
-                        className={styles.gradientPreview}
-                        style={{
-                            background: GradientUtils.createLinearGradient(gradientColors, direction),
-                            width: '100%',
-                            height: '100%'
-                        }}
-                    />
-                    {gradientColors.map((stop, index) => (
-                        <div
-                            key={index}
-                            style={{
-                                position: 'absolute',
-                                left: `${stop.position}%`,
-                                top: '50%',
-                                transform:
-                                'translate(-50%, -50%)',
-                                zIndex: 10
-                            }}
-                        >
-                            <div
-                                onMouseDown={e => startDrag(index, e, dragging, setGradientColors, previewRef)}
-                                onTouchStart={e => startDrag(index, e, dragging, setGradientColors, previewRef)}
-                                style={{
-                                    width: 14,
-                                    height: 14,
-                                    borderRadius: '50%',
-                                    background: stop.color,
-                                    border: '2px solid rgba(255,255,255,0.9)',
-                                    boxShadow: '0 0 0 1px rgba(0,0,0,0.2)',
-                                    cursor: 'ew-resize'
-                                }}
-                            />
-                        </div>
-                    ))}
-                </div>
-            </div>
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Colors"
-                    id="tw.customThemes.gradientCreator.colors"
-                /></label>
-                <div className={styles.colorStops}>
-                    {gradientColors.map((stop, index) => (
-                        <div
-                            key={index}
-                            className={styles.colorStop}
-                        >
-                            <input
-                                type="color"
-                                value={stop.color}
-                                onChange={e => handleColorChange(index, e.target.value)}
-                                className={styles.colorPicker}
-                            />
-                            {gradientColors.length > 2 && (<button
-                                type="button"
-                                onClick={() => handleRemoveColorStop(index)}
-                                className={styles.removeColorButton}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Remove"
-                                    id="tw.customThemes.gradientCreator.removeColor"
-                                /></button>)}
-                        </div>
-                    ))}
-                    <button
-                        type="button"
-                        onClick={handleAddColorStop}
-                        className={styles.addColorButton}
-                    >
-                        <FormattedMessage
-                            defaultMessage="Add Color"
-                            id="tw.customThemes.gradientCreator.addColor"
-                        /></button>
-                </div>
-            </div>
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Direction"
-                    id="tw.customThemes.gradientCreator.direction"
-                /></label>
-                <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    value={direction}
-                    onChange={e => setDirection(parseInt(e.target.value))}
-                    className={styles.directionSlider}
-                />
-                <span>{direction}{'°'}</span>
-            </div>
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Primary Color"
-                    id="tw.customThemes.gradientCreator.primaryColor"
-                /></label>
-                <input
-                    type="color"
-                    value={primaryColor}
-                    onChange={e => setPrimaryColor(e.target.value)}
-                    className={styles.colorPicker}
-                />
-            </div>
-            <div className={styles.customThemeDialogButtons}>
-                <button
-                    className={styles.customThemeDialogButton}
-                    onClick={() => {
-                        if (props.onCancel) props.onCancel();
-                    }}
-                >
-                    <FormattedMessage
-                        defaultMessage="Cancel"
-                        id="tw.customThemes.createDialog.cancel"
-                    /></button>
-                <button
-                    className={classNames(styles.customThemeDialogButton, styles.primary)}
-                    onClick={() => {
-                        if (props.onCreate) props.onCreate(name, description, gradientColors, primaryColor, direction);
-                    }}
-                >
-                    <FormattedMessage
-                        defaultMessage="Create"
-                        id="tw.customThemes.createDialog.create"
-                    /></button>
-            </div>
-        </div>
-    );
-};
-
-const GradientEditorApp = props => {
-    const [name, setName] = React.useState(props.initialName || '');
-    const [description, setDescription] = React.useState(props.initialDescription || '');
-    const [gradientColors, setGradientColors] = React.useState(props.initialGradientColors || [
-        {color: '#ff6b6b', position: 0},
-        {color: '#4ecdc4', position: 100}
-    ]);
-    const [direction, setDirection] = React.useState(props.initialDirection || 90);
-    const [primaryColor, setPrimaryColor] = React.useState(props.initialPrimaryColor || '#ff6b6b');
-
-    const previewRef = React.useRef(null);
-    const dragging = React.useRef({index: null, rect: null});
-
-    const handleAddColorStop = () => {
-        const newPosition = Math.round(
-            gradientColors.reduce((sum, stop) => sum + stop.position, 0) / gradientColors.length
-        );
-        const next = [...gradientColors, {color: '#ffffff', position: Math.max(0, Math.min(100, newPosition))}];
+    const handleDuplicateColor = index => {
+        if (gradientColors.length >= 8) return;
+        const stop = gradientColors[index];
+        const offset = index === 0 ? 5 : -5;
+        const next = [...gradientColors, {color: stop.color, position: Math.max(0, Math.min(100, stop.position + offset))}];
         next.sort((a, b) => a.position - b.position);
         setGradientColors(next);
     };
 
-    const handleRemoveColorStop = index => {
-        if (gradientColors.length <= 2) return;
-        setGradientColors(gradientColors.filter((_, i) => i !== index));
+    const handlePresetSelect = presetName => {
+        const preset = GradientUtils.getGradientPresets().find(p => p.name === presetName);
+        if (preset) {
+            const colorStops = preset.colors.map(
+                (color, index) => ({color, position: (index / (preset.colors.length - 1)) * 100})
+            );
+            setGradientColors(colorStops);
+            setDirection(preset.direction);
+            setPrimaryColor(preset.colors[0]);
+            setSelectedPreset(presetName);
+        }
     };
 
-    const handleColorChange = (index, color) => {
-        const next = gradientColors.slice();
-        next[index] = {...next[index], color};
-        setGradientColors(next);
-        if (index === 0) setPrimaryColor(color);
+    const handleQuickDirection = dir => setDirection(dir);
+
+    const handleKeyDown = e => {
+        if (e.key === 'Escape' && props.onCancel) props.onCancel();
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && props.onCreate) {
+            props.onCreate(name, description, gradientColors, primaryColor, direction);
+        }
     };
+
+    React.useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [name, description, gradientColors, primaryColor, direction]);
+
+    React.useEffect(() => () => {
+        if (dragging.current.moveHandler && dragging.current.upHandler) {
+            document.removeEventListener('mousemove', dragging.current.moveHandler);
+            document.removeEventListener('mouseup', dragging.current.upHandler);
+        }
+    }, []);
 
     return (
         <div
-            className={styles.customThemeDialogContent}
-            style={{width: '100%', height: '100%', boxSizing: 'border-box', overflow: 'auto'}}
+            className={styles.gradientCreatorContainer}
         >
-            <h3><FormattedMessage
-                defaultMessage="Edit Gradient Theme"
-                id="tw.customThemes.gradientEditor.title"
-            /></h3>
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Name"
-                    id="tw.customThemes.editorDialog.name"
-                /></label>
-                <input
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder={props.intl.formatMessage({
-                        defaultMessage: 'My Gradient Theme',
-                        id: 'tw.customThemes.placeholder.gradientName'
-                    })}
-                    maxLength={50}
-                />
-            </div>
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Description (optional)"
-                    id="tw.customThemes.createDialog.description"
-                /></label>
-                <textarea
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    placeholder={props.intl.formatMessage({
-                        defaultMessage: 'A custom gradient theme',
-                        id: 'tw.customThemes.placeholder.gradientDescription'
-                    })}
-                    maxLength={200}
-                    rows={2}
-                />
-            </div>
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Preview"
-                    id="tw.customThemes.gradientCreator.preview"
-                /></label>
-                <div
-                    ref={previewRef}
-                    style={{position: 'relative', width: '100%', height: 120}}
-                >
-                    <div
-                        className={styles.gradientPreview}
-                        style={{
-                            background: GradientUtils.createLinearGradient(gradientColors, direction),
-                            width: '100%',
-                            height: '100%'
-                        }}
-                    />
-                    {gradientColors.map((stop, index) => (
-                        <div
-                            key={index}
-                            style={{
-                                position: 'absolute',
-                                left: `${stop.position}%`,
-                                top: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                zIndex: 10}}
-                        >
-                            <div
-                                onMouseDown={e => startDrag(index, e, dragging, setGradientColors, previewRef)}
-                                onTouchStart={e => startDrag(index, e, dragging, setGradientColors, previewRef)}
-                                style={{
-                                    width: 14,
-                                    height: 14,
-                                    borderRadius: '50%',
-                                    background: stop.color,
-                                    border: '2px solid rgba(255,255,255,0.9)',
-                                    boxShadow: '0 0 0 1px rgba(0,0,0,0.2)',
-                                    cursor: 'ew-resize'
-                                }}
+            <div className={styles.gradientCreatorMain}>
+                <div className={styles.gradientCreatorLeft}>
+                    <div className={styles.gradientCreatorSection}>
+                        <h3 className={styles.gradientSectionTitle}>
+                            <FormattedMessage
+                                defaultMessage="Theme Details"
+                                id="tw.customThemes.gradientCreator.themeDetails"
                             />
-                        </div>
-                    ))}
-                </div>
-            </div>
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Colors"
-                    id="tw.customThemes.gradientCreator.colors"
-                /></label>
-                <div className={styles.colorStops}>
-                    {gradientColors.map((stop, index) => (
-                        <div
-                            key={index}
-                            className={styles.colorStop}
-                        >
-                            <input
-                                type="color"
-                                value={stop.color}
-                                onChange={e => handleColorChange(index, e.target.value)}
-                                className={styles.colorPicker}
-                            />
-                            {gradientColors.length > 2 && (<button
-                                type="button"
-                                onClick={() => handleRemoveColorStop(index)}
-                                className={styles.removeColorButton}
-                            >
+                        </h3>
+                        <div className={styles.formField}>
+                            <label>
                                 <FormattedMessage
-                                    defaultMessage="Remove"
-                                    id="tw.customThemes.gradientCreator.removeColor"
+                                    defaultMessage="Name"
+                                    id="tw.customThemes.gradientDialog.name"
                                 />
-                            </button>)}
+                            </label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                placeholder={intl.formatMessage({
+                                    defaultMessage: 'My Gradient Theme',
+                                    id: 'tw.customThemes.placeholder.gradientName'
+                                })}
+                                className={styles.gradientInput}
+                                maxLength={50}
+                            />
                         </div>
-                    ))}
-                    <button
-                        type="button"
-                        onClick={handleAddColorStop}
-                        className={styles.addColorButton}
-                    >
-                        <FormattedMessage
-                            defaultMessage="Add Color"
-                            id="tw.customThemes.gradientCreator.addColor"
-                        />
-                    </button>
+                        <div className={styles.formField}>
+                            <label>
+                                <FormattedMessage
+                                    defaultMessage="Description (optional)"
+                                    id="tw.customThemes.createDialog.description"
+                                />
+                            </label>
+                            <textarea
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                placeholder={intl.formatMessage({defaultMessage: 'A custom gradient theme', id: 'tw.customThemes.placeholder.gradientDescription'})}
+                                className={styles.gradientTextarea}
+                                maxLength={200}
+                                rows={2}
+                            />
+                        </div>
+                    </div>
+
+                    <div className={styles.gradientCreatorSection}>
+                        <h3 className={styles.gradientSectionTitle}>
+                            <FormattedMessage
+                                defaultMessage="Quick Presets"
+                                id="tw.customThemes.gradientCreator.quickPresets"
+                            />
+                        </h3>
+                        <div className={styles.presetGrid}>
+                            {GradientUtils.getGradientPresets().map(preset => (
+                                <button
+                                    key={preset.name}
+                                    type="button"
+                                    onClick={() => handlePresetSelect(preset.name)}
+                                    onMouseEnter={() => setHoveredPreset(preset.name)}
+                                    onMouseLeave={() => setHoveredPreset(null)}
+                                    className={classNames(styles.presetCard, selectedPreset === preset.name && styles.presetCardActive)}
+                                >
+                                    <div
+                                        className={styles.presetPreview}
+                                        style={{background: GradientUtils.createLinearGradient(preset.colors.map((c, i) => ({
+                                            color: c,
+                                            position: (i / (preset.colors.length - 1)) * 100
+                                        })), preset.direction)}}
+                                    />
+                                    <span className={styles.presetName}>
+                                        {intl.formatMessage({
+                                            defaultMessage: preset.name,
+                                            id: presetNameToKey[preset.name] || preset.name
+                                        })}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className={styles.gradientCreatorRight}>
+                    <div className={styles.gradientCreatorSection}>
+                        <h3 className={styles.gradientSectionTitle}>
+                            <FormattedMessage
+                                defaultMessage="Gradient Editor"
+                                id="tw.customThemes.gradientCreator.gradientEditor"
+                            />
+                        </h3>
+
+                        <div className={styles.previewContainer}>
+                            <div
+                                ref={previewRef}
+                                className={styles.gradientPreviewLarge}
+                            >
+                                <div
+                                    className={styles.gradientPreviewInner}
+                                    style={{background: GradientUtils.createLinearGradient(gradientColors, direction)}}
+                                />
+                                <div className={styles.gradientTrack}>
+                                    {gradientColors.map((stop, index) => (
+                                        <div
+                                            key={index}
+                                            className={classNames(styles.colorStopMarker, isDragging === index && styles.colorStopMarkerDragging)}
+                                            style={{left: `${stop.position}%`}}
+                                        >
+                                            <div
+                                                className={styles.colorStopHandle}
+                                                onMouseDown={e => {
+                                                    setIsDragging(index);
+                                                    startDrag(index, e, dragging, setGradientColors, previewRef);
+                                                }}
+                                                onTouchStart={e => {
+                                                    setIsDragging(index);
+                                                    startDrag(index, e, dragging, setGradientColors, previewRef);
+                                                }}
+                                                onMouseUp={() => setIsDragging(null)}
+                                                onTouchEnd={() => setIsDragging(null)}
+                                                style={{background: stop.color}}
+                                            />
+                                            <span className={styles.colorStopPosition}>{Math.round(stop.position)}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className={styles.colorStopsPalette}>
+                                {gradientColors.map((stop, index) => (
+                                    <div
+                                        key={index}
+                                        className={styles.paletteItem}
+                                    >
+                                        <div className={styles.paletteColorWrapper}>
+                                            <input
+                                                type="color"
+                                                value={stop.color}
+                                                onChange={e => handleColorChange(index, e.target.value)}
+                                                className={styles.paletteColorInput}
+                                                title={stop.color}
+                                            />
+                                        </div>
+                                        <div className={styles.paletteControls}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDuplicateColor(index)}
+                                                className={styles.paletteBtn}
+                                                title="Duplicate color"
+                                            >
+                                                <FormattedMessage
+                                                    defaultMessage="Copy"
+                                                    id="tw.customThemes.gradientCreator.copy"
+                                                />
+                                            </button>
+                                            {gradientColors.length > 2 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveColorStop(index)}
+                                                    className={classNames(styles.paletteBtn, styles.paletteBtnDanger)}
+                                                    title="Remove color"
+                                                >
+                                                    <FormattedMessage
+                                                        defaultMessage="Remove"
+                                                        id="tw.customThemes.gradientCreator.removeColor"
+                                                    />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                {gradientColors.length < 8 && (
+                                    <button
+                                        type="button"
+                                        onClick={handleAddColorStop}
+                                        className={styles.paletteAddBtn}
+                                    >
+                                        <FormattedMessage
+                                            defaultMessage="+ Add"
+                                            id="tw.customThemes.gradientCreator.addColor"
+                                        />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className={styles.directionSection}>
+                            <label>
+                                <FormattedMessage
+                                    defaultMessage="Direction"
+                                    id="tw.customThemes.gradientCreator.direction"
+                                />
+                            </label>
+                            <div className={styles.directionControls}>
+                                <div className={styles.directionWheel}>
+                                    <svg
+                                        viewBox="0 0 100 100"
+                                        className={styles.dirWheelSvg}
+                                    >
+                                        <circle
+                                            cx="50"
+                                            cy="50"
+                                            r="40"
+                                            fill="none"
+                                            stroke="rgba(0,0,0,0.1)"
+                                            strokeWidth="2"
+                                        />
+                                        <line
+                                            x1="50"
+                                            y1="50"
+                                            x2={50 + 35 * Math.cos((direction - 90) * Math.PI / 180)}
+                                            y2={50 + 35 * Math.sin((direction - 90) * Math.PI / 180)}
+                                            stroke="#4a90d9"
+                                            strokeWidth="3"
+                                            markerEnd="url(#arrowhead)"
+                                        />
+                                        <defs>
+                                            <marker
+                                                id="arrowhead"
+                                                markerWidth="10"
+                                                markerHeight="7"
+                                                refX="9"
+                                                refY="3.5"
+                                                orient="auto"
+                                            >
+                                                <polygon
+                                                    points="0 0, 10 3.5, 0 7"
+                                                    fill="#4a90d9"
+                                                />
+                                            </marker>
+                                        </defs>
+                                    </svg>
+                                </div>
+                                <div className={styles.directionSliderGroup}>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="360"
+                                        value={direction}
+                                        onChange={e => setDirection(parseInt(e.target.value, 10))}
+                                        className={styles.directionSlider}
+                                    />
+                                    <span className={styles.directionValue}>{direction}°</span>
+                                </div>
+                                <div className={styles.directionPresets}>
+                                    {[0, 45, 90, 135, 180, 225, 270, 315].map(dir => (
+                                        <button
+                                            key={dir}
+                                            type="button"
+                                            onClick={() => handleQuickDirection(dir)}
+                                            className={classNames(styles.dirPresetBtn, direction === dir && styles.dirPresetBtnActive)}
+                                            title={`${dir}°`}
+                                        >
+                                            {['→', '↗', '↓', '↘', '←', '↙', '↑', '↖'][dir / 45]}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.primaryColorSection}>
+                            <label>
+                                <FormattedMessage
+                                    defaultMessage="Primary Color (for UI accents)"
+                                    id="tw.customThemes.gradientCreator.primaryColor"
+                                />
+                            </label>
+                            <div className={styles.primaryColorPicker}>
+                                <input
+                                    type="color"
+                                    value={primaryColor}
+                                    onChange={e => setPrimaryColor(e.target.value)}
+                                    className={styles.primaryColorInput}
+                                />
+                                <div className={styles.primaryColorValue}>
+                                    <span
+                                        className={styles.colorPreview}
+                                        style={{background: primaryColor}}
+                                    />
+                                    <span className={styles.colorHex}>{primaryColor}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div className={styles.customThemeDialogField}>
-                <label><FormattedMessage
-                    defaultMessage="Direction"
-                    id="tw.customThemes.gradientCreator.direction"
-                /></label>
-                <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    value={direction}
-                    onChange={e => setDirection(parseInt(e.target.value, 10))}
-                    className={styles.directionSlider}
-                />
-                <span>{direction}{'°'}</span>
-            </div>
-            <div className={styles.customThemeDialogButtons}>
+
+            <div className={styles.gradientCreatorFooter}>
                 <button
-                    className={styles.customThemeDialogButton}
+                    className={classNames(styles.footerBtn, isPreviewActive && styles.footerBtnActive)}
+                    onClick={handlePreview}
+                    disabled={!name.trim()}
+                    title="Apply this theme to see how it looks"
+                >
+                    {isPreviewActive ? (
+                        <FormattedMessage
+                            defaultMessage="Stop Preview"
+                            id="tw.customThemes.gradientCreator.stopPreview"
+                        />
+                    ) : (
+                        <FormattedMessage
+                            defaultMessage="Preview Theme"
+                            id="tw.customThemes.gradientCreator.previewTheme"
+                        />
+                    )}
+                </button>
+                <button
+                    className={styles.footerBtn}
                     onClick={() => {
                         if (props.onCancel) props.onCancel();
                     }}
@@ -452,19 +495,451 @@ const GradientEditorApp = props => {
                     />
                 </button>
                 <button
-                    className={classNames(styles.customThemeDialogButton, styles.primary)}
+                    className={classNames(styles.footerBtn, styles.footerBtnPrimary)}
                     onClick={() => {
-                        if (props.onUpdate) props.onUpdate(name, description, gradientColors, primaryColor, direction);
+                        if (props.onCreate) props.onCreate(name, description, gradientColors, primaryColor, direction);
+                    }}
+                    disabled={!name.trim()}
+                >
+                    <FormattedMessage
+                        defaultMessage="Create Theme"
+                        id="tw.customThemes.createDialog.create"
+                    />
+                </button>
+            </div>
+        </div>
+    );
+});
+
+GradientCreatorApp.propTypes = {
+    initialName: PropTypes.string,
+    initialDescription: PropTypes.string,
+    initialGradientColors: PropTypes.arrayOf(PropTypes.shape({
+        color: PropTypes.string,
+        position: PropTypes.number
+    })),
+    initialDirection: PropTypes.number,
+    initialPrimaryColor: PropTypes.string,
+    onCancel: PropTypes.func,
+    onCreate: PropTypes.func,
+    onPreview: PropTypes.func,
+    intl: intlShape.isRequired
+};
+
+const GradientEditorApp = injectIntl(props => {
+    const {intl} = props;
+    const [name, setName] = React.useState(props.initialName || '');
+    const [description, setDescription] = React.useState(props.initialDescription || '');
+    const [gradientColors, setGradientColors] = React.useState(props.initialGradientColors || [
+        {color: '#ff6b6b', position: 0},
+        {color: '#4ecdc4', position: 100}
+    ]);
+    const [direction, setDirection] = React.useState(props.initialDirection || 90);
+    const [primaryColor, setPrimaryColor] = React.useState(props.initialPrimaryColor || '#ff6b6b');
+    const [isDragging, setIsDragging] = React.useState(null);
+    const [isPreviewActive, setIsPreviewActive] = React.useState(false);
+
+    const previewRef = React.useRef(null);
+    const dragging = React.useRef({index: null, rect: null});
+
+    const presetNameToKey = {
+        'Sunset': 'tw.customThemes.preset.sunset',
+        'Ocean': 'tw.customThemes.preset.ocean',
+        'Forest': 'tw.customThemes.preset.forest',
+        'Purple Rain': 'tw.customThemes.preset.purpleRain',
+        'Fire': 'tw.customThemes.preset.fire',
+        'Aurora': 'tw.customThemes.preset.aurora',
+        'Space': 'tw.customThemes.preset.space',
+        'Cherry': 'tw.customThemes.preset.cherry'
+    };
+
+    const handlePreview = async () => {
+        if (isPreviewActive) {
+            setIsPreviewActive(false);
+            if (props.onPreview) {
+                props.onPreview('', [], '', 90);
+            }
+            return;
+        }
+
+        if (!name.trim()) {
+            await showAlert(intl.formatMessage({defaultMessage: 'Please enter a theme name first', id: 'tw.customThemes.error.themeNameRequired'}));
+            return;
+        }
+
+        if (props.onPreview) {
+            props.onPreview(
+                name,
+                gradientColors,
+                primaryColor,
+                direction
+            );
+            setIsPreviewActive(true);
+        }
+    };
+
+    const handleAddColorStop = () => {
+        const newPosition = 50;
+        const next = [...gradientColors, {color: '#ffffff', position: newPosition}];
+        next.sort((a, b) => a.position - b.position);
+        setGradientColors(next);
+    };
+
+    const handleRemoveColorStop = index => {
+        if (gradientColors.length <= 2) return;
+        setGradientColors(gradientColors.filter((_, i) => i !== index));
+    };
+
+    const handleColorChange = (index, color) => {
+        const next = gradientColors.slice();
+        next[index] = {...next[index], color};
+        setGradientColors(next);
+        if (index === 0) setPrimaryColor(color);
+    };
+
+    const handleDuplicateColor = index => {
+        if (gradientColors.length >= 8) return;
+        const stop = gradientColors[index];
+        const offset = index === 0 ? 5 : -5;
+        const next = [...gradientColors, {color: stop.color, position: Math.max(0, Math.min(100, stop.position + offset))}];
+        next.sort((a, b) => a.position - b.position);
+        setGradientColors(next);
+    };
+
+    const handleQuickDirection = dir => setDirection(dir);
+
+    const handleKeyDown = e => {
+        if (e.key === 'Escape' && props.onCancel) props.onCancel();
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && props.onUpdate) {
+            props.onUpdate(name, description, gradientColors, primaryColor, direction);
+        }
+    };
+
+    React.useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [name, description, gradientColors, primaryColor, direction]);
+
+    React.useEffect(() => () => {
+        if (dragging.current.moveHandler && dragging.current.upHandler) {
+            document.removeEventListener('mousemove', dragging.current.moveHandler);
+            document.removeEventListener('mouseup', dragging.current.upHandler);
+        }
+    }, []);
+
+    return (
+        <div className={styles.gradientCreatorContainer}>
+            <div className={styles.gradientCreatorMain}>
+                <div className={styles.gradientCreatorLeft}>
+                    <div className={styles.gradientCreatorSection}>
+                        <h3 className={styles.gradientSectionTitle}>
+                            <FormattedMessage
+                                defaultMessage="Edit Theme"
+                                id="tw.customThemes.gradientEditor.title"
+                            />
+                        </h3>
+                        <div className={styles.formField}>
+                            <label>
+                                <FormattedMessage
+                                    defaultMessage="Name"
+                                    id="tw.customThemes.editorDialog.name"
+                                />
+                            </label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                placeholder={intl.formatMessage({
+                                    defaultMessage: 'My Gradient Theme',
+                                    id: 'tw.customThemes.placeholder.gradientName'
+                                })}
+                                className={styles.gradientInput}
+                                maxLength={50}
+                            />
+                        </div>
+                        <div className={styles.formField}>
+                            <label>
+                                <FormattedMessage
+                                    defaultMessage="Description (optional)"
+                                    id="tw.customThemes.createDialog.description"
+                                />
+                            </label>
+                            <textarea
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                placeholder={intl.formatMessage({defaultMessage: 'A custom gradient theme', id: 'tw.customThemes.placeholder.gradientDescription'})}
+                                className={styles.gradientTextarea}
+                                maxLength={200}
+                                rows={2}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className={styles.gradientCreatorRight}>
+                    <div className={styles.gradientCreatorSection}>
+                        <h3 className={styles.gradientSectionTitle}>
+                            <FormattedMessage
+                                defaultMessage="Gradient Editor"
+                                id="tw.customThemes.gradientCreator.gradientEditor"
+                            />
+                        </h3>
+
+                        <div className={styles.previewContainer}>
+                            <div
+                                ref={previewRef}
+                                className={styles.gradientPreviewLarge}
+                            >
+                                <div
+                                    className={styles.gradientPreviewInner}
+                                    style={{background: GradientUtils.createLinearGradient(gradientColors, direction)}}
+                                />
+                                <div className={styles.gradientTrack}>
+                                    {gradientColors.map((stop, index) => (
+                                        <div
+                                            key={index}
+                                            className={classNames(styles.colorStopMarker, isDragging === index && styles.colorStopMarkerDragging)}
+                                            style={{left: `${stop.position}%`}}
+                                        >
+                                            <div
+                                                className={styles.colorStopHandle}
+                                                onMouseDown={e => {
+                                                    setIsDragging(index);
+                                                    startDrag(index, e, dragging, setGradientColors, previewRef);
+                                                }}
+                                                onTouchStart={e => {
+                                                    setIsDragging(index);
+                                                    startDrag(index, e, dragging, setGradientColors, previewRef);
+                                                }}
+                                                onMouseUp={() => setIsDragging(null)}
+                                                onTouchEnd={() => setIsDragging(null)}
+                                                style={{background: stop.color}}
+                                            />
+                                            <span className={styles.colorStopPosition}>{Math.round(stop.position)}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className={styles.colorStopsPalette}>
+                                {gradientColors.map((stop, index) => (
+                                    <div
+                                        key={index}
+                                        className={styles.paletteItem}
+                                    >
+                                        <div className={styles.paletteColorWrapper}>
+                                            <input
+                                                type="color"
+                                                value={stop.color}
+                                                onChange={e => handleColorChange(index, e.target.value)}
+                                                className={styles.paletteColorInput}
+                                                title={stop.color}
+                                            />
+                                        </div>
+                                        <div className={styles.paletteControls}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDuplicateColor(index)}
+                                                className={styles.paletteBtn}
+                                                title="Duplicate color"
+                                            >
+                                                <FormattedMessage
+                                                    defaultMessage="Copy"
+                                                    id="tw.customThemes.gradientCreator.copy"
+                                                />
+                                            </button>
+                                            {gradientColors.length > 2 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveColorStop(index)}
+                                                    className={classNames(styles.paletteBtn, styles.paletteBtnDanger)}
+                                                    title="Remove color"
+                                                >
+                                                    <FormattedMessage
+                                                        defaultMessage="Remove"
+                                                        id="tw.customThemes.gradientCreator.removeColor"
+                                                    />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                {gradientColors.length < 8 && (
+                                    <button
+                                        type="button"
+                                        onClick={handleAddColorStop}
+                                        className={styles.paletteAddBtn}
+                                    >
+                                        <FormattedMessage
+                                            defaultMessage="+ Add"
+                                            id="tw.customThemes.gradientCreator.addColor"
+                                        />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className={styles.directionSection}>
+                            <label>
+                                <FormattedMessage
+                                    defaultMessage="Direction"
+                                    id="tw.customThemes.gradientCreator.direction"
+                                />
+                            </label>
+                            <div className={styles.directionControls}>
+                                <div className={styles.directionWheel}>
+                                    <svg
+                                        viewBox="0 0 100 100"
+                                        className={styles.dirWheelSvg}
+                                    >
+                                        <circle
+                                            cx="50"
+                                            cy="50"
+                                            r="40"
+                                            fill="none"
+                                            stroke="rgba(0,0,0,0.1)"
+                                            strokeWidth="2"
+                                        />
+                                        <line
+                                            x1="50"
+                                            y1="50"
+                                            x2={50 + 35 * Math.cos((direction - 90) * Math.PI / 180)}
+                                            y2={50 + 35 * Math.sin((direction - 90) * Math.PI / 180)}
+                                            stroke="#4a90d9"
+                                            strokeWidth="3"
+                                            markerEnd="url(#arrowhead2)"
+                                        />
+                                        <defs>
+                                            <marker
+                                                id="arrowhead2"
+                                                markerWidth="10"
+                                                markerHeight="7"
+                                                refX="9"
+                                                refY="3.5"
+                                                orient="auto"
+                                            >
+                                                <polygon
+                                                    points="0 0, 10 3.5, 0 7"
+                                                    fill="#4a90d9"
+                                                />
+                                            </marker>
+                                        </defs>
+                                    </svg>
+                                </div>
+                                <div className={styles.directionSliderGroup}>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="360"
+                                        value={direction}
+                                        onChange={e => setDirection(parseInt(e.target.value, 10))}
+                                        className={styles.directionSlider}
+                                    />
+                                    <span className={styles.directionValue}>{direction}°</span>
+                                </div>
+                                <div className={styles.directionPresets}>
+                                    {[0, 45, 90, 135, 180, 225, 270, 315].map(dir => (
+                                        <button
+                                            key={dir}
+                                            type="button"
+                                            onClick={() => handleQuickDirection(dir)}
+                                            className={classNames(styles.dirPresetBtn, direction === dir && styles.dirPresetBtnActive)}
+                                            title={`${dir}°`}
+                                        >
+                                            {['→', '↗', '↓', '↘', '←', '↙', '↑', '↖'][dir / 45]}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.primaryColorSection}>
+                            <label>
+                                <FormattedMessage
+                                    defaultMessage="Primary Color (for UI accents)"
+                                    id="tw.customThemes.gradientCreator.primaryColor"
+                                />
+                            </label>
+                            <div className={styles.primaryColorPicker}>
+                                <input
+                                    type="color"
+                                    value={primaryColor}
+                                    onChange={e => setPrimaryColor(e.target.value)}
+                                    className={styles.primaryColorInput}
+                                />
+                                <div className={styles.primaryColorValue}>
+                                    <span
+                                        className={styles.colorPreview}
+                                        style={{background: primaryColor}}
+                                    />
+                                    <span className={styles.colorHex}>{primaryColor}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className={styles.gradientCreatorFooter}>
+                <button
+                    className={classNames(styles.footerBtn, isPreviewActive && styles.footerBtnActive)}
+                    onClick={handlePreview}
+                    disabled={!name.trim()}
+                    title="Apply this theme to see how it looks"
+                >
+                    {isPreviewActive ? (
+                        <FormattedMessage
+                            defaultMessage="Stop Preview"
+                            id="tw.customThemes.gradientCreator.stopPreview"
+                        />
+                    ) : (
+                        <FormattedMessage
+                            defaultMessage="Preview Theme"
+                            id="tw.customThemes.gradientCreator.previewTheme"
+                        />
+                    )}
+                </button>
+                <button
+                    className={styles.footerBtn}
+                    onClick={() => {
+                        if (props.onCancel) props.onCancel();
                     }}
                 >
                     <FormattedMessage
-                        defaultMessage="Update"
+                        defaultMessage="Cancel"
+                        id="tw.customThemes.createDialog.cancel"
+                    />
+                </button>
+                <button
+                    className={classNames(styles.footerBtn, styles.footerBtnPrimary)}
+                    onClick={() => {
+                        if (props.onUpdate) props.onUpdate(name, description, gradientColors, primaryColor, direction);
+                    }}
+                    disabled={!name.trim()}
+                >
+                    <FormattedMessage
+                        defaultMessage="Save Changes"
                         id="tw.customThemes.gradientEditor.update"
                     />
                 </button>
             </div>
         </div>
     );
+});
+
+GradientEditorApp.propTypes = {
+    initialName: PropTypes.string,
+    initialDescription: PropTypes.string,
+    initialGradientColors: PropTypes.arrayOf(PropTypes.shape({
+        color: PropTypes.string,
+        position: PropTypes.number
+    })),
+    initialDirection: PropTypes.number,
+    initialPrimaryColor: PropTypes.string,
+    onCancel: PropTypes.func,
+    onUpdate: PropTypes.func,
+    onPreview: PropTypes.func,
+    intl: intlShape.isRequired
 };
 
 class CustomThemeMenu extends React.Component {
@@ -474,28 +949,26 @@ class CustomThemeMenu extends React.Component {
 
     constructor (props) {
         super(props);
+        this._unsubscribeCustomThemes = null;
+
         this.state = {
             customThemes: customThemeManager.getAllThemes(),
             showCreateDialog: false,
-            showImportDialog: false,
-            showGradientCreator: false,
-            showGradientEditor: false,
-            editingThemeUuid: null,
             createName: '',
             createDescription: '',
-            importData: '',
-            // Gradient creation state
             gradientColors: [
                 {color: '#ff6b6b', position: 0},
                 {color: '#4ecdc4', position: 100}
             ],
-            gradientDirection: 90,
             primaryColor: '#ff6b6b',
+            gradientDirection: 90,
             selectedPreset: '',
-            showColorPicker: false,
-            activeColorStop: 0
+            showGradientCreator: false,
+            showGradientEditor: false,
+            editingThemeUuid: null,
+            originalThemeBeforePreview: null
         };
-        
+
         this.fileInputRef = React.createRef();
         this.createThemeWindow = null;
         this.gradientCreatorWindow = null;
@@ -545,7 +1018,6 @@ class CustomThemeMenu extends React.Component {
                                 initialGradientColors: this.state.gradientColors,
                                 initialPrimaryColor: this.state.primaryColor,
                                 initialDirection: this.state.gradientDirection,
-                                intl: this.props.intl,
                                 onCreate: (name, description, colorStops, primary, dir) => {
                                     this.handleCreateGradientTheme(name, description, colorStops, primary, dir)
                                         .then(success => {
@@ -553,6 +1025,15 @@ class CustomThemeMenu extends React.Component {
                                                 this.gradientCreatorWindow.close();
                                             }
                                         });
+                                },
+                                onPreview: (name, gradientColors, primaryColor, direction) => {
+                                    return this.handlePreviewTheme(
+                                        name,
+                                        this.state.createDescription,
+                                        gradientColors,
+                                        primaryColor,
+                                        direction
+                                    );
                                 },
                                 onCancel: () => {
                                     if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
@@ -577,7 +1058,6 @@ class CustomThemeMenu extends React.Component {
                                 initialGradientColors: this.state.gradientColors,
                                 initialPrimaryColor: this.state.primaryColor,
                                 initialDirection: this.state.gradientDirection,
-                                intl: this.props.intl,
                                 onUpdate: (name, description, colorStops, primary, dir) => {
                                     this.handleUpdateGradientTheme(name, description, colorStops, primary, dir)
                                         .then(success => {
@@ -600,6 +1080,8 @@ class CustomThemeMenu extends React.Component {
         }
     }
 
+    // TODO: Migrate to functional component with useEffect cleanup
+    // componentWillUnmount is deprecated in React 16.3+
     componentWillUnmount () {
         this._isMounted = false;
 
@@ -619,6 +1101,12 @@ class CustomThemeMenu extends React.Component {
                 // Ignore abort errors
             }
             this._activeFileReader = null;
+        }
+
+        // Restore preview if still active
+        const {originalThemeBeforePreview} = this.state;
+        if (originalThemeBeforePreview) {
+            this.props.onChangeTheme(originalThemeBeforePreview);
         }
     }
 
@@ -711,13 +1199,19 @@ class CustomThemeMenu extends React.Component {
                 description: 'Title of the create gradient theme window',
                 id: 'tw.customTheme.createGradientWindowTitle'
             }),
-            width: 700,
-            height: 620,
-            minWidth: 520,
-            minHeight: 360,
+            width: 900,
+            height: 680,
+            minWidth: 680,
+            minHeight: 500,
             className: 'tw-gradient-creator-window',
             onClose: () => {
                 try {
+                    const {originalThemeBeforePreview} = this.state;
+                    if (originalThemeBeforePreview && this._isMounted) {
+                        this.props.onChangeTheme(originalThemeBeforePreview);
+                        this.safeSetState({originalThemeBeforePreview: null});
+                    }
+
                     if (this.gradientCreatorContainer) {
                         try {
                             ReactDOM.unmountComponentAtNode(this.gradientCreatorContainer);
@@ -750,7 +1244,6 @@ class CustomThemeMenu extends React.Component {
                             initialGradientColors: this.state.gradientColors,
                             initialPrimaryColor: this.state.primaryColor,
                             initialDirection: this.state.gradientDirection,
-                            intl: this.props.intl,
                             onCreate: (name, description, colorStops, primary, dir) => {
                                 this.handleCreateGradientTheme(name, description, colorStops, primary, dir)
                                     .then(success => {
@@ -759,7 +1252,21 @@ class CustomThemeMenu extends React.Component {
                                         }
                                     });
                             },
+                            onPreview: (name, gradientColors, primaryColor, direction) => {
+                                return this.handlePreviewTheme(
+                                    name,
+                                    this.state.createDescription,
+                                    gradientColors,
+                                    primaryColor,
+                                    direction
+                                );
+                            },
                             onCancel: () => {
+                                const {originalThemeBeforePreview} = this.state;
+                                if (originalThemeBeforePreview && this._isMounted) {
+                                    this.props.onChangeTheme(originalThemeBeforePreview);
+                                    this.safeSetState({originalThemeBeforePreview: null});
+                                }
                                 if (this.gradientCreatorWindow) this.gradientCreatorWindow.close();
                             }
                         })
@@ -790,13 +1297,19 @@ class CustomThemeMenu extends React.Component {
                 description: 'Title of the edit gradient theme window',
                 id: 'tw.customTheme.editGradientWindowTitle'
             }),
-            width: 700,
-            height: 620,
-            minWidth: 520,
-            minHeight: 360,
+            width: 800,
+            height: 640,
+            minWidth: 600,
+            minHeight: 480,
             className: 'tw-gradient-editor-window',
             onClose: () => {
                 try {
+                    const {originalThemeBeforePreview} = this.state;
+                    if (originalThemeBeforePreview && this._isMounted) {
+                        this.props.onChangeTheme(originalThemeBeforePreview);
+                        this.safeSetState({originalThemeBeforePreview: null});
+                    }
+
                     if (this.gradientEditorContainer) {
                         try {
                             ReactDOM.unmountComponentAtNode(this.gradientEditorContainer);
@@ -829,7 +1342,6 @@ class CustomThemeMenu extends React.Component {
                             initialGradientColors: this.state.gradientColors,
                             initialPrimaryColor: this.state.primaryColor,
                             initialDirection: this.state.gradientDirection,
-                            intl: this.props.intl,
                             onUpdate: (name, description, colorStops, primary, dir) => {
                                 this.handleUpdateGradientTheme(name, description, colorStops, primary, dir)
                                     .then(success => {
@@ -838,7 +1350,21 @@ class CustomThemeMenu extends React.Component {
                                         }
                                     });
                             },
+                            onPreview: (name, gradientColors, primaryColor, direction) => {
+                                return this.handlePreviewTheme(
+                                    name,
+                                    this.state.createDescription,
+                                    gradientColors,
+                                    primaryColor,
+                                    direction
+                                );
+                            },
                             onCancel: () => {
+                                const {originalThemeBeforePreview} = this.state;
+                                if (originalThemeBeforePreview && this._isMounted) {
+                                    this.props.onChangeTheme(originalThemeBeforePreview);
+                                    this.safeSetState({originalThemeBeforePreview: null});
+                                }
                                 if (this.gradientEditorWindow) this.gradientEditorWindow.close();
                             }
                         })
@@ -863,7 +1389,7 @@ class CustomThemeMenu extends React.Component {
         const {theme} = this.props;
         
         if (!createName.trim()) {
-            await showAlert(this.props.intl, this.props.intl.formatMessage({
+            await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'Theme name is required',
                 description: 'Error message when theme name is empty',
                 id: 'tw.customThemes.error.themeNameRequired'
@@ -889,7 +1415,7 @@ class CustomThemeMenu extends React.Component {
             this.props.onChangeTheme(customTheme);
             return true;
         } catch (error) {
-            await showAlert(this.props.intl, this.props.intl.formatMessage({
+            await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'Failed to create theme: {errorMessage}',
                 description: 'Error message when theme creation fails',
                 id: 'tw.customThemes.error.themeCreationFailed'
@@ -903,7 +1429,7 @@ class CustomThemeMenu extends React.Component {
         const theme = this.props.theme;
 
         if (!createName.trim()) {
-            await showAlert(this.props.intl, this.props.intl.formatMessage({
+            await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'Theme name is required',
                 description: 'Error message when theme name is empty',
                 id: 'tw.customThemes.error.themeNameRequired'
@@ -944,7 +1470,7 @@ class CustomThemeMenu extends React.Component {
             this.props.onChangeTheme(customTheme);
             return true;
         } catch (error) {
-            await showAlert(this.props.intl, this.props.intl.formatMessage({
+            await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'Failed to create gradient theme: {errorMessage}',
                 description: 'Error message when gradient theme creation fails',
                 id: 'tw.customThemes.error.gradientThemeCreationFailed'
@@ -1013,7 +1539,7 @@ class CustomThemeMenu extends React.Component {
                     selectedPreset: presetName
                 });
             } else {
-                await showAlert(this.props.intl, this.props.intl.formatMessage({
+                await showAlert(this.props.intl.formatMessage({
                     defaultMessage: 'Gradient preset not found',
                     description: 'Error message when selected gradient preset is not available',
                     id: 'tw.customThemes.error.gradientPresetNotFound'
@@ -1030,7 +1556,7 @@ class CustomThemeMenu extends React.Component {
             const theme = customThemeManager.getTheme(themeUuid);
             
             if (!gradientInfo || !theme) {
-                await showAlert(this.props.intl, this.props.intl.formatMessage({
+                await showAlert(this.props.intl.formatMessage({
                     defaultMessage: 'Could not load gradient information for this theme',
                     description: 'Error message when gradient information cannot be loaded for a theme',
                     id: 'tw.customThemes.error.gradientInfoLoadFailed'
@@ -1050,7 +1576,7 @@ class CustomThemeMenu extends React.Component {
                 if (this._isMounted) this.openGradientEditorWindow(themeUuid);
             });
         } catch (error) {
-            await showAlert(this.props.intl, this.props.intl.formatMessage({
+            await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'Failed to load gradient theme: {errorMessage}',
                 description: 'Error message when gradient theme loading fails',
                 id: 'tw.customThemes.error.gradientThemeLoadFailed'
@@ -1064,7 +1590,7 @@ class CustomThemeMenu extends React.Component {
         const createDescription = typeof description === 'string' ? description : (this.state.createDescription || '');
 
         if (!editingThemeUuid) {
-            await showAlert(this.props.intl, this.props.intl.formatMessage({
+            await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'No theme selected for editing',
                 description: 'Error message when no theme is selected for editing',
                 id: 'tw.customThemes.error.noThemeSelectedForEditing'
@@ -1073,7 +1599,7 @@ class CustomThemeMenu extends React.Component {
         }
 
         if (!createName.trim()) {
-            await showAlert(this.props.intl, this.props.intl.formatMessage({
+            await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'Theme name is required',
                 description: 'Error message when theme name is not provided',
                 id: 'tw.customThemes.error.themeNameRequired'
@@ -1134,7 +1660,7 @@ class CustomThemeMenu extends React.Component {
                 this.props.onChangeTheme(customThemeManager.getTheme(editingThemeUuid));
             }
         } catch (error) {
-            await showAlert(this.props.intl, this.props.intl.formatMessage({
+            await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'Failed to update gradient theme: {errorMessage}',
                 description: 'Error message when gradient theme update fails',
                 id: 'tw.customThemes.error.gradientThemeUpdateFailed'
@@ -1154,13 +1680,43 @@ class CustomThemeMenu extends React.Component {
                     customThemes: customThemeManager.getAllThemes()
                 });
             } catch (error) {
-                await showAlert(this.props.intl, this.props.intl.formatMessage({
-                    defaultMessage: 'Failed to delete theme: {errorMessage}',
-                    description: 'Error message when theme deletion fails',
-                    id: 'tw.customThemes.error.themeDeletionFailed'
-                }, {errorMessage: error.message}));
+                await showAlert(`Failed to delete theme: ${error.message}`);
             }
         }
+    };
+
+    handlePreviewTheme = (name, description, gradientColors, primaryColor, direction) => {
+        const {originalThemeBeforePreview} = this.state;
+
+        // Treat empty name as signal to stop preview (restore original theme)
+        if (!name || originalThemeBeforePreview) {
+            if (originalThemeBeforePreview) {
+                this.props.onChangeTheme(originalThemeBeforePreview);
+                this.safeSetState({originalThemeBeforePreview: null});
+                return true;
+            }
+            return false;
+        }
+
+        const {theme: currentTheme} = this.props;
+
+        const gradientAccent = GradientUtils.createGradientAccent(gradientColors, primaryColor, {direction});
+
+        const previewTheme = new CustomTheme(
+            name,
+            description,
+            gradientAccent,
+            currentTheme.gui || 'light',
+            currentTheme.blocks || 'three',
+            currentTheme.menuBarAlign || 'left',
+            currentTheme.wallpaper,
+            currentTheme.fonts
+        );
+
+        this.safeSetState({originalThemeBeforePreview: currentTheme});
+
+        this.props.onChangeTheme(previewTheme);
+        return true;
     };
 
     handleExportThemes = async () => {
@@ -1172,14 +1728,14 @@ class CustomThemeMenu extends React.Component {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `RemixWarp-themes-${new Date().toISOString()
+            link.download = `mistwarp-themes-${new Date().toISOString()
                 .split('T')[0]}.json`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         } catch (error) {
-            await showAlert(this.props.intl, this.props.intl.formatMessage({
+            await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'Failed to export themes: {errorMessage}',
                 description: 'Error message when theme export fails',
                 id: 'tw.customThemes.error.themeExportFailed'
@@ -1190,10 +1746,10 @@ class CustomThemeMenu extends React.Component {
     handleExportSingleTheme = async theme => {
         try {
             const exportData = {
-                version: '1.0',
-                exportedAt: new Date().toISOString(),
+                version: '2.0',
+                timestamp: Date.now(),
                 themes: [theme.export()],
-                count: 1
+                platform: 'Bilup'
             };
             const blob = new Blob([JSON.stringify(exportData, null, 2)], {
                 type: 'application/json'
@@ -1207,7 +1763,7 @@ class CustomThemeMenu extends React.Component {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         } catch (error) {
-            await showAlert(this.props.intl, this.props.intl.formatMessage({
+            await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'Failed to export theme: {errorMessage}',
                 description: 'Error message when theme export fails',
                 id: 'tw.customThemes.error.themeExportFailed'
@@ -1251,12 +1807,12 @@ class CustomThemeMenu extends React.Component {
                     }, {errorsCount: results.errors.length, errorMessages: results.errors.join('\n')});
                 }
                 
-                await showAlert(this.props.intl, message);
+                await showAlert(message);
                 this.safeSetState({
                     customThemes: customThemeManager.getAllThemes()
                 });
             } catch (error) {
-                await showAlert(this.props.intl, this.props.intl.formatMessage({
+                await showAlert(this.props.intl.formatMessage({
                     defaultMessage: 'Failed to import themes: {errorMessage}',
                     description: 'Error message when theme import fails',
                     id: 'tw.customThemes.error.themeImportFailed'
@@ -1343,7 +1899,7 @@ class CustomThemeMenu extends React.Component {
                     >
                         <FormattedMessage
                             defaultMessage="Create"
-                            id="tw.customThemes.createDialog.create"
+                            id="tw.customThemes.createDialog.createButton"
                         />
                     </button>
                 </div>
@@ -1450,7 +2006,11 @@ class CustomThemeMenu extends React.Component {
                         >
                             <div className={styles.option}>
                                 <Check
-                                    className={classNames(styles.check, {[styles.selected]: theme instanceof CustomTheme && theme.uuid === customTheme.uuid})}
+                                    className={
+                                        classNames(styles.check, {
+                                            [styles.selected]: theme instanceof CustomTheme &&
+                                                               theme.uuid === customTheme.uuid
+                                        })}
                                     size={15}
                                 />
                                 <div className={styles.customThemeItemInfo}>
@@ -1530,12 +2090,12 @@ class CustomThemeMenu extends React.Component {
 }
 
 CustomThemeMenu.propTypes = {
+    intl: intlShape.isRequired,
     isRtl: PropTypes.bool,
     onChangeTheme: PropTypes.func,
     theme: PropTypes.instanceOf(Theme),
     onOpen: PropTypes.func,
-    isOpen: PropTypes.bool,
-    intl: intlShape
+    isOpen: PropTypes.bool
 };
 
 const mapStateToProps = state => ({

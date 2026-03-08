@@ -1,0 +1,183 @@
+.sa-stage-camera-controls {
+    position: absolute;
+    bottom: 5rem;
+    right: 1.2rem;
+    background: var(--ui-modal-background, #ffffff);
+    border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    min-width: 120px;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sa-stage-camera-controls.hidden {
+    display: none;
+}
+
+.sa-stage-camera-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.1));
+}
+
+.sa-stage-camera-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary, #575e75);
+}
+
+.sa-stage-camera-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    color: var(--text-primary, #575e75);
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.sa-stage-camera-toggle:hover {
+    opacity: 1;
+}
+
+.sa-stage-camera-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+}
+
+.sa-stage-camera-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    border-radius: 4px;
+    background: var(--ui-primary, #ffffff);
+    color: var(--text-primary, #575e75);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sa-stage-camera-button:hover {
+    background: var(--ui-tertiary, #d9e3f2);
+    border-color: var(--ui-black-transparent, rgba(0, 0, 0, 0.2));
+}
+
+.sa-stage-camera-button:active {
+    background: var(--ui-secondary, #e9f1fc);
+    transform: scale(0.95);
+}
+
+.sa-stage-camera-button svg {
+    pointer-events: none;
+    width: 16px;
+    height: 16px;
+}
+
+.sa-stage-camera-zoom-display {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary, #575e75);
+    padding: 4px;
+    background: var(--ui-primary, #ffffff);
+    border-radius: 4px;
+    border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.1));
+}
+
+.sa-stage-camera-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--text-primary, #575e75);
+    opacity: 0.7;
+}
+
+.sa-stage-camera-hint svg {
+    pointer-events: none;
+    width: 12px;
+    height: 12px;
+}
+
+.sa-stage-camera-trigger {
+    position: absolute;
+    bottom: 4rem;
+    right: 1.2rem;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    border-radius: 4px;
+    background: var(--ui-modal-background, #ffffff);
+    color: var(--text-primary, #575e75);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 99;
+}
+
+.sa-stage-camera-trigger:hover {
+    background: var(--ui-tertiary, #d9e3f2);
+}
+
+.sa-stage-camera-trigger svg {
+    width: 16px;
+    height: 16px;
+}
+
+.sa-stage-camera-window {
+    position: fixed;
+    z-index: 9999;
+    background: var(--ui-modal-background, #ffffff);
+    border: 2px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.2));
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    min-width: 480px;
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sa-stage-camera-window-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--ui-secondary, #e9f1fc);
+    border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    border-radius: 6px 6px 0 0;
+    cursor: grab;
+    user-select: none;
+}
+
+.sa-stage-camera-window-header:active {
+    cursor: grabbing;
+}
+
+.sa-stage-camera-window-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary, #575e75);
+}
+
+.sa-stage-camera-window-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f0f0;
+    border-radius: 0 0 6px 6px;
+}

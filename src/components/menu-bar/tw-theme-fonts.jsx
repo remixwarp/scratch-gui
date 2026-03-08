@@ -149,6 +149,7 @@ class FontsThemeMenu extends React.Component {
                                         <button
                                             className={styles.removeButton}
                                             onClick={this.handleRemoveSelectedFont}
+                                            title="Remove font"
                                         >
                                             {'×'}
                                         </button>

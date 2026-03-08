@@ -20,6 +20,7 @@ import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
 import {connect} from 'react-redux';
 import storage from '../lib/persistence/storage';
 import VM from 'scratch-vm';
+import {updateCallbacks} from '../lib/shortcuts/event-router.js';
 
 const dragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE];
 const DroppableBackpack = DropAreaHOC(dragTypes)(BackpackComponent);
@@ -52,7 +53,8 @@ class Backpack extends React.Component {
             'handleGlobalPointerMove',
             'setDropAreaRef',
             'isPointerOverDropArea',
-            'handleMore'
+            'handleMore',
+            'handleSearchChange'
         ]);
 
         this.dropAreaRef = null;
@@ -84,7 +86,8 @@ class Backpack extends React.Component {
             loading: false,
             expanded: false,
             contents: [],
-            height: persistedHeight || DEFAULT_HEIGHT
+            height: persistedHeight || DEFAULT_HEIGHT,
+            searchQuery: ''
         };
 
         // If a host is given, add it as a web source to the storage module
@@ -103,6 +106,8 @@ class Backpack extends React.Component {
 
         document.addEventListener('pointermove', this.handleGlobalPointerMove);
         document.addEventListener('mousemove', this.handleGlobalPointerMove);
+
+        updateCallbacks({toggleBackpack: this.handleToggle});
     }
     componentWillUnmount () {
         this.props.vm.removeListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
@@ -363,16 +368,31 @@ class Backpack extends React.Component {
     handleMore () {
         this.getContents();
     }
+    handleSearchChange (value) {
+        this.setState({searchQuery: value});
+    }
+    getFilteredContents () {
+        const query = this.state.searchQuery.toLowerCase().trim();
+        if (!query) {
+            return this.state.contents;
+        }
+        return this.state.contents.filter(item => {
+            const name = item.name || 'script';
+            return name.toLowerCase().includes(query);
+        });
+    }
     render () {
         return (
             <DroppableBackpack
                 blockDragOver={this.state.blockDragOverBackpack}
-                contents={this.state.contents}
+                contents={this.getFilteredContents()}
                 error={this.state.error}
                 expanded={this.state.expanded}
                 height={this.state.height}
                 loading={this.state.loading}
-                showMore={this.state.moreToLoad}
+                searchQuery={this.state.searchQuery}
+                onSearchChange={this.handleSearchChange}
+                showMore={!this.props.searchQuery && this.state.moreToLoad}
                 onDelete={this.handleDelete}
                 onRename={this.handleRename}
                 onDrop={this.handleDrop}

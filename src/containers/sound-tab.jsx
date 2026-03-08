@@ -274,13 +274,7 @@ class SoundTab extends React.Component {
                         onNewSound={this.handleNewSound}
                     />
                 ) : null}
-                {this.props.soundLibraryVisible ? (
-                    <SoundLibrary
-                        vm={this.props.vm}
-                        onNewSound={this.handleNewSound}
-                        onRequestClose={this.props.onRequestCloseSoundLibrary}
-                    />
-                ) : null}
+
             </AssetPanel>
         );
     }
@@ -295,9 +289,7 @@ SoundTab.propTypes = {
     onCloseImporting: PropTypes.func.isRequired,
     onNewSoundFromLibraryClick: PropTypes.func.isRequired,
     onNewSoundFromRecordingClick: PropTypes.func.isRequired,
-    onRequestCloseSoundLibrary: PropTypes.func.isRequired,
     onShowImporting: PropTypes.func.isRequired,
-    soundLibraryVisible: PropTypes.bool,
     soundRecorderVisible: PropTypes.bool,
     sprites: PropTypes.shape({
         id: PropTypes.shape({
@@ -319,7 +311,6 @@ const mapStateToProps = state => ({
     isRtl: state.locales.isRtl,
     sprites: state.scratchGui.targets.sprites,
     stage: state.scratchGui.targets.stage,
-    soundLibraryVisible: state.scratchGui.modals.soundLibrary,
     soundRecorderVisible: state.scratchGui.modals.soundRecorder
 });
 
@@ -331,9 +322,6 @@ const mapDispatchToProps = dispatch => ({
     },
     onNewSoundFromRecordingClick: () => {
         dispatch(openSoundRecorder());
-    },
-    onRequestCloseSoundLibrary: () => {
-        dispatch(closeSoundLibrary());
     },
     dispatchUpdateRestore: restoreState => {
         dispatch(setRestore(restoreState));

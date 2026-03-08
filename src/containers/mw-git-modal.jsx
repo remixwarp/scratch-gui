@@ -25,7 +25,11 @@ import {
     mergeBranchesPreview,
     mergeBranchesApply,
     restoreProjectFromCurrentRef,
-    computeCommitGraph
+    computeCommitGraph,
+    addRemote,
+    removeRemote,
+    getRemotes,
+    push
 } from '../lib/git/browser-git.js';
 
 class TWGitModal extends React.Component {
@@ -52,7 +56,17 @@ class TWGitModal extends React.Component {
             mergeSourceBranch: '',
             mergeConflicts: [],
             mergeResolutions: {},
-            changes: []
+            changes: [],
+            // Remote repository state
+            remotes: [],
+            remoteName: '',
+            remoteUrl: '',
+            pushRemote: '',
+            pushBranch: '',
+            // Authentication state
+            authUsername: '',
+            authToken: '',
+            disableCorsProxy: false
         };
 
         this._lastProgressUpdate = 0;
@@ -78,7 +92,18 @@ class TWGitModal extends React.Component {
             'handleChangeMergeSourceBranch',
             'handlePreviewMerge',
             'handleSetMergeResolution',
-            'handleApplyMerge'
+            'handleApplyMerge',
+            // Remote repository handlers
+            'handleAddRemote',
+            'handleRemoveRemote',
+            'handlePush',
+            'handleChangeRemoteName',
+            'handleChangeRemoteUrl',
+            'handleChangePushRemote',
+            'handleChangePushBranch',
+            'handleChangeAuthUsername',
+            'handleChangeAuthToken',
+            'handleChangeDisableCorsProxy'
         ]);
     }
 
@@ -123,6 +148,12 @@ class TWGitModal extends React.Component {
                 (await computeCommitGraph({depth: 50})) :
                 {branches: [], nodes: [], branchLogs: []};
             
+            // Get remotes if repo is initialized
+            let remotes = [];
+            if (status.initialized && hasCommits) {
+                remotes = await getRemotes(this.props.vm);
+            }
+            
             const palette = [
                 '#4db6ac', '#9575cd', '#64b5f6',
                 '#f06292', '#ba68c8', '#4fc3f7',
@@ -141,7 +172,8 @@ class TWGitModal extends React.Component {
                 graphNodes: graph.nodes,
                 graphBranchLogs: graph.branchLogs,
                 branchColors,
-                changes: status.changes
+                changes: status.changes,
+                remotes
             });
         } catch (err) {
             this.setState({error: err && err.message ? err.message : String(err)});
@@ -176,7 +208,11 @@ class TWGitModal extends React.Component {
     async handleCommit () {
         const message = this.state.commitMessage.trim();
         if (!message) {
-            this.setState({error: 'Commit message is required'});
+            this.setState({error: this.props.intl.formatMessage({
+                defaultMessage: 'Commit message is required',
+                description: 'Error message when commit message is empty',
+                id: 'mw.gitModal.error.commitMessageRequired'
+            })});
             return;
         }
 
@@ -207,12 +243,20 @@ class TWGitModal extends React.Component {
     async handleUndoCommit () {
         if (!this.state.initialized) return;
         if (!this.state.currentBranch) {
-            this.setState({error: 'Cannot undo commit while detached. Check out a branch first.'});
+            this.setState({error: this.props.intl.formatMessage({
+                defaultMessage: 'Cannot undo commit while detached. Check out a branch first.',
+                description: 'Error message when trying to undo commit while detached',
+                id: 'mw.gitModal.error.cannotUndoWhileDetached'
+            })});
             return;
         }
 
         if (!Array.isArray(this.state.commits) || this.state.commits.length < 2) {
-            this.setState({error: 'No previous commit to undo to.'});
+            this.setState({error: this.props.intl.formatMessage({
+                defaultMessage: 'No previous commit to undo to.',
+                description: 'Error message when there is no previous commit',
+                id: 'mw.gitModal.error.noPreviousCommit'
+            })});
             return;
         }
 
@@ -253,7 +297,11 @@ class TWGitModal extends React.Component {
     async handleCreateBranch () {
         const ref = this.state.newBranchName.trim();
         if (!ref) {
-            this.setState({error: 'Branch name is required'});
+            this.setState({error: this.props.intl.formatMessage({
+                defaultMessage: 'Branch name is required',
+                description: 'Error message when branch name is empty',
+                id: 'mw.gitModal.error.branchNameRequired'
+            })});
             return;
         }
 
@@ -405,7 +453,11 @@ class TWGitModal extends React.Component {
         const theirs = this.state.mergeSourceBranch;
         if (!ours || !theirs) return;
         if (ours === theirs) {
-            this.setState({error: 'Select a different branch to merge.'});
+            this.setState({error: this.props.intl.formatMessage({
+                defaultMessage: 'Select a different branch to merge.',
+                description: 'Error message when selecting same branch for merge',
+                id: 'mw.gitModal.error.selectDifferentBranch'
+            })});
             return;
         }
         this.setState({
@@ -466,6 +518,133 @@ class TWGitModal extends React.Component {
         }
     }
 
+    // Remote repository handlers
+    async handleAddRemote () {
+        const {remoteName, remoteUrl} = this.state;
+        if (!remoteName.trim()) {
+            this.setState({error: this.props.intl.formatMessage({
+                defaultMessage: 'Remote name is required',
+                description: 'Error message when remote name is empty',
+                id: 'mw.gitModal.error.remoteNameRequired'
+            })});
+            return;
+        }
+        if (!remoteUrl.trim()) {
+            this.setState({error: this.props.intl.formatMessage({
+                defaultMessage: 'Remote URL is required',
+                description: 'Error message when remote URL is empty',
+                id: 'mw.gitModal.error.remoteUrlRequired'
+            })});
+            return;
+        }
+
+        this.setState({busy: true, busyMessage: this.props.intl.formatMessage({
+            defaultMessage: 'Adding remote…',
+            description: 'Message shown when adding a Git remote',
+            id: 'mw.gitModal.addingRemote'
+        }), busyProgress: null, error: null});
+        try {
+            await addRemote({vm: this.props.vm, name: remoteName, url: remoteUrl});
+            this.setState({remoteName: '', remoteUrl: ''});
+            await this.refresh();
+        } catch (err) {
+            this.setState({error: err && err.message ? err.message : String(err)});
+        } finally {
+            this.setState({busy: false, busyMessage: null, busyProgress: null});
+        }
+    }
+
+    async handleRemoveRemote (remoteName) {
+        if (!remoteName) return;
+
+        this.setState({busy: true, busyMessage: this.props.intl.formatMessage({
+            defaultMessage: 'Removing remote…',
+            description: 'Message shown when removing a Git remote',
+            id: 'mw.gitModal.removingRemote'
+        }), busyProgress: null, error: null});
+        try {
+            await removeRemote({vm: this.props.vm, name: remoteName});
+            await this.refresh();
+        } catch (err) {
+            this.setState({error: err && err.message ? err.message : String(err)});
+        } finally {
+            this.setState({busy: false, busyMessage: null, busyProgress: null});
+        }
+    }
+
+    async handlePush () {
+        const {pushRemote, pushBranch, authUsername, authToken, disableCorsProxy} = this.state;
+        if (!pushRemote) {
+            this.setState({error: this.props.intl.formatMessage({
+                defaultMessage: 'Select a remote to push to',
+                description: 'Error message when no remote is selected for push',
+                id: 'mw.gitModal.error.selectPushRemote'
+            })});
+            return;
+        }
+        if (!pushBranch) {
+            this.setState({error: this.props.intl.formatMessage({
+                defaultMessage: 'Select a branch to push',
+                description: 'Error message when no branch is selected for push',
+                id: 'mw.gitModal.error.selectPushBranch'
+            })});
+            return;
+        }
+
+        this.setState({busy: true, busyMessage: this.props.intl.formatMessage({
+            defaultMessage: 'Pushing to remote…',
+            description: 'Message shown when pushing to a Git remote',
+            id: 'mw.gitModal.pushingToRemote'
+        }), busyProgress: null, error: null});
+        try {
+            const options = {};
+            if (authUsername && authToken) {
+                options.onAuth = () => ({
+                    username: authUsername,
+                    password: authToken
+                });
+                options.onAuthFailure = () => {
+                    throw new Error('Authentication failed. Please check your username and token.');
+                };
+            }
+            options.disableCorsProxy = disableCorsProxy;
+            await push({vm: this.props.vm, remote: pushRemote, branch: pushBranch, ...options});
+            await this.refresh();
+        } catch (err) {
+            this.setState({error: err && err.message ? err.message : String(err)});
+        } finally {
+            this.setState({busy: false, busyMessage: null, busyProgress: null});
+        }
+    }
+
+    handleChangeRemoteName (e) {
+        this.setState({remoteName: e.target.value});
+    }
+
+    handleChangeRemoteUrl (e) {
+        this.setState({remoteUrl: e.target.value});
+    }
+
+    handleChangePushRemote (e) {
+        this.setState({pushRemote: e.target.value});
+    }
+
+    handleChangePushBranch (e) {
+        this.setState({pushBranch: e.target.value});
+    }
+
+    handleChangeAuthUsername (e) {
+        this.setState({authUsername: e.target.value});
+    }
+
+    handleChangeAuthToken (e) {
+        this.setState({authToken: e.target.value});
+    }
+
+    handleChangeDisableCorsProxy (e) {
+        this.setState({disableCorsProxy: e.target.checked});
+    }
+
     render () {
         const canUndoCommit = Boolean(this.state.currentBranch) &&
             Array.isArray(this.state.commits) &&
@@ -513,6 +692,25 @@ class TWGitModal extends React.Component {
                 onApplyMerge={this.handleApplyMerge}
                 onClose={this.handleClose}
                 changes={this.state.changes}
+                // Remote repository props
+                remotes={this.state.remotes}
+                remoteName={this.state.remoteName}
+                remoteUrl={this.state.remoteUrl}
+                pushRemote={this.state.pushRemote}
+                pushBranch={this.state.pushBranch}
+                authUsername={this.state.authUsername}
+                authToken={this.state.authToken}
+                disableCorsProxy={this.state.disableCorsProxy}
+                onAddRemote={this.handleAddRemote}
+                onRemoveRemote={this.handleRemoveRemote}
+                onPush={this.handlePush}
+                onChangeRemoteName={this.handleChangeRemoteName}
+                onChangeRemoteUrl={this.handleChangeRemoteUrl}
+                onChangePushRemote={this.handleChangePushRemote}
+                onChangePushBranch={this.handleChangePushBranch}
+                onChangeAuthUsername={this.handleChangeAuthUsername}
+                onChangeAuthToken={this.handleChangeAuthToken}
+                onChangeDisableCorsProxy={this.handleChangeDisableCorsProxy}
             />
         );
     }

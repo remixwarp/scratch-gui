@@ -25,7 +25,6 @@ import {MenuItem, MenuSection, Submenu} from '../menu/menu.jsx';
 import ProjectTitleInput from './project-title-input.jsx';
 import AuthorInfo from './author-info.jsx';
 import SB3Downloader from '../../containers/sb3-downloader.jsx';
-import downloadBlob from '../../lib/utils/download-blob';
 import DeletionRestorer from '../../containers/deletion-restorer.jsx';
 import TurboMode from '../../containers/turbo-mode.jsx';
 import MenuBarHOC from '../../containers/menu-bar-hoc.jsx';
@@ -36,6 +35,7 @@ import ChangeUsername from '../../containers/tw-change-username.jsx';
 import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
 import TWNews from './tw-news.jsx';
+import CollaborationContainer from '../../containers/collaboration-container.jsx';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 
@@ -46,19 +46,14 @@ import {
     openSettingsModal,
     openRestorePointModal,
     openGitModal,
-    openExtensionManagerModal
+    openExtensionManagerModal,
+    openShortcutManagerModal,
+    openSimpleDialog
 } from '../../reducers/modals';
-import {
-    openAIModal,
-    openAIChatModal,
-    openAIAgentModal
-} from '../../reducers/modals';
-import {
-    openAIMenu,
-    closeAIMenu,
-    aiMenuOpen
-} from '../../reducers/menus';
+import {showOnboarding} from '../../reducers/onboarding';
+import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
+import {openAIChatModal, openAIAgentModal} from '../../reducers/modals';
 import {
     isTimeTravel220022BC,
     isTimeTravel1920,
@@ -103,7 +98,13 @@ import {
     closeSettingsMenu,
     errorsMenuOpen,
     openErrorsMenu,
-    closeErrorsMenu
+    closeErrorsMenu,
+    openToolsMenu,
+    closeToolsMenu,
+    toolsMenuOpen,
+    openAIMenu,
+    closeAIMenu,
+    aiMenuOpen
 } from '../../reducers/menus';
 import {setFileHandle} from '../../reducers/tw.js';
 import {
@@ -144,14 +145,12 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard
 } from 'lucide-react';
-import {Cpu} from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
 
 import SeeInsideButton from './tw-see-inside.jsx';
-import AIPanel from '../ai/ai-panel.jsx';
 
 /* const ariaMessages = defineMessages({
     tutorials: {
@@ -166,21 +165,6 @@ const twMessages = defineMessages({
         id: 'tw.menuBar.compileError',
         defaultMessage: '{sprite}: {error}',
         description: 'Error message in error menu'
-    },
-    autosaveSuccess: {
-        id: 'tw.menuBar.autosaveSuccess',
-        defaultMessage: 'Project autosaved successfully!',
-        description: 'Message shown when project is autosaved successfully'
-    },
-    bookmarkDefaultName: {
-        id: 'tw.menuBar.bookmarkDefaultName',
-        defaultMessage: 'Bookmark {number}',
-        description: 'Default name for a new workspace bookmark'
-    },
-    bookmarkDefaultCategory: {
-        id: 'tw.menuBar.bookmarkDefaultCategory',
-        defaultMessage: 'General',
-        description: 'Default category name for workspace bookmarks'
     }
 });
 
@@ -268,6 +252,19 @@ MenuItemLink.propTypes = {
     href: PropTypes.string.isRequired
 };
 
+const formatShortcutDisplay = keyCombo => {
+    if (!keyCombo) return '';
+    const platform = bowser.mac ? 'mac' : 'windows';
+    return keyCombo
+        .replace(/Ctrl/g, platform === 'mac' ? '⌘' : 'Ctrl')
+        .replace(/Cmd/g, '⌘')
+        .replace(/Alt/g, platform === 'mac' ? '⌥' : 'Alt')
+        .replace(/Shift/g, '⇧')
+        .replace(/Space/g, '␣')
+        .replace(/Enter/g, '↵')
+        .replace(/ /g, '');
+};
+
 class MenuBar extends React.Component {
     constructor (props) {
         super(props);
@@ -275,7 +272,7 @@ class MenuBar extends React.Component {
             autosaveTimeRemaining: 0,
             autosavePaused: false,
             workspaceBookmarks: [],
-            workspaceBookmarksCategories: [this.props.intl.formatMessage(twMessages.bookmarkDefaultCategory)],
+            workspaceBookmarksCategories: ['General'],
             workspaceBookmarksCollapsedCategories: [],
             canUndo: true,
             canRedo: true
@@ -297,6 +294,7 @@ class MenuBar extends React.Component {
             'handleClickShare',
             'handleClickUndo',
             'handleClickRedo',
+            'handleClickCollaboration',
             'handleSetMode',
             'handleKeyPress',
             'handleRestoreOption',
@@ -319,14 +317,19 @@ class MenuBar extends React.Component {
             'handleExportWorkspaceBookmarks',
             'handleImportWorkspaceBookmarks',
             'handleClearAllWorkspaceBookmarks',
+            'showAlert',
+            'showPrompt',
+            'showConfirm',
             'handleCompatibilitySave',
             'getPlatformInfo',
             'checkCustomExtensions',
+            'getCompatibilityIssues',
+            'showCompatibilityDialog',
             'handleConvertToScratch',
             'handleConvertToTurbowarp',
             'handleConvertTo02Engine',
             'handleConvertToAstraEditor',
-            'handleConvertToBilup'
+            'handleConvertToRemixWarp'
         ]);
     }
     componentDidMount () {
@@ -355,21 +358,18 @@ class MenuBar extends React.Component {
             }
         });
     }
-    componentDidUpdate (prevProps) {
-        // Restart countdown if autosave settings changed
-        if (prevProps.autosaveEnabled !== this.props.autosaveEnabled ||
-            prevProps.autosaveInterval !== this.props.autosaveInterval) {
-            this.startAutosaveCountdown();
-        }
-    }
     componentWillUnmount () {
         document.removeEventListener('keydown', this.handleKeyPress);
-        if (this.workspaceBookmarksProjectListener && this.props.vm && this.props.vm.runtime) {
-            this.props.vm.runtime.off('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
-        }
+        
         if (this.autosaveCountdownInterval) {
             clearInterval(this.autosaveCountdownInterval);
+            this.autosaveCountdownInterval = null;
         }
+        
+        if (this.props.vm && this.props.vm.runtime && this.workspaceBookmarksProjectListener) {
+            this.props.vm.runtime.off('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
+        }
+        
         if (this.undoRedoChangeListener) {
             this.ensureScratchBlocks().then(ScratchBlocks => {
                 const workspace = ScratchBlocks.getMainWorkspace();
@@ -379,6 +379,259 @@ class MenuBar extends React.Component {
             });
         }
     }
+
+    showAlert (title, message) {
+        return new Promise(resolve => {
+            this.props.openSimpleDialog({
+                type: 'alert',
+                title,
+                message,
+                onOk: () => resolve()
+            });
+        });
+    }
+
+    showPrompt (title, message, defaultValue = '') {
+        return new Promise(resolve => {
+            this.props.openSimpleDialog({
+                type: 'prompt',
+                title,
+                message,
+                defaultValue,
+                onOk: value => resolve(value),
+                onCancel: () => resolve(null)
+            });
+        });
+    }
+
+    showConfirm (title, message) {
+        return new Promise(resolve => {
+            this.props.openSimpleDialog({
+                type: 'confirm',
+                title,
+                message,
+                onOk: () => resolve(true),
+                onCancel: () => resolve(false)
+            });
+        });
+    }
+
+    getPlatformInfo (agentName) {
+        const platforms = {
+            'Scratch': { name: 'scratch', url: 'https://scratch.mit.edu' },
+            'TurboWarp': { name: 'turbowarp', url: 'https://turbowarp.org' },
+            '02Engine': { name: 'o2engine', url: 'https://o2engine.com' },
+            'AstraEditor': { name: 'astraeditor', url: 'https://astraeditor.com' },
+            'RemixWarp': { name: 'remixwarp', url: 'https://remixwarp.com' }
+        };
+        return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
+    }
+
+    async handleCompatibilitySave (agentName) {
+        // Save with specific agent metadata
+        if (this.props.vm && this.props.vm.saveProjectSb3DontZip) {
+            try {
+                // Get project files without zipping
+                const projectFiles = this.props.vm.saveProjectSb3DontZip();
+                const jsonData = projectFiles['project.json'];
+
+                // Parse project.json
+                const projectJson = JSON.parse(new TextDecoder().decode(jsonData));
+
+                // Modify meta to indicate the target platform
+                if (!projectJson.meta) {
+                    projectJson.meta = {};
+                }
+                projectJson.meta.agent = agentName;
+
+                // Modify meta.platform to match the target platform
+                const platformInfo = this.getPlatformInfo(agentName);
+                projectJson.meta.platform = platformInfo;
+
+                // Convert back to Uint8Array
+                const modifiedJson = new TextEncoder().encode(JSON.stringify(projectJson));
+                projectFiles['project.json'] = modifiedJson;
+
+                // Create a new zip with the modified project.json
+                const JSZip = require('jszip');
+                const zip = new JSZip();
+
+                // Add all files to the zip
+                for (const [filename, data] of Object.entries(projectFiles)) {
+                    zip.file(filename, data);
+                }
+
+                // Generate the zip file
+                const content = await zip.generateAsync({type: 'uint8array'});
+
+                // Download the file
+                const downloadBlob = require('../../lib/utils/download-blob').default;
+                downloadBlob(`project-${agentName.toLowerCase()}.sb3`, content);
+
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.error('Error during compatibility save:', error);
+                this.showAlert('Error', `Failed to convert project: ${error.message}`);
+            }
+        }
+    }
+
+    checkCustomExtensions () {
+        // Check if the project contains any custom extensions (non-builtin)
+        if (!this.props.vm || !this.props.vm.extensionManager) {
+            return [];
+        }
+
+        const customExtensions = [];
+        const extensionManager = this.props.vm.extensionManager;
+
+        // Get all loaded extensions
+        for (const extensionId of extensionManager._loadedExtensions.keys()) {
+            // Check if this is a builtin extension
+            if (!extensionManager.isBuiltinExtension(extensionId)) {
+                customExtensions.push(extensionId);
+            }
+        }
+
+        return customExtensions;
+    }
+
+    getCompatibilityIssues (targetPlatform) {
+        // Get all compatibility issues for the target platform
+        const issues = [];
+
+        if (!this.props.vm || !this.props.vm.runtime) {
+            return issues;
+        }
+
+        const runtime = this.props.vm.runtime;
+
+        // Check custom extensions - only for Scratch
+        if (targetPlatform === 'Scratch') {
+            const customExtensions = this.checkCustomExtensions();
+            if (customExtensions.length > 0) {
+                issues.push({
+                    type: 'extension',
+                    severity: 'error',
+                    message: `包含 ${customExtensions.length} 个自定义扩展：${customExtensions.join(', ')}`,
+                    details: '这些扩展在Scratch中无法使用'
+                });
+            }
+        }
+
+        // Check stage size
+        const stageWidth = runtime.stageWidth;
+        const stageHeight = runtime.stageHeight;
+
+        if (targetPlatform === 'Scratch') {
+            if (stageWidth !== 480 || stageHeight !== 360) {
+                issues.push({
+                    type: 'stage',
+                    severity: 'warning',
+                    message: `舞台尺寸 (${stageWidth}x${stageHeight}) 与Scratch默认尺寸 (480x360) 不同`,
+                    details: '在Scratch中舞台尺寸将被重置为默认值'
+                });
+            }
+        }
+
+        return issues;
+    }
+
+    showCompatibilityDialog (targetPlatform, issues) {
+        // Show compatibility issues in a dialog
+        const errors = issues.filter(i => i.severity === 'error');
+        const warnings = issues.filter(i => i.severity === 'warning');
+
+        let message = `转换到 ${targetPlatform} 的兼容性报告：\n\n`;
+
+        if (errors.length > 0) {
+            message += `❌ 错误 (${errors.length} 项)：\n`;
+            errors.forEach((issue, index) => {
+                message += `${index + 1}. ${issue.message}\n`;
+                if (issue.details) {
+                    message += `   ${issue.details}\n`;
+                }
+            });
+            message += '\n';
+        }
+
+        if (warnings.length > 0) {
+            message += `⚠️ 警告 (${warnings.length} 项)：\n`;
+            warnings.forEach((issue, index) => {
+                message += `${index + 1}. ${issue.message}\n`;
+                if (issue.details) {
+                    message += `   ${issue.details}\n`;
+                }
+            });
+            message += '\n';
+        }
+
+        if (errors.length > 0) {
+            message += '存在错误，建议修复后再转换。是否仍要继续？';
+        } else if (warnings.length > 0) {
+            message += '存在警告，但项目仍可转换。是否继续？';
+        } else {
+            return true;
+        }
+
+        return confirm(message);
+    }
+
+    handleConvertToScratch () {
+        const issues = this.getCompatibilityIssues('Scratch');
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('Scratch', issues);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        this.handleCompatibilitySave('Scratch');
+    }
+
+    handleConvertToTurbowarp () {
+        const issues = this.getCompatibilityIssues('TurboWarp');
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('TurboWarp', issues);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        this.handleCompatibilitySave('TurboWarp');
+    }
+
+    handleConvertTo02Engine () {
+        const issues = this.getCompatibilityIssues('02Engine');
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('02Engine', issues);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        this.handleCompatibilitySave('02Engine');
+    }
+
+    handleConvertToAstraEditor () {
+        const issues = this.getCompatibilityIssues('AstraEditor');
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('AstraEditor', issues);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        this.handleCompatibilitySave('AstraEditor');
+    }
+
+    handleConvertToRemixWarp () {
+        const issues = this.getCompatibilityIssues('RemixWarp');
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('RemixWarp', issues);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        this.handleCompatibilitySave('RemixWarp');
+    }
+
     handleClickNew () {
         // if the project is dirty, and user owns the project, we will autosave.
         // but if they are not logged in and can't save, user should consider
@@ -447,6 +700,9 @@ class MenuBar extends React.Component {
                 waitForUpdate(false); // immediately transition to project page
             }
         }
+    }
+    handleClickCollaboration () {
+        this.props.onClickCollaboration();
     }
     handleSetMode (mode) {
         return () => {
@@ -532,20 +788,9 @@ class MenuBar extends React.Component {
             if (!stage || !stage.comments) return;
 
             const payload = readWorkspaceBookmarksFromStage(stage) || getDefaultWorkspaceBookmarksPayload();
-            const defaultCategory = this.props.intl.formatMessage(twMessages.bookmarkDefaultCategory);
-            
-            const normalizedBookmarks = payload.bookmarks.map(bookmark => ({
-                ...bookmark,
-                category: bookmark.category === 'General' ? defaultCategory : bookmark.category
-            }));
-            
-            const normalizedCategories = payload.categories.map(category => 
-                category === 'General' ? defaultCategory : category
-            );
-            
             this.setState({
-                workspaceBookmarks: normalizedBookmarks,
-                workspaceBookmarksCategories: normalizedCategories,
+                workspaceBookmarks: payload.bookmarks,
+                workspaceBookmarksCategories: payload.categories,
                 workspaceBookmarksCollapsedCategories: payload.collapsedCategories
             });
         } catch (e) {
@@ -627,48 +872,58 @@ class MenuBar extends React.Component {
         const enableCategories = true;
 
         if (this.state.workspaceBookmarks.length >= maxTabs) {
-            alert(this.props.intl.formatMessage({
-                defaultMessage: 'Maximum number of bookmarks reached ({max})',
-                description: 'Alert when too many bookmarks exist',
-                id: 'tw.workspaceBookmarks.maxReached'
-            }, {max: maxTabs}));
+            await this.showAlert(
+                this.props.intl.formatMessage({
+                    defaultMessage: 'Error',
+                    id: 'tw.workspaceBookmarks.errorTitle'
+                }),
+                this.props.intl.formatMessage({
+                    defaultMessage: 'Maximum number of bookmarks reached ({max})',
+                    description: 'Alert when too many bookmarks exist',
+                    id: 'tw.workspaceBookmarks.maxReached'
+                }, {max: maxTabs})
+            );
             return;
         }
 
         const state = await this.getCurrentWorkspaceBookmarkState();
         if (!state) return;
 
-        const name = prompt(
+        const name = await this.showPrompt(
+            this.props.intl.formatMessage({
+                defaultMessage: 'Bookmark Name',
+                id: 'tw.workspaceBookmarks.nameTitle'
+            }),
             this.props.intl.formatMessage({
                 defaultMessage: 'Bookmark name:',
                 description: 'Prompt title for bookmark name',
                 id: 'tw.workspaceBookmarks.namePrompt'
             }),
-            this.props.intl.formatMessage(twMessages.bookmarkDefaultName, {
-                number: this.state.workspaceBookmarks.length + 1
-            })
+            `Bookmark ${this.state.workspaceBookmarks.length + 1}`
         );
         if (name === null) return;
 
-        let category = this.props.intl.formatMessage(twMessages.bookmarkDefaultCategory);
+        let category = 'General';
         if (enableCategories) {
             const categoryList = this.state.workspaceBookmarksCategories.join(', ');
-            const categoryInput = prompt(
+            const categoryInput = await this.showPrompt(
+                this.props.intl.formatMessage({
+                    defaultMessage: 'Bookmark Category',
+                    id: 'tw.workspaceBookmarks.categoryTitle'
+                }),
                 this.props.intl.formatMessage({
                     defaultMessage: 'Category (existing: {categories})',
                     description: 'Prompt for bookmark category',
                     id: 'tw.workspaceBookmarks.categoryPrompt'
                 }, {categories: categoryList}),
-                this.props.intl.formatMessage(twMessages.bookmarkDefaultCategory)
+                'General'
             );
             if (categoryInput === null) return;
-            category = categoryInput.trim() || this.props.intl.formatMessage(twMessages.bookmarkDefaultCategory);
+            category = categoryInput.trim() || 'General';
         }
 
         const bookmark = {
-            name: (name.trim() || this.props.intl.formatMessage(twMessages.bookmarkDefaultName, {
-                number: this.state.workspaceBookmarks.length + 1
-            })),
+            name: (name.trim() || `Bookmark ${this.state.workspaceBookmarks.length + 1}`),
             category,
             state,
             timestamp: Date.now()
@@ -704,12 +959,16 @@ class MenuBar extends React.Component {
         });
     }
 
-    handleEditWorkspaceBookmark (index) {
+    async handleEditWorkspaceBookmark (index) {
         const enableCategories = true;
         if (index < 0 || index >= this.state.workspaceBookmarks.length) return;
         const bookmark = this.state.workspaceBookmarks[index];
 
-        const newName = prompt(
+        const newName = await this.showPrompt(
+            this.props.intl.formatMessage({
+                defaultMessage: 'Bookmark Name',
+                id: 'tw.workspaceBookmarks.nameTitle'
+            }),
             this.props.intl.formatMessage({
                 defaultMessage: 'Bookmark name:',
                 description: 'Prompt title for bookmark name',
@@ -722,10 +981,14 @@ class MenuBar extends React.Component {
             return;
         }
 
-        let newCategory = bookmark.category || this.props.intl.formatMessage(twMessages.bookmarkDefaultCategory);
+        let newCategory = bookmark.category || 'General';
         if (enableCategories) {
             const categoryList = this.state.workspaceBookmarksCategories.join(', ');
-            const categoryInput = prompt(
+            const categoryInput = await this.showPrompt(
+                this.props.intl.formatMessage({
+                    defaultMessage: 'Bookmark Category',
+                    id: 'tw.workspaceBookmarks.categoryTitle'
+                }),
                 this.props.intl.formatMessage({
                     defaultMessage: 'Category (existing: {categories})',
                     description: 'Prompt for bookmark category',
@@ -734,7 +997,7 @@ class MenuBar extends React.Component {
                 newCategory
             );
             if (categoryInput !== null) {
-                newCategory = categoryInput.trim() || this.props.intl.formatMessage(twMessages.bookmarkDefaultCategory);
+                newCategory = categoryInput.trim() || 'General';
             }
         }
 
@@ -806,20 +1069,32 @@ class MenuBar extends React.Component {
                             workspaceBookmarks: merged.bookmarks,
                             workspaceBookmarksCategories: merged.categories
                         };
-                    }, () => {
+                    }, async () => {
                         this.saveWorkspaceBookmarksToProject();
-                        alert(this.props.intl.formatMessage({
-                            defaultMessage: 'Successfully imported {count} bookmarks!',
-                            description: 'Alert after importing bookmarks',
-                            id: 'tw.workspaceBookmarks.importSuccess'
-                        }, {count: importCount}));
+                        await this.showAlert(
+                            this.props.intl.formatMessage({
+                                defaultMessage: 'Success',
+                                id: 'tw.workspaceBookmarks.importTitle'
+                            }),
+                            this.props.intl.formatMessage({
+                                defaultMessage: 'Successfully imported {count} bookmarks!',
+                                description: 'Alert after importing bookmarks',
+                                id: 'tw.workspaceBookmarks.importSuccess'
+                            }, {count: importCount})
+                        );
                     });
                 } catch {
-                    alert(this.props.intl.formatMessage({
-                        defaultMessage: 'Failed to import bookmarks. Please check the file format.',
-                        description: 'Alert when import fails',
-                        id: 'tw.workspaceBookmarks.importFailed'
-                    }));
+                    this.showAlert(
+                        this.props.intl.formatMessage({
+                            defaultMessage: 'Error',
+                            id: 'tw.workspaceBookmarks.importErrorTitle'
+                        }),
+                        this.props.intl.formatMessage({
+                            defaultMessage: 'Failed to import bookmarks. Please check the file format.',
+                            description: 'Alert when import fails',
+                            id: 'tw.workspaceBookmarks.importFailed'
+                        })
+                    );
                 }
             };
             reader.readAsText(file);
@@ -828,23 +1103,29 @@ class MenuBar extends React.Component {
         this.props.onRequestCloseWorkspaceBookmarks();
     }
 
-    handleClearAllWorkspaceBookmarks () {
+    async handleClearAllWorkspaceBookmarks () {
         if (this.state.workspaceBookmarks.length === 0) {
             this.props.onRequestCloseWorkspaceBookmarks();
             return;
         }
-        const ok = confirm(this.props.intl.formatMessage({
-            defaultMessage: 'Are you sure you want to delete all {count} bookmarks? This action cannot be undone.',
-            description: 'Confirmation when clearing bookmarks',
-            id: 'tw.workspaceBookmarks.clearAllConfirm'
-        }, {count: this.state.workspaceBookmarks.length}));
+        const ok = await this.showConfirm(
+            this.props.intl.formatMessage({
+                defaultMessage: 'Confirm',
+                id: 'tw.workspaceBookmarks.clearTitle'
+            }),
+            this.props.intl.formatMessage({
+                defaultMessage: 'Are you sure you want to delete all {count} bookmarks? This action cannot be undone.',
+                description: 'Confirmation when clearing bookmarks',
+                id: 'tw.workspaceBookmarks.clearAllConfirm'
+            }, {count: this.state.workspaceBookmarks.length})
+        );
         if (!ok) {
             this.props.onRequestCloseWorkspaceBookmarks();
             return;
         }
         this.setState({
             workspaceBookmarks: [],
-            workspaceBookmarksCategories: [this.props.intl.formatMessage(twMessages.bookmarkDefaultCategory)],
+            workspaceBookmarksCategories: ['General'],
             workspaceBookmarksCollapsedCategories: []
         }, () => {
             this.saveWorkspaceBookmarksToProject();
@@ -937,63 +1218,18 @@ class MenuBar extends React.Component {
             }
 
             if (showNotifications) {
-                const autosaveMessage = this.props.intl.formatMessage(twMessages.autosaveSuccess);
-                this.showAutosaveNotification(autosaveMessage, 'success');
+                this.showAutosaveNotification('Project autosaved successfully!', 'success');
             }
         }
     }
     showAutosaveNotification (message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `autosave-notification autosave-${type}`;
-        notification.textContent = message;
-
-        // Style the notification
-        Object.assign(notification.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            backgroundColor: type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3',
-            color: 'white',
-            padding: '12px 20px',
-            borderRadius: '4px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-            zIndex: '10000',
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            maxWidth: '300px',
-            animation: 'slideInRight 0.3s ease-out'
-        });
-
-        // Add CSS for animation if not already present
-        if (!document.getElementById('autosave-notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'autosave-notification-styles';
-            style.textContent = `
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes slideOutRight {
-                    from { transform: translateX(0); opacity: 1; }
-                    to { transform: translateX(100%); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(style);
+        // Use the toast notification system instead of manual DOM manipulation
+        if (this.props.showToast) {
+            this.props.showToast(message, type);
+        } else {
+            // Fallback to console if showToast is not available
+            console.log(`[${type.toUpperCase()}] ${message}`);
         }
-
-        // Add to page
-        document.body.appendChild(notification);
-
-        // Remove after 3 seconds
-        setTimeout(() => {
-            notification.style.animation = 'slideOutRight 0.3s ease-in';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
     }
     formatTimeRemaining (seconds) {
         if (seconds <= 0) return '';
@@ -1121,326 +1357,6 @@ class MenuBar extends React.Component {
             this.props.onRequestCloseAbout();
         };
     }
-    async handleCompatibilitySave (agentName) {
-        // Save with specific agent metadata
-        if (this.props.vm && this.props.vm.saveProjectSb3DontZip) {
-            try {
-                // Get project files without zipping
-                const projectFiles = this.props.vm.saveProjectSb3DontZip();
-                const jsonData = projectFiles['project.json'];
-                
-                // Parse project.json
-                const projectJson = JSON.parse(new TextDecoder().decode(jsonData));
-                
-                // Modify meta to indicate the target platform
-                if (!projectJson.meta) {
-                    projectJson.meta = {};
-                }
-                projectJson.meta.agent = agentName;
-                
-                // Modify meta.platform to match the target platform
-                // This is what AstraEditor and other editors use to identify the source platform
-                const platformInfo = this.getPlatformInfo(agentName);
-                projectJson.meta.platform = platformInfo;
-                
-                // Convert back to Uint8Array
-                const modifiedJsonData = new TextEncoder().encode(JSON.stringify(projectJson));
-                
-                // Create new project files with modified project.json
-                const modifiedProjectFiles = {
-                    ...projectFiles,
-                    'project.json': modifiedJsonData
-                };
-                
-                // Use JSZip to create the SB3 file
-                const JSZip = await import('@turbowarp/jszip');
-                const zip = new JSZip.default();
-                
-                // Add all files to zip
-                for (const [filename, data] of Object.entries(modifiedProjectFiles)) {
-                    zip.file(filename, data);
-                }
-                
-                // Generate the SB3 blob
-                const content = await zip.generateAsync({
-                    type: 'blob',
-                    compression: 'DEFLATE'
-                });
-                
-                // Always show save location picker
-                if (window.showSaveFilePicker) {
-                    try {
-                        const handle = await window.showSaveFilePicker({
-                            suggestedName: `${this.props.projectTitle || 'project'}.sb3`,
-                            types: [
-                                {
-                                    description: 'Scratch 3 Project',
-                                    accept: {
-                                        'application/octet-stream': '.sb3'
-                                    }
-                                }
-                            ],
-                            excludeAcceptAllOption: true
-                        });
-                        
-                        // Write to the selected file
-                        const writable = await handle.createWritable();
-                        await writable.write(content);
-                        await writable.close();
-                    } catch (error) {
-                        // User cancelled or error occurred
-                        if (error.name !== 'AbortError') {
-                            console.error('Error saving file:', error);
-                            // Fallback to download
-                            const downloadFilename = `${this.props.projectTitle || 'project'}.sb3`;
-                            downloadBlob(downloadFilename, content);
-                        }
-                    }
-                } else {
-                    // Fallback to download if showSaveFilePicker is not available
-                    const downloadFilename = `${this.props.projectTitle || 'project'}.sb3`;
-                    downloadBlob(downloadFilename, content);
-                }
-            } catch (error) {
-                console.error(`Error saving ${agentName} project:`, error);
-                // Fallback to standard save if something goes wrong
-                if (this.props.vm.saveProjectSb3) {
-                    this.props.vm.saveProjectSb3().then(content => {
-                        const filename = `${this.props.projectTitle || 'project'}.sb3`;
-                        downloadBlob(filename, content);
-                    });
-                }
-            }
-        }
-    }
-    getPlatformInfo (agentName) {
-        // Return platform info for different editors
-        // 使用小写名称以便更好地匹配
-        const platforms = {
-            'Scratch': {
-                name: 'scratch',
-                url: 'https://scratch.mit.edu/'
-            },
-            'TurboWarp': {
-                name: 'turbowarp',
-                url: 'https://turbowarp.org/'
-            },
-            '02Engine': {
-                name: '02engine',
-                url: 'https://02engine.02studio.xyz/'
-            },
-            'AstraEditor': {
-                name: 'astraeditor',
-                url: 'https://www.astras.top/'
-            },
-            'Bilup': {
-                name: 'bilup',
-                url: 'https://editor.bilup.org/'
-            }
-        };
-        return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
-    }
-    handleConvertToScratch () {
-        this.handleCompatibilitySave('Scratch');
-    }
-    checkCustomExtensions () {
-        // Check if the project contains any custom extensions (non-builtin)
-        if (!this.props.vm || !this.props.vm.extensionManager) {
-            return [];
-        }
-        
-        const customExtensions = [];
-        const extensionManager = this.props.vm.extensionManager;
-        
-        // Get all loaded extensions
-        for (const extensionId of extensionManager._loadedExtensions.keys()) {
-            // Check if this is a builtin extension
-            if (!extensionManager.isBuiltinExtension(extensionId)) {
-                customExtensions.push(extensionId);
-            }
-        }
-        
-        return customExtensions;
-    }
-    getCompatibilityIssues (targetPlatform) {
-        // Get all compatibility issues for the target platform
-        const issues = [];
-        
-        if (!this.props.vm || !this.props.vm.runtime) {
-            return issues;
-        }
-        
-        const runtime = this.props.vm.runtime;
-        
-        // Check custom extensions - only for Scratch
-        if (targetPlatform === 'Scratch') {
-            const customExtensions = this.checkCustomExtensions();
-            if (customExtensions.length > 0) {
-                issues.push({
-                    type: 'extension',
-                    severity: 'error',
-                    message: `包含 ${customExtensions.length} 个自定义扩展：${customExtensions.join(', ')}`,
-                    details: '这些扩展在Scratch中无法使用'
-                });
-            }
-        }
-        
-        // Check block count
-        let totalBlocks = 0;
-        for (const target of runtime.targets) {
-            if (target.sprite && target.sprite.blocks) {
-                totalBlocks += Object.keys(target.sprite.blocks._blocks).length;
-            }
-        }
-        
-        const platformLimits = {
-            'Scratch': { maxBlocks: Infinity },
-            'TurboWarp': { maxBlocks: Infinity },
-            '02Engine': { maxBlocks: Infinity },
-            'AstraEditor': { maxBlocks: Infinity },
-            'Bilup': { maxBlocks: Infinity }
-        };
-        
-        const limits = platformLimits[targetPlatform];
-        if (limits && limits.maxBlocks !== Infinity && totalBlocks > limits.maxBlocks) {
-            issues.push({
-                type: 'blocks',
-                severity: 'warning',
-                message: `积木数量 (${totalBlocks}) 超过 ${targetPlatform} 限制 (${limits.maxBlocks})`,
-                details: '部分积木可能无法正常工作'
-            });
-        }
-        
-        // Check stage size
-        const stageWidth = runtime.stageWidth;
-        const stageHeight = runtime.stageHeight;
-        
-        if (targetPlatform === 'Scratch') {
-            if (stageWidth !== 480 || stageHeight !== 360) {
-                issues.push({
-                    type: 'stage',
-                    severity: 'warning',
-                    message: `舞台尺寸 (${stageWidth}x${stageHeight}) 与Scratch默认尺寸 (480x360) 不同`,
-                    details: '在Scratch中舞台尺寸将被重置为默认值'
-                });
-            }
-        }
-        
-        // Check for TurboWarp-specific features
-        if (targetPlatform === 'Scratch') {
-            // Check for compiled blocks or other TurboWarp-specific features
-            for (const target of runtime.targets) {
-                if (target.sprite && target.sprite.blocks) {
-                    for (const blockId in target.sprite.blocks._blocks) {
-                        const block = target.sprite.blocks._blocks[blockId];
-                        // Check for TurboWarp-specific opcodes
-                        if (block.opcode && block.opcode.startsWith('tw_')) {
-                            issues.push({
-                                type: 'feature',
-                                severity: 'error',
-                                message: `使用了 TurboWarp 特有功能: ${block.opcode}`,
-                                details: '此功能在目标平台不可用'
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        
-        return issues;
-    }
-    showCompatibilityDialog (targetPlatform, issues) {
-        // Show compatibility issues in a dialog
-        const errors = issues.filter(i => i.severity === 'error');
-        const warnings = issues.filter(i => i.severity === 'warning');
-        
-        let message = `转换到 ${targetPlatform} 的兼容性报告：\n\n`;
-        
-        if (errors.length > 0) {
-            message += `❌ 错误 (${errors.length} 项)：\n`;
-            errors.forEach((issue, index) => {
-                message += `${index + 1}. ${issue.message}\n`;
-                if (issue.details) {
-                    message += `   ${issue.details}\n`;
-                }
-            });
-            message += '\n';
-        }
-        
-        if (warnings.length > 0) {
-            message += `⚠️ 警告 (${warnings.length} 项)：\n`;
-            warnings.forEach((issue, index) => {
-                message += `${index + 1}. ${issue.message}\n`;
-                if (issue.details) {
-                    message += `   ${issue.details}\n`;
-                }
-            });
-            message += '\n';
-        }
-        
-        if (errors.length > 0) {
-            message += '存在错误，建议修复后再转换。是否仍要继续？';
-            return confirm(message);
-        } else if (warnings.length > 0) {
-            message += '存在警告，但项目仍可转换。是否继续？';
-            return confirm(message);
-        }
-        
-        return true;
-    }
-    handleConvertToScratch () {
-        // Check compatibility issues before converting to Scratch
-        const issues = this.getCompatibilityIssues('Scratch');
-        
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('Scratch', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        
-        this.handleCompatibilitySave('Scratch');
-    }
-    handleConvertToTurbowarp () {
-        const issues = this.getCompatibilityIssues('TurboWarp');
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('TurboWarp', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        this.handleCompatibilitySave('TurboWarp');
-    }
-    handleConvertTo02Engine () {
-        const issues = this.getCompatibilityIssues('02Engine');
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('02Engine', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        this.handleCompatibilitySave('02Engine');
-    }
-    handleConvertToAstraEditor () {
-        const issues = this.getCompatibilityIssues('AstraEditor');
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('AstraEditor', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        this.handleCompatibilitySave('AstraEditor');
-    }
-    handleConvertToBilup () {
-        const issues = this.getCompatibilityIssues('Bilup');
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('Bilup', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        this.handleCompatibilitySave('Bilup');
-    }
     render () {
         const saveNowMessage = (
             <FormattedMessage
@@ -1464,14 +1380,11 @@ class MenuBar extends React.Component {
             />
         );
         const newProjectMessage = (
-            <div>
-                <FilePlusCorner />
-                <FormattedMessage
-                    defaultMessage="New"
-                    description="Menu bar item for creating a new project"
-                    id="gui.menuBar.new"
-                />
-            </div>
+            <FormattedMessage
+                defaultMessage="New"
+                description="Menu bar item for creating a new project"
+                id="gui.menuBar.new"
+            />
         );
         const remixButton = (
             <Button
@@ -1574,64 +1487,8 @@ class MenuBar extends React.Component {
                                         isRtl={this.props.isRtl}
                                         onClick={this.handleClickNew}
                                     >
+                                        <FilePlusCorner />
                                         {newProjectMessage}
-                                    </MenuItem>
-                                    <MenuItem
-                                        isRtl={this.props.isRtl}
-                                        expanded={false}
-                                    >
-                                        <div className={styles.menuItemContent}>
-                                            <FormattedMessage
-                                                defaultMessage="Compatibility Convert"
-                                                description="Convert project to different editor formats"
-                                                id="gui.menuBar.compatibility"
-                                            />
-                                            <ChevronDown size={8} />
-                                        </div>
-                                        <Submenu place={this.props.isRtl ? 'left' : 'right'}>
-                                            <div className={styles.menuSectionTitle}>
-                                                <FormattedMessage
-                                                    defaultMessage="Save to"
-                                                    description="Save to compatibility editors"
-                                                    id="gui.menuBar.compatibility.saveTo"
-                                                />
-                                            </div>
-                                            <MenuItem onClick={this.handleConvertToScratch}>
-                                                <FormattedMessage
-                                                    defaultMessage="Scratch"
-                                                    description="Convert to Scratch compatibility"
-                                                    id="gui.menuBar.compatibility.scratch"
-                                                />
-                                            </MenuItem>
-                                            <MenuItem onClick={this.handleConvertToTurbowarp}>
-                                                <FormattedMessage
-                                                    defaultMessage="Turbowarp"
-                                                    description="Convert to Turbowarp compatibility"
-                                                    id="gui.menuBar.compatibility.turbowarp"
-                                                />
-                                            </MenuItem>
-                                            <MenuItem onClick={this.handleConvertTo02Engine}>
-                                                <FormattedMessage
-                                                    defaultMessage="02Engine"
-                                                    description="Convert to 02Engine compatibility"
-                                                    id="gui.menuBar.compatibility.o2engine"
-                                                />
-                                            </MenuItem>
-                                            <MenuItem onClick={this.handleConvertToAstraEditor}>
-                                                <FormattedMessage
-                                                    defaultMessage="AstraEditor"
-                                                    description="Convert to AstraEditor compatibility"
-                                                    id="gui.menuBar.compatibility.astraeditor"
-                                                />
-                                            </MenuItem>
-                                            <MenuItem onClick={this.handleConvertToBilup}>
-                                                <FormattedMessage
-                                                    defaultMessage="Bilup"
-                                                    description="Convert to Bilup compatibility"
-                                                    id="gui.menuBar.compatibility.bilup"
-                                                />
-                                            </MenuItem>
-                                        </Submenu>
                                     </MenuItem>
                                     {this.props.onClickNewWindow && (
                                         <MenuItem
@@ -1649,14 +1506,20 @@ class MenuBar extends React.Component {
                                     {(this.props.canSave || this.props.canCreateCopy || this.props.canRemix) && (
                                         <MenuSection>
                                             {this.props.canSave && (
-                                                <MenuItem onClick={this.handleClickSave}>
+                                                <MenuItem
+                                                    onClick={this.handleClickSave}
+                                                    shortcut={formatShortcutDisplay('Ctrl+S')}
+                                                >
                                                     {saveNowMessage}
                                                 </MenuItem>
                                             )}
                                             {this.props.canCreateCopy && (
                                                 <div>
                                                     <Save />
-                                                    <MenuItem onClick={this.handleClickSaveAsCopy}>
+                                                    <MenuItem
+                                                        onClick={this.handleClickSaveAsCopy}
+                                                        shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
+                                                    >
                                                         {createCopyMessage}
                                                     </MenuItem>
                                                 </div>
@@ -1671,6 +1534,7 @@ class MenuBar extends React.Component {
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.props.onStartSelectingFileUpload}
+                                            shortcut={formatShortcutDisplay('Ctrl+O')}
                                         >
                                             <Upload />
                                             {this.props.intl.formatMessage(sharedMessages.loadFromComputerTitle)}
@@ -1683,8 +1547,11 @@ class MenuBar extends React.Component {
                                                     {extended.available && (
                                                         <React.Fragment>
                                                             {extended.name !== null && (
-                                                                // eslint-disable-next-line max-len
-                                                                <MenuItem onClick={this.getSaveToComputerHandler(extended.saveToLastFile)}>
+                                                                <MenuItem
+                                                                    // eslint-disable-next-line max-len
+                                                                    onClick={this.getSaveToComputerHandler(extended.saveToLastFile)}
+                                                                    shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
+                                                                >
                                                                     <FileInput />
                                                                     <FormattedMessage
                                                                         defaultMessage="Save to {file}"
@@ -1698,7 +1565,10 @@ class MenuBar extends React.Component {
                                                                 </MenuItem>
                                                             )}
                                                             {/* eslint-disable-next-line max-len */}
-                                                            <MenuItem onClick={this.getSaveToComputerHandler(extended.saveAsNew)}>
+                                                            <MenuItem
+                                                                onClick={this.getSaveToComputerHandler(extended.saveAsNew)}
+                                                                shortcut={formatShortcutDisplay('Ctrl+S')}
+                                                            >
                                                                 <Save />
                                                                 <FormattedMessage
                                                                     defaultMessage="Save as..."
@@ -1713,10 +1583,70 @@ class MenuBar extends React.Component {
                                             )}
                                         </SB3Downloader>
                                     </MenuSection>
+                                    <MenuSection>
+                                        <MenuItem
+                                            isRtl={this.props.isRtl}
+                                            expanded={false}
+                                        >
+                                            <div className={styles.menuItemContent}>
+                                                <FormattedMessage
+                                                    defaultMessage="Compatibility Convert"
+                                                    description="Convert project to different editor formats"
+                                                    id="gui.menuBar.compatibility"
+                                                />
+                                                <ChevronDown size={8} />
+                                            </div>
+                                            <Submenu place={this.props.isRtl ? 'left' : 'right'}>
+                                                <div className={styles.menuSectionTitle}>
+                                                    <FormattedMessage
+                                                        defaultMessage="Save to"
+                                                        description="Save to compatibility editors"
+                                                        id="gui.menuBar.compatibility.saveTo"
+                                                    />
+                                                </div>
+                                                <MenuItem onClick={this.handleConvertToScratch}>
+                                                    <FormattedMessage
+                                                        defaultMessage="Scratch"
+                                                        description="Convert to Scratch compatibility"
+                                                        id="gui.menuBar.compatibility.scratch"
+                                                    />
+                                                </MenuItem>
+                                                <MenuItem onClick={this.handleConvertToTurbowarp}>
+                                                    <FormattedMessage
+                                                        defaultMessage="Turbowarp"
+                                                        description="Convert to Turbowarp compatibility"
+                                                        id="gui.menuBar.compatibility.turbowarp"
+                                                    />
+                                                </MenuItem>
+                                                <MenuItem onClick={this.handleConvertTo02Engine}>
+                                                    <FormattedMessage
+                                                        defaultMessage="02Engine"
+                                                        description="Convert to 02Engine compatibility"
+                                                        id="gui.menuBar.compatibility.o2engine"
+                                                    />
+                                                </MenuItem>
+                                                <MenuItem onClick={this.handleConvertToAstraEditor}>
+                                                    <FormattedMessage
+                                                        defaultMessage="AstraEditor"
+                                                        description="Convert to AstraEditor compatibility"
+                                                        id="gui.menuBar.compatibility.astraeditor"
+                                                    />
+                                                </MenuItem>
+                                                <MenuItem onClick={this.handleConvertToRemixWarp}>
+                                                    <FormattedMessage
+                                                        defaultMessage="RemixWarp"
+                                                        description="Convert to RemixWarp compatibility"
+                                                        id="gui.menuBar.compatibility.remixwarp"
+                                                    />
+                                                </MenuItem>
+                                            </Submenu>
+                                        </MenuItem>
+                                    </MenuSection>
                                     {this.props.onClickPackager && (
                                         <MenuSection>
                                             <MenuItem
                                                 onClick={this.handleClickPackager}
+                                                shortcut={formatShortcutDisplay('Ctrl+P')}
                                             >
                                                 <Package />
                                                 <FormattedMessage
@@ -1729,17 +1659,20 @@ class MenuBar extends React.Component {
                                         </MenuSection>
                                     )}
                                     <MenuSection className={styles.menuSection}>
-                                        <MenuItem onClick={this.props.onClickGitModal}>
-                                            <GitBranch />
+                                        <MenuItem onClick={this.props.onClickCollaboration}>
+                                            <Handshake size={20} />
                                             <FormattedMessage
-                                                defaultMessage="Git"
-                                                description="Menu bar item to open git window"
-                                                id="mw.menuBar.git"
+                                                defaultMessage="Live Collaboration"
+                                                description="Menu bar item for live collaboration"
+                                                id="tw.menuBar.collaboration"
                                             />
                                         </MenuItem>
                                     </MenuSection>
                                     <MenuSection>
-                                        <MenuItem onClick={this.handleClickRestorePoints}>
+                                        <MenuItem
+                                            onClick={this.handleClickRestorePoints}
+                                            shortcut={formatShortcutDisplay('Alt+R')}
+                                        >
                                             <RefreshCcw />
                                             <FormattedMessage
                                                 defaultMessage="Restore points"
@@ -1801,55 +1734,6 @@ class MenuBar extends React.Component {
                             </MenuLabel>
                         )}
                         <MenuLabel
-                            open={this.props.aiMenuOpen}
-                            onOpen={this.props.onRequestOpenAI}
-                            onClose={this.props.onRequestCloseAI}
-                        >
-                            <Cpu size={20} />
-                            <span className={styles.collapsibleLabel}>
-                                <FormattedMessage
-                                    defaultMessage="AI"
-                                    description="AI button"
-                                    id="gui.menuBar.ai"
-                                />
-                            </span>
-                            <ChevronDown size={8} />
-                            <MenuBarMenu
-                                className={classNames(styles.menuBarMenu)}
-                                open={this.props.aiMenuOpen}
-                                place={this.props.isRtl ? 'left' : 'right'}
-                            >
-                                <MenuItem
-                                    isRtl={this.props.isRtl}
-                                    onClick={() => {
-                                        this.props.onClickOpenAIChat();
-                                        this.props.onRequestCloseAI();
-                                    }}
-                                    title={this.props.locale.startsWith('zh-') ? "与AI共话，浅吟低唱间灵感绽放" : undefined}
-                                >
-                                    <FormattedMessage
-                                        defaultMessage="AI Chat"
-                                        description="AI chat menu item"
-                                        id="gui.menuBar.ai.chat"
-                                    />
-                                </MenuItem>
-                                <MenuItem
-                                    isRtl={this.props.isRtl}
-                                    onClick={() => {
-                                        this.props.onClickOpenAIAgent();
-                                        this.props.onRequestCloseAI();
-                                    }}
-                                    title={this.props.locale.startsWith('zh-') ? "思绪为墨，AI代笔写就创意篇章" : undefined}
-                                >
-                                    <FormattedMessage
-                                        defaultMessage="AI Agent"
-                                        description="AI agent menu item"
-                                        id="gui.menuBar.ai.agent"
-                                    />
-                                </MenuItem>
-                            </MenuBarMenu>
-                        </MenuLabel>
-                        <MenuLabel
                             open={this.props.editMenuOpen}
                             onOpen={this.props.onClickEdit}
                             onClose={this.props.onRequestCloseEdit}
@@ -1885,6 +1769,7 @@ class MenuBar extends React.Component {
                                     <MenuItem
                                         className={classNames({[styles.disabled]: !this.state.canUndo})}
                                         onClick={this.state.canUndo ? this.handleClickUndo : null}
+                                        shortcut={formatShortcutDisplay('Ctrl+Z')}
                                     >
                                         <Undo />
 
@@ -1897,6 +1782,7 @@ class MenuBar extends React.Component {
                                     <MenuItem
                                         className={classNames({[styles.disabled]: !this.state.canRedo})}
                                         onClick={this.state.canRedo ? this.handleClickRedo : null}
+                                        shortcut={formatShortcutDisplay('Ctrl+Shift+Z')}
                                     >
                                         <Redo />
 
@@ -1913,6 +1799,7 @@ class MenuBar extends React.Component {
                                             this.props.onClickSettingsModal();
                                             this.props.onRequestCloseEdit();
                                         }}
+                                        shortcut={formatShortcutDisplay('Ctrl+,')}
                                     >
                                         <Settings />
                                         <FormattedMessage
@@ -1979,66 +1866,18 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                     )}</CloudVariablesToggler>
                                 </MenuSection>
-                                {window.__mistwarpDebuggerToggle || window.__mistwarpVariableManagerToggle ? (
-                                    <MenuSection>
-                                        {window.__mistwarpDebuggerToggle && (
-                                            <MenuItem
-                                                onClick={() => {
-                                                    window.__mistwarpDebuggerToggle();
-                                                    this.props.onRequestCloseEdit();
-                                                }}
-                                            >
-                                                <Bug />
-                                                <FormattedMessage
-                                                    defaultMessage="Debugger"
-                                                    description="Menu bar item to toggle the debugger"
-                                                    id="tw.menuBar.debugger"
-                                                />
-                                            </MenuItem>
-                                        )}
-                                        {window.__mistwarpVariableManagerToggle && (
-                                            <MenuItem
-                                                onClick={() => {
-                                                    window.__mistwarpVariableManagerToggle();
-                                                    this.props.onRequestCloseEdit();
-                                                }}
-                                            >
-                                                <Database />
-                                                <FormattedMessage
-                                                    defaultMessage="Variable Manager"
-                                                    description="Menu bar item to toggle the variable manager"
-                                                    id="tw.menuBar.variableManager"
-                                                />
-                                            </MenuItem>
-                                        )}
-                                    </MenuSection>
-                                ) : null}
-                                
                                 <MenuSection>
                                     <MenuItem
                                         onClick={() => {
+                                            this.props.onClickShowTutorial();
                                             this.props.onRequestCloseEdit();
-                                            this.props.onOpenExtensionLibrary();
                                         }}
                                     >
-                                        <PackagePlus />
+                                        <Sparkles />
                                         <FormattedMessage
-                                            defaultMessage="Add Extension"
-                                            description="Menu bar item for adding or importing extensions"
-                                            id="tw.menuBar.extensions.addImport"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem
-                                        onClick={() => {
-                                            this.props.onRequestCloseEdit();
-                                            this.props.onOpenExtensionManagerModal();
-                                        }}
-                                    >
-                                        <FileCog />
-                                        <FormattedMessage
-                                            defaultMessage="Manage Extensions"
-                                            description="Menu bar item for managing loaded extensions"
-                                            id="tw.menuBar.extensions.manage"
+                                            defaultMessage="Show Tutorial"
+                                            description="Menu bar item to show the tutorial"
+                                            id="tw.menuBar.showTutorial"
                                         />
                                     </MenuItem>
                                 </MenuSection>
@@ -2101,6 +1940,170 @@ class MenuBar extends React.Component {
                             onRequestOpen={this.props.onClickSettings}
                             settingsMenuOpen={this.props.settingsMenuOpen}
                         />)}
+                        <MenuLabel
+                            open={this.props.toolsMenuOpen}
+                            onOpen={this.props.onClickTools}
+                            onClose={this.props.onRequestCloseTools}
+                        >
+                            <Wrench size={20} />
+                            <span className={styles.collapsibleLabel}>
+                                <FormattedMessage
+                                    defaultMessage="Tools"
+                                    description="Text for tools dropdown menu"
+                                    id="gui.menuBar.tools"
+                                />
+                            </span>
+                            <ChevronDown size={8} />
+                            <MenuBarMenu
+                                className={classNames(styles.menuBarMenu)}
+                                open={this.props.toolsMenuOpen}
+                                place={this.props.isRtl ? 'left' : 'right'}
+                            >
+                                <MenuSection>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onClickGitModal();
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <GitBranch />
+                                        <FormattedMessage
+                                            defaultMessage="Git"
+                                            description="Menu bar item to open git window"
+                                            id="mw.menuBar.git"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem
+                                        expanded={this.props.aiMenuOpen}
+                                    >
+                                        <div
+                                            className={styles.option}
+                                            onClick={this.props.onClickAI}
+                                        >
+                                            <Sparkles className={styles.icon} />
+                                            <span className={styles.submenuLabel}>
+                                                <FormattedMessage
+                                                    defaultMessage="AI"
+                                                    description="AI sub-menu"
+                                                    id="gui.menuBar.ai"
+                                                />
+                                            </span>
+                                            <ChevronDown className={styles.expandCaret} />
+                                        </div>
+                                        <Submenu
+                                            className={styles.languageSubmenu}
+                                            place={this.props.isRtl ? 'left' : 'right'}
+                                        >
+                                            <MenuSection>
+                                                <MenuItem
+                                                    onClick={() => {
+                                                        this.props.onClickAIChat();
+                                                        this.props.onRequestCloseTools();
+                                                    }}
+                                                >
+                                                    <FormattedMessage
+                                                        defaultMessage="AI Chat"
+                                                        description="Menu bar item for AI chat"
+                                                        id="gui.menuBar.aiChat"
+                                                    />
+                                                </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => {
+                                                        this.props.onClickAIAgent();
+                                                        this.props.onRequestCloseTools();
+                                                    }}
+                                                >
+                                                    <FormattedMessage
+                                                        defaultMessage="AI Agent"
+                                                        description="Menu bar item for AI agent"
+                                                        id="gui.menuBar.aiAgent"
+                                                    />
+                                                </MenuItem>
+                                            </MenuSection>
+                                        </Submenu>
+                                    </MenuItem>
+                                </MenuSection>
+                                {window.__mistwarpDebuggerToggle || window.__mistwarpVariableManagerToggle ? (
+                                    <MenuSection>
+                                        {window.__mistwarpDebuggerToggle && (
+                                            <MenuItem
+                                                onClick={() => {
+                                                    window.__mistwarpDebuggerToggle();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <Bug />
+                                                <FormattedMessage
+                                                    defaultMessage="Debugger"
+                                                    description="Menu bar item to toggle the debugger"
+                                                    id="tw.menuBar.debugger"
+                                                />
+                                            </MenuItem>
+                                        )}
+                                        {window.__mistwarpVariableManagerToggle && (
+                                            <MenuItem
+                                                onClick={() => {
+                                                    window.__mistwarpVariableManagerToggle();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <Database />
+                                                <FormattedMessage
+                                                    defaultMessage="Variable Manager"
+                                                    description="Menu bar item to toggle the variable manager"
+                                                    id="tw.menuBar.variableManager"
+                                                />
+                                            </MenuItem>
+                                        )}
+                                    </MenuSection>
+                                ) : null}
+                                <MenuSection>
+                                     <MenuItem
+                                         onClick={() => {
+                                             this.props.onRequestCloseTools();
+                                             this.props.onOpenExtensionLibrary();
+                                         }}
+                                         shortcut={formatShortcutDisplay('Ctrl+.')}
+                                     >
+                                         <PackagePlus />
+                                         <FormattedMessage
+                                             defaultMessage="Add Extension"
+                                             description="Menu bar item for adding or importing extensions"
+                                             id="tw.menuBar.extensions.addImport"
+                                         />
+                                     </MenuItem>
+                                     <MenuItem
+                                         onClick={() => {
+                                             this.props.onRequestCloseTools();
+                                             this.props.onOpenExtensionManagerModal();
+                                         }}
+                                         shortcut={formatShortcutDisplay('Ctrl+Alt+E')}
+                                     >
+                                        <FileCog />
+                                        <FormattedMessage
+                                            defaultMessage="Manage Extensions"
+                                            description="Menu bar item for managing loaded extensions"
+                                            id="tw.menuBar.extensions.manage"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
+                                <MenuSection>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onClickShortcutManagerModal();
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <Keyboard />
+                                        <FormattedMessage
+                                            defaultMessage="Keyboard Shortcuts"
+                                            description="Menu bar item for keyboard shortcuts"
+                                            id="tw.menuBar.keyboardShortcuts"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
+                            </MenuBarMenu>
+                        </MenuLabel>
                         {!this.props.isPlayerOnly && (
                             <MenuLabel
                                 open={this.props.workspaceBookmarksMenuOpen}
@@ -2311,6 +2314,8 @@ MenuBar.propTypes = {
     enableCommunity: PropTypes.bool,
     fileMenuOpen: PropTypes.bool,
     workspaceBookmarksMenuOpen: PropTypes.bool,
+    toolsMenuOpen: PropTypes.bool,
+    aiMenuOpen: PropTypes.bool,
     handleSaveProject: PropTypes.func,
     intl: intlShape,
     isPlayerOnly: PropTypes.bool,
@@ -2338,11 +2343,14 @@ MenuBar.propTypes = {
     ]),
     onClickAccount: PropTypes.func,
     onClickAddonSettings: PropTypes.func,
+    onClickCollaboration: PropTypes.func,
     onClickDesktopSettings: PropTypes.func,
     onClickPackager: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
     onClickAddRestorePoint: PropTypes.func,
     onClickExtensionManager: PropTypes.func,
+    openSimpleDialog: PropTypes.func.isRequired,
+    showToast: PropTypes.func,
     onClickEdit: PropTypes.func,
     onClickEditor: PropTypes.func,
     onClickFile: PropTypes.func,
@@ -2358,6 +2366,8 @@ MenuBar.propTypes = {
     onClickPreferencesModal: PropTypes.func,
     onClickSettingsModal: PropTypes.func,
     onClickGitModal: PropTypes.func,
+    onClickShowTutorial: PropTypes.func,
+    onClickShortcutManagerModal: PropTypes.func,
     onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenExtensionLibrary: PropTypes.func,
@@ -2374,6 +2384,12 @@ MenuBar.propTypes = {
     onRequestCloseLogin: PropTypes.func,
     onRequestCloseMode: PropTypes.func,
     onRequestCloseSettings: PropTypes.func,
+    onClickTools: PropTypes.func,
+    onRequestCloseTools: PropTypes.func,
+    onClickAI: PropTypes.func,
+    onRequestCloseAI: PropTypes.func,
+    onClickAIChat: PropTypes.func,
+    onClickAIAgent: PropTypes.func,
     onRequestOpenAbout: PropTypes.func,
     onSeeCommunity: PropTypes.func,
     onSetAutosaveEnabled: PropTypes.func,
@@ -2416,7 +2432,6 @@ const mapStateToProps = (state, ownProps) => {
         projectId: state.scratchGui.projectState.projectId,
         aboutMenuOpen: aboutMenuOpen(state),
         accountMenuOpen: accountMenuOpen(state),
-        aiMenuOpen: aiMenuOpen(state),
         autosaveEnabled: state.scratchGui.autosave.enabled,
         autosaveInterval: state.scratchGui.autosave.interval,
         currentLocale: state.locales.locale,
@@ -2425,6 +2440,8 @@ const mapStateToProps = (state, ownProps) => {
         workspaceBookmarksMenuOpen: workspaceBookmarksMenuOpen(state),
         errors: state.scratchGui.tw.compileErrors,
         errorsMenuOpen: errorsMenuOpen(state),
+        toolsMenuOpen: toolsMenuOpen(state),
+        aiMenuOpen: aiMenuOpen(state),
         isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
         isRtl: state.locales.isRtl,
         isUpdating: getIsUpdating(loadingState),
@@ -2444,10 +2461,7 @@ const mapStateToProps = (state, ownProps) => {
         mode1920: isTimeTravel1920(state),
         mode1990: isTimeTravel1990(state),
         mode2020: isTimeTravel2020(state),
-        modeNow: isTimeTravelNow(state),
-        showSaveFilePicker: typeof window.showSaveFilePicker === 'function' && !navigator.userAgent.includes('Android') ?
-            window.showSaveFilePicker.bind(window) :
-            null
+        modeNow: isTimeTravelNow(state)
     };
 };
 
@@ -2457,6 +2471,7 @@ const mapDispatchToProps = dispatch => ({
     onOpenTipLibrary: () => dispatch(openTipsLibrary()),
     onClickAccount: () => dispatch(openAccountMenu()),
     onRequestCloseAccount: () => dispatch(closeAccountMenu()),
+    onClickCollaboration: () => dispatch(openCollaborationModal()),
     onClickFile: () => dispatch(openFileMenu()),
     onRequestCloseFile: () => dispatch(closeFileMenu()),
     onClickWorkspaceBookmarks: () => dispatch(openWorkspaceBookmarksMenu()),
@@ -2465,6 +2480,12 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseEdit: () => dispatch(closeEditMenu()),
     onClickErrors: () => dispatch(openErrorsMenu()),
     onRequestCloseErrors: () => dispatch(closeErrorsMenu()),
+    onClickTools: () => dispatch(openToolsMenu()),
+    onRequestCloseTools: () => dispatch(closeToolsMenu()),
+    onClickAI: () => dispatch(openAIMenu()),
+    onRequestCloseAI: () => dispatch(closeAIMenu()),
+    onClickAIChat: () => dispatch(openAIChatModal()),
+    onClickAIAgent: () => dispatch(openAIAgentModal()),
     onClickLogin: () => dispatch(openLoginMenu()),
     onRequestCloseLogin: () => dispatch(closeLoginMenu()),
     onClickMode: () => dispatch(openModeMenu()),
@@ -2482,10 +2503,13 @@ const mapDispatchToProps = dispatch => ({
         dispatch(closeEditMenu());
         dispatch(openGitModal());
     },
-    onClickOpenAIChat: () => dispatch(openAIChatModal()),
-    onClickOpenAIAgent: () => dispatch(openAIAgentModal()),
-    onRequestOpenAI: () => dispatch(openAIMenu()),
-    onRequestCloseAI: () => dispatch(closeAIMenu()),
+    onClickShowTutorial: () => {
+        localStorage.removeItem('mw:has-seen-onboarding');
+        dispatch(showOnboarding());
+    },
+    onClickShortcutManagerModal: () => {
+        dispatch(openShortcutManagerModal());
+    },
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onRequestCloseSettings: () => dispatch(closeSettingsMenu()),
     onClickNew: needSave => {
