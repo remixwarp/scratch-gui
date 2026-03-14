@@ -6,15 +6,17 @@
 }
 
 [class*="stage-header_stage-header-wrapper-overlay"] {
-  top: var(--sa-menu-bar-height, 0px) !important;
+  top: 0px !important;
   display: block !important;
   opacity: 1 !important;
   visibility: visible !important;
   transform: translateY(0%) !important;
+  z-index: 1000 !important;
 }
 
 [class*="stage-wrapper_full-screen"] {
-  top: calc(var(--sa-menu-bar-height, 0px) + 44px) !important;
+  top: 44px !important;
+  position: fixed !important;
 }
 
 [class*="stage-wrapper_full-screen"] [class*="stage-wrapper_stage-canvas-wrapper"],
@@ -52,6 +54,13 @@
 
 /* Ensure toolbar menu is visible */
 [class*="stage-header_stage-menu-wrapper"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure controls are visible */
+[class*="controls_controls-container"] {
   display: flex !important;
   opacity: 1 !important;
   visibility: visible !important;

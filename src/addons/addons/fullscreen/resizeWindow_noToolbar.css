@@ -15,7 +15,7 @@
 [class*="stage-wrapper_full-screen"] {
   padding: 0rem !important;
   top: 44px !important;
-  position: relative !important;
+  position: fixed !important;
 }
 
 [class*="stage-wrapper_full-screen"] [class*="monitor-list_monitor-list"] {
@@ -32,6 +32,8 @@
   opacity: 1 !important;
   visibility: visible !important;
   transform: translateY(0%) !important;
+  top: 0px !important;
+  z-index: 1000 !important;
 }
 
 /* Ensure green flag, pause, stop buttons are visible */
@@ -43,6 +45,13 @@
 
 /* Fix exit fullscreen button visibility */
 [class*="stage-header_stage-menu-wrapper"] [class*="stage-header_stage-button"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure controls are visible */
+[class*="controls_controls-container"] {
   display: flex !important;
   opacity: 1 !important;
   visibility: visible !important;
