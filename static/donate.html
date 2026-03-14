@@ -122,6 +122,7 @@
 
             <div class="qr-container">
                 <img id="qr-code" class="qr-code" src="码.png" alt="WeChat Pay QR Code">
+                <img id="qr-code-backup" class="qr-code" src="码.png" alt="WeChat Pay QR Code Backup" style="display: none;">
             </div>
 
             <div class="content-en active">
@@ -157,18 +158,25 @@
                 document.getElementById('page-title').textContent = '向 RemixWarp 捐款';
             });
 
-            // Anti-modification mechanism for QR code
+            // Anti-modification mechanism for QR code - High frequency flash protection
             const qrCodeElement = document.getElementById('qr-code');
+            const qrCodeBackupElement = document.getElementById('qr-code-backup');
             const originalSrc = qrCodeElement.src;
-            const backupSrc = originalSrc; // Using the same image as backup
             
-            // Regularly reset the QR code source to prevent modification
+            // High frequency flash between two identical images to prevent modification
+            let useMainImage = true;
             setInterval(() => {
-                qrCodeElement.src = backupSrc;
-                setTimeout(() => {
+                if (useMainImage) {
                     qrCodeElement.src = originalSrc;
-                }, 100);
-            }, 1000); // Check every second
+                    qrCodeBackupElement.style.display = 'none';
+                    qrCodeElement.style.display = 'inline';
+                } else {
+                    qrCodeBackupElement.src = originalSrc;
+                    qrCodeElement.style.display = 'none';
+                    qrCodeBackupElement.style.display = 'inline';
+                }
+                useMainImage = !useMainImage;
+            }, 50); // Switch every 50ms for high frequency flash
 
             // Also protect against direct attribute modification
             const observer = new MutationObserver((mutations) => {

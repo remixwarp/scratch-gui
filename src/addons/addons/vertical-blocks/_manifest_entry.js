@@ -1,12 +1,12 @@
 const manifest = {
   "editorOnly": true,
-  "noTranslations": true,
+  "noTranslations": false,
   "name": "Vertical Blocks",
   "description": "Adds a vertical blocks area that only allows vertical movement and a square button to show block sections",
   "credits": [
     {
-      "name": "Scratch Team",
-      "link": "https://scratch.mit.edu"
+      "name": "笑小朗",
+      "url": "https://scratch.mit.edu"
     }
   ],
   "tags": [
@@ -14,6 +14,7 @@ const manifest = {
     "blocks"
   ],
   "dynamicDisable": true,
+  "enabledByDefault": false,
   "userscripts": [
     {
       "url": "userscript.js"

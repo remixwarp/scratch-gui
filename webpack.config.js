@@ -138,6 +138,10 @@ const base = {
                     from: 'src/lib/themes/blocks/high-contrast-media/blocks-media',
                     to: 'static/blocks-media/high-contrast',
                     force: true
+                },
+                {
+                    from: 'src/addons/addons-l10n',
+                    to: 'addons-l10n'
                 }
             ]
         })

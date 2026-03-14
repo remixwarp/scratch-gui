@@ -29,7 +29,7 @@ export default async function ({ addon, msg, console }) {
     // Add square button
     const squareButton = document.createElement('button');
     squareButton.className = 'blocklyZoom square-button';
-    squareButton.title = 'Show block sections';
+    squareButton.title = msg('show-block-sections', 'Show block sections');
     squareButton.innerHTML = '□';
     squareButton.style.fontSize = '12px';
     squareButton.style.width = '24px';
@@ -39,20 +39,26 @@ export default async function ({ addon, msg, console }) {
     squareButton.style.borderRadius = '3px';
     squareButton.style.backgroundColor = '#f5f5f5';
     squareButton.style.cursor = 'pointer';
+    squareButton.style.display = 'block';
 
     // Insert before zoom in button
-    const zoomInButton = this.zoomInIcon_.parentNode;
-    zoomInButton.parentNode.insertBefore(squareButton, zoomInButton);
+    const svgGroup = this.svgGroup_;
+    if (svgGroup) {
+      const zoomInButton = svgGroup.querySelector('.blocklyZoom > svg');
+      if (zoomInButton && zoomInButton.parentNode) {
+        zoomInButton.parentNode.insertBefore(squareButton, zoomInButton.parentNode.firstChild);
 
-    // Add click event
-    squareButton.addEventListener('click', function() {
-      const workspace = this.workspace_;
-      if (workspace) {
-        showBlockSections(workspace);
+        // Add click event
+        squareButton.addEventListener('click', function() {
+          const workspace = Blockly.getMainWorkspace();
+          if (workspace) {
+            showBlockSections(workspace);
+          }
+        });
+
+        this.squareButton_ = squareButton;
       }
-    }.bind(this));
-
-    this.squareButton_ = squareButton;
+    }
     return result;
   };
 
@@ -81,7 +87,7 @@ export default async function ({ addon, msg, console }) {
     header.style.marginBottom = '20px';
 
     const title = document.createElement('h3');
-    title.textContent = 'Block Sections';
+    title.textContent = msg('block-sections', 'Block Sections');
     header.appendChild(title);
 
     const closeButton = document.createElement('button');
@@ -106,7 +112,7 @@ export default async function ({ addon, msg, console }) {
 
     if (topBlocks.length === 0) {
       const emptyMessage = document.createElement('p');
-      emptyMessage.textContent = 'No blocks found';
+      emptyMessage.textContent = msg('no-blocks-found', 'No blocks found');
       content.appendChild(emptyMessage);
     } else {
       topBlocks.forEach((block, index) => {
@@ -124,7 +130,7 @@ export default async function ({ addon, msg, console }) {
 
         const sectionTitle = document.createElement('span');
         sectionTitle.className = 'section-title';
-        sectionTitle.textContent = `Section ${index + 1}`;
+        sectionTitle.textContent = msg('section', 'Section') + ' ' + (index + 1);
         sectionTitle.style.fontWeight = 'bold';
         sectionTitle.style.cursor = 'pointer';
 
@@ -140,20 +146,20 @@ export default async function ({ addon, msg, console }) {
           input.focus();
 
           input.addEventListener('blur', function() {
-            sectionTitle.textContent = input.value || `Section ${index + 1}`;
+            sectionTitle.textContent = input.value || (msg('section', 'Section') + ' ' + (index + 1));
             sectionHeader.replaceChild(sectionTitle, input);
           });
 
           input.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-              sectionTitle.textContent = input.value || `Section ${index + 1}`;
+              sectionTitle.textContent = input.value || (msg('section', 'Section') + ' ' + (index + 1));
               sectionHeader.replaceChild(sectionTitle, input);
             }
           });
         });
 
         const sectionButton = document.createElement('button');
-        sectionButton.textContent = 'Go to Section';
+        sectionButton.textContent = msg('go-to-section', 'Go to Section');
         sectionButton.style.fontSize = '12px';
         sectionButton.style.padding = '2px 8px';
         sectionButton.style.border = '1px solid #ccc';
@@ -175,7 +181,7 @@ export default async function ({ addon, msg, console }) {
         const blockType = document.createElement('span');
         blockType.style.fontSize = '12px';
         blockType.style.color = '#666';
-        blockType.textContent = `Block type: ${block.type}`;
+        blockType.textContent = msg('block-type', 'Block type') + ': ' + block.type;
         section.appendChild(blockType);
 
         content.appendChild(section);

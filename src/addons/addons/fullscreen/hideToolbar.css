@@ -5,7 +5,7 @@
 [class*="stage-header_stage-header-wrapper-overlay"] {
   display: block;
   top: var(--sa-menu-bar-height, 0px) !important;
-  transform: translateY(calc(-101% - var(--sa-menu-bar-height, 0px)));
+  transform: translateY(0%);
   transition: transform 0.3s;
 }
 

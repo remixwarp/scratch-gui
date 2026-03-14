@@ -392,6 +392,8 @@
   "转换为中文-code/copied": "中文 code 已复制到剪贴板",
   "转换为中文-code/copy_prompt": "复制中文 code:",
   "转换为中文-code/error": "生成中文code 时出错",
+  "vertical-blocks/@name": "垂直积木",
+  "vertical-blocks/@description": "添加一个只允许垂直移动的积木区域和一个显示积木段落的方形按钮",
   "stage-camera/@name": "舞台相机控制",
   "stage-camera/@description": "为舞台添加相机控制功能，支持缩放、平移和全屏。在使用视频侦测或人脸检测扩展时特别有用。",
   "stage-camera/@settings-showControls": "显示相机控制",

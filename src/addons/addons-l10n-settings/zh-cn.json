@@ -474,5 +474,7 @@
   "tw-remove-feedback/@description": "从菜单栏中移除反馈按钮。",
   "tw-remove-feedback/@name": "移除反馈按钮",
   "tw-straighten-comments/@description": "强制积木注释始终通过一条水平直线连接到其源积木，而不是以倾斜角度连接。",
-  "tw-straighten-comments/@name": "保持积木注释连接为直线"
+  "tw-straighten-comments/@name": "保持积木注释连接为直线",
+  "vertical-blocks/@description": "添加一个只允许垂直移动的积木区域和一个显示积木段落的方形按钮",
+  "vertical-blocks/@name": "垂直积木"
 }
