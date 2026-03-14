@@ -167,13 +167,13 @@ const Footer = () => (
                             id="tw.footer.credits"
                         />
                     </a>
-                    {/**<a href="https://patreon.com/Mistium">
+                    <a href="donate.html">
                         <FormattedMessage
                             defaultMessage="Donate"
                             description="Donation link in footer"
                             id="tw.footer.donate"
                         />
-                    </a>**/}
+                    </a>
                 </div>
                 <div className={styles.footerSection}>
                     <a href="https://packager.warp.mistium.com/">

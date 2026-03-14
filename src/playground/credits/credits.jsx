@@ -116,6 +116,25 @@ const Credits = () => (
                 特别感谢02Engine和AstraEditor、RemixWarp的开源代码，它们为{APP_NAME}的兼容性转换提供了可能。我们兼容了他们的主题色。非常感谢他们的贡献。
             </p>
         </section>
+        <section>
+            <h2>Support {APP_NAME}</h2>
+            <p>
+                {APP_NAME} is a free, open-source project. Your donations help us cover server costs, renew domains, and develop new features.
+            </p>
+            <p>
+                <a href="/donate.html">
+                    Donate to support {APP_NAME}
+                </a>
+            </p>
+            <p>
+                您的捐款将帮助我们支付服务器费用、续费域名和开发新功能。
+            </p>
+            <p>
+                <a href="/donate.html">
+                    捐款支持 {APP_NAME}
+                </a>
+            </p>
+        </section>
     </main>
 );
 
