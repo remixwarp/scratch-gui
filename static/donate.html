@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title id="page-title">Donate to RemixWarp</title>
+        <meta charset="utf8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                margin: 0; padding: 0;
+            }
+            header {
+                background-color: #75C1C4;
+                color: white;
+                text-align: center;
+                padding: 20px 0;
+            }
+            main {
+                max-width: 600px;
+                margin: auto;
+                padding: 20px;
+            }
+            .warning {
+                background-color: #ff4444;
+                color: white;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                font-weight: bold;
+                text-align: center;
+            }
+            .qr-container {
+                text-align: center;
+                margin: 30px 0;
+                position: relative;
+            }
+            .qr-code {
+                max-width: 300px;
+                height: auto;
+                border: 2px solid #ddd;
+                border-radius: 10px;
+            }
+            .language-selector {
+                text-align: right;
+                margin-bottom: 20px;
+            }
+            .language-selector button {
+                background: none;
+                border: 1px solid #ccc;
+                padding: 5px 10px;
+                margin-left: 5px;
+                cursor: pointer;
+                border-radius: 3px;
+            }
+            .language-selector button.active {
+                background-color: #75C1C4;
+                color: white;
+                border-color: #75C1C4;
+            }
+            .content-en, .content-zh {
+                display: none;
+            }
+            .content-en.active, .content-zh.active {
+                display: block;
+            }
+            @media (prefers-color-scheme: dark) {
+                body { background: #111; color: #eee; }
+                a { color: #4af; }
+                .qr-code { border-color: #444; }
+                .language-selector button {
+                    border-color: #555;
+                    color: #eee;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <header>
+            <h1 class="content-en active">Support RemixWarp</h1>
+            <h1 class="content-zh">支持 RemixWarp</h1>
+        </header>
+
+        <main>
+            <div class="language-selector">
+                <button id="btn-en" class="active">English</button>
+                <button id="btn-zh">中文</button>
+            </div>
+
+            <div class="warning">
+                <div class="content-en active">Warning: Minors should not donate without parental consent.</div>
+                <div class="content-zh">警告：未成年人请勿在未获得监护人同意的情况下捐款。</div>
+            </div>
+
+            <div class="content-en active">
+                <h2>Why Donate?</h2>
+                <p>RemixWarp is a free, open-source project dedicated to providing a better Scratch editing experience. Your donations help us:</p>
+                <ul>
+                    <li>Cover server hosting costs</li>
+                    <li>Renew domain names</li>
+                    <li>Improve server performance</li>
+                    <li>Develop new features</li>
+                </ul>
+                
+                <h2>How to Donate</h2>
+                <p>Scan the QR code below to donate via WeChat Pay:</p>
+            </div>
+
+            <div class="content-zh">
+                <h2>为什么捐款？</h2>
+                <p>RemixWarp是一个免费的开源项目，致力于提供更好的Scratch编辑体验。您的捐款将帮助我们：</p>
+                <ul>
+                    <li>支付服务器托管费用</li>
+                    <li>续费域名</li>
+                    <li>提升服务器性能</li>
+                    <li>开发新功能</li>
+                </ul>
+                
+                <h2>如何捐款</h2>
+                <p>扫描下方二维码通过微信支付捐款：</p>
+            </div>
+
+            <div class="qr-container">
+                <img id="qr-code" class="qr-code" src="码.png" alt="WeChat Pay QR Code">
+            </div>
+
+            <div class="content-en active">
+                <h2>Thank You!</h2>
+                <p>Every donation, no matter how small, makes a difference. We appreciate your support in keeping RemixWarp running smoothly.</p>
+                <p>All donations will be used solely for the maintenance and development of RemixWarp.</p>
+            </div>
+
+            <div class="content-zh">
+                <h2>感谢您的支持！</h2>
+                <p>每一笔捐款，无论金额大小，都对我们意义重大。我们感谢您对RemixWarp的支持，帮助我们保持项目的平稳运行。</p>
+                <p>所有捐款将专门用于RemixWarp的维护和开发。</p>
+            </div>
+        </main>
+
+        <script>
+            // Language switching
+            document.getElementById('btn-en').addEventListener('click', function() {
+                document.querySelectorAll('.content-en').forEach(el => el.classList.add('active'));
+                document.querySelectorAll('.content-zh').forEach(el => el.classList.remove('active'));
+                document.getElementById('btn-en').classList.add('active');
+                document.getElementById('btn-zh').classList.remove('active');
+                document.documentElement.lang = 'en';
+                document.getElementById('page-title').textContent = 'Donate to RemixWarp';
+            });
+
+            document.getElementById('btn-zh').addEventListener('click', function() {
+                document.querySelectorAll('.content-zh').forEach(el => el.classList.add('active'));
+                document.querySelectorAll('.content-en').forEach(el => el.classList.remove('active'));
+                document.getElementById('btn-zh').classList.add('active');
+                document.getElementById('btn-en').classList.remove('active');
+                document.documentElement.lang = 'zh';
+                document.getElementById('page-title').textContent = '向 RemixWarp 捐款';
+            });
+
+            // Anti-modification mechanism for QR code
+            const qrCodeElement = document.getElementById('qr-code');
+            const originalSrc = qrCodeElement.src;
+            const backupSrc = originalSrc; // Using the same image as backup
+            
+            // Regularly reset the QR code source to prevent modification
+            setInterval(() => {
+                qrCodeElement.src = backupSrc;
+                setTimeout(() => {
+                    qrCodeElement.src = originalSrc;
+                }, 100);
+            }, 1000); // Check every second
+
+            // Also protect against direct attribute modification
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'src' && qrCodeElement.src !== originalSrc) {
+                        qrCodeElement.src = originalSrc;
+                    }
+                });
+            });
+
+            observer.observe(qrCodeElement, { attributes: true });
+        </script>
+    </body>
+</html>
