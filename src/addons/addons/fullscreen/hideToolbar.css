@@ -3,10 +3,25 @@
 }
 
 [class*="stage-header_stage-header-wrapper-overlay"] {
-  display: block;
+  display: block !important;
   top: var(--sa-menu-bar-height, 0px) !important;
-  transform: translateY(0%);
+  transform: translateY(0%) !important;
   transition: transform 0.3s;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure toolbar is always visible in fullscreen */
+[class*="stage-header_stage-header-wrapper-overlay"] [class*="stage-header_stage-menu-wrapper"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Fix stage position to account for toolbar */
+[class*="stage-wrapper_full-screen"] {
+  top: 44px !important;
+  position: relative !important;
 }
 
 .phantom-header {
@@ -20,6 +35,20 @@
 }
 
 .stage-header-hover {
-  transform: translateY(0%);
+  transform: translateY(0%) !important;
   transition: transform 0.3s 0.25s;
+}
+
+/* Ensure green flag, pause, stop buttons are visible */
+[class*="stage_green-flag-overlay-wrapper"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Fix exit fullscreen button visibility */
+[class*="stage-header_stage-menu-wrapper"] [class*="stage-header_stage-button"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }

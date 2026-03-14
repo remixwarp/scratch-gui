@@ -467,7 +467,5 @@
   "zebra-striping/@settings-name-intensity": "Intensity (0-100%)",
   "zebra-striping/@settings-name-shade": "Shade",
   "zebra-striping/@settings-select-shade-darker": "Darker",
-  "zebra-striping/@settings-select-shade-lighter": "Lighter",
-  "vertical-blocks/@description": "Adds a vertical blocks area that only allows vertical movement and a square button to show block sections",
-  "vertical-blocks/@name": "Vertical Blocks"
+  "zebra-striping/@settings-select-shade-lighter": "Lighter"
 }

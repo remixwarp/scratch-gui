@@ -2,18 +2,20 @@
 [class*="stage-wrapper_full-screen"] [class*="stage_stage"],
 [class*="stage-wrapper_full-screen"] [class*="stage-header_stage-menu-wrapper"],
 [class*="stage-wrapper_full-screen"] canvas {
-  width: min(calc(100vh * var(--sa-fullscreen-width) / var(--sa-fullscreen-height)), 100vw) !important;
+  width: min(calc((100vh - 44px) * var(--sa-fullscreen-width) / var(--sa-fullscreen-height)), 100vw) !important;
 }
 
 [class*="stage-wrapper_full-screen"] [class*="stage-wrapper_stage-canvas-wrapper"],
 [class*="stage-wrapper_full-screen"] [class*="stage_stage"],
 [class*="stage-wrapper_full-screen"] [class*="stage_green-flag-overlay-wrapper"],
 [class*="stage-wrapper_full-screen"] canvas {
-  height: min(100vh, calc(100vw * var(--sa-fullscreen-height) / var(--sa-fullscreen-width))) !important;
+  height: min(calc(100vh - 44px), calc(100vw * var(--sa-fullscreen-height) / var(--sa-fullscreen-width))) !important;
 }
 
 [class*="stage-wrapper_full-screen"] {
   padding: 0rem !important;
+  top: 44px !important;
+  position: relative !important;
 }
 
 [class*="stage-wrapper_full-screen"] [class*="monitor-list_monitor-list"] {
@@ -22,4 +24,26 @@
 
 [class*="stage-wrapper_full-screen"] [class*="stage_question-wrapper"] {
   width: auto !important;
+}
+
+/* Ensure toolbar is visible */
+[class*="stage-header_stage-header-wrapper-overlay"] {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0%) !important;
+}
+
+/* Ensure green flag, pause, stop buttons are visible */
+[class*="stage_green-flag-overlay-wrapper"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Fix exit fullscreen button visibility */
+[class*="stage-header_stage-menu-wrapper"] [class*="stage-header_stage-button"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }

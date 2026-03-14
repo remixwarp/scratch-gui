@@ -157,37 +157,7 @@
                 document.documentElement.lang = 'zh';
                 document.getElementById('page-title').textContent = '向 RemixWarp 捐款';
             });
-
-            // Anti-modification mechanism for QR code - High frequency flash protection
-            const qrCodeElement = document.getElementById('qr-code');
-            const qrCodeBackupElement = document.getElementById('qr-code-backup');
-            const originalSrc = qrCodeElement.src;
-            
-            // High frequency flash between two identical images to prevent modification
-            let useMainImage = true;
-            setInterval(() => {
-                if (useMainImage) {
-                    qrCodeElement.src = originalSrc;
-                    qrCodeBackupElement.style.display = 'none';
-                    qrCodeElement.style.display = 'inline';
-                } else {
-                    qrCodeBackupElement.src = originalSrc;
-                    qrCodeElement.style.display = 'none';
-                    qrCodeBackupElement.style.display = 'inline';
-                }
-                useMainImage = !useMainImage;
-            }, 50); // Switch every 50ms for high frequency flash
-
-            // Also protect against direct attribute modification
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.attributeName === 'src' && qrCodeElement.src !== originalSrc) {
-                        qrCodeElement.src = originalSrc;
-                    }
-                });
-            });
-
-            observer.observe(qrCodeElement, { attributes: true });
         </script>
+        <script src="donate.js"></script>
     </body>
 </html>

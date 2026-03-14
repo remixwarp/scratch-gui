@@ -87,40 +87,50 @@ export default async function ({ addon, console }) {
   async function updatePhantomHeader() {
     if (
       !addon.self.disabled &&
-      addon.tab.redux.state.scratchGui.mode.isFullScreen &&
-      addon.settings.get("toolbar") === "hover"
+      addon.tab.redux.state.scratchGui.mode.isFullScreen
     ) {
       hoverCanvas = hoverCanvas || await addon.tab.waitForElement('[class*="stage_full-screen"] canvas');
       hoverHeader = hoverHeader || await addon.tab.waitForElement('[class^="stage-header_stage-header-wrapper"]');
 
-      // Create phantom header exactly once.
-      if (!hoverHeader.parentElement.classList.contains("phantom-header")) {
-        phantomHeader = hoverHeader.parentElement.appendChild(document.createElement("div"));
-        phantomHeader.classList.add("phantom-header");
+      // Always show toolbar in fullscreen mode
+      if (hoverHeader) {
+        hoverHeader.style.transform = "translateY(0%)";
+        hoverHeader.style.opacity = "1";
+        hoverHeader.style.visibility = "visible";
+        hoverHeader.style.display = "block";
+      }
 
-        // Make the header a child of the phantom, so that mouseleave will trigger when the
-        // mouse leaves the header OR the phantom header.
-        phantomHeader.appendChild(hoverHeader);
+      // Only create phantom header for hover mode
+      if (addon.settings.get("toolbar") === "hover") {
+        // Create phantom header exactly once.
+        if (!hoverHeader.parentElement.classList.contains("phantom-header")) {
+          phantomHeader = hoverHeader.parentElement.appendChild(document.createElement("div"));
+          phantomHeader.classList.add("phantom-header");
 
-        phantomHeader.addEventListener("mouseenter", () => {
-          if (addon.settings.get("toolbar") === "hover" && addon.tab.redux.state.scratchGui.mode.isFullScreen && !addon.self.disabled) {
-            hoverHeader.classList.add("stage-header-hover");
-          }
-        });
-        phantomHeader.addEventListener("mouseleave", () => {
-          hoverHeader.classList.remove("stage-header-hover");
-        });
+          // Make the header a child of the phantom, so that mouseleave will trigger when the
+          // mouse leaves the header OR the phantom header.
+          phantomHeader.appendChild(hoverHeader);
 
-        // Pass click events on the phantom header onto the project player, essentially making it click-through
-        ["mousedown", "mousemove", "mouseup", "touchstart", "touchmove", "touchend", "wheel"].forEach((eventName) => {
-          phantomHeader.addEventListener(eventName, (e) => {
-            if (e.target.classList.contains("phantom-header")) {
-              hoverCanvas.dispatchEvent(new e.constructor(e.type, e));
+          phantomHeader.addEventListener("mouseenter", () => {
+            if (addon.settings.get("toolbar") === "hover" && addon.tab.redux.state.scratchGui.mode.isFullScreen && !addon.self.disabled) {
+              hoverHeader.classList.add("stage-header-hover");
             }
           });
-        });
-      } else {
-        phantomHeader = hoverHeader.parentElement;
+          phantomHeader.addEventListener("mouseleave", () => {
+            hoverHeader.classList.remove("stage-header-hover");
+          });
+
+          // Pass click events on the phantom header onto the project player, essentially making it click-through
+          ["mousedown", "mousemove", "mouseup", "touchstart", "touchmove", "touchend", "wheel"].forEach((eventName) => {
+            phantomHeader.addEventListener(eventName, (e) => {
+              if (e.target.classList.contains("phantom-header")) {
+                hoverCanvas.dispatchEvent(new e.constructor(e.type, e));
+              }
+            });
+          });
+        } else {
+          phantomHeader = hoverHeader.parentElement;
+        }
       }
 
       // Listen for when the mouse moves above the page (helps to show header when not in browser full screen mode)
