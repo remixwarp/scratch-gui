@@ -7,6 +7,10 @@
 
 [class*="stage-header_stage-header-wrapper-overlay"] {
   top: var(--sa-menu-bar-height, 0px) !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0%) !important;
 }
 
 [class*="stage-wrapper_full-screen"] {
@@ -30,4 +34,25 @@
 
 [class*="stage-wrapper_full-screen"] [class*="stage_question-wrapper"] {
   width: auto !important;
+}
+
+/* Ensure green flag, pause, stop buttons are visible */
+[class*="stage_green-flag-overlay-wrapper"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Fix exit fullscreen button visibility */
+[class*="stage-header_stage-menu-wrapper"] [class*="stage-header_stage-button"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure toolbar menu is visible */
+[class*="stage-header_stage-menu-wrapper"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }

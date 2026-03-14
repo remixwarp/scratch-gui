@@ -8,3 +8,11 @@
   top: 0;
   left: 0;
 }
+
+/* Ensure green flag overlay is always visible in fullscreen */
+[class*="stage_green-flag-overlay-wrapper"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 1000 !important;
+}

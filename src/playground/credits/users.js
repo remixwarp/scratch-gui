@@ -37,7 +37,12 @@ const contributors = [
     {
         userID: '148440803',
         username: 'RyaninCn11'
+    },
+    {
+        userID: '194891433',
+        username: 'LycheeNap'
     }
+
 ].map(fromHardcoded);
 
 const addonDevelopers = [
