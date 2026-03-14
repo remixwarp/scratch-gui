@@ -89,4 +89,5 @@ export default {
   "remove-extension-button": () => import(/* webpackChunkName: "addon-entry-remove-extension-button" */ "../addons/remove-extension-button/_runtime_entry.js"),
   "daily-quote": () => import(/* webpackChunkName: "addon-entry-daily-quote" */ "../addons/daily-quote/_runtime_entry.js"),
   "stage-camera": () => import(/* webpackChunkName: "addon-entry-stage-camera" */ "../addons/stage-camera/_runtime_entry.js"),
+  "vertical-blocks": () => import(/* webpackChunkName: "addon-entry-vertical-blocks" */ "../addons/vertical-blocks/_runtime_entry.js"),
 };

@@ -88,6 +88,7 @@ import _green_flag_order from "../addons/green-flag-order/_manifest_entry.js";
 import _remove_extension_button from "../addons/remove-extension-button/_manifest_entry.js";
 import _daily_quote from "../addons/daily-quote/_manifest_entry.js";
 import _stage_camera from "../addons/stage-camera/_manifest_entry.js";
+import _vertical_blocks from "../addons/vertical-blocks/_manifest_entry.js";
 export default {
   "calculator": _calculator,
   "cat-blocks": _cat_blocks,
@@ -178,4 +179,5 @@ export default {
   "remove-extension-button": _remove_extension_button
   ,"daily-quote": _daily_quote
   ,"stage-camera": _stage_camera
+  ,"vertical-blocks": _vertical_blocks
 };
