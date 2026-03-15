@@ -5,6 +5,7 @@
 .blocks {
     height: 100%;
     position: relative;
+    background-color: transparent;
 }
 
 .paletteResizer {
@@ -46,6 +47,7 @@
     border: 1px solid $ui-black-transparent;
     border-top-right-radius: $space;
     border-bottom-right-radius: $space;
+    background-color: transparent;
 }
 
 [dir="rtl"] .blocks :global(.injectionDiv) {

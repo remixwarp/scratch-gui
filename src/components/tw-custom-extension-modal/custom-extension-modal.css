@@ -98,7 +98,31 @@
     font-size: 0.85rem;
     color: white;
     background: $looks-secondary;
+    width: 100%;
+    cursor: pointer;
 }
 .load-button:disabled {
     opacity: 0.8;
+}
+.cancel-button {
+    font: inherit;
+    padding: 0.75rem 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid $ui-black-transparent;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: $ui-black-transparent;
+    background: transparent;
+    width: 100%;
+    cursor: pointer;
+    margin-top: 0.5rem;
+}
+.cancel-button:hover {
+    background: $ui-black-transparent;
+}
+.extension-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 1.5rem;
 }

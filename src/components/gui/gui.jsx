@@ -38,6 +38,7 @@ import TWUsernameModal from '../../containers/tw-username-modal.jsx';
 import TWSettingsModal from '../../containers/tw-settings-modal.jsx';
 import TWSecurityManager from '../../containers/tw-security-manager.jsx';
 import TWCustomExtensionModal from '../../containers/tw-custom-extension-modal.jsx';
+import TWExtensionLoadChoiceModal from '../../containers/tw-extension-load-choice-modal.jsx';
 import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
 import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
@@ -64,6 +65,106 @@ import {showOnboarding} from '../../reducers/onboarding';
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
 import styles from './gui.css';
+
+// Donation modal component
+const DonationModal = ({visible, onClose, count}) => {
+    if (!visible) return null;
+    
+    return (
+        <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000
+        }}>
+            <div style={{
+                backgroundColor: 'white',
+                padding: '30px',
+                borderRadius: '12px',
+                maxWidth: '450px',
+                width: '90%',
+                boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)',
+                position: 'relative'
+            }}>
+                {/* Close button (X) in top right */}
+                <button 
+                    onClick={onClose}
+                    style={{
+                        position: 'absolute',
+                        top: '10px',
+                        right: '15px',
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '24px',
+                        cursor: 'pointer',
+                        color: '#666'
+                    }}
+                >
+                    ×
+                </button>
+                
+                <h2 style={{marginTop: 0, color: '#333', textAlign: 'center'}}>感谢使用 RemixWarp！</h2>
+                <p style={{color: '#555', lineHeight: '1.5'}}>您已经启动了 <strong>{count}</strong> 次编辑器。</p>
+                <p style={{color: '#555', lineHeight: '1.5'}}>如果您喜欢这个编辑器，考虑通过捐款来支持我们的开发工作。</p>
+                
+                <div style={{margin: '30px 0', textAlign: 'center'}}>
+                    <a 
+                        href="./donate.html" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{
+                            display: 'inline-block',
+                            padding: '12px 24px',
+                            backgroundColor: '#75C1C4',
+                            color: 'white',
+                            textDecoration: 'none',
+                            borderRadius: '6px',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            transition: 'background-color 0.3s ease'
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = '#5a9ea1'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = '#75C1C4'}
+                    >
+                        立即捐款
+                    </a>
+                </div>
+                
+                <div style={{textAlign: 'center'}}>
+                    <button 
+                        onClick={onClose}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#f5f5f5',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            color: '#666',
+                            transition: 'all 0.3s ease'
+                        }}
+                        onMouseOver={(e) => {
+                            e.target.style.backgroundColor = '#e0e0e0';
+                            e.target.style.borderColor = '#ccc';
+                        }}
+                        onMouseOut={(e) => {
+                            e.target.style.backgroundColor = '#f5f5f5';
+                            e.target.style.borderColor = '#ddd';
+                        }}
+                    >
+                        但我不要
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const messages = defineMessages({
     addExtension: {
@@ -117,6 +218,32 @@ const getCachedBorderWidth = element => {
 };
 
 const GUIComponent = props => {
+    const [showDonationModal, setShowDonationModal] = useState(false);
+    const [donationCount, setDonationCount] = useState(0);
+    
+    // Handle startup count and donation modal
+    useEffect(() => {
+        // Generate a unique key based on the editor URL
+        const editorKey = `editor_startup_count_${window.location.href}`;
+        
+        // Get current count from localStorage
+        let count = parseInt(localStorage.getItem(editorKey) || '0', 10);
+        
+        // Increment count
+        count += 1;
+        localStorage.setItem(editorKey, count.toString());
+        
+        // Check if we should show donation modal
+        const donationThresholds = [20, 50, 100, 120, 150, 200, 250, 300];
+        if (donationThresholds.includes(count)) {
+            setDonationCount(count);
+            setShowDonationModal(true);
+        }
+    }, []);
+    
+    const handleCloseDonationModal = () => {
+        setShowDonationModal(false);
+    };
     const handleEnableProcedureReturns = useCallback(() => {
         try {
             const workspace = AddonHooks.blocklyWorkspace;
@@ -130,6 +257,20 @@ const GUIComponent = props => {
             }
         } catch (error) {
             console.error('Error enabling procedure returns:', error);
+        }
+    }, []);
+
+    const handleCategorySelected = useCallback((extensionId) => {
+        try {
+            const workspace = AddonHooks.blocklyWorkspace;
+            if (workspace) {
+                const toolbox = workspace.getToolbox();
+                if (toolbox && toolbox.setSelectedCategoryById) {
+                    toolbox.setSelectedCategoryById(extensionId);
+                }
+            }
+        } catch (error) {
+            console.error('Error selecting category:', error);
         }
     }, []);
 
@@ -472,6 +613,8 @@ const GUIComponent = props => {
         usernameModalVisible,
         settingsModalVisible,
         customExtensionModalVisible,
+        extensionLoadChoiceModalVisible,
+        extensionLoadChoiceData,
         fontsModalVisible,
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
@@ -569,6 +712,15 @@ const GUIComponent = props => {
                 />
             )}
             {customExtensionModalVisible && <TWCustomExtensionModal />}
+            {extensionLoadChoiceModalVisible && extensionLoadChoiceData && (
+                <TWExtensionLoadChoiceModal
+                    extensionId={extensionLoadChoiceData.extensionId}
+                    extensionName={extensionLoadChoiceData.extensionName}
+                    localURL={extensionLoadChoiceData.localURL}
+                    onlineURL={extensionLoadChoiceData.onlineURL}
+                    onCategorySelected={handleCategorySelected}
+                />
+            )}
             {fontsModalVisible && <TWFontsModal />}
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
@@ -585,6 +737,8 @@ const GUIComponent = props => {
         settingsModalVisible,
         isRtl,
         customExtensionModalVisible,
+        extensionLoadChoiceModalVisible,
+        extensionLoadChoiceData,
         fontsModalVisible,
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
@@ -892,10 +1046,17 @@ const GUIComponent = props => {
                         onRequestClose={onRequestCloseExtensionLibrary}
                         onOpenCustomExtensionModal={onOpenCustomExtensionModal}
                         onEnableProcedureReturns={handleEnableProcedureReturns}
+                        onActivateBlocksTab={() => {}}
+                        onCategorySelected={handleCategorySelected}
                     />
                 ) : null}
-                <DragLayer />
-            </Box>
+            <DragLayer />
+            <DonationModal 
+                visible={showDonationModal} 
+                onClose={handleCloseDonationModal} 
+                count={donationCount} 
+            />
+        </Box>
         );
     }}</MediaQuery>);
 };
@@ -993,6 +1154,12 @@ GUIComponent.propTypes = {
     settingsModalVisible: PropTypes.bool,
     shortcutManagerModalVisible: PropTypes.bool,
     customExtensionModalVisible: PropTypes.bool,
+    extensionLoadChoiceModalVisible: PropTypes.bool,
+    extensionLoadChoiceData: PropTypes.shape({
+        extensionId: PropTypes.string,
+        extensionName: PropTypes.string,
+        defaultURL: PropTypes.string
+    }),
     fontsModalVisible: PropTypes.bool,
     unknownPlatformModalVisible: PropTypes.bool,
     invalidProjectModalVisible: PropTypes.bool,
@@ -1026,12 +1193,15 @@ GUIComponent.defaultProps = {
 const mapStateToProps = state => ({
     customStageSize: state.scratchGui.customStageSize,
     isWindowFullScreen: state.scratchGui.tw.isWindowFullScreen,
+    isFullScreen: state.scratchGui.mode.isFullScreen || state.scratchGui.mode.isEmbedded,
     blocksId: state.scratchGui.timeTravel.year.toString(),
     stageSizeMode: state.scratchGui.stageSize.stageSize,
     theme: state.scratchGui.theme.theme,
     locale: state.locales.locale,
     onboardingVisible: state.scratchGui.onboarding.visible,
-    shortcutManagerModalVisible: state.scratchGui.modals.shortcutManagerModal
+    shortcutManagerModalVisible: state.scratchGui.modals.shortcutManagerModal,
+    extensionLoadChoiceModalVisible: state.scratchGui.modals.extensionLoadChoiceModal,
+    extensionLoadChoiceData: state.scratchGui.modals.extensionLoadChoiceData
 });
 
 const mapDispatchToProps = dispatch => ({

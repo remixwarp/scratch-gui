@@ -150,10 +150,42 @@
   gap: 6px;
 }
 .sendButton {
-  background: var(--ui-secondary, var(--menu-background, #1f8ef1));
-  color: white;
+  background: #1976d2 !important;
+  color: white !important;
   border-radius: 6px;
   padding: 8px 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.4);
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 80px;
+  cursor: pointer;
+}
+
+.sendButton:hover {
+  background: #1565c0 !important;
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.5);
+  transform: translateY(-1px);
+}
+
+.sendButton:active {
+  background: #0d47a1 !important;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.4);
+  transform: translateY(0);
+}
+
+.sendButton:disabled {
+  background: #90caf9 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+.sendButton:disabled:hover {
+  background: #90caf9 !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .convertButton {

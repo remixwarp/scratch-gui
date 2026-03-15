@@ -38,6 +38,8 @@ const StageWrapperComponent = function (props) {
         >
             <Box className={styles.stageMenuWrapper}>
                 <StageHeader
+                    isFullScreen={isFullScreen}
+                    isEmbedded={isEmbedded}
                     stageContainerWidth={stageContainerWidth}
                     stageSize={stageSize}
                     vm={vm}

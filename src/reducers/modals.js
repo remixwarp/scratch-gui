@@ -27,6 +27,7 @@ const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
 const MODAL_AI = 'aiModal';
 const MODAL_AI_CHAT = 'aiChatModal';
 const MODAL_AI_AGENT = 'aiAgentModal';
+const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -54,7 +55,9 @@ const initialState = {
     [MODAL_SHORTCUT_MANAGER]: false,
     [MODAL_AI]: false,
     [MODAL_AI_CHAT]: false,
-    [MODAL_AI_AGENT]: false
+    [MODAL_AI_AGENT]: false,
+    [MODAL_EXTENSION_LOAD_CHOICE]: false,
+    extensionLoadChoiceData: null
 };
 
 const reducer = function (state, action) {
@@ -62,12 +65,14 @@ const reducer = function (state, action) {
     switch (action.type) {
     case OPEN_MODAL:
         return Object.assign({}, state, {
-            [action.modal]: true
+            [action.modal]: true,
+            extensionLoadChoiceData: action.extensionLoadChoiceData || state.extensionLoadChoiceData
         });
     case CLOSE_MODAL:
         return Object.assign({}, state, {
             [action.modal]: false,
-            simpleDialogConfig: null
+            simpleDialogConfig: null,
+            extensionLoadChoiceData: action.modal === MODAL_EXTENSION_LOAD_CHOICE ? null : state.extensionLoadChoiceData
         });
     case 'scratch-gui/modals/SHOW_SIMPLE_DIALOG':
         return Object.assign({}, state, {
@@ -258,6 +263,24 @@ const closeOnboardingModal = function () {
 const closeShortcutManagerModal = function () {
     return closeModal(MODAL_SHORTCUT_MANAGER);
 };
+const openExtensionLoadChoiceModal = function (extensionId, extensionName, localURL, onlineURL) {
+    return {
+        type: OPEN_MODAL,
+        modal: MODAL_EXTENSION_LOAD_CHOICE,
+        extensionLoadChoiceData: {
+            extensionId,
+            extensionName,
+            localURL,
+            onlineURL
+        }
+    };
+};
+const closeExtensionLoadChoiceModal = function () {
+    return {
+        type: CLOSE_MODAL,
+        modal: MODAL_EXTENSION_LOAD_CHOICE
+    };
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -312,5 +335,7 @@ export {
     closeGitModal,
     closePreferencesModal,
     closeOnboardingModal,
-    closeShortcutManagerModal
+    closeShortcutManagerModal,
+    openExtensionLoadChoiceModal,
+    closeExtensionLoadChoiceModal
 };

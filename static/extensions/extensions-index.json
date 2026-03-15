@@ -1,0 +1,647 @@
+{
+  "extensions": [
+    {
+      "name": "Animated Text",
+      "nameTranslations": {
+        "de": "Animierter Text",
+        "es": "Texto Animado",
+        "fi": "Animoitu teksti",
+        "it": "Testo Animato",
+        "ja": "アニメーションテキスト",
+        "ko": "애니메이션 텍스트",
+        "nb": "Animert Tekst",
+        "nl": "Geanimeerde tekst",
+        "pl": "Animowany Tekst",
+        "ru": "Анимированный Текст",
+        "uk": "Анімований Текст",
+        "zh-cn": "动画文字"
+      },
+      "description": "An easy way to display and animate text. Compatible with Scratch Lab's Animated Text experiment.",
+      "descriptionTranslations": {
+        "de": "Eine einfache Art, Text anzuzeigen und zu animieren. Mit dem Animated Text-Experiment in Scratch Lab kompatibel.",
+        "es": "Una forma fácil de mostrar y animar texto. Compatible con el experimento de Texto Animado de Scratch Lab.",
+        "fi": "Helppo tapa näyttää ja animoida tekstiä. Yhteensopiva Scratch Labin Animoitu teksti -kokeilun kanssa.",
+        "it": "Un modo semplice per mostrare e animare il testo. Compatibie con i blocchi sperimentali \"Testo Animato\" di Scratch Lab.",
+        "ja": "テキストを表示・動画化する簡単な方法です。Scratch LabのAnimated Text実験機能との互換性があります。",
+        "ko": "텍스트를 간편하게 나타내고 애니메이션을 적용합니다. Scratch Lab의 Animated Text 실험판과 호환됩니다.",
+        "nb": "En enkel måte å vise og animere tekst på. Kompatibel med Scratch Lab's Animated Text eksperiment.",
+        "nl": "Toon en animeer tekst op een simpele manier. Compatibel met het experiment Animated Text van Scratch Lab.",
+        "ru": "Лёгкий путь отображать и анимировать текст. Совместимо с Scratch Lab эксперементом \"Анимированный текст\".",
+        "uk": "Простий спосіб відображення анімованого тексту. Сумісний зі Scratch Lab's Animated Text.",
+        "zh-cn": "显示与设置动画文字的简单方式，与 Scratch Lab 的"动画文字"实验项目兼容。"
+      },
+      "extensionId": "text",
+      "extensionURL": "/extensions/turbowarp/lab/text.js",
+      "onlineURL": "https://extensions.turbowarp.org/lab/text.js",
+      "iconURL": "/extensions/turbowarp/images/lab/text.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [
+        "LilyMakesThings"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Face Sensing",
+      "nameTranslations": {
+        "de": "Gesichtserkennung",
+        "es": "Sensor de Cara",
+        "it": "Sensore del Volto",
+        "ko": "얼굴 인식",
+        "ru": "Распознавание лиц",
+        "zh-cn": "人脸侦测"
+      },
+      "description": "Sense faces with the camera.",
+      "descriptionTranslations": {
+        "de": "Erkenne Gesichter mit der Kamera.",
+        "es": "Detecta caras con la cámara.",
+        "it": "Rileva i movimenti del volto usando la webcam.",
+        "ko": "카메라로 안면을 인식합니다.",
+        "ru": "Распознавайте лица с помощью камеры.",
+        "zh-cn": "使用摄像头侦测人脸。"
+      },
+      "extensionId": "faceSensing",
+      "extensionURL": "/extensions/turbowarp/lab/face-sensing.js",
+      "onlineURL": "https://extensions.turbowarp.org/lab/face-sensing.js",
+      "iconURL": "/extensions/turbowarp/images/lab/face-sensing.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Stretch",
+      "nameTranslations": {
+        "de": "Strecken",
+        "fi": "Venytä",
+        "it": "Stira",
+        "ja": "伸縮",
+        "ko": "늘리기",
+        "nb": "Strekke",
+        "nl": "Rekken",
+        "ru": "Растяжение",
+        "uk": "Розтяжка",
+        "zh-cn": "拉伸"
+      },
+      "description": "Stretch sprites horizontally or vertically.",
+      "descriptionTranslations": {
+        "de": "Strecke Figuren horizontal oder vertikal.",
+        "fi": "Venytä hahmoja pysty- ja vaakasuunnassa.",
+        "it": "Stira gli sprite in orizzontale e in verticale.",
+        "ja": "スプライトを水平または垂直に引き伸ばします。",
+        "ko": "스프라이트를 수직 또는 수평으로 늘립니다.",
+        "nb": "Strekke sprites horisontalt eller vertikalt.",
+        "nl": "Rek je sprites horizontaal en verticaal uit.",
+        "ru": "Растягивает спрайты горизонтально или вертикально.",
+        "uk": "Розтягуйте спрайти горизонтально та вертикально.",
+        "zh-cn": "水平或竖直拉伸角色。"
+      },
+      "extensionId": "stretch",
+      "extensionURL": "/extensions/turbowarp/stretch.js",
+      "onlineURL": "https://extensions.turbowarp.org/stretch.js",
+      "iconURL": "/extensions/turbowarp/images/stretch.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Gamepad",
+      "nameTranslations": {
+        "fi": "Peliohjain",
+        "ja": "ゲームパッド",
+        "ko": "게임패드",
+        "nb": "Spillkontroller",
+        "ru": "Геймпад",
+        "uk": "Геймпад",
+        "zh-cn": "游戏手柄"
+      },
+      "description": "Directly access gamepads instead of just mapping buttons to keys.",
+      "descriptionTranslations": {
+        "de": "Greife direkt auf Gamepads zu, statt nur Knöpfe zu Tasten zu machen.",
+        "fi": "Käytä peliohjaimia suoraan sen sijaan, että yhdistäisit painikkeita näppäimiin.",
+        "it": "Accede direttamente ai gamepad invece di mappare soltanto i pulsanti in tasti.",
+        "ja": "ボタンをキーに割り当てるだけでなく、ゲームパッドに直接アクセスする。",
+        "ko": "게임패드의 버튼을 키에 지정하는 대신 게임패드에 직접적으로 접근합니다.",
+        "nb": "Direkte tilgang til spillkontrollere i stedet for bare å kartlegge knapper til taster.",
+        "nl": "Lees direct de signalen van gamepads af in plaats van knoppen met toetsen te verbinden.",
+        "ru": "Прямой доступ к геймпадам вместо обычных отображающих кнопок в клавиши.",
+        "uk": "Прямий доступ до геймпаду замість підбирання кнопок до клавіш.",
+        "zh-cn": "直接访问游戏手柄而不再将按钮映射为按键。"
+      },
+      "extensionId": "Gamepad",
+      "extensionURL": "/extensions/turbowarp/gamepad.js",
+      "onlineURL": "https://extensions.turbowarp.org/gamepad.js",
+      "iconURL": "/extensions/turbowarp/images/gamepad.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Box2D Physics",
+      "nameTranslations": {
+        "de": "Box2D-Physik",
+        "fi": "Box2D-fysiikka",
+        "it": "Fisica Box2D",
+        "ja": "Box2D 物理",
+        "ko": "Box2D 물리",
+        "nb": "Box2D Fysikk",
+        "nl": "Box2D fysica-simulatie",
+        "ru": "Физика Box2D",
+        "uk": "Фізика Box2D",
+        "zh-cn": "Box2D 物理"
+      },
+      "description": "Two dimensional physics.",
+      "descriptionTranslations": {
+        "de": "Zweidimensionale Physik.",
+        "fi": "Kaksiulotteinen fysiikka.",
+        "it": "Fisica bidimensionale.",
+        "ja": "2次元物理学。",
+        "ko": "2차원 물리 작용을 다룹니다.",
+        "nb": "To-dimensjonal fysikk.",
+        "nl": "Maak gebruik van een twee-dimensionale fysica-simulatie.",
+        "ru": "Двухмерная физика.",
+        "uk": "Двохвимірна фізика",
+        "zh-cn": "2D 物理引擎。"
+      },
+      "extensionId": "griffpatch",
+      "extensionURL": "/extensions/turbowarp/box2d.js",
+      "onlineURL": "https://extensions.turbowarp.org/box2d.js",
+      "iconURL": "/extensions/turbowarp/images/box2d.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [
+        "griffpatch"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Files",
+      "nameTranslations": {
+        "de": "Dateien",
+        "es": "Archivos",
+        "fi": "Tiedostot",
+        "he": "קבצים",
+        "hu": "Fájlok",
+        "it": "File",
+        "ja": "ファイル",
+        "ko": "파일",
+        "nb": "Filer",
+        "nl": "Bestanden",
+        "pl": "Pliki",
+        "ru": "Файлы",
+        "sl": "Datoteke",
+        "uk": "Файли",
+        "zh-cn": "文件"
+      },
+      "description": "Read and download files.",
+      "descriptionTranslations": {
+        "de": "Lese und lade Dateien herunter.",
+        "fi": "Lue ja lataa tiedostoja.",
+        "it": "Legge e scarica file.",
+        "ja": "ファイルの読み込みと書き出し。",
+        "ko": "파일을 읽거나 다운로드 받습니다.",
+        "nb": "Les og last ned filer.",
+        "nl": "Lees en download bestanden.",
+        "ru": "Читает и скачивает файлы.",
+        "uk": "Читайте та завантажуйте файли.",
+        "zh-cn": "读取或下载文件。"
+      },
+      "extensionId": "files",
+      "extensionURL": "/extensions/turbowarp/files.js",
+      "onlineURL": "https://extensions.turbowarp.org/files.js",
+      "iconURL": "/extensions/turbowarp/images/files.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Pointerlock",
+      "nameTranslations": {
+        "de": "Zeigersperren",
+        "es": "Bloque del Puntero del Ratón",
+        "fi": "Hiiren osoittimen lukitus",
+        "it": "Blocco Puntatore",
+        "ja": "ポインターロック",
+        "ko": "포인터 잠금",
+        "nb": "Prikkerlås",
+        "nl": "Muisaanwijzer-vergrendeling",
+        "ru": "Блокировка Курсора",
+        "zh-cn": "鼠标指针锁定"
+      },
+      "description": "Adds blocks for mouse locking. Mouse x & y blocks will report change since previous frame while pointer is locked. Replaces pointerlock experiment.",
+      "descriptionTranslations": {
+        "de": "Fügt Blöcke zum Zeigersperren hinzu. Die Maus-X- und Maus-Y-Blöcke werden den Unterschied von der vorherigen Frame anzeigen, wenn der Zeiger gesperrt ist. Ersetzt das Pointerlock-Experiment.",
+        "es": "Agrega bloques para bloquear el puntero del ratón. Los bloques de posición x e y del ratón reportarán el cambio desde el anterior fotograma. Reemplaza el experimento de pointerlock.",
+        "fi": "Lisää hiiren lukitsemiseen liittyviä lohkoja. Hiiren x- ja y-sijaintilohkot ilmoittavat muutoksen viimeisestä ruudusta, kun hiiren osoitin on lukittu. Korvaa hiiren osoittimen lukitus -kokeilun.",
+        "it": "Aggiunge blocchi per bloccare il mouse. I blocchi\" x/y del mouse\" restituiscono di quanto è cambiata la posizione rispetto al frame precedente mentre il puntatore è bloccato. Rimpiazza il \"blocco puntatore\" sperimentale.",
+        "ja": "マウスロック用のブロックを追加する。マウスのx座標およびy座標のブロックは、ポインターがロックされている間に、前のフレームからどれだけ動いたかを報告する。pointerlock experimentは置き換えられます。",
+        "ko": "마우스 포인터를 잠금하는 블록들입니다. 포인터가 잠금된 동안 이전 프레임부터의 마우스의 x좌표 및 y좌표의 변화량을 반환합니다. 포인터 잠금 실험버전을 대체합니다.",
+        "nb": "Legger til blokker for muselåsing. Mus x- og y-blokker vil rapportere endringen siden forrige bilde mens pekeren er låst. Erstatter pekerlåseksperimentet.",
+        "nl": "Zet de muisaanwijzer vast. De blokken muis x & muis y geven de verandering in muispositie sinds de vorige frame.",
+        "ru": "Добавляет блоки для блокировки мыши. Блоки x и y мыши будут сообщать об изменениях по сравнению с предыдущим кадром, пока указатель заблокирован. Заменяет эксперимент с блокировкой указателя.",
+        "uk": "Додає можливість заблокувати вказівник. Блоки \"мишка x\" та \"мишка y\" відображатимуть рух миші, поки вказівник заблокований. Заміна експерименту pointerlock.",
+        "zh-cn": "添加鼠标锁定的功能。鼠标的 x、y 块在指针锁定时将返回上一帧到现在的变化，并取代了指针锁定的实验性功能。"
+      },
+      "extensionId": "pointerlock",
+      "extensionURL": "/extensions/turbowarp/pointerlock.js",
+      "onlineURL": "https://extensions.turbowarp.org/pointerlock.js",
+      "iconURL": "/extensions/turbowarp/images/pointerlock.png",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Mouse Cursor",
+      "nameTranslations": {
+        "de": "Mauszeiger",
+        "es": "Cursor del Ratón",
+        "fi": "Hiiren kohdistin",
+        "it": "Puntatore Mouse",
+        "ja": "マウスカーソル",
+        "ko": "마우스 커서",
+        "nb": "Mus Pekkeren",
+        "nl": "Muisaanwijzer",
+        "ru": "Курсор Мыши",
+        "uk": "Вказівник Миші",
+        "zh-cn": "鼠标指针"
+      },
+      "description": "Use custom cursors or hide cursor. Also allows replacing the cursor with any costume image.",
+      "descriptionTranslations": {
+        "de": "Benutzt eigene Mauszeiger oder versteckt den Cursor. Erlaubt auch, den Cursor mit jedem Kostümbild zu ersetzen.",
+        "es": "Usa cursores personalizados o esconde el cursor. También permite reemplazar el cursor con una imagen personalizada.",
+        "fi": "Käytä omia kohdistimia tai piilota kohdistin. Voit myös korvata kohdistimen millä vain asustekuvalla.",
+        "it": "Usa puntatori del mouse personalizzati o nasconde il puntatore. Permette anche di rimpiazzare il puntatore con le immagini di un qualunque costume.",
+        "ja": "カスタムカーソルを使用するか、カーソルを隠すことができる。カーソルをいずれかのコスチュームの画像に変更することもできる。",
+        "ko": "사용자 지정 커서를 사용하거나 커서를 숨깁니다. 또한 커서 모양을 스프라이트의 모양 이미지로 바꿉니다.",
+        "nb": "Bruk egendefinerte markører eller skjul markøren. Tillater også å erstatte markøren med et hvilket som helst kostyme bilde.",
+        "nl": "Gebruik aangepaste cursors, verberg het of vervang het met een uiterlijk.",
+        "ru": "Используйте пользовательские курсоры или скройте курсор. Также позволяет заменять курсор любым костюмом объекта.",
+        "uk": "Змініть вигляд вказівника або взагалі приховайте його. Також дозволяє замінити вказівник на образ спрайту.",
+        "zh-cn": "使用自定义指针或者隐藏指针。又或者用造型图片替换指针。"
+      },
+      "extensionId": "MouseCursor",
+      "extensionURL": "/extensions/turbowarp/cursor.js",
+      "onlineURL": "https://extensions.turbowarp.org/cursor.js",
+      "iconURL": "/extensions/turbowarp/images/cursor.png",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Runtime Options",
+      "nameTranslations": {
+        "ca": "Opcions d'execució",
+        "cs": "Nastavení běhu",
+        "de": "Laufzeit-Optionen",
+        "es": "Opciones de Runtime",
+        "fi": "Ajonaikaiset asetukset",
+        "fr": "Options d'exécution",
+        "hu": "Lefutási Opciók",
+        "it": "Opzioni Esecuzione",
+        "ja": "ランタイムのオプション",
+        "ja-hira": "ランタイムのオプション",
+        "ko": "실행 설정",
+        "lt": "Paleidimo laiko parinktys",
+        "nb": "Kjøretidsalternativer",
+        "nl": "Looptijdopties",
+        "pl": "Opcje Uruchamiania",
+        "pt": "Opções de Execução",
+        "pt-br": "Opções de Execução",
+        "ru": "Опции Выполнения",
+        "sl": "Možnosti izvajanja",
+        "sv": "Körtidsalternativ",
+        "tr": "Çalışma Zamanı Seçenekleri",
+        "uk": "Параметри Виконання",
+        "zh-cn": "运行时选项",
+        "zh-tw": "運行選項"
+      },
+      "description": "Get and modify turbo mode, framerate, interpolation, clone limit, stage size, and more.",
+      "descriptionTranslations": {
+        "de": "Erhalte und bearbeite Turbo Mode, Bildrate, Interpolation, die Klonbegrenzung, die Bühnengröße, und mehr.",
+        "fi": "Saa tietoa turbotilasta, kuvataajuudesta, interpoloinnista, kloonirajasta, esiintymislavan koosta sekä muusta ja muuta niitä.",
+        "it": "Restituisce e modifica le impostazioni per la modalità turbo, il framerate, l'interpolazione, i limiti dei cloni, le dimensioni dello Stage e altro ancora.",
+        "ja": "ターボモード、フレームレート、補間機能、クローンの制限、ステージの大きさなどを取得、変更します。",
+        "ko": "터보 모드, FPS, 보간, 복제본 제한, 무대 크기 등의 정보를 얻거나 수정합니다.",
+        "nb": "Få og endre turbo-modus, bildefrekvens, interpolasjon, klon-grense, scenestørrelse og mer.",
+        "nl": "Lees en verander turbomodus, framerate, interpolatie, kloonlimiet, speelveldgrootte en meer.",
+        "ru": "Получает и модифицирует турбо режим, частоту кадров, интерполяцию, лимит клонов, размеры сцены, и многое.",
+        "uk": "Змінюйте налаштування проєкту на ходу, такі як турбо режим, частота кадрів, інтерполяція, обмеження на кількість клонів, розмір сцени та інше.",
+        "zh-cn": "获取或修改关于加速模式，帧数，补帧，克隆体上限，舞台大小以及其他的设置。"
+      },
+      "extensionId": "runtimeoptions",
+      "extensionURL": "/extensions/turbowarp/runtime-options.js",
+      "onlineURL": "https://extensions.turbowarp.org/runtime-options.js",
+      "iconURL": "/extensions/turbowarp/images/runtime-options.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Fetch",
+      "nameTranslations": {
+        "de": "Internetquests",
+        "fi": "Datan haku",
+        "ja": "フェッチ",
+        "nb": "Hent",
+        "ru": "Нахождение"
+      },
+      "description": "Make requests to the broader internet.",
+      "descriptionTranslations": {
+        "de": "Mache Requests zum ganzen Internet.",
+        "fi": "Tee pyyntöjä laajaan internetiin.",
+        "it": "Invia richieste al web.",
+        "ja": "より広範囲のインターネットにリクエストを送る。",
+        "ko": "보다 광활한 인터넷을 향해 요청을 보냅니다.",
+        "nb": "Gjør forespørsler til det bredere internettet.",
+        "nl": "Maak verzoeken op het brede internet.",
+        "ru": "Делает запросы широкому интернету.",
+        "uk": "Надсилайте запити у далекий інтернет.",
+        "zh-cn": "向广阔的互联网进行请求。"
+      },
+      "extensionId": "fetch",
+      "extensionURL": "/extensions/turbowarp/fetch.js",
+      "onlineURL": "https://extensions.turbowarp.org/fetch.js",
+      "iconURL": "/extensions/turbowarp/images/fetch.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Encoding",
+      "nameTranslations": {
+        "de": "Kodierung",
+        "fi": "Koodaus",
+        "it": "Codifica",
+        "ja": "エンコーディング",
+        "ko": "인코딩",
+        "nb": "Koding",
+        "nl": "Codering",
+        "ru": "Кодирование",
+        "uk": "Кодування",
+        "zh-cn": "编码"
+      },
+      "description": "Encode and decode data using various encoding schemes.",
+      "descriptionTranslations": {
+        "de": "Kodiere und dekodiere Daten mit verschiedenen Kodierungsschemata.",
+        "fi": "Koodaa ja purkaa dataa käyttäen erilaisia koodauskaavoja.",
+        "it": "Codifica e decodifica i dati usando vari schemi di codifica.",
+        "ja": "様々なエンコーディング方式でデータをエンコード・デコードします。",
+        "ko": "다양한 인코딩 방식을 사용하여 데이터를 인코딩 및 디코딩합니다.",
+        "nb": "Koder og dekoder data ved hjelp av ulike kodingsskjemaer.",
+        "nl": "Codeer en decodeer data met verschillende coderingsschema's.",
+        "ru": "Кодируйте и декодируйте данные с использованием различных схем кодирования.",
+        "uk": "Кодуйте та декодуйте дані, використовуючи різні схеми кодування.",
+        "zh-cn": "使用各种编码方案对数据进行编码和解码。"
+      },
+      "extensionId": "encoding",
+      "extensionURL": "/extensions/turbowarp/encoding.js",
+      "onlineURL": "https://extensions.turbowarp.org/encoding.js",
+      "iconURL": "/extensions/turbowarp/images/encoding.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Cloud Data Ping",
+      "description": "Ping cloud variables to check if they are ready.",
+      "extensionId": "clouddata-ping",
+      "extensionURL": "/extensions/turbowarp/clouddata-ping.js",
+      "onlineURL": "https://extensions.turbowarp.org/clouddata-ping.js",
+      "iconURL": "/extensions/turbowarp/images/clouddata-ping.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Cloud Link",
+      "description": "Connect to cloud variables from other projects.",
+      "extensionId": "cloudlink",
+      "extensionURL": "/extensions/turbowarp/cloudlink.js",
+      "onlineURL": "https://extensions.turbowarp.org/cloudlink.js",
+      "iconURL": "/extensions/turbowarp/images/cloudlink.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Bitwise",
+      "description": "Bitwise operations on numbers.",
+      "extensionId": "bitwise",
+      "extensionURL": "/extensions/turbowarp/bitwise.js",
+      "onlineURL": "https://extensions.turbowarp.org/bitwise.js",
+      "iconURL": "/extensions/turbowarp/images/bitwise.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Clipboard",
+      "description": "Read and write to the clipboard.",
+      "extensionId": "clipboard",
+      "extensionURL": "/extensions/turbowarp/clipboard.js",
+      "onlineURL": "https://extensions.turbowarp.org/clipboard.js",
+      "iconURL": "/extensions/turbowarp/images/clipboard.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "AR",
+      "description": "Augmented reality features.",
+      "extensionId": "ar",
+      "extensionURL": "/extensions/turbowarp/ar.js",
+      "onlineURL": "https://extensions.turbowarp.org/ar.js",
+      "iconURL": "/extensions/turbowarp/images/ar.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Battery",
+      "description": "Get battery status.",
+      "extensionId": "battery",
+      "extensionURL": "/extensions/turbowarp/battery.js",
+      "onlineURL": "https://extensions.turbowarp.org/battery.js",
+      "iconURL": "/extensions/turbowarp/images/battery.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "GameJolt",
+      "description": "GameJolt API integration.",
+      "extensionId": "gamejolt",
+      "extensionURL": "/extensions/turbowarp/gamejolt.js",
+      "onlineURL": "https://extensions.turbowarp.org/gamejolt.js",
+      "iconURL": "/extensions/turbowarp/images/gamejolt.png",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "iframe",
+      "description": "Create and control iframes.",
+      "extensionId": "iframe",
+      "extensionURL": "/extensions/turbowarp/iframe.js",
+      "onlineURL": "https://extensions.turbowarp.org/iframe.js",
+      "iconURL": "/extensions/turbowarp/images/iframe.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "itch.io",
+      "description": "itch.io API integration.",
+      "extensionId": "itchio",
+      "extensionURL": "/extensions/turbowarp/itchio.js",
+      "onlineURL": "https://extensions.turbowarp.org/itchio.js",
+      "iconURL": "/extensions/turbowarp/images/itchio.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Local Storage",
+      "description": "Store data in the browser's local storage.",
+      "extensionId": "local-storage",
+      "extensionURL": "/extensions/turbowarp/local-storage.js",
+      "onlineURL": "https://extensions.turbowarp.org/local-storage.js",
+      "iconURL": "/extensions/turbowarp/images/local-storage.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Navigator",
+      "description": "Get information about the browser and device.",
+      "extensionId": "navigator",
+      "extensionURL": "/extensions/turbowarp/navigator.js",
+      "onlineURL": "https://extensions.turbowarp.org/navigator.js",
+      "iconURL": "/extensions/turbowarp/images/navigator.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Sound",
+      "description": "Advanced sound control.",
+      "extensionId": "sound",
+      "extensionURL": "/extensions/turbowarp/sound.js",
+      "onlineURL": "https://extensions.turbowarp.org/sound.js",
+      "iconURL": "/extensions/turbowarp/images/sound.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Steamworks",
+      "description": "Steamworks API integration.",
+      "extensionId": "steamworks",
+      "extensionURL": "/extensions/turbowarp/steamworks.js",
+      "onlineURL": "https://extensions.turbowarp.org/steamworks.js",
+      "iconURL": "/extensions/turbowarp/images/steamworks.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Utilities",
+      "description": "Various utility blocks.",
+      "extensionId": "utilities",
+      "extensionURL": "/extensions/turbowarp/utilities.js",
+      "onlineURL": "https://extensions.turbowarp.org/utilities.js",
+      "iconURL": "/extensions/turbowarp/images/utilities.svg",
+      "tags": [
+        "tw"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Array Buffers",
+      "description": "Read, parse, and write raw data efficiently using Array Buffers",
+      "extensionId": "arraybuffers",
+      "extensionURL": "/extensions/penguinmod/AndrewGaming587/agBuffer.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/AndrewGaming587/agBuffer.js",
+      "iconURL": "/extensions/penguinmod/AndrewGaming587/agBuffer.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "AndrewScripter587"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    }
+  ]
+}

@@ -1,0 +1,1140 @@
+{
+  "extensions": [
+    {
+      "name": "Pen+",
+      "description": "Extended pen section! Adds blocks for drawing triangles using textures and tints, drawing images and editing their pixels, etc.",
+      "extensionId": "pen",
+      "extensionURL": "/extensions/penguinmod/ObviousAlexC/PenPlus.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/ObviousAlexC/PenPlus.js",
+      "iconURL": "/extensions/penguinmod/ObviousAlexC/PenPlus.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "pinksheep2917"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Shovel Debugger",
+      "description": "Shovel's improved and feature rich debugger!",
+      "extensionId": "shoveldebugger",
+      "extensionURL": "/extensions/penguinmod/TheShovel/shoveldebugger.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/TheShovel/shoveldebugger.js",
+      "iconURL": "/extensions/penguinmod/TheShovel/thumbnail-shoveldebugger.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "TheShovel"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Server Storage",
+      "description": "Similar to the server storage blocks in the 'Storage' extension, but with a better server uptime and non-global keys.\nDid you know the server is open source?",
+      "extensionId": "serverstorage",
+      "extensionURL": "/extensions/penguinmod/Ikelene/serverStorageExtension.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Ikelene/serverStorageExtension.js",
+      "iconURL": "/extensions/penguinmod/Ikelene/serverStorageIMG.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "Ikelene"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Storage Plus",
+      "description": "A storage extension with many more features. Featuring server storage (with a fast server), local storage and more!",
+      "extensionId": "storageplus",
+      "extensionURL": "/extensions/penguinmod/Gen1x/storage_plus.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Gen1x/storage_plus.js",
+      "iconURL": "/extensions/penguinmod/Gen1x/storage_plus.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "G1nX"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "MotionSprite",
+      "description": "An advanced math-based animation system",
+      "extensionId": "motionsprite",
+      "extensionURL": "/extensions/penguinmod/TheShovel/qoan-renderer.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/TheShovel/qoan-renderer.js",
+      "iconURL": "/extensions/penguinmod/TheShovel/thumbnail-motionsprite.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "TheShovel"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Boxed Physics",
+      "description": "Implements the Box2D physics engine into PenguinMod, adding joints, springs, etc. This is different from TurboWarp's implementation.",
+      "extensionId": "boxedphysics",
+      "extensionURL": "/extensions/penguinmod/pooiod/Box2D.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/pooiod/Box2D.js",
+      "iconURL": "/extensions/penguinmod/pooiod/B2Dimg.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "pooiod7"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Lighting",
+      "description": "A fast, powerful and easy-to-use lighting engine powered by WebGL!",
+      "extensionId": "lighting",
+      "extensionURL": "/extensions/penguinmod/Gen1x/lighting.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Gen1x/lighting.js",
+      "iconURL": "/extensions/penguinmod/Gen1x/lighting.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "G1nX"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "3D Math",
+      "description": "A handful of utilities for making your own sprite-based 3D engine.",
+      "extensionId": "3dmath",
+      "extensionURL": "/extensions/penguinmod/ObviousAlexC/3DMath.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/ObviousAlexC/3DMath.js",
+      "iconURL": "/extensions/penguinmod/ObviousAlexC/3DMath.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "pinksheep2917"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "GPU.sb3",
+      "description": "Use WebGPU compute shaders to accelerate your projects.",
+      "extensionId": "gpusb3",
+      "extensionURL": "/extensions/penguinmod/derpygamer2142/gpusb3.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/derpygamer2142/gpusb3.js",
+      "iconURL": "/extensions/penguinmod/derpygamer2142/gpusb3.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "insanetaco2000"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Beat Sync",
+      "description": "An extension designed to let you sync anything in your project to a musical beat, with incredible precision.",
+      "extensionId": "beatsync",
+      "extensionURL": "/extensions/penguinmod/Gen1x/beat_sync.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Gen1x/beat_sync.js",
+      "iconURL": "/extensions/penguinmod/Gen1x/beat_sync.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "G1nX"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Object",
+      "description": "Handle large JSON files at an extreme speed.",
+      "extensionId": "object",
+      "extensionURL": "/extensions/penguinmod/skyhigh173/object.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/skyhigh173/object.js",
+      "iconURL": "/extensions/penguinmod/skyhigh173/object.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "skyhigh173"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Scope Variable",
+      "description": "Manage your variables in a block-like structure.",
+      "extensionId": "scopevariable",
+      "extensionURL": "/extensions/penguinmod/0znzw/ScopeVars.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/0znzw/ScopeVars.js",
+      "iconURL": "/extensions/penguinmod/0znzw/ScopeVars.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "yuri-kiss"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Extra Timers",
+      "description": "Allows for the creation and management of additional timer blocks.",
+      "extensionId": "extratimers",
+      "extensionURL": "/extensions/penguinmod/steve0greatness/timers.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/steve0greatness/timers.js",
+      "iconURL": "/extensions/penguinmod/steve0greatness/timers.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "Steve0Greatness"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Dictation",
+      "description": "Convert your voice into text. (not supported in all browsers)",
+      "extensionId": "dictation",
+      "extensionURL": "/extensions/penguinmod/pooiod/Dictation.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/pooiod/Dictation.js",
+      "iconURL": "/extensions/penguinmod/pooiod/Dictation.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "pooiod7"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Doodle Recognition",
+      "description": "A implementation of Google's Quick Draw image vision model",
+      "extensionId": "doodlerecognition",
+      "extensionURL": "/extensions/penguinmod/TheShovel/doodlerec.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/TheShovel/doodlerec.js",
+      "iconURL": "/extensions/penguinmod/TheShovel/thumbnail-doodlerec.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "TheShovel"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Stylus",
+      "description": "Get the pressure and tilt of a stylus or graphic tablet",
+      "extensionId": "stylus",
+      "extensionURL": "/extensions/penguinmod/sourdoggy/stylus extension.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/sourdoggy/stylus extension.js",
+      "iconURL": "/extensions/penguinmod/sourdoggy/stylus_ext.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "sourdoggy"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Text To Speech: Redone",
+      "description": "A better alternitive to the base text to speech extension. Powered by the TTStool API",
+      "extensionId": "texttospeechredone",
+      "extensionURL": "/extensions/penguinmod/PuzzlingGGG/ttsr.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/PuzzlingGGG/ttsr.js",
+      "iconURL": "/extensions/penguinmod/PuzzlingGGG/TTSR.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "PuzzlingGGG"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "CloudLink",
+      "description": "A powerful WebSocket extension for Scratch. Allows for online connectivity to servers for things like multiplayer.",
+      "extensionId": "cloudlink",
+      "extensionURL": "/extensions/penguinmod/MikeDev101/cloudlink.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/MikeDev101/cloudlink.js",
+      "iconURL": "/extensions/penguinmod/MikeDev101/cloudlink.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "MikeDev101"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "E2EE",
+      "description": "A general-purpose E2EE (End-to-End Encryption) extension for Scratch.",
+      "extensionId": "e2ee",
+      "extensionURL": "/extensions/penguinmod/MikeDev101/e2ee.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/MikeDev101/e2ee.js",
+      "iconURL": "/extensions/penguinmod/MikeDev101/e2ee.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "MikeDev101"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "WebRTC",
+      "description": "A barebones WebRTC implementation.",
+      "extensionId": "webrtc",
+      "extensionURL": "/extensions/penguinmod/MikeDev101/webrtc.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/MikeDev101/webrtc.js",
+      "iconURL": "/extensions/penguinmod/MikeDev101/webrtc.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "MikeDev101"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Spritesheeter",
+      "description": "Load and manipulate spritesheets with customizable frames and XML support",
+      "extensionId": "spritesheeter",
+      "extensionURL": "/extensions/penguinmod/MubiLop/spritesheeter.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/MubiLop/spritesheeter.js",
+      "iconURL": "/extensions/penguinmod/MubiLop/spritesheeter.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "cicerorph"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Background Remover",
+      "description": "Removes background from images.",
+      "extensionId": "backgroundremover",
+      "extensionURL": "/extensions/penguinmod/dumzdev/removebg.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/dumzdev/removebg.js",
+      "iconURL": "/extensions/penguinmod/dumzdev/removebgbanner.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "dumzdev"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "PenguinHook",
+      "description": "Send Webhook requests, that can be Discord or any type of webhook.",
+      "extensionId": "penguinhook",
+      "extensionURL": "/extensions/penguinmod/MubiLop/penguinhook.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/MubiLop/penguinhook.js",
+      "iconURL": "/extensions/penguinmod/MubiLop/penguinhook.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "cicerorph"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Number Utilities",
+      "description": "Adds blocks for number formatting and manipulation.",
+      "extensionId": "numberutilities",
+      "extensionURL": "/extensions/penguinmod/MubiLop/numutils.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/MubiLop/numutils.js",
+      "iconURL": "/extensions/penguinmod/MubiLop/numutils.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "cicerorph"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Mathematics",
+      "description": "Complicated maths extension for nerds.",
+      "extensionId": "mathematics",
+      "extensionURL": "/extensions/penguinmod/jwklong/mathematics.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/jwklong/mathematics.js",
+      "iconURL": "/extensions/penguinmod/jwklong/mathematics.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "jwklong"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Big Decimal",
+      "description": "High precision operations. (Support decimals)",
+      "extensionId": "bigdecimal",
+      "extensionURL": "/extensions/penguinmod/qxsck/big-decimal.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/qxsck/big-decimal.js",
+      "iconURL": "/extensions/penguinmod/qxsck/big-decimal.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "qxsck"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Date Format",
+      "description": "Manage, format and compare dates.",
+      "extensionId": "dateformat",
+      "extensionURL": "/extensions/penguinmod/ddededodediamante/dateFormatV2.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/ddededodediamante/dateFormatV2.js",
+      "iconURL": "/extensions/penguinmod/ddededodediamante/dateFormat.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "ddededodediamante"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Translation Keys",
+      "description": "Use translation keys in your projects for multi-language support",
+      "extensionId": "translationkeys",
+      "extensionURL": "/extensions/penguinmod/Embin/embintranslation.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Embin/embintranslation.js",
+      "iconURL": "/extensions/penguinmod/Embin/embintranslation.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "embinmc"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Yet Another String Extension",
+      "description": "A small collection of utilty blocks intended to make managing strings much, much easier.",
+      "extensionId": "yetanotherstringextension",
+      "extensionURL": "/extensions/penguinmod/DogeisCut/YetAnotherStringExtension.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/DogeisCut/YetAnotherStringExtension.js",
+      "iconURL": "/extensions/penguinmod/DogeisCut/YetAnotherStringExtension.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "DogeisCut"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Regular Expressions",
+      "description": "Create, modify, filter, and more with the new regular expression type.",
+      "extensionId": "regularexpressions",
+      "extensionURL": "/extensions/penguinmod/DogeisCut/dogeiscutRegularExpressions.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/DogeisCut/dogeiscutRegularExpressions.js",
+      "iconURL": "/extensions/penguinmod/DogeisCut/dogeiscutRegularExpressions.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "DogeisCut"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Sets",
+      "description": "Store non-repeating, unordered data super efficiently in sets.",
+      "extensionId": "sets",
+      "extensionURL": "/extensions/penguinmod/DogeisCut/dogeiscutSet.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/DogeisCut/dogeiscutSet.js",
+      "iconURL": "/extensions/penguinmod/DogeisCut/dogeiscutSet.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "DogeisCut"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Iterators",
+      "description": "Transform and iterate over different types of collections and more.",
+      "extensionId": "iterators",
+      "extensionURL": "/extensions/penguinmod/Div/divIterators.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Div/divIterators.js",
+      "iconURL": "/extensions/penguinmod/Div/divIterators.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "Dicuo"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Blobs",
+      "description": "An extension made for handling blobs which can be used to store files. Allows to easily make blobs for the Js extension",
+      "extensionId": "blobs",
+      "extensionURL": "/extensions/penguinmod/Faunks/Blobs.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Faunks/Blobs.js",
+      "iconURL": "/extensions/penguinmod/Faunks/Blobs.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "Faunks"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Random Utilities",
+      "description": "Many blocks related to generating random values, including seed-based number generation, true number generation, UUID's, random strings, etc.",
+      "extensionId": "randomutilities",
+      "extensionURL": "/extensions/penguinmod/Gen1x/random_utils.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Gen1x/random_utils.js",
+      "iconURL": "/extensions/penguinmod/Gen1x/randomutils.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "G1nX"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Toast Notifications",
+      "description": "Did you want alerts? Notifications that are easily customizable? This is the only and best notification extension!",
+      "extensionId": "toastnotifications",
+      "extensionURL": "/extensions/penguinmod/MubiLop/toastnotifs.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/MubiLop/toastnotifs.js",
+      "iconURL": "/extensions/penguinmod/MubiLop/toastnotifs.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "cicerorph"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Project Interfaces",
+      "description": "Effortlessly create intuitive graphical user interfaces in your projects.",
+      "extensionId": "projectinterfaces",
+      "extensionURL": "/extensions/penguinmod/LordCat0/ProjectInterfaces.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/LordCat0/ProjectInterfaces.js",
+      "iconURL": "/extensions/penguinmod/LordCat0/ProjectInterfaces.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "LordCat0"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Git Penguin",
+      "description": "Make requests and control the files for your GitHub repository.",
+      "extensionId": "gitpenguin",
+      "extensionURL": "/extensions/penguinmod/justablock/gitpenguin.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/justablock/gitpenguin.js",
+      "iconURL": "/extensions/penguinmod/justablock/gitpenguin.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "justablock"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Pang API",
+      "description": "Fetch information from the PenguinMod API.",
+      "extensionId": "pangapi",
+      "extensionURL": "/extensions/penguinmod/SammerLOL/pangapi.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/SammerLOL/pangapi.js",
+      "iconURL": "/extensions/penguinmod/SammerLOL/pangapi.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "oc9x97"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "TurboWeather",
+      "description": "Show weather and location data for any place in our world. Data that could be used for doxxing is deleted from results.",
+      "extensionId": "turboweather",
+      "extensionURL": "/extensions/penguinmod/RubyDevs/turboweather.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/RubyDevs/turboweather.js",
+      "iconURL": "/extensions/penguinmod/RubyDevs/turboweather.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "RubyDevs"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Cockatiel Location",
+      "description": "Fetch Users' IP Addresses and Location.",
+      "extensionId": "cockatiellocation",
+      "extensionURL": "/extensions/penguinmod/bruhbeast-pixel/CockatielLocation.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/bruhbeast-pixel/CockatielLocation.js",
+      "iconURL": "/extensions/penguinmod/bruhbeast-pixel/CockatielLocation.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "bruhbeast-pixel"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "CORS Proxy",
+      "description": "Accessible CORS Proxies for fetching information with PenguinMod.",
+      "extensionId": "corsproxy",
+      "extensionURL": "/extensions/penguinmod/NamelessCat/corsproxy.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/NamelessCat/corsproxy.js",
+      "iconURL": "/extensions/penguinmod/NamelessCat/corsproxy.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "NamelessCat"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Extension Exposer",
+      "description": "Access the raw functions from other extensions.",
+      "extensionId": "extensionexposer",
+      "extensionURL": "/extensions/penguinmod/TheShovel/extexp.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/TheShovel/extexp.js",
+      "iconURL": "/extensions/penguinmod/TheShovel/placeholder-extexp.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "TheShovel"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Project Page",
+      "description": "Modify and affect the studio project page from the code. How annoying can an extension possibly be?",
+      "extensionId": "projectpage",
+      "extensionURL": "/extensions/penguinmod/jwklong/projectpage.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/jwklong/projectpage.js",
+      "iconURL": "/extensions/penguinmod/jwklong/projectpage.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "jwklong"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "All Menus",
+      "description": "Every dropdown menu for each block, in one extension.",
+      "extensionId": "allmenus",
+      "extensionURL": "/extensions/penguinmod/Lily/AllMenus.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Lily/AllMenus.js",
+      "iconURL": "/extensions/penguinmod/Lily/AllMenus.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "LilyMakesThings"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "More Fields",
+      "description": "Custom Field Types",
+      "extensionId": "morefields",
+      "extensionURL": "/extensions/penguinmod/Ashime/MoreFields.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Ashime/MoreFields.js",
+      "iconURL": "/extensions/penguinmod/0znzw/MoreFields.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "yuri-kiss"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Beepbox Player",
+      "description": "Play, edit, and read songs from any BeepBox mod directly from the URL or JSON!",
+      "extensionId": "beepboxplayer",
+      "extensionURL": "/extensions/penguinmod/DogeisCut/BeepBoxPlayer.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/DogeisCut/BeepBoxPlayer.js",
+      "iconURL": "/extensions/penguinmod/DogeisCut/BeepBoxPlayer.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "DogeisCut"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Update File (Direct Access)",
+      "description": "A simple extension that uses the File System Access API to update files dynamically.",
+      "extensionId": "updatefiledirectaccess",
+      "extensionURL": "/extensions/penguinmod/Anonymous_cat1/updateFile.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Anonymous_cat1/updateFile.js",
+      "iconURL": "/extensions/penguinmod/Anonymous_cat1/updateFile.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "Anonymous-cat1"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "YeetYourFiles",
+      "description": "Upload files to the cloud by throwing it to outer space!",
+      "extensionId": "yeetyourfiles",
+      "extensionURL": "/extensions/penguinmod/MubiLop/yeetyourfiles.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/MubiLop/yeetyourfiles.js",
+      "iconURL": "/extensions/penguinmod/MubiLop/yeetyourfiles.png",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "cicerorph"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "File Upload",
+      "description": "Upload files to the Network, can also used with Files extension.",
+      "extensionId": "fileupload",
+      "extensionURL": "/extensions/penguinmod/Codefoxy/cfupload.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Codefoxy/cfupload.js",
+      "iconURL": "/extensions/penguinmod/Codefoxy/cfupload.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "Codefoxy"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Video Sharing",
+      "description": "Share your screen or camera to your projects!",
+      "extensionId": "videosharing",
+      "extensionURL": "/extensions/penguinmod/pooiod/VideoSharing.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/pooiod/VideoSharing.js",
+      "iconURL": "/extensions/penguinmod/pooiod/VideoSharing.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "pooiod7"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "WindowHasher",
+      "description": "Interact with URL hash: the part of the URL after a hashtag",
+      "extensionId": "windowhasher",
+      "extensionURL": "/extensions/penguinmod/pooiod/WindowHasher.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/pooiod/WindowHasher.js",
+      "iconURL": "/extensions/penguinmod/pooiod/WindowHasher.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "pooiod7"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Scratchblocks",
+      "description": "Generate blocks in the Scratch3, or Scratch2 format.",
+      "extensionId": "scratchblocks",
+      "extensionURL": "/extensions/penguinmod/pooiod/Scratchblocks.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/pooiod/Scratchblocks.js",
+      "iconURL": "/extensions/penguinmod/pooiod/Scratchblocks.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "pooiod7"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "AuthPenguin",
+      "description": "Authenticate with anything and everything!",
+      "extensionId": "authpenguin",
+      "extensionURL": "/extensions/penguinmod/MubiLop/authpenguin.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/MubiLop/authpenguin.js",
+      "iconURL": "/extensions/penguinmod/MubiLop/authpenguin.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "cicerorph"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Google Auth",
+      "description": "Login with Google to your projects. Allows getting a name, profile picture and email from the google account.",
+      "extensionId": "googleauth",
+      "extensionURL": "/extensions/penguinmod/Ikelene/googleAuthExtension.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Ikelene/googleAuthExtension.js",
+      "iconURL": "/extensions/penguinmod/Ikelene/ExtensionBanner.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "ikelene"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Discord Auth",
+      "description": "Login with discord to your projects. Identify users by ID and username in a secure and easy way!",
+      "extensionId": "discordauth",
+      "extensionURL": "/extensions/penguinmod/NotHouse/DiscordAuth.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/NotHouse/DiscordAuth.js",
+      "iconURL": "/extensions/penguinmod/NotHouse/DiscordAuth-banner.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "enderhacker"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Twitch",
+      "description": "Communicate with your Twitch Chat on PenguinMod!\n\nPenguinMod is not affiliated with Twitch.",
+      "extensionId": "twitch",
+      "extensionURL": "/extensions/penguinmod/bop_tw/Twitch.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/bop_tw/Twitch.js",
+      "iconURL": "/extensions/penguinmod/bop_tw/Twitch.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "bop_tw"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Chess",
+      "description": "A powerful extension that lets you manage a chessboard, customize it, use Stockfish 17 (via API), a local chess engine (Lozza) and much, MUCH more!",
+      "extensionId": "chess",
+      "extensionURL": "/extensions/penguinmod/Gen1x/chess-ext.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Gen1x/chess-ext.js",
+      "iconURL": "/extensions/penguinmod/Gen1x/chess-ext.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "G1nX"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "CATS",
+      "description": "Blocks related to cats.",
+      "extensionId": "cats",
+      "extensionURL": "/extensions/penguinmod/Gen1x/CATS.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Gen1x/CATS.js",
+      "iconURL": "/extensions/penguinmod/Gen1x/cats.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "G1nX"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Free Servers",
+      "description": "Here you can find a free server for your projects. And also check whether it is working now or not.\n\nЗдесь вы можете найти бесплатный сервер для своих проектов. А также проверить, работает он сейчас или нет.",
+      "extensionId": "freeservers",
+      "extensionURL": "/extensions/penguinmod/WAYLIVES/FreeServers.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/WAYLIVES/FreeServers.js",
+      "iconURL": "/extensions/penguinmod/WAYLIVES/FreeServersIMG.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "WAYLIVES"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "More Types",
+      "description": "Adds more value types to PenguinMod, implementing Functions, Objects, Arrays, Sets, Maps, Symbols and Nothing.",
+      "extensionId": "moretypes",
+      "extensionURL": "/extensions/penguinmod/VeryGoodScratcher42/More-Types.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/VeryGoodScratcher42/More-Types.js",
+      "iconURL": "/extensions/penguinmod/VeryGoodScratcher42/More-Types.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "VeryGoodScratcher42"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "oneko",
+      "description": "Cute cat that follows you on the block area.",
+      "extensionId": "oneko",
+      "extensionURL": "/extensions/penguinmod/TheShovel/oneko.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/TheShovel/oneko.js",
+      "iconURL": "/extensions/penguinmod/TheShovel/thumbnail-oneko.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "TheShovel"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Counter++",
+      "description": "Count anything, at any time, in PenguinMod!",
+      "extensionId": "counter",
+      "extensionURL": "/extensions/penguinmod/MrRedstonia/counterplusplus.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/MrRedstonia/counterplusplus.js",
+      "iconURL": "/extensions/penguinmod/MrRedstonia/counterplusplus.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "MrRedstonia"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "How many lines?",
+      "description": "Blocks to determine the amount of new lines in a piece of text.",
+      "extensionId": "howmanylines",
+      "extensionURL": "/extensions/penguinmod/Monochromasity/howmanylines.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Monochromasity/howmanylines.js",
+      "iconURL": "/extensions/penguinmod/Monochromasity/placeholder-howmanylines.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "Monochromasity"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Paint Utils",
+      "description": "A colour extension that lets you mix colours.",
+      "extensionId": "paintutils",
+      "extensionURL": "/extensions/penguinmod/Fruits555000/PaintUtils.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/Fruits555000/PaintUtils.js",
+      "iconURL": "/extensions/penguinmod/Fruits555000/PaintUtils.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "Fruits555000"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Resolution",
+      "description": "Provides utility blocks that simplify the creation of projects with dynamic resolution support.",
+      "extensionId": "resolution",
+      "extensionURL": "/extensions/penguinmod/DogeisCut/Resolution.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/DogeisCut/Resolution.js",
+      "iconURL": "/extensions/penguinmod/DogeisCut/Resolution.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "DogeisCut"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Device Motion",
+      "description": "Use Device Motion API to get rotation or movement of the device. Works best on mobile devices. \n Thumbnail by Dillon. ",
+      "extensionId": "devicemotion",
+      "extensionURL": "/extensions/penguinmod/gaimerI17/DeviceMotion.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/gaimerI17/DeviceMotion.js",
+      "iconURL": "/extensions/penguinmod/gaimerI17/DeviceMotion.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "gaimerI"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Cryptography",
+      "description": "Hash, encrypt and verify values using various algorithms. Actual security not guaranteed",
+      "extensionId": "cryptography",
+      "extensionURL": "/extensions/penguinmod/gaimerI17/crypto.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/gaimerI17/crypto.js",
+      "iconURL": "/extensions/penguinmod/gaimerI17/crypto.avif",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "gaimerI"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Smoke Detector",
+      "description": "Plays a beep every 30 seconds.",
+      "extensionId": "smokedetector",
+      "extensionURL": "/extensions/penguinmod/electricfuzzball_pm/firealarm.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/electricfuzzball_pm/firealarm.js",
+      "iconURL": "/extensions/penguinmod/electricfuzzball_pm/firealarm.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "FloppyDisk-OSC"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Stage Brah",
+      "description": "Spawn Brah cats in your codespace!",
+      "extensionId": "stagebrah",
+      "extensionURL": "/extensions/penguinmod/electricfuzzball_pm/StageBrah.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/electricfuzzball_pm/StageBrah.js",
+      "iconURL": "/extensions/penguinmod/electricfuzzball_pm/StageBrah.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "FloppyDisk-OSC"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "MIDI Controller",
+      "description": "Use a MIDI keyboard to interact with projects!",
+      "extensionId": "midicontroller",
+      "extensionURL": "/extensions/penguinmod/electricfuzzball_pm/MIDI.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/electricfuzzball_pm/MIDI.js",
+      "iconURL": "/extensions/penguinmod/electricfuzzball_pm/MIDI.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "FloppyDisk-OSC"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Array Buffers",
+      "description": "Read, parse, and write raw data efficiently using Array Buffers",
+      "extensionId": "arraybuffers",
+      "extensionURL": "/extensions/penguinmod/AndrewGaming587/agBuffer.js",
+      "onlineURL": "https://extensions.penguinmod.com/extensions/AndrewGaming587/agBuffer.js",
+      "iconURL": "/extensions/penguinmod/AndrewGaming587/agBuffer.svg",
+      "tags": [
+        "penguinmod"
+      ],
+      "credits": [
+        "AndrewScripter587"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    }
+  ]
+}

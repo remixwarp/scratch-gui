@@ -178,14 +178,15 @@ const updateWallpaperObserverState = (hasWallpaper, opacity = 0.3) => {
  * @param {object} wallpaper wallpaper configuration
  */
 const applyWallpaper = wallpaper => {
-    const target = document.querySelector("[class*='blocks-wrapper_']");
+    const target = document.querySelector("[class*='gui_blocks-wrapper_']");
+    const bodyWrapper = document.querySelector('.body-wrapper');
 
     let checkCountTarget = 0;
     if (!target) {
         const maxChecks = 50;
         const checkInterval = setInterval(() => {
             checkCountTarget++;
-            const newTarget = document.querySelector("[class*='blocks-wrapper_']");
+            const newTarget = document.querySelector("[class*='gui_blocks-wrapper_']");
             if (newTarget) {
                 applyWallpaper(wallpaper);
                 clearInterval(checkInterval);
@@ -197,6 +198,11 @@ const applyWallpaper = wallpaper => {
     }
 
     if (wallpaper.url) {
+        // Add has-wallpaper class to body-wrapper to make background transparent
+        if (bodyWrapper) {
+            bodyWrapper.classList.add('has-wallpaper');
+        }
+        
         // Apply opacity by creating a semi-transparent overlay
         const opacity = Math.max(0.1, Math.min(1, wallpaper.opacity || 0.3));
         const overlayOpacity = 1 - opacity;
@@ -207,18 +213,10 @@ const applyWallpaper = wallpaper => {
         // Create a composite background with the image and darkness overlay
         // The darkness overlay is applied as a black semi-transparent layer over the image
         if (darkness > 0) {
-            target.style.backgroundImage = `
-                linear-gradient(rgba(0, 0, 0, ${darkness}), rgba(0, 0, 0, ${darkness})),
-                url("${wallpaper.url}")
-            `;
+            target.style.background = `linear-gradient(rgba(0, 0, 0, ${darkness}), rgba(0, 0, 0, ${darkness})), url("${wallpaper.url}") center/cover no-repeat fixed`;
         } else {
-            target.style.backgroundImage = `url("${wallpaper.url}")`;
+            target.style.background = `url("${wallpaper.url}") center/cover no-repeat fixed`;
         }
-        
-        target.style.backgroundSize = 'cover';
-        target.style.backgroundPosition = 'center';
-        target.style.backgroundRepeat = 'no-repeat';
-        target.style.backgroundAttachment = 'fixed';
         
         // Use CSS custom properties for overlay and darkness
         document.documentElement.style.setProperty('--wallpaper-overlay-opacity', overlayOpacity.toString());
@@ -248,13 +246,14 @@ const applyWallpaper = wallpaper => {
         }, 500);
     } else {
         // Remove wallpaper
-        target.style.backgroundImage = '';
-        target.style.backgroundSize = '';
-        target.style.backgroundPosition = '';
-        target.style.backgroundRepeat = '';
-        target.style.backgroundAttachment = '';
+        target.style.background = '';
         document.documentElement.style.removeProperty('--wallpaper-overlay-opacity');
         document.documentElement.style.removeProperty('--wallpaper-darkness');
+        
+        // Remove has-wallpaper class from body-wrapper to restore background color
+        if (bodyWrapper) {
+            bodyWrapper.classList.remove('has-wallpaper');
+        }
         
         // Remove transparency from blocks workspace
         applyBlocksWorkspaceTransparency(false);

@@ -6,8 +6,8 @@ import Button from '../button/button.jsx';
 import MarkdownRenderer from '../markdown-renderer/markdown-renderer.jsx';
 
 const API_ENDPOINT = 'https://api.siliconflow.cn/v1/chat/completions';
-const API_KEY = 'sk-ytpuhxsxxuhmlnqelpvviiuvbvodluirsfsiyrbsvesosbti';
-const MODEL = 'deepseek-ai/DeepSeek-R1-0528-Qwen3-8B';
+const API_KEY = 'sk-madarokutonlejxkgjktphhujojhyinkpfltpxynypjvsvfq';
+const MODEL = 'deepseek-ai/DeepSeek-V3';
 
 class AIPanel extends React.PureComponent {
     constructor (props) {
@@ -1412,7 +1412,7 @@ class AIPanel extends React.PureComponent {
                         <Button 
                             onClick={this.handleSend} 
                             className={styles.sendButton} 
-                            disabled={this.state.loading || this.state.multiStepMode}
+                            disabled={this.state.loading || this.state.multiStepMode || !this.state.input || this.state.input.trim() === ''}
                         >
                             发送
                         </Button>
