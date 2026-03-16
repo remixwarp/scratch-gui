@@ -265,11 +265,19 @@ export const checkForUpdate = async () => {
                     commitMessage: updateInfo.rawMessage
                 });
                 
+                // 获取版本历史，筛选出从上次版本到当前版本的所有版本
+                const versionHistory = getVersionHistory();
+                const versionsToShow = getVersionsSinceLastSeen(versionHistory, lastSeenVersion);
+                
                 return {
                     hasUpdate: true,
                     currentVersion,
                     lastVersion: lastSeenVersion,
-                    ...updateInfo
+                    versions: versionsToShow.length > 0 ? versionsToShow : [{
+                        version: currentVersion,
+                        date: getCurrentDate(),
+                        changes: updateInfo.changes
+                    }]
                 };
             }
         }
@@ -279,6 +287,60 @@ export const checkForUpdate = async () => {
         console.error('Error checking for update:', error);
         return null;
     }
+};
+
+/**
+ * 从版本历史中获取从上次查看版本到当前版本的所有版本
+ * @param {Array} versionHistory - 版本历史数组
+ * @param {string} lastSeenVersion - 上次查看的版本号
+ * @returns {Array} 版本列表
+ */
+export const getVersionsSinceLastSeen = (versionHistory, lastSeenVersion) => {
+    if (!versionHistory || versionHistory.length === 0) {
+        return [];
+    }
+    
+    // 按版本号排序（从新到旧）
+    const sortedHistory = [...versionHistory].sort((a, b) => {
+        return compareVersions(b.version, a.version);
+    });
+    
+    if (!lastSeenVersion) {
+        // 首次使用，只显示最新版本
+        return [sortedHistory[0]];
+    }
+    
+    // 找到上次查看的版本在历史中的位置
+    const lastSeenIndex = sortedHistory.findIndex(v => v.version === lastSeenVersion);
+    
+    if (lastSeenIndex === -1) {
+        // 上次查看的版本不在历史中，只显示最新版本
+        return [sortedHistory[0]];
+    }
+    
+    // 返回从最新版本到上次查看版本之间的所有版本（不包括上次查看版本）
+    return sortedHistory.slice(0, lastSeenIndex);
+};
+
+/**
+ * 比较两个版本号
+ * @param {string} version1 - 版本号1
+ * @param {string} version2 - 版本号2
+ * @returns {number} 1: version1 > version2, 0: 相等, -1: version1 < version2
+ */
+export const compareVersions = (version1, version2) => {
+    const v1Parts = version1.split('.').map(Number);
+    const v2Parts = version2.split('.').map(Number);
+    
+    for (let i = 0; i < Math.max(v1Parts.length, v2Parts.length); i++) {
+        const v1 = v1Parts[i] || 0;
+        const v2 = v2Parts[i] || 0;
+        
+        if (v1 > v2) return 1;
+        if (v1 < v2) return -1;
+    }
+    
+    return 0;
 };
 
 /**

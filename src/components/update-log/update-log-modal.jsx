@@ -7,15 +7,17 @@ import styles from './update-log-modal.css';
 const STORAGE_KEY = 'remixwarp_last_seen_version';
 const DONT_SHOW_KEY = 'remixwarp_dont_show_updates';
 
-const UpdateLogModal = ({ intl, visible, onClose, currentVersion, updateDate, changes }) => {
+const UpdateLogModal = ({ intl, visible, onClose, versions }) => {
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
     const handleClose = () => {
         if (dontShowAgain) {
             localStorage.setItem(DONT_SHOW_KEY, 'true');
         }
-        // 记录已查看的版本
-        localStorage.setItem(STORAGE_KEY, currentVersion);
+        // 记录已查看的最新版本
+        if (versions && versions.length > 0) {
+            localStorage.setItem(STORAGE_KEY, versions[0].version);
+        }
         onClose();
     };
 
@@ -23,7 +25,7 @@ const UpdateLogModal = ({ intl, visible, onClose, currentVersion, updateDate, ch
         setDontShowAgain(e.target.checked);
     };
 
-    if (!visible) return null;
+    if (!visible || !versions || versions.length === 0) return null;
 
     return (
         <div className={styles.modalOverlay}>
@@ -50,47 +52,52 @@ const UpdateLogModal = ({ intl, visible, onClose, currentVersion, updateDate, ch
                 </div>
 
                 <div className={styles.modalContent}>
-                    <div className={styles.versionInfo}>
-                        <div className={styles.versionBadge}>
-                            <FormattedMessage
-                                defaultMessage="版本 {version}"
-                                description="Version number display"
-                                id="gui.updateLog.version"
-                                values={{ version: currentVersion }}
-                            />
-                        </div>
-                        <div className={styles.updateDate}>
-                            <FormattedMessage
-                                defaultMessage="更新日期: {date}"
-                                description="Update date display"
-                                id="gui.updateLog.date"
-                                values={{ date: updateDate }}
-                            />
-                        </div>
-                    </div>
-
-                    <div className={styles.changesContainer}>
-                        <h3 className={styles.changesTitle}>
-                            <FormattedMessage
-                                defaultMessage="更新内容"
-                                description="Changes section title"
-                                id="gui.updateLog.changesTitle"
-                            />
-                        </h3>
-                        <div className={styles.changesList}>
-                            {changes.map((change, index) => (
-                                <div key={index} className={styles.changeItem}>
-                                    <span className={`${styles.changeType} ${styles[change.type]}`}>
-                                        {change.type === 'feature' && '✨'}
-                                        {change.type === 'improvement' && '⚡'}
-                                        {change.type === 'bugfix' && '🐛'}
-                                        {change.type === 'other' && '📝'}
-                                    </span>
-                                    <span className={styles.changeText}>{change.text}</span>
+                    {versions.map((versionInfo, index) => (
+                        <div key={versionInfo.version} className={styles.versionSection}>
+                            <div className={styles.versionInfo}>
+                                <div className={styles.versionBadge}>
+                                    <FormattedMessage
+                                        defaultMessage="版本 {version}"
+                                        description="Version number display"
+                                        id="gui.updateLog.version"
+                                        values={{ version: versionInfo.version }}
+                                    />
                                 </div>
-                            ))}
+                                <div className={styles.updateDate}>
+                                    <FormattedMessage
+                                        defaultMessage="更新日期: {date}"
+                                        description="Update date display"
+                                        id="gui.updateLog.date"
+                                        values={{ date: versionInfo.date }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={styles.changesContainer}>
+                                <h3 className={styles.changesTitle}>
+                                    <FormattedMessage
+                                        defaultMessage="更新内容"
+                                        description="Changes section title"
+                                        id="gui.updateLog.changesTitle"
+                                    />
+                                </h3>
+                                <div className={styles.changesList}>
+                                    {versionInfo.changes.map((change, changeIndex) => (
+                                        <div key={changeIndex} className={styles.changeItem}>
+                                            <span className={`${styles.changeType} ${styles[change.type]}`}>
+                                                {change.type === 'feature' && '✨'}
+                                                {change.type === 'improvement' && '⚡'}
+                                                {change.type === 'bugfix' && '🐛'}
+                                                {change.type === 'other' && '📝'}
+                                            </span>
+                                            <span className={styles.changeText}>{change.text}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            {index < versions.length - 1 && <div className={styles.versionDivider}></div>}
                         </div>
-                    </div>
+                    ))}
                 </div>
 
                 <div className={styles.modalFooter}>
@@ -129,11 +136,13 @@ UpdateLogModal.propTypes = {
     intl: intlShape.isRequired,
     visible: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
-    currentVersion: PropTypes.string.isRequired,
-    updateDate: PropTypes.string.isRequired,
-    changes: PropTypes.arrayOf(PropTypes.shape({
-        type: PropTypes.oneOf(['feature', 'improvement', 'bugfix', 'other']).isRequired,
-        text: PropTypes.string.isRequired
+    versions: PropTypes.arrayOf(PropTypes.shape({
+        version: PropTypes.string.isRequired,
+        date: PropTypes.string.isRequired,
+        changes: PropTypes.arrayOf(PropTypes.shape({
+            type: PropTypes.oneOf(['feature', 'improvement', 'bugfix', 'other']).isRequired,
+            text: PropTypes.string.isRequired
+        })).isRequired
     })).isRequired
 };
 

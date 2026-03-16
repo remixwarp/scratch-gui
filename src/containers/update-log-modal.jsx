@@ -28,11 +28,9 @@ const UpdateLogModalContainer = ({ intl }) => {
                     // 获取更新信息
                     const info = await checkForUpdate();
                     
-                    if (info && info.hasUpdate) {
+                    if (info && info.hasUpdate && info.versions && info.versions.length > 0) {
                         setUpdateInfo({
-                            currentVersion: info.currentVersion,
-                            updateDate: info.date || getCurrentDate(),
-                            changes: info.changes || []
+                            versions: info.versions
                         });
                         setVisible(true);
                     }
@@ -54,12 +52,14 @@ const UpdateLogModalContainer = ({ intl }) => {
 
     const handleClose = () => {
         setVisible(false);
-        // 标记当前版本为已查看
-        markVersionAsSeen();
+        // 标记当前版本为已查看（最新版本）
+        if (updateInfo && updateInfo.versions && updateInfo.versions.length > 0) {
+            markVersionAsSeen();
+        }
     };
 
     // 如果没有更新信息或不应该显示，返回 null
-    if (!visible || !updateInfo) {
+    if (!visible || !updateInfo || !updateInfo.versions || updateInfo.versions.length === 0) {
         return null;
     }
 
@@ -67,9 +67,7 @@ const UpdateLogModalContainer = ({ intl }) => {
         <UpdateLogModalComponent
             visible={visible}
             onClose={handleClose}
-            currentVersion={updateInfo.currentVersion}
-            updateDate={updateInfo.updateDate}
-            changes={updateInfo.changes}
+            versions={updateInfo.versions}
         />
     );
 };
