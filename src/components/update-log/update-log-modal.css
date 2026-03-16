@@ -1,0 +1,341 @@
+@import "../../css/colors.css";
+@import "../../css/units.css";
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modalContainer {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+    overflow: hidden;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e0e0e0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: white;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.modalContent {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.versionInfo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.versionBadge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.updateDate {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.changesContainer {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.changesTitle {
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.changesList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.changeItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid #ddd;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.changeItem:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.changeType {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.changeType.feature {
+    border-left-color: #28a745;
+}
+
+.changeType.improvement {
+    border-left-color: #ffc107;
+}
+
+.changeType.bugfix {
+    border-left-color: #dc3545;
+}
+
+.changeType.other {
+    border-left-color: #6c757d;
+}
+
+.changeText {
+    color: #333;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.modalFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-top: 1px solid #e0e0e0;
+    background: #f8f9fa;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.checkboxText {
+    user-select: none;
+}
+
+.confirmButton {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.confirmButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.confirmButton:active {
+    transform: translateY(0);
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+    .modalContainer {
+        width: 95%;
+        max-height: 85vh;
+        margin: 16px;
+    }
+
+    .modalHeader {
+        padding: 16px 20px;
+    }
+
+    .title {
+        font-size: 1.2rem;
+    }
+
+    .modalContent {
+        padding: 16px;
+    }
+
+    .versionInfo {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .changesContainer {
+        padding: 16px;
+    }
+
+    .modalFooter {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px 20px;
+    }
+
+    .checkboxLabel {
+        justify-content: center;
+    }
+
+    .confirmButton {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .modalHeader {
+        padding: 12px 16px;
+    }
+
+    .title {
+        font-size: 1.1rem;
+    }
+
+    .closeButton {
+        font-size: 24px;
+        width: 28px;
+        height: 28px;
+    }
+
+    .modalContent {
+        padding: 12px;
+    }
+
+    .versionBadge {
+        font-size: 0.85rem;
+        padding: 4px 12px;
+    }
+
+    .updateDate {
+        font-size: 0.8rem;
+    }
+
+    .changesContainer {
+        padding: 12px;
+    }
+
+    .changesTitle {
+        font-size: 1rem;
+    }
+
+    .changeItem {
+        padding: 8px 10px;
+    }
+
+    .changeText {
+        font-size: 0.85rem;
+    }
+}
+
+/* 滚动条样式 */
+.modalContent::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modalContent::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.modalContent::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.modalContent::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

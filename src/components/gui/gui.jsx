@@ -51,6 +51,7 @@ import AIModal from '../../containers/ai-modal.jsx';
 import AIChatModal from '../../containers/ai-chat-modal.jsx';
 import AIAgentModal from '../../containers/ai-agent-modal.jsx';
 import SimpleDialog from '../../containers/simple-dialog.jsx';
+import UpdateLogModal from '../../containers/update-log-modal.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import Onboarding from '../../containers/onboarding.jsx';
@@ -729,6 +730,7 @@ const GUIComponent = props => {
             <AIChatModal />
             <AIAgentModal />
             <SimpleDialog />
+            <UpdateLogModal />
             {onboardingVisible && <Onboarding />}
         </React.Fragment>
     ), [
