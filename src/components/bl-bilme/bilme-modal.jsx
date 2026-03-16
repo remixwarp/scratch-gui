@@ -369,6 +369,7 @@ const BilmeModal = props => {
             id="bilmeModal"
             fullScreen
             onRequestClose={props.onClose}
+            visible={props.visible}
         >
             <Box className={styles.container}>
                 {/* Filters */}
@@ -523,7 +524,8 @@ const BilmeModal = props => {
 BilmeModal.propTypes = {
     intl: intlShape,
     onClose: PropTypes.func.isRequired,
-    onThemeApply: PropTypes.func
+    onThemeApply: PropTypes.func,
+    visible: PropTypes.bool
 };
 
 export default injectIntl(BilmeModal);

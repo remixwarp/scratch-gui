@@ -1,12 +1,12 @@
 import {connect} from 'react-redux';
-import {closeBilmeModal} from '../reducers/modals';
+import {closeBilmeModal, MODAL_WARPTHEME} from '../reducers/modals';
 import {setTheme} from '../reducers/theme';
 import {applyTheme} from '../lib/themes/themePersistance';
 import {CustomTheme} from '../lib/themes/custom-themes';
 import BilmeModal from '../components/bl-bilme/bilme-modal.jsx';
 
 const mapStateToProps = state => ({
-    visible: state.scratchGui.modals[state.scratchGui.modals.MODAL_WARPTHEME]
+    visible: state.scratchGui.modals[MODAL_WARPTHEME]
 });
 
 const mapDispatchToProps = dispatch => ({

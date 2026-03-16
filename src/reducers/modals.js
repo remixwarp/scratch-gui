@@ -347,5 +347,6 @@ export {
     openExtensionLoadChoiceModal,
     closeExtensionLoadChoiceModal,
     openBilmeModal,
-    closeBilmeModal
+    closeBilmeModal,
+    MODAL_WARPTHEME
 };

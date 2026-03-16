@@ -13,6 +13,7 @@ import TWWallpaperMenu from './tw-theme-wallpaper.jsx';
 import TWFontsThemeMenu from './tw-theme-fonts.jsx';
 import TWMenuBarAlignMenu from './tw-menubar-align.jsx';
 import TWCustomThemeMenu from './tw-theme-custom.jsx';
+import BilmeMenu from './bl-bilme-menu.jsx';
 
 import menuBarStyles from './menu-bar.css';
 import styles from './settings-menu.css';
@@ -62,6 +63,7 @@ const SettingsMenu = ({
                             <TWGuiThemeMenu />
                             <TWWallpaperMenu />
                             <TWFontsThemeMenu />
+                            <BilmeMenu onRequestClose={onRequestClose} />
                         </React.Fragment>
                     )}
                 </MenuSection>

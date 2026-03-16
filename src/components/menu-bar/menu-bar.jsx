@@ -1941,7 +1941,6 @@ class MenuBar extends React.Component {
                             onRequestOpen={this.props.onClickSettings}
                             settingsMenuOpen={this.props.settingsMenuOpen}
                         />)}
-                        <BilmeMenu />
                         <MenuLabel
                             open={this.props.toolsMenuOpen}
                             onOpen={this.props.onClickTools}

@@ -4,14 +4,15 @@ import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 import {MenuItem} from '../menu/menu.jsx';
 import {openBilmeModal} from '../../reducers/modals';
-import {openCustomThemes, closeSettingsMenu} from '../../reducers/menus';
 
 import {Store} from 'lucide-react';
 
 class BilmeMenu extends React.Component {
     handleClick () {
         this.props.onOpenBilme();
-        this.props.onRequestClose();
+        if (this.props.onRequestClose) {
+            this.props.onRequestClose();
+        }
     }
 
     render () {
@@ -32,14 +33,13 @@ class BilmeMenu extends React.Component {
 
 BilmeMenu.propTypes = {
     onOpenBilme: PropTypes.func.isRequired,
-    onRequestClose: PropTypes.func.isRequired
+    onRequestClose: PropTypes.func
 };
 
 const mapDispatchToProps = dispatch => ({
     onOpenBilme: () => {
         dispatch(openBilmeModal());
-    },
-    onRequestClose: () => dispatch(closeSettingsMenu())
+    }
 });
 
 export default connect(
