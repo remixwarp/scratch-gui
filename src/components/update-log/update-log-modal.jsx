@@ -7,7 +7,7 @@ import styles from './update-log-modal.css';
 const STORAGE_KEY = 'remixwarp_last_seen_version';
 const DONT_SHOW_KEY = 'remixwarp_dont_show_updates';
 
-const UpdateLogModal = ({ intl, visible, onClose, versions }) => {
+const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors }) => {
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
     const handleClose = () => {
@@ -27,10 +27,16 @@ const UpdateLogModal = ({ intl, visible, onClose, versions }) => {
 
     if (!visible || !versions || versions.length === 0) return null;
 
+    // 获取主题颜色，默认使用紫色主题
+    const primaryColor = themeColors['motion-primary'] || '#9966ff';
+    const secondaryColor = themeColors['motion-tertiary'] || '#8a4fff';
+
     return (
         <div className={styles.modalOverlay}>
             <div className={styles.modalContainer}>
-                <div className={styles.modalHeader}>
+                <div className={styles.modalHeader} style={{ 
+                    background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` 
+                }}>
                     <h2 className={styles.title}>
                         <FormattedMessage
                             defaultMessage="版本更新"
@@ -55,7 +61,9 @@ const UpdateLogModal = ({ intl, visible, onClose, versions }) => {
                     {versions.map((versionInfo, index) => (
                         <div key={versionInfo.version} className={styles.versionSection}>
                             <div className={styles.versionInfo}>
-                                <div className={styles.versionBadge}>
+                                <div className={styles.versionBadge} style={{ 
+                                    background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` 
+                                }}>
                                     <FormattedMessage
                                         defaultMessage="版本 {version}"
                                         description="Version number display"
@@ -119,6 +127,9 @@ const UpdateLogModal = ({ intl, visible, onClose, versions }) => {
                     <button 
                         className={styles.confirmButton}
                         onClick={handleClose}
+                        style={{ 
+                            background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` 
+                        }}
                     >
                         <FormattedMessage
                             defaultMessage="知道了"
@@ -143,7 +154,8 @@ UpdateLogModal.propTypes = {
             type: PropTypes.oneOf(['feature', 'improvement', 'bugfix', 'other']).isRequired,
             text: PropTypes.string.isRequired
         })).isRequired
-    })).isRequired
+    })).isRequired,
+    themeColors: PropTypes.object
 };
 
 // 检查是否需要显示更新日志
@@ -165,7 +177,7 @@ export const shouldShowUpdateLog = (currentVersion) => {
 
 // 解析提交信息中的版本号和更新内容
 export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
-    const versionMatch = commitMessage.match(/##([\d.]+)##/);
+    const versionMatch = commitMessage.match(/__([\d.]+)__/);
     let version = versionMatch ? versionMatch[1] : null;
     
     // 如果没有检测到版本号，自动递增版本号
@@ -180,7 +192,7 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
     }
 
     // 移除版本号标记，获取更新内容
-    let content = commitMessage.replace(/##[\d.]+##/g, '').trim();
+    let content = commitMessage.replace(/__[\d.]+__/g, '').trim();
     
     // 解析更新内容
     const changes = [];

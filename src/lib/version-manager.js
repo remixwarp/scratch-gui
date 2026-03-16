@@ -129,8 +129,8 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
         };
     }
 
-    // 匹配 ##版本号## 格式
-    const versionMatch = commitMessage.match(/##([\d.]+)##/);
+    // 匹配 __版本号__ 格式
+    const versionMatch = commitMessage.match(/__([\d.]+)__/);
     let version = versionMatch ? versionMatch[1] : null;
     
     // 如果没有检测到版本号，自动递增版本号
@@ -139,7 +139,7 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
     }
 
     // 移除版本号标记，获取更新内容
-    let content = commitMessage.replace(/##[\d.]+##/g, '').trim();
+    let content = commitMessage.replace(/__[\d.]+__/g, '').trim();
     
     // 解析更新内容
     const changes = parseChanges(content);
