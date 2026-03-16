@@ -345,5 +345,7 @@ export {
     closeOnboardingModal,
     closeShortcutManagerModal,
     openExtensionLoadChoiceModal,
-    closeExtensionLoadChoiceModal
+    closeExtensionLoadChoiceModal,
+    openBilmeModal,
+    closeBilmeModal
 };
