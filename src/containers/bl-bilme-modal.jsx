@@ -2,6 +2,7 @@ import {connect} from 'react-redux';
 import {closeBilmeModal} from '../reducers/modals';
 import {setTheme} from '../reducers/theme';
 import {applyTheme} from '../lib/themes/themePersistance';
+import {CustomTheme} from '../lib/themes/custom-themes';
 import BilmeModal from '../components/bl-bilme/bilme-modal.jsx';
 
 const mapStateToProps = state => ({
@@ -12,11 +13,26 @@ const mapDispatchToProps = dispatch => ({
     onClose: () => {
         dispatch(closeBilmeModal());
     },
-    onThemeApply: themeData => {
-        // Apply the theme data
-        console.log('Applying theme:', themeData);
-        // Here you would typically convert the theme data to the format expected by your theme system
-        // For now, we'll just log it
+    onThemeApply: async themeData => {
+        try {
+            console.log('Applying theme:', themeData);
+            
+            // 创建自定义主题
+            const customTheme = CustomTheme.import(themeData);
+            
+            // 应用主题
+            applyTheme(customTheme);
+            
+            // 分发主题更新
+            dispatch(setTheme(customTheme));
+            
+            // 关闭模态窗口
+            dispatch(closeBilmeModal());
+            
+            console.log('Theme applied successfully');
+        } catch (error) {
+            console.error('Error applying theme:', error);
+        }
     }
 });
 
