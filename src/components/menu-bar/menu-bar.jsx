@@ -118,6 +118,7 @@ import LazyScratchBlocks from '../../lib/tw-lazy-scratch-blocks';
 import SettingsStore from '../../addons/settings-store-singleton.js';
 
 import WorkspaceBookmarksMenu from './workspace-bookmarks-menu.jsx';
+import BilmeMenu from './bl-bilme-menu.jsx';
 
 import {
     createWorkspaceBookmarksExportData,
@@ -1940,6 +1941,7 @@ class MenuBar extends React.Component {
                             onRequestOpen={this.props.onClickSettings}
                             settingsMenuOpen={this.props.settingsMenuOpen}
                         />)}
+                        <BilmeMenu />
                         <MenuLabel
                             open={this.props.toolsMenuOpen}
                             onOpen={this.props.onClickTools}
