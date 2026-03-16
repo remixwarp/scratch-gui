@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
-import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
+import React, {useCallback, useEffect, useRef, useState, useMemo, Suspense} from 'react';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
@@ -12,7 +12,7 @@ import VM from 'scratch-vm';
 import Blocks from '../../containers/blocks.jsx';
 import CostumeTab from '../../containers/costume-tab.jsx';
 import SoundTab from '../../containers/sound-tab.jsx';
-import ExtensionLibrary from '../../containers/extension-library.jsx';
+const ExtensionLibrary = React.lazy(() => import('../../containers/extension-library.jsx'));
 import TargetPane from '../../containers/target-pane.jsx';
 import StageWrapper from '../../containers/stage-wrapper.jsx';
 import Loader from '../loader/loader.jsx';
@@ -1040,15 +1040,17 @@ const GUIComponent = props => {
                     </Box>
                 </Box>
                 {extensionLibraryVisible ? (
-                    <ExtensionLibrary
-                        vm={vm}
-                        visible={extensionLibraryVisible}
-                        onRequestClose={onRequestCloseExtensionLibrary}
-                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
-                        onEnableProcedureReturns={handleEnableProcedureReturns}
-                        onActivateBlocksTab={() => {}}
-                        onCategorySelected={handleCategorySelected}
-                    />
+                    <Suspense fallback={<Loader />}>
+                        <ExtensionLibrary
+                            vm={vm}
+                            visible={extensionLibraryVisible}
+                            onRequestClose={onRequestCloseExtensionLibrary}
+                            onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                            onEnableProcedureReturns={handleEnableProcedureReturns}
+                            onActivateBlocksTab={() => {}}
+                            onCategorySelected={handleCategorySelected}
+                        />
+                    </Suspense>
                 ) : null}
             <DragLayer />
             <DonationModal 

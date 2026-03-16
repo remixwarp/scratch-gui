@@ -1,6 +1,6 @@
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import VM from 'scratch-vm';
 import { defineMessages, injectIntl, intlShape } from 'react-intl';
 import log from '../lib/utils/log';

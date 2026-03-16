@@ -184,8 +184,43 @@ module.exports = [
                 chunks: 'all',
                 minChunks: 2,
                 minSize: 50000,
-                maxInitialRequests: 5
-            }
+                maxInitialRequests: 5,
+                cacheGroups: {
+                    vendors: {
+                        test: /[\\/]node_modules[\\/]/,
+                        name: 'vendors',
+                        chunks: 'initial',
+                        priority: -10
+                    },
+                    common: {
+                        name: 'common',
+                        minChunks: 2,
+                        chunks: 'all',
+                        priority: -20,
+                        reuseExistingChunk: true
+                    }
+                }
+            },
+            runtimeChunk: 'single',
+            minimize: process.env.NODE_ENV === 'production',
+            minimizer: process.env.NODE_ENV === 'production' ? [
+                new require('terser-webpack-plugin')({
+                    terserOptions: {
+                        compress: {
+                            drop_console: true,
+                            drop_debugger: true,
+                            dead_code: true,
+                            unused: true,
+                            if_return: true,
+                            join_vars: true
+                        },
+                        output: {
+                            comments: false,
+                            beautify: false
+                        }
+                    }
+                })
+            ] : []
         },
         plugins: base.plugins.concat([
             new webpack.DefinePlugin({
