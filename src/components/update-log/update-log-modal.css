@@ -54,7 +54,7 @@
     align-items: center;
     padding: 20px 24px;
     border-bottom: 1px solid #e0e0e0;
-    background: linear-gradient(135deg, #0098b3 0%, #00abc9 100%);
+    background: linear-gradient(135deg, $ui-primary 0%, $ui-secondary 100%);
     color: white;
 }
 
@@ -100,7 +100,7 @@
 }
 
 .versionBadge {
-    background: linear-gradient(135deg, #0098b3 0%, #00abc9 100%);
+    background: linear-gradient(135deg, $ui-primary 0%, $ui-secondary 100%);
     color: white;
     padding: 6px 16px;
     border-radius: 20px;
@@ -211,7 +211,7 @@
 }
 
 .confirmButton {
-    background: linear-gradient(135deg, #0098b3 0%, #00abc9 100%);
+    background: linear-gradient(135deg, $ui-primary 0%, $ui-secondary 100%);
     color: white;
     border: none;
     padding: 10px 24px;

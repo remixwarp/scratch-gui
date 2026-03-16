@@ -8,6 +8,8 @@ import * as accentRainbow from './accent/rainbow';
 import * as accentGreenTea from './accent/green-tea';
 import * as accentPaleBlue from './accent/pale-blue';
 import * as accentEggplantPurple from './accent/eggplant-purple';
+import * as accent02e from './accent/02e';
+import * as accentae from './accent/ae';
 
 const ACCENTS = [
     {
@@ -41,9 +43,9 @@ const ACCENTS = [
         id: 'tw.accent.green-tea'
     },
     {
-        name: 'Pale Blue',
+        name: 'RemixWarp',
         accent: accentPaleBlue,
-        description: 'Pale Blue accent color',
+        description: 'RemixWarp accent color',
         id: 'tw.accent.pale-blue'
     },
     {
@@ -69,6 +71,18 @@ const ACCENTS = [
         accent: accentRainbow,
         description: 'Rainbow accent color',
         id: 'tw.accent.rainbow'
+    },
+    {
+        name: '02Engine',
+        accent: accent02e,
+        description: '02Engine accent color',
+        id: 'tw.accent.02e'
+    },
+    {
+        name: 'AstraEditor',
+        accent: accentae,
+        description: 'AstraEditor accent color',
+        id: 'tw.accent.ae'
     }
 ];
 
