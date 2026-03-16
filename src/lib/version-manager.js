@@ -13,7 +13,7 @@ const VERSION_HISTORY_KEY = 'remixwarp_version_history';
  */
 export const getCurrentVersion = () => {
     // 从 package.json 或环境变量获取版本号
-    return process.env.APP_VERSION || '3.2.37';
+    return process.env.APP_VERSION || '1.1.2';
 };
 
 /**

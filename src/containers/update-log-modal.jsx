@@ -83,24 +83,22 @@ const UpdateLogModalContainer = ({ intl, theme }) => {
                 if (shouldShowUpdateLog(currentVersion)) {
                     console.log('✓ 满足显示条件');
                     
-                    // 获取版本历史
-                    const versionHistory = localStorage.getItem('remixwarp_version_history');
-                    let versions = [];
+                    // 使用checkForUpdate函数获取更新信息
+                    const info = await checkForUpdate();
                     
-                    if (versionHistory) {
-                        try {
-                            versions = JSON.parse(versionHistory);
-                            console.log('版本历史数量:', versions.length);
-                        } catch (e) {
-                            console.error('解析版本历史失败:', e);
-                            versions = [];
-                        }
-                    }
-                    
-                    // 如果没有版本历史，创建一个默认版本
-                    if (versions.length === 0) {
-                        console.log('创建默认版本记录');
-                        versions = [{
+                    if (info && info.hasUpdate && info.versions && info.versions.length > 0) {
+                        console.log('获取到更新信息:', info.versions.length, '个版本');
+                        console.log('显示的版本:', info.versions.map(v => v.version));
+                        
+                        setUpdateInfo({
+                            versions: info.versions
+                        });
+                        setVisible(true);
+                    } else {
+                        console.log('没有获取到更新信息，创建默认版本');
+                        
+                        // 创建默认版本记录
+                        const defaultVersion = {
                             version: currentVersion,
                             date: getCurrentDate(),
                             changes: [
@@ -108,35 +106,41 @@ const UpdateLogModalContainer = ({ intl, theme }) => {
                                 { type: 'improvement', text: '优化：提升编辑器性能' }
                             ],
                             createdAt: new Date().toISOString()
-                        }];
+                        };
                         
-                        // 保存到 localStorage
+                        // 保存到版本历史
+                        const versionHistory = localStorage.getItem('remixwarp_version_history');
+                        let versions = versionHistory ? JSON.parse(versionHistory) : [];
+                        versions.push(defaultVersion);
                         localStorage.setItem('remixwarp_version_history', JSON.stringify(versions));
+                        
+                        setUpdateInfo({
+                            versions: [defaultVersion]
+                        });
+                        setVisible(true);
                     }
-                    
-                    // 按版本号排序（从新到旧）
-                    versions.sort((a, b) => {
-                        const v1 = a.version.split('.').map(Number);
-                        const v2 = b.version.split('.').map(Number);
-                        for (let i = 0; i < Math.max(v1.length, v2.length); i++) {
-                            const num1 = v1[i] || 0;
-                            const num2 = v2[i] || 0;
-                            if (num1 !== num2) return num2 - num1;
-                        }
-                        return 0;
-                    });
-                    
-                    console.log('显示的版本:', versions.map(v => v.version));
-                    
-                    setUpdateInfo({
-                        versions
-                    });
-                    setVisible(true);
                 } else {
                     console.log('✗ 不满足显示条件');
                 }
             } catch (error) {
                 console.error('检查更新失败:', error);
+                
+                // 即使出错，也创建默认版本记录
+                const currentVersion = getCurrentVersion();
+                const defaultVersion = {
+                    version: currentVersion,
+                    date: getCurrentDate(),
+                    changes: [
+                        { type: 'feature', text: '新增：版本更新日志功能' },
+                        { type: 'improvement', text: '优化：提升编辑器性能' }
+                    ],
+                    createdAt: new Date().toISOString()
+                };
+                
+                setUpdateInfo({
+                    versions: [defaultVersion]
+                });
+                setVisible(true);
             } finally {
                 setIsLoading(false);
             }
