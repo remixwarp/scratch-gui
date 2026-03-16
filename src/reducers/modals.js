@@ -28,6 +28,7 @@ const MODAL_AI = 'aiModal';
 const MODAL_AI_CHAT = 'aiChatModal';
 const MODAL_AI_AGENT = 'aiAgentModal';
 const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
+const MODAL_WARPTHEME = 'bilmeModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -57,6 +58,7 @@ const initialState = {
     [MODAL_AI_CHAT]: false,
     [MODAL_AI_AGENT]: false,
     [MODAL_EXTENSION_LOAD_CHOICE]: false,
+    [MODAL_WARPTHEME]: false,
     extensionLoadChoiceData: null
 };
 
@@ -280,6 +282,12 @@ const closeExtensionLoadChoiceModal = function () {
         type: CLOSE_MODAL,
         modal: MODAL_EXTENSION_LOAD_CHOICE
     };
+};
+const openBilmeModal = function () {
+    return openModal(MODAL_WARPTHEME);
+};
+const closeBilmeModal = function () {
+    return closeModal(MODAL_WARPTHEME);
 };
 export {
     reducer as default,
