@@ -173,7 +173,7 @@
 }
 
 .breadcrumbSeparator {
-    color: $text-tertiary;
+    color: $ui-tertiary;
 }
 
 .workspaceSection {

@@ -43,6 +43,7 @@ class Backpack extends React.Component {
             'handleToggle',
             'handleDelete',
             'handleRename',
+            'handleAddToFolder',
             'getBackpackAssetURL',
             'getContents',
             'handleMouseEnter',
@@ -457,6 +458,53 @@ class Backpack extends React.Component {
                 });
         });
     }
+    handleAddToFolder (itemId) {
+        // 获取所有文件夹
+        getBackpackContents({
+            host: this.props.host,
+            token: this.props.token,
+            username: this.props.username
+        })
+            .then(allContents => {
+                const folders = allContents.filter(item => item.type === 'folder');
+                if (folders.length === 0) {
+                    alert('No folders found. Please create a folder first.');
+                    return;
+                }
+                
+                // 构建文件夹选择对话框
+                const folderOptions = folders.map(folder => `[${folder.id}] ${folder.name}`).join('\n');
+                const selectedFolderId = prompt(`Select a folder to add to:\n${folderOptions}\n\nEnter the folder ID:`);
+                
+                if (selectedFolderId) {
+                    const folder = folders.find(f => f.id === selectedFolderId);
+                    if (folder) {
+                        // 更新项目的 folderId
+                        updateBackpackObject({
+                            host: this.props.host,
+                            token: this.props.token,
+                            username: this.props.username,
+                            id: itemId,
+                            updates: {
+                                folderId: selectedFolderId
+                            }
+                        })
+                            .then(() => {
+                                // 重新加载内容
+                                this.getContents();
+                            })
+                            .catch(error => {
+                                this.handleError(error);
+                            });
+                    } else {
+                        alert('Invalid folder ID');
+                    }
+                }
+            })
+            .catch(error => {
+                this.handleError(error);
+            });
+    }
     handleCategoryChange (category) {
         this.setState({selectedCategory: category});
     }
@@ -562,6 +610,7 @@ class Backpack extends React.Component {
                 onCreateFolder={this.handleCreateFolder}
                 onDeleteFolder={this.handleDeleteFolder}
                 onCategoryChange={this.handleCategoryChange}
+                onAddToFolder={this.handleAddToFolder}
                 onToggleWorkspaceAssets={this.handleToggleWorkspaceAssets}
                 showWorkspaceAssets={this.state.showWorkspaceAssets}
                 workspaceAssets={workspaceAssets}

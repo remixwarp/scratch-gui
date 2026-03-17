@@ -63,6 +63,11 @@ const labelMap = defineMessages({
         id: 'gui.backpack.showWorkspace',
         defaultMessage: 'Show Workspace',
         description: 'Button to show workspace assets'
+    },
+    hideWorkspace: {
+        id: 'gui.backpack.hideWorkspace',
+        defaultMessage: 'Hide Workspace',
+        description: 'Button to hide workspace assets'
     }
 });
 
@@ -166,11 +171,11 @@ const Backpack = ({
                         className={styles.toolbarButton}
                         onClick={onToggleWorkspaceAssets}
                     >
-                        <FormattedMessage
-                            defaultMessage={showWorkspaceAssets ? "Hide Workspace" : "Show Workspace"}
-                            description="Button to toggle workspace assets"
-                            id="gui.backpack.showWorkspace"
-                        />
+                        {showWorkspaceAssets ? (
+                            <FormattedMessage {...labelMap.hideWorkspace} />
+                        ) : (
+                            <FormattedMessage {...labelMap.showWorkspace} />
+                        )}
                     </button>
                 </div>
 
@@ -336,7 +341,7 @@ const Backpack = ({
                                 {contents.length > 0 ? (
                                     <div className={styles.backpackListInner}>
                                         {contents.map(item => (
-                                            <SpriteSelectorItem
+                                                <SpriteSelectorItem
                                                 className={styles.backpackItem}
                                                 costumeURL={item.thumbnailUrl}
                                                 details={item.name}
@@ -348,6 +353,7 @@ const Backpack = ({
                                                 selected={false}
                                                 onClick={item.type === 'folder' ? () => onFolderClick(item.id, item.name) : noop}
                                                 onDeleteButtonClick={item.type === 'folder' ? onDeleteFolder : onDelete}
+                                                onAddToFolder={() => onAddToFolder(item.id)}
                                                 onRenameButtonClick={item.type === 'sprite' ? null : onRename}
                                             />
                                         ))}
@@ -417,6 +423,7 @@ Backpack.propTypes = {
     onDeleteFolder: PropTypes.func,
     onCategoryChange: PropTypes.func,
     onToggleWorkspaceAssets: PropTypes.func,
+    onAddToFolder: PropTypes.func,
     showWorkspaceAssets: PropTypes.bool,
     workspaceAssets: PropTypes.shape({
         costumes: PropTypes.array,
