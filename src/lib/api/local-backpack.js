@@ -91,7 +91,8 @@ const openDB = () => new Promise((resolve, reject) => {
 
 const getBackpackContents = async ({
     limit,
-    offset
+    offset,
+    folderId = null
 }) => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -113,7 +114,10 @@ const getBackpackContents = async ({
                 }
             }
             if (cursor && items.length < limit) {
-                items.push(idbItemToBackpackItem(cursor.value));
+                // 只返回指定文件夹的内容或根目录内容
+                if (cursor.value.folderId === folderId) {
+                    items.push(idbItemToBackpackItem(cursor.value));
+                }
                 cursor.continue();
             } else {
                 resolve(items);
