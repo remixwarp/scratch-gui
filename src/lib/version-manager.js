@@ -6,14 +6,28 @@
 const VERSION_STORAGE_KEY = 'remixwarp_last_seen_version';
 const DONT_SHOW_KEY = 'remixwarp_dont_show_updates';
 const VERSION_HISTORY_KEY = 'remixwarp_version_history';
+const CURRENT_VERSION_KEY = 'remixwarp_current_version';
 
 /**
  * 获取当前版本号
  * @returns {string} 当前版本号
  */
 export const getCurrentVersion = () => {
+    // 优先从 localStorage 获取（从 GitHub 提交中解析的）
+    const storedVersion = localStorage.getItem(CURRENT_VERSION_KEY);
+    if (storedVersion) {
+        return storedVersion;
+    }
     // 从 package.json 或环境变量获取版本号
-    return process.env.APP_VERSION || '1.1.2';
+    return process.env.APP_VERSION || '1.0.0';
+};
+
+/**
+ * 设置当前版本号
+ * @param {string} version - 版本号
+ */
+export const setCurrentVersion = (version) => {
+    localStorage.setItem(CURRENT_VERSION_KEY, version);
 };
 
 /**
@@ -237,12 +251,32 @@ export const parseChanges = (content) => {
 };
 
 /**
- * 获取当前日期字符串
- * @returns {string} 格式化的日期字符串
+ * 获取当前日期时间字符串（精确到分钟）
+ * @returns {string} 格式化的日期时间字符串
  */
-export const getCurrentDate = () => {
+export const getCurrentDateTime = () => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+};
+
+/**
+ * 格式化日期时间（精确到分钟）
+ * @param {string|Date} date - 日期对象或字符串
+ * @returns {string} 格式化的日期时间字符串
+ */
+export const formatDateTime = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
 /**
@@ -251,38 +285,47 @@ export const getCurrentDate = () => {
  */
 export const checkForUpdate = async () => {
     try {
-        const currentVersion = getCurrentVersion();
+        // 从 GitHub 获取最新的版本信息
+        const updateInfo = await fetchUpdateInfo();
+        
+        if (!updateInfo) {
+            return null;
+        }
+        
+        // 更新当前版本号
+        const newVersion = updateInfo.version;
+        setCurrentVersion(newVersion);
+        
         const lastSeenVersion = getLastSeenVersion();
         
+        // 保存到版本历史
+        addVersionHistory({
+            version: newVersion,
+            date: updateInfo.date || getCurrentDateTime(),
+            changes: updateInfo.changes,
+            commitMessage: updateInfo.rawMessage,
+            commitSha: updateInfo.commitSha,
+            author: updateInfo.author
+        });
+        
         // 如果是首次使用或版本有变化
-        if (!lastSeenVersion || lastSeenVersion !== currentVersion) {
-            // 尝试从 GitHub API 获取最新的提交信息
-            const updateInfo = await fetchUpdateInfo();
+        if (!lastSeenVersion || lastSeenVersion !== newVersion) {
+            // 获取版本历史，筛选出从上次版本到当前版本的所有版本
+            const versionHistory = getVersionHistory();
+            const versionsToShow = getVersionsSinceLastSeen(versionHistory, lastSeenVersion);
             
-            if (updateInfo) {
-                // 保存到版本历史
-                addVersionHistory({
-                    version: currentVersion,
-                    date: getCurrentDate(),
+            return {
+                hasUpdate: true,
+                currentVersion: newVersion,
+                lastVersion: lastSeenVersion,
+                versions: versionsToShow.length > 0 ? versionsToShow : [{
+                    version: newVersion,
+                    date: updateInfo.date || getCurrentDateTime(),
                     changes: updateInfo.changes,
-                    commitMessage: updateInfo.rawMessage
-                });
-                
-                // 获取版本历史，筛选出从上次版本到当前版本的所有版本
-                const versionHistory = getVersionHistory();
-                const versionsToShow = getVersionsSinceLastSeen(versionHistory, lastSeenVersion);
-                
-                return {
-                    hasUpdate: true,
-                    currentVersion,
-                    lastVersion: lastSeenVersion,
-                    versions: versionsToShow.length > 0 ? versionsToShow : [{
-                        version: currentVersion,
-                        date: getCurrentDate(),
-                        changes: updateInfo.changes
-                    }]
-                };
-            }
+                    commitSha: updateInfo.commitSha,
+                    author: updateInfo.author
+                }]
+            };
         }
         
         return null;
@@ -364,7 +407,7 @@ export const fetchUpdateInfo = async () => {
         const [, owner, repo] = repoMatch;
         
         // 调用 GitHub API 获取最近的提交
-        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=5`);
+        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=10`);
         
         if (!response.ok) {
             console.warn('Failed to fetch commits from GitHub');
@@ -384,12 +427,16 @@ export const fetchUpdateInfo = async () => {
         
         const parsedInfo = parseCommitMessage(commitMessage, lastVersion);
         
+        // 使用提交时间作为版本时间
+        const commitDate = latestCommit.commit.author.date;
+        
         return {
             ...parsedInfo,
+            date: formatDateTime(commitDate),
             commitSha: latestCommit.sha,
             commitUrl: latestCommit.html_url,
             author: latestCommit.commit.author.name,
-            date: latestCommit.commit.author.date
+            rawDate: commitDate
         };
     } catch (error) {
         console.error('Error fetching update info:', error);
@@ -411,7 +458,7 @@ export const generateDefaultUpdateInfo = () => {
             { type: 'improvement', text: '性能优化和稳定性改进' },
             { type: 'other', text: '常规维护和更新' }
         ],
-        date: getCurrentDate()
+        date: getCurrentDateTime()
     };
 };
 
@@ -425,6 +472,7 @@ export const markVersionAsSeen = () => {
 
 export default {
     getCurrentVersion,
+    setCurrentVersion,
     getLastSeenVersion,
     setLastSeenVersion,
     shouldShowUpdateLog,
@@ -434,7 +482,8 @@ export default {
     parseCommitMessage,
     incrementVersion,
     parseChanges,
-    getCurrentDate,
+    getCurrentDateTime,
+    formatDateTime,
     checkForUpdate,
     fetchUpdateInfo,
     generateDefaultUpdateInfo,
