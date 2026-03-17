@@ -129,8 +129,8 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
         };
     }
 
-    // 匹配 __版本号__ 格式
-    const versionMatch = commitMessage.match(/__([\d.]+)__/);
+    // 匹配 __版本号__ 格式，支持更广泛的版本号格式
+    const versionMatch = commitMessage.match(/__([\d.]+(?:-[\w.]+)?(?:\+[\w.]+)?)__/);
     let version = versionMatch ? versionMatch[1] : null;
     
     // 如果没有检测到版本号，自动递增版本号
@@ -139,7 +139,10 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
     }
 
     // 移除版本号标记，获取更新内容
-    let content = commitMessage.replace(/__[\d.]+__/g, '').trim();
+    let content = commitMessage.replace(/__[\d.]+(?:-[\w.]+)?(?:\+[\w.]+)?__/g, '').trim();
+    
+    // 清理可能的多余下划线
+    content = content.replace(/^_+|_+$/g, '').trim();
     
     // 解析更新内容
     const changes = parseChanges(content);
@@ -306,16 +309,16 @@ export const getVersionsSinceLastSeen = (versionHistory, lastSeenVersion) => {
     });
     
     if (!lastSeenVersion) {
-        // 首次使用，只显示最新版本
-        return [sortedHistory[0]];
+        // 首次使用，返回所有版本
+        return sortedHistory;
     }
     
     // 找到上次查看的版本在历史中的位置
     const lastSeenIndex = sortedHistory.findIndex(v => v.version === lastSeenVersion);
     
     if (lastSeenIndex === -1) {
-        // 上次查看的版本不在历史中，只显示最新版本
-        return [sortedHistory[0]];
+        // 上次查看的版本不在历史中，返回所有版本
+        return sortedHistory;
     }
     
     // 返回从最新版本到上次查看版本之间的所有版本（不包括上次查看版本）
