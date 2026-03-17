@@ -12,105 +12,110 @@ import CollaborationSpriteIndicator from '../collaboration-sprite-indicator.jsx'
 // react-contextmenu requires unique id to match trigger and context menu
 let contextMenuId = 0;
 
-const SpriteSelectorItem = props => (
-    <ContextMenuTrigger
-        attributes={{
-            className: classNames(props.className, styles.spriteSelectorItem, {
-                [styles.isSelected]: props.selected
-            }),
-            onClick: props.onClick,
-            onMouseEnter: props.onMouseEnter,
-            onMouseLeave: props.onMouseLeave,
-            onMouseDown: props.onMouseDown,
-            onTouchStart: props.onMouseDown
-        }}
-        disable={props.preventContextMenu}
-        id={`${props.name}-${contextMenuId}`}
-        ref={props.componentRef}
-    >
-        {typeof props.number === 'undefined' ? null : (
-            <div className={styles.number}>{props.number}</div>
-        )}
-        {props.costumeURL ? (
-            <div className={styles.spriteImageOuter}>
-                <div className={styles.spriteImageInner}>
-                    <img
-                        className={styles.spriteImage}
-                        draggable={false}
-                        loading="lazy"
-                        src={props.costumeURL}
-                    />
+const SpriteSelectorItem = props => {
+    // Generate a stable context menu id for this item
+    const menuId = `${props.name}-${props.id || contextMenuId++}`;
+    
+    return (
+        <ContextMenuTrigger
+            attributes={{
+                className: classNames(props.className, styles.spriteSelectorItem, {
+                    [styles.isSelected]: props.selected
+                }),
+                onClick: props.onClick,
+                onMouseEnter: props.onMouseEnter,
+                onMouseLeave: props.onMouseLeave,
+                onMouseDown: props.onMouseDown,
+                onTouchStart: props.onMouseDown
+            }}
+            disable={props.preventContextMenu}
+            id={menuId}
+            ref={props.componentRef}
+        >
+            {typeof props.number === 'undefined' ? null : (
+                <div className={styles.number}>{props.number}</div>
+            )}
+            {props.costumeURL ? (
+                <div className={styles.spriteImageOuter}>
+                    <div className={styles.spriteImageInner}>
+                        <img
+                            className={styles.spriteImage}
+                            draggable={false}
+                            loading="lazy"
+                            src={props.costumeURL}
+                        />
+                    </div>
                 </div>
-            </div>
-        ) : null}
-        {props.editingUsers && props.editingUsers.length > 0 ? (
-            <div className={styles.collaborationIndicator}>
-                <CollaborationSpriteIndicator editingUsers={props.editingUsers} />
-            </div>
-        ) : null}
-        <div className={styles.spriteInfo}>
-            <div className={styles.spriteName}>{props.name}</div>
-            {props.details ? (
-                <div className={styles.spriteDetails}>{props.details}</div>
             ) : null}
-        </div>
-        {(props.selected && props.onDeleteButtonClick) ? (
-            <DeleteButton
-                className={styles.deleteButton}
-                onClick={props.onDeleteButtonClick}
-            />
-        ) : null }
-        {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick || props.onAddToFolder ? (
-            <ContextMenu id={`${props.name}-${contextMenuId++}`}>
-                {props.onDuplicateButtonClick ? (
-                    <MenuItem onClick={props.onDuplicateButtonClick}>
-                        <FormattedMessage
-                            defaultMessage="duplicate"
-                            description="Menu item to duplicate in the right click menu"
-                            id="gui.spriteSelectorItem.contextMenuDuplicate"
-                        />
-                    </MenuItem>
+            {props.editingUsers && props.editingUsers.length > 0 ? (
+                <div className={styles.collaborationIndicator}>
+                    <CollaborationSpriteIndicator editingUsers={props.editingUsers} />
+                </div>
+            ) : null}
+            <div className={styles.spriteInfo}>
+                <div className={styles.spriteName}>{props.name}</div>
+                {props.details ? (
+                    <div className={styles.spriteDetails}>{props.details}</div>
                 ) : null}
-                {props.onExportButtonClick ? (
-                    <MenuItem onClick={props.onExportButtonClick}>
-                        <FormattedMessage
-                            defaultMessage="export"
-                            description="Menu item to export the selected item"
-                            id="gui.spriteSelectorItem.contextMenuExport"
-                        />
-                    </MenuItem>
-                ) : null }
-                {props.onAddToFolder ? (
-                    <MenuItem onClick={props.onAddToFolder}>
-                        <FormattedMessage
-                            defaultMessage="Add to Folder"
-                            description="Menu item to add to folder"
-                            id="gui.spriteSelectorItem.contextMenuAddToFolder"
-                        />
-                    </MenuItem>
-                ) : null}
-                {props.onRenameButtonClick ? (
-                    <MenuItem onClick={props.onRenameButtonClick}>
-                        <FormattedMessage
-                            defaultMessage="rename"
-                            description="Menu item to rename an item"
-                            id="tw.spriteSelectorItem.rename"
-                        />
-                    </MenuItem>
-                ) : null}
-                {props.onDeleteButtonClick ? (
-                    <DangerousMenuItem onClick={props.onDeleteButtonClick}>
-                        <FormattedMessage
-                            defaultMessage="delete"
-                            description="Menu item to delete in the right click menu"
-                            id="gui.spriteSelectorItem.contextMenuDelete"
-                        />
-                    </DangerousMenuItem>
-                ) : null }
-            </ContextMenu>
-        ) : null}
-    </ContextMenuTrigger>
-);
+            </div>
+            {(props.selected && props.onDeleteButtonClick) ? (
+                <DeleteButton
+                    className={styles.deleteButton}
+                    onClick={props.onDeleteButtonClick}
+                />
+            ) : null }
+            {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick || props.onAddToFolder ? (
+                <ContextMenu id={menuId}>
+                    {props.onDuplicateButtonClick ? (
+                        <MenuItem onClick={props.onDuplicateButtonClick}>
+                            <FormattedMessage
+                                defaultMessage="duplicate"
+                                description="Menu item to duplicate in the right click menu"
+                                id="gui.spriteSelectorItem.contextMenuDuplicate"
+                            />
+                        </MenuItem>
+                    ) : null}
+                    {props.onExportButtonClick ? (
+                        <MenuItem onClick={props.onExportButtonClick}>
+                            <FormattedMessage
+                                defaultMessage="export"
+                                description="Menu item to export the selected item"
+                                id="gui.spriteSelectorItem.contextMenuExport"
+                            />
+                        </MenuItem>
+                    ) : null }
+                    {props.onAddToFolder ? (
+                        <MenuItem onClick={props.onAddToFolder}>
+                            <FormattedMessage
+                                defaultMessage="Add to Folder"
+                                description="Menu item to add to folder"
+                                id="gui.spriteSelectorItem.contextMenuAddToFolder"
+                            />
+                        </MenuItem>
+                    ) : null}
+                    {props.onRenameButtonClick ? (
+                        <MenuItem onClick={props.onRenameButtonClick}>
+                            <FormattedMessage
+                                defaultMessage="rename"
+                                description="Menu item to rename an item"
+                                id="tw.spriteSelectorItem.rename"
+                            />
+                        </MenuItem>
+                    ) : null}
+                    {props.onDeleteButtonClick ? (
+                        <DangerousMenuItem onClick={props.onDeleteButtonClick}>
+                            <FormattedMessage
+                                defaultMessage="delete"
+                                description="Menu item to delete the selected item"
+                                id="gui.spriteSelectorItem.contextMenuDelete"
+                            />
+                        </DangerousMenuItem>
+                    ) : null}
+                </ContextMenu>
+            ) : null}
+        </ContextMenuTrigger>
+    );
+};
 
 SpriteSelectorItem.propTypes = {
     className: PropTypes.string,
