@@ -294,7 +294,8 @@ class Backpack extends React.Component {
                     token: this.props.token,
                     username: this.props.username,
                     offset: this.state.contents.length,
-                    limit: this.state.itemsPerPage
+                    limit: this.state.itemsPerPage,
+                    folderId: this.state.currentFolderId
                 })
                     .then(contents => {
                         this.setState({
@@ -419,7 +420,7 @@ class Backpack extends React.Component {
     }
     handleCreateFolder () {
         // eslint-disable-next-line no-alert
-        const folderName = prompt('Enter folder name:', 'New Folder');
+        const folderName = prompt('请输入文件夹名称:', '新建文件夹');
         if (!folderName) {
             return;
         }

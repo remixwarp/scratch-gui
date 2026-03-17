@@ -21,52 +21,52 @@ const dragTypeMap = { // Keys correspond with backpack-server item types
 const labelMap = defineMessages({
     costume: {
         id: 'gui.backpack.costumeLabel',
-        defaultMessage: 'costume',
+        defaultMessage: '造型',
         description: 'Label for costume backpack item'
     },
     sound: {
         id: 'gui.backpack.soundLabel',
-        defaultMessage: 'sound',
+        defaultMessage: '声音',
         description: 'Label for sound backpack item'
     },
     script: {
         id: 'gui.backpack.scriptLabel',
-        defaultMessage: 'script',
+        defaultMessage: '代码',
         description: 'Label for script backpack item'
     },
     sprite: {
         id: 'gui.backpack.spriteLabel',
-        defaultMessage: 'sprite',
+        defaultMessage: '角色',
         description: 'Label for sprite backpack item'
     },
     folder: {
         id: 'gui.backpack.folderLabel',
-        defaultMessage: 'folder',
+        defaultMessage: '文件夹',
         description: 'Label for folder backpack item'
     },
     all: {
         id: 'gui.backpack.allLabel',
-        defaultMessage: 'All',
+        defaultMessage: '全部',
         description: 'Label for all category'
     },
     workspace: {
         id: 'gui.backpack.workspaceLabel',
-        defaultMessage: 'Workspace',
+        defaultMessage: '工作区',
         description: 'Label for workspace assets'
     },
     createFolder: {
         id: 'gui.backpack.createFolder',
-        defaultMessage: 'Create Folder',
+        defaultMessage: '创建文件夹',
         description: 'Button to create folder'
     },
     showWorkspace: {
         id: 'gui.backpack.showWorkspace',
-        defaultMessage: 'Show Workspace',
+        defaultMessage: '显示工作区',
         description: 'Button to show workspace assets'
     },
     hideWorkspace: {
         id: 'gui.backpack.hideWorkspace',
-        defaultMessage: 'Hide Workspace',
+        defaultMessage: '隐藏工作区',
         description: 'Button to hide workspace assets'
     }
 });
@@ -165,11 +165,7 @@ const Backpack = ({
                         className={styles.toolbarButton}
                         onClick={onCreateFolder}
                     >
-                        <FormattedMessage
-                            defaultMessage="Create Folder"
-                            description="Button to create folder"
-                            id="gui.backpack.createFolder"
-                        />
+                        <FormattedMessage {...labelMap.createFolder} />
                     </button>
                     <button
                         className={styles.toolbarButton}

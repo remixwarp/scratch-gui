@@ -20,17 +20,19 @@ const getBackpackContents = ({
     username,
     token,
     limit,
-    offset
+    offset,
+    folderId = null
 }) => new Promise((resolve, reject) => {
     if (host === LOCAL_API) {
         return resolve(localBackpackAPI.getBackpackContents({
             limit,
-            offset
+            offset,
+            folderId
         }));
     }
     xhr({
         method: 'GET',
-        uri: `${host}/${username}?limit=${limit}&offset=${offset}`,
+        uri: `${host}/${username}?limit=${limit}&offset=${offset}${folderId ? `&folderId=${folderId}` : ''}`,
         headers: {'x-token': token},
         json: true
     }, (error, response) => {
