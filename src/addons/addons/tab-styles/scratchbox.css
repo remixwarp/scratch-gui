@@ -1,0 +1,7 @@
+[class*="gui_tab_"] {
+  border-radius: 0.75rem 0.75rem 0.25rem 0.25rem !important;
+}
+
+[class*="gui_tab_"]:not(:first-child) {
+  margin-left: 0.3rem !important;
+}
