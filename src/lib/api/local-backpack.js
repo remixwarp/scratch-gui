@@ -18,6 +18,9 @@ const idbItemToBackpackItem = item => {
         // The thumbnail was updated and it doesn't make sense for already backpacked sounds to
         // use the old icon instead of the new one.
         item.thumbnailUrl = `data:;base64,${soundThumbnail}`;
+    } else if (item.type === 'folder') {
+        // For folders, use a folder icon
+        item.thumbnailUrl = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTIyIDE5YTIgMiAwIDAgMS0yIDJINmEyIDIgMCAwIDEtMi0yVjVhMiAyIDAgMCAxIDItMmgxNGEyIDIgMCAwIDEgMiAydjE0eiIvPjxwYXRoIGQ9Ik0yIDVoOWwzLTNoM3YxMGgtMTJ6Ii8+PC9zdmc+';
     } else {
         // Thumbnail could be any image format. The browser will figure out which format it is.
         item.thumbnailUrl = `data:;base64,${arrayBufferToBase64(item.thumbnailData)}`;
@@ -124,7 +127,8 @@ const saveBackpackObject = async ({
     mime,
     name,
     body,
-    thumbnail
+    thumbnail,
+    folderId = null
 }) => {
     // User interaction -- fine to show a permission dialog
     requestPersistentStorage();
@@ -136,16 +140,22 @@ const saveBackpackObject = async ({
             reject(new Error(`Sving object: ${event.target.error}`));
         };
         const store = transaction.objectStore(STORE_NAME);
-        const bodyData = base64ToArrayBuffer(body);
-        const bodyMD5 = md5(bodyData);
         const idbItem = {
             type,
             mime,
             name,
-            bodyData,
-            bodyMD5,
-            thumbnailData: base64ToArrayBuffer(thumbnail)
+            folderId,
+            createdAt: Date.now()
         };
+        
+        if (type !== 'folder') {
+            const bodyData = base64ToArrayBuffer(body);
+            const bodyMD5 = md5(bodyData);
+            idbItem.bodyData = bodyData;
+            idbItem.bodyMD5 = bodyMD5;
+            idbItem.thumbnailData = base64ToArrayBuffer(thumbnail);
+        }
+        
         const putRequest = store.put(idbItem);
         putRequest.onsuccess = () => {
             idbItem.id = putRequest.result;
@@ -175,7 +185,8 @@ const deleteBackpackObject = async ({
 
 const updateBackpackObject = async ({
     id,
-    name
+    name,
+    folderId
 }) => {
     id = +id;
     const db = await openDB();
@@ -188,12 +199,79 @@ const updateBackpackObject = async ({
         const getRequest = store.get(id);
         getRequest.onsuccess = () => {
             const newItem = {
-                ...getRequest.result,
-                name: name
+                ...getRequest.result
             };
+            if (name !== undefined) {
+                newItem.name = name;
+            }
+            if (folderId !== undefined) {
+                newItem.folderId = folderId;
+            }
             const putRequest = store.put(newItem);
             putRequest.onsuccess = () => {
                 resolve(idbItemToBackpackItem(newItem));
+            };
+        };
+    });
+};
+
+const createFolder = async ({
+    name,
+    folderId = null
+}) => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, 'readwrite');
+        transaction.onerror = event => {
+            reject(new Error(`Creating folder: ${event.target.error}`));
+        };
+        const store = transaction.objectStore(STORE_NAME);
+        const idbItem = {
+            type: 'folder',
+            name,
+            folderId,
+            createdAt: Date.now()
+        };
+        const putRequest = store.put(idbItem);
+        putRequest.onsuccess = () => {
+            idbItem.id = putRequest.result;
+            resolve(idbItemToBackpackItem(idbItem));
+        };
+    });
+};
+
+const deleteBackpackFolder = async ({
+    id
+}) => {
+    id = +id;
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, 'readwrite');
+        transaction.onerror = event => {
+            reject(new Error(`Deleting folder: ${event.target.error}`));
+        };
+        const store = transaction.objectStore(STORE_NAME);
+        
+        // Delete the folder and all items in it
+        const deleteFolderRequest = store.delete(id);
+        deleteFolderRequest.onsuccess = () => {
+            // Find and delete all items in this folder
+            const items = [];
+            const request = store.openCursor();
+            request.onsuccess = e => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    if (cursor.value.folderId === id) {
+                        items.push(cursor.value.id);
+                    }
+                    cursor.continue();
+                } else {
+                    // Delete all items in the folder
+                    items.forEach(itemId => {
+                        store.delete(itemId);
+                    });
+                    resolve();
+                }
             };
         };
     });
@@ -203,5 +281,7 @@ export default {
     getBackpackContents,
     saveBackpackObject,
     deleteBackpackObject,
-    updateBackpackObject
+    updateBackpackObject,
+    createFolder,
+    deleteBackpackFolder
 };

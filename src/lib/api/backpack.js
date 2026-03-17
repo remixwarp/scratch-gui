@@ -45,11 +45,12 @@ const saveBackpackObject = ({
     host,
     username,
     token,
-    type, // Type of object being saved to the backpack
+    type, // Type of object being saved to backpack
     mime, // Mime-type of the object being saved
     name, // User-facing name of the object being saved
     body, // Base64-encoded body of the object being saved
-    thumbnail // Base64-encoded JPEG thumbnail of the object being saved
+    thumbnail, // Base64-encoded JPEG thumbnail of the object being saved
+    folderId // Optional folder ID to save the object in
 }) => new Promise((resolve, reject) => {
     if (host === LOCAL_API) {
         return resolve(localBackpackAPI.saveBackpackObject({
@@ -57,14 +58,15 @@ const saveBackpackObject = ({
             mime,
             name,
             body,
-            thumbnail
+            thumbnail,
+            folderId
         }));
     }
     xhr({
         method: 'POST',
         uri: `${host}/${username}`,
         headers: {'x-token': token},
-        json: {type, mime, name, body, thumbnail}
+        json: {type, mime, name, body, thumbnail, folderId}
     }, (error, response) => {
         if (error || response.statusCode !== 200) {
             return reject(new Error(response.status));
@@ -99,15 +101,66 @@ const deleteBackpackObject = ({
 const updateBackpackObject = ({
     host,
     id,
-    name
+    name,
+    folderId
 }) => new Promise((resolve, reject) => {
     if (host === LOCAL_API) {
         return resolve(localBackpackAPI.updateBackpackObject({
             id,
-            name
+            name,
+            folderId
         }));
     }
     reject(new Error('updateBackpackObject not supported'));
+});
+
+const createFolder = ({
+    host,
+    username,
+    token,
+    name,
+    folderId = null
+}) => new Promise((resolve, reject) => {
+    if (host === LOCAL_API) {
+        return resolve(localBackpackAPI.createFolder({
+            name,
+            folderId
+        }));
+    }
+    xhr({
+        method: 'POST',
+        uri: `${host}/${username}/folder`,
+        headers: {'x-token': token},
+        json: {name, folderId}
+    }, (error, response) => {
+        if (error || response.statusCode !== 200) {
+            return reject(new Error(response.status));
+        }
+        return resolve(includeFullUrls(response.body, host));
+    });
+});
+
+const deleteBackpackFolder = ({
+    host,
+    username,
+    token,
+    id
+}) => new Promise((resolve, reject) => {
+    if (host === LOCAL_API) {
+        return resolve(localBackpackAPI.deleteBackpackFolder({
+            id
+        }));
+    }
+    xhr({
+        method: 'DELETE',
+        uri: `${host}/${username}/folder/${id}`,
+        headers: {'x-token': token}
+    }, (error, response) => {
+        if (error || response.statusCode !== 200) {
+            return reject(new Error(response.status));
+        }
+        return resolve(response.body);
+    });
 });
 
 // Two types of backpack items are not retreivable through storage
@@ -122,7 +175,7 @@ const fetchAs = (responseType, uri) => new Promise((resolve, reject) => {
 });
 
 // These two helpers allow easy fetching of backpack code and sprite zips
-// Use the curried fetchAs here so the consumer does not worry about XHR responseTypes
+// Use of curried fetchAs here so that consumer does not worry about XHR responseTypes
 const fetchCode = fetchAs.bind(null, 'json');
 const fetchSprite = fetchAs.bind(null, 'arraybuffer');
 
@@ -131,6 +184,8 @@ export {
     saveBackpackObject,
     deleteBackpackObject,
     updateBackpackObject,
+    createFolder,
+    deleteBackpackFolder,
     costumePayload,
     soundPayload,
     spritePayload,

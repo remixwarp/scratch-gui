@@ -8,6 +8,8 @@ import {
     saveBackpackObject,
     deleteBackpackObject,
     updateBackpackObject,
+    createFolder,
+    deleteBackpackFolder,
     soundPayload,
     costumePayload,
     spritePayload,
@@ -54,7 +56,13 @@ class Backpack extends React.Component {
             'setDropAreaRef',
             'isPointerOverDropArea',
             'handleMore',
-            'handleSearchChange'
+            'handleSearchChange',
+            'handleFolderClick',
+            'handleCreateFolder',
+            'handleDeleteFolder',
+            'handleCategoryChange',
+            'handleBackToRoot',
+            'handleToggleWorkspaceAssets'
         ]);
 
         this.dropAreaRef = null;
@@ -76,8 +84,8 @@ class Backpack extends React.Component {
 
         this.state = {
             // While the DroppableHOC manages drop interactions for asset tiles,
-            // we still need to micromanage drops coming from the block workspace.
-            // TODO this may be refactorable with the share-the-love logic in SpriteSelectorItem
+            // we still need to micromanage drops coming from block workspace.
+            // TODO this may be refactorable with share-the-love logic in SpriteSelectorItem
             blockDragOutsideWorkspace: false,
             blockDragOverBackpack: false,
             error: false,
@@ -87,7 +95,11 @@ class Backpack extends React.Component {
             expanded: false,
             contents: [],
             height: persistedHeight || DEFAULT_HEIGHT,
-            searchQuery: ''
+            searchQuery: '',
+            currentFolderId: null,
+            folderPath: [],
+            selectedCategory: 'all',
+            showWorkspaceAssets: false
         };
 
         // If a host is given, add it as a web source to the storage module
@@ -209,7 +221,8 @@ class Backpack extends React.Component {
                     host: this.props.host,
                     token: this.props.token,
                     username: this.props.username,
-                    ...payload
+                    ...payload,
+                    folderId: this.state.currentFolderId
                 }))
                 .then(item => {
                     this.setState({
@@ -371,17 +384,155 @@ class Backpack extends React.Component {
     handleSearchChange (value) {
         this.setState({searchQuery: value});
     }
-    getFilteredContents () {
-        const query = this.state.searchQuery.toLowerCase().trim();
-        if (!query) {
-            return this.state.contents;
-        }
-        return this.state.contents.filter(item => {
-            const name = item.name || 'script';
-            return name.toLowerCase().includes(query);
+    handleFolderClick (folderId, folderName) {
+        this.setState({
+            currentFolderId: folderId,
+            folderPath: [...this.state.folderPath, {id: folderId, name: folderName}],
+            contents: []
+        }, () => {
+            this.getContents();
         });
     }
+    handleBackToRoot () {
+        this.setState({
+            currentFolderId: null,
+            folderPath: [],
+            contents: []
+        }, () => {
+            this.getContents();
+        });
+    }
+    handleNavigateBack (index) {
+        const newFolderPath = this.state.folderPath.slice(0, index + 1);
+        const targetFolder = newFolderPath[newFolderPath.length - 1];
+        this.setState({
+            currentFolderId: targetFolder ? targetFolder.id : null,
+            folderPath: newFolderPath,
+            contents: []
+        }, () => {
+            this.getContents();
+        });
+    }
+    handleCreateFolder () {
+        // eslint-disable-next-line no-alert
+        const folderName = prompt('Enter folder name:', 'New Folder');
+        if (!folderName) {
+            return;
+        }
+        this.setState({loading: true}, () => {
+            createFolder({
+                host: this.props.host,
+                token: this.props.token,
+                username: this.props.username,
+                name: folderName,
+                folderId: this.state.currentFolderId
+            })
+                .then(folder => {
+                    this.setState({
+                        loading: false,
+                        contents: [folder].concat(this.state.contents)
+                    });
+                })
+                .catch(error => {
+                    this.handleError(error);
+                });
+        });
+    }
+    handleDeleteFolder (id) {
+        this.setState({loading: true}, () => {
+            deleteBackpackFolder({
+                host: this.props.host,
+                token: this.props.token,
+                username: this.props.username,
+                id: id
+            })
+                .then(() => {
+                    this.setState({
+                        loading: false,
+                        contents: this.state.contents.filter(o => o.id !== id)
+                    });
+                })
+                .catch(error => {
+                    this.handleError(error);
+                });
+        });
+    }
+    handleCategoryChange (category) {
+        this.setState({selectedCategory: category});
+    }
+    handleToggleWorkspaceAssets () {
+        this.setState({showWorkspaceAssets: !this.state.showWorkspaceAssets});
+    }
+    getFilteredContents () {
+        const query = this.state.searchQuery.toLowerCase().trim();
+        let filtered = this.state.contents;
+        
+        // Filter by category
+        if (this.state.selectedCategory !== 'all') {
+            filtered = filtered.filter(item => item.type === this.state.selectedCategory);
+        }
+        
+        // Filter by search query
+        if (query) {
+            filtered = filtered.filter(item => {
+                const name = item.name || 'script';
+                return name.toLowerCase().includes(query);
+            });
+        }
+        
+        return filtered;
+    }
+    getWorkspaceAssets () {
+        const vm = this.props.vm;
+        const runtime = vm.runtime;
+        const targets = runtime.targets;
+        
+        const costumes = [];
+        const sounds = [];
+        const sprites = [];
+        const scripts = [];
+        
+        targets.forEach(target => {
+            // Get costumes
+            target.getCostumes().forEach((costume, index) => {
+                costumes.push({
+                    id: `workspace-costume-${target.id}-${index}`,
+                    type: 'costume',
+                    name: costume.name,
+                    thumbnailUrl: costume.asset ? costume.asset.encodeDataURI() : '',
+                    isWorkspace: true
+                });
+            });
+            
+            // Get sounds
+            target.getSounds().forEach((sound, index) => {
+                sounds.push({
+                    id: `workspace-sound-${target.id}-${index}`,
+                    type: 'sound',
+                    name: sound.name,
+                    thumbnailUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTUgMTJhNyA3IDAgMCAxIDctN2g1YTcgNyAwIDAgMSAxIDd6Ii8+PHBhdGggZD0iTTUgMTJhNyA3IDAgMCAxIDctN2g1YTcgNyAwIDAgMSAxIDd6Ii8+PC9zdmc+',
+                    isWorkspace: true
+                });
+            });
+        });
+        
+        // Get sprites (excluding stage)
+        const stageTarget = targets[0];
+        targets.slice(1).forEach((target, index) => {
+            const costume = target.getCostumes()[0];
+            sprites.push({
+                id: `workspace-sprite-${target.id}`,
+                type: 'sprite',
+                name: target.getName(),
+                thumbnailUrl: costume && costume.asset ? costume.asset.encodeDataURI() : '',
+                isWorkspace: true
+            });
+        });
+        
+        return {costumes, sounds, sprites, scripts};
+    }
     render () {
+        const workspaceAssets = this.state.showWorkspaceAssets ? this.getWorkspaceAssets() : null;
         return (
             <DroppableBackpack
                 blockDragOver={this.state.blockDragOverBackpack}
@@ -402,6 +553,18 @@ class Backpack extends React.Component {
                 onResizePointerDown={this.handleResizePointerDown}
                 onToggle={this.props.host ? this.handleToggle : null}
                 componentRef={this.setDropAreaRef}
+                currentFolderId={this.state.currentFolderId}
+                folderPath={this.state.folderPath}
+                selectedCategory={this.state.selectedCategory}
+                onFolderClick={this.handleFolderClick}
+                onBackToRoot={this.handleBackToRoot}
+                onNavigateBack={this.handleNavigateBack}
+                onCreateFolder={this.handleCreateFolder}
+                onDeleteFolder={this.handleDeleteFolder}
+                onCategoryChange={this.handleCategoryChange}
+                onToggleWorkspaceAssets={this.handleToggleWorkspaceAssets}
+                showWorkspaceAssets={this.state.showWorkspaceAssets}
+                workspaceAssets={workspaceAssets}
             />
         );
     }

@@ -96,6 +96,121 @@
     font-family: monospace;
 }
 
+.toolbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0 0.5rem;
+}
+
+.toolbarButton {
+    background: $ui-primary;
+    color: $text-primary;
+    border: 1px solid $ui-tertiary;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+        background: $ui-tertiary;
+    }
+}
+
+.categoryTabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+    padding: 0 0.5rem;
+    overflow-x: auto;
+}
+
+.categoryTab {
+    background: $ui-primary;
+    color: $text-primary;
+    border: 1px solid $ui-tertiary;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: $ui-tertiary;
+    }
+
+    &.categoryTabActive {
+        background: $ui-secondary;
+        color: $ui-white;
+        border-color: $ui-secondary;
+    }
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    color: $text-primary;
+    overflow-x: auto;
+}
+
+.breadcrumbItem {
+    background: none;
+    border: none;
+    color: $text-primary;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: background 0.2s ease;
+
+    &:hover {
+        background: $ui-tertiary;
+    }
+}
+
+.breadcrumbSeparator {
+    color: $text-tertiary;
+}
+
+.workspaceSection {
+    background: $ui-tertiary;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.workspaceSectionTitle {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: bold;
+    color: $text-primary;
+}
+
+.workspaceCategories {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.workspaceCategory {
+    h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: $text-primary;
+    }
+}
+
+.workspaceItems {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
+    gap: 0.5rem;
+}
+
 .backpack-item {
     width: 100%;
     height: 100%;
