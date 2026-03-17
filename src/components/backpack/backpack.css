@@ -181,6 +181,8 @@
     border-radius: 0.5rem;
     padding: 0.75rem;
     margin-bottom: 1rem;
+    z-index: 10;
+    position: relative;
 }
 
 .workspaceSectionTitle {
@@ -238,4 +240,15 @@
     padding: 0.25rem;
     margin: 0;
     cursor: pointer;
+}
+
+.folderItem {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px dashed $ui-tertiary;
+    border-radius: 0.25rem;
+}
+
+.dragOver {
+    background: rgba(0, 255, 0, 0.2);
+    border: 1px solid $ui-secondary;
 }

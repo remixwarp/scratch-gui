@@ -44,6 +44,8 @@ class Backpack extends React.Component {
             'handleDelete',
             'handleRename',
             'handleAddToFolder',
+            'handleFolderMouseEnter',
+            'handleFolderMouseLeave',
             'getBackpackAssetURL',
             'getContents',
             'handleMouseEnter',
@@ -100,7 +102,8 @@ class Backpack extends React.Component {
             currentFolderId: null,
             folderPath: [],
             selectedCategory: 'all',
-            showWorkspaceAssets: false
+            showWorkspaceAssets: false,
+            folderDragOverId: null
         };
 
         // If a host is given, add it as a web source to the storage module
@@ -468,13 +471,13 @@ class Backpack extends React.Component {
             .then(allContents => {
                 const folders = allContents.filter(item => item.type === 'folder');
                 if (folders.length === 0) {
-                    alert('No folders found. Please create a folder first.');
+                    alert('没有找到文件夹。请先创建一个文件夹。');
                     return;
                 }
                 
                 // 构建文件夹选择对话框
                 const folderOptions = folders.map(folder => `[${folder.id}] ${folder.name}`).join('\n');
-                const selectedFolderId = prompt(`Select a folder to add to:\n${folderOptions}\n\nEnter the folder ID:`);
+                const selectedFolderId = prompt(`选择要添加到的文件夹:\n${folderOptions}\n\n请输入文件夹ID:`);
                 
                 if (selectedFolderId) {
                     const folder = folders.find(f => f.id === selectedFolderId);
@@ -497,7 +500,7 @@ class Backpack extends React.Component {
                                 this.handleError(error);
                             });
                     } else {
-                        alert('Invalid folder ID');
+                        alert('无效的文件夹ID');
                     }
                 }
             })
@@ -510,6 +513,12 @@ class Backpack extends React.Component {
     }
     handleToggleWorkspaceAssets () {
         this.setState({showWorkspaceAssets: !this.state.showWorkspaceAssets});
+    }
+    handleFolderMouseEnter (folderId) {
+        this.setState({folderDragOverId: folderId});
+    }
+    handleFolderMouseLeave () {
+        this.setState({folderDragOverId: null});
     }
     getFilteredContents () {
         const query = this.state.searchQuery.toLowerCase().trim();
@@ -614,6 +623,9 @@ class Backpack extends React.Component {
                 onToggleWorkspaceAssets={this.handleToggleWorkspaceAssets}
                 showWorkspaceAssets={this.state.showWorkspaceAssets}
                 workspaceAssets={workspaceAssets}
+                folderDragOverId={this.state.folderDragOverId}
+                onFolderMouseEnter={this.handleFolderMouseEnter}
+                onFolderMouseLeave={this.handleFolderMouseLeave}
             />
         );
     }

@@ -100,9 +100,13 @@ const Backpack = ({
     onCreateFolder,
     onDeleteFolder,
     onCategoryChange,
+    onAddToFolder,
     onToggleWorkspaceAssets,
     showWorkspaceAssets,
-    workspaceAssets
+    workspaceAssets,
+    folderDragOverId,
+    onFolderMouseEnter,
+    onFolderMouseLeave
 }) => (
     <div className={styles.backpackContainer}>
         {expanded ? (
@@ -342,7 +346,10 @@ const Backpack = ({
                                     <div className={styles.backpackListInner}>
                                         {contents.map(item => (
                                                 <SpriteSelectorItem
-                                                className={styles.backpackItem}
+                                                className={classNames(styles.backpackItem, {
+                                                    [styles.folderItem]: item.type === 'folder',
+                                                    [styles.dragOver]: item.type === 'folder' && folderDragOverId === item.id
+                                                })}
                                                 costumeURL={item.thumbnailUrl}
                                                 details={item.name}
                                                 dragPayload={item}
@@ -355,6 +362,8 @@ const Backpack = ({
                                                 onDeleteButtonClick={item.type === 'folder' ? onDeleteFolder : onDelete}
                                                 onAddToFolder={() => onAddToFolder(item.id)}
                                                 onRenameButtonClick={item.type === 'sprite' ? null : onRename}
+                                                onMouseEnter={() => item.type === 'folder' && onFolderMouseEnter(item.id)}
+                                                onMouseLeave={() => item.type === 'folder' && onFolderMouseLeave()}
                                             />
                                         ))}
                                         {showMore && (
@@ -430,7 +439,10 @@ Backpack.propTypes = {
         sounds: PropTypes.array,
         sprites: PropTypes.array,
         scripts: PropTypes.array
-    })
+    }),
+    folderDragOverId: PropTypes.string,
+    onFolderMouseEnter: PropTypes.func,
+    onFolderMouseLeave: PropTypes.func
 };
 
 Backpack.defaultProps = {
