@@ -337,14 +337,49 @@ const BilmeModal = props => {
     const handleApplyTheme = async theme => {
         if (props.onThemeApply) {
             try {
+                console.log('Applying theme:', theme.name, 'UUID:', theme.uuid);
+                
                 const response = await fetch(
                     `https://theme.bilup.org/api/theme/export?uuid=${theme.uuid}&platform=bilup`
                 );
-                if (!response.ok) throw new Error('Failed to fetch theme');
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to fetch theme: ${response.status} ${response.statusText} - ${errorText}`);
+                }
+                
                 const themeData = await response.json();
+                console.log('Theme data received:', themeData);
+                
+                // 验证主题数据格式
+                if (!themeData || typeof themeData !== 'object') {
+                    throw new Error('Invalid theme data format');
+                }
+                
+                // 检查是否缺少必要属性，如果缺少则从原始主题数据中获取
+                if (!themeData.name) {
+                    themeData.name = theme.name;
+                    console.log('Added missing name from theme object');
+                }
+                
+                if (!themeData.gui) {
+                    themeData.gui = 'light'; // 默认使用 light GUI
+                    console.log('Added default gui: light');
+                }
+                
+                if (!themeData.blocks) {
+                    themeData.blocks = 'three'; // 默认使用 three blocks
+                    console.log('Added default blocks: three');
+                }
+                
+                console.log('Final theme data:', themeData);
+                
                 props.onThemeApply(themeData);
             } catch (err) {
                 console.error('Error applying theme:', err);
+                console.error('Error stack:', err.stack);
+                // 显示错误提示
+                alert(`主题应用失败: ${err.message}`);
             }
         }
     };
