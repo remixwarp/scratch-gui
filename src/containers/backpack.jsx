@@ -185,6 +185,44 @@ class Backpack extends React.Component {
         throw error;
     }
     handleDrop (dragInfo) {
+        // 检查是否是将书包内的项目拖放到文件夹上
+        if (dragInfo.dragType === DragConstants.BACKPACK_COSTUME || 
+            dragInfo.dragType === DragConstants.BACKPACK_SOUND || 
+            dragInfo.dragType === DragConstants.BACKPACK_SPRITE || 
+            dragInfo.dragType === DragConstants.BACKPACK_CODE ||
+            dragInfo.dragType === 'BACKPACK_FOLDER') {
+            
+            // 检查是否有目标文件夹
+            if (this.state.folderDragOverId) {
+                const itemId = dragInfo.payload.id;
+                const targetFolderId = this.state.folderDragOverId;
+                
+                // 更新项目的 folderId
+                updateBackpackObject({
+                    host: this.props.host,
+                    token: this.props.token,
+                    username: this.props.username,
+                    id: itemId,
+                    folderId: targetFolderId
+                })
+                    .then(() => {
+                        // 重新加载内容
+                        this.getContents();
+                        // 清除拖拽状态
+                        this.setState({folderDragOverId: null});
+                    })
+                    .catch(error => {
+                        this.handleError(error);
+                    });
+                return;
+            }
+        }
+        
+        // 阻止文件夹被拖放到其他地方
+        if (dragInfo.dragType === 'BACKPACK_FOLDER') {
+            return;
+        }
+        
         let payloader = null;
         let presaveAsset = null;
         switch (dragInfo.dragType) {
@@ -419,8 +457,21 @@ class Backpack extends React.Component {
         });
     }
     handleCreateFolder () {
+        // 获取当前目录下的所有文件夹名称
+        const existingFolders = this.state.contents.filter(item => item.type === 'folder');
+        const existingNames = existingFolders.map(folder => folder.name);
+        
+        // 生成默认文件夹名称
+        let defaultName = '新建文件夹';
+        let counter = 1;
+        
+        while (existingNames.includes(defaultName)) {
+            defaultName = `新建文件夹${counter}`;
+            counter++;
+        }
+        
         // eslint-disable-next-line no-alert
-        const folderName = prompt('请输入文件夹名称:', '新建文件夹');
+        const folderName = prompt('请输入文件夹名称:', defaultName);
         if (!folderName) {
             return;
         }
@@ -463,14 +514,37 @@ class Backpack extends React.Component {
         });
     }
     handleAddToFolder (itemId) {
-        // 获取所有文件夹
-        getBackpackContents({
-            host: this.props.host,
-            token: this.props.token,
-            username: this.props.username
-        })
-            .then(allContents => {
-                const folders = allContents.filter(item => item.type === 'folder');
+        // 递归获取所有文件夹，排除当前项目
+        const getAllFolders = async () => {
+            const allFolders = [];
+            const processedIds = new Set(); // 防止重复处理
+            
+            const fetchFolderContents = async (folderId = null) => {
+                const contents = await getBackpackContents({
+                    host: this.props.host,
+                    token: this.props.token,
+                    username: this.props.username,
+                    limit: 1000, // 增加限制以获取所有项目
+                    offset: 0,
+                    folderId
+                });
+                
+                for (const item of contents) {
+                    if (item.type === 'folder' && item.id !== itemId && !processedIds.has(item.id)) {
+                        processedIds.add(item.id);
+                        allFolders.push(item);
+                        // 递归获取子文件夹
+                        await fetchFolderContents(item.id);
+                    }
+                }
+            };
+            
+            await fetchFolderContents();
+            return allFolders;
+        };
+        
+        getAllFolders()
+            .then(folders => {
                 if (folders.length === 0) {
                     alert('没有找到文件夹。请先创建一个文件夹。');
                     return;
@@ -478,7 +552,8 @@ class Backpack extends React.Component {
                 
                 // 构建文件夹选择对话框
                 const folderOptions = folders.map(folder => `[${folder.id}] ${folder.name}`).join('\n');
-                const selectedFolderId = prompt(`选择要添加到的文件夹:\n${folderOptions}\n\n请输入文件夹ID:`);
+                
+                const selectedFolderId = prompt(`选择要添加到的文件夹:\n${folderOptions}\n\n请输入文件夹ID（名称前的方括号中）：\n（确定后，如果没有提示，则说明加入成功，可点击文件夹刷新。）`);
                 
                 if (selectedFolderId) {
                     const folder = folders.find(f => f.id === selectedFolderId);
@@ -489,9 +564,7 @@ class Backpack extends React.Component {
                             token: this.props.token,
                             username: this.props.username,
                             id: itemId,
-                            updates: {
-                                folderId: selectedFolderId
-                            }
+                            folderId: selectedFolderId
                         })
                             .then(() => {
                                 // 重新加载内容

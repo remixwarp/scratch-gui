@@ -15,7 +15,7 @@ const dragTypeMap = { // Keys correspond with backpack-server item types
     sound: DragConstants.BACKPACK_SOUND,
     script: DragConstants.BACKPACK_CODE,
     sprite: DragConstants.BACKPACK_SPRITE,
-    folder: DragConstants.BACKPACK_COSTUME
+    folder: 'BACKPACK_FOLDER' // 文件夹不能被拖放到其他地方
 };
 
 const labelMap = defineMessages({

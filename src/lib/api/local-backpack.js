@@ -115,7 +115,8 @@ const getBackpackContents = async ({
             }
             if (cursor && items.length < limit) {
                 // 只返回指定文件夹的内容或根目录内容
-                if (cursor.value.folderId === folderId) {
+                // 使用 == 而不是 === 来比较 folderId，因为可能是 null 或 undefined
+                if (cursor.value.folderId == folderId) {
                     items.push(idbItemToBackpackItem(cursor.value));
                 }
                 cursor.continue();
@@ -265,7 +266,8 @@ const deleteBackpackFolder = async ({
             request.onsuccess = e => {
                 const cursor = e.target.result;
                 if (cursor) {
-                    if (cursor.value.folderId === id) {
+                    // 使用 == 而不是 === 来比较 folderId
+                    if (cursor.value.folderId == id) {
                         items.push(cursor.value.id);
                     }
                     cursor.continue();
