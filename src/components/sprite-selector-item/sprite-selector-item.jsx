@@ -60,7 +60,7 @@ const SpriteSelectorItem = props => (
                 onClick={props.onDeleteButtonClick}
             />
         ) : null }
-        {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick ? (
+        {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick || props.onAddToFolder ? (
             <ContextMenu id={`${props.name}-${contextMenuId++}`}>
                 {props.onDuplicateButtonClick ? (
                     <MenuItem onClick={props.onDuplicateButtonClick}>
@@ -80,6 +80,15 @@ const SpriteSelectorItem = props => (
                         />
                     </MenuItem>
                 ) : null }
+                {props.onAddToFolder ? (
+                    <MenuItem onClick={props.onAddToFolder}>
+                        <FormattedMessage
+                            defaultMessage="Add to Folder"
+                            description="Menu item to add to folder"
+                            id="gui.spriteSelectorItem.contextMenuAddToFolder"
+                        />
+                    </MenuItem>
+                ) : null}
                 {props.onRenameButtonClick ? (
                     <MenuItem onClick={props.onRenameButtonClick}>
                         <FormattedMessage
@@ -116,6 +125,7 @@ SpriteSelectorItem.propTypes = {
     name: PropTypes.any,
     number: PropTypes.number,
     onClick: PropTypes.func,
+    onAddToFolder: PropTypes.func,
     onDeleteButtonClick: PropTypes.func,
     onDuplicateButtonClick: PropTypes.func,
     onExportButtonClick: PropTypes.func,
