@@ -196,8 +196,58 @@
   font-size: 12px;
 }
 
-/* 禁用状态 - 使用透明效果让用户看到背景 */
-.convertButtonDisabled,
+/* 标签页样式 */
+.headerWithTabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.headerTitle {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.tab {
+  padding: 6px 16px;
+  border: none;
+  background: transparent;
+  color: #333;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1f8ef1;
+}
+
+.activeTab {
+  background: white !important;
+  color: #1f8ef1 !important;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.tabContent {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 .convertButtonDisabled:disabled,
 .convertButtonDisabled[disabled] {
   background: rgba(76, 175, 80, 0.08) !important;
@@ -420,5 +470,45 @@
   background: rgba(255, 107, 107, 0.3) !important;
   color: rgba(255, 255, 255, 0.6) !important;
   cursor: not-allowed !important;
+}
+
+/* 造型预览样式 */
+.costumePreview {
+  margin-top: 15px;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.costumePreview h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.svgPreview {
+  width: 100%;
+  height: 200px;
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  background-color: white;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.svgPreview svg {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.addCostumeButton {
+  margin-top: 10px;
+  width: 100%;
 }
 

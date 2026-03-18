@@ -16,7 +16,7 @@ class AIAgentModalContainer extends React.Component {
         this.props.onClose();
     }
     render () {
-        const {visible, isRtl} = this.props;
+        const {visible, isRtl, vm} = this.props;
         
         return (
             <Modal
@@ -25,12 +25,13 @@ class AIAgentModalContainer extends React.Component {
                 visible={!!visible}
                 className="ai-modal"
                 onRequestClose={this.handleClose}
-                showHeader={true}
+                showHeader={false}
             >
                 <AIPanel 
                     onRequestClose={this.handleClose} 
-                    showHeader={false} 
+                    showHeader={true} 
                     type="agent"
+                    vm={vm}
                 />
             </Modal>
         );
@@ -41,13 +42,15 @@ AIAgentModalContainer.propTypes = {
     visible: PropTypes.bool,
     onClose: PropTypes.func,
     intl: PropTypes.object,
-    isRtl: PropTypes.bool
+    isRtl: PropTypes.bool,
+    vm: PropTypes.object
 };
 
 const mapStateToProps = state => {
     return {
         visible: !!state.scratchGui.modals.aiAgentModal,
-        isRtl: state.locales.isRtl
+        isRtl: state.locales.isRtl,
+        vm: state.scratchGui.vm
     };
 };
 
