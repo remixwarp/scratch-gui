@@ -338,7 +338,7 @@ class MenuBar extends React.Component {
         this.startAutosaveCountdown();
 
         // Prevent the legacy addon from also injecting a bookmarks menu.
-        window.__mistwarpNativeWorkspaceBookmarks = true;
+        window.__bilupNativeWorkspaceBookmarks = true;
 
         this.loadWorkspaceBookmarksFromProject();
         if (this.props.vm && this.props.vm.runtime) {
