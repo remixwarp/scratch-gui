@@ -89,7 +89,8 @@ const addons = [
     'stage-camera',
     'sprite-folders',
     'tab-styles',
-    'window-theme'
+    'window-theme',
+    'xiaolang-custom-blocks'
 ];
 
 const newAddons = [

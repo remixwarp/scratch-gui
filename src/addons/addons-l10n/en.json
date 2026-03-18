@@ -401,6 +401,8 @@
   "stage-camera/fixed-mode": "Fixed Mode",
   "stage-camera/stage-window": "Stage Window",
   "stage-camera/show-camera": "Show Camera Controls",
+  "vscode-layout/@name": "VS Code Style Layout",
+  "vscode-layout/@description": "Change the editor layout to VS Code style, including left activity bar, sidebar, center editor area, right panel, and bottom status bar",
   "tw.menuBar/collaboration": "Live Collaboration",
   "gui.collaboration.title": "Live Collaboration",
   "gui.collaboration.alphaWarningLabel": "Alpha Warning:",

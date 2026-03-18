@@ -406,6 +406,8 @@
   "stage-camera/fixed-mode": "固定模式",
   "stage-camera/stage-window": "舞台窗口",
   "stage-camera/show-camera": "显示相机控制",
+  "vscode-layout/@name": "VS Code 风格布局",
+  "vscode-layout/@description": "将编辑器布局改为 VS Code 风格，包括左侧活动栏、侧边栏、中间编辑区、右侧面板和底部状态栏",
   "tw.menuBar/collaboration": "实时协作",
   "gui.collaboration.title": "实时协作",
   "gui.collaboration.alphaWarningLabel": "Alpha 警告：",

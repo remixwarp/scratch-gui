@@ -92,6 +92,7 @@ import _sprite_folders from "../addons/sprite-folders/_manifest_entry.js";
 import _tab_styles from "../addons/tab-styles/_manifest_entry.js";
 import _window_theme from "../addons/window-theme/_manifest_entry.js";
 import _workspace_tabs from "../addons/workspace-tabs/_manifest_entry.js";
+import _xiaolang_custom_blocks from "../addons/xiaolang-custom-blocks/_manifest_entry.js";
 export default {
   "calculator": _calculator,
   "cat-blocks": _cat_blocks,
@@ -186,4 +187,5 @@ export default {
   ,"tab-styles": _tab_styles
   ,"window-theme": _window_theme
   ,"workspace-tabs": _workspace_tabs
+  ,"xiaolang-custom-blocks": _xiaolang_custom_blocks
 };
