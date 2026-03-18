@@ -94,9 +94,15 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors }) => {
                                         <div key={changeIndex} className={styles.changeItem}>
                                             <span className={`${styles.changeType} ${styles[change.type]}`}>
                                                 {change.type === 'feature' && '✨'}
-                                                {change.type === 'improvement' && '⚡'}
+                                                {change.type === 'improvement' && '🌠'}
                                                 {change.type === 'bugfix' && '🐛'}
                                                 {change.type === 'other' && '📝'}
+                                            </span>
+                                            <span className={styles.changeTypeText}>
+                                                {change.type === 'feature' && '新增'}
+                                                {change.type === 'improvement' && '优化'}
+                                                {change.type === 'bugfix' && '修复'}
+                                                {change.type === 'other' && '其他'}
                                             </span>
                                             <span className={styles.changeText}>{change.text}</span>
                                         </div>
