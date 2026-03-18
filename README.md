@@ -51,10 +51,11 @@ npm start             # 启动项目
 
 ```bash
 bun install           # 安装依赖
-bun run               # 启动项目
+bun start         # 启动项目
 ```
 
 注意：括号及括号里的内容还有```bash```仅为注释，不需要实际运行。
+运行成功后，请打开浏览器，访问 `https://localhost:8601` 即可查看项目。
 
 ---
 

@@ -4,6 +4,8 @@ import classNames from 'classnames';
 import styles from './ai-panel.css';
 import Button from '../button/button.jsx';
 import MarkdownRenderer from '../markdown-renderer/markdown-renderer.jsx';
+import {sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
+import {costumeUpload} from '../../lib/file-uploader.js';
 
 const API_ENDPOINT = 'https://api.siliconflow.cn/v1/chat/completions';
 const API_KEY = 'sk-madarokutonlejxkgjktphhujojhyinkpfltpxynypjvsvfq';
@@ -23,12 +25,18 @@ class AIPanel extends React.PureComponent {
             totalSteps: 4,
             stepStatus: ['pending', 'pending', 'pending', 'pending'], // pending, running, completed, error
             stepContext: {}, // 存储各步骤的上下文
-            progressExpanded: true // 创作进度展开/收起状态
+            progressExpanded: true, // 创作进度展开/收起状态
+            // 标签页状态
+            activeTab: 'works', // works, costume
+            // 造型生成状态
+            generatedSVG: null // 存储生成的SVG代码
         };
         this.handleChange = this.handleChange.bind(this);
         this.handleSend = this.handleSend.bind(this);
         this.handleConvertToProject = this.handleConvertToProject.bind(this);
         this.handleMultiStepStart = this.handleMultiStepStart.bind(this);
+        this.handleTabChange = this.handleTabChange.bind(this);
+        this.handleAddCostume = this.handleAddCostume.bind(this);
         this.messagesEnd = React.createRef();
         this.inputRef = React.createRef();
     }
@@ -55,6 +63,7 @@ class AIPanel extends React.PureComponent {
         if (!input) return;
         
         const isAgent = type === 'agent';
+        const isCostumeTab = this.state.activeTab === 'costume';
         
         // AI Agent的系统提示词，包含Scratch积木的完整信息
         const agentSystemPrompt = `你是RemixWarp的AI Agent助手，专门帮助用户编写Scratch项目。
@@ -278,9 +287,26 @@ class AIPanel extends React.PureComponent {
         // AI Chat的系统提示词
         const chatSystemPrompt = '你是RemixWarp的智能AI助手。回答的大部分是Scratch（及修改版）代码的问题。当需要输出代码时，请直接使用Markdown的代码块格式（```语言\n代码内容\n```）或者使用引用块格式（> 代码内容）。绝对不要输出CODEBLOCK0、CODEBLOCK1等占位符，这些占位符无法被正确渲染。直接输出实际的代码内容。';
         
-        const userMessageContent = isAgent 
-            ? agentSystemPrompt + input
-            : '你是RemixWarp的智能AI助手。回答的大部分是Scratch（及修改版）代码的问题。用户问题：' + input;
+        // AI造型的系统提示词
+        const costumeSystemPrompt = '你是一个图形化编辑器的造型生成ai助手，现在用户的要求是：';
+        
+        let userMessageContent;
+        let systemPrompt;
+        
+        if (isAgent) {
+            if (isCostumeTab) {
+                // AI造型标签页
+                userMessageContent = costumeSystemPrompt + input + '直接输出svg代码。不要有任何无关提示信息和符号。';
+                systemPrompt = costumeSystemPrompt;
+            } else {
+                // AI作品标签页
+                userMessageContent = agentSystemPrompt + input;
+                systemPrompt = agentSystemPrompt;
+            }
+        } else {
+            userMessageContent = '你是RemixWarp的智能AI助手。回答的大部分是Scratch（及修改版）代码的问题。用户问题：' + input;
+            systemPrompt = chatSystemPrompt;
+        }
             
         const userMessage = {role: 'user', content: userMessageContent};
         
@@ -291,6 +317,11 @@ class AIPanel extends React.PureComponent {
             error: null
         }), this.scrollToBottom);
 
+        // 如果是AI造型标签页，模拟按下Alt+2切换到造型编辑器
+        if (isAgent && isCostumeTab) {
+            this.simulateKeyPress('Alt', '2');
+        }
+
         fetch(API_ENDPOINT, {
             method: 'POST',
             headers: {
@@ -300,7 +331,7 @@ class AIPanel extends React.PureComponent {
             body: JSON.stringify({
                 model: MODEL,
                 messages: [
-                    {role: 'system', content: isAgent ? agentSystemPrompt : chatSystemPrompt},
+                    {role: 'system', content: systemPrompt},
                     userMessage
                 ]
             })
@@ -316,6 +347,11 @@ class AIPanel extends React.PureComponent {
             }
             if (!reply) reply = JSON.stringify(data);
             
+            // 如果是AI造型标签页，处理SVG生成
+            if (isAgent && isCostumeTab) {
+                this.handleCostumeGeneration(reply);
+            }
+            
             this.setState(state => ({
                 messages: [...state.messages, {from: 'assistant', text: reply}],
                 loading: false
@@ -324,6 +360,142 @@ class AIPanel extends React.PureComponent {
         .catch(err => {
             this.setState({loading: false, error: String(err)});
         });
+    }
+
+    // 模拟键盘按下事件
+    simulateKeyPress (modifierKey, key) {
+        // 创建键盘事件
+        const keyDownEvent = new KeyboardEvent('keydown', {
+            key: key,
+            altKey: modifierKey === 'Alt',
+            ctrlKey: modifierKey === 'Ctrl',
+            shiftKey: modifierKey === 'Shift',
+            bubbles: true,
+            cancelable: true
+        });
+        
+        const keyUpEvent = new KeyboardEvent('keyup', {
+            key: key,
+            altKey: modifierKey === 'Alt',
+            ctrlKey: modifierKey === 'Ctrl',
+            shiftKey: modifierKey === 'Shift',
+            bubbles: true,
+            cancelable: true
+        });
+        
+        // 分发事件到文档
+        document.dispatchEvent(keyDownEvent);
+        setTimeout(() => {
+            document.dispatchEvent(keyUpEvent);
+        }, 100);
+    }
+    
+    // 处理造型生成
+    handleCostumeGeneration (aiResponse) {
+        // 提取SVG代码
+        let svgCode = aiResponse;
+        
+        // 尝试从Markdown代码块中提取SVG
+        const codeBlockMatch = svgCode.match(/```svg[\s\S]*?```/);
+        if (codeBlockMatch) {
+            svgCode = codeBlockMatch[0].replace(/```svg/, '').replace(/```/, '').trim();
+        }
+        
+        // 尝试从HTML标签中提取SVG
+        const svgTagMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/);
+        if (svgTagMatch) {
+            svgCode = svgTagMatch[0];
+        }
+        
+        // 检查是否有SVG代码
+        if (!svgCode || !svgCode.includes('<svg')) {
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: '❌ 无法从AI响应中提取SVG代码'}]
+            }));
+            return;
+        }
+        
+        // 保存生成的SVG代码到状态
+        this.setState(state => ({
+            generatedSVG: svgCode,
+            messages: [...state.messages, {from: 'system', text: '🎨 SVG造型已生成，您可以预览并添加到项目中。'}]
+        }));
+    }
+    
+    // 手动添加造型到项目
+    handleAddCostume () {
+        const {generatedSVG} = this.state;
+        
+        if (!generatedSVG) {
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: '❌ 没有可添加的SVG代码'}]
+            }));
+            return;
+        }
+        
+        if (!this.props.vm) {
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: '❌ 无法添加造型，VM实例不可用'}]
+            }));
+            return;
+        }
+        
+        try {
+            // 检查editingTarget是否存在
+            if (!this.props.vm.editingTarget) {
+                this.setState(state => ({
+                    messages: [...state.messages, {from: 'system', text: '❌ 没有选中的角色，请先选择一个角色'}]
+                }));
+                return;
+            }
+            
+            // 获取目标ID
+            const targetId = this.props.vm.editingTarget.id;
+            console.log('Target ID:', targetId);
+            
+            // 将SVG字符串转换为Uint8Array
+            const svgBytes = new TextEncoder().encode(generatedSVG);
+            console.log('SVG Uint8Array length:', svgBytes.length);
+            
+            // 使用costumeUpload函数处理SVG上传
+            costumeUpload(svgBytes, 'image/svg+xml', this.props.vm, (vmCostumes) => {
+                console.log('Costumes created by costumeUpload:', vmCostumes);
+                
+                // 为每个生成的造型设置名称
+                vmCostumes.forEach((costume, i) => {
+                    costume.name = `AI生成造型${Date.now()}${i ? i + 1 : ''}`;
+                });
+                
+                // 添加造型到目标
+                const promises = vmCostumes.map(costume => {
+                    return this.props.vm.addCostume(costume.md5, costume, targetId);
+                });
+                
+                Promise.all(promises).then(() => {
+                    console.log('Costumes added successfully!');
+                    // 提示用户SVG已生成并添加到项目中
+                    this.setState(state => ({
+                        messages: [...state.messages, {from: 'system', text: '🎨 SVG造型已添加到项目中！'}]
+                    }));
+                }).catch(error => {
+                    console.error('添加造型失败:', error);
+                    this.setState(state => ({
+                        messages: [...state.messages, {from: 'system', text: `❌ 添加造型失败: ${error.message}`}]
+                    }));
+                });
+            }, (error) => {
+                console.error('costumeUpload失败:', error);
+                this.setState(state => ({
+                    messages: [...state.messages, {from: 'system', text: `❌ 处理SVG失败: ${error}`}]
+                }));
+            });
+        } catch (error) {
+            console.error('添加造型失败:', error);
+            console.error('Error stack:', error.stack);
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: `❌ 添加造型失败: ${error.message}`}]
+            }));
+        }
     }
 
     // 多步骤AI Agent处理方法
@@ -1264,6 +1436,11 @@ class AIPanel extends React.PureComponent {
         URL.revokeObjectURL(url);
     }
 
+    // 标签页切换处理方法
+    handleTabChange (tab) {
+        this.setState({activeTab: tab});
+    }
+
     render () {
         const {type} = this.props;
         const isAgent = type === 'agent';
@@ -1274,182 +1451,330 @@ class AIPanel extends React.PureComponent {
         
         return (
             <div className={styles.container}>
-                {this.props.showHeader !== false && (
-                    <div className={styles.header}>{isAgent ? 'AI Agent' : 'AI Chat'}</div>
+                {(this.props.showHeader !== false || isAgent) && (
+                    <div className={styles.header}>
+                        {isAgent ? (
+                            <div className={styles.headerWithTabs}>
+                                <div className={styles.headerTitle}>AI Agent</div>
+                                <div className={styles.tabs}>
+                                    <button 
+                                        className={classNames(styles.tab, {[styles.activeTab]: this.state.activeTab === 'works'})}
+                                        onClick={() => this.handleTabChange('works')}
+                                    >
+                                        AI作品
+                                    </button>
+                                    <button 
+                                        className={classNames(styles.tab, {[styles.activeTab]: this.state.activeTab === 'costume'})}
+                                        onClick={() => this.handleTabChange('costume')}
+                                    >
+                                        AI造型
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            'AI Chat'
+                        )}
+                    </div>
                 )}
                 <div className={styles.scrollableContent}>
-                    <div className={styles.messagesWrapper}>
-                    <div className={styles.messages}>
-                        {this.state.messages.map((m, i) => (
-                            <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
-                                {m.from === 'user' ? (
-                                    m.text
-                                ) : (
-                                    <MarkdownRenderer content={m.text} />
-                                )}
+                    {isAgent && this.state.activeTab === 'works' && (
+                        <div className={styles.tabContent}>
+                            <div className={styles.messagesWrapper}>
+                            <div className={styles.messages}>
+                                {this.state.messages.map((m, i) => (
+                                    <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
+                                        {m.from === 'user' ? (
+                                            m.text
+                                        ) : (
+                                            <MarkdownRenderer content={m.text} />
+                                        )}
+                                    </div>
+                                ))}
+                                <div ref={this.messagesEnd} />
                             </div>
-                        ))}
-                        <div ref={this.messagesEnd} />
-                    </div>
-                </div>
-                {/* 多步骤进度显示 */}
-                {isAgent && this.state.multiStepMode && (
-                    <div className={classNames(styles.progressContainer, {
-                        [styles.progressCollapsed]: !this.state.progressExpanded
-                    })}>
-                        {this.state.progressExpanded ? (
-                            // 展开状态
-                            <>
-                                <div 
-                                    className={styles.progressHeader}
-                                    onClick={() => this.setState({progressExpanded: false})}
-                                    style={{cursor: 'pointer'}}
-                                >
-                                    <span className={styles.progressTitle}>🚀 多步骤创作进度</span>
-                                    <div className={styles.progressHeaderRight}>
-                                        <span className={styles.progressCounter}>步骤 {this.state.currentStep}/4</span>
+                        </div>
+                        {/* 多步骤进度显示 */}
+                        {this.state.multiStepMode && (
+                            <div className={classNames(styles.progressContainer, {
+                                [styles.progressCollapsed]: !this.state.progressExpanded
+                            })}>
+                                {this.state.progressExpanded ? (
+                                    // 展开状态
+                                    <>
+                                        <div 
+                                            className={styles.progressHeader}
+                                            onClick={() => this.setState({progressExpanded: false})}
+                                            style={{cursor: 'pointer'}}
+                                        >
+                                            <span className={styles.progressTitle}>🚀 多步骤创作进度</span>
+                                            <div className={styles.progressHeaderRight}>
+                                                <span className={styles.progressCounter}>步骤 {this.state.currentStep}/4</span>
+                                                <button 
+                                                    className={styles.progressToggle}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        this.setState({progressExpanded: false});
+                                                    }}
+                                                >
+                                                    ▼
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className={styles.progressBar}>
+                                            <div 
+                                                className={styles.progressFill} 
+                                                style={{width: `${(this.state.currentStep / this.state.totalSteps) * 100}%`}}
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    // 收缩状态 - 窄条显示
+                                    <div 
+                                        className={styles.progressHeaderCollapsed}
+                                        onClick={() => this.setState({progressExpanded: true})}
+                                        style={{cursor: 'pointer'}}
+                                    >
+                                        <span className={styles.progressStepIndicator}>第{this.state.currentStep}步</span>
+                                        <div className={styles.progressBarCollapsed}>
+                                            <div 
+                                                className={styles.progressFillCollapsed} 
+                                                style={{width: `${(this.state.currentStep / this.state.totalSteps) * 100}%`}}
+                                            />
+                                        </div>
                                         <button 
                                             className={styles.progressToggle}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                this.setState({progressExpanded: false});
+                                                this.setState({progressExpanded: true});
                                             }}
                                         >
-                                            ▼
+                                            ▶
                                         </button>
                                     </div>
-                                </div>
-                                <div className={styles.progressBar}>
-                                    <div 
-                                        className={styles.progressFill} 
-                                        style={{width: `${(this.state.currentStep / this.state.totalSteps) * 100}%`}}
-                                    />
-                                </div>
-                            </>
-                        ) : (
-                            // 收缩状态 - 窄条显示
-                            <div 
-                                className={styles.progressHeaderCollapsed}
-                                onClick={() => this.setState({progressExpanded: true})}
-                                style={{cursor: 'pointer'}}
-                            >
-                                <span className={styles.progressStepIndicator}>第{this.state.currentStep}步</span>
-                                <div className={styles.progressBarCollapsed}>
-                                    <div 
-                                        className={styles.progressFillCollapsed} 
-                                        style={{width: `${(this.state.currentStep / this.state.totalSteps) * 100}%`}}
-                                    />
-                                </div>
-                                <button 
-                                    className={styles.progressToggle}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        this.setState({progressExpanded: true});
-                                    }}
+                                )}
+                                {this.state.progressExpanded && (
+                                    <div className={styles.stepList}>
+                                        {[
+                                            {icon: '📋', name: '设计程序结构'},
+                                            {icon: '💻', name: '编写代码'},
+                                            {icon: '🔧', name: '修复代码'},
+                                            {icon: '🎨', name: '绘制图形'}
+                                        ].map((step, index) => {
+                                            const status = this.state.stepStatus[index];
+                                            const isActive = index + 1 === this.state.currentStep;
+                                            return (
+                                                <div 
+                                                    key={index} 
+                                                    className={classNames(styles.stepItem, {
+                                                        [styles.stepActive]: isActive,
+                                                        [styles.stepCompleted]: status === 'completed',
+                                                        [styles.stepError]: status === 'error'
+                                                    })}
+                                                >
+                                                    <span className={styles.stepIcon}>
+                                                        {status === 'completed' ? '✅' : 
+                                                         status === 'error' ? '❌' : 
+                                                         status === 'running' ? '⏳' : 
+                                                         step.icon}
+                                                    </span>
+                                                    <span className={styles.stepName}>{step.name}</span>
+                                                    {isActive && <span className={styles.stepStatus}>进行中...</span>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        
+                        {this.state.loading && !this.state.multiStepMode && <div className={styles.loading}>思考中...</div>}
+                        {this.state.error && <div className={styles.error}>{this.state.error}</div>}
+                        <div className={styles.controls}>
+                            <textarea 
+                                ref={this.inputRef} 
+                                className={styles.input} 
+                                value={this.state.input} 
+                                onChange={this.handleChange} 
+                                placeholder={placeholder} 
+                                disabled={this.state.multiStepMode}
+                            />
+                            <div className={styles.actions}>
+                                {!this.state.multiStepMode && (
+                                    <Button 
+                                        onClick={this.handleMultiStepStart} 
+                                        className={classNames(styles.multiStepButton, {
+                                            [styles.multiStepButtonDisabled]: this.state.loading || !this.state.input
+                                        })}
+                                        disabled={this.state.loading || !this.state.input}
+                                    >
+                                        🚀 多步骤创作
+                                    </Button>
+                                )}
+                                <Button 
+                                    onClick={this.handleSend} 
+                                    className={styles.sendButton} 
+                                    disabled={this.state.loading || this.state.multiStepMode || !this.state.input || this.state.input.trim() === ''}
                                 >
-                                    ▶
-                                </button>
-                            </div>
-                        )}
-                        {this.state.progressExpanded && (
-                            <div className={styles.stepList}>
-                                {[
-                                    {icon: '📋', name: '设计程序结构'},
-                                    {icon: '💻', name: '编写代码'},
-                                    {icon: '🔧', name: '修复代码'},
-                                    {icon: '🎨', name: '绘制图形'}
-                                ].map((step, index) => {
-                                    const status = this.state.stepStatus[index];
-                                    const isActive = index + 1 === this.state.currentStep;
-                                    return (
-                                        <div 
-                                            key={index} 
-                                            className={classNames(styles.stepItem, {
-                                                [styles.stepActive]: isActive,
-                                                [styles.stepCompleted]: status === 'completed',
-                                                [styles.stepError]: status === 'error'
-                                            })}
-                                        >
-                                            <span className={styles.stepIcon}>
-                                                {status === 'completed' ? '✅' : 
-                                                 status === 'error' ? '❌' : 
-                                                 status === 'running' ? '⏳' : 
-                                                 step.icon}
-                                            </span>
-                                            <span className={styles.stepName}>{step.name}</span>
-                                            {isActive && <span className={styles.stepStatus}>进行中...</span>}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
-                
-                {this.state.loading && !this.state.multiStepMode && <div className={styles.loading}>思考中...</div>}
-                {this.state.error && <div className={styles.error}>{this.state.error}</div>}
-                <div className={styles.controls}>
-                    <textarea 
-                        ref={this.inputRef} 
-                        className={styles.input} 
-                        value={this.state.input} 
-                        onChange={this.handleChange} 
-                        placeholder={placeholder} 
-                        disabled={this.state.multiStepMode}
-                    />
-                    <div className={styles.actions}>
-                        {isAgent && !this.state.multiStepMode && (
-                            <Button 
-                                onClick={this.handleMultiStepStart} 
-                                className={classNames(styles.multiStepButton, {
-                                    [styles.multiStepButtonDisabled]: this.state.loading || !this.state.input
-                                })}
-                                disabled={this.state.loading || !this.state.input}
-                            >
-                                🚀 多步骤创作
-                            </Button>
-                        )}
-                        <Button 
-                            onClick={this.handleSend} 
-                            className={styles.sendButton} 
-                            disabled={this.state.loading || this.state.multiStepMode || !this.state.input || this.state.input.trim() === ''}
-                        >
-                            发送
-                        </Button>
-                        {isAgent && (
-                            <Button 
-                                onClick={this.handleConvertToProject} 
-                                className={classNames(styles.convertButton, {
-                                    [styles.convertButtonDisabled]: this.state.loading || 
+                                    发送
+                                </Button>
+                                <Button 
+                                    onClick={this.handleConvertToProject} 
+                                    className={classNames(styles.convertButton, {
+                                        [styles.convertButtonDisabled]: this.state.loading || 
+                                            (this.state.multiStepMode ? 
+                                                !this.state.stepStatus.every(s => s === 'completed') : 
+                                                !this.state.messages.some(m => m.from === 'assistant'))
+                                    })}
+                                    disabled={this.state.loading || 
                                         (this.state.multiStepMode ? 
                                             !this.state.stepStatus.every(s => s === 'completed') : 
-                                            !this.state.messages.some(m => m.from === 'assistant'))
-                                })}
-                                disabled={this.state.loading || 
-                                    (this.state.multiStepMode ? 
-                                        !this.state.stepStatus.every(s => s === 'completed') : 
-                                        !this.state.messages.some(m => m.from === 'assistant'))}
-                            >
-                                转换为作品
-                            </Button>
+                                            !this.state.messages.some(m => m.from === 'assistant'))}
+                                >
+                                    转换为作品
+                                </Button>
+                            </div>
+                        </div>
+                        {/* 警告消息 - 放在底部 */}
+                        <div className={styles.warningBanner}>
+                            <div className={styles.warningIcon}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+                                    <path d="M12 9v4"></path>
+                                    <path d="M12 17h.01"></path>
+                                </svg>
+                            </div>
+                            <div className={styles.warningContent}>
+                                <strong><span>警告：</span></strong>
+                                <span dangerouslySetInnerHTML={{__html: warningText}} />
+                            </div>
+                        </div>
+                        </div>
+                    )}
+                    
+                    {isAgent && this.state.activeTab === 'costume' && (
+                        <div className={styles.tabContent}>
+                            <div className={styles.messagesWrapper}>
+                            <div className={styles.messages}>
+                                {this.state.messages.map((m, i) => (
+                                    <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
+                                        {m.from === 'user' ? (
+                                            m.text
+                                        ) : (
+                                            <MarkdownRenderer content={m.text} />
+                                        )}
+                                    </div>
+                                ))}
+                                <div ref={this.messagesEnd} />
+                            </div>
+                        </div>
+                        {this.state.loading && <div className={styles.loading}>思考中...</div>}
+                        {this.state.error && <div className={styles.error}>{this.state.error}</div>}
+                        <div className={styles.controls}>
+                            <textarea 
+                                ref={this.inputRef} 
+                                className={styles.input} 
+                                value={this.state.input} 
+                                onChange={this.handleChange} 
+                                placeholder="描述你想要的造型..."
+                                disabled={this.state.loading}
+                            />
+                            <div className={styles.actions}>
+                                <Button 
+                                    onClick={this.handleSend} 
+                                    className={styles.sendButton} 
+                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === ''}
+                                >
+                                    发送
+                                </Button>
+                            </div>
+                        </div>
+                        {/* 造型生成预览区域 */}
+                        {this.state.activeTab === 'costume' && this.state.generatedSVG && (
+                            <div className={styles.costumePreview}>
+                                <h4>SVG预览</h4>
+                                <div className={styles.svgPreview}>
+                                    <div dangerouslySetInnerHTML={{__html: this.state.generatedSVG}} />
+                                </div>
+                                <Button 
+                                    onClick={this.handleAddCostume} 
+                                    className={styles.addCostumeButton}
+                                    variant="primary"
+                                >
+                                    添加到造型
+                                </Button>
+                            </div>
                         )}
-                    </div>
+                        {/* 警告消息 - 放在底部 */}
+                        <div className={styles.warningBanner}>
+                            <div className={styles.warningIcon}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+                                    <path d="M12 9v4"></path>
+                                    <path d="M12 17h.01"></path>
+                                </svg>
+                            </div>
+                            <div className={styles.warningContent}>
+                                <strong><span>警告：</span></strong>
+                                <span dangerouslySetInnerHTML={{__html: '内容为AI生成,请注意仔细鉴别<br/>此功能用于生成SVG造型，可直接使用。<br/>用来生成造型的是文字处理模型，可能会不满您的预期，敬请谅解。'}} />
+                            </div>
+                        </div>
+                        </div>
+                    )}
+                    
+                    {!isAgent && (
+                        <div className={styles.tabContent}>
+                            <div className={styles.messagesWrapper}>
+                            <div className={styles.messages}>
+                                {this.state.messages.map((m, i) => (
+                                    <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
+                                        {m.from === 'user' ? (
+                                            m.text
+                                        ) : (
+                                            <MarkdownRenderer content={m.text} />
+                                        )}
+                                    </div>
+                                ))}
+                                <div ref={this.messagesEnd} />
+                            </div>
+                        </div>
+                        {this.state.loading && <div className={styles.loading}>思考中...</div>}
+                        {this.state.error && <div className={styles.error}>{this.state.error}</div>}
+                        <div className={styles.controls}>
+                            <textarea 
+                                ref={this.inputRef} 
+                                className={styles.input} 
+                                value={this.state.input} 
+                                onChange={this.handleChange} 
+                                placeholder={placeholder}
+                                disabled={this.state.loading}
+                            />
+                            <div className={styles.actions}>
+                                <Button 
+                                    onClick={this.handleSend} 
+                                    className={styles.sendButton} 
+                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === ''}
+                                >
+                                    发送
+                                </Button>
+                            </div>
+                        </div>
+                        {/* 警告消息 - 放在底部 */}
+                        <div className={styles.warningBanner}>
+                            <div className={styles.warningIcon}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+                                    <path d="M12 9v4"></path>
+                                    <path d="M12 17h.01"></path>
+                                </svg>
+                            </div>
+                            <div className={styles.warningContent}>
+                                <strong><span>警告：</span></strong>
+                                <span dangerouslySetInnerHTML={{__html: warningText}} />
+                            </div>
+                        </div>
+                        </div>
+                    )}
                 </div>
-                {/* 警告消息 - 放在底部 */}
-                <div className={styles.warningBanner}>
-                    <div className={styles.warningIcon}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
-                            <path d="M12 9v4"></path>
-                            <path d="M12 17h.01"></path>
-                        </svg>
-                    </div>
-                    <div className={styles.warningContent}>
-                        <strong><span>警告：</span></strong>
-                        <span dangerouslySetInnerHTML={{__html: warningText}} />
-                    </div>
-                </div>
-            </div>
             </div>
         );
     }
@@ -1457,12 +1782,14 @@ class AIPanel extends React.PureComponent {
 
 AIPanel.propTypes = {
     onRequestClose: PropTypes.func,
-    type: PropTypes.string
+    type: PropTypes.string,
+    vm: PropTypes.object
 };
 
 AIPanel.defaultProps = {
     showHeader: true,
-    type: 'chat'
+    type: 'chat',
+    vm: null
 };
 
 AIPanel.propTypes = Object.assign({}, AIPanel.propTypes, {
