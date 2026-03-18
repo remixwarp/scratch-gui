@@ -5,10 +5,11 @@ import { injectIntl, intlShape } from 'react-intl';
 import UpdateLogModalComponent from '../components/update-log/update-log-modal.jsx';
 import {
     checkForUpdate,
-    shouldShowUpdateLog,
     getCurrentVersion,
-    getCurrentDate,
-    markVersionAsSeen
+    getLastSeenVersion,
+    markVersionAsSeen,
+    storeCurrentUrl,
+    hasUrlChanged
 } from '../lib/version-manager.js';
 import { ACCENT_MAP } from '../lib/themes/accents';
 
@@ -73,74 +74,32 @@ const UpdateLogModalContainer = ({ intl, theme }) => {
             try {
                 setIsLoading(true);
                 
-                const currentVersion = getCurrentVersion();
                 console.log('=== 检查更新 ===');
-                console.log('当前版本:', currentVersion);
-                console.log('上次查看版本:', localStorage.getItem('remixwarp_last_seen_version'));
+                console.log('当前 URL:', window.location.href);
+                console.log('上次查看版本:', getLastSeenVersion());
+                console.log('当前存储版本:', getCurrentVersion());
                 console.log('不再显示:', localStorage.getItem('remixwarp_dont_show_updates'));
                 
-                // 检查是否应该显示更新日志
-                if (shouldShowUpdateLog(currentVersion)) {
-                    console.log('✓ 满足显示条件');
+                // 使用新的 checkForUpdate 函数获取更新信息
+                const info = await checkForUpdate();
+                
+                if (info && info.hasUpdate && info.versions && info.versions.length > 0) {
+                    console.log('获取到更新信息:', info.versions.length, '个版本');
+                    console.log('显示的版本:', info.versions.map(v => v.version));
+                    console.log('当前 URL:', info.url);
+                    console.log('URL 是否变化:', info.isUrlChanged);
                     
-                    // 使用checkForUpdate函数获取更新信息
-                    const info = await checkForUpdate();
-                    
-                    if (info && info.hasUpdate && info.versions && info.versions.length > 0) {
-                        console.log('获取到更新信息:', info.versions.length, '个版本');
-                        console.log('显示的版本:', info.versions.map(v => v.version));
-                        
-                        setUpdateInfo({
-                            versions: info.versions
-                        });
-                        setVisible(true);
-                    } else {
-                        console.log('没有获取到更新信息，创建默认版本');
-                        
-                        // 创建默认版本记录
-                        const defaultVersion = {
-                            version: currentVersion,
-                            date: getCurrentDate(),
-                            changes: [
-                                { type: 'feature', text: '新增：版本更新日志功能' },
-                                { type: 'improvement', text: '优化：提升编辑器性能' }
-                            ],
-                            createdAt: new Date().toISOString()
-                        };
-                        
-                        // 保存到版本历史
-                        const versionHistory = localStorage.getItem('remixwarp_version_history');
-                        let versions = versionHistory ? JSON.parse(versionHistory) : [];
-                        versions.push(defaultVersion);
-                        localStorage.setItem('remixwarp_version_history', JSON.stringify(versions));
-                        
-                        setUpdateInfo({
-                            versions: [defaultVersion]
-                        });
-                        setVisible(true);
-                    }
+                    setUpdateInfo({
+                        versions: info.versions,
+                        currentVersion: info.currentVersion,
+                        lastVersion: info.lastVersion
+                    });
+                    setVisible(true);
                 } else {
-                    console.log('✗ 不满足显示条件');
+                    console.log('没有获取到更新信息或无需显示更新');
                 }
             } catch (error) {
                 console.error('检查更新失败:', error);
-                
-                // 即使出错，也创建默认版本记录
-                const currentVersion = getCurrentVersion();
-                const defaultVersion = {
-                    version: currentVersion,
-                    date: getCurrentDate(),
-                    changes: [
-                        { type: 'feature', text: '新增：版本更新日志功能' },
-                        { type: 'improvement', text: '优化：提升编辑器性能' }
-                    ],
-                    createdAt: new Date().toISOString()
-                };
-                
-                setUpdateInfo({
-                    versions: [defaultVersion]
-                });
-                setVisible(true);
             } finally {
                 setIsLoading(false);
             }
@@ -156,11 +115,9 @@ const UpdateLogModalContainer = ({ intl, theme }) => {
 
     const handleClose = () => {
         setVisible(false);
-        // 标记当前版本为已查看（最新版本）
-        if (updateInfo && updateInfo.versions && updateInfo.versions.length > 0) {
-            markVersionAsSeen();
-            console.log('已标记版本为已查看:', updateInfo.versions[0].version);
-        }
+        // 标记当前版本为已查看
+        markVersionAsSeen();
+        console.log('已标记版本为已查看');
     };
 
     // 如果没有更新信息或不应该显示，返回 null

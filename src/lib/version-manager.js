@@ -4,9 +4,45 @@
  */
 
 const VERSION_STORAGE_KEY = 'remixwarp_last_seen_version';
+const CURRENT_URL_KEY = 'remixwarp_current_url';
 const DONT_SHOW_KEY = 'remixwarp_dont_show_updates';
 const VERSION_HISTORY_KEY = 'remixwarp_version_history';
 const CURRENT_VERSION_KEY = 'remixwarp_current_version';
+
+/**
+ * 获取当前 URL
+ * @returns {string} 当前 URL
+ */
+export const getCurrentUrl = () => {
+    return window.location.href;
+};
+
+/**
+ * 存储当前 URL
+ */
+export const storeCurrentUrl = () => {
+    const url = getCurrentUrl();
+    localStorage.setItem(CURRENT_URL_KEY, url);
+    console.log('存储当前 URL:', url);
+};
+
+/**
+ * 获取存储的 URL
+ * @returns {string|null} 存储的 URL
+ */
+export const getStoredUrl = () => {
+    return localStorage.getItem(CURRENT_URL_KEY);
+};
+
+/**
+ * 检查 URL 是否发生变化
+ * @returns {boolean} URL 是否变化
+ */
+export const hasUrlChanged = () => {
+    const currentUrl = getCurrentUrl();
+    const storedUrl = getStoredUrl();
+    return currentUrl !== storedUrl;
+};
 
 /**
  * 获取当前版本号
@@ -116,10 +152,10 @@ export const addVersionHistory = (versionInfo) => {
             });
         }
         
-        // 只保留最近 20 个版本记录
-        if (history.length > 20) {
+        // 只保留最近 50 个版本记录
+        if (history.length > 50) {
             history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            history.length = 20;
+            history.length = 50;
         }
         
         localStorage.setItem(VERSION_HISTORY_KEY, JSON.stringify(history));
@@ -280,95 +316,6 @@ export const formatDateTime = (date) => {
 };
 
 /**
- * 检查版本更新
- * @returns {Object|null} 更新信息，如果没有更新则返回 null
- */
-export const checkForUpdate = async () => {
-    try {
-        // 从 GitHub 获取最新的版本信息
-        const updateInfo = await fetchUpdateInfo();
-        
-        if (!updateInfo) {
-            return null;
-        }
-        
-        // 更新当前版本号
-        const newVersion = updateInfo.version;
-        setCurrentVersion(newVersion);
-        
-        const lastSeenVersion = getLastSeenVersion();
-        
-        // 保存到版本历史
-        addVersionHistory({
-            version: newVersion,
-            date: updateInfo.date || getCurrentDateTime(),
-            changes: updateInfo.changes,
-            commitMessage: updateInfo.rawMessage,
-            commitSha: updateInfo.commitSha,
-            author: updateInfo.author
-        });
-        
-        // 如果是首次使用或版本有变化
-        if (!lastSeenVersion || lastSeenVersion !== newVersion) {
-            // 获取版本历史，筛选出从上次版本到当前版本的所有版本
-            const versionHistory = getVersionHistory();
-            const versionsToShow = getVersionsSinceLastSeen(versionHistory, lastSeenVersion);
-            
-            return {
-                hasUpdate: true,
-                currentVersion: newVersion,
-                lastVersion: lastSeenVersion,
-                versions: versionsToShow.length > 0 ? versionsToShow : [{
-                    version: newVersion,
-                    date: updateInfo.date || getCurrentDateTime(),
-                    changes: updateInfo.changes,
-                    commitSha: updateInfo.commitSha,
-                    author: updateInfo.author
-                }]
-            };
-        }
-        
-        return null;
-    } catch (error) {
-        console.error('Error checking for update:', error);
-        return null;
-    }
-};
-
-/**
- * 从版本历史中获取从上次查看版本到当前版本的所有版本
- * @param {Array} versionHistory - 版本历史数组
- * @param {string} lastSeenVersion - 上次查看的版本号
- * @returns {Array} 版本列表
- */
-export const getVersionsSinceLastSeen = (versionHistory, lastSeenVersion) => {
-    if (!versionHistory || versionHistory.length === 0) {
-        return [];
-    }
-    
-    // 按版本号排序（从新到旧）
-    const sortedHistory = [...versionHistory].sort((a, b) => {
-        return compareVersions(b.version, a.version);
-    });
-    
-    if (!lastSeenVersion) {
-        // 首次使用，返回所有版本
-        return sortedHistory;
-    }
-    
-    // 找到上次查看的版本在历史中的位置
-    const lastSeenIndex = sortedHistory.findIndex(v => v.version === lastSeenVersion);
-    
-    if (lastSeenIndex === -1) {
-        // 上次查看的版本不在历史中，返回所有版本
-        return sortedHistory;
-    }
-    
-    // 返回从最新版本到上次查看版本之间的所有版本（不包括上次查看版本）
-    return sortedHistory.slice(0, lastSeenIndex);
-};
-
-/**
  * 比较两个版本号
  * @param {string} version1 - 版本号1
  * @param {string} version2 - 版本号2
@@ -390,10 +337,11 @@ export const compareVersions = (version1, version2) => {
 };
 
 /**
- * 从 GitHub 获取更新信息
- * @returns {Object|null} 更新信息
+ * 从 GitHub 获取提交历史
+ * @param {number} perPage - 每页获取的提交数量
+ * @returns {Array|null} 提交历史数组
  */
-export const fetchUpdateInfo = async () => {
+export const fetchCommitsFromGitHub = async (perPage = 100) => {
     try {
         // 从 package.json 获取仓库信息
         const repoUrl = process.env.REPO_URL || 'https://github.com/remixwarp/scratch-gui';
@@ -401,45 +349,195 @@ export const fetchUpdateInfo = async () => {
         
         if (!repoMatch) {
             console.warn('Could not parse repository URL');
-            return generateDefaultUpdateInfo();
+            return null;
         }
         
         const [, owner, repo] = repoMatch;
         
         // 调用 GitHub API 获取最近的提交
-        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=10`);
+        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=${perPage}`);
         
         if (!response.ok) {
             console.warn('Failed to fetch commits from GitHub');
-            return generateDefaultUpdateInfo();
+            return null;
         }
         
         const commits = await response.json();
+        return commits;
+    } catch (error) {
+        console.error('Error fetching commits from GitHub:', error);
+        return null;
+    }
+};
+
+/**
+ * 递归查找匹配的版本
+ * 从 GitHub 提交历史中查找，直到找到与本地存储版本匹配的提交
+ * @param {string} lastSeenVersion - 上次查看的版本号
+ * @param {Array} commits - GitHub 提交历史
+ * @returns {Object} 查找结果
+ */
+export const findMatchingVersion = (lastSeenVersion, commits) => {
+    if (!commits || commits.length === 0) {
+        return {
+            found: false,
+            versions: [],
+            allCommits: []
+        };
+    }
+
+    const versions = [];
+    let foundIndex = -1;
+    let lastVersion = lastSeenVersion || '1.0.0';
+
+    // 遍历提交历史，解析版本号
+    for (let i = 0; i < commits.length; i++) {
+        const commit = commits[i];
+        const commitMessage = commit.commit.message;
+        
+        // 解析提交信息获取版本号
+        const parsedInfo = parseCommitMessage(commitMessage, lastVersion);
+        const version = parsedInfo.version;
+        
+        // 使用提交时间作为版本时间
+        const commitDate = commit.commit.author.date;
+        
+        const versionInfo = {
+            version: version,
+            date: formatDateTime(commitDate),
+            changes: parsedInfo.changes,
+            commitSha: commit.sha,
+            commitUrl: commit.html_url,
+            author: commit.commit.author.name,
+            rawDate: commitDate,
+            rawMessage: commitMessage
+        };
+        
+        versions.push(versionInfo);
+        
+        // 检查是否找到匹配的版本
+        if (lastSeenVersion && version === lastSeenVersion) {
+            foundIndex = i;
+            break;
+        }
+        
+        // 更新 lastVersion 用于下一个提交的版本号计算
+        lastVersion = version;
+    }
+
+    return {
+        found: foundIndex !== -1,
+        versions: versions,
+        foundIndex: foundIndex,
+        allCommits: commits
+    };
+};
+
+/**
+ * 检查版本更新
+ * 核心逻辑：
+ * 1. 实时读取当前 URL，存储当前 URL
+ * 2. 从 GitHub 获取最新版本
+ * 3. 对比当前版本和最新版本
+ * 4. 如果版本号不同，递归读取历史版本，直到找到匹配的版本
+ * 5. 返回所有需要显示的更新版本
+ * @returns {Object|null} 更新信息，如果没有更新则返回 null
+ */
+export const checkForUpdate = async () => {
+    try {
+        console.log('=== 开始检查版本更新 ===');
+        
+        // 1. 实时读取当前 URL 并存储
+        storeCurrentUrl();
+        const currentUrl = getCurrentUrl();
+        console.log('当前 URL:', currentUrl);
+        
+        // 2. 从 GitHub 获取提交历史
+        const commits = await fetchCommitsFromGitHub(100);
         
         if (!commits || commits.length === 0) {
+            console.warn('无法从 GitHub 获取提交历史');
             return generateDefaultUpdateInfo();
         }
         
-        // 获取最新的提交信息
+        console.log(`获取到 ${commits.length} 条提交记录`);
+        
+        // 3. 获取最新提交信息
         const latestCommit = commits[0];
-        const commitMessage = latestCommit.commit.message;
-        const lastVersion = getLastSeenVersion() || '1.0.0';
+        const latestCommitMessage = latestCommit.commit.message;
+        const lastSeenVersion = getLastSeenVersion();
+        const currentStoredVersion = getCurrentVersion();
         
-        const parsedInfo = parseCommitMessage(commitMessage, lastVersion);
+        console.log('上次查看版本:', lastSeenVersion);
+        console.log('当前存储版本:', currentStoredVersion);
+        console.log('最新提交信息:', latestCommitMessage.substring(0, 100));
         
-        // 使用提交时间作为版本时间
-        const commitDate = latestCommit.commit.author.date;
+        // 4. 解析最新版本号
+        const latestParsedInfo = parseCommitMessage(latestCommitMessage, currentStoredVersion);
+        const latestVersion = latestParsedInfo.version;
         
-        return {
-            ...parsedInfo,
-            date: formatDateTime(commitDate),
+        console.log('最新版本号:', latestVersion);
+        
+        // 5. 更新当前版本号
+        setCurrentVersion(latestVersion);
+        
+        // 6. 保存最新版本到历史记录
+        addVersionHistory({
+            version: latestVersion,
+            date: formatDateTime(latestCommit.commit.author.date),
+            changes: latestParsedInfo.changes,
+            commitMessage: latestCommitMessage,
             commitSha: latestCommit.sha,
-            commitUrl: latestCommit.html_url,
-            author: latestCommit.commit.author.name,
-            rawDate: commitDate
+            author: latestCommit.commit.author.name
+        });
+        
+        // 7. 检查是否需要显示更新
+        // 如果用户选择了不再显示，直接返回 null
+        if (localStorage.getItem(DONT_SHOW_KEY) === 'true') {
+            console.log('用户选择了不再显示更新');
+            return null;
+        }
+        
+        // 8. 对比版本号
+        // 如果最新版本与上次查看的版本相同，不显示更新
+        if (lastSeenVersion && lastSeenVersion === latestVersion) {
+            console.log('版本号相同，无需显示更新');
+            return null;
+        }
+        
+        // 9. 如果版本号不同，递归读取历史版本，直到找到匹配的版本
+        console.log('版本号不同，开始查找历史版本...');
+        
+        const searchResult = findMatchingVersion(lastSeenVersion, commits);
+        
+        console.log(`找到 ${searchResult.versions.length} 个版本`);
+        console.log('是否找到匹配版本:', searchResult.found);
+        
+        // 10. 准备需要显示的版本列表
+        let versionsToShow = [];
+        
+        if (searchResult.found) {
+            // 找到了匹配的版本，显示从最新版本到匹配版本之间的所有版本（不包括匹配版本）
+            versionsToShow = searchResult.versions.slice(0, searchResult.foundIndex);
+            console.log(`显示从最新版本到上次查看版本之间的 ${versionsToShow.length} 个版本`);
+        } else {
+            // 没有找到匹配的版本，显示所有获取到的版本
+            versionsToShow = searchResult.versions;
+            console.log(`未找到匹配版本，显示所有 ${versionsToShow.length} 个版本`);
+        }
+        
+        // 11. 返回更新信息
+        return {
+            hasUpdate: true,
+            currentVersion: latestVersion,
+            lastVersion: lastSeenVersion,
+            versions: versionsToShow,
+            url: currentUrl,
+            isUrlChanged: hasUrlChanged()
         };
+        
     } catch (error) {
-        console.error('Error fetching update info:', error);
+        console.error('检查版本更新时出错:', error);
         return generateDefaultUpdateInfo();
     }
 };
@@ -453,12 +551,21 @@ export const generateDefaultUpdateInfo = () => {
     const newVersion = incrementVersion(lastVersion);
     
     return {
-        version: newVersion,
-        changes: [
-            { type: 'improvement', text: '性能优化和稳定性改进' },
-            { type: 'other', text: '常规维护和更新' }
-        ],
-        date: getCurrentDateTime()
+        hasUpdate: true,
+        currentVersion: newVersion,
+        lastVersion: lastVersion,
+        versions: [{
+            version: newVersion,
+            date: getCurrentDateTime(),
+            changes: [
+                { type: 'improvement', text: '性能优化和稳定性改进' },
+                { type: 'other', text: '常规维护和更新' }
+            ],
+            commitSha: null,
+            author: 'System'
+        }],
+        url: getCurrentUrl(),
+        isUrlChanged: hasUrlChanged()
     };
 };
 
@@ -468,9 +575,23 @@ export const generateDefaultUpdateInfo = () => {
 export const markVersionAsSeen = () => {
     const currentVersion = getCurrentVersion();
     setLastSeenVersion(currentVersion);
+    console.log('已标记版本为已查看:', currentVersion);
+};
+
+/**
+ * 获取当前日期字符串
+ * @returns {string} 格式化的日期字符串
+ */
+export const getCurrentDate = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 };
 
 export default {
+    getCurrentUrl,
+    storeCurrentUrl,
+    getStoredUrl,
+    hasUrlChanged,
     getCurrentVersion,
     setCurrentVersion,
     getLastSeenVersion,
@@ -484,8 +605,11 @@ export default {
     parseChanges,
     getCurrentDateTime,
     formatDateTime,
+    compareVersions,
+    fetchCommitsFromGitHub,
+    findMatchingVersion,
     checkForUpdate,
-    fetchUpdateInfo,
     generateDefaultUpdateInfo,
-    markVersionAsSeen
+    markVersionAsSeen,
+    getCurrentDate
 };

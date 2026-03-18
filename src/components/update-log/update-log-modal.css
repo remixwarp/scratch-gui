@@ -134,8 +134,8 @@
 
 .changeItem {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    align-items: center;
+    gap: 4px;
     padding: 10px 12px;
     background: white;
     border-radius: 6px;
@@ -151,33 +151,78 @@
 .changeType {
     font-size: 1.2rem;
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.changeType.feature {
+.changeItem:has(.changeType.feature) {
     border-left-color: #28a745;
 }
 
-.changeType.improvement {
+.changeItem:has(.changeType.improvement) {
     border-left-color: #ffc107;
 }
 
-.changeType.bugfix {
+.changeItem:has(.changeType.bugfix) {
     border-left-color: #dc3545;
 }
 
-.changeType.other {
+.changeItem:has(.changeType.other) {
     border-left-color: #6c757d;
+}
+
+.changeType.feature {
+    color: #28a745;
+}
+
+.changeType.improvement {
+    color: #f39c12;
+}
+
+.changeType.bugfix {
+    color: #dc3545;
+}
+
+.changeType.other {
+    color: #6c757d;
+}
+
+.changeTypeText {
+    font-size: 1rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-right: 4px;
+}
+
+.changeTypeText:has(+ .changeText) {
+    color: inherit;
+}
+
+.changeItem:has(.changeType.feature) .changeTypeText {
+    color: #28a745;
+}
+
+.changeItem:has(.changeType.improvement) .changeTypeText {
+    color: #f39c12;
+}
+
+.changeItem:has(.changeType.bugfix) .changeTypeText {
+    color: #dc3545;
+}
+
+.changeItem:has(.changeType.other) .changeTypeText {
+    color: #6c757d;
 }
 
 .changeText {
     color: #333;
     line-height: 1.5;
-    font-size: 0.95rem;
+    font-size: 1rem;
+    flex: 1;
 }
 
 .modalFooter {
