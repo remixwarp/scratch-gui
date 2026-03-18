@@ -27,7 +27,7 @@ class AIPanel extends React.PureComponent {
             stepContext: {}, // 存储各步骤的上下文
             progressExpanded: true, // 创作进度展开/收起状态
             // 标签页状态
-            activeTab: 'works', // works, costume
+            activeTab: 'works', // works, costume, control
             // 造型生成状态
             generatedSVG: null // 存储生成的SVG代码
         };
@@ -64,6 +64,7 @@ class AIPanel extends React.PureComponent {
         
         const isAgent = type === 'agent';
         const isCostumeTab = this.state.activeTab === 'costume';
+        const isControlTab = this.state.activeTab === 'control';
         
         // AI Agent的系统提示词，包含Scratch积木的完整信息
         const agentSystemPrompt = `你是RemixWarp的AI Agent助手，专门帮助用户编写Scratch项目。
@@ -290,6 +291,83 @@ class AIPanel extends React.PureComponent {
         // AI造型的系统提示词
         const costumeSystemPrompt = '你是一个图形化编辑器的造型生成ai助手，现在用户的要求是：';
         
+        // AI操控的系统提示词
+        const controlSystemPrompt = `你是RemixWarp的AI操控助手，专门帮助用户通过自然语言控制Scratch编辑器的各种功能。
+
+## 可用快捷键参考
+
+### 文件操作
+- Ctrl+S: 保存项目
+- Ctrl+Shift+S: 另存为副本
+- Ctrl+O: 从计算机加载
+- Ctrl+P: 打包项目
+- Alt+R: 恢复点
+
+### 视图操作
+- Ctrl+,: 设置
+- F11: 全屏切换
+- Alt+F: 舞台全屏
+- Alt+B: 切换背包
+
+### 编辑器导航
+- Alt+1: 切换到积木标签页
+- Alt+2: 切换到造型标签页
+- Alt+3: 切换到声音标签页
+
+### 项目控制
+- Ctrl+Enter: 绿旗启动项目
+- Ctrl+Shift+Enter: 停止所有
+
+### 素材库访问
+- Alt+S: 打开角色库
+- Alt+C: 打开造型库
+- Alt+K: 打开声音库
+- Ctrl+.: 打开扩展库
+- Alt+E: 扩展管理器
+
+### 角色管理
+- Alt+Shift+D: 复制角色
+- Alt+Shift+X: 删除角色
+
+### 编辑操作
+- Ctrl+Z: 撤销
+- Ctrl+Shift+Z: 重做
+- Ctrl+C: 复制
+- Ctrl+V: 粘贴
+- Ctrl+X: 剪切
+
+### 窗口管理
+- Alt+Q: 关闭窗口
+- Ctrl+Shift+C: 打开AI聊天
+- Ctrl+Shift+A: 打开AI Agent
+
+### 项目分析
+- 分析项目: 分析当前项目的结构、角色、积木等
+- 项目报告: 生成项目的详细分析报告
+
+## 响应格式
+
+### 1. 快捷键操作
+当用户要求执行某个操作时，你应该：
+1. 识别用户想要执行的功能
+2. 返回对应的快捷键组合
+3. 格式：[快捷键] 操作描述
+
+例如：
+用户说"保存项目"，你应该返回：[Ctrl+S] 保存当前项目
+用户说"切换到造型编辑器"，你应该返回：[Alt+2] 切换到造型标签页
+用户说"运行项目"，你应该返回：[Ctrl+Enter] 启动项目（绿旗）
+
+### 2. 项目分析
+当用户要求分析项目时，你应该：
+1. 识别用户想要分析项目
+2. 返回：[ANALYZE_PROJECT] 正在分析当前项目...
+
+例如：
+用户说"分析我的项目"，你应该返回：[ANALYZE_PROJECT] 正在分析当前项目...
+用户说"项目报告"，你应该返回：[ANALYZE_PROJECT] 正在生成项目报告...
+用户说"看看我的项目结构"，你应该返回：[ANALYZE_PROJECT] 正在分析项目结构...`;
+        
         let userMessageContent;
         let systemPrompt;
         
@@ -298,6 +376,10 @@ class AIPanel extends React.PureComponent {
                 // AI造型标签页
                 userMessageContent = costumeSystemPrompt + input + '直接输出svg代码。不要有任何无关提示信息和符号。';
                 systemPrompt = costumeSystemPrompt;
+            } else if (isControlTab) {
+                // AI操控标签页
+                userMessageContent = input;
+                systemPrompt = controlSystemPrompt;
             } else {
                 // AI作品标签页
                 userMessageContent = agentSystemPrompt + input;
@@ -352,6 +434,11 @@ class AIPanel extends React.PureComponent {
                 this.handleCostumeGeneration(reply);
             }
             
+            // 如果是AI操控标签页，解析并执行快捷键
+            if (isAgent && isControlTab) {
+                this.handleControlCommand(reply);
+            }
+            
             this.setState(state => ({
                 messages: [...state.messages, {from: 'assistant', text: reply}],
                 loading: false
@@ -379,6 +466,194 @@ class AIPanel extends React.PureComponent {
             altKey: modifierKey === 'Alt',
             ctrlKey: modifierKey === 'Ctrl',
             shiftKey: modifierKey === 'Shift',
+            bubbles: true,
+            cancelable: true
+        });
+        
+        // 分发事件到文档
+        document.dispatchEvent(keyDownEvent);
+        setTimeout(() => {
+            document.dispatchEvent(keyUpEvent);
+        }, 100);
+    }
+    
+    // 处理AI操控命令
+    handleControlCommand (aiResponse) {
+        // 检查是否是项目分析命令
+        if (aiResponse.includes('[ANALYZE_PROJECT]')) {
+            this.analyzeProject();
+            return;
+        }
+        
+        // 解析快捷键格式 [Ctrl+S] 或 [Alt+2] 等
+        const shortcutMatch = aiResponse.match(/\[([\w+]+)\]/);
+        if (!shortcutMatch) {
+            console.log('No shortcut found in response:', aiResponse);
+            return;
+        }
+        
+        const shortcut = shortcutMatch[1];
+        console.log('Executing shortcut:', shortcut);
+        
+        // 解析快捷键组合
+        const parts = shortcut.split('+');
+        let ctrl = false, alt = false, shift = false;
+        let key = '';
+        
+        parts.forEach(part => {
+            const lowerPart = part.trim().toLowerCase();
+            if (lowerPart === 'ctrl') ctrl = true;
+            else if (lowerPart === 'alt') alt = true;
+            else if (lowerPart === 'shift') shift = true;
+            else key = part.trim();
+        });
+        
+        // 模拟键盘事件
+        this.simulateComplexKeyPress(ctrl, alt, shift, key);
+        
+        // 添加系统消息提示用户
+        this.setState(state => ({
+            messages: [...state.messages, {from: 'system', text: `✅ 已执行: ${shortcut}`}]
+        }));
+    }
+    
+    // 分析当前项目
+    async analyzeProject () {
+        if (!this.props.vm) {
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: '❌ VM实例不可用，无法分析项目'}]
+            }));
+            return;
+        }
+        
+        try {
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: '📊 正在分析项目，请稍候...'}],
+                loading: true
+            }));
+            
+            // 获取项目JSON数据
+            const projectJSON = this.props.vm.toJSON();
+            const projectData = JSON.parse(projectJSON);
+            
+            // 简化项目数据，只保留关键信息
+            const simplifiedProject = this.simplifyProjectData(projectData);
+            
+            // 将简化后的项目数据发送给AI分析
+            await this.sendProjectToAIForAnalysis(simplifiedProject);
+            
+        } catch (error) {
+            console.error('项目分析失败:', error);
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: `❌ 项目分析失败: ${error.message}`}],
+                loading: false
+            }));
+        }
+    }
+    
+    // 简化项目数据，只保留关键信息
+    simplifyProjectData (projectData) {
+        const simplified = {
+            targets: [],
+            meta: projectData.meta
+        };
+        
+        if (projectData.targets) {
+            simplified.targets = projectData.targets.map(target => ({
+                name: target.name,
+                isStage: target.isStage,
+                variables: target.variables ? Object.keys(target.variables).length : 0,
+                lists: target.lists ? Object.keys(target.lists).length : 0,
+                broadcasts: target.broadcasts ? Object.keys(target.broadcasts).length : 0,
+                blocks: target.blocks ? Object.keys(target.blocks).length : 0,
+                costumes: target.costumes ? target.costumes.length : 0,
+                sounds: target.sounds ? target.sounds.length : 0,
+                visible: target.visible,
+                x: target.x,
+                y: target.y,
+                direction: target.direction,
+                size: target.size
+            }));
+        }
+        
+        return simplified;
+    }
+    
+    // 将项目数据发送给AI分析
+    async sendProjectToAIForAnalysis (projectData) {
+        const analysisPrompt = `请分析以下Scratch项目，提供详细的项目分析报告：
+
+## 项目数据
+${JSON.stringify(projectData, null, 2)}
+
+## 分析要求
+请从以下几个方面进行分析：
+1. 项目概述：项目包含多少个角色、背景、变量等
+2. 角色分析：每个角色的功能、位置、大小等属性
+3. 复杂度评估：积木数量、变量使用情况等
+4. 建议改进：可以优化的地方或添加的功能
+
+请用中文回答，格式清晰易读。`;
+
+        try {
+            const response = await fetch(API_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + API_KEY
+                },
+                body: JSON.stringify({
+                    model: MODEL,
+                    messages: [
+                        {role: 'system', content: '你是Scratch项目分析专家，专门分析Scratch项目的结构和功能。'},
+                        {role: 'user', content: analysisPrompt}
+                    ]
+                })
+            });
+            
+            const data = await response.json();
+            let reply = null;
+            if (data && data.choices && data.choices[0]) {
+                const choice = data.choices[0];
+                if (choice.message && choice.message.content) reply = choice.message.content;
+                else if (choice.text) reply = choice.text;
+            }
+            if (!reply) reply = JSON.stringify(data);
+            
+            this.setState(state => ({
+                messages: [...state.messages, 
+                    {from: 'system', text: '✅ 项目分析完成！'},
+                    {from: 'assistant', text: reply}
+                ],
+                loading: false
+            }), this.scrollToBottom);
+            
+        } catch (error) {
+            console.error('AI分析请求失败:', error);
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: `❌ AI分析请求失败: ${error.message}`}],
+                loading: false
+            }));
+        }
+    }
+    
+    // 模拟复杂键盘组合
+    simulateComplexKeyPress (ctrl, alt, shift, key) {
+        // 创建键盘按下事件
+        const keyDownEvent = new KeyboardEvent('keydown', {
+            key: key,
+            ctrlKey: ctrl,
+            altKey: alt,
+            shiftKey: shift,
+            bubbles: true,
+            cancelable: true
+        });
+        
+        const keyUpEvent = new KeyboardEvent('keyup', {
+            key: key,
+            ctrlKey: ctrl,
+            altKey: alt,
+            shiftKey: shift,
             bubbles: true,
             cancelable: true
         });
@@ -1469,6 +1744,12 @@ class AIPanel extends React.PureComponent {
                                     >
                                         AI造型
                                     </button>
+                                    <button 
+                                        className={classNames(styles.tab, {[styles.activeTab]: this.state.activeTab === 'control'})}
+                                        onClick={() => this.handleTabChange('control')}
+                                    >
+                                        AI操控
+                                    </button>
                                 </div>
                             </div>
                         ) : (
@@ -1716,6 +1997,60 @@ class AIPanel extends React.PureComponent {
                             <div className={styles.warningContent}>
                                 <strong><span>警告：</span></strong>
                                 <span dangerouslySetInnerHTML={{__html: '内容为AI生成,请注意仔细鉴别<br/>此功能用于生成SVG造型，可直接使用。<br/>用来生成造型的是文字处理模型，可能会不满您的预期，敬请谅解。'}} />
+                            </div>
+                        </div>
+                        </div>
+                    )}
+                    
+                    {isAgent && this.state.activeTab === 'control' && (
+                        <div className={styles.tabContent}>
+                            <div className={styles.messagesWrapper}>
+                            <div className={styles.messages}>
+                                {this.state.messages.map((m, i) => (
+                                    <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
+                                        {m.from === 'user' ? (
+                                            m.text
+                                        ) : (
+                                            <MarkdownRenderer content={m.text} />
+                                        )}
+                                    </div>
+                                ))}
+                                <div ref={this.messagesEnd} />
+                            </div>
+                        </div>
+                        {this.state.loading && <div className={styles.loading}>思考中...</div>}
+                        {this.state.error && <div className={styles.error}>{this.state.error}</div>}
+                        <div className={styles.controls}>
+                            <textarea 
+                                ref={this.inputRef} 
+                                className={styles.input} 
+                                value={this.state.input} 
+                                onChange={this.handleChange} 
+                                placeholder="例如：保存项目、切换到造型编辑器、运行项目..."
+                                disabled={this.state.loading}
+                            />
+                            <div className={styles.actions}>
+                                <Button 
+                                    onClick={this.handleSend} 
+                                    className={styles.sendButton} 
+                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === ''}
+                                >
+                                    发送
+                                </Button>
+                            </div>
+                        </div>
+                        {/* 警告消息 - 放在底部 */}
+                        <div className={styles.warningBanner}>
+                            <div className={styles.warningIcon}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+                                    <path d="M12 9v4"></path>
+                                    <path d="M12 17h.01"></path>
+                                </svg>
+                            </div>
+                            <div className={styles.warningContent}>
+                                <strong><span>提示：</span></strong>
+                                <span dangerouslySetInnerHTML={{__html: 'AI操控可以通过自然语言控制编辑器功能<br/>例如："保存项目"、"切换到造型编辑器"、"运行项目"等<br/>新增：输入"分析项目"或"项目报告"可以让AI分析当前项目结构'}} />
                             </div>
                         </div>
                         </div>
