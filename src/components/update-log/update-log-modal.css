@@ -429,3 +429,38 @@
 .modalContent::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
+
+/* 警告框样式 */
+.warningBanner {
+    background: rgba(255, 193, 7, 0.15);
+    color: #f57c00;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border-left: 4px solid #ffc107;
+}
+
+.warningIcon {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.warningIcon svg {
+    color: #ffc107;
+    width: 20px;
+    height: 20px;
+}
+
+.warningContent {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.warningContent strong {
+    font-weight: 600;
+    margin-right: 4px;
+}
