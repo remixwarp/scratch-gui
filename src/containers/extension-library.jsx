@@ -266,13 +266,13 @@ class ExtensionLibrary extends React.PureComponent {
             galleryError: null,
             galleryTimedOut: false
         };
-        this.isMounted = false;
+        this._isMounted = false;
     }
     componentDidMount() {
-        this.isMounted = true;
+        this._isMounted = true;
         if (!this.state.gallery) {
             const timeout = setTimeout(() => {
-                if (this.isMounted) {
+                if (this._isMounted) {
                     this.setState({
                         galleryTimedOut: true
                     });
@@ -281,7 +281,7 @@ class ExtensionLibrary extends React.PureComponent {
 
             fetchLibrary()
                 .then(gallery => {
-                    if (this.isMounted) {
+                    if (this._isMounted) {
                         cachedGallery = gallery;
                         this.setState({
                             gallery
@@ -291,7 +291,7 @@ class ExtensionLibrary extends React.PureComponent {
                 })
                 .catch(error => {
                     log.error(error);
-                    if (this.isMounted) {
+                    if (this._isMounted) {
                         this.setState({
                             galleryError: error
                         });
@@ -301,7 +301,7 @@ class ExtensionLibrary extends React.PureComponent {
         }
     }
     componentWillUnmount() {
-        this.isMounted = false;
+        this._isMounted = false;
     }
     handleItemSelect(item) {
         if (item.href) {
