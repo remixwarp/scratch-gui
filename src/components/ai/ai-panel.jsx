@@ -5,7 +5,7 @@ import styles from './ai-panel.css';
 import Button from '../button/button.jsx';
 import MarkdownRenderer from '../markdown-renderer/markdown-renderer.jsx';
 import {sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
-import {costumeUpload} from '../../lib/file-uploader.js';
+import {costumeUpload, soundUpload} from '../../lib/file-uploader.js';
 
 const API_ENDPOINT = 'https://api.siliconflow.cn/v1/chat/completions';
 const API_KEY = 'sk-madarokutonlejxkgjktphhujojhyinkpfltpxynypjvsvfq';
@@ -39,6 +39,8 @@ class AIPanel extends React.PureComponent {
         this.handleMultiStepStart = this.handleMultiStepStart.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
         this.handleAddCostume = this.handleAddCostume.bind(this);
+        this.handleAddSound = this.handleAddSound.bind(this);
+        this.handleDownloadSound = this.handleDownloadSound.bind(this);
         this.messagesEnd = React.createRef();
         this.inputRef = React.createRef();
     }
@@ -319,36 +321,40 @@ class AIPanel extends React.PureComponent {
 
 ## 声音描述格式
 
-当用户要求生成声音时，请按以下格式描述：
-
 ### 语音旁白格式
 [VOICE] 文字内容 | 音色：男声/女声/童声 | 语速：正常/快/慢 | 音调：正常/高/低
-
-例如：
-用户说"生成一个角色说'你好，欢迎来到我的游戏！'的语音"
-你应该返回：[VOICE] 你好，欢迎来到我的游戏！ | 音色：女声 | 语速：正常 | 音调：正常
 
 ### 音效格式
 [EFFECT] 音效名称 | 时长：秒数 | 风格：描述风格 | 音量：百分比
 
-例如：
-用户说"生成一个点击按钮的音效"
-你应该返回：[EFFECT] 点击音效 | 时长：0.2 | 风格：清脆 | 音量：80
-
 ### 音乐格式
 [MUSIC] 音乐描述 | 时长：秒数 | 风格：描述风格 | 节奏：描述节奏 | 音量：百分比
 
-例如：
+## 重要提示
+
+1. 必须根据用户的具体要求生成声音描述，不要使用固定的模板
+2. 每次生成都要根据用户的输入内容创建不同的声音描述
+3. 音效名称、音乐描述等必须与用户输入的内容相关
+4. 时长、风格、节奏、音量等参数要根据用户要求合理设置
+5. 不要重复使用示例中的内容，每次都要生成新的、符合用户要求的描述
+6. 如果用户没有指定时长，可以设置为5-30秒之间的合理值
+7. 如果用户没有指定音量，可以设置为60-90之间的合理值
+8. 风格和节奏描述要具体且多样化，不要重复使用相同的描述
+9. 音效名称要准确反映用户描述的声音类型（如：爆炸声、跳跃声、开门声等）
+10. 音乐描述要准确反映用户描述的音乐风格（如：悲伤的钢琴曲、激昂的摇滚乐、平静的轻音乐等）
+
+## 示例参考（仅供参考，不要直接复制）
+
+用户说"生成一个角色说'你好，欢迎来到我的游戏！'的语音"
+你应该返回：[VOICE] 你好，欢迎来到我的游戏！ | 音色：女声 | 语速：正常 | 音调：正常
+
+用户说"生成一个点击按钮的音效"
+你应该返回：[EFFECT] 点击音效 | 时长：0.2 | 风格：清脆 | 音量：80
+
 用户说"生成一个欢快的背景音乐"
 你应该返回：[MUSIC] 欢快的背景音乐 | 时长：10 | 风格：欢快明亮 | 节奏：轻快 | 音量：60
 
-## 注意事项
-
-1. 所有声音描述必须使用上述格式
-2. 时长建议：语音5-30秒，音效0.1-3秒，音乐5-30秒
-3. 音量范围：0-100
-4. 风格描述要具体，如"欢快"、"悲伤"、"神秘"等
-5. 如果用户要求不明确，可以询问更多细节`;
+现在请根据用户的要求生成声音描述，确保每次都生成符合用户具体要求的新内容。`;
         
         // AI操控的系统提示词
         const controlSystemPrompt = `你是RemixWarp的AI操控助手，专门帮助用户通过自然语言控制Scratch编辑器的各种功能。
@@ -994,57 +1000,35 @@ ${JSON.stringify(projectData, null, 2)}
             // 生成WAV格式的音频数据
             const wavData = this.generateWAV(generatedSound);
             
-            // 计算MD5哈希
-            const md5 = this.calculateMD5(wavData);
-            
-            // 创建声音对象
-            const soundObject = {
-                assetId: md5,
-                name: generatedSound.description,
-                dataFormat: 'wav',
-                format: '',
-                md5ext: `${md5}.wav`,
-                data: wavData,
-                sampleCount: wavData.length / 2,
-                rate: 44100,
-                soundID: -1
-            };
-            
-            // 使用audioEngine解码声音
-            const runtime = this.props.vm.runtime;
-            if (runtime.audioEngine) {
-                runtime.audioEngine.decodeSoundPlayer(soundObject).then(soundPlayer => {
-                    soundObject.soundId = soundPlayer.id;
-                    const soundBuffer = soundPlayer.buffer;
-                    soundObject.rate = soundBuffer.sampleRate;
-                    soundObject.sampleCount = soundBuffer.length;
-                    
-                    // 添加声音到soundBank
-                    const target = this.props.vm.editingTarget;
-                    if (target.sprite.soundBank) {
-                        target.sprite.soundBank.addSoundPlayer(soundPlayer);
-                    }
-                    
-                    // 添加声音到目标
-                    target.addSound(soundObject);
-                    
-                    // 触发更新
-                    this.props.vm.emitTargetsUpdate();
-                    
+            // 使用soundUpload函数处理声音上传（类似costumeUpload）
+            const storage = this.props.vm.runtime.storage;
+            soundUpload(wavData.buffer, 'audio/wav', storage, (vmSound) => {
+                console.log('Sound created by soundUpload:', vmSound);
+                
+                // 设置声音名称
+                vmSound.name = generatedSound.description;
+                
+                // 获取目标ID
+                const targetId = this.props.vm.editingTarget.id;
+                
+                // 添加声音到目标
+                this.props.vm.addSound(vmSound, targetId).then(() => {
+                    console.log('Sound added successfully!');
                     this.setState(state => ({
                         messages: [...state.messages, {from: 'system', text: `🎵 声音"${generatedSound.description}"已成功添加到项目中！`}]
                     }));
                 }).catch(error => {
-                    console.error('解码声音失败:', error);
+                    console.error('添加声音失败:', error);
                     this.setState(state => ({
-                        messages: [...state.messages, {from: 'system', text: `❌ 解码声音失败: ${error.message}`}]
+                        messages: [...state.messages, {from: 'system', text: `❌ 添加声音失败: ${error.message}`}]
                     }));
                 });
-            } else {
+            }, (error) => {
+                console.error('soundUpload失败:', error);
                 this.setState(state => ({
-                    messages: [...state.messages, {from: 'system', text: '❌ 音频引擎不可用'}]
+                    messages: [...state.messages, {from: 'system', text: `❌ 处理声音失败: ${error}`}]
                 }));
-            }
+            });
         } catch (error) {
             console.error('添加声音失败:', error);
             console.error('Error stack:', error.stack);
@@ -1072,6 +1056,45 @@ ${JSON.stringify(projectData, null, 2)}
         }
         
         return hashString;
+    }
+    
+    // 下载音频文件
+    handleDownloadSound () {
+        const {generatedSound} = this.state;
+        
+        if (!generatedSound) {
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: '❌ 没有可下载的声音'}]
+            }));
+            return;
+        }
+        
+        try {
+            // 生成WAV格式的音频数据
+            const wavData = this.generateWAV(generatedSound);
+            
+            // 创建Blob对象
+            const blob = new Blob([wavData], { type: 'audio/wav' });
+            
+            // 创建下载链接
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${generatedSound.description}.wav`;
+            a.click();
+            
+            // 释放URL对象
+            URL.revokeObjectURL(url);
+            
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: `💾 音频已下载：${generatedSound.description}.wav`}]
+            }));
+        } catch (error) {
+            console.error('下载音频失败:', error);
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: `❌ 下载音频失败: ${error.message}`}]
+            }));
+        }
     }
 
     // 生成WAV格式的音频数据
@@ -2457,13 +2480,24 @@ ${JSON.stringify(projectData, null, 2)}
                                         )}
                                     </div>
                                 </div>
-                                <Button 
-                                    onClick={this.handleAddSound} 
-                                    className={styles.addCostumeButton}
-                                    variant="primary"
-                                >
-                                    添加到声音
-                                </Button>
+                                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                    <Button 
+                                        onClick={this.handleAddSound} 
+                                        className={styles.addCostumeButton}
+                                        variant="primary"
+                                        style={{ flex: 1 }}
+                                    >
+                                        添加到声音
+                                    </Button>
+                                    <Button 
+                                        onClick={this.handleDownloadSound} 
+                                        className={styles.addCostumeButton}
+                                        variant="secondary"
+                                        style={{ flex: 1 }}
+                                    >
+                                        下载音频
+                                    </Button>
+                                </div>
                             </div>
                         )}
                         {/* 警告消息 - 放在底部 */}
@@ -2477,7 +2511,7 @@ ${JSON.stringify(projectData, null, 2)}
                             </div>
                             <div className={styles.warningContent}>
                                 <strong><span>提示：</span></strong>
-                                <span dangerouslySetInnerHTML={{__html: 'AI声音可以通过自然语言生成语音、音效和音乐<br/>例如："生成一个点击按钮的音效"、"生成一段欢快的背景音乐"<br/>生成的声音会自动切换到声音编辑器（Alt+3）'}} />
+                                <span dangerouslySetInnerHTML={{__html: 'AI声音可以通过自然语言生成语音、音效和音乐<br/>例如："生成一个点击按钮的音效"、"生成一段欢快的背景音乐"<br/>生成声音时会自动切换到声音编辑器'}} />
                             </div>
                         </div>
                         </div>
