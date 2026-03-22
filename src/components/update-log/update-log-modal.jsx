@@ -58,17 +58,56 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors }) => {
                 </div>
 
                 <div className={styles.modalContent}>
+                    <div className={styles.warningBanner}>
+                        <div className={styles.warningIcon}>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                                <path d="M12 9v4" />
+                                <path d="M12 17h.01" />
+                            </svg>
+                        </div>
+                        <div className={styles.warningContent}>
+                            <strong>
+                                <FormattedMessage
+                                    defaultMessage="注意："
+                                    description="Warning label"
+                                    id="gui.updateLog.warningLabel"
+                                />
+                            </strong>
+                            <span>
+                                <FormattedMessage
+                                    defaultMessage="此版本信息是从代码仓库读取的最新更新内容。由于部署需要一定时间，新功能可能需要等待一段时间才能在当前环境中显示。请耐心等待部署完成。具体时间请参考提交版本时间后的10~20分钟。"
+                                    description="Warning message about deployment delay"
+                                    id="gui.updateLog.warningMessage"
+                                />
+                            </span>
+                        </div>
+                    </div>
                     {versions.map((versionInfo, index) => (
                         <div key={versionInfo.version} className={styles.versionSection}>
                             <div className={styles.versionInfo}>
-                                <div className={styles.versionBadge} style={{ 
-                                    background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` 
-                                }}>
+                                <div
+                                    className={styles.versionBadge}
+                                    style={{
+                                        background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
+                                    }}
+                                >
                                     <FormattedMessage
                                         defaultMessage="版本 {version}"
                                         description="Version number display"
                                         id="gui.updateLog.version"
-                                        values={{ version: versionInfo.version }}
+                                        values={{version: versionInfo.version}}
                                     />
                                 </div>
                                 <div className={styles.updateDate}>
@@ -76,7 +115,7 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors }) => {
                                         defaultMessage="更新日期: {date}"
                                         description="Update date display"
                                         id="gui.updateLog.date"
-                                        values={{ date: versionInfo.date }}
+                                        values={{date: versionInfo.date}}
                                     />
                                 </div>
                             </div>
