@@ -286,10 +286,6 @@ const GUIComponent = props => {
     const [stagePanelWidth, setStagePanelWidth] = useState(null);
     const [stageContainerWidth, setStageContainerWidth] = useState(null);
 
-    const handleStagePanelResizeDoubleClick = useCallback(() => {
-        setStagePanelWidth(null);
-    }, []);
-
     const getStageBorderExtraWidth = useCallback(containerEl => {
         if (!containerEl || typeof window === 'undefined') return 0;
         
@@ -392,134 +388,6 @@ const GUIComponent = props => {
             }
         };
     }, [measureStageContainerWidth]);
-
-    const handleStagePanelResizePointerDown = useCallback(e => {
-        if (typeof e.button !== 'undefined' && e.button !== 0) return;
-        e.preventDefault();
-
-        const el = stageAndTargetWrapperRef.current;
-        if (!el) return;
-        const editorEl = editorWrapperRef.current;
-        const startRect = el.getBoundingClientRect();
-        const computedStyle = window.getComputedStyle(el);
-        const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
-        const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
-        const borderExtra = getStageBorderExtraWidth(el);
-        const editorRect = editorEl ? editorEl.getBoundingClientRect() : null;
-        const startX = (typeof e.clientX === 'number') ? e.clientX : 0;
-        const startWidth = startRect.width;
-        const startInnerWidth = Math.max(0, startWidth - paddingLeft - paddingRight - borderExtra);
-
-        setStageContainerWidth(Math.round(startInnerWidth));
-
-        if (e.currentTarget &&
-            typeof e.currentTarget.setPointerCapture === 'function' &&
-            typeof e.pointerId === 'number') {
-            try {
-                e.currentTarget.setPointerCapture(e.pointerId);
-            } catch (err) {
-                // ignore
-            }
-        }
-
-        const minWidth = Math.max(0, (FIXED_WIDTH * 0.5) + paddingLeft + paddingRight + borderExtra);
-
-        const containerEl = editorEl ? editorEl.parentElement : null;
-        const containerRect = containerEl ? containerEl.getBoundingClientRect() : null;
-        const containerWidth = (containerRect && Number.isFinite(containerRect.width)) ?
-            containerRect.width :
-            window.innerWidth;
-        const resizerRect = (e.currentTarget && typeof e.currentTarget.getBoundingClientRect === 'function') ?
-            e.currentTarget.getBoundingClientRect() : null;
-        const resizerWidth = (resizerRect && Number.isFinite(resizerRect.width)) ? resizerRect.width : 6;
-
-        const maxWidthByEditor = Math.max(minWidth, containerWidth - MIN_EDITOR_PANE_WIDTH - resizerWidth);
-
-        let stageWrapperEl = el.querySelector('[class*="stage-wrapper_stage-wrapper"]');
-        if (!stageWrapperEl) {
-            const candidates = Array.from(el.querySelectorAll('[class*="stage-wrapper"]'));
-            stageWrapperEl = candidates.find(candidate => candidate.querySelector('[class*="stage-header"]'));
-        }
-        const stageCanvasEl = stageWrapperEl ? stageWrapperEl.querySelector('[class*="stage_stage"]') : null;
-
-        const stageWrapperRect = stageWrapperEl ? stageWrapperEl.getBoundingClientRect() : null;
-        const stageCanvasRect = stageCanvasEl ? stageCanvasEl.getBoundingClientRect() : null;
-        const stageOverheadHeight = (stageWrapperRect && stageCanvasRect) ?
-            Math.max(0, stageWrapperRect.height - stageCanvasRect.height) :
-            88;
-
-        const maxStageCanvasHeight = Math.max(
-            0,
-            startRect.height - MIN_TARGET_PANE_HEIGHT - stageOverheadHeight
-        );
-
-        const customSize = props.customStageSize;
-        const widthPerHeight = (customSize && customSize.height > 0) ?
-            (customSize.width / customSize.height) :
-            (4 / 3);
-        const maxInnerWidthByHeight = (maxStageCanvasHeight * widthPerHeight) + 2;
-        const maxWidthByHeight = Math.max(
-            minWidth,
-            maxInnerWidthByHeight + paddingLeft + paddingRight + borderExtra
-        );
-
-        const maxWidth = Math.min(maxWidthByEditor, maxWidthByHeight);
-
-        const stageIsLeft = editorRect ? (startRect.left < editorRect.left) : false;
-        const directionFactor = stageIsLeft ? 1 : -1;
-
-        let moveRaf = null;
-        const onMove = ev => {
-            if (moveRaf) return;
-            
-            moveRaf = requestAnimationFrame(() => {
-                moveRaf = null;
-                
-                const x = (typeof ev.clientX === 'number') ? ev.clientX : 0;
-                const dx = x - startX;
-                const nextWidth = Math.min(maxWidth, Math.max(minWidth, startWidth + (dx * directionFactor)));
-                const nextInnerWidth = Math.max(0, nextWidth - paddingLeft - paddingRight - borderExtra);
-                
-                setStagePanelWidth(nextWidth);
-                setStageContainerWidth(prev => {
-                    if (typeof prev === 'number' && Math.abs(prev - nextInnerWidth) < 0.5) {
-                        return prev;
-                    }
-                    return nextInnerWidth;
-                });
-
-                if (!props.isFullScreen &&
-                    props.stageSizeMode !== STAGE_SIZE_MODES.small &&
-                    typeof props.onSetStageSize === 'function' &&
-                    nextInnerWidth < AUTO_SMALL_STAGE_INNER_WIDTH) {
-                    autoSmallStageActiveRef.current = true;
-                    props.onSetStageSize(STAGE_SIZE_MODES.small);
-                }
-            });
-        };
-
-        const onUp = () => {
-            if (moveRaf) {
-                cancelAnimationFrame(moveRaf);
-                moveRaf = null;
-            }
-            window.removeEventListener('pointermove', onMove);
-            window.removeEventListener('pointerup', onUp);
-            window.removeEventListener('mousemove', onMove);
-            window.removeEventListener('mouseup', onUp);
-        };
-
-        window.addEventListener('pointermove', onMove);
-        window.addEventListener('pointerup', onUp);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('mouseup', onUp);
-    }, [
-        getStageBorderExtraWidth,
-        props.customStageSize,
-        props.isFullScreen,
-        props.onSetStageSize,
-        props.stageSizeMode
-    ]);
 
     const {
         accountNavOpen,
@@ -1009,15 +877,6 @@ const GUIComponent = props => {
                                 <Backpack host={backpackHost} />
                             ) : null}
                         </Box>
-
-                        <Box
-                            className={styles.stagePaneResizer}
-                            onPointerDown={handleStagePanelResizePointerDown}
-                            onDoubleClick={handleStagePanelResizeDoubleClick}
-                            role="separator"
-                            aria-orientation="vertical"
-                            tabIndex={-1}
-                        />
 
                         <Box
                             className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}
