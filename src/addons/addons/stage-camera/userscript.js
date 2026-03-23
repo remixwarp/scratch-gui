@@ -96,11 +96,38 @@ export default async function ({ addon, console, msg }) {
 
     controlsContainer.appendChild(buttonsContainer);
 
-    // Zoom display
-    const zoomDisplay = document.createElement('div');
-    zoomDisplay.className = 'sa-stage-camera-zoom-display';
-    zoomDisplay.textContent = zoom + '%';
-    controlsContainer.appendChild(zoomDisplay);
+    // Zoom input container
+    const zoomInputContainer = document.createElement('div');
+    zoomInputContainer.className = 'sa-stage-camera-zoom-input-container';
+    
+    // Zoom input
+    const zoomInput = document.createElement('input');
+    zoomInput.className = 'sa-stage-camera-zoom-input';
+    zoomInput.type = 'number';
+    zoomInput.min = '50';
+    zoomInput.max = '200';
+    zoomInput.value = zoom;
+    zoomInput.addEventListener('change', () => {
+        let newZoom = parseInt(zoomInput.value, 10);
+        if (isNaN(newZoom)) newZoom = 100;
+        newZoom = Math.max(50, Math.min(200, newZoom));
+        zoom = newZoom;
+        updateZoom();
+    });
+    zoomInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            zoomInput.blur();
+        }
+    });
+    
+    // Zoom percentage label
+    const zoomLabel = document.createElement('span');
+    zoomLabel.className = 'sa-stage-camera-zoom-label';
+    zoomLabel.textContent = '%';
+    
+    zoomInputContainer.appendChild(zoomInput);
+    zoomInputContainer.appendChild(zoomLabel);
+    controlsContainer.appendChild(zoomInputContainer);
 
     // Add to stage selector
     stageSelector.style.position = 'relative';
@@ -228,13 +255,30 @@ export default async function ({ addon, console, msg }) {
 
     // Update zoom function
     function updateZoom() {
-        zoomDisplay.textContent = zoom + '%';
+        // Update input value
+        if (zoomInput) {
+            zoomInput.value = zoom;
+        }
         
         // Apply zoom to stage canvas
         const stageCanvas = document.querySelector("[class*='stage_stage']");
         if (stageCanvas) {
             stageCanvas.style.transform = `scale(${zoom / 100})`;
             stageCanvas.style.transformOrigin = 'center center';
+        }
+        
+        // If in window mode, resize the window to fit the zoomed stage
+        if (isWindowMode && windowContainer) {
+            const baseWidth = 480;
+            const baseHeight = 360;
+            const headerHeight = 40; // Approximate header height
+            const padding = 20; // Padding for window content
+            
+            const scaledWidth = Math.round(baseWidth * (zoom / 100)) + padding;
+            const scaledHeight = Math.round(baseHeight * (zoom / 100)) + headerHeight + padding;
+            
+            windowContainer.style.width = scaledWidth + 'px';
+            windowContainer.style.height = scaledHeight + 'px';
         }
     }
 
