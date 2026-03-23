@@ -474,5 +474,7 @@
   "tw-remove-feedback/@description": "从菜单栏中移除反馈按钮。",
   "tw-remove-feedback/@name": "移除反馈按钮",
   "tw-straighten-comments/@description": "强制积木注释始终通过一条水平直线连接到其源积木，而不是以倾斜角度连接。",
-  "tw-straighten-comments/@name": "保持积木注释连接为直线"
+  "tw-straighten-comments/@name": "保持积木注释连接为直线",
+  "sprite-folders/@name": "角色文件列表视图",
+  "sprite-folders/@description": "将角色列表转换为 VSCode 风格的文件浏览器，支持文件夹（使用 // 文件夹命名方式）。"
 }
