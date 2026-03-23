@@ -459,5 +459,21 @@
   "tw.collaboration.error.connectionTimeout": "连接到房间 \"{roomId}\" 超时。主机可能不可用。",
   "tw.collaboration.error.hostUnavailable": "无法连接到主机。房间 \"{roomId}\" 可能不存在或主机离线。",
   "tw.collaboration.error.iceConnectionFailed": "ICE 连接在 {attempts} 次尝试后失败。这可能是网络问题。",
-  "tw.collaboration.error.unknown": "连接失败：{error}"
+  "tw.collaboration.error.unknown": "连接失败：{error}",
+  "sprite-folders/expand-all": "展开全部",
+  "sprite-folders/collapse-all": "收起全部",
+  "sprite-folders/new-folder": "新建文件夹",
+  "sprite-folders/folder-name-prompt": "请输入文件夹名称：",
+  "sprite-folders/folder-exists": "文件夹已存在！",
+  "sprite-folders/rename-folder-prompt": "请输入新的文件夹名称：{name}",
+  "sprite-folders/delete-folder-with-sprites": "确定要删除文件夹\"{name}\"及其所有角色吗？",
+  "sprite-folders/remove-empty-folder": "确定要删除空文件夹\"{name}\"吗？",
+  "sprite-folders/untitled": "未命名",
+  "sprite-folders/rename": "重命名",
+  "sprite-folders/delete": "删除",
+  "sprite-folders/remove-folder": "移除文件夹",
+  "sprite-folders/duplicate": "复制",
+  "sprite-folders/export": "导出",
+  "sprite-folders/rename-sprite-prompt": "请输入新的角色名称：",
+  "sprite-folders/delete-sprite-confirm": "确定要删除此角色吗？"
 }

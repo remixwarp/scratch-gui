@@ -51,19 +51,16 @@ import gdxforConnectionSmallIconURL from './gdxfor/gdxfor-small.svg';
 
 import twIcon from './tw/tw.svg';
 import customExtensionIcon from './custom/custom.svg';
-import galleryIcon from './gallery/gallery.png';
+import galleryIcon from './gallery/gallery.svg';
 import {APP_NAME} from '../../constants/brand';
 
 export default [
     {
         name: (
             <FormattedMessage
-                defaultMessage="{APP_NAME} Blocks"
-                description="Name of the strange 'TurboWarp Blocks' extension"
-                id="tw.twExtension.name"
-                values={{
-                    APP_NAME
-                }}
+                defaultMessage="TurboWarp 积木"
+                description="Name of the TurboWarp extension category"
+                id="tw.extension.turboWarp.name"
             />
         ),
         extensionId: 'tw',

@@ -498,7 +498,7 @@ export default async ({ addon, console, msg }) => {
     function removeContextMenu() {
         const last_menu = document.getElementsByClassName('sa-folder-context-menu');
         try {
-            for (let i = 0; i <= last_menu.length; i += 1) {
+            for (let i = 0; i < last_menu.length; i += 1) {
                 last_menu[i].remove();
             }
         } catch (e) {
