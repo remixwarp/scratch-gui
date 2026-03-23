@@ -27,6 +27,7 @@ import AuthorInfo from './author-info.jsx';
 import SB3Downloader from '../../containers/sb3-downloader.jsx';
 import DeletionRestorer from '../../containers/deletion-restorer.jsx';
 import TurboMode from '../../containers/turbo-mode.jsx';
+import FramerateChanger from '../../containers/tw-framerate-changer.jsx';
 import MenuBarHOC from '../../containers/menu-bar-hoc.jsx';
 import SettingsMenu from './settings-menu.jsx';
 import TWViewCounter from './tw-view-counter.jsx';
@@ -146,7 +147,8 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
+    Zap, Gauge
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -1861,12 +1863,48 @@ class MenuBar extends React.Component {
                                                     defaultMessage="Cloud Variables are not Available"
                                                     // eslint-disable-next-line max-len
                                                     description="Menu bar item for when cloud variables are not available"
-                                                    id="tw.menuBar.cloudUnavailable"
-                                                />
-                                            )}
-                                        </MenuItem>
-                                    )}</CloudVariablesToggler>
-                                </MenuSection>
+                                                        id="tw.menuBar.cloudUnavailable"
+                                                    />
+                                                )}
+                                            </MenuItem>
+                                        )}</CloudVariablesToggler>
+                                        <TurboMode>{(toggleTurboMode, {turboMode}) => (
+                                            <MenuItem onClick={toggleTurboMode}>
+                                                <Zap />
+                                                {turboMode ? (
+                                                    <FormattedMessage
+                                                        defaultMessage="Turn off Turbo Mode"
+                                                        description="Menu bar item for turning off turbo mode"
+                                                        id="gui.menuBar.turboModeOff"
+                                                    />
+                                                ) : (
+                                                    <FormattedMessage
+                                                        defaultMessage="Turn on Turbo Mode"
+                                                        description="Menu bar item for turning on turbo mode"
+                                                        id="gui.menuBar.turboModeOn"
+                                                    />
+                                                )}
+                                            </MenuItem>
+                                        )}</TurboMode>
+                                        <FramerateChanger>{(changeFramerate, {framerate}) => (
+                                            <MenuItem onClick={changeFramerate}>
+                                                <Gauge />
+                                                {framerate === 60 ? (
+                                                    <FormattedMessage
+                                                        defaultMessage="Turn off 60 FPS Mode"
+                                                        description="Menu bar item for turning off 60 FPS mode"
+                                                        id="tw.menuBar.60off"
+                                                    />
+                                                ) : (
+                                                    <FormattedMessage
+                                                        defaultMessage="Turn on 60 FPS Mode"
+                                                        description="Menu bar item for turning on 60 FPS mode"
+                                                        id="tw.menuBar.60on"
+                                                    />
+                                                )}
+                                            </MenuItem>
+                                        )}</FramerateChanger>
+                                    </MenuSection>
                                 <MenuSection>
                                     <MenuItem
                                         onClick={() => {
