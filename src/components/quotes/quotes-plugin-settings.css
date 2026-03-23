@@ -8,17 +8,86 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
 }
 .panel {
     background: #fff;
-    padding: 12px 16px;
-    border-radius: 6px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-    min-width: 260px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    min-width: 400px;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
 }
-.title { margin: 0 0 8px 0; font-size: 14px; }
-.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; }
-.input { width: 80px; }
-.actions { display:flex; gap:8px; justify-content: flex-end; margin-top:8px }
-.save { background:#1f8ceb; color:#fff; border:none; padding:6px 10px; border-radius:4px }
-.cancel { background:transparent; border:1px solid #ccc; padding:6px 10px; border-radius:4px }
+.title { margin: 0 0 12px 0; font-size: 16px; font-weight: 600; }
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 12px 0;
+    font-size: 14px;
+}
+.input {
+    width: 80px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+.select {
+    width: 120px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+    cursor: pointer;
+}
+.textareaRow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0;
+    font-size: 14px;
+}
+.textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+.textarea:focus {
+    outline: none;
+    border-color: #1f8ceb;
+    box-shadow: 0 0 0 2px rgba(31, 140, 235, 0.2);
+}
+.actions { display:flex; gap:12px; justify-content: flex-end; margin-top:16px }
+.save {
+    background:#1f8ceb;
+    color:#fff;
+    border:none;
+    padding:8px 16px;
+    border-radius:4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.save:hover { background:#1976d2; }
+.cancel {
+    background:transparent;
+    border:1px solid #ccc;
+    padding:8px 16px;
+    border-radius:4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.cancel:hover { background:#f5f5f5; }

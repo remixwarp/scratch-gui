@@ -475,12 +475,22 @@ const Setting = ({
             {(setting.type === 'string' || setting.type === 'untranslated') && (
                 <React.Fragment>
                     {label}
-                    <TextInput
-                        id={uniqueId}
-                        type="text"
-                        value={value}
-                        onChange={newValue => SettingsStore.setAddonSetting(addonId, settingId, newValue)}
-                    />
+                    {setting.multiline ? (
+                        <textarea
+                            id={uniqueId}
+                            className={styles.textarea}
+                            value={value}
+                            onChange={e => SettingsStore.setAddonSetting(addonId, settingId, e.target.value)}
+                            rows={setting.rows || 5}
+                        />
+                    ) : (
+                        <TextInput
+                            id={uniqueId}
+                            type="text"
+                            value={value}
+                            onChange={newValue => SettingsStore.setAddonSetting(addonId, settingId, newValue)}
+                        />
+                    )}
                     <ResetButton
                         addonId={addonId}
                         settingId={settingId}

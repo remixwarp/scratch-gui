@@ -544,6 +544,23 @@ a:active, a:focus {
     height: 35px;
     box-sizing: border-box;
 }
+.setting textarea {
+    background: $input-background;
+    border: 1px solid $ui-black-transparent;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    min-width: 300px;
+    resize: vertical;
+    transition: 0.25s ease;
+    transition-property: background;
+}
+.setting textarea:focus, .setting textarea:active {
+    outline: none;
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 3px $looks-transparent;
+}
 .setting input[type="color"] {
     height: 30px;
     width: 100px;
