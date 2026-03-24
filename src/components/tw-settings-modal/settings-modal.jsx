@@ -313,7 +313,7 @@ const settingDefinitions = {
         },
         help: {
             // eslint-disable-next-line max-len
-            defaultMessage: '启用超级重构模式。启用后，您可以在代码编辑器中自由修改所有项目代码。编辑器外观不变，但所有代码都变得可编辑。点击编辑菜单中的超级重构按钮打开代码编辑器。',
+            defaultMessage: '启用超级重构模式。启用后，您可以在代码编辑器中自由修改所有项目代码，点击编辑菜单中的超级重构按钮打开代码编辑器。',
             description: 'Super Refactor help',
             id: 'tw.settingsModal.superRefactorHelp'
         }
