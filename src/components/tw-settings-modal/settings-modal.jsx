@@ -304,6 +304,19 @@ const settingDefinitions = {
             description: 'Real Layer Indexes help',
             id: 'tw.settingsModal.realLayerIndexesHelp'
         }
+    },
+    superRefactor: {
+        label: {
+            defaultMessage: '超级重构',
+            description: 'Super Refactor setting',
+            id: 'tw.settingsModal.superRefactor'
+        },
+        help: {
+            // eslint-disable-next-line max-len
+            defaultMessage: '启用超级重构模式。启用后，您可以在代码编辑器中自由修改所有项目代码。编辑器外观不变，但所有代码都变得可编辑。点击编辑菜单中的超级重构按钮打开代码编辑器。',
+            description: 'Super Refactor help',
+            id: 'tw.settingsModal.superRefactorHelp'
+        }
     }
 };
 
@@ -335,6 +348,7 @@ const RemoveMiscLimits = createBooleanSetting('RemoveMiscLimits', settingDefinit
 const WarpTimer = createBooleanSetting('WarpTimer', settingDefinitions.warpTimer);
 const CaseSensitiveLists = createBooleanSetting('CaseSensitiveLists', settingDefinitions.caseSensitiveLists);
 const RealLayerIndexes = createBooleanSetting('RealLayerIndexes', settingDefinitions.realLayerIndexes);
+const SuperRefactor = createBooleanSetting('SuperRefactor', settingDefinitions.superRefactor);
 
 const DisableCompiler = props => (
     <BooleanSetting
@@ -643,6 +657,13 @@ const pageConfigurations = {
                         props: props => ({
                             value: props.caseSensitiveLists,
                             onChange: props.onCaseSensitiveListsChange
+                        })
+                    },
+                    {
+                        component: SuperRefactor,
+                        props: props => ({
+                            value: props.superRefactor,
+                            onChange: props.onSuperRefactorChange
                         })
                     }
                 ]

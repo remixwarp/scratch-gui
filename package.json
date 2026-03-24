@@ -26,7 +26,9 @@
     "test:unit": "jest test[\\\\/]unit[\\\\/]addons",
     "test:smoke": "jest --runInBand test[\\\\/]smoke",
     "watch": "webpack --colors --watch",
-    "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint"
+    "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint",
+    "dev-server": "node scripts/dev-server.js",
+    "generate-files": "node scripts/generate-file-contents.js"
   },
   "config": {
     "commitizen": {

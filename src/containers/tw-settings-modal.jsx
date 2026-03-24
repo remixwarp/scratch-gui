@@ -25,7 +25,8 @@ class UsernameModal extends React.Component {
             debugMode: localStorage.getItem('mw:debug-mode') === 'true',
             showFPSCounter: localStorage.getItem('mw:show-fps-counter') === 'true',
             viewCompiledMode: localStorage.getItem('mw:view-compiled-mode') === 'true',
-            storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true'
+            storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true',
+            superRefactor: localStorage.getItem('mw:super-refactor') === 'true'
         };
 
         bindAll(this, [
@@ -48,7 +49,8 @@ class UsernameModal extends React.Component {
             'handleDebugModeChange',
             'handleShowFPSCounterChange',
             'handleViewCompiledModeChange',
-            'handleStoreThemeInProjectChange'
+            'handleStoreThemeInProjectChange',
+            'handleSuperRefactorChange'
         ]);
     }
 
@@ -200,6 +202,15 @@ class UsernameModal extends React.Component {
             // ignore
         }
     }
+
+    handleSuperRefactorChange (e) {
+        this.setState({superRefactor: e.target.checked});
+        try {
+            localStorage.setItem('mw:super-refactor', e.target.checked);
+        } catch (err) {
+            // ignore
+        }
+    }
     render () {
         const {
             /* eslint-disable no-unused-vars */
@@ -236,11 +247,13 @@ class UsernameModal extends React.Component {
                 onShowFPSCounterChange={this.handleShowFPSCounterChange}
                 onViewCompiledModeChange={this.handleViewCompiledModeChange}
                 onStoreThemeInProjectChange={this.handleStoreThemeInProjectChange}
+                onSuperRefactorChange={this.handleSuperRefactorChange}
                 optimizeAnimations={this.state.optimizeAnimations}
                 debugMode={this.state.debugMode}
                 showFPSCounter={this.state.showFPSCounter}
                 viewCompiledMode={this.state.viewCompiledMode}
                 storeThemeInProject={this.state.storeThemeInProject}
+                superRefactor={this.state.superRefactor}
                 theme={this.props.theme}
                 {...props}
             />

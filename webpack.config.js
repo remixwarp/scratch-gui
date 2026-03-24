@@ -46,6 +46,57 @@ const base = {
                 {from: /^\/\d+\/embed\/?$/, to: '/embed.html'},
                 {from: /^\/addons\/?$/, to: '/addons.html'}
             ]
+        },
+        // 代理超级重构后端服务器API
+        proxy: {
+            '/api/save-file': {
+                target: 'http://localhost:3456',
+                changeOrigin: true,
+                logLevel: 'debug'
+            }
+        },
+        // 启动时自动启动后端服务器
+        before: function(app, server, compiler) {
+            const { spawn } = require('child_process');
+            const path = require('path');
+            const net = require('net');
+
+            const SERVER_PORT = 3456;
+            const SERVER_SCRIPT = path.resolve(__dirname, 'scripts/dev-server.js');
+
+            // 检查端口是否被占用
+            function checkPort(port) {
+                return new Promise((resolve) => {
+                    const testServer = net.createServer();
+                    testServer.once('error', (err) => {
+                        if (err.code === 'EADDRINUSE') {
+                            resolve(true);
+                        } else {
+                            resolve(false);
+                        }
+                    });
+                    testServer.once('listening', () => {
+                        testServer.close();
+                        resolve(false);
+                    });
+                    testServer.listen(port);
+                });
+            }
+
+            // 自动启动后端服务器
+            checkPort(SERVER_PORT).then(isRunning => {
+                if (!isRunning) {
+                    console.log('\n[超级重构] 正在自动启动后端服务器...');
+                    const child = spawn('node', [SERVER_SCRIPT], {
+                        detached: true,
+                        stdio: 'ignore'
+                    });
+                    child.unref();
+                    console.log('[超级重构] 后端服务器启动命令已发送\n');
+                } else {
+                    console.log('\n[超级重构] 后端服务器已在运行\n');
+                }
+            });
         }
     },
     output: {
@@ -121,6 +172,10 @@ const base = {
                     limit: 16 * 1024
                 }
             }]
+        },
+        {
+            test: /\.raw\.(js|jsx|json|md)$/,
+            use: 'raw-loader'
         }]
     },
     plugins: [

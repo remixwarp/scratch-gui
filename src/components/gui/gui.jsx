@@ -50,6 +50,7 @@ import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import AIModal from '../../containers/ai-modal.jsx';
 import AIChatModal from '../../containers/ai-chat-modal.jsx';
 import AIAgentModal from '../../containers/ai-agent-modal.jsx';
+import SuperRefactorModal from '../../containers/super-refactor-modal.jsx';
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 import UpdateLogModal from '../../containers/update-log-modal.jsx';
 import BilmeModal from '../../containers/bl-bilme-modal.jsx';
@@ -598,6 +599,7 @@ const GUIComponent = props => {
             <AIModal />
             <AIChatModal />
             <AIAgentModal />
+            <SuperRefactorModal />
             <SimpleDialog />
             <UpdateLogModal />
             <BilmeModal />

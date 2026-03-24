@@ -120,10 +120,15 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #858585;
+    color: var(--text-primary, #333333);
     flex-shrink: 0;
     width: 16px;
     height: 16px;
+}
+
+/* Dark mode support */
+[class*="dark"] .sa-folder-icon {
+    color: var(--text-primary, #ffffff);
 }
 
 .sa-folder-icon svg {
