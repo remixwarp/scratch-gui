@@ -5,11 +5,12 @@ import styles from './ai-panel.css';
 import Button from '../button/button.jsx';
 import MarkdownRenderer from '../markdown-renderer/markdown-renderer.jsx';
 import {sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
-import {costumeUpload, soundUpload} from '../../lib/file-uploader.js';
+import {costumeUpload} from '../../lib/file-uploader.js';
+import {getApiKey, getApiConfig} from '../../lib/constants/api-keys.js';
 
-const API_ENDPOINT = 'https://api.siliconflow.cn/v1/chat/completions';
-const API_KEY = 'sk-madarokutonlejxkgjktphhujojhyinkpfltpxynypjvsvfq';
-const MODEL = 'deepseek-ai/DeepSeek-V3';
+const API_CONFIG = getApiConfig('siliconflow');
+const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/chat/completions';
+const MODEL = API_CONFIG ? API_CONFIG.model : 'deepseek-ai/DeepSeek-V3';
 
 class AIPanel extends React.PureComponent {
     constructor (props) {
@@ -27,11 +28,11 @@ class AIPanel extends React.PureComponent {
             stepContext: {}, // 存储各步骤的上下文
             progressExpanded: true, // 创作进度展开/收起状态
             // 标签页状态
-            activeTab: 'works', // works, costume, sound, control
+            activeTab: 'works', // works, costume, control
             // 造型生成状态
             generatedSVG: null, // 存储生成的SVG代码
-            // 声音生成状态
-            generatedSound: null // 存储生成的声音数据
+            // API密钥
+            apiKey: null
         };
         this.handleChange = this.handleChange.bind(this);
         this.handleSend = this.handleSend.bind(this);
@@ -39,8 +40,6 @@ class AIPanel extends React.PureComponent {
         this.handleMultiStepStart = this.handleMultiStepStart.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
         this.handleAddCostume = this.handleAddCostume.bind(this);
-        this.handleAddSound = this.handleAddSound.bind(this);
-        this.handleDownloadSound = this.handleDownloadSound.bind(this);
         this.messagesEnd = React.createRef();
         this.inputRef = React.createRef();
     }
@@ -51,9 +50,19 @@ class AIPanel extends React.PureComponent {
         }
     }
 
-    componentDidMount () {
+    async componentDidMount () {
         if (this.inputRef && this.inputRef.current) {
             this.inputRef.current.focus();
+        }
+        
+        try {
+            const apiKey = getApiKey('siliconflow');
+            this.setState({apiKey});
+            if (!apiKey) {
+                console.warn('未找到硅基流动API密钥');
+            }
+        } catch (error) {
+            console.error('获取API密钥失败:', error);
         }
     }
 
@@ -68,7 +77,6 @@ class AIPanel extends React.PureComponent {
         
         const isAgent = type === 'agent';
         const isCostumeTab = this.state.activeTab === 'costume';
-        const isSoundTab = this.state.activeTab === 'sound';
         const isControlTab = this.state.activeTab === 'control';
         
         // AI Agent的系统提示词，包含Scratch积木的完整信息
@@ -296,66 +304,6 @@ class AIPanel extends React.PureComponent {
         // AI造型的系统提示词
         const costumeSystemPrompt = '你是一个图形化编辑器的造型生成ai助手，现在用户的要求是：';
         
-        // AI声音的系统提示词
-        const soundSystemPrompt = `你是RemixWarp的AI声音生成助手，专门帮助用户生成Scratch项目中的声音和音效。
-
-## 声音类型
-
-### 1. 语音旁白
-- 角色对话
-- 故事叙述
-- 教学讲解
-- 提示信息
-
-### 2. 音效
-- 点击声、碰撞声
-- 背景音效
-- 游戏音效
-- 转换音效
-
-### 3. 音乐片段
-- 简单的旋律
-- 背景音乐片段
-- 节奏音效
-- 主题曲片段
-
-## 声音描述格式
-
-### 语音旁白格式
-[VOICE] 文字内容 | 音色：男声/女声/童声 | 语速：正常/快/慢 | 音调：正常/高/低
-
-### 音效格式
-[EFFECT] 音效名称 | 时长：秒数 | 风格：描述风格 | 音量：百分比
-
-### 音乐格式
-[MUSIC] 音乐描述 | 时长：秒数 | 风格：描述风格 | 节奏：描述节奏 | 音量：百分比
-
-## 重要提示
-
-1. 必须根据用户的具体要求生成声音描述，不要使用固定的模板
-2. 每次生成都要根据用户的输入内容创建不同的声音描述
-3. 音效名称、音乐描述等必须与用户输入的内容相关
-4. 时长、风格、节奏、音量等参数要根据用户要求合理设置
-5. 不要重复使用示例中的内容，每次都要生成新的、符合用户要求的描述
-6. 如果用户没有指定时长，可以设置为5-30秒之间的合理值
-7. 如果用户没有指定音量，可以设置为60-90之间的合理值
-8. 风格和节奏描述要具体且多样化，不要重复使用相同的描述
-9. 音效名称要准确反映用户描述的声音类型（如：爆炸声、跳跃声、开门声等）
-10. 音乐描述要准确反映用户描述的音乐风格（如：悲伤的钢琴曲、激昂的摇滚乐、平静的轻音乐等）
-
-## 示例参考（仅供参考，不要直接复制）
-
-用户说"生成一个角色说'你好，欢迎来到我的游戏！'的语音"
-你应该返回：[VOICE] 你好，欢迎来到我的游戏！ | 音色：女声 | 语速：正常 | 音调：正常
-
-用户说"生成一个点击按钮的音效"
-你应该返回：[EFFECT] 点击音效 | 时长：0.2 | 风格：清脆 | 音量：80
-
-用户说"生成一个欢快的背景音乐"
-你应该返回：[MUSIC] 欢快的背景音乐 | 时长：10 | 风格：欢快明亮 | 节奏：轻快 | 音量：60
-
-现在请根据用户的要求生成声音描述，确保每次都生成符合用户具体要求的新内容。`;
-        
         // AI操控的系统提示词
         const controlSystemPrompt = `你是RemixWarp的AI操控助手，专门帮助用户通过自然语言控制Scratch编辑器的各种功能。
 
@@ -377,7 +325,6 @@ class AIPanel extends React.PureComponent {
 ### 编辑器导航
 - Alt+1: 切换到积木标签页
 - Alt+2: 切换到造型标签页
-- Alt+3: 切换到声音标签页
 
 ### 项目控制
 - Ctrl+Enter: 绿旗启动项目
@@ -386,7 +333,6 @@ class AIPanel extends React.PureComponent {
 ### 素材库访问
 - Alt+S: 打开角色库
 - Alt+C: 打开造型库
-- Alt+K: 打开声音库
 - Ctrl+.: 打开扩展库
 - Alt+E: 扩展管理器
 
@@ -441,10 +387,6 @@ class AIPanel extends React.PureComponent {
                 // AI造型标签页
                 userMessageContent = costumeSystemPrompt + input + '直接输出svg代码。不要有任何无关提示信息和符号。';
                 systemPrompt = costumeSystemPrompt;
-            } else if (isSoundTab) {
-                // AI声音标签页
-                userMessageContent = input;
-                systemPrompt = soundSystemPrompt;
             } else if (isControlTab) {
                 // AI操控标签页
                 userMessageContent = input;
@@ -473,16 +415,20 @@ class AIPanel extends React.PureComponent {
             this.simulateKeyPress('Alt', '2');
         }
 
-        // 如果是AI声音标签页，模拟按下Alt+3切换到声音编辑器
-        if (isAgent && isSoundTab) {
-            this.simulateKeyPress('Alt', '3');
+        const {apiKey} = this.state;
+        if (!apiKey) {
+            this.setState({
+                loading: false,
+                error: 'API密钥未配置，请在控制台查看错误信息'
+            });
+            return;
         }
 
         fetch(API_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + API_KEY
+                'Authorization': 'Bearer ' + apiKey
             },
             body: JSON.stringify({
                 model: MODEL,
@@ -506,11 +452,6 @@ class AIPanel extends React.PureComponent {
             // 如果是AI造型标签页，处理SVG生成
             if (isAgent && isCostumeTab) {
                 this.handleCostumeGeneration(reply);
-            }
-            
-            // 如果是AI声音标签页，处理声音生成
-            if (isAgent && isSoundTab) {
-                this.handleSoundGeneration(reply);
             }
             
             // 如果是AI操控标签页，解析并执行快捷键
@@ -675,11 +616,20 @@ ${JSON.stringify(projectData, null, 2)}
 请用中文回答，格式清晰易读。`;
 
         try {
+            const {apiKey} = this.state;
+            if (!apiKey) {
+                this.setState({
+                    loading: false,
+                    error: 'API密钥未配置，请在控制台查看错误信息'
+                });
+                return;
+            }
+
             const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + API_KEY
+                    'Authorization': 'Bearer ' + apiKey
                 },
                 body: JSON.stringify({
                     model: MODEL,
@@ -852,192 +802,6 @@ ${JSON.stringify(projectData, null, 2)}
         }
     }
 
-    // 处理AI声音生成
-    handleSoundGeneration (aiResponse) {
-        console.log('处理AI声音生成:', aiResponse);
-        
-        // 解析AI返回的声音描述
-        let soundType = '';
-        let soundDescription = '';
-        let duration = 5;
-        let style = '';
-        let volume = 80;
-        let voiceText = '';
-        let voiceGender = '女声';
-        let voiceSpeed = '正常';
-        let voicePitch = '正常';
-        
-        // 解析语音旁白
-        if (aiResponse.includes('[VOICE]')) {
-            const voiceMatch = aiResponse.match(/\[VOICE\] (.+?)\s*\|/);
-            if (voiceMatch) {
-                voiceText = voiceMatch[1].trim();
-                soundType = 'VOICE';
-                soundDescription = voiceText;
-                
-                // 解析音色
-                const genderMatch = aiResponse.match(/音色：(.+?)\s*\|/);
-                if (genderMatch) voiceGender = genderMatch[1].trim();
-                
-                // 解析语速
-                const speedMatch = aiResponse.match(/语速：(.+?)\s*\|/);
-                if (speedMatch) voiceSpeed = speedMatch[1].trim();
-                
-                // 解析音调
-                const pitchMatch = aiResponse.match(/音调：(.+)/);
-                if (pitchMatch) voicePitch = pitchMatch[1].trim();
-            }
-        }
-        // 解析音效
-        else if (aiResponse.includes('[EFFECT]')) {
-            const effectMatch = aiResponse.match(/\[EFFECT\] (.+?)\s*\|/);
-            if (effectMatch) {
-                soundDescription = effectMatch[1].trim();
-                soundType = 'EFFECT';
-                
-                // 解析时长
-                const durationMatch = aiResponse.match(/时长：(.+?)\s*\|/);
-                if (durationMatch) {
-                    const durationValue = parseFloat(durationMatch[1].trim());
-                    if (!isNaN(durationValue)) duration = durationValue;
-                }
-                
-                // 解析风格
-                const styleMatch = aiResponse.match(/风格：(.+?)\s*\|/);
-                if (styleMatch) style = styleMatch[1].trim();
-                
-                // 解析音量
-                const volumeMatch = aiResponse.match(/音量：(.+)/);
-                if (volumeMatch) {
-                    const volumeValue = parseInt(volumeMatch[1].trim());
-                    if (!isNaN(volumeValue)) volume = volumeValue;
-                }
-            }
-        }
-        // 解析音乐
-        else if (aiResponse.includes('[MUSIC]')) {
-            const musicMatch = aiResponse.match(/\[MUSIC\] (.+?)\s*\|/);
-            if (musicMatch) {
-                soundDescription = musicMatch[1].trim();
-                soundType = 'MUSIC';
-                
-                // 解析时长
-                const durationMatch = aiResponse.match(/时长：(.+?)\s*\|/);
-                if (durationMatch) {
-                    const durationValue = parseFloat(durationMatch[1].trim());
-                    if (!isNaN(durationValue)) duration = durationValue;
-                }
-                
-                // 解析风格
-                const styleMatch = aiResponse.match(/风格：(.+?)\s*\|/);
-                if (styleMatch) style = styleMatch[1].trim();
-                
-                // 解析节奏
-                const rhythmMatch = aiResponse.match(/节奏：(.+?)\s*\|/);
-                if (rhythmMatch) style += `，${rhythmMatch[1].trim()}`;
-                
-                // 解析音量
-                const volumeMatch = aiResponse.match(/音量：(.+)/);
-                if (volumeMatch) {
-                    const volumeValue = parseInt(volumeMatch[1].trim());
-                    if (!isNaN(volumeValue)) volume = volumeValue;
-                }
-            }
-        }
-        
-        // 检查是否成功解析
-        if (!soundType) {
-            this.setState(state => ({
-                messages: [...state.messages, {from: 'system', text: '❌ 无法解析AI返回的声音描述'}]
-            }));
-            return;
-        }
-        
-        // 保存声音信息到状态
-        this.setState(state => ({
-            generatedSound: {
-                type: soundType,
-                description: soundDescription,
-                duration: duration,
-                style: style,
-                volume: volume,
-                voiceText: voiceText,
-                voiceGender: voiceGender,
-                voiceSpeed: voiceSpeed,
-                voicePitch: voicePitch
-            },
-            messages: [...state.messages, {from: 'system', text: `🎵 声音已生成：${soundDescription}\n类型：${soundType === 'VOICE' ? '语音' : soundType === 'EFFECT' ? '音效' : '音乐'}\n您可以预览并添加到项目中。`}]
-        }));
-    }
-
-    // 添加声音到项目
-    handleAddSound () {
-        const {generatedSound} = this.state;
-        
-        if (!generatedSound) {
-            this.setState(state => ({
-                messages: [...state.messages, {from: 'system', text: '❌ 没有可添加的声音'}]
-            }));
-            return;
-        }
-        
-        if (!this.props.vm) {
-            this.setState(state => ({
-                messages: [...state.messages, {from: 'system', text: '❌ 无法添加声音，VM实例不可用'}]
-            }));
-            return;
-        }
-        
-        // 检查editingTarget是否存在
-        if (!this.props.vm.editingTarget) {
-            this.setState(state => ({
-                messages: [...state.messages, {from: 'system', text: '❌ 没有选中的角色，请先选择一个角色'}]
-            }));
-            return;
-        }
-        
-        try {
-            // 生成WAV格式的音频数据
-            const wavData = this.generateWAV(generatedSound);
-            
-            // 使用soundUpload函数处理声音上传（类似costumeUpload）
-            const storage = this.props.vm.runtime.storage;
-            soundUpload(wavData.buffer, 'audio/wav', storage, (vmSound) => {
-                console.log('Sound created by soundUpload:', vmSound);
-                
-                // 设置声音名称
-                vmSound.name = generatedSound.description;
-                
-                // 获取目标ID
-                const targetId = this.props.vm.editingTarget.id;
-                
-                // 添加声音到目标
-                this.props.vm.addSound(vmSound, targetId).then(() => {
-                    console.log('Sound added successfully!');
-                    this.setState(state => ({
-                        messages: [...state.messages, {from: 'system', text: `🎵 声音"${generatedSound.description}"已成功添加到项目中！`}]
-                    }));
-                }).catch(error => {
-                    console.error('添加声音失败:', error);
-                    this.setState(state => ({
-                        messages: [...state.messages, {from: 'system', text: `❌ 添加声音失败: ${error.message}`}]
-                    }));
-                });
-            }, (error) => {
-                console.error('soundUpload失败:', error);
-                this.setState(state => ({
-                    messages: [...state.messages, {from: 'system', text: `❌ 处理声音失败: ${error}`}]
-                }));
-            });
-        } catch (error) {
-            console.error('添加声音失败:', error);
-            console.error('Error stack:', error.stack);
-            this.setState(state => ({
-                messages: [...state.messages, {from: 'system', text: `❌ 添加声音失败: ${error.message}`}]
-            }));
-        }
-    }
-
     // 计算MD5哈希
     calculateMD5 (data) {
         let hash = 0;
@@ -1058,129 +822,6 @@ ${JSON.stringify(projectData, null, 2)}
         return hashString;
     }
     
-    // 下载音频文件
-    handleDownloadSound () {
-        const {generatedSound} = this.state;
-        
-        if (!generatedSound) {
-            this.setState(state => ({
-                messages: [...state.messages, {from: 'system', text: '❌ 没有可下载的声音'}]
-            }));
-            return;
-        }
-        
-        try {
-            // 生成WAV格式的音频数据
-            const wavData = this.generateWAV(generatedSound);
-            
-            // 创建Blob对象
-            const blob = new Blob([wavData], { type: 'audio/wav' });
-            
-            // 创建下载链接
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${generatedSound.description}.wav`;
-            a.click();
-            
-            // 释放URL对象
-            URL.revokeObjectURL(url);
-            
-            this.setState(state => ({
-                messages: [...state.messages, {from: 'system', text: `💾 音频已下载：${generatedSound.description}.wav`}]
-            }));
-        } catch (error) {
-            console.error('下载音频失败:', error);
-            this.setState(state => ({
-                messages: [...state.messages, {from: 'system', text: `❌ 下载音频失败: ${error.message}`}]
-            }));
-        }
-    }
-
-    // 生成WAV格式的音频数据
-    generateWAV (soundInfo) {
-        const sampleRate = 44100;
-        const numChannels = 1;
-        const bitsPerSample = 16;
-        const duration = soundInfo.duration;
-        const numSamples = sampleRate * duration;
-        
-        // 创建音频缓冲区
-        const audioBuffer = new Float32Array(numSamples);
-        
-        // 根据声音类型生成不同的音频
-        if (soundInfo.type === 'VOICE') {
-            // 生成语音（简单的正弦波模拟）
-            const frequency = 440; // A4音符
-            for (let i = 0; i < numSamples; i++) {
-                const t = i / sampleRate;
-                audioBuffer[i] = Math.sin(2 * Math.PI * frequency * t) * 0.3;
-            }
-        } else if (soundInfo.type === 'EFFECT') {
-            // 生成音效（短促的声音）
-            const frequency = 880; // A5音符
-            for (let i = 0; i < numSamples; i++) {
-                const t = i / sampleRate;
-                const envelope = Math.exp(-t * 5); // 指数衰减
-                audioBuffer[i] = Math.sin(2 * Math.PI * frequency * t) * envelope * 0.5;
-            }
-        } else if (soundInfo.type === 'MUSIC') {
-            // 生成音乐（简单的旋律）
-            const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25]; // C大调音阶
-            const noteDuration = duration / notes.length;
-            for (let i = 0; i < numSamples; i++) {
-                const t = i / sampleRate;
-                const noteIndex = Math.floor(t / noteDuration) % notes.length;
-                const frequency = notes[noteIndex];
-                const noteTime = t % noteDuration;
-                const envelope = Math.sin(Math.PI * noteTime / noteDuration); // 平滑包络
-                audioBuffer[i] = Math.sin(2 * Math.PI * frequency * t) * envelope * 0.3;
-            }
-        }
-        
-        // 应用音量
-        const volumeMultiplier = soundInfo.volume / 100;
-        for (let i = 0; i < numSamples; i++) {
-            audioBuffer[i] *= volumeMultiplier;
-        }
-        
-        // 转换为16位PCM
-        const pcmData = new Int16Array(numSamples);
-        for (let i = 0; i < numSamples; i++) {
-            pcmData[i] = Math.max(-32768, Math.min(32767, Math.floor(audioBuffer[i] * 32767)));
-        }
-        
-        // 创建WAV文件头
-        const wavHeader = new ArrayBuffer(44);
-        const view = new DataView(wavHeader);
-        
-        // RIFF chunk descriptor
-        this.writeString(view, 0, 'RIFF');
-        view.setUint32(4, 36 + pcmData.length * 2, true);
-        this.writeString(view, 8, 'WAVE');
-        
-        // fmt sub-chunk
-        this.writeString(view, 12, 'fmt ');
-        view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
-        view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
-        view.setUint16(22, numChannels, true);
-        view.setUint32(24, sampleRate, true);
-        view.setUint32(28, sampleRate * numChannels * bitsPerSample / 8, true); // ByteRate
-        view.setUint16(32, numChannels * bitsPerSample / 8, true); // BlockAlign
-        view.setUint16(34, bitsPerSample, true);
-        
-        // data sub-chunk
-        this.writeString(view, 36, 'data');
-        view.setUint32(40, pcmData.length * 2, true);
-        
-        // 合并WAV头和PCM数据
-        const wavData = new Uint8Array(44 + pcmData.length * 2);
-        wavData.set(new Uint8Array(wavHeader), 0);
-        wavData.set(new Uint8Array(pcmData.buffer), 44);
-        
-        return wavData;
-    }
-
     // 多步骤AI Agent处理方法
     async handleMultiStepStart () {
         const {input} = this.state;
@@ -1526,11 +1167,16 @@ ${JSON.stringify(projectData, null, 2)}
     
     // 调用AI的通用方法
     async callAI (prompt) {
+        const {apiKey} = this.state;
+        if (!apiKey) {
+            throw new Error('API密钥未配置');
+        }
+
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + API_KEY
+                'Authorization': 'Bearer ' + apiKey
             },
             body: JSON.stringify({
                 model: MODEL,
@@ -2160,12 +1806,6 @@ ${JSON.stringify(projectData, null, 2)}
                                         AI造型
                                     </button>
                                     <button 
-                                        className={classNames(styles.tab, {[styles.activeTab]: this.state.activeTab === 'sound'})}
-                                        onClick={() => this.handleTabChange('sound')}
-                                    >
-                                        AI声音
-                                    </button>
-                                    <button 
                                         className={classNames(styles.tab, {[styles.activeTab]: this.state.activeTab === 'control'})}
                                         onClick={() => this.handleTabChange('control')}
                                     >
@@ -2418,100 +2058,6 @@ ${JSON.stringify(projectData, null, 2)}
                             <div className={styles.warningContent}>
                                 <strong><span>警告：</span></strong>
                                 <span dangerouslySetInnerHTML={{__html: '内容为AI生成,请注意仔细鉴别<br/>此功能用于生成SVG造型，可直接使用。<br/>用来生成造型的是文字处理模型，可能会不满您的预期，敬请谅解。'}} />
-                            </div>
-                        </div>
-                        </div>
-                    )}
-                    
-                    {isAgent && this.state.activeTab === 'sound' && (
-                        <div className={styles.tabContent}>
-                            <div className={styles.messagesWrapper}>
-                            <div className={styles.messages}>
-                                {this.state.messages.map((m, i) => (
-                                    <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
-                                        {m.from === 'user' ? (
-                                            m.text
-                                        ) : (
-                                            <MarkdownRenderer content={m.text} />
-                                        )}
-                                    </div>
-                                ))}
-                                <div ref={this.messagesEnd} />
-                            </div>
-                        </div>
-                        {this.state.loading && <div className={styles.loading}>思考中...</div>}
-                        {this.state.error && <div className={styles.error}>{this.state.error}</div>}
-                        <div className={styles.controls}>
-                            <textarea 
-                                ref={this.inputRef} 
-                                className={styles.input} 
-                                value={this.state.input} 
-                                onChange={this.handleChange} 
-                                placeholder="例如：生成一个点击按钮的音效、生成一段欢快的背景音乐..."
-                                disabled={this.state.loading}
-                            />
-                            <div className={styles.actions}>
-                                <Button 
-                                    onClick={this.handleSend} 
-                                    className={styles.sendButton} 
-                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === ''}
-                                >
-                                    发送
-                                </Button>
-                            </div>
-                        </div>
-                        {/* 声音生成预览区域 */}
-                        {this.state.activeTab === 'sound' && this.state.generatedSound && (
-                            <div className={styles.costumePreview}>
-                                <h4>声音预览</h4>
-                                <div className={styles.svgPreview}>
-                                    <div>
-                                        <strong>类型：</strong>{this.state.generatedSound.type === 'VOICE' ? '语音' : this.state.generatedSound.type === 'EFFECT' ? '音效' : '音乐'}<br/>
-                                        <strong>描述：</strong>{this.state.generatedSound.description}<br/>
-                                        <strong>时长：</strong>{this.state.generatedSound.duration}秒<br/>
-                                        <strong>音量：</strong>{this.state.generatedSound.volume}%
-                                        {this.state.generatedSound.style && <><br/><strong>风格：</strong>{this.state.generatedSound.style}</>}
-                                        {this.state.generatedSound.type === 'VOICE' && (
-                                            <>
-                                                <br/><strong>音色：</strong>{this.state.generatedSound.voiceGender}
-                                                <br/><strong>语速：</strong>{this.state.generatedSound.voiceSpeed}
-                                                <br/><strong>音调：</strong>{this.state.generatedSound.voicePitch}
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                                    <Button 
-                                        onClick={this.handleAddSound} 
-                                        className={styles.addCostumeButton}
-                                        variant="primary"
-                                        style={{ flex: 1 }}
-                                    >
-                                        添加到声音
-                                    </Button>
-                                    <Button 
-                                        onClick={this.handleDownloadSound} 
-                                        className={styles.addCostumeButton}
-                                        variant="secondary"
-                                        style={{ flex: 1 }}
-                                    >
-                                        下载音频
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                        {/* 警告消息 - 放在底部 */}
-                        <div className={styles.warningBanner}>
-                            <div className={styles.warningIcon}>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
-                                    <path d="M12 9v4"></path>
-                                    <path d="M12 17h.01"></path>
-                                </svg>
-                            </div>
-                            <div className={styles.warningContent}>
-                                <strong><span>提示：</span></strong>
-                                <span dangerouslySetInnerHTML={{__html: 'AI声音可以通过自然语言生成语音、音效和音乐<br/>例如："生成一个点击按钮的音效"、"生成一段欢快的背景音乐"<br/>生成声音时会自动切换到声音编辑器'}} />
                             </div>
                         </div>
                         </div>
