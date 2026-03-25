@@ -53,13 +53,7 @@ class SuperRefactorModalContainer extends React.Component {
         const {theme} = this.props;
         const isDarkTheme = theme && typeof theme.isDark === 'function' ? theme.isDark() : false;
         
-        console.log('[超级重构] 主题检测:', {
-            theme: theme,
-            isDarkTheme: isDarkTheme,
-            themeId: theme ? theme.id : 'no theme',
-            themeGui: theme ? theme.gui : 'no gui',
-            bodyClass: document.body ? document.body.className : 'no body'
-        });
+
         
         // 延迟执行以确保窗口已创建
         setTimeout(() => {
@@ -275,13 +269,9 @@ class SuperRefactorModalContainer extends React.Component {
     }
 
     handleWordWrapToggle () {
-        console.log('[超级重构] 切换自动换行:', this.state.wordWrap);
-        this.setState(prevState => {
-            console.log('[超级重构] 新的自动换行状态:', !prevState.wordWrap);
-            return {
-                wordWrap: !prevState.wordWrap
-            };
-        });
+        this.setState(prevState => ({
+            wordWrap: !prevState.wordWrap
+        }));
     }
 
     formatJSON (jsonString) {

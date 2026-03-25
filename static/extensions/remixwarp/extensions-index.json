@@ -1,0 +1,23 @@
+{
+  "extensions": [
+    {
+      "name": "Windows of OS",
+      "description": "An extension that simulates an operating system, including CMD terminal, register management, external program loading, custom windows, and GUI components.",
+      "descriptionTranslations": {
+        "zh-cn": "一个模拟操作系统的扩展，包含CMD终端、寄存器管理、外部程序加载、自定义窗口和GUI组件等功能。"
+      },
+      "extensionId": "gmyosWindow",
+      "extensionURL": "/extensions/remixwarp/gmy-xxl/windows-of-os.js",
+      "onlineURL": "https://extensions.remixwarp.org/gmy-xxl/windows-of-os.js",
+      "iconURL": "/extensions/remixwarp/gmy-xxl/扩展封面.png",
+      "tags": [
+        "remixwarp"
+      ],
+      "credits": [
+        "gmy-xxl"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    }
+  ]
+}

@@ -3,5 +3,6 @@ export default [
     {tag: 'tw', intlLabel: 'TurboWarp'},
     {tag: 'mistium', intlLabel: 'Mistium'},
     {tag: 'sharkpools', intlLabel: 'SharkPools'},
-    {tag: 'penguinmod', intlLabel: 'PenguinMod'}
+    {tag: 'penguinmod', intlLabel: 'PenguinMod'},
+    {tag: 'remixwarp', intlLabel: 'RemixWarp'}
 ];
