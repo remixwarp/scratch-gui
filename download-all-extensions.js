@@ -315,6 +315,90 @@ const downloadSharkPoolsExtensions = async () => {
     }
 };
 
+const downloadAstraEditorExtensions = async () => {
+    console.log('\n=== Downloading AstraEditor Extensions ===');
+    try {
+        const baseURL = 'https://editors.astras.top/extensions';
+        
+        // List of AstraEditor extensions with their correct filenames
+        const extensions = [
+            { name: 'Cyberexplorer', id: 'cyberexplorer', file: 'cyberexplorertools.js', icon: 'cyberexplorertools.png', creator: 'LanwyWriteXU' },
+            { name: 'XJY\'s blocked words', id: 'xjy-blocked-words', file: 'prohibitedWordsExtension.js', icon: 'prohibitedWordsExtension.png', creator: '小金鱼' },
+            { name: '哈希助手', id: 'hash-helper', file: 'hashhelper.js', icon: 'hashhelper.png', creator: 'fhy-action' },
+            { name: '类WinUI3弹窗', id: 'winui3-dialog', file: 'WinUI3.js', icon: 'WinUI3.png', creator: 'E.R.T.J.' },
+            { name: 'TextProcessing', id: 'text-processing', file: 'textprocessing.js', icon: 'textprocessing.png', creator: 'fhy-action' },
+            { name: 'image processor', id: 'image-processor', file: 'ImageProcessor.js', icon: 'ImageProcessor.png', creator: 'CramYing' },
+            { name: 'Text Check', id: 'text-check', file: 'textcheck.js', icon: 'textcheck.png', creator: 'GALAXY__a' },
+            { name: 'Imitating Windows10&11 window pop-up animations', id: 'windows-animation', file: 'EsayWindows10Windows11Animations.js', icon: 'EsayWindows10Windows11Animations.png', creator: '蓝莓是颗果' },
+            { name: 'SheepToolkit', id: 'sheep-toolkit', file: 'SheepToolkit.js', icon: 'SheepToolkit.png', creator: '小小羊' },
+            { name: 'ningqi-Repetitive block', id: 'ningqi-repetitive-block', file: 'ningqiRepetitiveblock.js', icon: 'ningqiRepetitiveblock.png', creator: 'ningqi' },
+            { name: 'ningqiVariableTool', id: 'ningqi-variable-tool', file: 'ningqiVariableTool.js', icon: 'ningqiVariableTool.png', creator: 'ningqi' },
+            { name: 'ningqiSensings', id: 'ningqi-sensings', file: 'ningqiSensings.js', icon: 'ningqiSensings.png', creator: 'ningqi' },
+            { name: 'ningqi Collection1.5', id: 'ningqi-collection', file: 'ningqiCollect.js', icon: 'ningqiCollect.png', creator: 'ningqi' },
+            { name: 'Multi-Source Extensions List', id: 'multi-source-extensions', file: 'ningqiMultiSourceExtensions.js', icon: 'ningqiMultiSourceExtensions.png', creator: 'ningqi' },
+            { name: 'Windows toast', id: 'windows-toast', file: 'windowstoast.js', icon: 'windowstoast.png', creator: 'DVD' },
+            { name: 'Browser Check', id: 'browser-check', file: 'browserDetector.js', icon: 'browserDetector.png', creator: 'DVD' }
+        ];
+        
+        console.log(`Found ${extensions.length} AstraEditor extensions`);
+        
+        let downloaded = 0;
+        let imgDownloaded = 0;
+        const metadata = [];
+        
+        for (const ext of extensions) {
+            const extPath = path.join(extensionsDir, 'astraeditor', ext.file);
+            ensureDir(path.dirname(extPath));
+            
+            let localExtensionURL = `/extensions/astraeditor/${ext.file}`;
+            let finalOnlineURL = `${baseURL}/${ext.file}`;
+            
+            // Try to download extension file
+            try {
+                await downloadFile(`${baseURL}/${ext.file}`, extPath, 2, { rejectUnauthorized: false });
+                downloaded++;
+                process.stdout.write(`\r  Downloaded: ${downloaded}/${extensions.length} extensions`);
+            } catch (err) {
+                // Use online URL directly if download fails
+                localExtensionURL = finalOnlineURL;
+            }
+            
+            // Try to download icon
+            let localIconURL = null;
+            if (ext.icon) {
+                const imgPath = path.join(extensionsDir, 'astraeditor', 'images', ext.icon);
+                ensureDir(path.dirname(imgPath));
+                try {
+                    await downloadFile(`${baseURL}/images/${ext.icon}`, imgPath, 2, { rejectUnauthorized: false });
+                    localIconURL = `/extensions/astraeditor/images/${ext.icon}`;
+                    imgDownloaded++;
+                } catch (e) {
+                    // Use online icon URL if download fails
+                    localIconURL = `${baseURL}/images/${ext.icon}`;
+                }
+            }
+            
+            metadata.push({
+                name: ext.name,
+                description: '',
+                extensionId: ext.id,
+                extensionURL: localExtensionURL,
+                onlineURL: finalOnlineURL,
+                iconURL: localIconURL,
+                tags: ['astra'],
+                credits: [ext.creator],
+                incompatibleWithScratch: true,
+                featured: true
+            });
+        }
+        console.log(`\n✓ AstraEditor: ${downloaded} extensions downloaded, ${imgDownloaded} icons downloaded`);
+        
+        fs.writeFileSync(path.join(extensionsDir, 'astraeditor', 'extensions-index.json'), JSON.stringify({ extensions: metadata }, null, 2));
+    } catch (error) {
+        console.error('✗ Failed:', error.message);
+    }
+};
+
 const createLocalExtensionsIndex = async () => {
     console.log('\n=== Creating Combined Extensions Index ===');
     const allExtensions = [];
@@ -368,6 +452,13 @@ const createLocalExtensionsIndex = async () => {
         allExtensions.push(...(spData.extensions || []));
     }
     
+    // AstraEditor
+    const astraPath = path.join(extensionsDir, 'astraeditor', 'extensions-index.json');
+    if (fs.existsSync(astraPath)) {
+        const astraData = JSON.parse(fs.readFileSync(astraPath, 'utf8'));
+        allExtensions.push(...(astraData.extensions || []));
+    }
+    
     fs.writeFileSync(path.join(extensionsDir, 'extensions-index.json'), JSON.stringify({ extensions: allExtensions }, null, 2));
     console.log(`✓ Created index with ${allExtensions.length} extensions`);
 };
@@ -380,6 +471,7 @@ const main = async () => {
     await downloadPenguinModExtensions();
     await downloadMistiumExtensions();
     await downloadSharkPoolsExtensions();
+    await downloadAstraEditorExtensions();
     await createLocalExtensionsIndex();
     
     console.log('\n=== Download Complete ===');

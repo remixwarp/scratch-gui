@@ -28,7 +28,7 @@
         "nl": "Toon en animeer tekst op een simpele manier. Compatibel met het experiment Animated Text van Scratch Lab.",
         "ru": "Лёгкий путь отображать и анимировать текст. Совместимо с Scratch Lab эксперементом \"Анимированный текст\".",
         "uk": "Простий спосіб відображення анімованого тексту. Сумісний зі Scratch Lab's Animated Text.",
-        "zh-cn": "显示与设置动画文字的简单方式，与 Scratch Lab 的"动画文字"实验项目兼容。"
+        "zh-cn": "显示与设置动画文字的简单方式，与 Scratch Lab 的\"动画文字\"实验项目兼容。"
       },
       "extensionId": "text",
       "extensionURL": "/extensions/turbowarp/lab/text.js",
@@ -658,6 +658,262 @@
       ],
       "credits": [
         "gmy-xxl"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Cyberexplorer",
+      "description": "A tool for exploring the cyber world",
+      "extensionId": "cyberexplorer",
+      "extensionURL": "https://editors.astras.top/extensions/cyberexplorertools.js",
+      "onlineURL": "https://editors.astras.top/extensions/cyberexplorertools.js",
+      "iconURL": "/extensions/astraeditor/images/cyberexplorertools.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "LanwyWriteXU"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "XJY's blocked words",
+      "description": "Makes it easier for you to manage blocked words, suitable for chat features",
+      "extensionId": "xjy-blocked-words",
+      "extensionURL": "https://editors.astras.top/extensions/prohibitedWordsExtension.js",
+      "onlineURL": "https://editors.astras.top/extensions/prohibitedWordsExtension.js",
+      "iconURL": "/extensions/astraeditor/images/prohibitedWordsExtension.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "小金鱼"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "哈希助手",
+      "description": "提供一些哈希函数，包括SHA-1、SHA-256、CRC32和HMAC-SHA256，用于数据完整性的验证。",
+      "extensionId": "hash-helper",
+      "extensionURL": "https://editors.astras.top/extensions/hashhelper.js",
+      "onlineURL": "https://editors.astras.top/extensions/hashhelper.js",
+      "iconURL": "/extensions/astraeditor/images/hashhelper.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "fhy-action"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "类WinUI3弹窗",
+      "description": "弹窗！更好用的弹窗！",
+      "extensionId": "winui3-dialog",
+      "extensionURL": "https://editors.astras.top/extensions/WinUI3.js",
+      "onlineURL": "https://editors.astras.top/extensions/WinUI3.js",
+      "iconURL": "/extensions/astraeditor/images/WinUI3.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "E.R.T.J."
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "TextProcessing",
+      "description": "Provides a rich set of text processing blocks for advanced text manipulation scenarios: case conversion, search & replace, regex, split/join, statistics, text cleaning, and more.",
+      "extensionId": "text-processing",
+      "extensionURL": "https://editors.astras.top/extensions/textprocessing.js",
+      "onlineURL": "https://editors.astras.top/extensions/textprocessing.js",
+      "iconURL": "/extensions/astraeditor/images/textprocessing.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "fhy-action"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "image processor",
+      "description": "A simple image processing",
+      "extensionId": "image-processor",
+      "extensionURL": "https://editors.astras.top/extensions/ImageProcessor.js",
+      "onlineURL": "https://editors.astras.top/extensions/ImageProcessor.js",
+      "iconURL": "/extensions/astraeditor/images/ImageProcessor.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "CramYing"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Text Check",
+      "description": "This is a text checking extension that provides blocks to check if an input is a valid character/number and whether it contains specified special characters.",
+      "extensionId": "text-check",
+      "extensionURL": "https://editors.astras.top/extensions/textcheck.js",
+      "onlineURL": "https://editors.astras.top/extensions/textcheck.js",
+      "iconURL": "/extensions/astraeditor/images/textcheck.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "GALAXY__a"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Imitating Windows10&11 window pop-up animations",
+      "description": "Let your Scratch OS project have window pop-up animations similar to Windows 10 & 11.",
+      "extensionId": "windows-animation",
+      "extensionURL": "https://editors.astras.top/extensions/EsayWindows10Windows11Animations.js",
+      "onlineURL": "https://editors.astras.top/extensions/EsayWindows10Windows11Animations.js",
+      "iconURL": "/extensions/astraeditor/images/EsayWindows10Windows11Animations.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "蓝莓是颗果"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "SheepToolkit",
+      "description": "Some strange blocks.",
+      "extensionId": "sheep-toolkit",
+      "extensionURL": "https://editors.astras.top/extensions/SheepToolkit.js",
+      "onlineURL": "https://editors.astras.top/extensions/SheepToolkit.js",
+      "iconURL": "/extensions/astraeditor/images/SheepToolkit.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "小小羊"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "ningqi-Repetitive block",
+      "description": "Let you simplify some repetitive building blocks",
+      "extensionId": "ningqi-repetitive-block",
+      "extensionURL": "https://editors.astras.top/extensions/ningqiRepetitiveblock.js",
+      "onlineURL": "https://editors.astras.top/extensions/ningqiRepetitiveblock.js",
+      "iconURL": "/extensions/astraeditor/images/ningqiRepetitiveblock.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "ningqi"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "ningqiVariableTool",
+      "description": "Allows you to create new variables within the extension, list",
+      "extensionId": "ningqi-variable-tool",
+      "extensionURL": "https://editors.astras.top/extensions/ningqiVariableTool.js",
+      "onlineURL": "https://editors.astras.top/extensions/ningqiVariableTool.js",
+      "iconURL": "/extensions/astraeditor/images/ningqiVariableTool.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "ningqi"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "ningqiSensings",
+      "description": "Check for some things that may not be part of the scratchwork",
+      "extensionId": "ningqi-sensings",
+      "extensionURL": "https://editors.astras.top/extensions/ningqiSensings.js",
+      "onlineURL": "https://editors.astras.top/extensions/ningqiSensings.js",
+      "iconURL": "/extensions/astraeditor/images/ningqiSensings.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "ningqi"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "ningqi Collection1.5",
+      "description": "Collected a bunch of useful and fun things!",
+      "extensionId": "ningqi-collection",
+      "extensionURL": "https://editors.astras.top/extensions/ningqiCollect.js",
+      "onlineURL": "https://editors.astras.top/extensions/ningqiCollect.js",
+      "iconURL": "/extensions/astraeditor/images/ningqiCollect.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "ningqi"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Multi-Source Extensions List",
+      "description": "Fetches extension lists from AstraEditor or ningqiCollectCollection repositories, and allows loading extensions from arbitrary URLs.",
+      "extensionId": "multi-source-extensions",
+      "extensionURL": "https://editors.astras.top/extensions/ningqiMultiSourceExtensions.js",
+      "onlineURL": "https://editors.astras.top/extensions/ningqiMultiSourceExtensions.js",
+      "iconURL": "/extensions/astraeditor/images/ningqiMultiSourceExtensions.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "ningqi"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Windows toast",
+      "description": "Send Windows Toast notifications with icon, sound and duration settings",
+      "extensionId": "windows-toast",
+      "extensionURL": "https://editors.astras.top/extensions/windowstoast.js",
+      "onlineURL": "https://editors.astras.top/extensions/windowstoast.js",
+      "iconURL": "/extensions/astraeditor/images/windowstoast.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "DVD"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Browser Check",
+      "description": "Detects the browser type running the project, supports multiple browser identification",
+      "extensionId": "browser-check",
+      "extensionURL": "https://editors.astras.top/extensions/browserDetector.js",
+      "onlineURL": "https://editors.astras.top/extensions/browserDetector.js",
+      "iconURL": "/extensions/astraeditor/images/browserDetector.png",
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "DVD"
       ],
       "incompatibleWithScratch": true,
       "featured": true

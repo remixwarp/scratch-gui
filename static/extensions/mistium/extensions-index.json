@@ -1,0 +1,32 @@
+{
+  "extensions": [
+    {
+      "name": "MistUtils",
+      "description": "",
+      "extensionId": "mistutils",
+      "extensionURL": "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Extensions/Apps/MistUtils.js",
+      "onlineURL": "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Extensions/Apps/MistUtils.js",
+      "iconURL": null,
+      "tags": [
+        "mistium"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "MistUI",
+      "description": "",
+      "extensionId": "mistui",
+      "extensionURL": "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Extensions/Apps/MistUI.js",
+      "onlineURL": "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Extensions/Apps/MistUI.js",
+      "iconURL": null,
+      "tags": [
+        "mistium"
+      ],
+      "credits": [],
+      "incompatibleWithScratch": true,
+      "featured": true
+    }
+  ]
+}
