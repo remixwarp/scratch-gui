@@ -49,6 +49,7 @@ const fetchLibrary = async () => {
     let sharkpoolsExtensions = [];
     let penguinmodExtensions = [];
     let remixwarpExtensions = [];
+    let astraExtensions = [];
 
     try {
         const twRes = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
@@ -277,7 +278,31 @@ const fetchLibrary = async () => {
         console.warn('Failed to load RemixWarp extensions:', error);
     }
 
-    return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions, ...remixwarpExtensions];
+    try {
+        const astraRes = await fetch('/extensions/astraeditor/extensions-index.json');
+        if (!astraRes.ok) {
+            console.warn(`AstraEditor extensions: HTTP status ${astraRes.status}`);
+        } else {
+            const astraData = await astraRes.json();
+            astraExtensions = astraData.extensions.map(extension => ({
+                name: extension.name,
+                nameTranslations: extension.nameTranslations || {},
+                description: extension.description,
+                descriptionTranslations: extension.descriptionTranslations || {},
+                extensionId: extension.extensionId,
+                extensionURL: extension.extensionURL,
+                iconURL: extension.iconURL || emptyBanner,
+                tags: extension.tags || ['astra'],
+                credits: extension.credits || [],
+                incompatibleWithScratch: extension.incompatibleWithScratch || true,
+                featured: extension.featured || true
+            }));
+        }
+    } catch (error) {
+        console.warn('Failed to load AstraEditor extensions:', error);
+    }
+
+    return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions, ...remixwarpExtensions, ...astraExtensions];
 };
 
 class ExtensionLibrary extends React.PureComponent {
