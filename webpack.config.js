@@ -83,20 +83,8 @@ const base = {
                 });
             }
 
-            // 自动启动后端服务器
-            checkPort(SERVER_PORT).then(isRunning => {
-                if (!isRunning) {
-                    console.log('\n[超级重构] 正在自动启动后端服务器...');
-                    const child = spawn('node', [SERVER_SCRIPT], {
-                        detached: true,
-                        stdio: 'ignore'
-                    });
-                    child.unref();
-                    console.log('[超级重构] 后端服务器启动命令已发送\n');
-                } else {
-                    console.log('\n[超级重构] 后端服务器已在运行\n');
-                }
-            });
+            // 后端服务器已禁用
+            console.log('\n[超级重构] 后端服务器已禁用\n');
         }
     },
     output: {

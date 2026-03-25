@@ -48,6 +48,7 @@ const fetchLibrary = async () => {
     let mistiumExtensions = [];
     let sharkpoolsExtensions = [];
     let penguinmodExtensions = [];
+    let remixwarpExtensions = [];
 
     try {
         const twRes = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
@@ -252,7 +253,31 @@ const fetchLibrary = async () => {
         console.warn('Failed to load PenguinMod extensions:', error);
     }
 
-    return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions];
+    try {
+        const remixwarpRes = await fetch('/extensions/remixwarp/extensions-index.json');
+        if (!remixwarpRes.ok) {
+            console.warn(`RemixWarp extensions: HTTP status ${remixwarpRes.status}`);
+        } else {
+            const remixwarpData = await remixwarpRes.json();
+            remixwarpExtensions = remixwarpData.extensions.map(extension => ({
+                name: extension.name,
+                nameTranslations: extension.nameTranslations || {},
+                description: extension.description,
+                descriptionTranslations: extension.descriptionTranslations || {},
+                extensionId: extension.extensionId,
+                extensionURL: extension.extensionURL,
+                iconURL: extension.iconURL,
+                tags: extension.tags || ['remixwarp'],
+                credits: extension.credits || [],
+                incompatibleWithScratch: extension.incompatibleWithScratch || true,
+                featured: extension.featured || true
+            }));
+        }
+    } catch (error) {
+        console.warn('Failed to load RemixWarp extensions:', error);
+    }
+
+    return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions, ...remixwarpExtensions];
 };
 
 class ExtensionLibrary extends React.PureComponent {
