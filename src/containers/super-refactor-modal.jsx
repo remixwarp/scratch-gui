@@ -334,25 +334,31 @@ class SuperRefactorModalContainer extends React.Component {
                 .replace(/\[/g, '<span style="color: #d4d4d4;">[</span>')
                 .replace(/\]/g, '<span style="color: #d4d4d4;">]</span>');
         } else if (type === 'svg') {
-            return code
+            let processed = code
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/&lt;(\w+)([^&gt;]*)&gt;/g, '<span style="color: #569cd6;">&lt;$1</span><span style="color: #d4d4d4;">$2</span><span style="color: #569cd6;">&gt;</span>')
-                .replace(/&lt;\/([^&gt;]+)&gt;/g, '<span style="color: #569cd6;">&lt;/$1&gt;</span>')
-                .replace(/(\w+)=/g, '<span style="color: #9cdcfe;">$1</span>=')
-                .replace(/"([^"]*)"/g, (match, value) => {
-                    // 检测颜色值
-                    if (/^#[0-9a-fA-F]{3,6}$/.test(value)) {
-                        return `<span style="color: #ce9178;"><span style="color: ${value};">${match}</span></span>`;
-                    } else if (/^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/.test(value)) {
-                        return `<span style="color: #ce9178;"><span style="color: ${value};">${match}</span></span>`;
-                    } else if (/^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\)$/.test(value)) {
-                        return `<span style="color: #ce9178;"><span style="color: ${value};">${match}</span></span>`;
-                    } else {
-                        return `<span style="color: #ce9178;">${match}</span>`;
-                    }
-                });
+                .replace(/>/g, '&gt;');
+            
+            processed = processed.replace(/(#[0-9a-fA-F]{3,6})/g, (match, color) => {
+                return `<span style="display: inline-flex; align-items: center; vertical-align: middle;"><span style="width: 14px; height: 14px; background: ${color}; border: 1px solid #666; margin-right: 4px; border-radius: 2px; flex-shrink: 0;"></span><span style="color: #ce9178;">${color}</span></span>`;
+            });
+            
+            processed = processed.replace(/(rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\))/g, (match, color) => {
+                return `<span style="display: inline-flex; align-items: center; vertical-align: middle;"><span style="width: 14px; height: 14px; background: ${color}; border: 1px solid #666; margin-right: 4px; border-radius: 2px; flex-shrink: 0;"></span><span style="color: #ce9178;">${color}</span></span>`;
+            });
+            
+            processed = processed.replace(/(rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))/g, (match, color) => {
+                return `<span style="display: inline-flex; align-items: center; vertical-align: middle;"><span style="width: 14px; height: 14px; background: ${color}; border: 1px solid #666; margin-right: 4px; border-radius: 2px; flex-shrink: 0;"></span><span style="color: #ce9178;">${color}</span></span>`;
+            });
+            
+            processed = processed.replace(/&lt;(\w+)([^&gt;]*)&gt;/g, (match, tagName, attributes) => {
+                const processedAttributes = attributes.replace(/(\w+)=/g, '<span style="color: #9cdcfe;">$1</span>=')
+                    .replace(/"([^"]*)"/g, '<span style="color: #ce9178;">$&</span>');
+                return `<span style="color: #569cd6;">&lt;${tagName}</span><span style="color: #d4d4d4;">${processedAttributes}</span><span style="color: #569cd6;">&gt;</span>`;
+            })
+            .replace(/&lt;\/([^&gt;]+)&gt;/g, '<span style="color: #569cd6;">&lt;/$1&gt;</span>');
+            
+            return processed;
         }
         return code;
     }
