@@ -20,7 +20,10 @@ class SuperRefactorModalContainer extends React.Component {
             'applyChanges',
             'downloadProject',
             'getProjectFiles',
-            'toggleViewMode'
+            'toggleViewMode',
+            'handleEditorScroll',
+            'handleEditorKeyDown',
+            'handleWordWrapToggle'
         ]);
 
         this.state = {
@@ -30,7 +33,8 @@ class SuperRefactorModalContainer extends React.Component {
             message: '',
             searchQuery: '',
             filteredFiles: [],
-            viewMode: 'preview' // preview 或 code
+            viewMode: 'code', // code or preview for SVG
+            wordWrap: true // 自动换行
         };
     }
 
@@ -208,11 +212,17 @@ class SuperRefactorModalContainer extends React.Component {
         const files = this.getProjectFiles();
         
         if (files.length > 0) {
+            let content = files[0].content;
+            // 如果是JSON文件，自动格式化显示
+            if (files[0].type === 'json') {
+                content = this.formatJSON(content);
+            }
+            
             this.setState({
                 files: files,
                 filteredFiles: files,
                 currentFile: 0,
-                content: files[0].content
+                content: content
             });
         }
     }
@@ -234,6 +244,128 @@ class SuperRefactorModalContainer extends React.Component {
         this.setState({files, content});
     }
 
+    handleEditorScroll (e) {
+        const lineNumbers = e.target.parentElement.previousElementSibling;
+        const syntaxHighlight = e.target.previousElementSibling;
+        
+        if (lineNumbers) {
+            lineNumbers.scrollTop = e.target.scrollTop;
+        }
+        
+        if (syntaxHighlight) {
+            syntaxHighlight.scrollTop = e.target.scrollTop;
+            syntaxHighlight.scrollLeft = e.target.scrollLeft;
+        }
+    }
+
+    handleEditorKeyDown (e) {
+        // 支持Tab键缩进
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = e.target.selectionStart;
+            const end = e.target.selectionEnd;
+            const value = e.target.value;
+            
+            const newValue = value.substring(0, start) + '    ' + value.substring(end);
+            e.target.value = newValue;
+            e.target.selectionStart = e.target.selectionEnd = start + 4;
+            
+            this.handleFileChange({target: e.target});
+        }
+    }
+
+    handleWordWrapToggle () {
+        console.log('[超级重构] 切换自动换行:', this.state.wordWrap);
+        this.setState(prevState => {
+            console.log('[超级重构] 新的自动换行状态:', !prevState.wordWrap);
+            return {
+                wordWrap: !prevState.wordWrap
+            };
+        });
+    }
+
+    formatJSON (jsonString) {
+        try {
+            const parsed = JSON.parse(jsonString);
+            return JSON.stringify(parsed, null, 2);
+        } catch (e) {
+            return jsonString;
+        }
+    }
+
+    compressJSON (jsonString) {
+        try {
+            const parsed = JSON.parse(jsonString);
+            return JSON.stringify(parsed);
+        } catch (e) {
+            return jsonString;
+        }
+    }
+
+    handleEditorScroll (e) {
+        const lineNumbers = e.target.previousElementSibling;
+        if (lineNumbers) {
+            lineNumbers.scrollTop = e.target.scrollTop;
+        }
+    }
+
+    highlightSyntax (code, type) {
+        if (!code) return '';
+        
+        if (type === 'json') {
+            return code
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"([^"]+)"(?=:)/g, '<span style="color: #9cdcfe;">$&</span>')
+                .replace(/:\s*("[^"]*"|\d+|true|false|null)/g, (match, value) => {
+                    if (value === 'true' || value === 'false') {
+                        return `: <span style="color: #569cd6;">${value}</span>`;
+                    } else if (value === 'null') {
+                        return `: <span style="color: #569cd6;">${value}</span>`;
+                    } else if (!isNaN(value)) {
+                        return `: <span style="color: #b5cea8;">${value}</span>`;
+                    } else {
+                        return `: <span style="color: #ce9178;">${value}</span>`;
+                    }
+                })
+                .replace(/\{/g, '<span style="color: #d4d4d4;">{</span>')
+                .replace(/\}/g, '<span style="color: #d4d4d4;">}</span>')
+                .replace(/\[/g, '<span style="color: #d4d4d4;">[</span>')
+                .replace(/\]/g, '<span style="color: #d4d4d4;">]</span>');
+        } else if (type === 'svg') {
+            return code
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/&lt;(\w+)([^&gt;]*)&gt;/g, '<span style="color: #569cd6;">&lt;$1</span><span style="color: #d4d4d4;">$2</span><span style="color: #569cd6;">&gt;</span>')
+                .replace(/&lt;\/([^&gt;]+)&gt;/g, '<span style="color: #569cd6;">&lt;/$1&gt;</span>')
+                .replace(/(\w+)=/g, '<span style="color: #9cdcfe;">$1</span>=')
+                .replace(/"([^"]*)"/g, (match, value) => {
+                    // 检测颜色值
+                    if (/^#[0-9a-fA-F]{3,6}$/.test(value)) {
+                        return `<span style="color: #ce9178;"><span style="color: ${value};">${match}</span></span>`;
+                    } else if (/^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/.test(value)) {
+                        return `<span style="color: #ce9178;"><span style="color: ${value};">${match}</span></span>`;
+                    } else if (/^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\)$/.test(value)) {
+                        return `<span style="color: #ce9178;"><span style="color: ${value};">${match}</span></span>`;
+                    } else {
+                        return `<span style="color: #ce9178;">${match}</span>`;
+                    }
+                });
+        }
+        return code;
+    }
+
+    getLineNumbers (code) {
+        const lines = (code || '').split('\n').length;
+        let numbers = '';
+        for (let i = 1; i <= lines; i++) {
+            numbers += `<div style="padding: 0 10px; text-align: right; color: #666; font-size: 13px; line-height: 1.5;">${i}</div>`;
+        }
+        return numbers;
+    }
+
     selectFile (index) {
         const {filteredFiles} = this.state;
         const selectedFileName = filteredFiles[index].name;
@@ -244,11 +376,17 @@ class SuperRefactorModalContainer extends React.Component {
         }));
 
         const fullIndex = files.findIndex(f => f.name === selectedFileName);
+        let content = files[fullIndex].content;
+
+        // 如果是JSON文件，自动格式化显示
+        if (files[fullIndex].type === 'json') {
+            content = this.formatJSON(content);
+        }
 
         this.setState({
             files,
             currentFile: fullIndex,
-            content: files[fullIndex].content
+            content: content
         });
     }
 
@@ -281,7 +419,9 @@ class SuperRefactorModalContainer extends React.Component {
 
         try {
             if (file.name === 'project.json') {
-                const newData = JSON.parse(file.content);
+                // 压缩JSON回一行
+                const compressedContent = this.compressJSON(file.content);
+                const newData = JSON.parse(compressedContent);
                 
                 if (this.props.vm) {
                     this.props.vm.loadProject(newData).then(() => {
@@ -374,7 +514,7 @@ class SuperRefactorModalContainer extends React.Component {
 
     render () {
         const {visible, theme} = this.props;
-        const {files, currentFile, content, message, searchQuery, filteredFiles, viewMode} = this.state;
+        const {files, currentFile, content, message, searchQuery, filteredFiles, viewMode, wordWrap} = this.state;
         const currentFileObj = files[currentFile];
         const currentFileName = currentFileObj ? currentFileObj.name : '';
         const currentFileType = currentFileObj ? currentFileObj.type : '';
@@ -616,30 +756,92 @@ class SuperRefactorModalContainer extends React.Component {
                                             {viewMode === 'preview' ? '显示代码' : '显示预览'}
                                         </button>
                                     )}
+                                    {canEdit && (
+                                        <button
+                                            onClick={this.handleWordWrapToggle}
+                                            style={{
+                                                padding: '4px 8px',
+                                                background: wordWrap ? '#4d97ff' : colors.buttonBg,
+                                                color: wordWrap ? 'white' : colors.text,
+                                                border: `1px solid ${colors.border}`,
+                                                borderRadius: '3px',
+                                                cursor: 'pointer',
+                                                fontSize: '10px',
+                                                fontWeight: wordWrap ? 'bold' : 'normal'
+                                            }}
+                                        >
+                                            {wordWrap ? '自动换行' : '禁用换行'}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             
                             {isSvg ? (
                                 viewMode === 'code' ? (
-                                    <textarea
-                                        value={content}
-                                        onChange={this.handleFileChange}
-                                        style={{
+                                    <div style={{
+                                        flex: 1,
+                                        display: 'flex',
+                                        border: `1px solid ${colors.border}`,
+                                        borderRadius: '0 0 4px 4px',
+                                        overflow: 'hidden',
+                                        position: 'relative'
+                                    }}>
+                                        <div style={{
+                                            width: '40px',
+                                            background: colors.headerBg,
+                                            borderRight: `1px solid ${colors.border}`,
+                                            overflow: 'hidden'
+                                        }} dangerouslySetInnerHTML={{ __html: this.getLineNumbers(content) }} />
+                                        <div style={{
                                             flex: 1,
-                                            width: '100%',
-                                            padding: '15px',
-                                            fontFamily: 'monospace',
-                                            fontSize: '13px',
-                                            border: `1px solid ${colors.border}`,
-                                            borderRadius: '0 0 4px 4px',
-                                            resize: 'none',
-                                            outline: 'none',
-                                            lineHeight: '1.5',
-                                            background: colors.background,
-                                            color: colors.text
-                                        }}
-                                        spellCheck="false"
-                                    />
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}>
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                right: 0,
+                                                bottom: 0,
+                                                padding: '15px',
+                                                fontFamily: "Consolas, 'Courier New', monospace",
+                                                fontSize: '13px',
+                                                lineHeight: '1.5',
+                                                whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+                                                wordWrap: wordWrap ? 'break-word' : 'normal',
+                                                overflow: 'auto',
+                                                pointerEvents: 'none',
+                                                color: colors.text
+                                            }} dangerouslySetInnerHTML={{ __html: this.highlightSyntax(content, 'svg') }} />
+                                            <textarea
+                                                value={content}
+                                                onChange={this.handleFileChange}
+                                                onKeyDown={this.handleEditorKeyDown}
+                                                onScroll={this.handleEditorScroll}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    bottom: 0,
+                                                    padding: '15px',
+                                                    fontFamily: "Consolas, 'Courier New', monospace",
+                                                    fontSize: '13px',
+                                                    lineHeight: '1.5',
+                                                    resize: 'none',
+                                                    outline: 'none',
+                                                    background: 'transparent',
+                                                    color: 'transparent',
+                                                    caretColor: colors.text,
+                                                    border: 'none',
+                                                    whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+                                                    wordWrap: wordWrap ? 'break-word' : 'normal',
+                                                    overflow: 'auto'
+                                                }}
+                                                spellCheck="false"
+                                            />
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div style={{
                                         flex: 1,
@@ -649,41 +851,94 @@ class SuperRefactorModalContainer extends React.Component {
                                         border: `1px solid ${colors.border}`,
                                         borderRadius: '0 0 4px 4px',
                                         background: colors.headerBg,
-                                        overflow: 'auto'
+                                        overflow: 'hidden'
                                     }}>
-                                        {content ? (
-                                            <div style={{
-                                                padding: '20px',
-                                                maxWidth: '100%',
-                                                maxHeight: '100%'
-                                            }}>
-                                                <svg dangerouslySetInnerHTML={{ __html: content }} />
-                                            </div>
-                                        ) : (
-                                            <div style={{color: '#999'}}>无法预览SVG</div>
-                                        )}
+                                        <div style={{
+                                            flex: 1,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            overflow: 'auto',
+                                            margin: '20px'
+                                        }}>
+                                            {content ? (
+                                                <div style={{
+                                                    maxWidth: '100%',
+                                                    maxHeight: '100%'
+                                                }}>
+                                                    <svg dangerouslySetInnerHTML={{ __html: content }} />
+                                                </div>
+                                            ) : (
+                                                <div style={{color: '#999'}}>无法预览SVG</div>
+                                            )}
+                                        </div>
                                     </div>
                                 )
                             ) : canEdit ? (
-                                <textarea
-                                    value={content}
-                                    onChange={this.handleFileChange}
-                                    style={{
+                                <div style={{
+                                    flex: 1,
+                                    display: 'flex',
+                                    border: `1px solid ${colors.border}`,
+                                    borderRadius: '0 0 4px 4px',
+                                    overflow: 'hidden',
+                                    position: 'relative'
+                                }}>
+                                    <div style={{
+                                        width: '40px',
+                                        background: colors.headerBg,
+                                        borderRight: `1px solid ${colors.border}`,
+                                        overflow: 'hidden'
+                                    }} dangerouslySetInnerHTML={{ __html: this.getLineNumbers(content) }} />
+                                    <div style={{
                                         flex: 1,
-                                        width: '100%',
-                                        padding: '15px',
-                                        fontFamily: 'monospace',
-                                        fontSize: '13px',
-                                        border: `1px solid ${colors.border}`,
-                                        borderRadius: '0 0 4px 4px',
-                                        resize: 'none',
-                                        outline: 'none',
-                                        lineHeight: '1.5',
-                                        background: colors.background,
-                                        color: colors.text
-                                    }}
-                                    spellCheck="false"
-                                />
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                right: 0,
+                                                bottom: 0,
+                                                padding: '15px',
+                                                fontFamily: "Consolas, 'Courier New', monospace",
+                                                fontSize: '13px',
+                                                lineHeight: '1.5',
+                                                whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+                                                wordWrap: wordWrap ? 'break-word' : 'normal',
+                                                overflow: 'auto',
+                                                pointerEvents: 'none',
+                                                color: colors.text
+                                            }} dangerouslySetInnerHTML={{ __html: this.highlightSyntax(content, 'json') }} />
+                                        <textarea
+                                                value={content}
+                                                onChange={this.handleFileChange}
+                                                onKeyDown={this.handleEditorKeyDown}
+                                                onScroll={this.handleEditorScroll}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    bottom: 0,
+                                                    padding: '15px',
+                                                    fontFamily: "Consolas, 'Courier New', monospace",
+                                                    fontSize: '13px',
+                                                    lineHeight: '1.5',
+                                                    resize: 'none',
+                                                    outline: 'none',
+                                                    background: 'transparent',
+                                                    color: 'transparent',
+                                                    caretColor: colors.text,
+                                                    border: 'none',
+                                                    whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+                                                    wordWrap: wordWrap ? 'break-word' : 'normal',
+                                                    overflow: 'auto'
+                                                }}
+                                                spellCheck="false"
+                                            />
+                                    </div>
+                                </div>
                             ) : currentFileType === 'image' ? (
                                 <div style={{
                                     flex: 1,
@@ -769,7 +1024,7 @@ SuperRefactorModalContainer.propTypes = {
 const mapStateToProps = state => ({
     visible: state.scratchGui.modals.superRefactorModal,
     vm: state.scratchGui.vm,
-    theme: state.scratchGui.theme
+    theme: state.scratchGui.theme.theme
 });
 
 const mapDispatchToProps = dispatch => ({
