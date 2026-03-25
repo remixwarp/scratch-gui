@@ -98,47 +98,26 @@ const fetchLibrary = async () => {
     }
 
     try {
-        const mistiumRes = await fetch('https://extensions.mistium.com/generated-metadata/extensions-v0.json');
+        const mistiumRes = await fetch('/extensions/mistium/extensions-index.json');
         if (!mistiumRes.ok) {
             console.warn(`Mistium extensions: HTTP status ${mistiumRes.status}`);
         } else {
             const mistiumData = await mistiumRes.json();
             mistiumExtensions = mistiumData.extensions
-                .filter(ext => ext.featured)
                 .map(extension => ({
                     name: extension.name,
                     nameTranslations: extension.nameTranslations || {},
                     description: extension.description,
                     descriptionTranslations: extension.descriptionTranslations || {},
-                    extensionId: extension.id,
-                    extensionURL: `https://extensions.mistium.com/featured/${extension.name}.js`,
-                    iconURL: extension.image ? `https://extensions.mistium.com/${extension.image}` : emptyBanner,
+                    extensionId: extension.extensionId,
+                    extensionURL: extension.extensionURL,
+                    iconURL: extension.iconURL || emptyBanner,
                     tags: ['mistium'],
-                    credits: [
-                        ...(extension.by || []),
-                        ...(extension.original || [])
-                    ].map(credit => {
-                        if (credit.link) {
-                            return (
-                                <a
-                                    href={credit.link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    key={credit.name}
-                                >
-                                    {credit.name}
-                                </a>
-                            );
-                        }
-                        return credit.name;
-                    }),
+                    credits: (extension.credits || []).map(credit => credit.name),
                     docsURI: null,
-                    samples: extension.samples ? extension.samples.map(sample => ({
-                        href: `${process.env.ROOT}editor?project_url=https://extensions-mistium.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
-                        text: sample
-                    })) : null,
+                    samples: null,
                     incompatibleWithScratch: true,
-                    featured: true
+                    featured: extension.featured
                 }));
         }
     } catch (error) {

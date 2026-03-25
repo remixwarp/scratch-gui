@@ -1,32 +1,660 @@
 {
   "extensions": [
     {
-      "name": "MistUtils",
-      "description": "",
-      "extensionId": "mistutils",
-      "extensionURL": "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Extensions/Apps/MistUtils.js",
-      "onlineURL": "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Extensions/Apps/MistUtils.js",
-      "iconURL": null,
+      "name": "Async Skins",
+      "description": "Have your sprites render as other images or costumes.",
+      "extensionId": "async-skins",
+      "extensionURL": "/extensions/mistium/Async Skins.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Async Skins.js",
+      "iconURL": "/extensions/mistium/images/Async Skins.png",
       "tags": [
         "mistium"
       ],
-      "credits": [],
+      "credits": [
+        "Mistium"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
     {
-      "name": "MistUI",
-      "description": "",
-      "extensionId": "mistui",
-      "extensionURL": "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Extensions/Apps/MistUI.js",
-      "onlineURL": "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Extensions/Apps/MistUI.js",
-      "iconURL": null,
+      "name": "Canvas",
+      "description": "Create and manipulate canvases with this extension",
+      "extensionId": "canvas",
+      "extensionURL": "/extensions/mistium/Canvas.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Canvas.js",
+      "iconURL": "/extensions/mistium/images/Canvas.png",
       "tags": [
         "mistium"
       ],
-      "credits": [],
+      "credits": [
+        "Mistium"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
+    },
+    {
+      "name": "DiscordBot",
+      "description": "Make discord bots in turbowarp",
+      "extensionId": "discordbot",
+      "extensionURL": "/extensions/mistium/DiscordBot.js",
+      "onlineURL": "https://extensions.mistium.com/featured/DiscordBot.js",
+      "iconURL": "/extensions/mistium/images/DiscordBot.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "EvalPlus",
+      "description": "Evaluate JS better (plus some dom stuff)",
+      "extensionId": "evalplus",
+      "extensionURL": "/extensions/mistium/EvalPlus.js",
+      "onlineURL": "https://extensions.mistium.com/featured/EvalPlus.js",
+      "iconURL": "/extensions/mistium/images/EvalPlus.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Github",
+      "description": "Access github from scratch",
+      "extensionId": "github",
+      "extensionURL": "/extensions/mistium/Github.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Github.js",
+      "iconURL": "/extensions/mistium/images/Github.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "HTMLInputs",
+      "description": "Manage html inut elements on the stage",
+      "extensionId": "htmlinputs",
+      "extensionURL": "/extensions/mistium/HTMLInputs.js",
+      "onlineURL": "https://extensions.mistium.com/featured/HTMLInputs.js",
+      "iconURL": "/extensions/mistium/images/HTMLInputs.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Iframe+",
+      "description": "Have many iframes at once",
+      "extensionId": "iframe-",
+      "extensionURL": "/extensions/mistium/Iframe+.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Iframe+.js",
+      "iconURL": "/extensions/mistium/images/Iframe+.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "IndexedDB",
+      "description": "Access and write to IndexedDB.",
+      "extensionId": "indexeddb",
+      "extensionURL": "/extensions/mistium/IndexedDB.js",
+      "onlineURL": "https://extensions.mistium.com/featured/IndexedDB.js",
+      "iconURL": "/extensions/mistium/images/IndexedDB.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "KeyHistory",
+      "description": "Manage previous keys simply",
+      "extensionId": "keyhistory",
+      "extensionURL": "/extensions/mistium/KeyHistory.js",
+      "onlineURL": "https://extensions.mistium.com/featured/KeyHistory.js",
+      "iconURL": "/extensions/mistium/images/KeyHistory.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "MediaUtils",
+      "description": "Just some uilities for media devices",
+      "extensionId": "mediautils",
+      "extensionURL": "/extensions/mistium/MediaUtils.js",
+      "onlineURL": "https://extensions.mistium.com/featured/MediaUtils.js",
+      "iconURL": "/extensions/mistium/images/MediaUtils.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Mist's Utils",
+      "description": "A bunch of compiled stuff",
+      "extensionId": "mist-s-utils",
+      "extensionURL": "/extensions/mistium/Mist's Utils.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Mist's Utils.js",
+      "iconURL": "/extensions/mistium/images/Mist's Utils.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "MistFetch",
+      "description": "my fetch extension for http and stuff cos i needed a better one for originOS",
+      "extensionId": "mistfetch",
+      "extensionURL": "/extensions/mistium/MistFetch.js",
+      "onlineURL": "https://extensions.mistium.com/featured/MistFetch.js",
+      "iconURL": "/extensions/mistium/images/MistFetch.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "OASM",
+      "description": "Run the full oasm interpreter except very fast.",
+      "extensionId": "oasm",
+      "extensionURL": "/extensions/mistium/OASM.js",
+      "onlineURL": "https://extensions.mistium.com/featured/OASM.js",
+      "iconURL": "/extensions/mistium/images/OASM.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Persistent File System",
+      "description": "Persistent file system using IndexedDB",
+      "extensionId": "persistent-file-system",
+      "extensionURL": "/extensions/mistium/Persistent File System.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Persistent File System.js",
+      "iconURL": "/extensions/mistium/images/Persistent File System.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Python",
+      "description": "Run python in turbowarp with piodide",
+      "extensionId": "python",
+      "extensionURL": "/extensions/mistium/Python.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Python.js",
+      "iconURL": "/extensions/mistium/images/Python.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "RDF",
+      "description": "Type restricted data formatting",
+      "extensionId": "rdf",
+      "extensionURL": "/extensions/mistium/RDF.js",
+      "onlineURL": "https://extensions.mistium.com/featured/RDF.js",
+      "iconURL": "/extensions/mistium/images/RDF.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Rotur",
+      "description": "Utilise rotur in your projects",
+      "extensionId": "rotur",
+      "extensionURL": "/extensions/mistium/Rotur.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Rotur.js",
+      "iconURL": "/extensions/mistium/images/Rotur.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "roturVoice",
+      "description": "Voice and video calling for turbowarp",
+      "extensionId": "roturvoice",
+      "extensionURL": "/extensions/mistium/roturVoice.js",
+      "onlineURL": "https://extensions.mistium.com/featured/roturVoice.js",
+      "iconURL": "/extensions/mistium/images/roturVoice.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Shaders",
+      "description": "Run GLSL shaders on your sprites",
+      "extensionId": "shaders",
+      "extensionURL": "/extensions/mistium/Shaders.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Shaders.js",
+      "iconURL": "/extensions/mistium/images/Shaders.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Tables",
+      "description": "basically just compiled 2d arrays",
+      "extensionId": "tables",
+      "extensionURL": "/extensions/mistium/Tables.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Tables.js",
+      "iconURL": "/extensions/mistium/images/Tables.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Virtual File System",
+      "description": "in memory file system as an ext goes pretty crazy :sunglasses:",
+      "extensionId": "virtual-file-system",
+      "extensionURL": "/extensions/mistium/Virtual File System.js",
+      "onlineURL": "https://extensions.mistium.com/featured/Virtual File System.js",
+      "iconURL": "/extensions/mistium/images/Virtual File System.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "WebsocketPlus",
+      "description": "Connect and manage multiple websocket connections",
+      "extensionId": "websocketplus",
+      "extensionURL": "/extensions/mistium/WebsocketPlus.js",
+      "onlineURL": "https://extensions.mistium.com/featured/WebsocketPlus.js",
+      "iconURL": "/extensions/mistium/images/WebsocketPlus.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true
+    },
+    {
+      "name": "Camera",
+      "description": "Use the camera :P",
+      "extensionId": "camera",
+      "extensionURL": "/extensions/mistium/Camera.js",
+      "onlineURL": "https://extensions.mistium.com/files/Camera.js",
+      "iconURL": "https://extensions.mistium.com/images/Camera.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "Cloudlink4_Improved",
+      "description": "A powerful WebSocket extension for Scratch.",
+      "extensionId": "cloudlink4-improved",
+      "extensionURL": "/extensions/mistium/Cloudlink4_Improved.js",
+      "onlineURL": "https://extensions.mistium.com/files/Cloudlink4_Improved.js",
+      "iconURL": "https://extensions.mistium.com/images/Cloudlink4_Improved.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "Compiled Comments",
+      "description": "",
+      "extensionId": "compiled-comments",
+      "extensionURL": "/extensions/mistium/Compiled Comments.js",
+      "onlineURL": "https://extensions.mistium.com/files/Compiled Comments.js",
+      "iconURL": "https://extensions.mistium.com/images/Compiled Comments.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "ExportSpriteDataURI",
+      "description": "",
+      "extensionId": "exportspritedatauri",
+      "extensionURL": "/extensions/mistium/ExportSpriteDataURI.js",
+      "onlineURL": "https://extensions.mistium.com/files/ExportSpriteDataURI.js",
+      "iconURL": "https://extensions.mistium.com/images/ExportSpriteDataURI.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "Fast_List_Set",
+      "description": "",
+      "extensionId": "fast-list-set",
+      "extensionURL": "/extensions/mistium/Fast_List_Set.js",
+      "onlineURL": "https://extensions.mistium.com/files/Fast_List_Set.js",
+      "iconURL": "https://extensions.mistium.com/images/Fast_List_Set.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "Faster Blur Uri",
+      "description": "High-performance WebGL-based stack blur with adaptive downscaling for optimal performance",
+      "extensionId": "faster-blur-uri",
+      "extensionURL": "/extensions/mistium/Faster Blur Uri.js",
+      "onlineURL": "https://extensions.mistium.com/files/Faster Blur Uri.js",
+      "iconURL": "https://extensions.mistium.com/images/Faster Blur Uri.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "Faster Blur Uri Legacy",
+      "description": "",
+      "extensionId": "faster-blur-uri-legacy",
+      "extensionURL": "/extensions/mistium/Faster Blur Uri Legacy.js",
+      "onlineURL": "https://extensions.mistium.com/files/Faster Blur Uri Legacy.js",
+      "iconURL": "https://extensions.mistium.com/images/Faster Blur Uri Legacy.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "Faster Blur Uri Legacy 2",
+      "description": "A simple extension that just blurs images from urls and data uris as fast as i could make it blur them!!!!",
+      "extensionId": "faster-blur-uri-legacy-2",
+      "extensionURL": "/extensions/mistium/Faster Blur Uri Legacy 2.js",
+      "onlineURL": "https://extensions.mistium.com/files/Faster Blur Uri Legacy 2.js",
+      "iconURL": "https://extensions.mistium.com/images/Faster Blur Uri Legacy 2.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "FastObject",
+      "description": "",
+      "extensionId": "fastobject",
+      "extensionURL": "/extensions/mistium/FastObject.js",
+      "onlineURL": "https://extensions.mistium.com/files/FastObject.js",
+      "iconURL": "https://extensions.mistium.com/images/FastObject.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "InputManager",
+      "description": "Store a list of previously pressed keys. Made primarily for use in originOS (https://github.com/Mistium/Origin-OS).",
+      "extensionId": "inputmanager",
+      "extensionURL": "/extensions/mistium/InputManager.js",
+      "onlineURL": "https://extensions.mistium.com/files/InputManager.js",
+      "iconURL": "https://extensions.mistium.com/images/InputManager.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "KeyHistory Legacy",
+      "description": "Manage previous keys simply",
+      "extensionId": "keyhistory-legacy",
+      "extensionURL": "/extensions/mistium/KeyHistory Legacy.js",
+      "onlineURL": "https://extensions.mistium.com/files/KeyHistory Legacy.js",
+      "iconURL": "https://extensions.mistium.com/images/KeyHistory Legacy.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "LowLevelSkins",
+      "description": "",
+      "extensionId": "lowlevelskins",
+      "extensionURL": "/extensions/mistium/LowLevelSkins.js",
+      "onlineURL": "https://extensions.mistium.com/files/LowLevelSkins.js",
+      "iconURL": "https://extensions.mistium.com/images/LowLevelSkins.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "originOSL",
+      "description": "Run OSL code in the originOSL environment through the live embed system",
+      "extensionId": "originosl",
+      "extensionURL": "/extensions/mistium/originOSL.js",
+      "onlineURL": "https://extensions.mistium.com/files/originOSL.js",
+      "iconURL": "https://extensions.mistium.com/images/originOSL.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "Random",
+      "description": "",
+      "extensionId": "random",
+      "extensionURL": "/extensions/mistium/Random.js",
+      "onlineURL": "https://extensions.mistium.com/files/Random.js",
+      "iconURL": "https://extensions.mistium.com/images/Random.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "roturVoice Advanced",
+      "description": "",
+      "extensionId": "roturvoice-advanced",
+      "extensionURL": "/extensions/mistium/roturVoice Advanced.js",
+      "onlineURL": "https://extensions.mistium.com/files/roturVoice Advanced.js",
+      "iconURL": "https://extensions.mistium.com/images/roturVoice Advanced.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "SoundUtils",
+      "description": "",
+      "extensionId": "soundutils",
+      "extensionURL": "/extensions/mistium/SoundUtils.js",
+      "onlineURL": "https://extensions.mistium.com/files/SoundUtils.js",
+      "iconURL": "https://extensions.mistium.com/images/SoundUtils.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "TabUtils",
+      "description": "Detect when the tab key is pressed and allow it to be disabled and enabled.",
+      "extensionId": "tabutils",
+      "extensionURL": "/extensions/mistium/TabUtils.js",
+      "onlineURL": "https://extensions.mistium.com/files/TabUtils.js",
+      "iconURL": "https://extensions.mistium.com/images/TabUtils.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "URI Utilities",
+      "description": "",
+      "extensionId": "uri-utilities",
+      "extensionURL": "/extensions/mistium/URI Utilities.js",
+      "onlineURL": "https://extensions.mistium.com/files/URI Utilities.js",
+      "iconURL": "https://extensions.mistium.com/images/URI Utilities.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
+    },
+    {
+      "name": "USB",
+      "description": "Just some blocks for the web usb api",
+      "extensionId": "usb",
+      "extensionURL": "/extensions/mistium/USB.js",
+      "onlineURL": "https://extensions.mistium.com/files/USB.js",
+      "iconURL": "https://extensions.mistium.com/images/USB.png",
+      "tags": [
+        "mistium"
+      ],
+      "credits": [
+        "Mistium"
+      ],
+      "incompatibleWithScratch": true,
+      "featured": false
     }
   ]
 }
