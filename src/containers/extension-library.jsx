@@ -113,7 +113,7 @@ const fetchLibrary = async () => {
                     extensionURL: extension.extensionURL,
                     iconURL: extension.iconURL || emptyBanner,
                     tags: ['mistium'],
-                    credits: (extension.credits || []).map(credit => credit.name),
+                    credits: (extension.credits || []).map(credit => typeof credit === 'object' && credit.name ? credit.name : credit),
                     docsURI: null,
                     samples: null,
                     incompatibleWithScratch: true,
@@ -250,10 +250,11 @@ const fetchLibrary = async () => {
                 tags: extension.tags || ['remixwarp'],
                 credits: (extension.credits || []).map(credit => {
                     if (typeof credit === 'object' && credit.name) {
-                        if (credit.link) {
+                        const link = credit.link || credit.url;
+                        if (link) {
                             return (
                                 <a
-                                    href={credit.link}
+                                    href={link}
                                     target="_blank"
                                     rel="noreferrer"
                                     key={credit.name}
@@ -296,10 +297,11 @@ const fetchLibrary = async () => {
                 tags: extension.tags || ['astra'],
                 credits: (extension.credits || []).map(credit => {
                     if (typeof credit === 'object' && credit.name) {
-                        if (credit.link) {
+                        const link = credit.link || credit.url;
+                        if (link) {
                             return (
                                 <a
-                                    href={credit.link}
+                                    href={link}
                                     target="_blank"
                                     rel="noreferrer"
                                     key={credit.name}
@@ -436,7 +438,6 @@ class ExtensionLibrary extends React.PureComponent {
                 const locale = this.props.intl.locale;
                 library.push(
                     ...this.state.gallery
-                        .filter(i => i.extensionId !== 'faceSensing')
                         .map(i => translateGalleryItem(i, locale))
                         .map(toLibraryItem)
                 );

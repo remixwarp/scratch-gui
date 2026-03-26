@@ -169,7 +169,7 @@ export default [
             />
         ),
         extensionId: 'faceSensing',
-        extensionURL: 'https://extensions.turbowarp.org/lab/face-sensing.js',
+        extensionURL: '/extensions/turbowarp/lab/face-sensing.js',
         iconURL: faceSensingIconURL,
         insetIconURL: faceSensingInsetIconURL,
         description: (

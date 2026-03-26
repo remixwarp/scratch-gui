@@ -11,8 +11,14 @@
         "astra"
       ],
       "credits": [
-        "Cyberexplorer",
-        "_KOSHINO_"
+        {
+          "name": "Cyberexplorer",
+          "link": "https://github.com/LanwyWriteXU"
+        },
+        {
+          "name": "_KOSHINO_",
+          "link": "https://github.com/KOSHINOawa"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -28,7 +34,9 @@
         "astra"
       ],
       "credits": [
-        "小金鱼"
+        {
+          "name": "小金鱼"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -44,7 +52,10 @@
         "astra"
       ],
       "credits": [
-        "fhy-action"
+        {
+          "name": "fhy-action",
+          "link": "https://github.com/fhy-action"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -60,7 +71,10 @@
         "astra"
       ],
       "credits": [
-        "E.R.T.J."
+        {
+          "name": "E.R.T.J.",
+          "link": "https://www.ccw.site/student/627b7cb4353b0e6d7ffca104"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -76,7 +90,10 @@
         "astra"
       ],
       "credits": [
-        "fhy-action"
+        {
+          "name": "fhy-action",
+          "link": "https://github.com/fhy-action"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -92,7 +109,10 @@
         "astra"
       ],
       "credits": [
-        "CramYing"
+        {
+          "name": "CramYing",
+          "link": "https://b23.tv/9qx3DTK"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -108,7 +128,10 @@
         "astra"
       ],
       "credits": [
-        "GALAXY__a"
+        {
+          "name": "GALAXY__a",
+          "link": "https://galaxyapages.mohuajz.eu.org/"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -124,7 +147,10 @@
         "astra"
       ],
       "credits": [
-        "蓝莓是颗果"
+        {
+          "name": "蓝莓是颗果",
+          "link": "https://space.bilibili.com/3546904308746714"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -140,7 +166,10 @@
         "astra"
       ],
       "credits": [
-        "小小羊"
+        {
+          "name": "小小羊",
+          "link": "https://github.com/xiaoxiaoyang-114514/"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -156,7 +185,10 @@
         "astra"
       ],
       "credits": [
-        "ningqi"
+        {
+          "name": "ningqi",
+          "link": "https://github.com/ningqi24"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -172,7 +204,10 @@
         "astra"
       ],
       "credits": [
-        "ningqi"
+        {
+          "name": "ningqi",
+          "link": "https://github.com/ningqi24"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -188,7 +223,10 @@
         "astra"
       ],
       "credits": [
-        "ningqi"
+        {
+          "name": "ningqi",
+          "link": "https://github.com/ningqi24"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -204,7 +242,10 @@
         "astra"
       ],
       "credits": [
-        "ningqi"
+        {
+          "name": "ningqi",
+          "link": "https://github.com/ningqi24"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -220,7 +261,10 @@
         "astra"
       ],
       "credits": [
-        "ningqi"
+        {
+          "name": "ningqi",
+          "link": "https://github.com/ningqi24"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
@@ -236,14 +280,17 @@
         "astra"
       ],
       "credits": [
-        "DVD"
+        {
+          "name": "DVD",
+          "link": "https://space.bilibili.com/504603863"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
     },
     {
-      "name": "Browser Check",
-      "description": "Detects the browser type running the project, supports multiple browser identification",
+      "name": "浏览器检查",
+      "description": "检测项目运行的浏览器类型，支持多个浏览器识别",
       "extensionId": "browser-check",
       "extensionURL": "/extensions/astraeditor/browserDetector.js",
       "onlineURL": "https://editors.astras.top/extensions/browserDetector.js",
@@ -252,7 +299,10 @@
         "astra"
       ],
       "credits": [
-        "DVD"
+        {
+          "name": "DVD",
+          "link": "https://space.bilibili.com/504603863"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true

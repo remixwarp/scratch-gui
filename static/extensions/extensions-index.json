@@ -903,17 +903,19 @@
       "featured": true
     },
     {
-      "name": "Browser Check",
-      "description": "Detects the browser type running the project, supports multiple browser identification",
+      "name": "浏览器检查",
+      "description": "检测项目运行的浏览器类型，支持多个浏览器识别",
       "extensionId": "browser-check",
-      "extensionURL": "https://editors.astras.top/extensions/browserDetector.js",
+      "extensionURL": "/extensions/astraeditor/browserDetector.js",
       "onlineURL": "https://editors.astras.top/extensions/browserDetector.js",
       "iconURL": "/extensions/astraeditor/images/browserDetector.png",
       "tags": [
         "astra"
       ],
       "credits": [
-        "DVD"
+        {
+          "name": "DVD"
+        }
       ],
       "incompatibleWithScratch": true,
       "featured": true
