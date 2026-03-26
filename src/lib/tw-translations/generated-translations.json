@@ -10,7 +10,7 @@
         "gui.menuBar.compatibility.turbowarp": "Turbowarp",
         "gui.menuBar.compatibility.o2engine": "02Engine",
         "gui.menuBar.compatibility.astraeditor": "AstraEditor",
-        "gui.menuBar.compatibility.remixwarp": "RemixWarp"
+        "gui.menuBar.compatibility.Bilup": "Bilup"
     },
     "zh-geng": {
         "onboarding.step7.title": "AI助手",
@@ -23,14 +23,7 @@
         "gui.menuBar.compatibility.turbowarp": "Turbowarp",
         "gui.menuBar.compatibility.o2engine": "02Engine",
         "gui.menuBar.compatibility.astraeditor": "AstraEditor",
-        "gui.menuBar.compatibility.remixwarp": "RemixWarp",
-        "gui.menuBar.compatibility": "兼容性转换",
-        "gui.menuBar.compatibility.saveTo": "保存到",
-        "gui.menuBar.compatibility.scratch": "Scratch",
-        "gui.menuBar.compatibility.turbowarp": "Turbowarp",
-        "gui.menuBar.compatibility.o2engine": "02Engine",
-        "gui.menuBar.compatibility.astraeditor": "AstraEditor",
-        "gui.menuBar.compatibility.remixwarp": "RemixWarp"
+        "gui.menuBar.compatibility.Bilup": "Bilup"
     },
     "zh-cn": {
         "tw.accent.blue": "蓝色",
@@ -706,7 +699,7 @@
         "gui.menuBar.compatibility.turbowarp": "Turbowarp",
         "gui.menuBar.compatibility.o2engine": "02Engine",
         "gui.menuBar.compatibility.astraeditor": "AstraEditor",
-        "gui.menuBar.compatibility.remixwarp": "RemixWarp",
+        "gui.menuBar.compatibility.Bilup": "Bilup",
         "onboarding.next": "下一步",
         "onboarding.startCreating": "开始创作",
         "onboarding.skipTutorial": "跳过教程",

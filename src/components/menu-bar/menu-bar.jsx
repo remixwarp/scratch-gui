@@ -421,13 +421,13 @@ class MenuBar extends React.Component {
         });
     }
 
-    getPlatformInfo (agentName) {
+    getPlatformInfo (agentName) {   
         const platforms = {
-            'Scratch': { name: 'scratch', url: 'https://scratch.mit.edu' },
-            'TurboWarp': { name: 'turbowarp', url: 'https://turbowarp.org' },
-            '02Engine': { name: 'o2engine', url: 'https://o2engine.com' },
-            'AstraEditor': { name: 'astraeditor', url: 'https://astraeditor.com' },
-            'RemixWarp': { name: 'remixwarp', url: 'https://remixwarp.com' }
+            'Scratch': { name: 'Scratch', url: 'https://scratch.mit.edu' },
+            'TurboWarp': { name: 'TurboWarp', url: 'https://turbowarp.org' },
+            '02Engine': { name: '02Engine', url: 'https://02engine.02studio.xyz/' },
+            'AstraEditor': { name: 'AstraEditor', url: 'https://www.astras.top/' },
+            'Bilup': { name: 'Bilup', url: 'https://editor.bilup.org/' }
         };
         return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
     }
@@ -1676,7 +1676,7 @@ class MenuBar extends React.Component {
                                                     <FormattedMessage
                                                         defaultMessage="02Engine"
                                                         description="Convert to 02Engine compatibility"
-                                                        id="gui.menuBar.compatibility.o2engine"
+                                                        id="gui.menuBar.compatibility.02engine"
                                                     />
                                                 </MenuItem>
                                                 <MenuItem onClick={this.handleConvertToAstraEditor}>
@@ -1689,8 +1689,8 @@ class MenuBar extends React.Component {
                                                 <MenuItem onClick={this.handleConvertToRemixWarp}>
                                                     <FormattedMessage
                                                         defaultMessage="RemixWarp"
-                                                        description="Convert to RemixWarp compatibility"
-                                                        id="gui.menuBar.compatibility.remixwarp"
+                                                        description="Convert to Bilup compatibility"
+                                                        id="gui.menuBar.compatibility.Bilup"
                                                     />
                                                 </MenuItem>
                                             </Submenu>

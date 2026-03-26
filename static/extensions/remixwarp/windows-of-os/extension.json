@@ -1,5 +1,5 @@
 {
-  "slug": "gmy-xxl/windows-of-os",
+  "slug": "windows-of-os/windows-of-os",
   "id": "gmyosWindow",
   "name": "Windows of OS",
   "description": "An extension that simulates an operating system, including CMD terminal, register management, external program loading, custom windows, and GUI components.",

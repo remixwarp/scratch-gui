@@ -4,11 +4,16 @@
       "name": "赛博探险者工具箱迷你版",
       "description": "由Cyberexplorer和_KOSHINO_制作。",
       "extensionId": "cyberexplorertools",
-      "extensionURL": "https://editors.astras.top/extensions/cyberexplorertools.js",
+      "extensionURL": "/extensions/astraeditor/cyberexplorertools.js",
       "onlineURL": "https://editors.astras.top/extensions/cyberexplorertools.js",
       "iconURL": "/extensions/astraeditor/images/cyberexplorertools.png",
-      "tags": ["astra"],
-      "credits": ["Cyberexplorer", "_KOSHINO_"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "Cyberexplorer",
+        "_KOSHINO_"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -16,11 +21,15 @@
       "name": "XJY的阻挡话语",
       "description": "它让你更容易管理被阻塞的词汇，适合聊天功能 由小金鱼创作。",
       "extensionId": "xjy-blocked-words",
-      "extensionURL": "https://editors.astras.top/extensions/prohibitedWordsExtension.js",
+      "extensionURL": "/extensions/astraeditor/prohibitedWordsExtension.js",
       "onlineURL": "https://editors.astras.top/extensions/prohibitedWordsExtension.js",
       "iconURL": "/extensions/astraeditor/images/prohibitedWordsExtension.png",
-      "tags": ["astra"],
-      "credits": ["小金鱼"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "小金鱼"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -28,11 +37,15 @@
       "name": "哈希助手",
       "description": "提供一些哈希函数，包括SHA-1、SHA-256、CRC32和HMAC-SHA256，用于数据完整性的验证。",
       "extensionId": "hash-helper",
-      "extensionURL": "https://editors.astras.top/extensions/hashhelper.js",
+      "extensionURL": "/extensions/astraeditor/hashhelper.js",
       "onlineURL": "https://editors.astras.top/extensions/hashhelper.js",
       "iconURL": "/extensions/astraeditor/images/hashhelper.png",
-      "tags": ["astra"],
-      "credits": ["fhy-action"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "fhy-action"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -40,11 +53,15 @@
       "name": "类WinUI3弹窗",
       "description": "弹窗！更好用的弹窗！",
       "extensionId": "winui3-dialog",
-      "extensionURL": "https://editors.astras.top/extensions/WinUI3.js",
+      "extensionURL": "/extensions/astraeditor/WinUI3.js",
       "onlineURL": "https://editors.astras.top/extensions/WinUI3.js",
       "iconURL": "/extensions/astraeditor/images/WinUI3.png",
-      "tags": ["astra"],
-      "credits": ["E.R.T.J."],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "E.R.T.J."
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -52,11 +69,15 @@
       "name": "文本处理",
       "description": "为高级文本处理场景提供丰富的文本处理模块：大小转换、搜索替换、正则表达式、拆联、统计、文本清理等。",
       "extensionId": "text-processing",
-      "extensionURL": "https://editors.astras.top/extensions/textprocessing.js",
+      "extensionURL": "/extensions/astraeditor/textprocessing.js",
       "onlineURL": "https://editors.astras.top/extensions/textprocessing.js",
       "iconURL": "/extensions/astraeditor/images/textprocessing.png",
-      "tags": ["astra"],
-      "credits": ["fhy-action"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "fhy-action"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -64,11 +85,15 @@
       "name": "图像处理器",
       "description": "简单的图像处理",
       "extensionId": "image-processor",
-      "extensionURL": "https://editors.astras.top/extensions/ImageProcessor.js",
+      "extensionURL": "/extensions/astraeditor/ImageProcessor.js",
       "onlineURL": "https://editors.astras.top/extensions/ImageProcessor.js",
       "iconURL": "/extensions/astraeditor/images/ImageProcessor.png",
-      "tags": ["astra"],
-      "credits": ["CramYing"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "CramYing"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -76,11 +101,15 @@
       "name": "文本检查",
       "description": "这是一个用于检测文本的扩展，提供块来检查输入是否为有效字符/数字，以及是否包含指定的特殊字符。",
       "extensionId": "text-check",
-      "extensionURL": "https://editors.astras.top/extensions/textcheck.js",
+      "extensionURL": "/extensions/astraeditor/textcheck.js",
       "onlineURL": "https://editors.astras.top/extensions/textcheck.js",
       "iconURL": "/extensions/astraeditor/images/textcheck.png",
-      "tags": ["astra"],
-      "credits": ["GALAXY__a"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "GALAXY__a"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -88,11 +117,15 @@
       "name": "模拟Windows10和11窗口弹出动画",
       "description": "让你的 Scratch OS 项目有类似 Windows 10 和 11 的窗口弹出动画。",
       "extensionId": "windows-animation",
-      "extensionURL": "https://editors.astras.top/extensions/EsayWindows10Windows11Animations.js",
+      "extensionURL": "/extensions/astraeditor/EsayWindows10Windows11Animations.js",
       "onlineURL": "https://editors.astras.top/extensions/EsayWindows10Windows11Animations.js",
       "iconURL": "/extensions/astraeditor/images/EsayWindows10Windows11Animations.png",
-      "tags": ["astra"],
-      "credits": ["蓝莓是颗果"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "蓝莓是颗果"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -100,11 +133,15 @@
       "name": "羊工具包",
       "description": "一些奇怪的方块。",
       "extensionId": "sheep-toolkit",
-      "extensionURL": "https://editors.astras.top/extensions/SheepToolkit.js",
+      "extensionURL": "/extensions/astraeditor/SheepToolkit.js",
       "onlineURL": "https://editors.astras.top/extensions/SheepToolkit.js",
       "iconURL": "/extensions/astraeditor/images/SheepToolkit.png",
-      "tags": ["astra"],
-      "credits": ["小小羊"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "小小羊"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -112,11 +149,15 @@
       "name": "宁气——重复块",
       "description": "让你简化一些重复的构建模块",
       "extensionId": "ningqi-repetitive-block",
-      "extensionURL": "https://editors.astras.top/extensions/ningqiRepetitiveblock.js",
+      "extensionURL": "/extensions/astraeditor/ningqiRepetitiveblock.js",
       "onlineURL": "https://editors.astras.top/extensions/ningqiRepetitiveblock.js",
       "iconURL": "/extensions/astraeditor/images/ningqiRepetitiveblock.png",
-      "tags": ["astra"],
-      "credits": ["ningqi"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "ningqi"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -124,11 +165,15 @@
       "name": "ningqiVariableTool",
       "description": "允许你在扩展列表中创建新的变量",
       "extensionId": "ningqi-variable-tool",
-      "extensionURL": "https://editors.astras.top/extensions/ningqiVariableTool.js",
+      "extensionURL": "/extensions/astraeditor/ningqiVariableTool.js",
       "onlineURL": "https://editors.astras.top/extensions/ningqiVariableTool.js",
       "iconURL": "/extensions/astraeditor/images/ningqiVariableTool.png",
-      "tags": ["astra"],
-      "credits": ["ningqi"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "ningqi"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -136,11 +181,15 @@
       "name": "宁气感知",
       "description": "检查一下有没有一些不属于刮痕的地方",
       "extensionId": "ningqi-sensings",
-      "extensionURL": "https://editors.astras.top/extensions/ningqiSensings.js",
+      "extensionURL": "/extensions/astraeditor/ningqiSensings.js",
       "onlineURL": "https://editors.astras.top/extensions/ningqiSensings.js",
       "iconURL": "/extensions/astraeditor/images/ningqiSensings.png",
-      "tags": ["astra"],
-      "credits": ["ningqi"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "ningqi"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -148,11 +197,15 @@
       "name": "宁奇收藏1.5",
       "description": "收集了很多有用又有趣的东西！",
       "extensionId": "ningqi-collection",
-      "extensionURL": "https://editors.astras.top/extensions/ningqiCollect.js",
+      "extensionURL": "/extensions/astraeditor/ningqiCollect.js",
       "onlineURL": "https://editors.astras.top/extensions/ningqiCollect.js",
       "iconURL": "/extensions/astraeditor/images/ningqiCollect.png",
-      "tags": ["astra"],
-      "credits": ["ningqi"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "ningqi"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -160,11 +213,15 @@
       "name": "多源扩展列表",
       "description": "它从AstraEditor或ningqiCollectCollection仓库获取扩展列表，并允许从任意URL加载扩展。",
       "extensionId": "multi-source-extensions",
-      "extensionURL": "https://editors.astras.top/extensions/ningqiMultiSourceExtensions.js",
+      "extensionURL": "/extensions/astraeditor/ningqiMultiSourceExtensions.js",
       "onlineURL": "https://editors.astras.top/extensions/ningqiMultiSourceExtensions.js",
       "iconURL": "/extensions/astraeditor/images/ningqiMultiSourceExtensions.png",
-      "tags": ["astra"],
-      "credits": ["ningqi"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "ningqi"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -172,11 +229,15 @@
       "name": "Windows toast",
       "description": "发送带有图标、声音和持续时间设置的 Windows Toast 通知",
       "extensionId": "windows-toast",
-      "extensionURL": "https://editors.astras.top/extensions/windowstoast.js",
+      "extensionURL": "/extensions/astraeditor/windowstoast.js",
       "onlineURL": "https://editors.astras.top/extensions/windowstoast.js",
       "iconURL": "/extensions/astraeditor/images/windowstoast.png",
-      "tags": ["astra"],
-      "credits": ["DVD"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "DVD"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     },
@@ -184,11 +245,15 @@
       "name": "Browser Check",
       "description": "Detects the browser type running the project, supports multiple browser identification",
       "extensionId": "browser-check",
-      "extensionURL": "https://editors.astras.top/extensions/browserDetector.js",
+      "extensionURL": "/extensions/astraeditor/browserDetector.js",
       "onlineURL": "https://editors.astras.top/extensions/browserDetector.js",
       "iconURL": "/extensions/astraeditor/images/browserDetector.png",
-      "tags": ["astra"],
-      "credits": ["DVD"],
+      "tags": [
+        "astra"
+      ],
+      "credits": [
+        "DVD"
+      ],
       "incompatibleWithScratch": true,
       "featured": true
     }

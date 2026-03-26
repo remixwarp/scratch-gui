@@ -248,7 +248,29 @@ const fetchLibrary = async () => {
                 extensionURL: extension.extensionURL,
                 iconURL: extension.iconURL,
                 tags: extension.tags || ['remixwarp'],
-                credits: extension.credits || [],
+                credits: (extension.credits || []).map(credit => {
+                    if (typeof credit === 'object' && credit.name) {
+                        if (credit.link) {
+                            return (
+                                <a
+                                    href={credit.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    key={credit.name}
+                                >
+                                    {credit.name}
+                                </a>
+                            );
+                        }
+                        return credit.name;
+                    }
+                    return credit;
+                }),
+                docsURI: extension.docsURI || null,
+                samples: extension.samples ? extension.samples.map(sample => ({
+                    href: `${process.env.ROOT}editor?project_url=${window.location.origin}${sample.href}`,
+                    text: sample.text
+                })) : null,
                 incompatibleWithScratch: extension.incompatibleWithScratch || true,
                 featured: extension.featured || true
             }));
@@ -272,7 +294,29 @@ const fetchLibrary = async () => {
                 extensionURL: extension.extensionURL,
                 iconURL: extension.iconURL || emptyBanner,
                 tags: extension.tags || ['astra'],
-                credits: extension.credits || [],
+                credits: (extension.credits || []).map(credit => {
+                    if (typeof credit === 'object' && credit.name) {
+                        if (credit.link) {
+                            return (
+                                <a
+                                    href={credit.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    key={credit.name}
+                                >
+                                    {credit.name}
+                                </a>
+                            );
+                        }
+                        return credit.name;
+                    }
+                    return credit;
+                }),
+                docsURI: extension.docsURI || null,
+                samples: extension.samples ? extension.samples.map(sample => ({
+                    href: `${process.env.ROOT}editor?project_url=${window.location.origin}${sample.href}`,
+                    text: sample.text
+                })) : null,
                 incompatibleWithScratch: extension.incompatibleWithScratch || true,
                 featured: extension.featured || true
             }));

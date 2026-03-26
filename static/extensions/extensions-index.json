@@ -650,9 +650,9 @@
         "zh-cn": "一个模拟操作系统的扩展，包含CMD终端、寄存器管理、外部程序加载、自定义窗口和GUI组件等功能。"
       },
       "extensionId": "gmyosWindow",
-      "extensionURL": "/extensions/remixwarp/gmy-xxl/windows-of-os.js",
-      "onlineURL": "https://extensions.remixwarp.org/gmy-xxl/windows-of-os.js",
-      "iconURL": "/extensions/remixwarp/gmy-xxl/扩展封面.png",
+      "extensionURL": "/extensions/remixwarp/windows-of-os/windows-of-os.js",
+      "onlineURL": "https://extensions.remixwarp.org/windows-of-os/windows-of-os.js",
+      "iconURL": "/extensions/remixwarp/windows-of-os/win-of-os.png",
       "tags": [
         "remixwarp"
       ],
