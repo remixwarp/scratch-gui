@@ -1,0 +1,269 @@
+@import "../../css/colors.css";
+
+.modal-content {
+    max-width: 900px;
+    margin-top: 50px;
+}
+
+.body {
+    background: $ui-white;
+    padding: 2rem 2.5rem;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.title {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $text-primary;
+}
+
+.categoryTabs {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.categoryTab {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-tertiary;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.categoryTab:hover {
+    background: $ui-secondary;
+    border-color: $looks-secondary;
+}
+
+.categoryTab.active {
+    background: $looks-secondary;
+    color: white;
+    border-color: $looks-secondary;
+}
+
+.tutorialGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.tutorialCard {
+    background: $ui-tertiary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tutorialCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: $looks-secondary;
+}
+
+.tutorialThumbnail {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    background: $ui-secondary;
+    overflow: hidden;
+}
+
+.thumbnailImage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.tutorialCard:hover .thumbnailImage {
+    transform: scale(1.05);
+}
+
+.playButton {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.tutorialCard:hover .playButton {
+    opacity: 1;
+}
+
+.playIcon {
+    color: white;
+    font-size: 24px;
+    margin-left: 5px;
+}
+
+.tutorialInfo {
+    padding: 1.25rem;
+}
+
+.tutorialTitle {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: $text-primary;
+    line-height: 1.3;
+}
+
+.tutorialDescription {
+    margin: 0;
+    font-size: 0.95rem;
+    color: $text-primary;
+    opacity: 0.8;
+    line-height: 1.5;
+}
+
+.videoOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+}
+
+.videoWindow {
+    position: absolute;
+    background: $ui-white;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    min-width: 400px;
+    min-height: 225px;
+}
+
+.resizeHandle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background: $looks-secondary;
+    cursor: nwse-resize;
+    border-bottom-right-radius: 0.5rem;
+}
+
+.resizeHandle::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 10px;
+    height: 10px;
+    border-bottom: 2px solid white;
+    border-right: 2px solid white;
+}
+
+.videoHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: $ui-secondary;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.videoHeader h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: $text-primary;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: $text-primary;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+    transition: background 0.2s ease;
+}
+
+.closeButton:hover {
+    background: $ui-tertiary;
+}
+
+.videoContent {
+    position: relative;
+    padding-top: 56.25%;
+}
+
+.videoIframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.loadingSpinner {
+    background: $ui-white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 1.125rem;
+    color: $text-primary;
+}
+
+@media (max-width: 768px) {
+    .tutorialGrid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        max-width: 95%;
+        margin: 20px;
+    }
+    
+    .videoWindow {
+        max-width: 95%;
+        max-height: 80%;
+    }
+}

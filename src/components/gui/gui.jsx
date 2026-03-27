@@ -52,6 +52,8 @@ import AIChatModal from '../../containers/ai-chat-modal.jsx';
 import AIAgentModal from '../../containers/ai-agent-modal.jsx';
 import SuperRefactorModal from '../../containers/super-refactor-modal.jsx';
 import SimpleDialog from '../../containers/simple-dialog.jsx';
+import TutorialModal from '../../containers/tutorial-modal.jsx';
+import VideoModal from '../../containers/video-modal.jsx';
 import UpdateLogModal from '../../containers/update-log-modal.jsx';
 import BilmeModal from '../../containers/bl-bilme-modal.jsx';
 import AddonHooks from '../../addons/hooks.js';
@@ -601,6 +603,8 @@ const GUIComponent = props => {
             <AIAgentModal />
             <SuperRefactorModal />
             <SimpleDialog />
+            <TutorialModal />
+            <VideoModal />
             <UpdateLogModal />
             <BilmeModal />
             {onboardingVisible && <Onboarding />}

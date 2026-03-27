@@ -1,59 +1,25 @@
-/* Ensure stage wrapper leaves space for toolbar */
-[class*="stage-wrapper_full-screen"] {
-  top: 44px !important;
-  position: fixed !important;
-}
+/* 舞台全屏模式时隐藏顶部菜单栏的样式 */
+/* 这些样式由 userscript.js 动态应用 */
 
-/* Ensure toolbar header is always visible */
-[class*="stage-header_stage-header-wrapper-overlay"] {
-  display: block !important;
-  top: 0px !important;
-  transform: translateY(0%) !important;
-  transition: transform 0.3s;
-  opacity: 1 !important;
-  visibility: visible !important;
-  z-index: 1000 !important;
-}
-
-/* Ensure toolbar menu is always visible */
-[class*="stage-header_stage-header-wrapper-overlay"] [class*="stage-header_stage-menu-wrapper"] {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-.phantom-header {
+/* 菜单栏幻影头部样式 - 用于触发菜单栏显示 */
+.menu-bar-phantom-header {
   position: fixed;
   top: 0px;
   left: 0px;
   right: 0px;
   height: 8px;
-  display: block;
   z-index: 5000;
+  cursor: default;
 }
 
-.stage-header-hover {
-  transform: translateY(0%) !important;
-  transition: transform 0.3s 0.25s;
+/* 确保舞台全屏时顶部没有间距 */
+[class*="stage-wrapper"][class*="full-screen"] {
+  top: 0rem !important;
 }
 
-/* Ensure green flag, pause, stop buttons are visible */
-[class*="stage_green-flag-overlay-wrapper"] {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Fix exit fullscreen button visibility */
-[class*="stage-header_stage-menu-wrapper"] [class*="stage-header_stage-button"] {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Ensure controls are visible */
-[class*="controls_controls-container"] {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+/* 舞台头部在全屏模式下的样式 */
+[class*="stage-header_stage-header-wrapper-overlay"] {
+  display: block;
+  top: 0px !important;
+  transition: transform 0.3s;
 }

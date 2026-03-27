@@ -10,7 +10,11 @@
         "gui.menuBar.compatibility.turbowarp": "Turbowarp",
         "gui.menuBar.compatibility.o2engine": "02Engine",
         "gui.menuBar.compatibility.astraeditor": "AstraEditor",
-        "gui.menuBar.compatibility.Bilup": "Bilup"
+        "gui.menuBar.compatibility.Bilup": "Bilup",
+        "tw.menuBar.tutorial": "Tutorial",
+        "tw.tutorialModal.title": "Tutorial",
+        "tw.tutorialModal.tutorial1.title": "RemixWarp 入门教程",
+        "tw.tutorialModal.tutorial1.description": "学习如何使用 RemixWarp 编辑器的基本功能"
     },
     "zh-geng": {
         "onboarding.step7.title": "AI助手",
@@ -23,7 +27,11 @@
         "gui.menuBar.compatibility.turbowarp": "Turbowarp",
         "gui.menuBar.compatibility.o2engine": "02Engine",
         "gui.menuBar.compatibility.astraeditor": "AstraEditor",
-        "gui.menuBar.compatibility.Bilup": "Bilup"
+        "gui.menuBar.compatibility.Bilup": "Bilup",
+        "tw.menuBar.tutorial": "教程",
+        "tw.tutorialModal.title": "教程",
+        "tw.tutorialModal.tutorial1.title": "RemixWarp 入门教程",
+        "tw.tutorialModal.tutorial1.description": "学习如何使用 RemixWarp 编辑器的基本功能"
     },
     "zh-cn": {
         "tw.accent.blue": "蓝色",
@@ -662,6 +670,8 @@
         "gui.collaboration.waitingForHost": "等待房主加载项目...",
         "gui.collaboration.synchronizing": "正在与所有客户端同步...",
         "tw.menuBar.collaboration": "实时协作",
+        "tw.menuBar.tutorial": "教程",
+        "tw.tutorialModal.title": "教程",
         "tw.collaboration.error.connectionTimeout": "连接到房间 \"{roomId}\" 超时。房主可能不可用。",
         "tw.collaboration.error.hostUnavailable": "无法连接到房主。房间 \"{roomId}\" 可能不存在或房主离线。",
         "tw.collaboration.error.iceConnectionFailed": "ICE 连接在 {attempts} 次尝试后失败。这可能是网络问题。",
@@ -742,6 +752,9 @@
         "shortcut.paste": "粘贴",
         "shortcut.cut": "剪切",
         "shortcut.closeWindow": "关闭窗口",
-        "tw.customThemes.createDialog.createButton": "创建"
+        "tw.customThemes.createDialog.createButton": "创建",
+        "tw.tutorialModal.title": "教程",
+        "tw.tutorialModal.tutorial1.title": "RemixWarp 入门教程",
+        "tw.tutorialModal.tutorial1.description": "学习如何使用 RemixWarp 编辑器的基本功能"
     }
 }

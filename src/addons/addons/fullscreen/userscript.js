@@ -84,7 +84,68 @@ export default async function ({ addon, console }) {
     phantomHeader = null;
   };
 
+  // Menu bar hide/show functionality
+  let menuBarPhantom = null;
+  let menuBarMouseLeaveHandler = null;
+
+  const updateMenuBarVisibility = () => {
+    const isFullScreen = addon.tab.redux.state.scratchGui.mode.isFullScreen;
+    const menuBar = document.querySelector('[class*="menu-bar_menu-bar"]');
+    
+    if (!menuBar) {
+      // Menu bar not found, retry if in fullscreen
+      if (isFullScreen) {
+        setTimeout(updateMenuBarVisibility, 100);
+      }
+      return;
+    }
+    
+    if (isFullScreen) {
+      // Hide menu bar in fullscreen mode
+      menuBar.style.transform = "translateY(-101%)";
+      menuBar.style.transition = "transform 0.3s";
+      
+      // Create phantom header for menu bar if not exists
+      if (!menuBarPhantom) {
+        menuBarPhantom = document.createElement("div");
+        menuBarPhantom.classList.add("menu-bar-phantom-header");
+        menuBarPhantom.style.cssText = "position:fixed;top:0;left:0;right:0;height:8px;z-index:5000;";
+        
+        // Show menu bar on hover
+        menuBarPhantom.addEventListener("mouseenter", () => {
+          if (addon.tab.redux.state.scratchGui.mode.isFullScreen) {
+            menuBar.style.transform = "translateY(0%)";
+          }
+        });
+        
+        document.body.appendChild(menuBarPhantom);
+      }
+      
+      // Add mouseleave handler to menu bar
+      if (!menuBarMouseLeaveHandler) {
+        menuBarMouseLeaveHandler = () => {
+          if (addon.tab.redux.state.scratchGui.mode.isFullScreen) {
+            menuBar.style.transform = "translateY(-101%)";
+          }
+        };
+        menuBar.addEventListener("mouseleave", menuBarMouseLeaveHandler);
+      }
+    } else {
+      // Show menu bar when not in fullscreen
+      menuBar.style.transform = "translateY(0%)";
+      
+      // Remove phantom header
+      if (menuBarPhantom) {
+        menuBarPhantom.remove();
+        menuBarPhantom = null;
+      }
+    }
+  };
+
   async function updatePhantomHeader() {
+    // Update menu bar visibility first
+    updateMenuBarVisibility();
+    
     if (
       !addon.self.disabled &&
       addon.tab.redux.state.scratchGui.mode.isFullScreen
@@ -157,6 +218,8 @@ export default async function ({ addon, console }) {
     } else {
       detachHoverListeners();
       await removePhantomHeader();
+      // Update menu bar visibility when exiting fullscreen
+      updateMenuBarVisibility();
     }
   }
 

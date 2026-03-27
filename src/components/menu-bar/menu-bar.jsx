@@ -49,7 +49,8 @@ import {
     openGitModal,
     openExtensionManagerModal,
     openShortcutManagerModal,
-    openSimpleDialog
+    openSimpleDialog,
+    openTutorialModal
 } from '../../reducers/modals';
 import {showOnboarding} from '../../reducers/onboarding';
 import {openCollaborationModal} from '../../reducers/collaboration';
@@ -148,7 +149,7 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
-    Zap, Gauge
+    Zap, Gauge, BookOpen
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -1721,6 +1722,14 @@ class MenuBar extends React.Component {
                                                 id="tw.menuBar.collaboration"
                                             />
                                         </MenuItem>
+                                        <MenuItem onClick={this.props.onClickTutorial}>
+                                            <BookOpen size={20} />
+                                            <FormattedMessage
+                                                defaultMessage="Tutorial"
+                                                description="Menu bar item for tutorial"
+                                                id="tw.menuBar.tutorial"
+                                            />
+                                        </MenuItem>
                                     </MenuSection>
                                     <MenuSection>
                                         <MenuItem
@@ -2472,6 +2481,7 @@ MenuBar.propTypes = {
     onClickSettingsModal: PropTypes.func,
     onClickGitModal: PropTypes.func,
     onClickShowTutorial: PropTypes.func,
+    onClickTutorial: PropTypes.func,
     onClickShortcutManagerModal: PropTypes.func,
     onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
@@ -2614,6 +2624,9 @@ const mapDispatchToProps = dispatch => ({
     onClickShowTutorial: () => {
         localStorage.removeItem('mw:has-seen-onboarding');
         dispatch(showOnboarding());
+    },
+    onClickTutorial: () => {
+        dispatch(openTutorialModal());
     },
     onClickShortcutManagerModal: () => {
         dispatch(openShortcutManagerModal());
