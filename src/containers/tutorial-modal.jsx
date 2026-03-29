@@ -2,6 +2,7 @@ import {connect} from 'react-redux';
 import {compose} from 'redux';
 import {injectIntl} from 'react-intl';
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import TutorialModal from '../components/tutorial-modal/tutorial-modal.jsx';
 import {
@@ -9,7 +10,7 @@ import {
 } from '../reducers/modals';
 
 const mapStateToProps = state => ({
-    visible: state.scratchGui.modals.tutorialModal
+    visible: state.scratchGui && state.scratchGui.modals && state.scratchGui.modals.tutorialModal
 });
 
 const mapDispatchToProps = dispatch => ({
@@ -34,8 +35,8 @@ const TutorialModalContainer = props => (props.visible ? (
 ) : null);
 
 TutorialModalContainer.propTypes = {
-    visible: false,
-    onClose: () => {}
+    visible: PropTypes.bool,
+    onClose: PropTypes.func
 };
 
 export default connect(

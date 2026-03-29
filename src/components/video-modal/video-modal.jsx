@@ -16,7 +16,7 @@ const messages = defineMessages({
 });
 
 const VideoModal = props => {
-    if (!props.visible || !props.tutorial) return null;
+    console.log('VideoModal props:', props);
     
     const [windowPosition, setWindowPosition] = useState({ x: 100, y: 100 });
     const [windowSize, setWindowSize] = useState({ width: 800, height: 450 });
@@ -61,6 +61,10 @@ const VideoModal = props => {
         setIsResizing(false);
     };
 
+    if (!props.visible || !props.tutorial) {
+        return null;
+    }
+    
     return (
         <div 
             className={styles.videoOverlay}
@@ -90,7 +94,7 @@ const VideoModal = props => {
                 </div>
                 <div className={styles.videoContent}>
                     <iframe
-                        src={props.tutorial.videoUrl}
+                        src={`//player.bilibili.com/player.html?isOutside=true&bvid=${props.tutorial.bvid}&p=1`}
                         scrolling="no"
                         border="0"
                         frameBorder="no"

@@ -1,5 +1,5 @@
-import PropTypes from 'prop-types';
-import React, {useState} from 'react';
+向。import PropTypes from 'prop-types';
+import React, {useState, useEffect, useCallback} from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 
@@ -46,9 +46,7 @@ const messages = defineMessages({
 const tutorialData = [
     {
         id: 1,
-        bvid: 'BV1FDUTBGE2H',
-        aid: '115599531318028',
-        cid: '34212417236',
+        bvid: 'BV14Lf4BPEQE',
         category: 'all'
     }
 ];
@@ -62,43 +60,83 @@ const TutorialModal = props => {
         selectedCategory === 'all' || tutorial.category === selectedCategory
     );
 
-    const fetchVideoDetails = async (bvid) => {
-        if (tutorialDetails[bvid]) return tutorialDetails[bvid];
-        
+    // 使用 useCallback 定义 fetchVideoDetails，避免在 useEffect 中使用时出现依赖问题
+    const fetchVideoDetails = useCallback(async (bvid) => {
         setLoading(true);
         try {
-            // 使用B站公开API获取视频信息
-            const response = await fetch(`https://api.bilibili.com/x/web-interface/wbi/view?bvid=${bvid}`);
+            // 使用B站公开API获取视频信息，通过CORS代理绕过跨域限制
+            console.log('Fetching video details for:', bvid);
+            const apiUrl = `https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`;
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+            const response = await fetch(proxyUrl);
+            console.log('Response status:', response.status);
             const data = await response.json();
+            console.log('Response data:', data);
             
             if (data.code === 0) {
                 const details = {
+                    bvid: bvid,
                     title: data.data.title,
                     description: data.data.desc,
                     thumbnail: data.data.pic,
-                    videoUrl: `//player.bilibili.com/player.html?isOutside=true&bvid=${bvid}&cid=${data.data.cid}&p=1`
+                    videoUrl: `https://www.bilibili.com/video/${bvid}`,
+                    author: data.data.owner.name,
+                    views: data.data.stat.view,
+                    duration: data.data.duration
                 };
+                console.log('Fetched video details:', details);
                 setTutorialDetails(prev => ({ ...prev, [bvid]: details }));
                 return details;
+            } else {
+                console.error('API error:', data.message);
+                throw new Error(data.message);
             }
         } catch (error) {
             console.error('Failed to fetch video details:', error);
+            // 即使API调用失败，也使用默认数据，避免用户看到错误
+            const defaultDetails = {
+                bvid: bvid,
+                title: 'RemixWarp 入门教程',
+                description: '学习如何使用 RemixWarp 编辑器的基本功能',
+                thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lm77niYfkuIvkvbPkuKXmrKHniYg8L3RleHQ+PC9zdmc+',
+                videoUrl: `https://www.bilibili.com/video/${bvid}`,
+                author: 'RemixWarp',
+                views: 0,
+                duration: 0
+            };
+            setTutorialDetails(prev => ({ ...prev, [bvid]: defaultDetails }));
+            return defaultDetails;
         } finally {
             setLoading(false);
+            console.log('Loading finished');
         }
-        
-        // 默认数据
-        return {
-            title: '视频标题',
-            description: '视频描述',
-            thumbnail: 'https://i2.hdslb.com/bfs/archive/3a0b8c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0.jpg',
-            videoUrl: `//player.bilibili.com/player.html?isOutside=true&bvid=${bvid}`
+    }, []);
+
+    // 组件挂载时自动获取所有教程的视频详情
+    useEffect(() => {
+        const fetchAllVideoDetails = async () => {
+            for (const tutorial of tutorialData) {
+                try {
+                    await fetchVideoDetails(tutorial.bvid);
+                } catch (error) {
+                    console.error('Failed to fetch tutorial details:', error);
+                }
+            }
         };
-    };
+        fetchAllVideoDetails();
+    }, [fetchVideoDetails]);
 
     const handleTutorialClick = async (tutorial) => {
-        const details = await fetchVideoDetails(tutorial.bvid);
-        props.openVideoModal({ ...tutorial, ...details });
+        console.log('Tutorial clicked:', tutorial);
+        try {
+            const details = await fetchVideoDetails(tutorial.bvid);
+            console.log('Fetched details:', details);
+            console.log('Opening video modal with:', { ...tutorial, ...details });
+            props.openVideoModal({ ...tutorial, ...details });
+            console.log('openVideoModal called');
+        } catch (error) {
+            console.error('Failed to open video:', error);
+        }
     };
 
     return (
@@ -139,7 +177,9 @@ const TutorialModal = props => {
                         const details = tutorialDetails[tutorial.bvid] || {
                             title: '加载中...',
                             description: '正在获取视频信息...',
-                            thumbnail: 'https://i2.hdslb.com/bfs/archive/3a0b8c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0.jpg'
+                            thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lm77niYfkuIvkvbPkuKXmrKHniYg8L3RleHQ+PC9zdmc+',
+                            author: '加载中...',
+                            views: 0
                         };
                         
                         return (
@@ -165,6 +205,14 @@ const TutorialModal = props => {
                                     <p className={styles.tutorialDescription}>
                                         {details.description}
                                     </p>
+                                    <div className={styles.tutorialMetadata}>
+                                        <div className={styles.tutorialAuthor}>
+                                            <span>UP: {details.author}</span>
+                                        </div>
+                                        <div className={styles.tutorialViews}>
+                                            <span>{details.views} 播放</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         );

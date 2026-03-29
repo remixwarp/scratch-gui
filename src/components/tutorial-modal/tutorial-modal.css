@@ -50,46 +50,51 @@
 }
 
 .tutorialGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
 }
 
 .tutorialCard {
-    background: $ui-tertiary;
-    border: 1px solid $ui-black-transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    flex-basis: 300px;
+    max-width: 300px;
+    position: relative;
+    height: 160px;
+    margin: 0.5rem;
+    padding: 1rem 1rem 0 1rem;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: $text-primary;
+    background: $ui-white;
+    border-width: 2px;
+    border-style: solid;
+    border-color: $ui-black-transparent;
     border-radius: 0.5rem;
-    overflow: hidden;
+    text-align: center;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .tutorialCard:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border-color: $looks-secondary;
 }
 
 .tutorialThumbnail {
     position: relative;
     width: 100%;
-    padding-top: 56.25%;
-    background: $ui-secondary;
+    height: 100px;
     overflow: hidden;
+    background: $ui-secondary;
+    border-radius: 0.25rem;
 }
 
 .thumbnailImage {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.tutorialCard:hover .thumbnailImage {
-    transform: scale(1.05);
 }
 
 .playButton {
@@ -97,8 +102,8 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 60px;
-    height: 60px;
+    width: 40px;
+    height: 40px;
     background: rgba(0, 0, 0, 0.7);
     border-radius: 50%;
     display: flex;
@@ -114,28 +119,61 @@
 
 .playIcon {
     color: white;
-    font-size: 24px;
-    margin-left: 5px;
+    font-size: 16px;
+    margin-left: 3px;
 }
 
 .tutorialInfo {
-    padding: 1.25rem;
+    width: 100%;
+    padding: 0.5rem 0 0 0;
 }
 
 .tutorialTitle {
-    margin: 0 0 0.75rem 0;
-    font-size: 1.125rem;
-    font-weight: 600;
+    width: 100%;
+    margin: 0 0 0.25rem 0;
+    font-size: 0.875rem;
+    font-weight: bold;
     color: $text-primary;
-    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .tutorialDescription {
+    width: 100%;
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.75rem;
     color: $text-primary;
-    opacity: 0.8;
-    line-height: 1.5;
+    opacity: 0.75;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.tutorialMetadata {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.6875rem;
+    color: $text-primary;
+    opacity: 0.6;
+    margin-top: 0.25rem;
+}
+
+.tutorialAuthor {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.tutorialViews {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
 }
 
 .videoOverlay {

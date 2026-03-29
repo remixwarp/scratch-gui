@@ -3,8 +3,8 @@ import { closeVideoModal } from '../reducers/modals.js';
 import VideoModal from '../components/video-modal/video-modal.jsx';
 
 const mapStateToProps = state => ({
-    visible: state.scratchGui && state.scratchGui.modals && state.scratchGui.modals.videoModal && state.scratchGui.modals.videoModal.isOpen,
-    tutorial: state.scratchGui && state.scratchGui.modals && state.scratchGui.modals.videoModal && state.scratchGui.modals.videoModal.data
+    visible: state.scratchGui && state.scratchGui.modals && state.scratchGui.modals.videoModal,
+    tutorial: state.scratchGui && state.scratchGui.modals && state.scratchGui.modals.videoModalData
 });
 
 const mapDispatchToProps = dispatch => ({

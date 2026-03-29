@@ -31,6 +31,7 @@ const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 const MODAL_WARPTHEME = 'bilmeModal';
 const MODAL_SUPER_REFACTOR = 'superRefactorModal';
 const MODAL_TUTORIAL = 'tutorialModal';
+const MODAL_VIDEO = 'videoModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -63,9 +64,11 @@ const initialState = {
     [MODAL_WARPTHEME]: false,
     [MODAL_SUPER_REFACTOR]: false,
     [MODAL_TUTORIAL]: false,
+    [MODAL_VIDEO]: false,
     extensionLoadChoiceData: null,
     superRefactorCode: '{}',
-    superRefactorOnSave: null
+    superRefactorOnSave: null,
+    videoModalData: null
 };
 
 const reducer = function (state, action) {
@@ -76,13 +79,15 @@ const reducer = function (state, action) {
             [action.modal]: true,
             extensionLoadChoiceData: action.extensionLoadChoiceData || state.extensionLoadChoiceData,
             superRefactorCode: action.superRefactorCode || state.superRefactorCode,
-            superRefactorOnSave: action.superRefactorOnSave || state.superRefactorOnSave
+            superRefactorOnSave: action.superRefactorOnSave || state.superRefactorOnSave,
+            videoModalData: action.tutorial || state.videoModalData
         });
     case CLOSE_MODAL:
         return Object.assign({}, state, {
             [action.modal]: false,
             simpleDialogConfig: null,
-            extensionLoadChoiceData: action.modal === MODAL_EXTENSION_LOAD_CHOICE ? null : state.extensionLoadChoiceData
+            extensionLoadChoiceData: action.modal === MODAL_EXTENSION_LOAD_CHOICE ? null : state.extensionLoadChoiceData,
+            videoModalData: action.modal === MODAL_VIDEO ? null : state.videoModalData
         });
     case 'scratch-gui/modals/SHOW_SIMPLE_DIALOG':
         return Object.assign({}, state, {
@@ -93,10 +98,11 @@ const reducer = function (state, action) {
         return state;
     }
 };
-const openModal = function (modal) {
+const openModal = function (modal, data) {
     return {
         type: OPEN_MODAL,
-        modal: modal
+        modal: modal,
+        ...data
     };
 };
 const closeModal = function (modal) {
@@ -308,7 +314,6 @@ const openBilmeModal = function () {
 const closeBilmeModal = function () {
     return closeModal(MODAL_WARPTHEME);
 };
-const MODAL_VIDEO = 'videoModal';
 const openTutorialModal = function () {
     return openModal(MODAL_TUTORIAL);
 };
@@ -319,7 +324,9 @@ const openVideoModal = function (tutorial) {
     return openModal(MODAL_VIDEO, { tutorial });
 };
 const closeVideoModal = function () {
-    return closeModal(MODAL_VIDEO);
+    return Object.assign({}, closeModal(MODAL_VIDEO), {
+        videoModalData: null
+    });
 };
 export {
     reducer as default,
