@@ -1,4 +1,4 @@
-向。import PropTypes from 'prop-types';
+import PropTypes from 'prop-types';
 import React, {useState, useEffect, useCallback} from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
@@ -44,25 +44,88 @@ const messages = defineMessages({
 });
 
 const tutorialData = [
+    //all
     {
-        id: 1,
-        bvid: 'BV14Lf4BPEQE',
-        category: 'all'
+        id: 'tutorial1',
+        bvid: 'BV1DUnhzkEJb',
+        category: 1
+    },
+    //tips
+    {
+        id: 'tutorial2',
+        bvid: 'BV18fxVz6EiE',
+        category: 2
+    },
+    //facts
+    {
+        id: 'tutorial3',
+        bvid: 'BV1hi2HBcEuD',
+        category: 3
+    },
+    //extension
+    {
+        id: 'tutorial4',
+        bvid: 'BV1q3aezREjd',
+        category: 4
+    },
+    {
+        id: 'tutorial5',
+        bvid: 'BV1FDUTBGE2H',
+        category: 4
+    },
+    {
+        id: 'tutorial6',
+        bvid: 'BV1khhyzZEyS',
+        category: 4
+    },
+    {
+        id: 'tutorial7',
+        bvid: 'BV1BAeyzZEf3',
+        category: 4
+    },
+    {
+        id: 'tutorial8',
+        bvid: 'BV1vBpRzsEDK',
+        category: 4
+    },
+    {
+        id: 'tutorial9',
+        bvid: 'BV16Exvz7E6N',
+        category: 4
+    },
+    {
+        id: 'tutorial10',
+        bvid: 'BV1XPWbz1Ezb',
+        category: 4
+    },
+    {
+        id: 'tutorial11',
+        bvid: 'BV1Sm1kBJEBg',
+        category: 4
     }
 ];
 
+const getCategoryInfo = (categoryId) => {
+    const categories = {
+        1: { id: 1, key: 'all', defaultMessage: '所有' },
+        2: { id: 2, key: 'tips', defaultMessage: '小技巧' },
+        3: { id: 3, key: 'facts', defaultMessage: '冷知识' },
+        4: { id: 4, key: 'extension', defaultMessage: '扩展' }
+    };
+    return categories[categoryId] || categories[1];
+};
+
 const TutorialModal = props => {
-    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedCategory, setSelectedCategory] = useState(1);
     const [tutorialDetails, setTutorialDetails] = useState({});
     const [loading, setLoading] = useState(false);
 
     const filteredTutorials = tutorialData.filter(tutorial => 
-        selectedCategory === 'all' || tutorial.category === selectedCategory
+        selectedCategory === 1 || tutorial.category === selectedCategory
     );
 
     // 使用 useCallback 定义 fetchVideoDetails，避免在 useEffect 中使用时出现依赖问题
     const fetchVideoDetails = useCallback(async (bvid) => {
-        setLoading(true);
         try {
             // 使用B站公开API获取视频信息，通过CORS代理绕过跨域限制
             console.log('Fetching video details for:', bvid);
@@ -82,7 +145,8 @@ const TutorialModal = props => {
                     videoUrl: `https://www.bilibili.com/video/${bvid}`,
                     author: data.data.owner.name,
                     views: data.data.stat.view,
-                    duration: data.data.duration
+                    duration: data.data.duration,
+                    loadFailed: false
                 };
                 console.log('Fetched video details:', details);
                 setTutorialDetails(prev => ({ ...prev, [bvid]: details }));
@@ -96,31 +160,38 @@ const TutorialModal = props => {
             // 即使API调用失败，也使用默认数据，避免用户看到错误
             const defaultDetails = {
                 bvid: bvid,
-                title: 'RemixWarp 入门教程',
-                description: '学习如何使用 RemixWarp 编辑器的基本功能',
-                thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lm77niYfkuIvkvbPkuKXmrKHniYg8L3RleHQ+PC9zdmc+',
+                title: '加载信息失败',
+                description: '无法获取视频信息，但视频可以正常播放',
+                thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Mb2FkaW5nLi4uPC90ZXh0Pjwvc3ZnPg==',
                 videoUrl: `https://www.bilibili.com/video/${bvid}`,
-                author: 'RemixWarp',
+                author: '未知',
                 views: 0,
-                duration: 0
+                duration: 0,
+                loadFailed: true
             };
             setTutorialDetails(prev => ({ ...prev, [bvid]: defaultDetails }));
             return defaultDetails;
-        } finally {
-            setLoading(false);
-            console.log('Loading finished');
         }
     }, []);
 
-    // 组件挂载时自动获取所有教程的视频详情
+    // 组件挂载时并行获取所有教程的视频详情
     useEffect(() => {
         const fetchAllVideoDetails = async () => {
-            for (const tutorial of tutorialData) {
-                try {
-                    await fetchVideoDetails(tutorial.bvid);
-                } catch (error) {
-                    console.error('Failed to fetch tutorial details:', error);
-                }
+            setLoading(true);
+            try {
+                // 并行加载所有教程，提高速度
+                const promises = tutorialData.map(tutorial => 
+                    fetchVideoDetails(tutorial.bvid).catch(error => {
+                        console.error('Failed to fetch tutorial details:', error);
+                        return null;
+                    })
+                );
+                await Promise.all(promises);
+            } catch (error) {
+                console.error('Error in fetchAllVideoDetails:', error);
+            } finally {
+                setLoading(false);
+                console.log('All tutorials loaded');
             }
         };
         fetchAllVideoDetails();
@@ -129,13 +200,30 @@ const TutorialModal = props => {
     const handleTutorialClick = async (tutorial) => {
         console.log('Tutorial clicked:', tutorial);
         try {
-            const details = await fetchVideoDetails(tutorial.bvid);
-            console.log('Fetched details:', details);
+            let details = tutorialDetails[tutorial.bvid];
+            
+            if (!details) {
+                console.log('Fetching fresh details for:', tutorial.bvid);
+                details = await fetchVideoDetails(tutorial.bvid);
+            } else {
+                console.log('Using cached details:', details);
+            }
+            
             console.log('Opening video modal with:', { ...tutorial, ...details });
             props.openVideoModal({ ...tutorial, ...details });
             console.log('openVideoModal called');
         } catch (error) {
             console.error('Failed to open video:', error);
+        }
+    };
+
+    const handleReload = async (e, tutorial) => {
+        e.stopPropagation();
+        console.log('Reloading tutorial:', tutorial.bvid);
+        try {
+            await fetchVideoDetails(tutorial.bvid);
+        } catch (error) {
+            console.error('Failed to reload tutorial:', error);
         }
     };
 
@@ -152,34 +240,32 @@ const TutorialModal = props => {
                 </h2>
                 
                 <div className={styles.categoryTabs}>
-                    <Button
-                        className={`${styles.categoryTab} ${selectedCategory === 'all' ? styles.active : ''}`}
-                        onClick={() => setSelectedCategory('all')}
-                    >
-                        {props.intl.formatMessage(messages.categoryAll)}
-                    </Button>
-                    <Button
-                        className={`${styles.categoryTab} ${selectedCategory === 'tips' ? styles.active : ''}`}
-                        onClick={() => setSelectedCategory('tips')}
-                    >
-                        {props.intl.formatMessage(messages.categoryTips)}
-                    </Button>
-                    <Button
-                        className={`${styles.categoryTab} ${selectedCategory === 'facts' ? styles.active : ''}`}
-                        onClick={() => setSelectedCategory('facts')}
-                    >
-                        {props.intl.formatMessage(messages.categoryFacts)}
-                    </Button>
+                    {[1, 2, 3, 4].map(categoryId => {
+                        const categoryInfo = getCategoryInfo(categoryId);
+                        return (
+                            <Button
+                                key={categoryId}
+                                className={`${styles.categoryTab} ${selectedCategory === categoryId ? styles.active : ''}`}
+                                onClick={() => setSelectedCategory(categoryId)}
+                            >
+                                {categoryInfo.defaultMessage}
+                            </Button>
+                        );
+                    })}
                 </div>
 
                 <div className={styles.tutorialGrid}>
                     {filteredTutorials.map(tutorial => {
                         const details = tutorialDetails[tutorial.bvid] || {
-                            title: '加载中...',
-                            description: '正在获取视频信息...',
-                            thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lm77niYfkuIvkvbPkuKXmrKHniYg8L3RleHQ+PC9zdmc+',
-                            author: '加载中...',
+                            title: 'Loading...',
+                            description: 'Fetching video information...',
+                            thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Mb2FkaW5nLi4uPC90ZXh0Pjwvc3ZnPg==',
+                            author: 'Loading...',
                             views: 0
+                        };
+                        
+                        const handleImageError = (e) => {
+                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Mb2FkaW5nLi4uPC90ZXh0Pjwvc3ZnPg==';
                         };
                         
                         return (
@@ -193,6 +279,7 @@ const TutorialModal = props => {
                                         src={details.thumbnail} 
                                         alt={details.title}
                                         className={styles.thumbnailImage}
+                                        onError={handleImageError}
                                     />
                                     <div className={styles.playButton}>
                                         <span className={styles.playIcon}>▶</span>
@@ -205,6 +292,14 @@ const TutorialModal = props => {
                                     <p className={styles.tutorialDescription}>
                                         {details.description}
                                     </p>
+                                    {details.loadFailed && (
+                                        <button
+                                            className={styles.reloadButton}
+                                            onClick={(e) => handleReload(e, tutorial)}
+                                        >
+                                            重新加载
+                                        </button>
+                                    )}
                                     <div className={styles.tutorialMetadata}>
                                         <div className={styles.tutorialAuthor}>
                                             <span>UP: {details.author}</span>
