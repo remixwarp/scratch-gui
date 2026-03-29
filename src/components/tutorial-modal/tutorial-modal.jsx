@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 
@@ -119,6 +119,12 @@ const TutorialModal = props => {
     const [selectedCategory, setSelectedCategory] = useState(1);
     const [tutorialDetails, setTutorialDetails] = useState({});
     const [loading, setLoading] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState({
+        total: 0,
+        loaded: 0,
+        failed: 0
+    });
+    const isLoadingRef = useRef(false); // 使用ref跟踪加载状态，避免重复加载
 
     const filteredTutorials = tutorialData.filter(tutorial => 
         selectedCategory === 1 || tutorial.category === selectedCategory
@@ -174,28 +180,77 @@ const TutorialModal = props => {
         }
     }, []);
 
-    // 组件挂载时并行获取所有教程的视频详情
+    // 组件挂载时串行获取所有教程的视频详情，添加延迟避免被API限制
     useEffect(() => {
+        // 避免重复加载
+        if (isLoadingRef.current) {
+            console.log('Already loading, skipping...');
+            return;
+        }
+        
         const fetchAllVideoDetails = async () => {
+            isLoadingRef.current = true;
             setLoading(true);
+            // 初始化进度
+            const total = tutorialData.length;
+            let loaded = 0;
+            let failed = 0;
+            setLoadingProgress({ total, loaded, failed });
+            
             try {
-                // 并行加载所有教程，提高速度
-                const promises = tutorialData.map(tutorial => 
-                    fetchVideoDetails(tutorial.bvid).catch(error => {
-                        console.error('Failed to fetch tutorial details:', error);
-                        return null;
-                    })
-                );
-                await Promise.all(promises);
+                // 串行加载所有教程，每个请求之间添加延迟
+                for (const tutorial of tutorialData) {
+                    try {
+                        // 检查缓存，如果有缓存且未失败，跳过
+                        const cachedDetails = tutorialDetails[tutorial.bvid];
+                        if (!cachedDetails || cachedDetails.loadFailed) {
+                            const result = await fetchVideoDetails(tutorial.bvid);
+                            // 更新进度
+                            if (result.loadFailed) {
+                                failed++;
+                            } else {
+                                loaded++;
+                            }
+                            // 每2个视频更新一次进度，减少UI更新频率
+                            if ((loaded + failed) % 2 === 0 || (loaded + failed) === total) {
+                                setLoadingProgress({ total, loaded, failed });
+                            }
+                            // 添加随机延迟，模拟人类操作
+                            const delay = Math.floor(Math.random() * 2000) + 1000; // 1-3秒
+                            console.log(`Waiting ${delay}ms before next request...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                        } else {
+                            // 缓存命中，更新进度
+                            loaded++;
+                            // 每2个视频更新一次进度，减少UI更新频率
+                            if (loaded % 2 === 0 || loaded === total) {
+                                setLoadingProgress({ total, loaded, failed });
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Failed to fetch tutorial details:', tutorial.bvid, error);
+                        // 更新失败进度
+                        failed++;
+                        // 每2个视频更新一次进度，减少UI更新频率
+                        if ((loaded + failed) % 2 === 0 || (loaded + failed) === total) {
+                            setLoadingProgress({ total, loaded, failed });
+                        }
+                        // 失败后也添加延迟
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                    }
+                }
+                // 最终更新进度
+                setLoadingProgress({ total, loaded, failed });
             } catch (error) {
                 console.error('Error in fetchAllVideoDetails:', error);
             } finally {
                 setLoading(false);
+                isLoadingRef.current = false;
                 console.log('All tutorials loaded');
             }
         };
         fetchAllVideoDetails();
-    }, [fetchVideoDetails]);
+    }, [fetchVideoDetails, tutorialDetails]);
 
     const handleTutorialClick = async (tutorial) => {
         console.log('Tutorial clicked:', tutorial);
@@ -265,7 +320,9 @@ const TutorialModal = props => {
                         };
                         
                         const handleImageError = (e) => {
-                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Mb2FkaW5nLi4uPC90ZXh0Pjwvc3ZnPg==';
+                            console.log('Image failed to load, using placeholder');
+                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5MaW5rIFN0cmF0Y2g8L3RleHQ+PC9zdmc+';
+                            // 图片加载失败不影响整体加载状态
                         };
                         
                         return (
@@ -318,6 +375,18 @@ const TutorialModal = props => {
                     <div className={styles.loadingOverlay}>
                         <div className={styles.loadingSpinner}>
                             加载中...
+                            <div className={styles.loadingProgress}>
+                                <div className={styles.progressBar}>
+                                    <div 
+                                        className={styles.progressFill} 
+                                        style={{ width: `${(loadingProgress.loaded / loadingProgress.total) * 100}%` }}
+                                    />
+                                </div>
+                                <div className={styles.progressInfo}>
+                                    {loadingProgress.loaded}/{loadingProgress.total} 已加载
+                                    {loadingProgress.failed > 0 && ` (${loadingProgress.failed} 失败)`}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
