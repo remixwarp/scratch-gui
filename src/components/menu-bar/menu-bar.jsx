@@ -109,6 +109,8 @@ import {
     aiMenuOpen
 } from '../../reducers/menus';
 import {setFileHandle} from '../../reducers/tw.js';
+import JSZip from '@turbowarp/jszip';
+import settingsStore from '../../addons/settings-store-singleton.js';
 import {
     setAutosaveEnabled,
     setAutosaveInterval,
@@ -1197,6 +1199,183 @@ class MenuBar extends React.Component {
             }
         };
     }
+
+    handleExportSettings = async () => {
+        try {
+            // 收集所有设置数据
+            let addonSettings = null;
+            try {
+                // 尝试导出插件设置，即使 theme 有问题也能继续
+                addonSettings = settingsStore.export({theme: this.props.theme || {isDark: () => false}});
+            } catch (themeError) {
+                console.error('Error exporting addon settings:', themeError);
+                // 如果 theme 有问题，使用默认值
+                addonSettings = {
+                    core: {
+                        lightTheme: true,
+                        version: 'v1.0.0'
+                    },
+                    addons: {}
+                };
+            }
+
+            // 收集所有 localStorage 设置
+            const localStorageSettings = {};
+            const keysToExport = [
+                'tw:theme',
+                'tw:shortcuts',
+                'tw:language',
+                'tw:addons',
+                'tw:custom-themes',
+                'tw:persisted_unsandboxed',
+                'tw:restore-point-interval'
+            ];
+
+            for (const key of keysToExport) {
+                const value = localStorage.getItem(key);
+                if (value !== null) {
+                    localStorageSettings[key] = value;
+                }
+            }
+
+            // 收集工作区书签
+            const workspaceBookmarks = {
+                bookmarks: this.state.workspaceBookmarks || [],
+                categories: this.state.workspaceBookmarksCategories || ['General'],
+                collapsedCategories: this.state.workspaceBookmarksCollapsedCategories || []
+            };
+
+            // 收集 Redux 状态中的相关设置
+            const reduxSettings = {
+                locale: this.props.locale,
+                isRtl: this.props.isRtl
+            };
+
+            const settingsData = {
+                version: '1.1.0',
+                exportTime: new Date().toISOString(),
+                editorVersion: '3.2.37',
+                addonSettings: addonSettings,
+                localStorageSettings: localStorageSettings,
+                workspaceBookmarks: workspaceBookmarks,
+                reduxSettings: reduxSettings
+            };
+
+            // 创建压缩包
+            const zip = new JSZip();
+            zip.file('settings.json', JSON.stringify(settingsData, null, 2));
+            zip.file('version.json', JSON.stringify({
+                version: '1.1.0',
+                exportTime: settingsData.exportTime,
+                editorVersion: settingsData.editorVersion
+            }, null, 2));
+
+            // 生成压缩文件
+            const content = await zip.generateAsync({type: 'blob'});
+
+            // 保存文件
+            const blob = new Blob([content], {type: 'application/zip'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `remixwarp-settings-${Date.now().toString(36)}.rws`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // 显示成功消息
+            this.showAlert('成功', '设置已成功导出');
+        } catch (error) {
+            console.error('Error exporting settings:', error);
+            this.showAlert('错误', '导出设置失败，请重试。');
+        } finally {
+            this.props.onRequestCloseFile();
+        }
+    };
+
+    handleImportSettings = () => {
+        // 创建文件输入元素
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.rws';
+        input.onchange = async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+
+            try {
+                // 读取文件
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        // 解析压缩包
+                        const zip = new JSZip();
+                        const content = await zip.loadAsync(event.target.result);
+
+                        // 读取设置文件
+                        const settingsFile = content.file('settings.json');
+                        if (!settingsFile) {
+                            throw new Error('Invalid settings file');
+                        }
+
+                        const settingsData = JSON.parse(await settingsFile.async('text'));
+
+                        // 确认覆盖现有设置
+                        if (!confirm('确定要导入设置吗？这将覆盖您当前的设置。')) {
+                            return;
+                        }
+
+                        // 导入插件设置
+                        if (settingsData.addonSettings) {
+                            settingsStore.import(settingsData.addonSettings);
+                        }
+
+                        // 导入 localStorage 设置
+                        if (settingsData.localStorageSettings) {
+                            for (const [key, value] of Object.entries(settingsData.localStorageSettings)) {
+                                localStorage.setItem(key, value);
+                            }
+                        }
+
+                        // 兼容旧版本格式
+                        if (settingsData.themeSettings) {
+                            localStorage.setItem('tw:theme', settingsData.themeSettings);
+                        }
+                        if (settingsData.shortcuts) {
+                            localStorage.setItem('tw:shortcuts', settingsData.shortcuts);
+                        }
+                        if (settingsData.language) {
+                            localStorage.setItem('tw:language', settingsData.language);
+                        }
+
+                        // 导入工作区书签
+                        if (settingsData.workspaceBookmarks) {
+                            this.setState({
+                                workspaceBookmarks: settingsData.workspaceBookmarks.bookmarks || [],
+                                workspaceBookmarksCategories: settingsData.workspaceBookmarks.categories || ['General'],
+                                workspaceBookmarksCollapsedCategories: settingsData.workspaceBookmarks.collapsedCategories || []
+                            }, () => {
+                                this.saveWorkspaceBookmarksToProject();
+                            });
+                        }
+
+                        // 显示成功消息并提示刷新
+                        this.showAlert('成功', '设置已成功导入。请刷新页面以应用更改。');
+                    } catch (error) {
+                        console.error('Error importing settings:', error);
+                        this.showAlert('错误', '导入设置失败，请检查文件格式。');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } catch (error) {
+                console.error('Error reading file:', error);
+                this.showAlert('错误', '读取设置文件失败，请重试。');
+            } finally {
+                this.props.onRequestCloseFile();
+            }
+        };
+        input.click();
+    };
     handleToggleAutosave () {
         // Instead of enabling/disabling, just pause/resume the timer
         this.setState(prevState => ({autosavePaused: !prevState.autosavePaused}));
@@ -1724,11 +1903,7 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                         <MenuItem onClick={this.props.onClickTutorial}>
                                             <BookOpen size={20} />
-                                            <FormattedMessage
-                                                defaultMessage="Tutorial"
-                                                description="Menu bar item for tutorial"
-                                                id="tw.menuBar.tutorial"
-                                            />
+                                            {this.props.locale === 'zh-cn' ? '视频教程' : 'Video Tutorial'}
                                         </MenuItem>
                                     </MenuSection>
                                     <MenuSection>
@@ -1750,6 +1925,24 @@ class MenuBar extends React.Component {
                                                 description="Menu bar item to create a manual restore point immediately"
                                                 id="tw.menuBar.createRestorePoint"
                                             />
+                                        </MenuItem>
+                                    </MenuSection>
+                                    <MenuSection>
+                                        <MenuItem
+                                            expanded={false}
+                                        >
+                                            <div className={styles.menuItemContent}>
+                                                {this.props.locale === 'zh-cn' ? '配置迁移' : 'Config Migration'}
+                                                <ChevronDown size={8} />
+                                            </div>
+                                            <Submenu place={this.props.isRtl ? 'left' : 'right'}>
+                                                <MenuItem onClick={this.handleExportSettings}>
+                                                    {this.props.locale === 'zh-cn' ? '导出全部配置' : 'Export All Config'}
+                                                </MenuItem>
+                                                <MenuItem onClick={this.handleImportSettings}>
+                                                    {this.props.locale === 'zh-cn' ? '导入全部配置' : 'Import All Config'}
+                                                </MenuItem>
+                                            </Submenu>
                                         </MenuItem>
                                     </MenuSection>
                                     {this.getAutosaveEnabled() && (

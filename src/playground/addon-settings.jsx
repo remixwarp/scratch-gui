@@ -21,7 +21,7 @@ import render from './app-target';
 
 const onExportSettings = settings => {
     const blob = new Blob([JSON.stringify(settings)]);
-    downloadBlob('turbowarp-addon-settings.json', blob);
+    downloadBlob(`${APP_NAME}-addon-settings.json`, blob);
 };
 
 render((
