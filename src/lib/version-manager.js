@@ -10,6 +10,230 @@ const VERSION_HISTORY_KEY = 'remixwarp_version_history';
 const CURRENT_VERSION_KEY = 'remixwarp_current_version';
 
 /**
+ * 翻译映射表 - 用于将中文提交信息翻译成英文
+ */
+const TRANSLATION_MAP = {
+    // 功能相关
+    '添加': 'Add',
+    '新增': 'Add',
+    '支持': 'Support',
+    '实现': 'Implement',
+    '创建': 'Create',
+    '引入': 'Introduce',
+    '集成': 'Integrate',
+    '导出': 'Export',
+    '导入': 'Import',
+    '配置': 'Config',
+    '设置': 'Settings',
+    '功能': 'Feature',
+    '菜单': 'Menu',
+    '子菜单': 'Submenu',
+    '按钮': 'Button',
+    '选项': 'Option',
+    '文件': 'File',
+
+    // 优化相关
+    '优化': 'Optimize',
+    '改进': 'Improve',
+    '提升': 'Enhance',
+    '调整': 'Adjust',
+    '完善': 'Refine',
+    '重构': 'Refactor',
+    '简化': 'Simplify',
+    '更新': 'Update',
+    '升级': 'Upgrade',
+    '性能': 'Performance',
+    '体验': 'Experience',
+    '界面': 'Interface',
+    '显示': 'Display',
+    '适配': 'Adapt',
+
+    // 修复相关
+    '修复': 'Fix',
+    '解决': 'Resolve',
+    '处理': 'Handle',
+    '纠正': 'Correct',
+    'bug': 'Bug',
+    '问题': 'Issue',
+    '错误': 'Error',
+    '崩溃': 'Crash',
+    '异常': 'Exception',
+    '冲突': 'Conflict',
+
+    // 其他
+    '删除': 'Remove',
+    '移除': 'Remove',
+    '清理': 'Clean',
+    '整理': 'Organize',
+    '文档': 'Documentation',
+    '注释': 'Comment',
+    '测试': 'Test',
+    '部署': 'Deploy',
+    '发布': 'Release',
+    '版本': 'Version',
+    '初始化': 'Initialize',
+    '默认': 'Default',
+    '全部': 'All',
+    '完整': 'Complete',
+    '编辑器': 'Editor',
+    '主题': 'Theme',
+    '颜色': 'Color',
+    '语言': 'Language',
+    '本地化': 'Localization',
+    '国际化': 'Internationalization',
+    '中英文': 'Chinese and English',
+    '英文': 'English',
+    '中文': 'Chinese',
+    '切换': 'Switch',
+    '检测': 'Detect',
+    '自动': 'Auto',
+    '手动': 'Manual',
+    '保存': 'Save',
+    '读取': 'Read',
+    '加载': 'Load',
+    '存储': 'Store',
+    '压缩': 'Compress',
+    '格式': 'Format',
+    '数据': 'Data',
+    '信息': 'Information',
+    '内容': 'Content',
+    '标题': 'Title',
+    '警告': 'Warning',
+    '提示': 'Tip',
+    '注意': 'Note',
+    '确认': 'Confirm',
+    '取消': 'Cancel',
+    '关闭': 'Close',
+    '打开': 'Open',
+    '成功': 'Success',
+    '失败': 'Failed',
+    '完成': 'Complete',
+    '进行': 'In Progress',
+    '等待': 'Wait',
+    '耐心': 'Patient',
+    '时间': 'Time',
+    '分钟': 'Minutes',
+    '环境': 'Environment',
+    '当前': 'Current',
+    '最新': 'Latest',
+    '历史': 'History',
+    '记录': 'Record',
+    '提交': 'Commit',
+    '代码': 'Code',
+    '仓库': 'Repository',
+    '部署': 'Deploy',
+    '需要': 'Need',
+    '可能': 'May',
+    '一段': 'A period of',
+    '才能': 'Can',
+    '显示': 'Display',
+    '出现': 'Appear',
+    '请': 'Please',
+    '参考': 'Reference',
+    '具体': 'Specific',
+    '由于': 'Due to',
+    '一定': 'Certain',
+    '后': 'After',
+    '的': ' ',
+    '了': ' ',
+    '和': 'and',
+    '与': 'and',
+    '或': 'or',
+    '在': 'in',
+    '到': 'to',
+    '从': 'from',
+    '为': 'for',
+    '对': 'for',
+    '将': 'will',
+    '把': ' ',
+    '被': 'be',
+    '会': 'will',
+    '可以': 'can',
+    '已经': 'already',
+    '正在': 'is',
+    '没有': 'no',
+    '不': 'not',
+    '无': 'no',
+    '有': 'have',
+    '是': 'is',
+    '的': ' ',
+    '地': 'ly',
+    '得': ' ',
+    '着': 'ing',
+    '过': 'ed',
+    '了': ' ',
+    '啊': ' ',
+    '呢': ' ',
+    '吧': ' ',
+    '吗': ' ',
+    '哦': ' ',
+    '嗯': ' ',
+    '哈': ' ',
+    '啦': ' ',
+    '呀': ' ',
+    '哇': ' ',
+    '哟': ' ',
+    '喽': ' ',
+    '呗': ' ',
+    '嘛': ' ',
+    '罢': ' ',
+    '哉': ' ',
+    '兮': ' ',
+    '之': ' ',
+    '乎': ' ',
+    '者': ' ',
+    '也': ' ',
+    '矣': ' ',
+    '焉': ' ',
+    '耳': ' ',
+    '耶': ' ',
+    '与': 'and',
+    '欤': ' ',
+    '邪': ' ',
+    '哉': ' '
+};
+
+/**
+ * 将中文文本翻译成英文
+ * @param {string} text - 中文文本
+ * @returns {string} 英文文本
+ */
+export const translateToEnglish = (text) => {
+    if (!text || typeof text !== 'string') return text;
+
+    let translated = text;
+
+    // 按长度降序排序，优先匹配长词
+    const sortedKeys = Object.keys(TRANSLATION_MAP).sort((a, b) => b.length - a.length);
+
+    for (const key of sortedKeys) {
+        const regex = new RegExp(key, 'g');
+        translated = translated.replace(regex, TRANSLATION_MAP[key]);
+    }
+
+    // 清理多余空格
+    translated = translated.replace(/\s+/g, ' ').trim();
+
+    return translated;
+};
+
+/**
+ * 翻译更新内容
+ * @param {Array} changes - 更新内容数组
+ * @param {string} locale - 当前语言
+ * @returns {Array} 翻译后的更新内容数组
+ */
+export const translateChanges = (changes, locale) => {
+    if (!changes || !Array.isArray(changes)) return changes;
+    if (locale === 'zh-cn') return changes;
+
+    return changes.map(change => ({
+        ...change,
+        text: translateToEnglish(change.text)
+    }));
+};
+
+/**
  * 获取当前 URL
  * @returns {string} 当前 URL
  */
@@ -441,23 +665,24 @@ export const findMatchingVersion = (lastSeenVersion, commits) => {
  * 3. 对比当前版本和最新版本
  * 4. 如果版本号不同，递归读取历史版本，直到找到匹配的版本
  * 5. 返回所有需要显示的更新版本
+ * @param {string} locale - 当前语言
  * @returns {Object|null} 更新信息，如果没有更新则返回 null
  */
-export const checkForUpdate = async () => {
+export const checkForUpdate = async (locale = 'zh-cn') => {
     try {
         console.log('=== 开始检查版本更新 ===');
-        
+
         // 1. 实时读取当前 URL 并存储
         storeCurrentUrl();
         const currentUrl = getCurrentUrl();
         console.log('当前 URL:', currentUrl);
-        
+
         // 2. 从 GitHub 获取提交历史
         const commits = await fetchCommitsFromGitHub(100);
-        
+
         if (!commits || commits.length === 0) {
             console.warn('无法从 GitHub 获取提交历史');
-            return generateDefaultUpdateInfo();
+            return generateDefaultUpdateInfo(locale);
         }
         
         console.log(`获取到 ${commits.length} 条提交记录`);
@@ -535,21 +760,24 @@ export const checkForUpdate = async () => {
             url: currentUrl,
             isUrlChanged: hasUrlChanged()
         };
-        
+
     } catch (error) {
         console.error('检查版本更新时出错:', error);
-        return generateDefaultUpdateInfo();
+        return generateDefaultUpdateInfo(locale);
     }
 };
 
 /**
  * 生成默认更新信息
+ * @param {string} locale - 当前语言
  * @returns {Object} 默认更新信息
  */
-export const generateDefaultUpdateInfo = () => {
+export const generateDefaultUpdateInfo = (locale = 'zh-cn') => {
     const lastVersion = getLastSeenVersion() || '1.0.0';
     const newVersion = incrementVersion(lastVersion);
-    
+
+    const isChinese = locale === 'zh-cn';
+
     return {
         hasUpdate: true,
         currentVersion: newVersion,
@@ -558,8 +786,8 @@ export const generateDefaultUpdateInfo = () => {
             version: newVersion,
             date: getCurrentDateTime(),
             changes: [
-                { type: 'improvement', text: '性能优化和稳定性改进' },
-                { type: 'other', text: '常规维护和更新' }
+                { type: 'improvement', text: isChinese ? '性能优化和稳定性改进' : 'Performance optimization and stability improvements' },
+                { type: 'other', text: isChinese ? '常规维护和更新' : 'Routine maintenance and updates' }
             ],
             commitSha: null,
             author: 'System'
@@ -611,5 +839,7 @@ export default {
     checkForUpdate,
     generateDefaultUpdateInfo,
     markVersionAsSeen,
-    getCurrentDate
+    getCurrentDate,
+    translateToEnglish,
+    translateChanges
 };

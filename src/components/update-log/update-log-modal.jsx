@@ -7,7 +7,7 @@ import styles from './update-log-modal.css';
 const STORAGE_KEY = 'remixwarp_last_seen_version';
 const DONT_SHOW_KEY = 'remixwarp_dont_show_updates';
 
-const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors }) => {
+const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors, locale }) => {
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
     const handleClose = () => {
@@ -34,24 +34,16 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors }) => {
     return (
         <div className={styles.modalOverlay}>
             <div className={styles.modalContainer}>
-                <div className={styles.modalHeader} style={{ 
-                    background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` 
+                <div className={styles.modalHeader} style={{
+                    background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
                 }}>
                     <h2 className={styles.title}>
-                        <FormattedMessage
-                            defaultMessage="版本更新"
-                            description="Update log modal title"
-                            id="gui.updateLog.title"
-                        />
+                        {locale === 'zh-cn' ? '版本更新' : 'Version Update'}
                     </h2>
-                    <button 
+                    <button
                         className={styles.closeButton}
                         onClick={handleClose}
-                        aria-label={intl.formatMessage({
-                            defaultMessage: '关闭',
-                            description: 'Close button label',
-                            id: 'gui.updateLog.close'
-                        })}
+                        aria-label={locale === 'zh-cn' ? '关闭' : 'Close'}
                     >
                         ×
                     </button>
@@ -79,18 +71,12 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors }) => {
                         </div>
                         <div className={styles.warningContent}>
                             <strong>
-                                <FormattedMessage
-                                    defaultMessage="注意："
-                                    description="Warning label"
-                                    id="gui.updateLog.warningLabel"
-                                />
+                                {locale === 'zh-cn' ? '注意：' : 'Note: '}
                             </strong>
                             <span>
-                                <FormattedMessage
-                                    defaultMessage="此版本信息是从代码仓库读取的最新更新内容。由于部署需要一定时间，新功能可能需要等待一段时间才能在当前环境中显示。请耐心等待部署完成。具体时间请参考提交版本时间后的10~20分钟。"
-                                    description="Warning message about deployment delay"
-                                    id="gui.updateLog.warningMessage"
-                                />
+                                {locale === 'zh-cn'
+                                    ? '此版本信息是从代码仓库读取的最新更新内容。由于部署需要一定时间，新功能可能需要等待一段时间才能在当前环境中显示。请耐心等待部署完成。具体时间请参考提交版本时间后的10~20分钟。'
+                                    : 'This version information is read from the code repository. Due to deployment time, new features may take a while to appear in the current environment. Please be patient. The specific time is approximately 10-20 minutes after the commit time.'}
                             </span>
                         </div>
                     </div>
@@ -103,30 +89,16 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors }) => {
                                         background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
                                     }}
                                 >
-                                    <FormattedMessage
-                                        defaultMessage="版本 {version}"
-                                        description="Version number display"
-                                        id="gui.updateLog.version"
-                                        values={{version: versionInfo.version}}
-                                    />
+                                    {locale === 'zh-cn' ? `版本 ${versionInfo.version}` : `Version ${versionInfo.version}`}
                                 </div>
                                 <div className={styles.updateDate}>
-                                    <FormattedMessage
-                                        defaultMessage="更新日期: {date}"
-                                        description="Update date display"
-                                        id="gui.updateLog.date"
-                                        values={{date: versionInfo.date}}
-                                    />
+                                    {locale === 'zh-cn' ? `更新日期: ${versionInfo.date}` : `Update Date: ${versionInfo.date}`}
                                 </div>
                             </div>
 
                             <div className={styles.changesContainer}>
                                 <h3 className={styles.changesTitle}>
-                                    <FormattedMessage
-                                        defaultMessage="更新内容"
-                                        description="Changes section title"
-                                        id="gui.updateLog.changesTitle"
-                                    />
+                                    {locale === 'zh-cn' ? '更新内容' : 'Changes'}
                                 </h3>
                                 <div className={styles.changesList}>
                                     {versionInfo.changes.map((change, changeIndex) => (
@@ -138,10 +110,10 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors }) => {
                                                 {change.type === 'other' && '📝'}
                                             </span>
                                             <span className={styles.changeTypeText}>
-                                                {change.type === 'feature' && '新增'}
-                                                {change.type === 'improvement' && '优化'}
-                                                {change.type === 'bugfix' && '修复'}
-                                                {change.type === 'other' && '其他'}
+                                                {change.type === 'feature' && (locale === 'zh-cn' ? '新增' : 'Feature')}
+                                                {change.type === 'improvement' && (locale === 'zh-cn' ? '优化' : 'Improvement')}
+                                                {change.type === 'bugfix' && (locale === 'zh-cn' ? '修复' : 'Bugfix')}
+                                                {change.type === 'other' && (locale === 'zh-cn' ? '其他' : 'Other')}
                                             </span>
                                             <span className={styles.changeText}>{change.text}</span>
                                         </div>
@@ -162,25 +134,17 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors }) => {
                             className={styles.checkbox}
                         />
                         <span className={styles.checkboxText}>
-                            <FormattedMessage
-                                defaultMessage="不再显示此版本更新"
-                                description="Don't show again checkbox"
-                                id="gui.updateLog.dontShowAgain"
-                            />
+                            {locale === 'zh-cn' ? '不再显示此版本更新' : 'Don\'t show this update again'}
                         </span>
                     </label>
-                    <button 
+                    <button
                         className={styles.confirmButton}
                         onClick={handleClose}
-                        style={{ 
-                            background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` 
+                        style={{
+                            background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
                         }}
                     >
-                        <FormattedMessage
-                            defaultMessage="知道了"
-                            description="Confirm button text"
-                            id="gui.updateLog.confirm"
-                        />
+                        {locale === 'zh-cn' ? '知道了' : 'Got it'}
                     </button>
                 </div>
             </div>
@@ -200,7 +164,8 @@ UpdateLogModal.propTypes = {
             text: PropTypes.string.isRequired
         })).isRequired
     })).isRequired,
-    themeColors: PropTypes.object
+    themeColors: PropTypes.object,
+    locale: PropTypes.string
 };
 
 // 检查是否需要显示更新日志

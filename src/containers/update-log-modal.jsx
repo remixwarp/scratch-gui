@@ -9,11 +9,12 @@ import {
     getLastSeenVersion,
     markVersionAsSeen,
     storeCurrentUrl,
-    hasUrlChanged
+    hasUrlChanged,
+    translateChanges
 } from '../lib/version-manager.js';
 import { ACCENT_MAP } from '../lib/themes/accents';
 
-const UpdateLogModalContainer = ({ intl, theme }) => {
+const UpdateLogModalContainer = ({ intl, theme, locale }) => {
     const [visible, setVisible] = useState(false);
     const [updateInfo, setUpdateInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -81,16 +82,22 @@ const UpdateLogModalContainer = ({ intl, theme }) => {
                 console.log('不再显示:', localStorage.getItem('remixwarp_dont_show_updates'));
                 
                 // 使用新的 checkForUpdate 函数获取更新信息
-                const info = await checkForUpdate();
+                const info = await checkForUpdate(locale);
                 
                 if (info && info.hasUpdate && info.versions && info.versions.length > 0) {
                     console.log('获取到更新信息:', info.versions.length, '个版本');
                     console.log('显示的版本:', info.versions.map(v => v.version));
                     console.log('当前 URL:', info.url);
                     console.log('URL 是否变化:', info.isUrlChanged);
-                    
+
+                    // 根据语言设置翻译更新内容
+                    const translatedVersions = info.versions.map(version => ({
+                        ...version,
+                        changes: translateChanges(version.changes, locale)
+                    }));
+
                     setUpdateInfo({
-                        versions: info.versions,
+                        versions: translatedVersions,
                         currentVersion: info.currentVersion,
                         lastVersion: info.lastVersion
                     });
@@ -111,7 +118,7 @@ const UpdateLogModalContainer = ({ intl, theme }) => {
         }, 2000);
 
         return () => clearTimeout(timer);
-    }, []);
+    }, [locale]);
 
     const handleClose = () => {
         setVisible(false);
@@ -131,17 +138,20 @@ const UpdateLogModalContainer = ({ intl, theme }) => {
             onClose={handleClose}
             versions={updateInfo.versions}
             themeColors={themeColors}
+            locale={locale}
         />
     );
 };
 
 UpdateLogModalContainer.propTypes = {
     intl: intlShape.isRequired,
-    theme: PropTypes.object
+    theme: PropTypes.object,
+    locale: PropTypes.string
 };
 
 const mapStateToProps = state => ({
-    theme: state.scratchGui.theme.theme
+    theme: state.scratchGui.theme.theme,
+    locale: state.locales.locale
 });
 
 const mapDispatchToProps = () => ({});
