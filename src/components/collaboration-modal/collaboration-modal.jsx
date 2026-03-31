@@ -308,21 +308,18 @@ class CollaborationModal extends Component {
             return;
         }
 
-        this.setState({
-            isConnecting: true,
-            connectionStep: 'connecting',
-            error: null
-        });
+        // 存储待加入的房间信息
+        this._pendingRoomJoin = {
+            roomId: this.state.roomId.trim(),
+            username: this.props.currentUsername
+        };
 
-        try {
-            await this.props.onJoinRoom(this.state.roomId.trim(), this.props.currentUsername);
-        } catch (error) {
-            this.setState({
-                error: error.message || 'Failed to join room',
-                isConnecting: false,
-                connectionStep: 'join'
-            });
-        }
+        // 显示人机验证步骤
+        this.setState({
+            connectionStep: 'captcha',
+            error: null,
+            turnstileToken: ''
+        });
     }
 
     async handleCreateRoom () {
@@ -507,7 +504,6 @@ class CollaborationModal extends Component {
 
     async verifyCaptcha () {
         if (this.state.turnstileToken) {
-            // 验证码正确，继续创建房间
             this.setState({
                 isConnecting: true,
                 connectionStep: 'connecting',
@@ -515,34 +511,77 @@ class CollaborationModal extends Component {
             });
             
             try {
-                if (this._pendingRoomCreation) {
-                    const { roomCode, username } = this._pendingRoomCreation;
-                    await this.props.onCreateRoom(roomCode, username, 'public');
-                    
-                    const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('room', roomCode);
-                    currentUrl.searchParams.delete('username');
-                    window.history.replaceState(null, null, currentUrl.toString());
-                    
-                    this.setState({ roomId: roomCode });
-                    this._pendingRoomCreation = null;
+                // 服务器端验证 Turnstile token
+                const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        secret: '0x4AAAAAACyeS8KFuErSMsZIM2CQAsdSmu8',
+                        response: this.state.turnstileToken,
+                        remoteip: window.navigator.userAgent
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 验证成功，执行待处理操作
+                    if (this._pendingRoomCreation) {
+                        // 创建房间
+                        const { roomCode, username } = this._pendingRoomCreation;
+                        await this.props.onCreateRoom(roomCode, username, 'public');
+                        
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('room', roomCode);
+                        currentUrl.searchParams.delete('username');
+                        window.history.replaceState(null, null, currentUrl.toString());
+                        
+                        this.setState({ roomId: roomCode });
+                        this._pendingRoomCreation = null;
+                    } else if (this._pendingRoomJoin) {
+                        // 加入房间
+                        const { roomId, username } = this._pendingRoomJoin;
+                        await this.props.onJoinRoom(roomId, username);
+                        
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('room', roomId);
+                        currentUrl.searchParams.delete('username');
+                        window.history.replaceState(null, null, currentUrl.toString());
+                        
+                        this.setState({ roomId: roomId });
+                        this._pendingRoomJoin = null;
+                    } else {
+                        // 直接创建新房间
+                        const roomCode = this.generateRoomCode();
+                        await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
+                        
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('room', roomCode);
+                        currentUrl.searchParams.delete('username');
+                        window.history.replaceState(null, null, currentUrl.toString());
+                        
+                        this.setState({ roomId: roomCode });
+                    }
                 } else {
-                    // 直接创建新房间
-                    const roomCode = this.generateRoomCode();
-                    await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
+                    // 验证失败
+                    console.error('Turnstile verification failed:', result);
+                    this.setState({
+                        isConnecting: false,
+                        connectionStep: 'captcha',
+                        error: 'Invalid verification. Please try again.'
+                    });
                     
-                    const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('room', roomCode);
-                    currentUrl.searchParams.delete('username');
-                    window.history.replaceState(null, null, currentUrl.toString());
-                    
-                    this.setState({ roomId: roomCode });
+                    // 重新初始化 Turnstile
+                    this.initTurnstile();
                 }
             } catch (error) {
+                console.error('Error verifying captcha or creating/joining room:', error);
                 this.setState({
-                    error: error.message || 'Failed to create room',
+                    error: 'Error verifying captcha. Please try again.',
                     isConnecting: false,
-                    connectionStep: 'join'
+                    connectionStep: 'captcha'
                 });
             }
         } else {
