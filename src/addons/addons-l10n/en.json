@@ -454,5 +454,11 @@
   "tw.collaboration.error.connectionTimeout": "Connection to room \"{roomId}\" timed out. Host may not be available.",
   "tw.collaboration.error.hostUnavailable": "Could not connect to host. Room \"{roomId}\" may not exist or host may be offline.",
   "tw.collaboration.error.iceConnectionFailed": "ICE connection failed after {attempts} attempts. This may be a network issue.",
-  "tw.collaboration.error.unknown": "Connection failed: {error}"
+  "tw.collaboration.error.unknown": "Connection failed: {error}",
+  "gui.collaboration.captchaTitle": "Human Verification",
+  "gui.collaboration.captchaDescription": "Please complete the verification to create a room.",
+  "gui.collaboration.captchaLabel": "Answer",
+  "gui.collaboration.verifyCaptcha": "Verify",
+  "gui.collaboration.newCaptcha": "New Challenge",
+  "gui.collaboration.cancelVerification": "Cancel"
 }

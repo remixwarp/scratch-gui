@@ -126,6 +126,9 @@ export default [
                 id="gui.extension.pen.name"
             />
         ),
+        nameTranslations: {
+            'zh-cn': '画笔'
+        },
         extensionId: 'pen',
         iconURL: penIconURL,
         insetIconURL: penInsetIconURL,
@@ -136,6 +139,9 @@ export default [
                 id="gui.extension.pen.description"
             />
         ),
+        descriptionTranslations: {
+            'zh-cn': '使用角色绘制。'
+        },
         tags: ['scratch'],
         featured: true
     },

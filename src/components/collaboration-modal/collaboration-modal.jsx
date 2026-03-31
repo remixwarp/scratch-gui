@@ -28,7 +28,10 @@ class CollaborationModal extends Component {
             connectionStep: props.isConnected ? 'connected' : 'join',
             error: null,
             pendingRequests: [],
-            showJoinRequest: false
+            showJoinRequest: false,
+            captcha: '',
+            captchaSolution: '',
+            captchaImage: ''
         };
 
         this.autoJoinAttempted = new Set();
@@ -59,6 +62,9 @@ class CollaborationModal extends Component {
         this.handleCancelClick = this.handleCancelClick.bind(this);
         this.togglePublicPrivacy = this.togglePublicPrivacy.bind(this);
         this.togglePrivatePrivacy = this.togglePrivatePrivacy.bind(this);
+        this.generateCaptcha = this.generateCaptcha.bind(this);
+        this.handleCaptchaChange = this.handleCaptchaChange.bind(this);
+        this.verifyCaptcha = this.verifyCaptcha.bind(this);
     }
 
     componentDidMount () {
@@ -274,31 +280,18 @@ class CollaborationModal extends Component {
     }
 
     async handleCreateRoom () {
-        const roomCode = this.generateRoomCode();
+        // 生成房间代码并存储
+        this._pendingRoomCreation = {
+            roomCode: this.generateRoomCode(),
+            username: this.props.currentUsername
+        };
 
+        // 显示人机验证步骤
+        this.generateCaptcha();
         this.setState({
-            isConnecting: true,
-            connectionStep: 'connecting',
+            connectionStep: 'captcha',
             error: null
         });
-
-        try {
-            await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
-
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('room', roomCode);
-            currentUrl.searchParams.delete('username');
-            window.history.replaceState(null, null, currentUrl.toString());
-
-            this.setState({roomId: roomCode});
-
-        } catch (error) {
-            this.setState({
-                error: error.message || 'Failed to create room',
-                isConnecting: false,
-                connectionStep: 'join'
-            });
-        }
     }
 
     handleLeaveRoom () {
@@ -427,10 +420,18 @@ class CollaborationModal extends Component {
 
             try {
                 console.log(`Auto-creating room "${roomCode}" since it doesn't exist`);
-                await this.props.onCreateRoom(roomCode, username);
-                console.log(`Successfully created room "${roomCode}"`);
-
-                this._autoJoinFailures.delete(roomIdKey);
+                // 自动创建房间时也需要先进行人机验证
+                this.generateCaptcha();
+                this.setState({
+                    connectionStep: 'captcha',
+                    error: null,
+                    isConnecting: false
+                });
+                // 存储要创建的房间信息，以便验证后使用
+                this._pendingRoomCreation = {
+                    roomCode,
+                    username
+                };
             } catch (createError) {
                 console.error(`Failed to create room "${roomCode}":`, createError.message);
 
@@ -450,6 +451,84 @@ class CollaborationModal extends Component {
                     });
                 }
             }
+        }
+    }
+
+    generateCaptcha () {
+        // 生成简单的数学验证码
+        let num1 = Math.floor(Math.random() * 10) + 1;
+        let num2 = Math.floor(Math.random() * 10) + 1;
+        const operators = ['+', '-'];
+        const operator = operators[Math.floor(Math.random() * operators.length)];
+        let solution;
+        
+        if (operator === '+') {
+            solution = num1 + num2;
+        } else {
+            // 确保结果为正数
+            if (num1 < num2) {
+                const temp = num1;
+                num1 = num2;
+                num2 = temp;
+            }
+            solution = num1 - num2;
+        }
+        
+        this.setState({
+            captcha: `${num1} ${operator} ${num2} = ?`,
+            captchaSolution: solution.toString(),
+            captchaImage: '' // 可以在这里生成图像验证码
+        });
+    }
+
+    handleCaptchaChange (e) {
+        this.setState({ captcha: e.target.value });
+    }
+
+    async verifyCaptcha () {
+        if (this.state.captcha === this.state.captchaSolution) {
+            // 验证码正确，继续创建房间
+            this.setState({
+                isConnecting: true,
+                connectionStep: 'connecting',
+                error: null
+            });
+            
+            try {
+                if (this._pendingRoomCreation) {
+                    const { roomCode, username } = this._pendingRoomCreation;
+                    await this.props.onCreateRoom(roomCode, username, 'public');
+                    
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('room', roomCode);
+                    currentUrl.searchParams.delete('username');
+                    window.history.replaceState(null, null, currentUrl.toString());
+                    
+                    this.setState({ roomId: roomCode });
+                    this._pendingRoomCreation = null;
+                } else {
+                    // 直接创建新房间
+                    const roomCode = this.generateRoomCode();
+                    await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
+                    
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('room', roomCode);
+                    currentUrl.searchParams.delete('username');
+                    window.history.replaceState(null, null, currentUrl.toString());
+                    
+                    this.setState({ roomId: roomCode });
+                }
+            } catch (error) {
+                this.setState({
+                    error: error.message || 'Failed to create room',
+                    isConnecting: false,
+                    connectionStep: 'join'
+                });
+            }
+        } else {
+            // 验证码错误，重新生成
+            this.setState({ error: 'Incorrect captcha. Please try again.' });
+            this.generateCaptcha();
         }
     }
 
@@ -1096,6 +1175,115 @@ class CollaborationModal extends Component {
         );
     }
 
+    renderCaptchaStep () {
+        return (
+            <Box className={styles.content}>
+                <div className={styles.alphaBanner}>
+                    <div className={styles.bannerIcon}>
+                        <AlertTriangle size={20} />
+                    </div>
+                    <div className={styles.bannerContent}>
+                        <strong>
+                            <FormattedMessage
+                                defaultMessage="Alpha Warning:"
+                                description="Alpha warning label"
+                                id="gui.collaboration.alphaWarningLabel"
+                            />
+                        </strong>
+                        {' '}
+                        <FormattedMessage
+                            defaultMessage="This feature is in early development. Your projects may get corrupted or broken. Use at your own risk."
+                            description="Alpha warning message"
+                            id="gui.collaboration.alphaWarningMessage"
+                        />
+                    </div>
+                </div>
+                <div className={styles.header}>
+                    <CollaborationIcon
+                        className={styles.headerIcon}
+                        draggable={false}
+                    />
+                    <div className={styles.headerText}>
+                        <FormattedMessage
+                            defaultMessage="Human Verification"
+                            description="Title for captcha verification"
+                            id="gui.collaboration.captchaTitle"
+                        />
+                    </div>
+                </div>
+
+                <div className={styles.description}>
+                    <FormattedMessage
+                        defaultMessage="Please complete the verification to create a room."
+                        description="Description for captcha verification"
+                        id="gui.collaboration.captchaDescription"
+                    />
+                </div>
+
+                <div className={styles.captchaSection}>
+                    <div className={styles.captchaQuestion}>
+                        {this.state.captcha}
+                    </div>
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label}>
+                            <FormattedMessage
+                                defaultMessage="Answer"
+                                description="Label for captcha input"
+                                id="gui.collaboration.captchaLabel"
+                            />
+                        </label>
+                        <Input
+                            className={styles.input}
+                            placeholder="Enter your answer..."
+                            value={this.state.captcha}
+                            onChange={this.handleCaptchaChange}
+                            type="number"
+                        />
+                    </div>
+                    <Button
+                        className={styles.primaryButton}
+                        onClick={this.verifyCaptcha}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Verify"
+                            description="Button to verify captcha"
+                            id="gui.collaboration.verifyCaptcha"
+                        />
+                    </Button>
+                    <Button
+                        className={styles.secondaryButton}
+                        onClick={this.generateCaptcha}
+                    >
+                        <FormattedMessage
+                            defaultMessage="New Challenge"
+                            description="Button to generate new captcha"
+                            id="gui.collaboration.newCaptcha"
+                        />
+                    </Button>
+                </div>
+
+                {this.state.error && (
+                    <div className={styles.error}>
+                        {this.state.error}
+                    </div>
+                )}
+
+                <div className={styles.buttonGroup}>
+                    <Button
+                        className={styles.secondaryButton}
+                        onClick={this.handleCancelClick}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Cancel"
+                            description="Cancel verification button"
+                            id="gui.collaboration.cancelVerification"
+                        />
+                    </Button>
+                </div>
+            </Box>
+        );
+    }
+
     render () {
         let content;
         switch (this.state.connectionStep) {
@@ -1110,6 +1298,9 @@ class CollaborationModal extends Component {
             break;
         case 'pending-approval':
             content = this.renderPendingApprovalStep();
+            break;
+        case 'captcha':
+            content = this.renderCaptchaStep();
             break;
         default:
             content = this.renderJoinStep();

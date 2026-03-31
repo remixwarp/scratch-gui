@@ -35,9 +35,20 @@ const toLibraryItem = extension => {
 
 const translateGalleryItem = (extension, locale) => ({
     ...extension,
-    name: extension.nameTranslations[locale] || extension.name,
-    description: extension.descriptionTranslations[locale] || extension.description
+    name: extension.nameTranslations?.[locale] || extension.name,
+    description: extension.descriptionTranslations?.[locale] || extension.description
 });
+
+const translateStaticItem = (item, locale) => {
+    if (typeof item !== 'object' || item === null) return item;
+    if (!item.nameTranslations && !item.descriptionTranslations) return item;
+
+    return {
+        ...item,
+        name: item.nameTranslations?.[locale] || item.name,
+        description: item.descriptionTranslations?.[locale] || item.description
+    };
+};
 
 let cachedGallery = null;
 
@@ -431,11 +442,13 @@ class ExtensionLibrary extends React.PureComponent {
     render() {
         let library = null;
         if (this.state.gallery || this.state.galleryError || this.state.galleryTimedOut) {
-            library = extensionLibraryContent.map(toLibraryItem);
+            const locale = this.props.intl.locale;
+            library = extensionLibraryContent
+                .map(i => translateStaticItem(i, locale))
+                .map(toLibraryItem);
             library.push('---');
             if (this.state.gallery) {
                 library.push(toLibraryItem(galleryMore));
-                const locale = this.props.intl.locale;
                 library.push(
                     ...this.state.gallery
                         .map(i => translateGalleryItem(i, locale))

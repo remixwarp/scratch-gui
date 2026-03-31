@@ -679,3 +679,31 @@
     padding-left: 1rem;
     border-top: 1px solid $ui-black-transparent;
 }
+
+/* Captcha verification styles */
+.captchaSection {
+    padding: 1.5rem;
+    background: $badge-background;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.captchaQuestion {
+    font-size: 1.125rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: $text-primary;
+    padding: 1rem;
+    background: $ui-white;
+    border-radius: 0.25rem;
+    border: 1px solid $ui-black-transparent;
+}
+
+.captchaSection .inputGroup {
+    margin-bottom: 1.5rem;
+}
+
+.captchaSection .primaryButton {
+    margin-bottom: 0.75rem;
+}

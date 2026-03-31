@@ -1636,9 +1636,9 @@ class MenuBar extends React.Component {
                                             </MenuItem>
                                             <MenuItem onClick={this.handleConvertToRemixWarp}>
                                                 <FormattedMessage
-                                                    defaultMessage="Bilup"
-                                                    description="Convert to Bilup compatibility"
-                                                    id="gui.menuBar.compatibility.Bilup"
+                                                    defaultMessage="RemixWarp"
+                                                    description="Convert to RemixWarp compatibility"
+                                                    id="gui.menuBar.compatibility.RemixWarp"
                                                 />
                                             </MenuItem>
                                         </Submenu>

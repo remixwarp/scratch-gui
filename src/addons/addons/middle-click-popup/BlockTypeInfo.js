@@ -432,7 +432,29 @@ export class BlockTypeInfo {
                     break;
                 }
             } else if (!field.argType_) {
-                if (field.getText().trim().length !== 0) parts.push(field.getText());
+                const text = field.getText();
+                if (text.trim().length !== 0) {
+                    // Try to localize the text using the locale function
+                    // First check if it's a block type that has a localization key
+                    const blockId = workspaceForm.id;
+                    const localizationKey = `block-switching/${blockId}`;
+                    const localizedText = locale(localizationKey);
+                    
+                    // Debugging: check if localization is working
+                    if (blockId && text) {
+                        // Only log for specific blocks to avoid too much logging
+                        if (blockId.includes('control_if') || blockId.includes('operator_add')) {
+                            console.log(`BlockTypeInfo: Block ID: ${blockId}, Original text: "${text}", Localization key: "${localizationKey}", Localized text: "${localizedText}"`);
+                        }
+                    }
+                    
+                    if (localizedText && localizedText !== localizationKey) {
+                        parts.push(localizedText);
+                    } else {
+                        // If no localization found, use the original text
+                        parts.push(text);
+                    }
+                }
             } else if (field.argType_[0] === 'colour') {
                 addInput(new BlockInputColour(inputIdx, fieldIdx));
             } else if (field.argType_[1] === 'number') {
