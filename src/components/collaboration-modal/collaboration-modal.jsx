@@ -29,9 +29,7 @@ class CollaborationModal extends Component {
             error: null,
             pendingRequests: [],
             showJoinRequest: false,
-            captcha: '',
-            captchaSolution: '',
-            captchaImage: ''
+            turnstileToken: ''
         };
 
         this.autoJoinAttempted = new Set();
@@ -62,9 +60,8 @@ class CollaborationModal extends Component {
         this.handleCancelClick = this.handleCancelClick.bind(this);
         this.togglePublicPrivacy = this.togglePublicPrivacy.bind(this);
         this.togglePrivatePrivacy = this.togglePrivatePrivacy.bind(this);
-        this.generateCaptcha = this.generateCaptcha.bind(this);
-        this.handleCaptchaChange = this.handleCaptchaChange.bind(this);
         this.verifyCaptcha = this.verifyCaptcha.bind(this);
+        this.onTurnstileSuccess = this.onTurnstileSuccess.bind(this);
     }
 
     componentDidMount () {
@@ -73,6 +70,11 @@ class CollaborationModal extends Component {
             isConnected: this.props.isConnected,
             currentUsername: this.props.currentUsername
         });
+
+        // 为 Cloudflare Turnstile 回调设置全局引用
+        if (typeof window !== 'undefined') {
+            window.collaborationModal = this;
+        }
 
         if (this.props.roomId && !this.props.isConnected && !this._autoJoinTimer && !this.autoJoinInProgress) {
             console.log('[COLLAB MODAL] Auto-joining room from URL:', this.props.roomId);
@@ -102,7 +104,46 @@ class CollaborationModal extends Component {
         }
     }
 
-    componentDidUpdate (prevProps) {
+    initTurnstile () {
+        // 确保 Turnstile 脚本已加载
+        if (typeof window !== 'undefined' && window.turnstile) {
+            console.log('Initializing Turnstile...');
+            // 显式渲染 Turnstile
+            window.turnstile.render('.cf-turnstile', {
+                sitekey: '0x4AAAAAACyeS6Www9AVI--y',
+                theme: 'auto',
+                size: 'normal',
+                language: 'auto',
+                retry: 'auto',
+                retryInterval: 2000,
+                callback: (token) => {
+                    console.log('Turnstile verification success, token:', token);
+                    this.onTurnstileSuccess(token);
+                },
+                errorCallback: (error) => {
+                    console.error('Turnstile verification error:', error);
+                },
+                expiredCallback: () => {
+                    console.log('Turnstile token expired, reinitializing...');
+                    this.initTurnstile();
+                },
+                timeoutCallback: () => {
+                    console.error('Turnstile verification timed out');
+                }
+            });
+        } else {
+            // 如果 Turnstile 脚本还没加载，等待一下再尝试
+            console.log('Turnstile script not loaded yet, waiting...');
+            setTimeout(() => this.initTurnstile(), 100);
+        }
+    }
+
+    componentDidUpdate (prevProps, prevState) {
+        // 当切换到验证码步骤时，初始化 Cloudflare Turnstile
+        if (this.state.connectionStep === 'captcha' && prevState.connectionStep !== 'captcha') {
+            this.initTurnstile();
+        }
+
         if (prevProps.isConnected !== this.props.isConnected) {
             const newConnectionStep = this.props.isConnected ? 'connected' : 'join';
             this.setState({
@@ -207,6 +248,11 @@ class CollaborationModal extends Component {
     }
 
     componentWillUnmount () {
+        // 清理 Cloudflare Turnstile 全局引用
+        if (typeof window !== 'undefined') {
+            delete window.collaborationModal;
+        }
+
         if (typeof window !== 'undefined' && window.CollaborationService) {
             try {
                 const service = window.CollaborationService.getInstance();
@@ -287,10 +333,10 @@ class CollaborationModal extends Component {
         };
 
         // 显示人机验证步骤
-        this.generateCaptcha();
         this.setState({
             connectionStep: 'captcha',
-            error: null
+            error: null,
+            turnstileToken: ''
         });
     }
 
@@ -454,39 +500,13 @@ class CollaborationModal extends Component {
         }
     }
 
-    generateCaptcha () {
-        // 生成简单的数学验证码
-        let num1 = Math.floor(Math.random() * 10) + 1;
-        let num2 = Math.floor(Math.random() * 10) + 1;
-        const operators = ['+', '-'];
-        const operator = operators[Math.floor(Math.random() * operators.length)];
-        let solution;
-        
-        if (operator === '+') {
-            solution = num1 + num2;
-        } else {
-            // 确保结果为正数
-            if (num1 < num2) {
-                const temp = num1;
-                num1 = num2;
-                num2 = temp;
-            }
-            solution = num1 - num2;
-        }
-        
-        this.setState({
-            captcha: `${num1} ${operator} ${num2} = ?`,
-            captchaSolution: solution.toString(),
-            captchaImage: '' // 可以在这里生成图像验证码
-        });
-    }
-
-    handleCaptchaChange (e) {
-        this.setState({ captcha: e.target.value });
+    onTurnstileSuccess (token) {
+        this.setState({ turnstileToken: token });
+        this.verifyCaptcha();
     }
 
     async verifyCaptcha () {
-        if (this.state.captcha === this.state.captchaSolution) {
+        if (this.state.turnstileToken) {
             // 验证码正确，继续创建房间
             this.setState({
                 isConnecting: true,
@@ -526,9 +546,8 @@ class CollaborationModal extends Component {
                 });
             }
         } else {
-            // 验证码错误，重新生成
-            this.setState({ error: 'Incorrect captcha. Please try again.' });
-            this.generateCaptcha();
+            // 验证码未完成
+            this.setState({ error: 'Please complete the verification.' });
         }
     }
 
@@ -1221,24 +1240,14 @@ class CollaborationModal extends Component {
                 </div>
 
                 <div className={styles.captchaSection}>
-                    <div className={styles.captchaQuestion}>
-                        {this.state.captcha}
-                    </div>
-                    <div className={styles.inputGroup}>
-                        <label className={styles.label}>
-                            <FormattedMessage
-                                defaultMessage="Answer"
-                                description="Label for captcha input"
-                                id="gui.collaboration.captchaLabel"
-                            />
-                        </label>
-                        <Input
-                            className={styles.input}
-                            placeholder="Enter your answer..."
-                            value={this.state.captcha}
-                            onChange={this.handleCaptchaChange}
-                            type="number"
-                        />
+                    <div className={styles.turnstileContainer}>
+                        <div 
+                            className="cf-turnstile" 
+                            data-sitekey="0x4AAAAAACyeS6Www9AVI--y" 
+                            data-theme="auto" 
+                            data-size="normal" 
+                            data-callback="window.collaborationModal.onTurnstileSuccess"
+                        ></div>
                     </div>
                     <Button
                         className={styles.primaryButton}
@@ -1248,16 +1257,6 @@ class CollaborationModal extends Component {
                             defaultMessage="Verify"
                             description="Button to verify captcha"
                             id="gui.collaboration.verifyCaptcha"
-                        />
-                    </Button>
-                    <Button
-                        className={styles.secondaryButton}
-                        onClick={this.generateCaptcha}
-                    >
-                        <FormattedMessage
-                            defaultMessage="New Challenge"
-                            description="Button to generate new captcha"
-                            id="gui.collaboration.newCaptcha"
                         />
                     </Button>
                 </div>

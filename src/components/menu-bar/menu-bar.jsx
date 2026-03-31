@@ -432,7 +432,7 @@ class MenuBar extends React.Component {
             '02Engine': { name: '02Engine', url: 'https://02engine.02studio.xyz/' },
             'AstraEditor': { name: 'AstraEditor', url: 'https://www.astras.top/' },
             'RemixWarp': { name: 'RemixWarp', url: 'https://editor.RemixWarp.org/' },
-            'Gandi': { name: 'Gandi', url: '' }
+            'Gandi': { name: 'Gandi', url: 'https://getgandi.com/' }
         };
         return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
     }

@@ -171,7 +171,7 @@ class CollaborationContainer extends Component {
 
             await this.collaborationService.connectToRoom(roomId, username, true, privacy);
 
-            // For hosts, set connected immediately since they're always connected
+            // Set connected and update room info after successful connection
             this.props.onSetConnected(true);
             this.props.onSetRoomId(roomId);
             this.props.onSetRoomPrivacy(privacy);

@@ -707,3 +707,17 @@
 .captchaSection .primaryButton {
     margin-bottom: 0.75rem;
 }
+
+.turnstileContainer {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: $ui-white;
+    border-radius: 0.25rem;
+    border: 1px solid $ui-black-transparent;
+}
+
+.turnstileContainer .cf-turnstile {
+    display: inline-block;
+}

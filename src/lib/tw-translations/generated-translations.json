@@ -34,6 +34,12 @@
         "tw.tutorialModal.tutorial1.description": "学习如何使用 RemixWarp 编辑器的基本功能"
     },
     "zh-cn": {
+        "gui.collaboration.captchaTitle": "人机验证",
+        "gui.collaboration.captchaDescription": "请完成验证以创建房间。",
+        "gui.collaboration.captchaLabel": "答案",
+        "gui.collaboration.verifyCaptcha": "验证",
+        "gui.collaboration.newCaptcha": "新挑战",
+        "gui.collaboration.cancelVerification": "取消",
         "tw.accent.blue": "蓝色",
         "tw.accent.purple": "紫色",
         "tw.accent.rainbow": "彩虹色",
