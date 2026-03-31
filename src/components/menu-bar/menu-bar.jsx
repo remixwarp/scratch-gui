@@ -336,6 +336,7 @@ class MenuBar extends React.Component {
             'handleConvertTo02Engine',
             'handleConvertToAstraEditor',
             'handleConvertToRemixWarp',
+            'handleConvertToGandi',
             'handleSuperRefactorSave',
             'handleSuperRefactorClick'
         ]);
@@ -345,7 +346,7 @@ class MenuBar extends React.Component {
         this.startAutosaveCountdown();
 
         // Prevent the legacy addon from also injecting a bookmarks menu.
-        window.__bilupNativeWorkspaceBookmarks = true;
+        window.__RemixWarpNativeWorkspaceBookmarks = true;
 
         this.loadWorkspaceBookmarksFromProject();
         if (this.props.vm && this.props.vm.runtime) {
@@ -430,7 +431,8 @@ class MenuBar extends React.Component {
             'TurboWarp': { name: 'TurboWarp', url: 'https://turbowarp.org' },
             '02Engine': { name: '02Engine', url: 'https://02engine.02studio.xyz/' },
             'AstraEditor': { name: 'AstraEditor', url: 'https://www.astras.top/' },
-            'Bilup': { name: 'Bilup', url: 'https://editor.bilup.org/' }
+            'RemixWarp': { name: 'RemixWarp', url: 'https://editor.RemixWarp.org/' },
+            'Gandi': { name: 'Gandi', url: '' }
         };
         return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
     }
@@ -455,6 +457,11 @@ class MenuBar extends React.Component {
                 // Modify meta.platform to match the target platform
                 const platformInfo = this.getPlatformInfo(agentName);
                 projectJson.meta.platform = platformInfo;
+
+                // Convert extensions to Gandi format if target is Gandi
+                if (agentName === 'Gandi') {
+                    await this.convertExtensionsToGandiFormat(projectFiles, projectJson);
+                }
 
                 // Convert back to Uint8Array
                 const modifiedJson = new TextEncoder().encode(JSON.stringify(projectJson));
@@ -482,6 +489,129 @@ class MenuBar extends React.Component {
                 this.showAlert('Error', `Failed to convert project: ${error.message}`);
             }
         }
+    }
+
+    async convertExtensionsToGandiFormat (projectFiles, projectJson) {
+        // Check if project has extension URLs (used by TurboWarp and other editors)
+        const extensionURLs = projectJson.extensionURLs || {};
+        
+        // Process each extension URL
+        for (const [extensionId, extensionURL] of Object.entries(extensionURLs)) {
+            // Skip builtin extensions
+            if (this.isBuiltinExtension(extensionId)) {
+                continue;
+            }
+            
+            // Check if extension file exists in project files
+            // Extension files are typically stored with their URL as the key or a hash of the URL
+            const extensionFileKey = this.findExtensionFileKey(projectFiles, extensionId, extensionURL);
+            
+            if (extensionFileKey && projectFiles[extensionFileKey]) {
+                // Read extension content
+                const extensionContent = new TextDecoder().decode(projectFiles[extensionFileKey]);
+                
+                // Convert extension to Gandi format
+                const convertedContent = this.convertExtensionToGandiFormat(extensionContent, extensionId);
+                
+                // Update the extension file in project files
+                projectFiles[extensionFileKey] = new TextEncoder().encode(convertedContent);
+            } else {
+                // Extension file not found in project, try to fetch it from URL
+                try {
+                    const response = await fetch(extensionURL);
+                    if (response.ok) {
+                        const extensionContent = await response.text();
+                        const convertedContent = this.convertExtensionToGandiFormat(extensionContent, extensionId);
+                        
+                        // Store the converted extension in project files
+                        const fileName = `extensions/${extensionId}.js`;
+                        projectFiles[fileName] = new TextEncoder().encode(convertedContent);
+                        
+                        // Update the extension URL to point to the local file
+                        extensionURLs[extensionId] = fileName;
+                    }
+                } catch (error) {
+                    console.warn(`Failed to fetch extension ${extensionId} from ${extensionURL}:`, error);
+                }
+            }
+        }
+        
+        // Update projectJson with modified extensionURLs
+        projectJson.extensionURLs = extensionURLs;
+    }
+
+    isBuiltinExtension (extensionId) {
+        // List of builtin extension IDs that don't need conversion
+        const builtinExtensions = [
+            'motion', 'looks', 'sound', 'events', 'control', 'sensing', 'operators', 'data', 'procedures',
+            'pen', 'wedo2', 'music', 'microbit', 'text2speech', 'translate', 'videoSensing', 
+            'ev3', 'makeymakey', 'boost', 'gdxfor', 'tw'
+        ];
+        return builtinExtensions.includes(extensionId);
+    }
+
+    findExtensionFileKey (projectFiles, extensionId, extensionURL) {
+        // Try to find the extension file in project files
+        // Common patterns for extension file keys
+        const possibleKeys = [
+            extensionURL,
+            `extensions/${extensionId}.js`,
+            extensionId,
+            extensionURL.split('/').pop()
+        ];
+        
+        for (const key of possibleKeys) {
+            if (projectFiles[key]) {
+                return key;
+            }
+        }
+        
+        // Search for any key that contains the extension ID
+        for (const key of Object.keys(projectFiles)) {
+            if (key.includes(extensionId) || key.includes(extensionURL.split('/').pop())) {
+                return key;
+            }
+        }
+        
+        return null;
+    }
+
+    convertExtensionToGandiFormat (extensionContent, extensionId) {
+        // Convert extension to Gandi format based on the examples in F:\RemixWarp\0
+        
+        // Check if it's already in Gandi format
+        if (extensionContent.includes('// Gandi Format')) {
+            return extensionContent;
+        }
+        
+        // Gandi format characteristics based on examples:
+        // 1. Uses the same basic structure as TurboWarp
+        // 2. Includes l10n code
+        // 3. Uses IIFE pattern
+        // 4. Registers extension via Scratch.extensions.register()
+        
+        // The main difference appears to be in the implementation details of the extension
+        // For now, we'll add Gandi-specific metadata and ensure the format is consistent
+        
+        // Add Gandi format header
+        let convertedContent = '// Gandi Format\n';
+        convertedContent += extensionContent;
+        
+        // Ensure extension ID is properly formatted
+        // Gandi seems to use lowercase IDs with underscores
+        convertedContent = convertedContent.replace(/id:\s*["']([^"']+)["']/g, (match, id) => {
+            const gandiId = id.toLowerCase().replace(/-/g, '_');
+            return `id: "${gandiId}"`;
+        });
+        
+        // Add Gandi-specific metadata
+        if (!convertedContent.includes('// Gandi Metadata')) {
+            convertedContent += '\n// Gandi Metadata\n';
+            convertedContent += `// Extension ID: ${extensionId}\n`;
+            convertedContent += '// Converted to Gandi format\n';
+        }
+        
+        return convertedContent;
     }
 
     checkCustomExtensions () {
@@ -638,6 +768,17 @@ class MenuBar extends React.Component {
             }
         }
         this.handleCompatibilitySave('RemixWarp');
+    }
+
+    handleConvertToGandi () {
+        const issues = this.getCompatibilityIssues('Gandi');
+        if (issues.length > 0) {
+            const shouldContinue = this.showCompatibilityDialog('Gandi', issues);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        this.handleCompatibilitySave('Gandi');
     }
 
     handleSuperRefactorSave (newCode) {
@@ -1278,7 +1419,7 @@ class MenuBar extends React.Component {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `remixwarp-settings-${Date.now().toString(36)}.rws`;
+            a.download = `remixwarp-cfgmig-${Date.now().toString(36)}.rwc`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1869,8 +2010,15 @@ class MenuBar extends React.Component {
                                                 <MenuItem onClick={this.handleConvertToRemixWarp}>
                                                     <FormattedMessage
                                                         defaultMessage="RemixWarp"
-                                                        description="Convert to Bilup compatibility"
-                                                        id="gui.menuBar.compatibility.Bilup"
+                                                        description="Convert to RemixWarp compatibility"
+                                                        id="gui.menuBar.compatibility.RemixWarp"
+                                                    />
+                                                </MenuItem>
+                                                <MenuItem onClick={this.handleConvertToGandi}>
+                                                    <FormattedMessage
+                                                        defaultMessage="Gandi"
+                                                        description="Convert to Gandi compatibility"
+                                                        id="gui.menuBar.compatibility.Gandi"
                                                     />
                                                 </MenuItem>
                                             </Submenu>

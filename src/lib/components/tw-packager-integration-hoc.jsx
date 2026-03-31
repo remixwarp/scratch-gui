@@ -6,7 +6,7 @@ import log from '../utils/log';
 import { getIsShowingProject } from '../../reducers/project-state';
 import windowManager from '../../addons/window-system/window-manager';
 
-const PACKAGER_URL = 'https://packager.bilup.org';
+const PACKAGER_URL = 'https://packager.RemixWarp.org';
 const PACKAGER_ORIGIN = PACKAGER_URL;
 
 let packagerWindow = null;

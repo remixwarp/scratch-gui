@@ -49,7 +49,7 @@ const messages = defineMessages({
 const randomMessages = [
   "Also try TurboWarp!",
   "Also try MistWarp!",
-  "Also try Bilup!",
+  "Also try RemixWarp!",
   "Also try 02Engine!",
   "Also try AstraEditor!"
 ];

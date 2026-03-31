@@ -128,8 +128,8 @@ class CollaborationService {
         }, 30000);
 
         this.peerConfig = {
-            host: 'collab.bilup.org',
-            key: 'bilup',
+            host: 'collab.RemixWarp.org',
+            key: 'RemixWarp',
             path: '/',
             secure: true,
             config: {

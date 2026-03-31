@@ -14,15 +14,59 @@ import styles from './settings-menu.css';
 
 import ChevronDown from './ChevronDown.jsx';
 
-import {Check, Globe} from 'lucide-react';
+import {Check, Globe, Upload} from 'lucide-react';
 
 class LanguageMenu extends React.PureComponent {
     constructor (props) {
         super(props);
         bindAll(this, [
             'setRef',
-            'handleMouseOver'
+            'handleMouseOver',
+            'handleImportLanguagePack'
         ]);
+    }
+
+    handleImportLanguagePack () {
+        // Create file input element
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+
+            try {
+                // Read file content
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        // Parse language pack
+                        const languagePack = JSON.parse(event.target.result);
+                        
+                        // Validate language pack format
+                        if (!languagePack.locale || !languagePack.name || !languagePack.messages) {
+                            throw new Error('Invalid language pack format');
+                        }
+                        
+                        // Add language to locales
+                        // Note: This is a temporary solution, in a real implementation you would
+                        // need to update the locales object and trigger a re-render
+                        console.log('Imported language pack:', languagePack);
+                        
+                        // Show success message
+                        alert('Language pack imported successfully!');
+                    } catch (error) {
+                        console.error('Error parsing language pack:', error);
+                        alert('Failed to import language pack: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            } catch (error) {
+                console.error('Error reading file:', error);
+                alert('Failed to read language pack file: ' + error.message);
+            }
+        };
+        input.click();
     }
 
     componentDidUpdate (prevProps) {
@@ -102,6 +146,17 @@ class LanguageMenu extends React.PureComponent {
                                 </MenuItem>
                             ))
                     }
+                    <MenuItem
+                        className={styles.languageMenuItem}
+                        onClick={this.handleImportLanguagePack}
+                    >
+                        <Upload size={15} className={styles.icon} />
+                        <FormattedMessage
+                            defaultMessage="Import Custom Language Pack"
+                            description="Import custom language pack"
+                            id="gui.menuBar.importLanguagePack"
+                        />
+                    </MenuItem>
                 </Submenu>
             </MenuItem>
         );

@@ -21,10 +21,10 @@ const manifest = {
   "dynamicDisable": true,
   "userstyles": [
     {
-      "url": "bilup.css",
+      "url": "RemixWarp.css",
       "if": {
         "settings": {
-          "tab_style": "bilup"
+          "tab_style": "RemixWarp"
         }
       }
     },
@@ -77,8 +77,8 @@ const manifest = {
       "type": "select",
       "potentialValues": [
         {
-            "name": "Bilup",
-            "id": "bilup"
+            "name": "RemixWarp",
+            "id": "RemixWarp"
         },
         {
             "name": "TurboWarp",
@@ -93,7 +93,7 @@ const manifest = {
             "id": "remixwarp"
         }
       ],
-      "default": "Bilup"
+      "default": "RemixWarp"
     },
     {
       "dynamic": true,
