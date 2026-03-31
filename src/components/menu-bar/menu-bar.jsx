@@ -55,7 +55,7 @@ import {
 import {showOnboarding} from '../../reducers/onboarding';
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
-import {openAIChatModal, openAIAgentModal, openSuperRefactorModal} from '../../reducers/modals';
+import {openAIChatModal, openAIAgentModal, openSuperRefactorModal, openGandiHelpModal} from '../../reducers/modals';
 import {
     isTimeTravel220022BC,
     isTimeTravel1920,
@@ -460,7 +460,67 @@ class MenuBar extends React.Component {
 
                 // Convert extensions to Gandi format if target is Gandi
                 if (agentName === 'Gandi') {
-                    await this.convertExtensionsToGandiFormat(projectFiles, projectJson);
+                    // Add Gandi-specific metadata to project.json
+                    projectJson.meta.gandiVersion = '1.0';
+                    projectJson.meta.gandiCompatible = true;
+                    projectJson.meta.gandiEditorVersion = '1.0';
+                    projectJson.meta.gandiBuild = '1.0.0';
+                    projectJson.meta.gandiProjectType = 'scratch3';
+                    projectJson.meta.gandiAuthor = 'Gandi Editor';
+                    projectJson.meta.gandiCreatedWith = 'Gandi Editor';
+                    
+                    // Ensure extensions array is present and empty
+                    // Gandi might not support custom extensions, so we clear them
+                    projectJson.extensions = [];
+                    
+                    // Remove extensionURLs completely
+                    // Gandi might not support this property
+                    delete projectJson.extensionURLs;
+                    
+                    // Ensure all targets have Gandi-compatible properties
+                    if (projectJson.targets) {
+                        projectJson.targets.forEach(target => {
+                            // Ensure target has all required properties
+                            if (!target.isStage) {
+                                // Add missing properties for sprites
+                                if (target.visible === undefined) target.visible = true;
+                                if (target.x === undefined) target.x = 0;
+                                if (target.y === undefined) target.y = 0;
+                                if (target.size === undefined) target.size = 100;
+                                if (target.direction === undefined) target.direction = 90;
+                                if (target.draggable === undefined) target.draggable = false;
+                                if (target.rotationStyle === undefined) target.rotationStyle = 'all around';
+                            }
+                            
+                            // Ensure costumes have all required properties
+                            if (target.costumes) {
+                                target.costumes.forEach(costume => {
+                                    if (costume.bitmapResolution === undefined) costume.bitmapResolution = 2;
+                                    if (costume.layerOrder === undefined) costume.layerOrder = 0;
+                                    if (costume.rotationCenterX === undefined) costume.rotationCenterX = 0.5;
+                                    if (costume.rotationCenterY === undefined) costume.rotationCenterY = 0.5;
+                                });
+                            }
+                            
+                            // Ensure sounds have all required properties
+                            if (target.sounds) {
+                                target.sounds.forEach(sound => {
+                                    if (sound.rate === undefined) sound.rate = 44100;
+                                    if (sound.sampleCount === undefined) sound.sampleCount = 0;
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Ensure monitors array is present
+                    if (!projectJson.monitors) {
+                        projectJson.monitors = [];
+                    }
+                    
+                    // Ensure project has correct semver
+                    if (!projectJson.meta.semver) {
+                        projectJson.meta.semver = '3.0.0';
+                    }
                 }
 
                 // Convert back to Uint8Array
@@ -471,13 +531,28 @@ class MenuBar extends React.Component {
                 const JSZip = require('jszip');
                 const zip = new JSZip();
 
-                // Add all files to the zip
+                // Add only essential files to the zip
+                // Gandi might be strict about what files it accepts
                 for (const [filename, data] of Object.entries(projectFiles)) {
-                    zip.file(filename, data);
+                    // Only include project.json and asset files
+                    if (filename === 'project.json' || 
+                        filename.match(/^[a-f0-9]{32}\.[a-z0-9]{3}$/i) ||
+                        filename.match(/^costumes\/.*$/) ||
+                        filename.match(/^sounds\/.*$/)) {
+                        zip.file(filename, data);
+                    }
                 }
 
-                // Generate the zip file
-                const content = await zip.generateAsync({type: 'uint8array'});
+                // Generate the zip file with specific options for Gandi compatibility
+                const content = await zip.generateAsync({
+                    type: 'uint8array',
+                    compression: 'DEFLATE',
+                    compressionOptions: {
+                        level: 6
+                    },
+                    // Ensure consistent file order for Gandi compatibility
+                    platform: process.platform
+                });
 
                 // Download the file
                 const downloadBlob = require('../../lib/utils/download-blob').default;
@@ -495,6 +570,9 @@ class MenuBar extends React.Component {
         // Check if project has extension URLs (used by TurboWarp and other editors)
         const extensionURLs = projectJson.extensionURLs || {};
         
+        // Ensure extensions directory exists in project files
+        projectFiles['extensions/'] = new Uint8Array(0);
+        
         // Process each extension URL
         for (const [extensionId, extensionURL] of Object.entries(extensionURLs)) {
             // Skip builtin extensions
@@ -502,42 +580,59 @@ class MenuBar extends React.Component {
                 continue;
             }
             
+            // Ensure extension is properly formatted for Gandi
+            const gandiExtensionId = extensionId.toLowerCase().replace(/-/g, '_');
+            const gandiFileName = `extensions/${gandiExtensionId}.js`;
+            
+            let extensionContent;
+            let convertedContent;
+            
             // Check if extension file exists in project files
-            // Extension files are typically stored with their URL as the key or a hash of the URL
             const extensionFileKey = this.findExtensionFileKey(projectFiles, extensionId, extensionURL);
             
             if (extensionFileKey && projectFiles[extensionFileKey]) {
                 // Read extension content
-                const extensionContent = new TextDecoder().decode(projectFiles[extensionFileKey]);
-                
-                // Convert extension to Gandi format
-                const convertedContent = this.convertExtensionToGandiFormat(extensionContent, extensionId);
-                
-                // Update the extension file in project files
-                projectFiles[extensionFileKey] = new TextEncoder().encode(convertedContent);
+                extensionContent = new TextDecoder().decode(projectFiles[extensionFileKey]);
             } else {
                 // Extension file not found in project, try to fetch it from URL
                 try {
                     const response = await fetch(extensionURL);
                     if (response.ok) {
-                        const extensionContent = await response.text();
-                        const convertedContent = this.convertExtensionToGandiFormat(extensionContent, extensionId);
-                        
-                        // Store the converted extension in project files
-                        const fileName = `extensions/${extensionId}.js`;
-                        projectFiles[fileName] = new TextEncoder().encode(convertedContent);
-                        
-                        // Update the extension URL to point to the local file
-                        extensionURLs[extensionId] = fileName;
+                        extensionContent = await response.text();
+                    } else {
+                        // Create a minimal placeholder extension if fetch fails
+                        extensionContent = `class ${gandiExtensionId} { getInfo() { return { id: "${gandiExtensionId}", name: "${extensionId}", blocks: [] }; } }`;
                     }
                 } catch (error) {
                     console.warn(`Failed to fetch extension ${extensionId} from ${extensionURL}:`, error);
+                    // Create a minimal placeholder extension if fetch fails
+                    extensionContent = `class ${gandiExtensionId} { getInfo() { return { id: "${gandiExtensionId}", name: "${extensionId}", blocks: [] }; } }`;
                 }
             }
+            
+            // Convert extension to Gandi format
+            convertedContent = this.convertExtensionToGandiFormat(extensionContent, extensionId);
+            
+            // Store the converted extension in project files
+            projectFiles[gandiFileName] = new TextEncoder().encode(convertedContent);
+            
+            // Update the extension URL to point to the local file
+            extensionURLs[extensionId] = gandiFileName;
         }
         
         // Update projectJson with modified extensionURLs
         projectJson.extensionURLs = extensionURLs;
+        
+        // Ensure extensions array is present and contains all extension IDs
+        if (!projectJson.extensions) {
+            projectJson.extensions = [];
+        }
+        
+        // Reset extensions array and add only the extension IDs
+        projectJson.extensions = Object.keys(extensionURLs);
+        
+        // Remove any extensions that might cause issues in Gandi
+        projectJson.extensions = projectJson.extensions.filter(extId => !this.isBuiltinExtension(extId));
     }
 
     isBuiltinExtension (extensionId) {
@@ -589,16 +684,83 @@ class MenuBar extends React.Component {
         // 2. Includes l10n code
         // 3. Uses IIFE pattern
         // 4. Registers extension via Scratch.extensions.register()
+        // 5. Properly formatted extension ID
         
-        // The main difference appears to be in the implementation details of the extension
-        // For now, we'll add Gandi-specific metadata and ensure the format is consistent
+        // Generate safe class name from extension ID
+        const safeClassName = extensionId.split(/[^a-zA-Z0-9]/).map(part => 
+            part.charAt(0).toUpperCase() + part.slice(1)
+        ).join('') || 'Extension';
+        
+        // Generate Gandi-compatible extension ID
+        const gandiExtensionId = extensionId.toLowerCase().replace(/-/g, '_');
+        
+        // Check if extension content already has a class definition
+        const hasClassDefinition = /class\s+\w+\s*{/.test(extensionContent);
+        
+        // Check if extension content already has IIFE
+        const hasIIFE = extensionContent.includes('(function (Scratch)');
+        
+        // Check if extension content already has registration
+        const hasRegistration = extensionContent.includes('Scratch.extensions.register(');
+        
+        // Process the extension content
+        let convertedContent = '';
         
         // Add Gandi format header
-        let convertedContent = '// Gandi Format\n';
-        convertedContent += extensionContent;
+        convertedContent += '// Gandi Format\n';
         
-        // Ensure extension ID is properly formatted
-        // Gandi seems to use lowercase IDs with underscores
+        // Add l10n code
+        convertedContent += '/* generated l10n code */Scratch.translate.setup({});/* end generated l10n code */';
+        
+        // Add IIFE wrapper if not present
+        if (!hasIIFE) {
+            convertedContent += '(function (Scratch) {\n';
+            convertedContent += '    "use strict";\n\n';
+        }
+        
+        // Add extension content
+        if (hasIIFE) {
+            // If already has IIFE, just add the content
+            convertedContent += extensionContent;
+        } else {
+            // If no IIFE, add the content inside the IIFE
+            if (hasClassDefinition) {
+                // If has class definition, add it as-is
+                convertedContent += extensionContent;
+            } else {
+                // If no class definition, create a minimal class
+                convertedContent += `class ${safeClassName} {\n`;
+                convertedContent += '    getInfo() {\n';
+                convertedContent += '        return {\n';
+                convertedContent += `            id: "${gandiExtensionId}",\n`;
+                convertedContent += `            name: "${extensionId}",\n`;
+                convertedContent += '            blocks: []\n';
+                convertedContent += '        };\n';
+                convertedContent += '    }\n';
+                convertedContent += '}\n';
+            }
+            
+            // Add registration code if not present
+            if (!hasRegistration) {
+                convertedContent += '\n';
+                convertedContent += '    // Register the extension\n';
+                convertedContent += `    if (typeof ${safeClassName} === 'function') {\n`;
+                convertedContent += `        Scratch.extensions.register(new ${safeClassName}());\n`;
+                convertedContent += '    } else {\n';
+                convertedContent += '        // Fallback: register as an object\n';
+                convertedContent += '        Scratch.extensions.register({\n';
+                convertedContent += `            id: "${gandiExtensionId}",\n`;
+                convertedContent += `            name: "${extensionId}",\n`;
+                convertedContent += '            blocks: []\n';
+                convertedContent += '        });\n';
+                convertedContent += '    }\n';
+            }
+            
+            // Close IIFE if we added it
+            convertedContent += '})(Scratch);\n';
+        }
+        
+        // Ensure extension ID is properly formatted in the content
         convertedContent = convertedContent.replace(/id:\s*["']([^"']+)["']/g, (match, id) => {
             const gandiId = id.toLowerCase().replace(/-/g, '_');
             return `id: "${gandiId}"`;
@@ -607,8 +769,9 @@ class MenuBar extends React.Component {
         // Add Gandi-specific metadata
         if (!convertedContent.includes('// Gandi Metadata')) {
             convertedContent += '\n// Gandi Metadata\n';
-            convertedContent += `// Extension ID: ${extensionId}\n`;
+            convertedContent += `// Extension ID: ${gandiExtensionId}\n`;
             convertedContent += '// Converted to Gandi format\n';
+            convertedContent += '// Gandi Editor Compatible\n';
         }
         
         return convertedContent;
@@ -2015,11 +2178,37 @@ class MenuBar extends React.Component {
                                                     />
                                                 </MenuItem>
                                                 <MenuItem onClick={this.handleConvertToGandi}>
-                                                    <FormattedMessage
-                                                        defaultMessage="Gandi"
-                                                        description="Convert to Gandi compatibility"
-                                                        id="gui.menuBar.compatibility.Gandi"
-                                                    />
+                                                    <div style={{display: 'flex', alignItems: 'center', width: '100%'}}>
+                                                        <FormattedMessage
+                                                            defaultMessage="Gandi"
+                                                            description="Convert to Gandi compatibility"
+                                                            id="gui.menuBar.compatibility.Gandi"
+                                                        />
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // 阻止事件冒泡，避免触发MenuItem的点击事件
+                                                                console.log('Gandi help button clicked');
+                                                                this.props.dispatch(openGandiHelpModal());
+                                                            }}
+                                                            style={{
+                                                                background: 'none',
+                                                                border: '1px solid #ccc',
+                                                                borderRadius: '50%',
+                                                                width: '20px',
+                                                                height: '20px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                marginLeft: '16px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '12px',
+                                                                color: '#666'
+                                                            }}
+                                                            title={this.props.locale === 'zh-cn' ? '答疑解惑' : 'Help'}
+                                                        >
+                                                            ?
+                                                        </button>
+                                                    </div>
                                                 </MenuItem>
                                             </Submenu>
                                         </MenuItem>

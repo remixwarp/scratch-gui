@@ -32,6 +32,7 @@ const MODAL_WARPTHEME = 'bilmeModal';
 const MODAL_SUPER_REFACTOR = 'superRefactorModal';
 const MODAL_TUTORIAL = 'tutorialModal';
 const MODAL_VIDEO = 'videoModal';
+const MODAL_GANDI_HELP = 'gandiHelpModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -65,6 +66,7 @@ const initialState = {
     [MODAL_SUPER_REFACTOR]: false,
     [MODAL_TUTORIAL]: false,
     [MODAL_VIDEO]: false,
+    [MODAL_GANDI_HELP]: false,
     extensionLoadChoiceData: null,
     superRefactorCode: '{}',
     superRefactorOnSave: null,
@@ -328,6 +330,12 @@ const closeVideoModal = function () {
         videoModalData: null
     });
 };
+const openGandiHelpModal = function () {
+    return openModal(MODAL_GANDI_HELP);
+};
+const closeGandiHelpModal = function () {
+    return closeModal(MODAL_GANDI_HELP);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -393,5 +401,8 @@ export {
     closeTutorialModal,
     openVideoModal,
     closeVideoModal,
+    openGandiHelpModal,
+    closeGandiHelpModal,
+    MODAL_GANDI_HELP,
     MODAL_WARPTHEME
 };

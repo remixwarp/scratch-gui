@@ -56,6 +56,7 @@ import TutorialModal from '../../containers/tutorial-modal.jsx';
 import VideoModal from '../../containers/video-modal.jsx';
 import UpdateLogModal from '../../containers/update-log-modal.jsx';
 import BilmeModal from '../../containers/bl-bilme-modal.jsx';
+import GandiHelp from '../gandi-help/gandi-help.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import Onboarding from '../../containers/onboarding.jsx';
@@ -608,6 +609,7 @@ const GUIComponent = props => {
             <UpdateLogModal />
             <BilmeModal />
             {onboardingVisible && <Onboarding />}
+            {props.gandiHelpModal && <GandiHelp onClose={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/CLOSE_MODAL', modal: 'gandiHelpModal'})} />}
         </React.Fragment>
     ), [
         securityManager,
@@ -622,7 +624,8 @@ const GUIComponent = props => {
         invalidProjectModalVisible,
         gitModalVisible,
         shortcutManagerModalVisible,
-        onboardingVisible
+        onboardingVisible,
+        props.gandiHelpModal
     ]);
 
     const minDimensions = useMemo(() => ({
@@ -1035,6 +1038,7 @@ GUIComponent.propTypes = {
     unknownPlatformModalVisible: PropTypes.bool,
     invalidProjectModalVisible: PropTypes.bool,
     gitModalVisible: PropTypes.bool,
+    gandiHelpModal: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 GUIComponent.defaultProps = {
@@ -1072,7 +1076,8 @@ const mapStateToProps = state => ({
     onboardingVisible: state.scratchGui.onboarding.visible,
     shortcutManagerModalVisible: state.scratchGui.modals.shortcutManagerModal,
     extensionLoadChoiceModalVisible: state.scratchGui.modals.extensionLoadChoiceModal,
-    extensionLoadChoiceData: state.scratchGui.modals.extensionLoadChoiceData
+    extensionLoadChoiceData: state.scratchGui.modals.extensionLoadChoiceData,
+    gandiHelpModal: state.scratchGui.modals.gandiHelpModal
 });
 
 const mapDispatchToProps = dispatch => ({
