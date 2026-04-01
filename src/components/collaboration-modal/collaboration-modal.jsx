@@ -29,7 +29,9 @@ class CollaborationModal extends Component {
             error: null,
             pendingRequests: [],
             showJoinRequest: false,
-            turnstileToken: ''
+            turnstileToken: '',
+            turnstileLoading: false,
+            turnstileReady: false
         };
 
         this.autoJoinAttempted = new Set();
@@ -37,6 +39,7 @@ class CollaborationModal extends Component {
         this._autoJoinTimer = null;
         this._lastAutoJoinAttempt = new Map();
         this._autoJoinFailures = new Map();
+        this.turnstileInitialized = false;
 
         this.handleRoomIdChange = this.handleRoomIdChange.bind(this);
         this.handleJoinRoom = this.handleJoinRoom.bind(this);
@@ -62,6 +65,7 @@ class CollaborationModal extends Component {
         this.togglePrivatePrivacy = this.togglePrivatePrivacy.bind(this);
         this.verifyCaptcha = this.verifyCaptcha.bind(this);
         this.onTurnstileSuccess = this.onTurnstileSuccess.bind(this);
+        this.onTurnstileReady = this.onTurnstileReady.bind(this);
     }
 
     componentDidMount () {
@@ -105,9 +109,15 @@ class CollaborationModal extends Component {
     }
 
     initTurnstile () {
+        if (this.turnstileInitialized) return;
+        
+        this.setState({ turnstileLoading: true, turnstileReady: false });
+        
         // 确保 Turnstile 脚本已加载
         if (typeof window !== 'undefined' && window.turnstile) {
             console.log('Initializing Turnstile...');
+            this.turnstileInitialized = true;
+            
             // 显式渲染 Turnstile
             window.turnstile.render('.cf-turnstile', {
                 sitekey: '0x4AAAAAACyeS6Www9AVI--y',
@@ -120,15 +130,22 @@ class CollaborationModal extends Component {
                     console.log('Turnstile verification success, token:', token);
                     this.onTurnstileSuccess(token);
                 },
+                readyCallback: () => {
+                    console.log('Turnstile ready');
+                    this.onTurnstileReady();
+                },
                 errorCallback: (error) => {
                     console.error('Turnstile verification error:', error);
+                    this.setState({ turnstileLoading: false, error: 'Verification failed. Please try again.' });
                 },
                 expiredCallback: () => {
                     console.log('Turnstile token expired, reinitializing...');
+                    this.setState({ turnstileToken: '', turnstileReady: false });
                     this.initTurnstile();
                 },
                 timeoutCallback: () => {
                     console.error('Turnstile verification timed out');
+                    this.setState({ turnstileLoading: false, error: 'Verification timed out. Please try again.' });
                 }
             });
         } else {
@@ -136,6 +153,10 @@ class CollaborationModal extends Component {
             console.log('Turnstile script not loaded yet, waiting...');
             setTimeout(() => this.initTurnstile(), 100);
         }
+    }
+
+    onTurnstileReady () {
+        this.setState({ turnstileLoading: false, turnstileReady: true });
     }
 
     componentDidUpdate (prevProps, prevState) {
@@ -503,82 +524,94 @@ class CollaborationModal extends Component {
     }
 
     async verifyCaptcha () {
-        if (this.state.turnstileToken) {
-            this.setState({
-                isConnecting: true,
-                connectionStep: 'connecting',
-                error: null
+        if (!this.state.turnstileToken) {
+            this.setState({ error: 'Please complete the verification.' });
+            return;
+        }
+        
+        this.setState({
+            isConnecting: true,
+            error: null
+        });
+        
+        try {
+            const serverUrl = 'https://remixwarp-turnstile-verifier.xiao-xiao-lang.workers.dev';
+            
+            const response = await fetch(`${serverUrl}/api/verify-turnstile`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    token: this.state.turnstileToken
+                })
             });
             
-            try {
-                const serverUrl = 'https://remixwarp-turnstile-verifier.xiao-xiao-lang.workers.dev';
-                
-                const response = await fetch(`${serverUrl}/api/verify-turnstile`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        token: this.state.turnstileToken
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    if (this._pendingRoomCreation) {
-                        const { roomCode, username } = this._pendingRoomCreation;
-                        await this.props.onCreateRoom(roomCode, username, 'public');
-                        
-                        const currentUrl = new URL(window.location.href);
-                        currentUrl.searchParams.set('room', roomCode);
-                        currentUrl.searchParams.delete('username');
-                        window.history.replaceState(null, null, currentUrl.toString());
-                        
-                        this.setState({ roomId: roomCode });
-                        this._pendingRoomCreation = null;
-                    } else if (this._pendingRoomJoin) {
-                        const { roomId, username } = this._pendingRoomJoin;
-                        await this.props.onJoinRoom(roomId, username);
-                        
-                        const currentUrl = new URL(window.location.href);
-                        currentUrl.searchParams.set('room', roomId);
-                        currentUrl.searchParams.delete('username');
-                        window.history.replaceState(null, null, currentUrl.toString());
-                        
-                        this.setState({ roomId: roomId });
-                        this._pendingRoomJoin = null;
-                    } else {
-                        const roomCode = this.generateRoomCode();
-                        await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
-                        
-                        const currentUrl = new URL(window.location.href);
-                        currentUrl.searchParams.set('room', roomCode);
-                        currentUrl.searchParams.delete('username');
-                        window.history.replaceState(null, null, currentUrl.toString());
-                        
-                        this.setState({ roomId: roomCode });
-                    }
-                } else {
-                    console.error('Turnstile verification failed:', result);
-                    this.setState({
-                        isConnecting: false,
-                        connectionStep: 'captcha',
-                        error: 'Invalid verification. Please try again.'
-                    });
-                    
-                    this.initTurnstile();
-                }
-            } catch (error) {
-                console.error('Error verifying captcha or creating/joining room:', error);
-                this.setState({
-                    error: 'Error verifying captcha. Please try again.',
-                    isConnecting: false,
-                    connectionStep: 'captcha'
-                });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        } else {
-            this.setState({ error: 'Please complete the verification.' });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                if (this._pendingRoomCreation) {
+                    const { roomCode, username } = this._pendingRoomCreation;
+                    await this.props.onCreateRoom(roomCode, username, 'public');
+                    
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('room', roomCode);
+                    currentUrl.searchParams.delete('username');
+                    window.history.replaceState(null, null, currentUrl.toString());
+                    
+                    this.setState({ roomId: roomCode });
+                    this._pendingRoomCreation = null;
+                } else if (this._pendingRoomJoin) {
+                    const { roomId, username } = this._pendingRoomJoin;
+                    await this.props.onJoinRoom(roomId, username);
+                    
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('room', roomId);
+                    currentUrl.searchParams.delete('username');
+                    window.history.replaceState(null, null, currentUrl.toString());
+                    
+                    this.setState({ roomId: roomId });
+                    this._pendingRoomJoin = null;
+                } else {
+                    const roomCode = this.generateRoomCode();
+                    await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
+                    
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('room', roomCode);
+                    currentUrl.searchParams.delete('username');
+                    window.history.replaceState(null, null, currentUrl.toString());
+                    
+                    this.setState({ roomId: roomCode });
+                }
+            } else {
+                console.error('Turnstile verification failed:', result);
+                this.setState({
+                    isConnecting: false,
+                    error: 'Invalid verification. Please try again.',
+                    turnstileToken: '',
+                    turnstileReady: false
+                });
+                
+                // 重新初始化 Turnstile
+                this.turnstileInitialized = false;
+                setTimeout(() => this.initTurnstile(), 500);
+            }
+        } catch (error) {
+            console.error('Error verifying captcha or creating/joining room:', error);
+            this.setState({
+                error: 'Error verifying captcha. Please try again.',
+                isConnecting: false,
+                turnstileToken: '',
+                turnstileReady: false
+            });
+            
+            // 重新初始化 Turnstile
+            this.turnstileInitialized = false;
+            setTimeout(() => this.initTurnstile(), 500);
         }
     }
 
@@ -1272,17 +1305,26 @@ class CollaborationModal extends Component {
 
                 <div className={styles.captchaSection}>
                     <div className={styles.turnstileContainer}>
-                        <div 
-                            className="cf-turnstile" 
-                            data-sitekey="0x4AAAAAACyeS6Www9AVI--y" 
-                            data-theme="auto" 
-                            data-size="normal" 
-                            data-callback="window.collaborationModal.onTurnstileSuccess"
-                        ></div>
+                        {this.state.turnstileLoading ? (
+                            <div className={styles.loadingContainer}>
+                                <div className={styles.spinner} />
+                                <p>Loading verification...</p>
+                            </div>
+                        ) : (
+                            <div 
+                                className="cf-turnstile" 
+                                data-sitekey="0x4AAAAAACyeS6Www9AVI--y" 
+                                data-theme="auto" 
+                                data-size="normal" 
+                                data-callback="window.collaborationModal.onTurnstileSuccess"
+                                data-ready-callback="window.collaborationModal.onTurnstileReady"
+                            ></div>
+                        )}
                     </div>
                     <Button
                         className={styles.primaryButton}
                         onClick={this.verifyCaptcha}
+                        disabled={!this.state.turnstileToken || this.state.turnstileLoading}
                     >
                         <FormattedMessage
                             defaultMessage="Verify"
@@ -1302,6 +1344,7 @@ class CollaborationModal extends Component {
                     <Button
                         className={styles.secondaryButton}
                         onClick={this.handleCancelClick}
+                        disabled={this.state.turnstileLoading}
                     >
                         <FormattedMessage
                             defaultMessage="Cancel"

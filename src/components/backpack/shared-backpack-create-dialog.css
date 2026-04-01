@@ -1,0 +1,161 @@
+.dialogOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.dialog {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.dialogHeader {
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dialogHeader h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+}
+
+.closeButton:hover {
+    color: #333;
+}
+
+.dialogContent {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.formGroup {
+    margin-bottom: 20px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+}
+
+.input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.membersList {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.memberItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.memberItem:last-child {
+    border-bottom: none;
+}
+
+.memberName {
+    font-size: 14px;
+    color: #333;
+}
+
+.roleSelect {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: white;
+}
+
+.dialogFooter {
+    padding: 20px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.cancelButton {
+    padding: 8px 16px;
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.cancelButton:hover {
+    background-color: #e0e0e0;
+}
+
+.createButton {
+    padding: 8px 16px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.createButton:hover:not(:disabled) {
+    background-color: #357abd;
+}
+
+.createButton:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .dialog {
+        width: 95%;
+        margin: 20px;
+    }
+}

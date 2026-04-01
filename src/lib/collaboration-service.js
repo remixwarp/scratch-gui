@@ -183,7 +183,16 @@ class CollaborationService {
             'host-loading-start': this.handleHostLoadingStart.bind(this),
             'host-loading-progress': this.handleHostLoadingProgress.bind(this),
             'host-loading-complete': this.handleHostLoadingComplete.bind(this),
-            'sprite-info-changed': this.handleSpriteInfoChanged.bind(this)
+            'sprite-info-changed': this.handleSpriteInfoChanged.bind(this),
+            'shared-backpack-create': this.handleSharedBackpackCreate.bind(this),
+            'shared-backpack-update': this.handleSharedBackpackUpdate.bind(this),
+            'shared-backpack-delete': this.handleSharedBackpackDelete.bind(this),
+            'shared-backpack-item-add': this.handleSharedBackpackItemAdd.bind(this),
+            'shared-backpack-item-remove': this.handleSharedBackpackItemRemove.bind(this),
+            'shared-backpack-item-update': this.handleSharedBackpackItemUpdate.bind(this),
+            'shared-backpack-member-add': this.handleSharedBackpackMemberAdd.bind(this),
+            'shared-backpack-member-remove': this.handleSharedBackpackMemberRemove.bind(this),
+            'shared-backpack-member-update': this.handleSharedBackpackMemberUpdate.bind(this)
         };
     }
 
@@ -1308,6 +1317,178 @@ class CollaborationService {
                 if (connection !== conn && connection.open) {
                     connection.send({
                         type: 'sprite-info-changed',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    // 共享书包事件处理方法
+    handleSharedBackpackCreate (payload, conn) {
+        if (payload.sender === this.peer.id) return;
+        
+        this.emit('shared-backpack-created', payload);
+        
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'shared-backpack-create',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    handleSharedBackpackUpdate (payload, conn) {
+        if (payload.sender === this.peer.id) return;
+        
+        this.emit('shared-backpack-updated', payload);
+        
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'shared-backpack-update',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    handleSharedBackpackDelete (payload, conn) {
+        if (payload.sender === this.peer.id) return;
+        
+        this.emit('shared-backpack-deleted', payload);
+        
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'shared-backpack-delete',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    handleSharedBackpackItemAdd (payload, conn) {
+        if (payload.sender === this.peer.id) return;
+        
+        this.emit('shared-backpack-item-added', payload);
+        
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'shared-backpack-item-add',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    handleSharedBackpackItemRemove (payload, conn) {
+        if (payload.sender === this.peer.id) return;
+        
+        this.emit('shared-backpack-item-removed', payload);
+        
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'shared-backpack-item-remove',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    handleSharedBackpackItemUpdate (payload, conn) {
+        if (payload.sender === this.peer.id) return;
+        
+        this.emit('shared-backpack-item-updated', payload);
+        
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'shared-backpack-item-update',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    handleSharedBackpackMemberAdd (payload, conn) {
+        if (payload.sender === this.peer.id) return;
+        
+        this.emit('shared-backpack-member-added', payload);
+        
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'shared-backpack-member-add',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    handleSharedBackpackMemberRemove (payload, conn) {
+        if (payload.sender === this.peer.id) return;
+        
+        this.emit('shared-backpack-member-removed', payload);
+        
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'shared-backpack-member-remove',
+                        payload,
+                        sender: payload.sender,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+    }
+
+    handleSharedBackpackMemberUpdate (payload, conn) {
+        if (payload.sender === this.peer.id) return;
+        
+        this.emit('shared-backpack-member-updated', payload);
+        
+        if (this.isHost && payload.sender !== this.peer.id) {
+            this.connections.forEach(connection => {
+                if (connection !== conn && connection.open) {
+                    connection.send({
+                        type: 'shared-backpack-member-update',
                         payload,
                         sender: payload.sender,
                         timestamp: Date.now()
