@@ -511,7 +511,7 @@ class CollaborationModal extends Component {
             });
             
             try {
-                const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001';
+                const serverUrl = 'https://remixwarp-turnstile-verifier.xiao-xiao-lang.workers.dev';
                 
                 const response = await fetch(`${serverUrl}/api/verify-turnstile`, {
                     method: 'POST',

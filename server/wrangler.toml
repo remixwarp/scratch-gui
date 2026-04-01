@@ -1,0 +1,17 @@
+name = "remixwarp-turnstile-verifier"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# 生产环境路由配置
+# 这会将 remixwarp.pages.dev/api/* 路由到 Worker
+routes = [
+  {
+    pattern = "remixwarp.pages.dev/api/*",
+    zone_name = "remixwarp.pages.dev"
+  }
+]
+
+# 环境变量配置
+# 注意：实际的 secret key 应该通过 wrangler secret put 命令添加
+[vars]
+# TURNSTILE_SECRET_KEY = "your_secret_key_here" # 不要直接在这里存储密钥
