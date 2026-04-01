@@ -28,7 +28,9 @@
     "watch": "webpack --colors --watch",
     "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint",
     "dev-server": "node scripts/dev-server.js",
-    "generate-files": "node scripts/generate-file-contents.js"
+    "generate-files": "node scripts/generate-file-contents.js",
+    "server": "node server/index.js",
+    "dev:all": "concurrently \"npm start\" \"npm run server\""
   },
   "config": {
     "commitizen": {
@@ -123,6 +125,9 @@
     "babel-eslint": "10.1.0",
     "babel-loader": "8.3.0",
     "chromedriver": "117.0.3",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "enzyme": "3.10.0",
     "enzyme-adapter-react-16": "1.15.7",
     "eslint": "8.55.0",
@@ -131,6 +136,7 @@
     "eslint-plugin-import": "2.29.1",
     "eslint-plugin-jest": "22.17.0",
     "eslint-plugin-react": "7.33.2",
+    "express": "^4.19.2",
     "file-loader": "6.2.0",
     "gh-pages": "3.2.3",
     "html-webpack-plugin": "^4.2.0",
