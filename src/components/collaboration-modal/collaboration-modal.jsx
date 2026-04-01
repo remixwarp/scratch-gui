@@ -101,6 +101,7 @@ class CollaborationModal extends Component {
                     service.on('awaiting-approval', this.handleAwaitingApproval);
                     service.on('approval-resolved', this.handleApprovalResolved);
                     service.on('join-denied', this.handleJoinDenied);
+                    service.on('connected-to-host', this.handleConnectedToHost);
                 }
             } catch (error) {
                 console.warn('Could not set up collaboration service event listeners:', error);
@@ -282,6 +283,7 @@ class CollaborationModal extends Component {
                     service.off('awaiting-approval', this.handleAwaitingApproval);
                     service.off('approval-resolved', this.handleApprovalResolved);
                     service.off('join-denied', this.handleJoinDenied);
+                    service.off('connected-to-host', this.handleConnectedToHost);
                 }
             } catch (error) {
                 console.warn('Could not clean up collaboration service event listeners:', error);
@@ -702,6 +704,19 @@ class CollaborationModal extends Component {
             connectionStep: 'join',
             isConnecting: false,
             error: `Join request denied: ${reason}`
+        });
+    }
+
+    handleConnectedToHost () {
+        console.log('[COLLAB MODAL] Connected to host', {
+            isConnected: this.props.isConnected,
+            connectionStep: this.state.connectionStep
+        });
+
+        this.setState({
+            connectionStep: 'connected',
+            isConnecting: false,
+            error: null
         });
     }
 
