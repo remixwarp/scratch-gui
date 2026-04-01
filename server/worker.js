@@ -89,7 +89,7 @@ async function handleRequest(request) {
   }
 
   // 健康检查端点
-  if (request.method === 'GET' && new URL(request.url).pathname === '/health') {
+  if (request.method === 'GET' && new URL(request.url).pathname === '/api/health') {
     return new Response(JSON.stringify({ 
       status: 'ok', 
       timestamp: new Date().toISOString() 
