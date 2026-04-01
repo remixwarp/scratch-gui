@@ -1,3 +1,4 @@
+import React from 'react';
 import {connect} from 'react-redux';
 import SharedBackpackComponent from '../components/backpack/shared-backpack.jsx';
 import SharedBackpackCreateDialog from '../components/backpack/shared-backpack-create-dialog.jsx';
@@ -74,27 +75,30 @@ const mapDispatchToProps = dispatch => ({
     }
 });
 
-const mergeProps = (stateProps, dispatchProps, ownProps) => ({
-    ...ownProps,
-    ...stateProps,
-    ...dispatchProps,
-    onCreate: () => {
-        dispatch({
-            type: 'scratch-gui/shared-backpack/OPEN_CREATE_DIALOG'
-        });
-    },
-    onCloseCreateDialog: () => {
-        dispatch({
-            type: 'scratch-gui/shared-backpack/CLOSE_CREATE_DIALOG'
-        });
-    },
-    onCreateBackpack: (name, initialPermissions) => {
-        dispatchProps.onCreateSharedBackpack(name, initialPermissions);
-        dispatch({
-            type: 'scratch-gui/shared-backpack/CLOSE_CREATE_DIALOG'
-        });
-    }
-});
+const mergeProps = (stateProps, dispatchProps, ownProps) => {
+    const { dispatch } = dispatchProps;
+    return {
+        ...ownProps,
+        ...stateProps,
+        ...dispatchProps,
+        onCreate: () => {
+            dispatch({
+                type: 'scratch-gui/shared-backpack/OPEN_CREATE_DIALOG'
+            });
+        },
+        onCloseCreateDialog: () => {
+            dispatch({
+                type: 'scratch-gui/shared-backpack/CLOSE_CREATE_DIALOG'
+            });
+        },
+        onCreateBackpack: (name, initialPermissions) => {
+            dispatchProps.onCreateSharedBackpack(name, initialPermissions);
+            dispatch({
+                type: 'scratch-gui/shared-backpack/CLOSE_CREATE_DIALOG'
+            });
+        }
+    };
+};
 
 const SharedBackpackContainer = connect(
     mapStateToProps,
@@ -111,6 +115,7 @@ const SharedBackpackContainer = connect(
     onCreateBackpack, 
     onLoadSharedBackpacks, 
     onBackpackClick,
+    dispatch,
     ...props 
 }) => {
     // 当进入协作模式时加载共享书包
@@ -131,4 +136,49 @@ const SharedBackpackContainer = connect(
             });
         };
         
-        const handleBackpackUpdated = (data
+        const handleBackpackUpdated = (data) => {
+            dispatch({
+                type: 'scratch-gui/shared-backpack/UPDATE_SHARED_BACKPACK',
+                backpack: data.backpack
+            });
+        };
+        
+        const handleBackpackDeleted = (data) => {
+            dispatch({
+                type: 'scratch-gui/shared-backpack/REMOVE_SHARED_BACKPACK',
+                backpackId: data.backpackId
+            });
+        };
+        
+        collabService.on('shared-backpack-created', handleBackpackCreated);
+        collabService.on('shared-backpack-updated', handleBackpackUpdated);
+        collabService.on('shared-backpack-deleted', handleBackpackDeleted);
+        
+        return () => {
+            collabService.off('shared-backpack-created', handleBackpackCreated);
+            collabService.off('shared-backpack-updated', handleBackpackUpdated);
+            collabService.off('shared-backpack-deleted', handleBackpackDeleted);
+        };
+    }, [dispatch]);
+    
+    return (
+        <>
+            <SharedBackpackComponent
+                {...props}
+                backpacks={backpacks}
+                currentUser={currentUser}
+                onToggle={props.onToggle}
+                onCreate={isCollaborating && isHost ? onCreate : null}
+                onBackpackClick={onBackpackClick}
+            />
+            <SharedBackpackCreateDialog
+                isOpen={props.createDialogOpen}
+                onClose={onCloseCreateDialog}
+                onCreate={onCreateBackpack}
+                roomMembers={roomMembers}
+            />
+        </>
+    );
+});
+
+export default SharedBackpackContainer;

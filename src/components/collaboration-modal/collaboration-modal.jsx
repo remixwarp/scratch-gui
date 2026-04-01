@@ -531,6 +531,7 @@ class CollaborationModal extends Component {
         
         this.setState({
             isConnecting: true,
+            connectionStep: 'connecting',
             error: null
         });
         
@@ -554,39 +555,46 @@ class CollaborationModal extends Component {
             const result = await response.json();
             
             if (result.success) {
-                if (this._pendingRoomCreation) {
-                    const { roomCode, username } = this._pendingRoomCreation;
-                    await this.props.onCreateRoom(roomCode, username, 'public');
+                    // 重置加载状态
+                    this.setState({
+                        isConnecting: false,
+                        turnstileLoading: false,
+                        turnstileReady: false
+                    });
                     
-                    const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('room', roomCode);
-                    currentUrl.searchParams.delete('username');
-                    window.history.replaceState(null, null, currentUrl.toString());
-                    
-                    this.setState({ roomId: roomCode });
-                    this._pendingRoomCreation = null;
-                } else if (this._pendingRoomJoin) {
-                    const { roomId, username } = this._pendingRoomJoin;
-                    await this.props.onJoinRoom(roomId, username);
-                    
-                    const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('room', roomId);
-                    currentUrl.searchParams.delete('username');
-                    window.history.replaceState(null, null, currentUrl.toString());
-                    
-                    this.setState({ roomId: roomId });
-                    this._pendingRoomJoin = null;
-                } else {
-                    const roomCode = this.generateRoomCode();
-                    await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
-                    
-                    const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('room', roomCode);
-                    currentUrl.searchParams.delete('username');
-                    window.history.replaceState(null, null, currentUrl.toString());
-                    
-                    this.setState({ roomId: roomCode });
-                }
+                    if (this._pendingRoomCreation) {
+                        const { roomCode, username } = this._pendingRoomCreation;
+                        await this.props.onCreateRoom(roomCode, username, 'public');
+                        
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('room', roomCode);
+                        currentUrl.searchParams.delete('username');
+                        window.history.replaceState(null, null, currentUrl.toString());
+                        
+                        this.setState({ roomId: roomCode });
+                        this._pendingRoomCreation = null;
+                    } else if (this._pendingRoomJoin) {
+                        const { roomId, username } = this._pendingRoomJoin;
+                        await this.props.onJoinRoom(roomId, username);
+                        
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('room', roomId);
+                        currentUrl.searchParams.delete('username');
+                        window.history.replaceState(null, null, currentUrl.toString());
+                        
+                        this.setState({ roomId: roomId });
+                        this._pendingRoomJoin = null;
+                    } else {
+                        const roomCode = this.generateRoomCode();
+                        await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
+                        
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('room', roomCode);
+                        currentUrl.searchParams.delete('username');
+                        window.history.replaceState(null, null, currentUrl.toString());
+                        
+                        this.setState({ roomId: roomCode });
+                    }
             } else {
                 console.error('Turnstile verification failed:', result);
                 this.setState({

@@ -173,7 +173,7 @@ const deleteSharedBackpack = async (backpackId) => {
 };
 
 // 添加项目到共享书包
-const addBackpackItem = async (backpackId, item) => {
+const addBackpackItem = async (backpackId, item, userId) => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -189,15 +189,28 @@ const addBackpackItem = async (backpackId, item) => {
                 return;
             }
             
+            // 检查用户权限
+            if (!checkPermission(backpack, userId, 'editor')) {
+                reject(new Error('Permission denied'));
+                return;
+            }
+            
             const newItem = {
                 ...item,
                 id: Date.now().toString(),
-                addedAt: Date.now()
+                addedAt: Date.now(),
+                addedBy: userId
             };
             
             backpack.items.push(newItem);
             const putRequest = store.put(backpack);
             putRequest.onsuccess = () => {
+                // 记录操作
+                logOperation('addItem', backpackId, userId, {
+                    itemId: newItem.id,
+                    itemType: newItem.type,
+                    itemName: newItem.name
+                });
                 resolve(newItem);
             };
         };
@@ -205,7 +218,7 @@ const addBackpackItem = async (backpackId, item) => {
 };
 
 // 从共享书包移除项目
-const removeBackpackItem = async (backpackId, itemId) => {
+const removeBackpackItem = async (backpackId, itemId, userId) => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -221,9 +234,22 @@ const removeBackpackItem = async (backpackId, itemId) => {
                 return;
             }
             
+            // 检查用户权限
+            if (!checkPermission(backpack, userId, 'editor')) {
+                reject(new Error('Permission denied'));
+                return;
+            }
+            
+            const itemToRemove = backpack.items.find(item => item.id === itemId);
             backpack.items = backpack.items.filter(item => item.id !== itemId);
             const putRequest = store.put(backpack);
             putRequest.onsuccess = () => {
+                // 记录操作
+                logOperation('removeItem', backpackId, userId, {
+                    itemId,
+                    itemType: itemToRemove ? itemToRemove.type : 'unknown',
+                    itemName: itemToRemove ? itemToRemove.name : 'unknown'
+                });
                 resolve();
             };
         };
@@ -231,7 +257,7 @@ const removeBackpackItem = async (backpackId, itemId) => {
 };
 
 // 更新书包项目
-const updateBackpackItem = async (backpackId, itemId, updates) => {
+const updateBackpackItem = async (backpackId, itemId, updates, userId) => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -247,19 +273,33 @@ const updateBackpackItem = async (backpackId, itemId, updates) => {
                 return;
             }
             
+            // 检查用户权限
+            if (!checkPermission(backpack, userId, 'editor')) {
+                reject(new Error('Permission denied'));
+                return;
+            }
+            
             const itemIndex = backpack.items.findIndex(item => item.id === itemId);
             if (itemIndex === -1) {
                 reject(new Error('Item not found'));
                 return;
             }
             
+            const oldItem = backpack.items[itemIndex];
             backpack.items[itemIndex] = {
-                ...backpack.items[itemIndex],
+                ...oldItem,
                 ...updates
             };
             
             const putRequest = store.put(backpack);
             putRequest.onsuccess = () => {
+                // 记录操作
+                logOperation('updateItem', backpackId, userId, {
+                    itemId,
+                    itemType: oldItem.type,
+                    oldName: oldItem.name,
+                    newName: updates.name || oldItem.name
+                });
                 resolve(backpack.items[itemIndex]);
             };
         };
@@ -267,7 +307,7 @@ const updateBackpackItem = async (backpackId, itemId, updates) => {
 };
 
 // 添加成员
-const addMember = async (backpackId, userId, username, role) => {
+const addMember = async (backpackId, userId, username, role, currentUserId) => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -280,6 +320,12 @@ const addMember = async (backpackId, userId, username, role) => {
             const backpack = getRequest.result;
             if (!backpack) {
                 reject(new Error('Shared backpack not found'));
+                return;
+            }
+            
+            // 检查用户权限（只有拥有者可以添加成员）
+            if (!checkPermission(backpack, currentUserId, 'owner')) {
+                reject(new Error('Permission denied'));
                 return;
             }
             
@@ -300,6 +346,12 @@ const addMember = async (backpackId, userId, username, role) => {
             backpack.permissions.push(newMember);
             const putRequest = store.put(backpack);
             putRequest.onsuccess = () => {
+                // 记录操作
+                logOperation('addMember', backpackId, currentUserId, {
+                    newMemberId: userId,
+                    newMemberUsername: username,
+                    role
+                });
                 resolve(newMember);
             };
         };
@@ -307,7 +359,7 @@ const addMember = async (backpackId, userId, username, role) => {
 };
 
 // 移除成员
-const removeMember = async (backpackId, userId) => {
+const removeMember = async (backpackId, userId, currentUserId) => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -323,15 +375,27 @@ const removeMember = async (backpackId, userId) => {
                 return;
             }
             
+            // 检查用户权限（只有拥有者可以移除成员）
+            if (!checkPermission(backpack, currentUserId, 'owner')) {
+                reject(new Error('Permission denied'));
+                return;
+            }
+            
             // 不能移除创建者
             if (backpack.creatorId === userId) {
                 reject(new Error('Cannot remove creator'));
                 return;
             }
             
+            const memberToRemove = backpack.permissions.find(p => p.userId === userId);
             backpack.permissions = backpack.permissions.filter(p => p.userId !== userId);
             const putRequest = store.put(backpack);
             putRequest.onsuccess = () => {
+                // 记录操作
+                logOperation('removeMember', backpackId, currentUserId, {
+                    removedMemberId: userId,
+                    removedMemberUsername: memberToRemove ? memberToRemove.username : 'unknown'
+                });
                 resolve();
             };
         };
@@ -339,7 +403,7 @@ const removeMember = async (backpackId, userId) => {
 };
 
 // 更新成员角色
-const updateMemberRole = async (backpackId, userId, role) => {
+const updateMemberRole = async (backpackId, userId, role, currentUserId) => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -355,6 +419,12 @@ const updateMemberRole = async (backpackId, userId, role) => {
                 return;
             }
             
+            // 检查用户权限（只有拥有者可以更新成员角色）
+            if (!checkPermission(backpack, currentUserId, 'owner')) {
+                reject(new Error('Permission denied'));
+                return;
+            }
+            
             const memberIndex = backpack.permissions.findIndex(p => p.userId === userId);
             if (memberIndex === -1) {
                 reject(new Error('Member not found'));
@@ -367,9 +437,17 @@ const updateMemberRole = async (backpackId, userId, role) => {
                 return;
             }
             
+            const oldRole = backpack.permissions[memberIndex].role;
             backpack.permissions[memberIndex].role = role;
             const putRequest = store.put(backpack);
             putRequest.onsuccess = () => {
+                // 记录操作
+                logOperation('updateMemberRole', backpackId, currentUserId, {
+                    memberId: userId,
+                    memberUsername: backpack.permissions[memberIndex].username,
+                    oldRole,
+                    newRole: role
+                });
                 resolve(backpack.permissions[memberIndex]);
             };
         };
@@ -393,6 +471,47 @@ const checkPermission = (backpack, userId, requiredRole) => {
     return userRoleLevel >= requiredRoleLevel;
 };
 
+// 数据加密函数（简单实现，实际应用中应使用更安全的加密方法）
+const encryptData = (data) => {
+    try {
+        const jsonString = JSON.stringify(data);
+        // 使用btoa进行简单的Base64编码，实际应用中应使用加密库
+        return btoa(unescape(encodeURIComponent(jsonString)));
+    } catch (error) {
+        console.error('Error encrypting data:', error);
+        return null;
+    }
+};
+
+// 数据解密函数
+const decryptData = (encryptedData) => {
+    try {
+        // 使用atob进行简单的Base64解码，实际应用中应使用加密库
+        const jsonString = decodeURIComponent(escape(atob(encryptedData)));
+        return JSON.parse(jsonString);
+    } catch (error) {
+        console.error('Error decrypting data:', error);
+        return null;
+    }
+};
+
+// 操作审计函数
+const logOperation = (operation, backpackId, userId, details = {}) => {
+    try {
+        const logEntry = {
+            timestamp: Date.now(),
+            operation,
+            backpackId,
+            userId,
+            details
+        };
+        console.log('Shared backpack operation:', logEntry);
+        // 实际应用中应将日志存储到服务器或本地存储
+    } catch (error) {
+        console.error('Error logging operation:', error);
+    }
+};
+
 export default {
     createSharedBackpack,
     getSharedBackpack,
@@ -405,5 +524,8 @@ export default {
     addMember,
     removeMember,
     updateMemberRole,
-    checkPermission
+    checkPermission,
+    encryptData,
+    decryptData,
+    logOperation
 };
