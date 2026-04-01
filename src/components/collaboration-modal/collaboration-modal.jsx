@@ -511,25 +511,22 @@ class CollaborationModal extends Component {
             });
             
             try {
-                // 服务器端验证 Turnstile token
-                const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+                const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001';
+                
+                const response = await fetch(`${serverUrl}/api/verify-turnstile`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                        'Content-Type': 'application/json'
                     },
-                    body: new URLSearchParams({
-                        secret: '0x4AAAAAACyeS8KFuErSMsZIM2CQAsdSmu8',
-                        response: this.state.turnstileToken,
-                        remoteip: window.navigator.userAgent
+                    body: JSON.stringify({
+                        token: this.state.turnstileToken
                     })
                 });
                 
                 const result = await response.json();
                 
                 if (result.success) {
-                    // 验证成功，执行待处理操作
                     if (this._pendingRoomCreation) {
-                        // 创建房间
                         const { roomCode, username } = this._pendingRoomCreation;
                         await this.props.onCreateRoom(roomCode, username, 'public');
                         
@@ -541,7 +538,6 @@ class CollaborationModal extends Component {
                         this.setState({ roomId: roomCode });
                         this._pendingRoomCreation = null;
                     } else if (this._pendingRoomJoin) {
-                        // 加入房间
                         const { roomId, username } = this._pendingRoomJoin;
                         await this.props.onJoinRoom(roomId, username);
                         
@@ -553,7 +549,6 @@ class CollaborationModal extends Component {
                         this.setState({ roomId: roomId });
                         this._pendingRoomJoin = null;
                     } else {
-                        // 直接创建新房间
                         const roomCode = this.generateRoomCode();
                         await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
                         
@@ -565,7 +560,6 @@ class CollaborationModal extends Component {
                         this.setState({ roomId: roomCode });
                     }
                 } else {
-                    // 验证失败
                     console.error('Turnstile verification failed:', result);
                     this.setState({
                         isConnecting: false,
@@ -573,7 +567,6 @@ class CollaborationModal extends Component {
                         error: 'Invalid verification. Please try again.'
                     });
                     
-                    // 重新初始化 Turnstile
                     this.initTurnstile();
                 }
             } catch (error) {
@@ -585,7 +578,6 @@ class CollaborationModal extends Component {
                 });
             }
         } else {
-            // 验证码未完成
             this.setState({ error: 'Please complete the verification.' });
         }
     }
