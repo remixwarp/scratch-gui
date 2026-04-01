@@ -117,10 +117,19 @@ class CollaborationModal extends Component {
         // 确保 Turnstile 脚本已加载
         if (typeof window !== 'undefined' && window.turnstile) {
             console.log('Initializing Turnstile...');
+            
+            // 先获取DOM元素
+            const container = document.querySelector('.cf-turnstile');
+            if (!container) {
+                console.error('Turnstile container not found');
+                this.setState({ turnstileLoading: false, error: 'Verification container not found' });
+                return;
+            }
+            
             this.turnstileInitialized = true;
             
             // 显式渲染 Turnstile
-            window.turnstile.render('.cf-turnstile', {
+            window.turnstile.render(container, {
                 sitekey: '0x4AAAAAACyeS6Www9AVI--y',
                 theme: 'auto',
                 size: 'normal',
@@ -142,6 +151,7 @@ class CollaborationModal extends Component {
                 expiredCallback: () => {
                     console.log('Turnstile token expired, reinitializing...');
                     this.setState({ turnstileToken: '', turnstileReady: false });
+                    this.turnstileInitialized = false;
                     this.initTurnstile();
                 },
                 timeoutCallback: () => {
@@ -538,7 +548,7 @@ class CollaborationModal extends Component {
         });
         
         try {
-            const serverUrl = 'https://remixwarp.pages.dev';
+            const serverUrl = 'https://remixwarp-turnstile-verifier.xiao-xiao-lang.workers.dev';
             
             const response = await fetch(`${serverUrl}/api/verify-turnstile`, {
                 method: 'POST',
