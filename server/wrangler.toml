@@ -5,10 +5,7 @@ compatibility_date = "2024-01-01"
 # 生产环境路由配置
 # 这会将 remixwarp.pages.dev/api/* 路由到 Worker
 routes = [
-  {
-    pattern = "remixwarp.pages.dev/api/*",
-    zone_name = "remixwarp.pages.dev"
-  }
+  { pattern = "remixwarp.pages.dev/api/*", zone_name = "remixwarp.pages.dev" }
 ]
 
 # 环境变量配置

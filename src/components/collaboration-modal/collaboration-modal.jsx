@@ -538,7 +538,7 @@ class CollaborationModal extends Component {
         });
         
         try {
-            const serverUrl = 'https://remixwarp-turnstile-verifier.xiao-xiao-lang.workers.dev';
+            const serverUrl = 'https://remixwarp.pages.dev';
             
             const response = await fetch(`${serverUrl}/api/verify-turnstile`, {
                 method: 'POST',

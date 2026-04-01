@@ -40,13 +40,11 @@ wrangler login
    ```bash
    cd server
    ```
-
 2. **添加 Secret Key**：
    ```bash
    wrangler secret put TURNSTILE_SECRET_KEY
    ```
    当提示时，输入你的 Turnstile Secret Key。
-
 3. **部署 Worker**：
    ```bash
    wrangler deploy
@@ -59,7 +57,7 @@ wrangler login
 3. **点击 Create Application**
 4. **选择 Create Worker**
 5. **输入 Worker 名称**（例如 `remixwarp-turnstile-verifier`）
-6. **将 `worker.js` 的内容复制到代码编辑器**
+6. **将** **`worker.js`** **的内容复制到代码编辑器**
 7. **点击 Settings → Variables**
 8. **添加环境变量**：
    - 变量名：`TURNSTILE_SECRET_KEY`
@@ -102,7 +100,6 @@ routes = [
    ```json
    {"status":"ok","timestamp":"2024-01-01T00:00:00.000Z"}
    ```
-
 2. **测试验证 API**：
    ```bash
    curl -X POST https://remixwarp.pages.dev/api/verify-turnstile \
@@ -120,9 +117,7 @@ routes = [
    ```bash
    npm run build
    ```
-
 2. **部署前端**：将 `build` 目录部署到 Cloudflare Pages
-
 3. **测试协作功能**：
    - 打开 `https://remixwarp.pages.dev/editor.html`
    - 尝试创建或加入房间
@@ -143,7 +138,6 @@ routes = [
   ```bash
   wrangler tail
   ```
-
 - **使用 Cloudflare 仪表盘**：
   - 进入 Worker 详情页
   - 点击 Logs
