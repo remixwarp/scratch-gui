@@ -64,6 +64,8 @@ class CollaborationContainer extends Component {
         this.handleHostLoadingStart = this.handleHostLoadingStart.bind(this);
         this.handleHostLoadingProgress = this.handleHostLoadingProgress.bind(this);
         this.handleHostLoadingComplete = this.handleHostLoadingComplete.bind(this);
+        this.handleAwaitingApproval = this.handleAwaitingApproval.bind(this);
+        this.handleApprovalResolved = this.handleApprovalResolved.bind(this);
     }
 
     componentDidMount () {
@@ -96,6 +98,8 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('host-loading-complete', this.handleHostLoadingComplete);
         this.collaborationService.on('project-sync-wait', this.handleProjectSyncWait);
         this.collaborationService.on('session-ready', this.handleSessionReady);
+        this.collaborationService.on('awaiting-approval', this.handleAwaitingApproval);
+        this.collaborationService.on('approval-resolved', this.handleApprovalResolved);
 
         this.projectSyncProgress = 0;
         this.projectSyncLoadingBar = null;
@@ -123,6 +127,8 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('host-loading-complete', this.handleHostLoadingComplete);
         this.collaborationService.off('project-sync-wait', this.handleProjectSyncWait);
         this.collaborationService.off('session-ready', this.handleSessionReady);
+        this.collaborationService.off('awaiting-approval', this.handleAwaitingApproval);
+        this.collaborationService.off('approval-resolved', this.handleApprovalResolved);
 
         // Clear waiting overlay if it exists
         this.clearWaitingOverlay();
@@ -630,6 +636,14 @@ class CollaborationContainer extends Component {
 
     handleSessionReady () {
         this.clearWaitingOverlay();
+    }
+
+    handleAwaitingApproval () {
+        console.log('[COLLAB CONTAINER] Awaiting approval from host');
+    }
+
+    handleApprovalResolved () {
+        console.log('[COLLAB CONTAINER] Approval resolved');
     }
 
     render () {
