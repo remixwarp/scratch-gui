@@ -117,6 +117,9 @@ export default class Dropdown {
             LIST: 'data-lists',
             costume: 'looks',
             sound: 'sounds',
+            control: 'control',
+            operators: 'operators',
+            sounds: 'sounds',
             block: 'more',
             flag: 'events'
         };

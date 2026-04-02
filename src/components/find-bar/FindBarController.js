@@ -745,40 +745,51 @@ export default class FindBarController {
                 // 修复操作码与翻译键名的映射
                 let translatedKey = blockType;
                 
-                // 特殊处理操作码与翻译键名的映射
+                // 特殊处理操作码与中文翻译的映射
                 const opcodeMap = {
-                    'sound_seteffectto': 'sound_seteffecto',
-                    'operator_add': 'operators_add',
-                    'operator_subtract': 'operators_subtract',
-                    'operator_multiply': 'operators_multiply',
-                    'operator_divide': 'operators_divide',
-                    'operator_random': 'operators_random',
-                    'operator_gt': 'operators_gt',
-                    'operator_lt': 'operators_lt',
-                    'operator_equals': 'operators_equals',
-                    'operator_and': 'operators_and',
-                    'operator_or': 'operators_or',
-                    'operator_not': 'operators_not',
-                    'operator_join': 'operators_join',
-                    'operator_letter_of': 'operators_letterof',
-                    'operator_length': 'operators_length',
-                    'operator_contains': 'operators_contains',
-                    'operator_mod': 'operators_mod',
-                    'operator_round': 'operators_round',
-                    'operator_mathop': 'operators_mathop',
-                    'control_if_else': 'control_if_else',
-                    'control_wait_until': 'control_waituntil',
-                    'control_repeat_until': 'control_repeatuntil',
-                    'control_for_each': 'control_foreach',
-                    'control_create_clone_of': 'control_createcloneof',
-                    'control_delete_this_clone': 'control_deletethisclone'
+                    'sound_seteffectto': '设置音效为',
+                    'operator_add': '加',
+                    'operator_subtract': '减',
+                    'operator_multiply': '乘',
+                    'operator_divide': '除',
+                    'operator_random': '随机数',
+                    'operator_gt': '大于',
+                    'operator_lt': '小于',
+                    'operator_equals': '等于',
+                    'operator_and': '与',
+                    'operator_or': '或',
+                    'operator_not': '不',
+                    'operator_join': '连接',
+                    'operator_letter_of': '字母',
+                    'operator_length': '长度',
+                    'operator_contains': '包含',
+                    'operator_mod': '取余数',
+                    'operator_round': '四舍五入',
+                    'operator_mathop': '数学运算',
+                    'control_if_else': '如果…那么…否则',
+                    'control_wait_until': '等待直到',
+                    'control_repeat_until': '重复执行直到',
+                    'control_for_each': '对每个执行',
+                    'control_create_clone_of': '创建克隆体',
+                    'control_delete_this_clone': '删除此克隆体'
                 };
                 
+                let displayText = blockType;
                 if (opcodeMap[blockType]) {
-                    translatedKey = opcodeMap[blockType];
+                    displayText = opcodeMap[blockType];
                 }
                 
-                addBlock(blockType, translatedKey, block, blockType);
+                // 为不同类型的积木设置正确的类名，以便显示正确的颜色
+                let blockClass = blockType;
+                if (blockType.startsWith('control_')) {
+                    blockClass = 'control';
+                } else if (blockType.startsWith('operator_')) {
+                    blockClass = 'operators';
+                } else if (blockType.startsWith('sound_')) {
+                    blockClass = 'sounds';
+                }
+                
+                addBlock(blockClass, displayText, block, blockType);
             }
         }
 
