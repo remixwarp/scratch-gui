@@ -1,7 +1,7 @@
 {
   "_general/blocks/anticlockwise": "逆时针",
   "_general/blocks/clockwise": "顺时针",
-  "_general/blocks/green-flag": "旗",
+  "_general/blocks/green-flag": "🟩",
   "editor-devtools/clean-plus": "整理积木+",
   "editor-devtools/copy-all": "全部复制",
   "editor-devtools/copy-block": "复制积木",

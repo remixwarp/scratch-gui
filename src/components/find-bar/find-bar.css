@@ -258,12 +258,12 @@
 }
 
 :global(.sa-find-dropdown .sa-find-flag) {
-    color: var(--operators-primary, var(--editorTheme3-operators-primary, #59c059));
+    color: var(--event-primary, var(--editorTheme3-event-primary, #ffbf00));
 }
 
 :global(.sa-find-dropdown .sa-find-flag:hover),
 :global(.sa-find-dropdown .sa-find-flag.sel) {
-    background-color: var(--operators-primary, var(--editorTheme3-operators-primary, #59c059));
+    background-color: var(--event-primary, var(--editorTheme3-event-primary, #ffbf00));
     color: var(--sa-block-text-on-bright-background);
 }
 

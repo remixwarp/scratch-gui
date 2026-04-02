@@ -359,7 +359,11 @@ export default class FindBarController {
 
                 this.clearChildren(li);
 
-                if (match.matchInOpcode && opcode) {
+                if (li.data && li.data.cls === 'flag') {
+                    // 添加绿旗表情符号
+                    const textNode = document.createTextNode('当 🟩 被点击');
+                    li.appendChild(textNode);
+                } else if (match.matchInOpcode && opcode) {
                     li.appendChild(document.createTextNode(displayName));
                     li.appendChild(document.createTextNode(' ('));
 
@@ -390,9 +394,16 @@ export default class FindBarController {
             }
             li.style.display = 'block';
 
-            const displayName = li.displayName;
             this.clearChildren(li);
-            li.appendChild(document.createTextNode(displayName));
+            
+            if (li.data && li.data.cls === 'flag') {
+                // 添加绿旗表情符号
+                const textNode = document.createTextNode('当 🟩 被点击');
+                li.appendChild(textNode);
+            } else {
+                const displayName = li.displayName;
+                li.appendChild(document.createTextNode(displayName));
+            }
         }
     }
 
@@ -650,7 +661,8 @@ export default class FindBarController {
             }
 
             if (root.type === 'event_whenflagclicked') {
-                addBlock('flag', getDescFromField(root), root, root.type);
+                // 特殊处理绿旗积木，使用绿旗SVG图标
+                addBlock('flag', '当 被点击', root, root.type);
                 continue;
             }
 
@@ -730,7 +742,43 @@ export default class FindBarController {
                 blockType !== 'event_broadcast' &&
                 blockType !== 'event_broadcastandwait'
             ) {
-                addBlock(blockType, blockType, block, blockType);
+                // 修复操作码与翻译键名的映射
+                let translatedKey = blockType;
+                
+                // 特殊处理操作码与翻译键名的映射
+                const opcodeMap = {
+                    'sound_seteffectto': 'sound_seteffecto',
+                    'operator_add': 'operators_add',
+                    'operator_subtract': 'operators_subtract',
+                    'operator_multiply': 'operators_multiply',
+                    'operator_divide': 'operators_divide',
+                    'operator_random': 'operators_random',
+                    'operator_gt': 'operators_gt',
+                    'operator_lt': 'operators_lt',
+                    'operator_equals': 'operators_equals',
+                    'operator_and': 'operators_and',
+                    'operator_or': 'operators_or',
+                    'operator_not': 'operators_not',
+                    'operator_join': 'operators_join',
+                    'operator_letter_of': 'operators_letterof',
+                    'operator_length': 'operators_length',
+                    'operator_contains': 'operators_contains',
+                    'operator_mod': 'operators_mod',
+                    'operator_round': 'operators_round',
+                    'operator_mathop': 'operators_mathop',
+                    'control_if_else': 'control_if_else',
+                    'control_wait_until': 'control_waituntil',
+                    'control_repeat_until': 'control_repeatuntil',
+                    'control_for_each': 'control_foreach',
+                    'control_create_clone_of': 'control_createcloneof',
+                    'control_delete_this_clone': 'control_deletethisclone'
+                };
+                
+                if (opcodeMap[blockType]) {
+                    translatedKey = opcodeMap[blockType];
+                }
+                
+                addBlock(blockType, translatedKey, block, blockType);
             }
         }
 

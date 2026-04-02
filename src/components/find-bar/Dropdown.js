@@ -3,7 +3,7 @@ import BlockInstance from '../../lib/find-bar/BlockInstance';
 import Carousel from './Carousel';
 import {getReactInternalKey} from './dom-utils';
 
-const normalizeMessagePlaceholders = text => String(text).replace(/%\d+/g, '()');
+const normalizeMessagePlaceholders = text => String(text).replace(/%\d+|%b|%s/g, '()');
 
 export default class Dropdown {
     constructor ({ScratchBlocks, utils, vm, msg}) {
@@ -101,7 +101,6 @@ export default class Dropdown {
 
     addItem (proc, messagesList, colours) {
         const item = document.createElement('li');
-        item.innerText = proc.procCode;
         item.data = proc;
         const name = proc.procCode.toUpperCase();
         item.displayName = normalizeMessagePlaceholders(
@@ -118,12 +117,17 @@ export default class Dropdown {
             LIST: 'data-lists',
             costume: 'looks',
             sound: 'sounds',
-            block: 'more'
+            block: 'more',
+            flag: 'events'
         };
 
         if (proc.cls === 'flag') {
             item.className = 'sa-find-flag';
+            // 添加绿旗表情符号
+            const textNode = document.createTextNode('当 🟩 被点击');
+            item.appendChild(textNode);
         } else {
+            item.innerText = proc.procCode;
             let colorId = colorIds[proc.cls];
             if (!colorId) {
                 const code = proc.procCode.split('_', 1)[0];
@@ -141,7 +145,7 @@ export default class Dropdown {
                 ].includes(code)) {
                     colorId = code;
                     if (colorId === 'sound') colorId = 'sounds';
-                } else if (code === 'operator') {
+                } else if (code === 'operator' || code === 'operators') {
                     colorId = 'operators';
                 } else {
                     colorId = 'more';
