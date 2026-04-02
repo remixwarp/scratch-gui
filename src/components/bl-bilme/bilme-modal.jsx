@@ -270,7 +270,7 @@ const BilmeModal = props => {
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch('https://theme.RemixWarp.org/api/themes');
+                const response = await fetch('https://theme.bilup.org/api/themes');
                 if (!response.ok) throw new Error('Failed to fetch themes');
                 const data = await response.json();
                 setThemes(data.themes || []);
@@ -326,12 +326,12 @@ const BilmeModal = props => {
     }, [themes, searchQuery, platformFilter, colorFilter, sortBy]);
 
     const handleCreateTheme = () => {
-        window.open('https://theme.RemixWarp.org', '_blank');
+        window.open('https://theme.bilup.org', '_blank');
     };
 
     const handleOpenInBilme = theme => {
         const slug = theme.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        window.open(`https://theme.RemixWarp.org/themes/${theme.author}/${slug}`, '_blank');
+        window.open(`https://theme.bilup.org/themes/${theme.author}/${slug}`, '_blank');
     };
 
     const handleApplyTheme = async theme => {
@@ -340,7 +340,7 @@ const BilmeModal = props => {
                 console.log('Applying theme:', theme.name, 'UUID:', theme.uuid);
                 
                 const response = await fetch(
-                    `https://theme.RemixWarp.org/api/theme/export?uuid=${theme.uuid}&platform=RemixWarp`
+                    `https://theme.bilup.org/api/theme/export?uuid=${theme.uuid}&platform=RemixWarp`
                 );
                 
                 if (!response.ok) {

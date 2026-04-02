@@ -28,7 +28,10 @@ class CollaborationModal extends Component {
             connectionStep: props.isConnected ? 'connected' : 'join',
             error: null,
             pendingRequests: [],
-            showJoinRequest: false
+            showJoinRequest: false,
+            turnstileToken: '',
+            turnstileLoading: false,
+            turnstileReady: false
         };
 
         this.autoJoinAttempted = new Set();
@@ -36,6 +39,7 @@ class CollaborationModal extends Component {
         this._autoJoinTimer = null;
         this._lastAutoJoinAttempt = new Map();
         this._autoJoinFailures = new Map();
+        this.turnstileInitialized = false;
 
         this.handleRoomIdChange = this.handleRoomIdChange.bind(this);
         this.handleJoinRoom = this.handleJoinRoom.bind(this);
@@ -59,6 +63,9 @@ class CollaborationModal extends Component {
         this.handleCancelClick = this.handleCancelClick.bind(this);
         this.togglePublicPrivacy = this.togglePublicPrivacy.bind(this);
         this.togglePrivatePrivacy = this.togglePrivatePrivacy.bind(this);
+        this.verifyCaptcha = this.verifyCaptcha.bind(this);
+        this.onTurnstileSuccess = this.onTurnstileSuccess.bind(this);
+        this.onTurnstileReady = this.onTurnstileReady.bind(this);
     }
 
     componentDidMount () {
@@ -67,6 +74,11 @@ class CollaborationModal extends Component {
             isConnected: this.props.isConnected,
             currentUsername: this.props.currentUsername
         });
+
+        // 为 Cloudflare Turnstile 回调设置全局引用
+        if (typeof window !== 'undefined') {
+            window.collaborationModal = this;
+        }
 
         if (this.props.roomId && !this.props.isConnected && !this._autoJoinTimer && !this.autoJoinInProgress) {
             console.log('[COLLAB MODAL] Auto-joining room from URL:', this.props.roomId);
@@ -97,7 +109,72 @@ class CollaborationModal extends Component {
         }
     }
 
+    initTurnstile () {
+        if (this.turnstileInitialized) return;
+        
+        this.setState({ turnstileLoading: true, turnstileReady: false });
+        
+        // 确保 Turnstile 脚本已加载
+        if (typeof window !== 'undefined' && window.turnstile) {
+            console.log('Initializing Turnstile...');
+            
+            // 先获取DOM元素
+            const container = document.querySelector('.cf-turnstile');
+            if (!container) {
+                console.error('Turnstile container not found');
+                this.setState({ turnstileLoading: false, error: 'Verification container not found' });
+                return;
+            }
+            
+            this.turnstileInitialized = true;
+            
+            // 显式渲染 Turnstile
+            window.turnstile.render(container, {
+                sitekey: '0x4AAAAAACyeS6Www9AVI--y',
+                theme: 'auto',
+                size: 'normal',
+                language: 'auto',
+                retry: 'auto',
+                retryInterval: 2000,
+                callback: (token) => {
+                    console.log('Turnstile verification success, token:', token);
+                    this.onTurnstileSuccess(token);
+                },
+                readyCallback: () => {
+                    console.log('Turnstile ready');
+                    this.onTurnstileReady();
+                },
+                errorCallback: (error) => {
+                    console.error('Turnstile verification error:', error);
+                    this.setState({ turnstileLoading: false, error: 'Verification failed. Please try again.' });
+                },
+                expiredCallback: () => {
+                    console.log('Turnstile token expired, reinitializing...');
+                    this.setState({ turnstileToken: '', turnstileReady: false });
+                    this.turnstileInitialized = false;
+                    this.initTurnstile();
+                },
+                timeoutCallback: () => {
+                    console.error('Turnstile verification timed out');
+                    this.setState({ turnstileLoading: false, error: 'Verification timed out. Please try again.' });
+                }
+            });
+        } else {
+            // 如果 Turnstile 脚本还没加载，等待一下再尝试
+            console.log('Turnstile script not loaded yet, waiting...');
+            setTimeout(() => this.initTurnstile(), 100);
+        }
+    }
+
+    onTurnstileReady () {
+        this.setState({ turnstileLoading: false, turnstileReady: true });
+    }
+
     componentDidUpdate (prevProps, prevState) {
+        // 当切换到验证码步骤时，初始化 Cloudflare Turnstile
+        if (this.state.connectionStep === 'captcha' && prevState.connectionStep !== 'captcha') {
+            this.initTurnstile();
+        }
 
         if (prevProps.isConnected !== this.props.isConnected) {
             const newConnectionStep = this.props.isConnected ? 'connected' : 'join';
@@ -203,6 +280,11 @@ class CollaborationModal extends Component {
     }
 
     componentWillUnmount () {
+        // 清理 Cloudflare Turnstile 全局引用
+        if (typeof window !== 'undefined') {
+            delete window.collaborationModal;
+        }
+
         if (typeof window !== 'undefined' && window.CollaborationService) {
             try {
                 const service = window.CollaborationService.getInstance();
@@ -259,61 +341,33 @@ class CollaborationModal extends Component {
             return;
         }
 
-        const roomId = this.state.roomId.trim();
-        const username = this.props.currentUsername;
+        // 存储待加入的房间信息
+        this._pendingRoomJoin = {
+            roomId: this.state.roomId.trim(),
+            username: this.props.currentUsername
+        };
 
+        // 显示人机验证步骤
         this.setState({
-            isConnecting: true,
-            connectionStep: 'connecting',
-            error: null
+            connectionStep: 'captcha',
+            error: null,
+            turnstileToken: ''
         });
-
-        try {
-            await this.props.onJoinRoom(roomId, username);
-            
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('room', roomId);
-            currentUrl.searchParams.delete('username');
-            window.history.replaceState(null, null, currentUrl.toString());
-            
-            this.setState({ roomId });
-        } catch (error) {
-            console.error('Failed to join room:', error);
-            this.setState({
-                error: `Failed to join room: ${error.message || 'Unknown error'}`,
-                isConnecting: false,
-                connectionStep: 'join'
-            });
-        }
     }
 
     async handleCreateRoom () {
-        const roomCode = this.generateRoomCode();
-        const username = this.props.currentUsername;
+        // 生成房间代码并存储
+        this._pendingRoomCreation = {
+            roomCode: this.generateRoomCode(),
+            username: this.props.currentUsername
+        };
 
+        // 显示人机验证步骤
         this.setState({
-            isConnecting: true,
-            connectionStep: 'connecting',
-            error: null
+            connectionStep: 'captcha',
+            error: null,
+            turnstileToken: ''
         });
-
-        try {
-            await this.props.onCreateRoom(roomCode, username, 'public');
-            
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('room', roomCode);
-            currentUrl.searchParams.delete('username');
-            window.history.replaceState(null, null, currentUrl.toString());
-            
-            this.setState({ roomId: roomCode });
-        } catch (error) {
-            console.error('Failed to create room:', error);
-            this.setState({
-                error: `Failed to create room: ${error.message || 'Unknown error'}`,
-                isConnecting: false,
-                connectionStep: 'join'
-            });
-        }
     }
 
     handleLeaveRoom () {
@@ -442,8 +496,18 @@ class CollaborationModal extends Component {
 
             try {
                 console.log(`Auto-creating room "${roomCode}" since it doesn't exist`);
-                await this.props.onCreateRoom(roomCode, username, 'public');
-                console.log(`Successfully created room "${roomCode}"`);
+                // 自动创建房间时也需要先进行人机验证
+                this.generateCaptcha();
+                this.setState({
+                    connectionStep: 'captcha',
+                    error: null,
+                    isConnecting: false
+                });
+                // 存储要创建的房间信息，以便验证后使用
+                this._pendingRoomCreation = {
+                    roomCode,
+                    username
+                };
             } catch (createError) {
                 console.error(`Failed to create room "${roomCode}":`, createError.message);
 
@@ -466,7 +530,110 @@ class CollaborationModal extends Component {
         }
     }
 
+    onTurnstileSuccess (token) {
+        this.setState({ turnstileToken: token });
+        this.verifyCaptcha();
+    }
 
+    async verifyCaptcha () {
+        if (!this.state.turnstileToken) {
+            this.setState({ error: 'Please complete the verification.' });
+            return;
+        }
+        
+        this.setState({
+            isConnecting: true,
+            connectionStep: 'connecting',
+            error: null
+        });
+        
+        try {
+            const serverUrl = 'https://remixwarp-turnstile-verifier.xiao-xiao-lang.workers.dev';
+            
+            const response = await fetch(`${serverUrl}/api/verify-turnstile`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    token: this.state.turnstileToken
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                    // 重置加载状态
+                    this.setState({
+                        isConnecting: false,
+                        turnstileLoading: false,
+                        turnstileReady: false
+                    });
+                    
+                    if (this._pendingRoomCreation) {
+                        const { roomCode, username } = this._pendingRoomCreation;
+                        await this.props.onCreateRoom(roomCode, username, 'public');
+                        
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('room', roomCode);
+                        currentUrl.searchParams.delete('username');
+                        window.history.replaceState(null, null, currentUrl.toString());
+                        
+                        this.setState({ roomId: roomCode });
+                        this._pendingRoomCreation = null;
+                    } else if (this._pendingRoomJoin) {
+                        const { roomId, username } = this._pendingRoomJoin;
+                        await this.props.onJoinRoom(roomId, username);
+                        
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('room', roomId);
+                        currentUrl.searchParams.delete('username');
+                        window.history.replaceState(null, null, currentUrl.toString());
+                        
+                        this.setState({ roomId: roomId });
+                        this._pendingRoomJoin = null;
+                    } else {
+                        const roomCode = this.generateRoomCode();
+                        await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
+                        
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('room', roomCode);
+                        currentUrl.searchParams.delete('username');
+                        window.history.replaceState(null, null, currentUrl.toString());
+                        
+                        this.setState({ roomId: roomCode });
+                    }
+            } else {
+                console.error('Turnstile verification failed:', result);
+                this.setState({
+                    isConnecting: false,
+                    error: 'Invalid verification. Please try again.',
+                    turnstileToken: '',
+                    turnstileReady: false
+                });
+                
+                // 重新初始化 Turnstile
+                this.turnstileInitialized = false;
+                setTimeout(() => this.initTurnstile(), 500);
+            }
+        } catch (error) {
+            console.error('Error verifying captcha or creating/joining room:', error);
+            this.setState({
+                error: 'Error verifying captcha. Please try again.',
+                isConnecting: false,
+                turnstileToken: '',
+                turnstileReady: false
+            });
+            
+            // 重新初始化 Turnstile
+            this.turnstileInitialized = false;
+            setTimeout(() => this.initTurnstile(), 500);
+        }
+    }
 
 
     async handleApproveRequest (requesterId, requesterUsername) {
@@ -1008,187 +1175,3 @@ class CollaborationModal extends Component {
                                     </span>
                                 </label>
                                 <label className={styles.radioLabel}>
-                                    <FancyCheckbox
-                                        className={styles.checkbox}
-                                        checked={this.props.roomPrivacy === 'private'}
-                                        onChange={this.togglePrivatePrivacy}
-                                    />
-                                    <span className={styles.radioText}>
-                                        <FormattedMessage
-                                            defaultMessage="Make Private"
-                                            description="Make private room option"
-                                            id="gui.collaboration.makePrivate"
-                                        />
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-                    </>
-                )}
-
-                <div className={styles.connectedActions}>
-                    <div className={styles.primaryActions}>
-                        <Button
-                            className={styles.primaryButton}
-                            onClick={this.handleCopyRoomUrl}
-                            iconElem={Copy}
-                            iconClassName={styles.buttonIcon}
-                        >
-                            <FormattedMessage
-                                defaultMessage="Copy Room URL to Share"
-                                description="Button to copy room URL for sharing"
-                                id="gui.collaboration.copyRoomUrl"
-                            />
-                        </Button>
-                    </div>
-
-                    <Button
-                        className={styles.dangerButton}
-                        onClick={this.handleLeaveRoom}
-                    >
-                        <FormattedMessage
-                            defaultMessage="Leave Room"
-                            description="Button to leave collaboration room"
-                            id="gui.collaboration.leaveRoom"
-                        />
-                    </Button>
-                </div>
-            </Box>
-        );
-    }
-
-    renderPendingApprovalStep () {
-        return (
-            <Box className={styles.content}>
-                <div className={styles.alphaBanner}>
-                    <div className={styles.bannerIcon}>
-                        <AlertTriangle size={20} />
-                    </div>
-                    <div className={styles.bannerContent}>
-                        <strong>
-                            <FormattedMessage
-                                defaultMessage="Alpha Warning:"
-                                description="Alpha warning label"
-                                id="gui.collaboration.alphaWarningLabel"
-                            />
-                        </strong>
-                        {' '}
-                        <FormattedMessage
-                            defaultMessage="This feature is in early development. Your projects may get corrupted or broken. Use at your own risk."
-                            description="Alpha warning message"
-                            id="gui.collaboration.alphaWarningMessage"
-                        />
-                    </div>
-                </div>
-                <div className={styles.header}>
-                    <CollaborationIcon
-                        className={styles.headerIcon}
-                        draggable={false}
-                    />
-                    <div className={styles.headerText}>
-                        <FormattedMessage
-                            defaultMessage="Waiting for Host Approval"
-                            description="Title for pending approval state"
-                            id="gui.collaboration.waitingApproval"
-                        />
-                    </div>
-                </div>
-
-                <div className={styles.description}>
-                    <FormattedMessage
-                        defaultMessage="Your request to join this private room has been sent to the host. Please wait for approval."
-                        description="Description for pending approval"
-                        id="gui.collaboration.pendingApprovalDescription"
-                    />
-                </div>
-
-                <div className={styles.buttonGroup}>
-                    <Button
-                        className={styles.secondaryButton}
-                        onClick={this.handleCancelJoinRequest}
-                    >
-                        <FormattedMessage
-                            defaultMessage="Cancel Request"
-                            description="Button to cancel join request"
-                            id="gui.collaboration.cancelRequest"
-                        />
-                    </Button>
-                </div>
-
-                {this.state.error && (
-                    <div className={styles.error}>
-                        {this.state.error}
-                    </div>
-                )}
-            </Box>
-        );
-    }
-
-    render () {
-        let content;
-        switch (this.state.connectionStep) {
-        case 'join':
-            content = this.renderJoinStep();
-            break;
-        case 'connecting':
-            content = this.renderConnectingStep();
-            break;
-        case 'connected':
-            content = this.renderConnectedStep();
-            break;
-        case 'pending-approval':
-            content = this.renderPendingApprovalStep();
-            break;
-        default:
-            content = this.renderJoinStep();
-        }
-
-        return (
-            <Modal
-                visible={this.props.visible}
-                className={styles.modalContent}
-                onRequestClose={this.props.onRequestClose}
-                contentLabel={this.props.intl.formatMessage({
-                    id: 'gui.collaboration.title',
-                    defaultMessage: 'Live Collaboration',
-                    description: 'Title for collaboration modal'
-                })}
-                id="collaborationModal"
-                width={600}
-                height={720}
-                resizable
-            >
-                <Box className={styles.body}>
-                    {content}
-                </Box>
-            </Modal>
-        );
-    }
-}
-
-CollaborationModal.propTypes = {
-    visible: PropTypes.bool,
-    currentUsername: PropTypes.string,
-    currentUserId: PropTypes.string,
-    isConnected: PropTypes.bool,
-    roomId: PropTypes.string,
-    roomPrivacy: PropTypes.string,
-    connectedUsers: PropTypes.arrayOf(PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        username: PropTypes.string.isRequired,
-        isHost: PropTypes.bool
-    })),
-    connectionError: PropTypes.string,
-    onRequestClose: PropTypes.func.isRequired,
-    onJoinRoom: PropTypes.func.isRequired,
-    onCreateRoom: PropTypes.func.isRequired,
-    onLeaveRoom: PropTypes.func.isRequired,
-    onKickUser: PropTypes.func.isRequired,
-    onCancelConnection: PropTypes.func.isRequired,
-    onApproveJoinRequest: PropTypes.func,
-    onDenyJoinRequest: PropTypes.func,
-    onCancelJoinRequest: PropTypes.func,
-    onChangeRoomPrivacy: PropTypes.func
-};
-
-export default injectIntl(CollaborationModal);
