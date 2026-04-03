@@ -333,6 +333,14 @@ module.exports = [
                         context: 'src/examples'
                     }
                 ]
+            }),
+            new CopyWebpackPlugin({
+                patterns: [
+                    {
+                        from: 'asset',
+                        to: 'asset'
+                    }
+                ]
             })
         ])
     })
@@ -386,6 +394,15 @@ module.exports = [
                             from: 'src/lib/libraries/*.json',
                             to: 'libraries',
                             flatten: true
+                        }
+                    ]
+                }),
+                // Copy local assets for library loading
+                new CopyWebpackPlugin({
+                    patterns: [
+                        {
+                            from: 'asset',
+                            to: 'asset'
                         }
                     ]
                 })
