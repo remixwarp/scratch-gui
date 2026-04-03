@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 
 import ChevronDown from './ChevronDown.jsx';
@@ -13,6 +13,19 @@ import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
 
 import {Check, Wallpaper, Trash} from 'lucide-react';
+
+const messages = defineMessages({
+    uploadWallpaper: {
+        defaultMessage: 'Upload Wallpaper',
+        description: 'Button to upload wallpaper',
+        id: 'tw.wallpaper.upload'
+    },
+    addWallpaper: {
+        defaultMessage: 'Add',
+        description: 'Button to add wallpaper',
+        id: 'tw.wallpaper.add'
+    }
+});
 
 const WallpaperMenuItem = ({url, isSelected, onClick, onRemove}) => (
     <MenuItem onClick={onClick}>
@@ -100,6 +113,20 @@ const WallpaperInputForm = injectIntl(({intl, onSubmit, onOpacityChange, onDarkn
         }
     };
 
+    const handleFileChange = e => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = event => {
+                const dataUrl = event.target.result;
+                onSubmit(dataUrl, opacity, darkness);
+                // Reset file input
+                e.target.value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleOpacityChange = e => {
         const newOpacity = parseFloat(e.target.value);
         setOpacity(newOpacity);
@@ -140,12 +167,21 @@ const WallpaperInputForm = injectIntl(({intl, onSubmit, onOpacityChange, onDarkn
                         disabled={!url.trim()}
                         onClick={e => e.stopPropagation()}
                     >
-                        <FormattedMessage
-                            defaultMessage="Add"
-                            description="Button to add wallpaper"
-                            id="tw.wallpaper.add"
-                        />
+                        <FormattedMessage {...messages.addWallpaper} />
                     </button>
+                    <label
+                        className={styles.wallpaperButton}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <FormattedMessage {...messages.uploadWallpaper} />
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            onClick={e => e.stopPropagation()}
+                            style={{ display: 'none' }}
+                        />
+                    </label>
                 </div>
             </form>
             <div

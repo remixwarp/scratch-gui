@@ -13,10 +13,6 @@
     background-color: $ui-primary;
 }
 
-.body-wrapper.has-wallpaper {
-    background-color: transparent;
-}
-
 .body-wrapper * {
     box-sizing: border-box;
 }

@@ -178,15 +178,14 @@ const updateWallpaperObserverState = (hasWallpaper, opacity = 0.3) => {
  * @param {object} wallpaper wallpaper configuration
  */
 const applyWallpaper = wallpaper => {
-    const target = document.querySelector(".blocks-wrapper");
-    const bodyWrapper = document.querySelector('.body-wrapper');
+    const target = document.querySelector("[class*='blocks-wrapper_']");
 
     let checkCountTarget = 0;
     if (!target) {
         const maxChecks = 50;
         const checkInterval = setInterval(() => {
             checkCountTarget++;
-            const newTarget = document.querySelector(".blocks-wrapper");
+            const newTarget = document.querySelector("[class*='blocks-wrapper_']");
             if (newTarget) {
                 applyWallpaper(wallpaper);
                 clearInterval(checkInterval);
@@ -198,11 +197,6 @@ const applyWallpaper = wallpaper => {
     }
 
     if (wallpaper.url) {
-        // Add has-wallpaper class to body-wrapper to make background transparent
-        if (bodyWrapper) {
-            bodyWrapper.classList.add('has-wallpaper');
-        }
-        
         // Apply opacity by creating a semi-transparent overlay
         const opacity = Math.max(0.1, Math.min(1, wallpaper.opacity || 0.3));
         const overlayOpacity = 1 - opacity;
@@ -213,14 +207,25 @@ const applyWallpaper = wallpaper => {
         // Create a composite background with the image and darkness overlay
         // The darkness overlay is applied as a black semi-transparent layer over the image
         if (darkness > 0) {
-            target.style.background = `linear-gradient(rgba(0, 0, 0, ${darkness}), rgba(0, 0, 0, ${darkness})), url("${wallpaper.url}") center/cover no-repeat fixed`;
+            target.style.backgroundImage = `
+                linear-gradient(rgba(0, 0, 0, ${darkness}), rgba(0, 0, 0, ${darkness})),
+                url("${wallpaper.url}")
+            `;
         } else {
-            target.style.background = `url("${wallpaper.url}") center/cover no-repeat fixed`;
+            target.style.backgroundImage = `url("${wallpaper.url}")`;
         }
+        
+        target.style.backgroundSize = 'cover';
+        target.style.backgroundPosition = 'center';
+        target.style.backgroundRepeat = 'no-repeat';
+        target.style.backgroundAttachment = 'fixed';
         
         // Use CSS custom properties for overlay and darkness
         document.documentElement.style.setProperty('--wallpaper-overlay-opacity', overlayOpacity.toString());
         document.documentElement.style.setProperty('--wallpaper-darkness', darkness.toString());
+        
+        // Set workspace background to transparent so wallpaper shows through
+        document.documentElement.style.setProperty('--editorTheme3-workspace-background', 'transparent');
         
         // Apply JavaScript-based transparency to blocks workspace
         applyBlocksWorkspaceTransparency(true, opacity);
@@ -246,14 +251,14 @@ const applyWallpaper = wallpaper => {
         }, 500);
     } else {
         // Remove wallpaper
-        target.style.background = '';
+        target.style.backgroundImage = '';
+        target.style.backgroundSize = '';
+        target.style.backgroundPosition = '';
+        target.style.backgroundRepeat = '';
+        target.style.backgroundAttachment = '';
         document.documentElement.style.removeProperty('--wallpaper-overlay-opacity');
         document.documentElement.style.removeProperty('--wallpaper-darkness');
-        
-        // Remove has-wallpaper class from body-wrapper to restore background color
-        if (bodyWrapper) {
-            bodyWrapper.classList.remove('has-wallpaper');
-        }
+        document.documentElement.style.removeProperty('--editorTheme3-workspace-background');
         
         // Remove transparency from blocks workspace
         applyBlocksWorkspaceTransparency(false);
