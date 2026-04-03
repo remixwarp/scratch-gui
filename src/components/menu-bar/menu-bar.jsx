@@ -431,7 +431,7 @@ class MenuBar extends React.Component {
             'TurboWarp': { name: 'TurboWarp', url: 'https://turbowarp.org' },
             '02Engine': { name: '02Engine', url: 'https://02engine.02studio.xyz/' },
             'AstraEditor': { name: 'AstraEditor', url: 'https://www.astras.top/' },
-            'RemixWarp': { name: 'RemixWarp', url: 'https://editor.RemixWarp.org/' },
+            'RemixWarp': { name: 'RemixWarp', url: 'https://remixwarp.pages.dev/' },
             'Gandi': { name: 'Gandi', url: 'https://getgandi.com/' }
         };
         return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
