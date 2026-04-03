@@ -317,6 +317,19 @@ const settingDefinitions = {
             description: 'Super Refactor help',
             id: 'tw.settingsModal.superRefactorHelp'
         }
+    },
+    multiWorkspaces: {
+        label: {
+            defaultMessage: '多工作区',
+            description: 'Multi Workspaces setting',
+            id: 'tw.settingsModal.multiWorkspaces'
+        },
+        help: {
+            // eslint-disable-next-line max-len
+            defaultMessage: '启用多工作区功能。启用后，您可以在代码编辑器中同时查看和编辑多个角色或舞台的代码，每个工作区显示为一个标签页。',
+            description: 'Multi Workspaces help',
+            id: 'tw.settingsModal.multiWorkspacesHelp'
+        }
     }
 };
 
@@ -349,6 +362,7 @@ const WarpTimer = createBooleanSetting('WarpTimer', settingDefinitions.warpTimer
 const CaseSensitiveLists = createBooleanSetting('CaseSensitiveLists', settingDefinitions.caseSensitiveLists);
 const RealLayerIndexes = createBooleanSetting('RealLayerIndexes', settingDefinitions.realLayerIndexes);
 const SuperRefactor = createBooleanSetting('SuperRefactor', settingDefinitions.superRefactor);
+const MultiWorkspaces = createBooleanSetting('MultiWorkspaces', settingDefinitions.multiWorkspaces);
 
 const DisableCompiler = props => (
     <BooleanSetting
@@ -665,6 +679,13 @@ const pageConfigurations = {
                             value: props.superRefactor,
                             onChange: props.onSuperRefactorChange
                         })
+                    },
+                    {
+                        component: MultiWorkspaces,
+                        props: props => ({
+                            value: props.multiWorkspaces,
+                            onChange: props.onMultiWorkspacesChange
+                        })
                     }
                 ]
             }
@@ -837,7 +858,9 @@ SettingsModalComponent.propTypes = {
     debugMode: PropTypes.bool,
     onDebugModeChange: PropTypes.func,
     showFPSCounter: PropTypes.bool,
-    onShowFPSCounterChange: PropTypes.func
+    onShowFPSCounterChange: PropTypes.func,
+    multiWorkspaces: PropTypes.bool,
+    onMultiWorkspacesChange: PropTypes.func
 };
 
 export default injectIntl(SettingsModalComponent);

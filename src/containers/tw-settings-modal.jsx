@@ -26,7 +26,8 @@ class UsernameModal extends React.Component {
             showFPSCounter: localStorage.getItem('mw:show-fps-counter') === 'true',
             viewCompiledMode: localStorage.getItem('mw:view-compiled-mode') === 'true',
             storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true',
-            superRefactor: localStorage.getItem('mw:super-refactor') === 'true'
+            superRefactor: localStorage.getItem('mw:super-refactor') === 'true',
+            multiWorkspaces: localStorage.getItem('mw:multi-workspaces') === 'true'
         };
 
         bindAll(this, [
@@ -50,7 +51,8 @@ class UsernameModal extends React.Component {
             'handleShowFPSCounterChange',
             'handleViewCompiledModeChange',
             'handleStoreThemeInProjectChange',
-            'handleSuperRefactorChange'
+            'handleSuperRefactorChange',
+            'handleMultiWorkspacesChange'
         ]);
     }
 
@@ -211,6 +213,18 @@ class UsernameModal extends React.Component {
             // ignore
         }
     }
+
+    handleMultiWorkspacesChange (e) {
+        this.setState({multiWorkspaces: e.target.checked});
+        try {
+            localStorage.setItem('mw:multi-workspaces', e.target.checked);
+            window.dispatchEvent(new CustomEvent('mw-settings-changed', {
+                detail: {key: 'multi-workspaces', value: e.target.checked}
+            }));
+        } catch (err) {
+            // ignore
+        }
+    }
     render () {
         const {
             /* eslint-disable no-unused-vars */
@@ -248,12 +262,14 @@ class UsernameModal extends React.Component {
                 onViewCompiledModeChange={this.handleViewCompiledModeChange}
                 onStoreThemeInProjectChange={this.handleStoreThemeInProjectChange}
                 onSuperRefactorChange={this.handleSuperRefactorChange}
+                onMultiWorkspacesChange={this.handleMultiWorkspacesChange}
                 optimizeAnimations={this.state.optimizeAnimations}
                 debugMode={this.state.debugMode}
                 showFPSCounter={this.state.showFPSCounter}
                 viewCompiledMode={this.state.viewCompiledMode}
                 storeThemeInProject={this.state.storeThemeInProject}
                 superRefactor={this.state.superRefactor}
+                multiWorkspaces={this.state.multiWorkspaces}
                 theme={this.props.theme}
                 {...props}
             />

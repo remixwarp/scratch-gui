@@ -10,6 +10,7 @@ import tabStyles from 'react-tabs/style/react-tabs.css';
 import VM from 'scratch-vm';
 
 import Blocks from '../../containers/blocks.jsx';
+import MultiWorkspaces from '../../components/blocks/multi-workspaces.jsx';
 import CostumeTab from '../../containers/costume-tab.jsx';
 import SoundTab from '../../containers/sound-tab.jsx';
 const ExtensionLibrary = React.lazy(() => import('../../containers/extension-library.jsx'));
@@ -226,6 +227,13 @@ const getCachedBorderWidth = element => {
 const GUIComponent = props => {
     const [showDonationModal, setShowDonationModal] = useState(false);
     const [donationCount, setDonationCount] = useState(0);
+    const [multiWorkspacesEnabled, setMultiWorkspacesEnabled] = useState(() => {
+        try {
+            return localStorage.getItem('mw:multi-workspaces') === 'true';
+        } catch (e) {
+            return false;
+        }
+    });
     
     // Handle startup count and donation modal
     useEffect(() => {
@@ -250,6 +258,20 @@ const GUIComponent = props => {
     const handleCloseDonationModal = () => {
         setShowDonationModal(false);
     };
+
+    useEffect(() => {
+        const handleSettingsChange = (e) => {
+            if (e.detail && e.detail.key === 'multi-workspaces') {
+                setMultiWorkspacesEnabled(e.detail.value);
+            }
+        };
+
+        window.addEventListener('mw-settings-changed', handleSettingsChange);
+
+        return () => {
+            window.removeEventListener('mw-settings-changed', handleSettingsChange);
+        };
+    }, []);
     const handleEnableProcedureReturns = useCallback(() => {
         try {
             const workspace = AddonHooks.blocklyWorkspace;
@@ -494,6 +516,7 @@ const GUIComponent = props => {
         invalidProjectModalVisible,
         gitModalVisible,
         shortcutManagerModalVisible,
+        editingTarget,
         vm,
         ...componentProps
     } = omit(props, 'dispatch');
@@ -843,19 +866,30 @@ const GUIComponent = props => {
                                 </TabList>
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     <Box className={styles.blocksWrapper}>
-                                        <Blocks
-                                            key={`${blocksId}/${theme.id}`}
-                                            canUseCloud={canUseCloud}
-                                            grow={1}
-                                            isVisible={blocksTabVisible}
-                                            options={{
-                                                media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
-                                            }}
-                                            stageSize={stageSize}
-                                            onOpenCustomExtensionModal={onOpenCustomExtensionModal}
-                                            theme={theme}
-                                            vm={vm}
-                                        />
+                                        {multiWorkspacesEnabled ? (
+                                            <MultiWorkspaces
+                                                canUseCloud={canUseCloud}
+                                                stageSize={stageSize}
+                                                onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                                                theme={theme}
+                                                vm={vm}
+                                                editingTarget={editingTarget}
+                                            />
+                                        ) : (
+                                            <Blocks
+                                                key={`${blocksId}/${theme.id}`}
+                                                canUseCloud={canUseCloud}
+                                                grow={1}
+                                                isVisible={blocksTabVisible}
+                                                options={{
+                                                    media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
+                                                }}
+                                                stageSize={stageSize}
+                                                onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                                                theme={theme}
+                                                vm={vm}
+                                            />
+                                        )}
                                     </Box>
                                     <Box className={styles.extensionButtonContainer}>
                                         <button
@@ -1077,7 +1111,8 @@ const mapStateToProps = state => ({
     shortcutManagerModalVisible: state.scratchGui.modals.shortcutManagerModal,
     extensionLoadChoiceModalVisible: state.scratchGui.modals.extensionLoadChoiceModal,
     extensionLoadChoiceData: state.scratchGui.modals.extensionLoadChoiceData,
-    gandiHelpModal: state.scratchGui.modals.gandiHelpModal
+    gandiHelpModal: state.scratchGui.modals.gandiHelpModal,
+    editingTarget: state.scratchGui.targets && state.scratchGui.targets.editingTarget
 });
 
 const mapDispatchToProps = dispatch => ({
