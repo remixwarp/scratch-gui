@@ -338,7 +338,8 @@ module.exports = [
                 patterns: [
                     {
                         from: 'asset',
-                        to: 'asset'
+                        to: 'asset',
+                        noErrorOnMissing: true
                     }
                 ]
             })
@@ -402,7 +403,8 @@ module.exports = [
                     patterns: [
                         {
                             from: 'asset',
-                            to: 'asset'
+                            to: 'asset',
+                            noErrorOnMissing: true
                         }
                     ]
                 })
