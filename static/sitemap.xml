@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- 主页 -->
+  <url>
+    <loc>https://remixwarp.pages.dev/</loc>
+    <lastmod>2026-04-05</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- 编辑器界面 -->
+  <url>
+    <loc>https://remixwarp.pages.dev/editor.html</loc>
+    <lastmod>2026-04-05</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- 捐赠页面 -->
+  <url>
+    <loc>https://remixwarp.pages.dev/donate.html</loc>
+    <lastmod>2026-04-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- 隐私政策 -->
+  <url>
+    <loc>https://remixwarp.pages.dev/privacy.html</loc>
+    <lastmod>2026-04-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- 嵌入测试页面 -->
+  <url>
+    <loc>https://remixwarp.pages.dev/embedtest.html</loc>
+    <lastmod>2026-04-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- 嵌入测试错误页面 -->
+  <url>
+    <loc>https://remixwarp.pages.dev/embedtestbad.html</loc>
+    <lastmod>2026-04-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>
