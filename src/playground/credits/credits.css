@@ -54,3 +54,24 @@ a {
 .user:link:hover {
     background: $ui-black-transparent;
 }
+
+.languageSelector {
+    text-align: right;
+    margin: 20px;
+}
+
+.languageSelector button {
+    background: none;
+    border: 1px solid $ui-black-transparent;
+    padding: 5px 10px;
+    margin-left: 5px;
+    cursor: pointer;
+    border-radius: 3px;
+    color: inherit;
+}
+
+.languageSelector button.active {
+    background-color: $looks-secondary;
+    color: white;
+    border-color: $looks-secondary;
+}

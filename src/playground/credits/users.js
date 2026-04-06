@@ -44,7 +44,7 @@ const contributors = [
     },
     {
         userID: '273910431',
-        username: 'DL_Grass'
+        username: 'DLGrass'
     },
 
 ].map(fromHardcoded);
