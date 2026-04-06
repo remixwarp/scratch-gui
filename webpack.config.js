@@ -83,8 +83,7 @@ const base = {
                 });
             }
 
-            // 后端服务器已禁用
-            console.log('\n[超级重构] 后端服务器已禁用\n');
+
         }
     },
     output: {
