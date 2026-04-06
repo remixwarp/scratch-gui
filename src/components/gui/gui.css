@@ -323,6 +323,11 @@ $fade-out-distance: 15px;
 .menu-bar-position {
     position: relative;
     z-index: $z-index-menu-bar;
+    transition: transform 0.3s ease-in-out;
+}
+
+.menu-bar-hidden {
+    transform: translateY(-100%);
 }
 /* Alerts */
 
