@@ -14,29 +14,96 @@ import UserData from './users';
 applyGuiColors(detectTheme());
 document.documentElement.lang = 'en';
 
-const User = ({image, text, href}) => (
-    <a
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className={styles.user}
-    >
-        <img
-            loading="lazy"
-            className={styles.userImage}
-            src={image}
-            width="60"
-            height="60"
-        />
-        <div className={styles.userInfo}>
-            {text}
-        </div>
-    </a>
-);
+const Modal = ({ isOpen, onClose, onConfirm, onCancel, title, message, confirmText, cancelText }) => {
+    if (!isOpen) return null;
+
+    return ReactDOM.createPortal(
+        <div className={styles.modalOverlay}>
+            <div className={styles.modal}>
+                <div className={styles.modalTitle}>{title}</div>
+                <div className={styles.modalMessage}>{message}</div>
+                <div className={styles.modalButtons}>
+                    {onConfirm && (
+                        <button className={styles.modalButton} onClick={onConfirm}>
+                            {confirmText}
+                        </button>
+                    )}
+                    {onCancel && (
+                        <button className={styles.modalButton} onClick={onCancel}>
+                            {cancelText}
+                        </button>
+                    )}
+                    <button className={styles.modalButton} onClick={onClose}>
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+};
+
+const User = ({image, text, github, bilibili}) => {
+    const [modalOpen, setModalOpen] = useState(false);
+
+    const handleClick = () => {
+        if (github && bilibili) {
+            setModalOpen(true);
+        } else if (github) {
+            window.open(github, '_blank', 'noreferrer');
+        } else if (bilibili) {
+            window.open(bilibili, '_blank', 'noreferrer');
+        }
+    };
+
+    const handleGitHub = () => {
+        window.open(github, '_blank', 'noreferrer');
+        setModalOpen(false);
+    };
+
+    const handleBilibili = () => {
+        window.open(bilibili, '_blank', 'noreferrer');
+        setModalOpen(false);
+    };
+
+    return (
+        <>
+            <div className={styles.user} onClick={handleClick}>
+                <img
+                    loading="lazy"
+                    className={styles.userImage}
+                    src={image}
+                    width="60"
+                    height="60"
+                />
+                <div className={styles.userInfo}>
+                    {text}
+                </div>
+            </div>
+            <Modal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onConfirm={handleGitHub}
+                onCancel={handleBilibili}
+                title="选择链接"
+                message={
+                    <div>
+                        <p>请选择要访问的链接：</p>
+                        <p>1. GitHub: {github}</p>
+                        <p>2. Bilibili: {bilibili}</p>
+                    </div>
+                }
+                confirmText="访问 GitHub"
+                cancelText="访问 Bilibili"
+            />
+        </>
+    );
+};
 User.propTypes = {
     image: PropTypes.string.isRequired,
     text: PropTypes.string.isRequired,
-    href: PropTypes.string
+    github: PropTypes.string,
+    bilibili: PropTypes.string
 };
 
 const UserList = ({users}) => (

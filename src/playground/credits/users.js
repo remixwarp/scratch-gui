@@ -8,13 +8,16 @@ const shuffle = list => {
     return list;
 };
 
-const fromHardcoded = ({userID = '0', username}) => {
+const fromHardcoded = ({userID = '0', username, uid}) => {
     const result = {
         image: `https://avatars.githubusercontent.com/u/${userID}`,
         text: username
     };
     if (username && userID !== '0') {
-        result.href = `https://github.com/${username}/`;
+        result.github = `https://github.com/${username}/`;
+    }
+    if (uid) {
+        result.bilibili = `https://space.bilibili.com/${uid}/`;
     }
     return result;
 };
@@ -32,19 +35,23 @@ const contributors = [
     },
     {
         userID: '222322998',
-        username: 'xiao-xiao-lang'
+        username: 'xiao-xiao-lang',
+        uid:"3546876326447960"
     },
     {
         userID: '148440803',
-        username: 'RyaninCn11'
+        username: 'RyaninCn11',
+        uid:"1413670374"
     },
     {
         userID: '194891433',
-        username: 'LycheeNap'
+        username: 'LycheeNap',
+        uid:"3546662593104166"
     },
     {
         userID: '273910431',
-        username: 'DLGrass'
+        username: 'DLGrass',
+        uid:"3546642852612185"
     },
 
 ].map(fromHardcoded);
