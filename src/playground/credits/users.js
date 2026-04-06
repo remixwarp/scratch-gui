@@ -41,7 +41,11 @@ const contributors = [
     {
         userID: '194891433',
         username: 'LycheeNap'
-    }
+    },
+    {
+        userID: '273910431',
+        username: 'DL_Grass'
+    },
 
 ].map(fromHardcoded);
 
