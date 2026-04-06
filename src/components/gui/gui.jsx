@@ -578,6 +578,8 @@ const GUIComponent = props => {
         };
     }, [onStartSelectingFileUpload, onClickPackager, vm, props.dispatch]);
 
+
+
     const tabClassNames = useMemo(() => ({
         tabs: styles.tabs,
         tab: classNames(tabStyles.reactTabsTab, styles.tab),
@@ -777,7 +779,12 @@ const GUIComponent = props => {
                     canRemix={canRemix}
                     canSave={canSave}
                     canShare={canShare}
-                    className={styles.menuBarPosition}
+                    className={classNames(
+                        styles.menuBarPosition,
+                        {
+                            [styles.menuBarHidden]: isFullScreen
+                        }
+                    )}
                     enableCommunity={enableCommunity}
                     isShared={isShared}
                     isTotallyNormal={isTotallyNormal}
