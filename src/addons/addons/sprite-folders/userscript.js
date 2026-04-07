@@ -207,11 +207,11 @@ export default async ({ addon, console, msg }) => {
 
                 // Fallback to asset URL
                 if (costume.asset.assetId) {
-                    const url = `https://assets.scratch.mit.edu/internalapi/asset/${costume.asset.assetId}.${costume.dataFormat || 'png'}/get/`;
+                    const url = `https://rw-asset.pages.dev/asset/internalapi/asset/${costume.asset.assetId}.${costume.dataFormat || 'png'}/get/`;
                     return url;
                 }
                 if (costume.md5ext) {
-                    return `https://assets.scratch.mit.edu/internalapi/asset/${costume.md5ext}/get/`;
+                    return `https://rw-asset.pages.dev/asset/internalapi/asset/${costume.md5ext}/get/`;
                 }
             }
         }
@@ -252,7 +252,7 @@ export default async ({ addon, console, msg }) => {
                         icon.src = dataUri;
                     }
                 }).catch(() => {
-                    const url = `https://assets.scratch.mit.edu/internalapi/asset/${costume.asset.assetId}.${costume.dataFormat || 'png'}/get/`;
+                    const url = `https://rw-asset.pages.dev/asset/internalapi/asset/${costume.asset.assetId}.${costume.dataFormat || 'png'}/get/`;
                     if (icon.parentNode) {
                         icon.src = url;
                     }
