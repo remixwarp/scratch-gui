@@ -481,5 +481,27 @@
   "gui.collaboration.captchaLabel": "答案",
   "gui.collaboration.verifyCaptcha": "验证",
   "gui.collaboration.newCaptcha": "新挑战",
-  "gui.collaboration.cancelVerification": "取消"
+  "gui.collaboration.cancelVerification": "取消",
+  
+  "coder-style/@name": "代码风格",
+  "coder-style/@description": "极简主义积木风格：仅彩色文本，无可见边框，输入框采用括号风格",
+  "coder-style/@settings-block-opacity": "积木透明度",
+  "coder-style/@settings-c-shape-opacity": "C形积木透明度",
+  "coder-style/@settings-boolean-opacity": "布尔积木透明度",
+  "coder-style/@settings-input-opacity": "输入积木透明度",
+  
+  "comment-vscode-sync/@name": "VS Code 注释同步",
+  "comment-vscode-sync/@description": "在 Scratch 编辑器和 VS Code 之间同步注释",
+  
+  "Terminal/@name": "终端",
+  "Terminal/@description": "添加一个按钮以打开带有 xterm.js 的独立终端窗口",
+  
+  "astras-copilot/@name": "Astra Copilot",
+  "astras-copilot/@description": "为 Scratch 添加 AI 辅助编程功能",
+  
+  "my-blocks-plus/@name": "我的积木增强",
+  "my-blocks-plus/@description": "增强自定义积木的功能和灵活性",
+  
+  "hide-menubar/@name": "隐藏菜单栏",
+  "hide-menubar/@description": "隐藏编辑器顶部的菜单栏，增加工作区空间"
 }

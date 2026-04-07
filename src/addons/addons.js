@@ -89,7 +89,13 @@ const addons = [
     'stage-camera',
     'sprite-folders',
     'tab-styles',
-    'window-theme'
+    'window-theme',
+    'coder-style',
+    'comment-vscode-sync',
+    'Terminal',
+    'astras-copilot',
+    'my-blocks-plus',
+    'hide-menubar'
 ];
 
 const newAddons = [
@@ -97,7 +103,13 @@ const newAddons = [
     'autosave',
     'no-category-text',
     'green-flag-order',
-    'remove-extension-button'
+    'remove-extension-button',
+    'coder-style',
+    'comment-vscode-sync',
+    'Terminal',
+    'astras-copilot',
+    'my-blocks-plus',
+    'hide-menubar'
 ];
 
 // eslint-disable-next-line import/no-commonjs

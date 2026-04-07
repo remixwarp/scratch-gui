@@ -152,16 +152,130 @@ a:active, a:focus {
     text-align: center;
 }
 
+.main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
 .addons {
+    flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 10px 20px;
-    height: 100%;
 }
 @media (max-width: 700px) {
     .addons {
         padding-left: 5px;
         padding-right: 5px;
+    }
+}
+
+.sidebar {
+    width: 250px;
+    background-color: $ui-secondary;
+    border-left: 1px solid $ui-black-transparent;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* 多级下拉菜单样式 */
+.dropdown-container {
+    margin-bottom: 20px;
+}
+
+.dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: $ui-tertiary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-header:hover {
+    background-color: $ui-white;
+}
+
+.dropdown-title {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.dropdown-arrow {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.dropdown-menu {
+    margin-top: 5px;
+    background-color: $ui-secondary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px $shadow;
+    overflow: hidden;
+}
+
+.dropdown-level {
+    padding: 10px 0;
+}
+
+.dropdown-item {
+    margin-bottom: 5px;
+}
+
+.dropdown-button {
+    width: 100%;
+    padding: 8px 15px;
+    background: $ui-tertiary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    margin-bottom: 5px;
+}
+
+.dropdown-button:hover {
+    background-color: $ui-white;
+    border-color: $looks-secondary;
+}
+
+.dropdown-button-active {
+    background-color: $looks-secondary;
+    color: white;
+    border-color: $looks-secondary;
+}
+
+.dropdown-submenu {
+    margin-top: 5px;
+    padding: 10px 15px;
+    background-color: $ui-tertiary;
+    border-top: 1px solid $ui-black-transparent;
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 200px;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid $ui-black-transparent;
+        padding: 15px;
+        max-height: 300px;
     }
 }
 
@@ -701,5 +815,163 @@ a:active, a:focus {
     }
     to {
         transform: translateY(0);
+    }
+}
+
+/* Editor and Category buttons */
+
+.editorMenu {
+    margin-bottom: 24px;
+}
+
+.editorMenu h3 {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: $text-primary;
+    text-transform: uppercase;
+}
+
+.editorButtonContainer {
+    margin-bottom: 8px;
+}
+
+.editorButtonWrapper {
+    display: flex;
+    align-items: center;
+}
+
+.editorButton {
+    flex: 1;
+    padding: 10px 16px;
+    background: $ui-tertiary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px 0 0 4px;
+    color: $text-primary;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.categoryToggleButton {
+    width: 36px;
+    padding: 10px 8px;
+    background: $ui-tertiary;
+    border: 1px solid $ui-black-transparent;
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    color: $text-primary;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.editorButtonWrapper:hover .editorButton,
+.editorButtonWrapper:hover .categoryToggleButton {
+    background: $ui-white;
+    border-color: $looks-secondary;
+}
+
+.editorButtonActive {
+    background: $looks-secondary;
+    color: white;
+    border-color: $looks-secondary;
+}
+
+.editorButtonActive + .categoryToggleButton {
+    background: $looks-secondary;
+    color: white;
+    border-color: $looks-secondary;
+}
+
+.editorButtonWrapper:hover .editorButtonActive,
+.editorButtonWrapper:hover .editorButtonActive + .categoryToggleButton {
+    background: $looks-secondary-dark;
+    border-color: $looks-secondary-dark;
+}
+
+.editorButton:hover {
+    background: $ui-white;
+    border-color: $looks-secondary;
+}
+
+.editorButtonActive {
+    background: $looks-secondary;
+    color: white;
+    border-color: $looks-secondary;
+}
+
+.editorButtonActive:hover {
+    background: $looks-secondary-dark;
+    border-color: $looks-secondary-dark;
+}
+
+.categoryMenu {
+    margin-top: 8px;
+    margin-left: 16px;
+    margin-bottom: 16px;
+}
+
+.categoryMenu h4 {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: $text-primary;
+    text-transform: uppercase;
+}
+
+.categoryButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.categoryButton {
+    padding: 8px 12px;
+    background: $ui-tertiary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    color: $text-primary;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    outline: none;
+    width: 100%;
+}
+
+.categoryButton:hover {
+    background: $ui-white;
+    border-color: $looks-secondary;
+}
+
+.categoryButtonActive {
+    background: $looks-secondary;
+    color: white;
+    border-color: $looks-secondary;
+}
+
+.categoryButtonActive:hover {
+    background: $looks-secondary-dark;
+    border-color: $looks-secondary-dark;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .categoryButtons {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .categoryButton {
+        flex: 1;
+        min-width: 100px;
+        text-align: center;
     }
 }

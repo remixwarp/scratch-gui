@@ -39,6 +39,9 @@ import {applyGuiColors} from '../../lib/themes/guiHelpers.js';
 import {APP_NAME, FEEDBACK_URL} from '../../lib/constants/brand.js';
 import '../../lib/normalize.css';
 
+// 编辑器名称
+const EDITOR_NAME = 'RemixWarp';
+
 /* eslint-disable no-alert */
 /* eslint-disable no-console */
 /* eslint-disable react/no-multi-comp */
@@ -133,6 +136,148 @@ const getAllTags = () => {
     return Array.from(tags).sort();
 };
 const allTags = getAllTags();
+
+// 多级下拉菜单组件
+class MultiLevelDropdown extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            open: false,
+            selectedEditor: this.props.selectedEditor || 'remixwarp',
+            selectedCategory: this.props.selectedCategory || 'all'
+        };
+        this.handleToggleDropdown = this.handleToggleDropdown.bind(this);
+        this.handleEditorSelect = this.handleEditorSelect.bind(this);
+        this.handleCategorySelect = this.handleCategorySelect.bind(this);
+        this.handleContainerClick = this.handleContainerClick.bind(this);
+    }
+    
+    componentDidUpdate(prevProps) {
+        if (prevProps.selectedEditor !== this.props.selectedEditor) {
+            this.setState({ selectedEditor: this.props.selectedEditor });
+        }
+        if (prevProps.selectedCategory !== this.props.selectedCategory) {
+            this.setState({ selectedCategory: this.props.selectedCategory });
+        }
+    }
+    
+    handleContainerClick(e) {
+        e.stopPropagation();
+    }
+    
+    handleToggleDropdown(e) {
+        e.stopPropagation();
+        this.setState(prevState => ({
+            open: !prevState.open
+        }));
+    }
+    
+    handleEditorSelect(editorId) {
+        this.setState({
+            selectedEditor: editorId,
+            selectedCategory: 'all'
+        });
+        if (this.props.onEditorSelect) {
+            this.props.onEditorSelect(editorId);
+        }
+    }
+    
+    handleCategorySelect(categoryId) {
+        this.setState({
+            selectedCategory: categoryId
+        });
+        if (this.props.onCategorySelect) {
+            this.props.onCategorySelect(categoryId);
+        }
+    }
+    
+    render() {
+        const { open, selectedEditor, selectedCategory } = this.state;
+        const editors = [
+            { id: 'remixwarp', name: 'RemixWarp' },
+            { id: '02engine', name: '02Engine' },
+            { id: 'astraeditor', name: 'AstraEditor' },
+            { id: 'turbowarp', name: 'TurboWarp' },
+            { id: 'bilup', name: 'Bilup' }
+        ];
+        
+        const categories = [
+        { id: 'all', name: '全部插件' },
+        { id: 'new', name: '新插件' },
+        { id: 'theme', name: '主题' },
+        { id: 'editor', name: '编辑器' },
+        { id: 'debug', name: '调试' },
+        { id: 'utility', name: '实用工具' },
+        { id: 'sprites', name: '角色' },
+        { id: 'stage', name: '舞台' },
+        { id: 'workflow', name: '工作流' },
+        { id: 'ui', name: '界面' },
+        { id: 'toolbox', name: '工具箱' }
+    ];
+        
+        return (
+            <div className={styles.dropdownContainer} onClick={this.handleContainerClick}>
+                <div className={styles.dropdownHeader} onClick={this.handleToggleDropdown}>
+                    <span className={styles.dropdownTitle}>{EDITOR_NAME}</span>
+                    <span className={styles.dropdownArrow}>{open ? '▼' : '▶'}</span>
+                </div>
+                {open && (
+                    <div className={styles.dropdownMenu}>
+                        {/* 第一级：编辑器选择 */}
+                        <div className={styles.dropdownLevel}>
+                            {editors.map(editor => (
+                                <div key={editor.id} className={styles.dropdownItem}>
+                                    <button
+                                        className={classNames(styles.dropdownButton, {
+                                            [styles.dropdownButtonActive]: selectedEditor === editor.id
+                                        })}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            this.handleEditorSelect(editor.id);
+                                        }}
+                                    >
+                                        {editor.name}
+                                    </button>
+                                    {selectedEditor === editor.id && (
+                                        <div className={styles.dropdownSubmenu}>
+                                            {/* 第二级：分类选择 */}
+                                            <div className={styles.dropdownLevel}>
+                                                {categories.map(category => (
+                                                    <div key={category.id} className={styles.dropdownItem}>
+                                                        <button
+                                                            className={classNames(styles.dropdownButton, {
+                                                                [styles.dropdownButtonActive]: selectedCategory === category.id
+                                                            })}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                this.handleCategorySelect(category.id);
+                                                            }}
+                                                        >
+                                                            {category.name}
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+}
+MultiLevelDropdown.propTypes = {
+    selectedTags: PropTypes.instanceOf(Set).isRequired,
+    onTagToggle: PropTypes.func.isRequired,
+    onClearAll: PropTypes.func.isRequired,
+    selectedEditor: PropTypes.string,
+    selectedCategory: PropTypes.string,
+    onEditorSelect: PropTypes.func,
+    onCategorySelect: PropTypes.func
+};
 
 const getInitialSearch = () => {
     const hash = location.hash.substring(1);
@@ -925,11 +1070,81 @@ class AddonList extends React.Component {
             )
         );
     }
+    
+    filterAddonsByEditor (addons) {
+        if (!this.props.selectedEditors || this.props.selectedEditors.length === 0) {
+            return [];
+        }
+        
+        // 编辑器对应的插件标签
+        const editorTags = {
+            // TW与BL都有的存入TW
+            turbowarp: ['cat-blocks', 'editor-devtools', 'find-bar', 'middle-click-popup', 'jump-to-def', 'reorder-custom-inputs', 'editor-searchable-dropdowns', 'data-category-tweaks-v2', 'block-palette-icons', 'hide-flyout', 'mediarecorder', 'drag-drop', 'debugger', 'pause', 'mute-project', 'vol-slider', 'clones', 'mouse-pos', 'color-picker', 'remove-sprite-confirm', 'block-count', 'onion-skinning', 'paint-snap', 'default-costume-editor-color', 'bitmap-copy', '2d-color-picker', 'paint-skew', 'better-img-uploads', 'pick-colors-from-stage', 'custom-block-shape', 'editor-square-inputs', 'zebra-striping', 'custom-menu-bar', 'editor-theme3', 'custom-block-text', 'editor-colored-context-menus', 'editor-stage-left', 'editor-buttons-reverse-order', 'variable-manager', 'search-sprites', 'sprite-properties', 'gamepad', 'editor-sounds', 'folders', 'block-switching', 'load-extensions', 'custom-zoom', 'copy-reporter', 'initialise-sprite-position', 'blocks2image', 'remove-curved-stage-border', 'transparent-orphans', 'paint-by-default', 'block-cherry-picking', 'hide-new-variables', 'editor-extra-keys', 'hide-delete-button', 'no-script-bumping', 'disable-stage-drag-select', 'move-to-top-bottom', 'move-to-top-layer', 'disable-paste-offset', 'block-duplicate', 'rename-broadcasts', 'swap-local-global', 'editor-comment-previews', 'columns', 'number-pad', 'editor-number-arrow-keys', 'script-snap', 'fullscreen', 'hide-stage', 'tw-straighten-comments', 'tw-remove-backpack', 'tw-remove-feedback', 'tw-disable-cloud-variables', 'editor-stepping', 'canvas-screenshot'],
+            
+            // BL特有的插件
+            bilup: ['autosave', 'no-category-text', 'green-flag-order', 'remove-extension-button', 'tab-styles', 'sprite-folders'],
+            
+            // RW与BL对比多出的存入RW
+            remixwarp: ['calculator', 'daily-quote', 'workspace-tabs', 'stage-camera', 'window-theme'],
+            
+            // AE与TW对比多出的存入AE
+            astraeditor: ['Terminal', 'astras-copilot', 'my-blocks-plus', 'hide-menubar'],
+            
+            // 02与TW对比多出的存入02
+            '02engine': ['coder-style', 'comment-vscode-sync']
+        };
+        
+        // 收集所有选中编辑器的插件ID
+        const selectedAddonIds = new Set();
+        this.props.selectedEditors.forEach(editorId => {
+            const addonIds = editorTags[editorId] || [];
+            addonIds.forEach(id => selectedAddonIds.add(id));
+        });
+        
+        return addons.filter(addon => selectedAddonIds.has(addon.id));
+    }
+    
+    filterAddonsByCategory (addons) {
+        if (!this.props.selectedEditors || this.props.selectedEditors.length === 0) {
+            return [];
+        }
+        
+        // 收集所有选中编辑器的分类
+        const selectedCategories = new Set();
+        this.props.selectedEditors.forEach(editorId => {
+            const category = this.props.editorCategories[editorId];
+            if (category && category !== 'all') {
+                selectedCategories.add(category);
+            }
+        });
+        
+        // 如果所有选中的编辑器都选择了'全部插件'分类，或者没有选中任何分类，则返回所有插件
+        if (selectedCategories.size === 0) {
+            return addons;
+        }
+        
+        // 过滤插件，只要插件的标签包含任何一个选中的分类，就保留它
+        return addons.filter(addon => {
+            if (selectedCategories.has('new')) {
+                return addon.manifest.tags.includes('new');
+            }
+            return Array.from(selectedCategories).some(category => 
+                addon.manifest.tags.includes(category)
+            );
+        });
+    }
+    
     render () {
         let filteredAddons = this.props.addons;
         
         // Apply tag filtering first
         filteredAddons = this.filterAddonsByTags(filteredAddons);
+        
+        // Apply editor filtering
+        filteredAddons = this.filterAddonsByEditor(filteredAddons);
+        
+        // Apply category filtering
+        filteredAddons = this.filterAddonsByCategory(filteredAddons);
         
         if (this.props.search) {
             // Rebuild search index with filtered addons
@@ -1008,6 +1223,8 @@ AddonList.propTypes = {
     })).isRequired,
     search: PropTypes.string.isRequired,
     selectedTags: PropTypes.instanceOf(Set).isRequired,
+    selectedEditors: PropTypes.arrayOf(PropTypes.string).isRequired,
+    editorCategories: PropTypes.objectOf(PropTypes.string).isRequired,
     extended: PropTypes.bool.isRequired
 };
 
@@ -1026,6 +1243,9 @@ class AddonSettingsComponent extends React.Component {
         this.searchRef = this.searchRef.bind(this);
         this.handleTagFilter = this.handleTagFilter.bind(this);
         this.handleClearAll = this.handleClearAll.bind(this);
+        this.handleEditorSelect = this.handleEditorSelect.bind(this);
+        this.handleCategorySelect = this.handleCategorySelect.bind(this);
+        this.handleToggleCategoryMenu = this.handleToggleCategoryMenu.bind(this);
         this.searchBar = null;
         this.state = {
             loading: false,
@@ -1033,6 +1253,9 @@ class AddonSettingsComponent extends React.Component {
             search: getInitialSearch(),
             extended: false,
             selectedTags: new Set(),
+            selectedEditors: ['remixwarp'], // 支持选择多个编辑器
+            editorCategories: { remixwarp: 'all' }, // 每个编辑器的分类选择
+            openCategoryMenus: { remixwarp: true }, // 控制每个编辑器的分类菜单是否打开
             ...this.readFullAddonState()
         };
         if (Channels.changeChannel) {
@@ -1204,6 +1427,56 @@ class AddonSettingsComponent extends React.Component {
             selectedTags: new Set()
         });
     }
+    
+    handleEditorSelect (editorId) {
+        this.setState(prevState => {
+            const isSelected = prevState.selectedEditors.includes(editorId);
+            let newSelectedEditors;
+            let newEditorCategories;
+            
+            if (isSelected) {
+                // 取消选择编辑器
+                newSelectedEditors = prevState.selectedEditors.filter(id => id !== editorId);
+                newEditorCategories = { ...prevState.editorCategories };
+                delete newEditorCategories[editorId];
+            } else {
+                // 添加选择编辑器
+                newSelectedEditors = [...prevState.selectedEditors, editorId];
+                newEditorCategories = {
+                    ...prevState.editorCategories,
+                    [editorId]: 'all' // 默认选择全部插件分类
+                };
+            }
+            
+            return {
+                selectedEditors: newSelectedEditors,
+                editorCategories: newEditorCategories,
+                openCategoryMenus: {
+                    ...prevState.openCategoryMenus,
+                    [editorId]: true // 选择编辑器时自动打开其分类菜单
+                }
+            };
+        });
+    }
+    
+    handleCategorySelect (editorId, categoryId) {
+        this.setState(prevState => ({
+            editorCategories: {
+                ...prevState.editorCategories,
+                [editorId]: categoryId
+            }
+        }));
+    }
+    
+    handleToggleCategoryMenu (editorId) {
+        this.setState(prevState => ({
+            openCategoryMenus: {
+                ...prevState.openCategoryMenus,
+                [editorId]: !prevState.openCategoryMenus[editorId]
+            }
+        }));
+    }
+    
     render () {
         const addonState = Object.entries(supportedAddons).map(([id, manifest]) => ({
             id,
@@ -1250,60 +1523,121 @@ class AddonSettingsComponent extends React.Component {
                         />
                     )}
                 </div>
-                <div className={styles.addons}>
-                    {!this.state.loading && (
-                        <div className={styles.section}>
-                            <TagFilter
-                                tags={allTags}
-                                selectedTags={this.state.selectedTags}
-                                onTagToggle={this.handleTagFilter}
-                                onClearAll={this.handleClearAll}
-                            />
-                            <AddonList
-                                addons={addonState}
-                                search={this.state.search}
-                                selectedTags={this.state.selectedTags}
-                                extended={this.state.extended}
-                            />
-                            <div className={styles.footerButtons}>
-                                <button
-                                    className={classNames(styles.button, styles.resetAllButton)}
-                                    onClick={this.handleResetAll}
-                                >
-                                    {settingsTranslations.resetAll}
-                                </button>
-                                <button
-                                    className={classNames(styles.button, styles.exportButton)}
-                                    onClick={this.handleExport}
-                                >
-                                    {settingsTranslations.export}
-                                </button>
-                                <button
-                                    className={classNames(styles.button, styles.importButton)}
-                                    onClick={this.handleImport}
-                                >
-                                    {settingsTranslations.import}
-                                </button>
+                <div className={styles.mainContent}>
+                    <div className={styles.addons}>
+                        {!this.state.loading && (
+                            <div className={styles.section}>
+                                <AddonList
+                                    addons={addonState}
+                                    search={this.state.search}
+                                    selectedTags={this.state.selectedTags}
+                                    selectedEditors={this.state.selectedEditors}
+                                    editorCategories={this.state.editorCategories}
+                                    extended={this.state.extended}
+                                />
+                                <div className={styles.footerButtons}>
+                                    <button
+                                        className={classNames(styles.button, styles.resetAllButton)}
+                                        onClick={this.handleResetAll}
+                                    >
+                                        {settingsTranslations.resetAll}
+                                    </button>
+                                    <button
+                                        className={classNames(styles.button, styles.exportButton)}
+                                        onClick={this.handleExport}
+                                    >
+                                        {settingsTranslations.export}
+                                    </button>
+                                    <button
+                                        className={classNames(styles.button, styles.importButton)}
+                                        onClick={this.handleImport}
+                                    >
+                                        {settingsTranslations.import}
+                                    </button>
+                                </div>
+                                <footer className={styles.footer}>
+                                    {unsupported.length ? (
+                                        <UnsupportedAddons
+                                            addons={unsupported}
+                                        />
+                                    ) : null}
+                                    <span
+                                        className={styles.version}
+                                        onClick={this.handleClickVersion}
+                                    >
+                                        {this.state.extended ?
+                                            // Don't bother translating, pretty much no one will ever see this.
+                                            // eslint-disable-next-line max-len
+                                            `You have enabled debug mode. (Addons version ${upstreamMeta.commit})` :
+                                            `Addons version ${upstreamMeta.commit}`}
+                                    </span>
+                                </footer>
                             </div>
-                            <footer className={styles.footer}>
-                                {unsupported.length ? (
-                                    <UnsupportedAddons
-                                        addons={unsupported}
-                                    />
-                                ) : null}
-                                <span
-                                    className={styles.version}
-                                    onClick={this.handleClickVersion}
-                                >
-                                    {this.state.extended ?
-                                        // Don't bother translating, pretty much no one will ever see this.
-                                        // eslint-disable-next-line max-len
-                                        `You have enabled debug mode. (Addons version ${upstreamMeta.commit})` :
-                                        `Addons version ${upstreamMeta.commit}`}
-                                </span>
-                            </footer>
+                        )}
+                    </div>
+                    <div className={styles.sidebar}>
+                        <div className={styles.editorMenu}>
+                            <h3>编辑器</h3>
+                            <div className={styles.editorButtons}>
+                                {[
+                                    { id: 'remixwarp', name: 'RemixWarp' },
+                                    { id: '02engine', name: '02Engine' },
+                                    { id: 'astraeditor', name: 'AstraEditor' },
+                                    { id: 'turbowarp', name: 'TurboWarp' },
+                                    { id: 'bilup', name: 'Bilup' }
+                                ].map(editor => (
+                                    <div key={editor.id} className={styles.editorButtonContainer}>
+                                        <div className={styles.editorButtonWrapper}>
+                                            <button
+                                                className={classNames(styles.editorButton, {
+                                                    [styles.editorButtonActive]: this.state.selectedEditors.includes(editor.id)
+                                                })}
+                                                onClick={() => this.handleEditorSelect(editor.id)}
+                                            >
+                                                {editor.name}
+                                            </button>
+                                            <button
+                                                className={styles.categoryToggleButton}
+                                                onClick={() => this.handleToggleCategoryMenu(editor.id)}
+                                            >
+                                                {this.state.openCategoryMenus[editor.id] ? '▼' : '▶'}
+                                            </button>
+                                        </div>
+                                        {this.state.openCategoryMenus[editor.id] && (
+                                            <div className={styles.categoryMenu}>
+                                                <h4>分类</h4>
+                                                <div className={styles.categoryButtons}>
+                                                    {[
+                                                        { id: 'all', name: '全部插件' },
+                                                        { id: 'new', name: '新插件' },
+                                                        { id: 'theme', name: '主题' },
+                                                        { id: 'editor', name: '编辑器' },
+                                                        { id: 'debug', name: '调试' },
+                                                        { id: 'utility', name: '实用工具' },
+                                                        { id: 'sprites', name: '角色' },
+                                                        { id: 'stage', name: '舞台' },
+                                                        { id: 'workflow', name: '工作流' },
+                                                        { id: 'ui', name: '界面' },
+                                                        { id: 'toolbox', name: '工具箱' }
+                                                    ].map(category => (
+                                                        <button
+                                                            key={category.id}
+                                                            className={classNames(styles.categoryButton, {
+                                                                [styles.categoryButtonActive]: this.state.editorCategories[editor.id] === category.id
+                                                            })}
+                                                            onClick={() => this.handleCategorySelect(editor.id, category.id)}
+                                                        >
+                                                            {category.name}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         );
