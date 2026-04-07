@@ -612,6 +612,7 @@ export const findMatchingVersion = (lastSeenVersion, commits) => {
 
     const versions = [];
     let foundIndex = -1;
+    // 使用lastSeenVersion作为基础版本号，确保当提交信息中没有找到版本号时，从该版本更新的前一位的版本号的最后一位增加1
     let lastVersion = lastSeenVersion || '1.0.0';
 
     // 遍历提交历史，解析版本号
@@ -619,7 +620,7 @@ export const findMatchingVersion = (lastSeenVersion, commits) => {
         const commit = commits[i];
         const commitMessage = commit.commit.message;
         
-        // 解析提交信息获取版本号
+        // 解析提交信息获取版本号，使用前一个提交的版本号作为基础
         const parsedInfo = parseCommitMessage(commitMessage, lastVersion);
         const version = parsedInfo.version;
         
@@ -645,7 +646,8 @@ export const findMatchingVersion = (lastSeenVersion, commits) => {
             break;
         }
         
-        // 更新 lastVersion 用于下一个提交的版本号计算
+        // 更新 lastVersion 为当前提交的版本号，作为下一个提交的基础版本号
+        // 这样，对于每个提交，如果提交信息中没有版本号，就会使用前一个提交的版本号作为基础，然后递增
         lastVersion = version;
     }
 
@@ -698,7 +700,19 @@ export const checkForUpdate = async (locale = 'zh-cn') => {
         console.log('最新提交信息:', latestCommitMessage.substring(0, 100));
         
         // 4. 解析最新版本号
-        const latestParsedInfo = parseCommitMessage(latestCommitMessage, currentStoredVersion);
+        // 首先尝试获取前一个提交的版本号作为基础
+        let baseVersion = '1.0.0';
+        if (commits.length > 1) {
+            const previousCommit = commits[1];
+            const previousParsedInfo = parseCommitMessage(previousCommit.commit.message, lastSeenVersion || '1.0.0');
+            baseVersion = previousParsedInfo.version;
+        } else {
+            // 如果只有一个提交，使用lastSeenVersion作为基础
+            baseVersion = lastSeenVersion || '1.0.0';
+        }
+        
+        // 解析最新版本号，使用前一个提交的版本号作为基础
+        const latestParsedInfo = parseCommitMessage(latestCommitMessage, baseVersion);
         const latestVersion = latestParsedInfo.version;
         
         console.log('最新版本号:', latestVersion);
