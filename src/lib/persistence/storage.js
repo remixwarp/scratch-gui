@@ -55,7 +55,11 @@ class Storage extends ScratchStorage {
         this.assetHost = assetHost;
     }
     getAssetGetConfig (asset) {
-        return `${this.assetHost}/asset/${asset.assetId}.${asset.dataFormat}`;
+        // 清除缓存，强制从网络加载最新资源
+        if (this.builtinHelper && this.builtinHelper.assets) {
+            delete this.builtinHelper.assets[asset.assetId];
+        }
+        return `${this.assetHost}/asset/${asset.assetId}.${asset.dataFormat}?v=${Date.now()}`;
     }
     getAssetCreateConfig (asset) {
         return {
