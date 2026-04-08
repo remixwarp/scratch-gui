@@ -158,6 +158,16 @@ a:active, a:focus {
     overflow: hidden;
 }
 
+.main-content-left-align,
+.mainContentLeftAlign {
+    flex-direction: row;
+}
+
+.main-content-right-align,
+.mainContentRightAlign {
+    flex-direction: row-reverse;
+}
+
 .addons {
     flex: 1;
     overflow-y: auto;
@@ -974,4 +984,100 @@ a:active, a:focus {
         min-width: 100px;
         text-align: center;
     }
+}
+
+/* 对齐按钮样式 */
+
+.alignButtons {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.alignButtonGroup {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.alignButton {
+    width: 32px;
+    height: 32px;
+    padding: 4px;
+    background: $ui-tertiary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    color: $text-primary;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.alignButton:hover {
+    background: $ui-white;
+    border-color: $looks-secondary;
+}
+
+.alignButtonActive {
+    background: $looks-secondary;
+    color: white;
+    border-color: $looks-secondary;
+}
+
+.alignButtonActive:hover {
+    background: $looks-secondary-dark;
+    border-color: $looks-secondary-dark;
+}
+
+/* 分类菜单对齐样式 */
+.categoryMenu.alignLeft {
+    text-align: left;
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.categoryMenu.alignRight {
+    text-align: right;
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.categoryMenu.alignRight .categoryButtons {
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+/* 编辑器按钮容器对齐 */
+.editorButtons.alignLeft {
+    text-align: left;
+    width: 100%;
+}
+
+.editorButtons.alignRight {
+    text-align: right;
+    width: 100%;
+}
+
+/* 编辑器按钮对齐 */
+.editorButtonContainer.alignLeft {
+    text-align: left;
+    width: 100%;
+}
+
+.editorButtonContainer.alignRight {
+    text-align: right;
+    width: 100%;
+}
+
+/* 编辑器按钮包装器对齐 */
+.editorButtonWrapper.alignLeft {
+    justify-content: flex-start;
+}
+
+.editorButtonWrapper.alignRight {
+    justify-content: flex-end;
 }

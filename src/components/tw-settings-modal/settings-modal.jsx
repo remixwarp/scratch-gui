@@ -12,8 +12,9 @@ import DocumentationLink from '../tw-documentation-link/documentation-link.jsx';
 import styles from './settings-modal.css';
 import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/constants/brand.js';
+import {AESettings} from '../../lib/settings.js';
 
-import {Settings, Zap} from 'lucide-react';
+import {Settings, Zap, Code} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -46,6 +47,71 @@ const messages = defineMessages({
     headerExperimental: {
         defaultMessage: 'Experimental',
         id: 'mw.settings.experimental'
+    },
+    headerAE: {
+        defaultMessage: 'AE Settings',
+        description: 'AE Settings modal section',
+        id: 'tw.settingsModal.ae'
+    },
+    autodisplayreadme: {
+        defaultMessage: 'Automatically Display README',
+        description: 'Auto Displat Readme label',
+        id: 'tw.settingsModal.autodisplayreadme'
+    },
+    autodisplayreadmeHelp: {
+        defaultMessage: 'After the project is opened, if there is a Sprite named \'README\', the README inside the Sprite will be automatically displayed.',
+        description: 'Auto Displat Readme label help',
+        id: 'tw.settingsModal.autodisplayreadmeHelp'
+    },
+    enablehtmlsupportreadme: {
+        defaultMessage: 'Enable HTML Support',
+        description: 'Enable HTML Support in README label',
+        id: 'tw.settingsModal.enablehtmlsupportreadme'
+    },
+    enablehtmlsupportreadmeHelp: {
+        defaultMessage: 'Allows you to use HTML tags in the README.',
+        description: 'Enable HTML Support in README help',
+        id: 'tw.settingsModal.enablehtmlsupportreadmeHelp'
+    },
+    skipcustomextwarn: {
+        defaultMessage: 'Skip custom extension warning',
+        description: 'Skip custom extension warning label',
+        id: 'tw.settingsModal.skipcustomextwarn'
+    },
+    skipcustomextwarnhelp: {
+        defaultMessage: 'When the project loads, you do not need to agree to each custom extension request sequentially. You only need to click \'Agree All\' once.',
+        description: 'Skip custom extension warning help',
+        id: 'tw.settingsModal.skipcustomextwarnhelp'
+    },
+    enableextensionpreview: {
+        defaultMessage: 'Enable extension preview when load extension (Deprecated)',
+        description: 'extension preview label',
+        id: 'tw.settingsModal.enableextensionpreview'
+    },
+    enableextensionpreviewhelp: {
+        defaultMessage: 'Before loading custom extensions, you can preview the extensions you want to load.',
+        description: 'extension preview help',
+        id: 'tw.settingsModal.enableextensionpreviewhelp'
+    },
+    enablevscodelayout: {
+        defaultMessage: 'Enable VSCode Layout (Need Refresh)',
+        description: 'EnableVSCodeLayout label',
+        id: 'tw.settingsModal.enablevscodelayout'
+    },
+    enablevscodelayouthelp: {
+        defaultMessage: 'Change the interface layout to a style similar to VSCode.',
+        description: 'EnableVSCodeLayout help',
+        id: 'tw.settingsModal.enablevscodelayouthelp'
+    },
+    enablecoblielayout: {
+        defaultMessage: 'Enable Mobile Layout (Need Refresh)',
+        description: 'EnableMobileLayout label',
+        id: 'tw.settingsModal.enablecoblielayout'
+    },
+    enablecoblielayouthelp: {
+        defaultMessage: 'Adjust the stage and sprite area positions to make them slightly more suitable for Mobile editing.',
+        description: 'EnableMobileLayout help',
+        id: 'tw.settingsModal.enablecoblielayouthelp'
     }
 });
 
@@ -159,7 +225,7 @@ UnwrappedSetting.propTypes = {
 
 const Setting = injectIntl(UnwrappedSetting);
 
-const BooleanSetting = ({value, onChange, label, ...props}) => (
+const BooleanSetting = ({ value, onChange, label, ...props }) => (
     <Setting
         {...props}
         active={value}
@@ -175,12 +241,133 @@ const BooleanSetting = ({value, onChange, label, ...props}) => (
         }
     />
 );
-
 BooleanSetting.propTypes = {
     onChange: PropTypes.func.isRequired,
     value: PropTypes.bool.isRequired,
     label: PropTypes.node.isRequired
 };
+
+const AutoDisplayREADME = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                defaultMessage="Automatically Display README"
+                description="Auto Displat Readme label"
+                id="tw.settingsModal.autodisplayreadme"
+            />
+        }
+        help={
+            <FormattedMessage
+                defaultMessage="After the project is opened, if there is a Sprite named 'README', the README inside the Sprite will be automatically displayed."
+                description="Auto Displat Readme label help"
+                id="tw.settingsModal.autodisplayreadmeHelp"
+            />
+        }
+    />
+);
+
+const EnableHTMLSupportREADME = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                defaultMessage="Enable HTML Support"
+                description="Enable HTML Support in README label"
+                id="tw.settingsModal.enablehtmlsupportreadme"
+            />
+        }
+        help={
+            <FormattedMessage
+                defaultMessage="Allows you to use HTML tags in the README."
+                description="Enable HTML Support in README help"
+                id="tw.settingsModal.enablehtmlsupportreadmeHelp"
+            />
+        }
+    />
+);
+
+const SkipCustomExtWarn = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                defaultMessage="Skip custom extension warning"
+                description="Skip custom extension warning label"
+                id="tw.settingsModal.skipcustomextwarn"
+            />
+        }
+        help={
+            <FormattedMessage
+                defaultMessage="When the project loads, you do not need to agree to each custom extension request sequentially. You only need to click 'Agree All' once."
+                description="Skip custom extension warning help"
+                id="tw.settingsModal.skipcustomextwarnhelp"
+            />
+        }
+    />
+);
+
+const EnableExtensionPreview = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                defaultMessage="Enable extension preview when load extension (Deprecated)"
+                description="extension preview label"
+                id="tw.settingsModal.enableextensionpreview"
+            />
+        }
+        help={
+            <FormattedMessage
+                defaultMessage="Before loading custom extensions, you can preview the extensions you want to load."
+                description="extension preview help"
+                id="tw.settingsModal.enableextensionpreviewhelp"
+            />
+        }
+    />
+);
+
+const EnableVSCodeLayout = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                defaultMessage="Enable VSCode Layout (Need Refresh)"
+                description="EnableVSCodeLayout label"
+                id="tw.settingsModal.enablevscodelayout"
+            />
+        }
+        help={
+            <FormattedMessage
+                defaultMessage="Change the interface layout to a style similar to VSCode."
+                description="EnableVSCodeLayout help"
+                id="tw.settingsModal.enablevscodelayouthelp"
+            />
+        }
+    />
+);
+
+const EnableMobileLayout = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                defaultMessage="Enable Mobile Layout (Need Refresh)"
+                description="EnableMobileLayout label"
+                id="tw.settingsModal.enablecoblielayout"
+            />
+        }
+        help={
+            <FormattedMessage
+                defaultMessage="Adjust the stage and sprite area positions to make them slightly more suitable for Mobile editing."
+                description="EnableMobileLayout help"
+                id="tw.settingsModal.enablecoblielayouthelp"
+            />
+        }
+    />
+);
+
+const AEBooleanSetting = BooleanSetting;
 
 const settingDefinitions = {
     highQualityPen: {
@@ -567,6 +754,13 @@ StoreProjectOptions.propTypes = {
     onStoreThemeInProjectChange: PropTypes.func
 };
 
+const AEsettings = new AESettings();
+
+// Function to notify other components when settings change
+const notifySettingsChange = () => {
+    window.dispatchEvent(new CustomEvent('ae-settings-changed'));
+};
+
 const pageConfigurations = {
     general: {
         sections: [
@@ -690,6 +884,57 @@ const pageConfigurations = {
                 ]
             }
         ]
+    },
+    ae: {
+        sections: [
+            {
+                headerMessage: 'headerAE',
+                settings: [
+                    {
+                        component: AutoDisplayREADME,
+                        props: props => ({
+                            value: AEsettings.get('enableREADMEAutoDisplay') || false,
+                            onChange: (e) => { AEsettings.set("enableREADMEAutoDisplay", e.target.checked); notifySettingsChange(); }
+                        })
+                    },
+                    {
+                        component: EnableHTMLSupportREADME,
+                        props: props => ({
+                            value: AEsettings.get('enableHTMLSupportInREADME') || false,
+                            onChange: (e) => { AEsettings.set("enableHTMLSupportInREADME", e.target.checked); notifySettingsChange(); }
+                        })
+                    },
+                    {
+                        component: SkipCustomExtWarn,
+                        props: props => ({
+                            value: AEsettings.get('skipExtWarn') || false,
+                            onChange: (e) => { AEsettings.set("skipExtWarn", e.target.checked); notifySettingsChange(); }
+                        })
+                    },
+                    {
+                        component: EnableExtensionPreview,
+                        props: props => ({
+                            value: AEsettings.get('EnableExtensionPreview') || false,
+                            onChange: (e) => { AEsettings.set("EnableExtensionPreview", e.target.checked); notifySettingsChange(); }
+                        })
+                    },
+                    {
+                        component: EnableVSCodeLayout,
+                        props: props => ({
+                            value: AEsettings.get('EnableVSCodeLayout') || false,
+                            onChange: (e) => { AEsettings.set("EnableVSCodeLayout", e.target.checked); notifySettingsChange(); location.reload(); }
+                        })
+                    },
+                    {
+                        component: EnableMobileLayout,
+                        props: props => ({
+                            value: AEsettings.get('EnableMobileLayout') || false,
+                            onChange: (e) => { AEsettings.set("EnableMobileLayout", e.target.checked); notifySettingsChange(); location.reload(); }
+                        })
+                    }
+                ]
+            }
+        ]
     }
 };
 
@@ -711,6 +956,7 @@ const UnwrappedPageRenderer = ({config, intl, ...props}) => (
                     return (<SettingComponent
                         key={settingIdx}
                         {...settingProps}
+                        intl={intl}
                     />);
                 })}
             </React.Fragment>
@@ -734,12 +980,19 @@ const ExperimentalPage = props => (<PageRenderer
     {...props}
 />);
 
+const AEPAGE = props => (<PageRenderer
+    config={pageConfigurations.ae}
+    {...props}
+/>);
+
 const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
     case 'general':
         return <GeneralPage {...handlers} />;
     case 'experimental':
         return <ExperimentalPage {...handlers} />;
+    case 'ae':
+        return <AEPAGE {...handlers} />;
     default:
         return null;
     }
@@ -782,6 +1035,11 @@ class SettingsModalComponent extends React.Component {
                 id: 'experimental',
                 label: intl.formatMessage({id: 'mw.settings.experimental', defaultMessage: 'Experimental'}),
                 icon: Zap
+            },
+            {
+                id: 'ae',
+                label: intl.formatMessage({id: 'tw.settingsModal.ae', defaultMessage: 'AE Settings'}),
+                icon: Code
             }
         ];
 

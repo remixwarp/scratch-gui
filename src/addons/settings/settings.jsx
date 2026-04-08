@@ -1253,9 +1253,22 @@ class AddonSettingsComponent extends React.Component {
             search: getInitialSearch(),
             extended: false,
             selectedTags: new Set(),
-            selectedEditors: ['remixwarp'], // 支持选择多个编辑器
-            editorCategories: { remixwarp: 'all' }, // 每个编辑器的分类选择
-            openCategoryMenus: { remixwarp: true }, // 控制每个编辑器的分类菜单是否打开
+            selectedEditors: ['remixwarp', '02engine', 'astraeditor', 'turbowarp', 'bilup'], // 默认选择全部编辑器
+            editorCategories: {
+                remixwarp: 'all',
+                '02engine': 'all',
+                astraeditor: 'all',
+                turbowarp: 'all',
+                bilup: 'all'
+            }, // 每个编辑器的分类选择
+            openCategoryMenus: {
+                remixwarp: false,
+                '02engine': false,
+                astraeditor: false,
+                turbowarp: false,
+                bilup: false
+            }, // 控制每个编辑器的分类菜单是否打开
+            align: 'left', // 对齐方式，默认靠左对齐
             ...this.readFullAddonState()
         };
         if (Channels.changeChannel) {
@@ -1523,7 +1536,148 @@ class AddonSettingsComponent extends React.Component {
                         />
                     )}
                 </div>
-                <div className={styles.mainContent}>
+                <div className={styles.mainContent} style={{ flexDirection: this.state.align === 'left' ? 'row' : 'row-reverse' }}>
+                    <div className={styles.sidebar}>
+                        <div className={styles.editorMenu}>
+                            {/* 对齐按钮 */}
+                            <div className={styles.alignButtons}>
+                                <div className={styles.alignButtonGroup}>
+                                    <button
+                                        className={classNames(styles.alignButton, {
+                                            [styles.alignButtonActive]: this.state.align === 'left'
+                                        })}
+                                        onClick={() => this.setState({ align: 'left' })}
+                                        title="靠左对齐"
+                                    >
+                                        ←
+                                    </button>
+                                    <button
+                                        className={classNames(styles.alignButton, {
+                                            [styles.alignButtonActive]: this.state.align === 'right'
+                                        })}
+                                        onClick={() => this.setState({ align: 'right' })}
+                                        title="靠右对齐"
+                                    >
+                                        →
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <h3>编辑器</h3>
+                            <div className={classNames(styles.editorButtons, {
+                                [styles.alignLeft]: this.state.align === 'left',
+                                [styles.alignRight]: this.state.align === 'right'
+                            })}>
+                                {/* 全部编辑器菜单项 */}
+                                <div key="all" className={classNames(styles.editorButtonContainer, {
+                                    [styles.alignLeft]: this.state.align === 'left',
+                                    [styles.alignRight]: this.state.align === 'right'
+                                })}>
+                                    <div className={classNames(styles.editorButtonWrapper, {
+                                        [styles.alignLeft]: this.state.align === 'left',
+                                        [styles.alignRight]: this.state.align === 'right'
+                                    })}>
+                                        <button
+                                            className={classNames(styles.editorButton, {
+                                                [styles.editorButtonActive]: this.state.selectedEditors.length === 5
+                                            })}
+                                            onClick={() => {
+                                                // 选择所有编辑器
+                                                this.setState({
+                                                    selectedEditors: ['remixwarp', '02engine', 'astraeditor', 'turbowarp', 'bilup'],
+                                                    editorCategories: {
+                                                        remixwarp: 'all',
+                                                        '02engine': 'all',
+                                                        astraeditor: 'all',
+                                                        turbowarp: 'all',
+                                                        bilup: 'all'
+                                                    },
+                                                    openCategoryMenus: {
+                                                        remixwarp: false,
+                                                        '02engine': false,
+                                                        astraeditor: false,
+                                                        turbowarp: false,
+                                                        bilup: false
+                                                    }
+                                                });
+                                            }}
+                                        >
+                                            全部
+                                        </button>
+                                    </div>
+                                </div>
+                                {
+                                    [
+                                        { id: 'remixwarp', name: 'RemixWarp' },
+                                        { id: '02engine', name: '02Engine' },
+                                        { id: 'astraeditor', name: 'AstraEditor' },
+                                        { id: 'turbowarp', name: 'TurboWarp' },
+                                        { id: 'bilup', name: 'Bilup' }
+                                    ].map(editor => (
+                                        <div key={editor.id} className={classNames(styles.editorButtonContainer, {
+                                            [styles.alignLeft]: this.state.align === 'left',
+                                            [styles.alignRight]: this.state.align === 'right'
+                                        })}>
+                                            <div className={classNames(styles.editorButtonWrapper, {
+                                                [styles.alignLeft]: this.state.align === 'left',
+                                                [styles.alignRight]: this.state.align === 'right'
+                                            })}>
+                                                <button
+                                                    className={classNames(styles.editorButton, {
+                                                        [styles.editorButtonActive]: this.state.selectedEditors.includes(editor.id)
+                                                    })}
+                                                    onClick={() => this.handleEditorSelect(editor.id)}
+                                                >
+                                                    {editor.name}
+                                                </button>
+                                                <button
+                                                    className={styles.categoryToggleButton}
+                                                    onClick={() => this.handleToggleCategoryMenu(editor.id)}
+                                                >
+                                                    {this.state.openCategoryMenus[editor.id] ? '▼' : '▶'}
+                                                </button>
+                                            </div>
+                                            {this.state.openCategoryMenus[editor.id] && (
+                                                <div className={classNames(styles.categoryMenu, {
+                                                    [styles.alignLeft]: this.state.align === 'left',
+                                                    [styles.alignRight]: this.state.align === 'right'
+                                                })}>
+                                                    <h4>分类</h4>
+                                                    <div className={styles.categoryButtons}>
+                                                        {
+                                                            [
+                                                                { id: 'all', name: '全部插件' },
+                                                                { id: 'new', name: '新插件' },
+                                                                { id: 'theme', name: '主题' },
+                                                                { id: 'editor', name: '编辑器' },
+                                                                { id: 'debug', name: '调试' },
+                                                                { id: 'utility', name: '实用工具' },
+                                                                { id: 'sprites', name: '角色' },
+                                                                { id: 'stage', name: '舞台' },
+                                                                { id: 'workflow', name: '工作流' },
+                                                                { id: 'ui', name: '界面' },
+                                                                { id: 'toolbox', name: '工具箱' }
+                                                            ].map(category => (
+                                                                <button
+                                                                    key={category.id}
+                                                                    className={classNames(styles.categoryButton, {
+                                                                        [styles.categoryButtonActive]: this.state.editorCategories[editor.id] === category.id
+                                                                    })}
+                                                                    onClick={() => this.handleCategorySelect(editor.id, category.id)}
+                                                                >
+                                                                    {category.name}
+                                                                </button>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        </div>
+                    </div>
                     <div className={styles.addons}>
                         {!this.state.loading && (
                             <div className={styles.section}>
@@ -1574,69 +1728,6 @@ class AddonSettingsComponent extends React.Component {
                                 </footer>
                             </div>
                         )}
-                    </div>
-                    <div className={styles.sidebar}>
-                        <div className={styles.editorMenu}>
-                            <h3>编辑器</h3>
-                            <div className={styles.editorButtons}>
-                                {[
-                                    { id: 'remixwarp', name: 'RemixWarp' },
-                                    { id: '02engine', name: '02Engine' },
-                                    { id: 'astraeditor', name: 'AstraEditor' },
-                                    { id: 'turbowarp', name: 'TurboWarp' },
-                                    { id: 'bilup', name: 'Bilup' }
-                                ].map(editor => (
-                                    <div key={editor.id} className={styles.editorButtonContainer}>
-                                        <div className={styles.editorButtonWrapper}>
-                                            <button
-                                                className={classNames(styles.editorButton, {
-                                                    [styles.editorButtonActive]: this.state.selectedEditors.includes(editor.id)
-                                                })}
-                                                onClick={() => this.handleEditorSelect(editor.id)}
-                                            >
-                                                {editor.name}
-                                            </button>
-                                            <button
-                                                className={styles.categoryToggleButton}
-                                                onClick={() => this.handleToggleCategoryMenu(editor.id)}
-                                            >
-                                                {this.state.openCategoryMenus[editor.id] ? '▼' : '▶'}
-                                            </button>
-                                        </div>
-                                        {this.state.openCategoryMenus[editor.id] && (
-                                            <div className={styles.categoryMenu}>
-                                                <h4>分类</h4>
-                                                <div className={styles.categoryButtons}>
-                                                    {[
-                                                        { id: 'all', name: '全部插件' },
-                                                        { id: 'new', name: '新插件' },
-                                                        { id: 'theme', name: '主题' },
-                                                        { id: 'editor', name: '编辑器' },
-                                                        { id: 'debug', name: '调试' },
-                                                        { id: 'utility', name: '实用工具' },
-                                                        { id: 'sprites', name: '角色' },
-                                                        { id: 'stage', name: '舞台' },
-                                                        { id: 'workflow', name: '工作流' },
-                                                        { id: 'ui', name: '界面' },
-                                                        { id: 'toolbox', name: '工具箱' }
-                                                    ].map(category => (
-                                                        <button
-                                                            key={category.id}
-                                                            className={classNames(styles.categoryButton, {
-                                                                [styles.categoryButtonActive]: this.state.editorCategories[editor.id] === category.id
-                                                            })}
-                                                            onClick={() => this.handleCategorySelect(editor.id, category.id)}
-                                                        >
-                                                            {category.name}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

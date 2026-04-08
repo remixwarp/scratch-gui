@@ -1,7 +1,6 @@
 export class AESettings {
         constructor() {
                 this.storageKey = "AESettings";
-                this.init();
                 this.initset = {
                         enableREADMEAutoDisplay: true,
                         enableHTMLSupportInREADME: false,
@@ -10,6 +9,7 @@ export class AESettings {
                         EnableVSCodeLayout: true,
                         EnableMobileLayout: false
                 };
+                this.init();
         }
 
         init() {
@@ -36,7 +36,11 @@ export class AESettings {
         get(id) {
 
                 const settings = this.getAll();
-                return settings[id];
+                if (settings[id] !== undefined) {
+                        return settings[id];
+                }
+                // Return default value if not found
+                return this.initset[id];
         }
 
         set(id, value) {

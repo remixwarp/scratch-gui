@@ -503,5 +503,25 @@
   "my-blocks-plus/@description": "增强自定义积木的功能和灵活性",
   
   "hide-menubar/@name": "隐藏菜单栏",
-  "hide-menubar/@description": "隐藏编辑器顶部的菜单栏，增加工作区空间"
+  "hide-menubar/@description": "隐藏编辑器顶部的菜单栏，增加工作区空间",
+  "ae-settings/enableREADMEAutoDisplay": "启用 README 自动显示",
+  "ae-settings/enableHTMLSupportInREADME": "在 README 中启用 HTML 支持",
+  "ae-settings/skipExtWarn": "跳过扩展警告",
+  "ae-settings/EnableExtensionPreview": "启用扩展预览",
+  "ae-settings/EnableVSCodeLayout": "启用 VSCode 布局",
+  "ae-settings/EnableMobileLayout": "启用移动布局",
+  "ae-settings/section-title": "AE 设置",
+  "tw.settingsModal.ae": "AE 设置",
+  "tw.settingsModal.autodisplayreadme": "自动显示 README",
+  "tw.settingsModal.autodisplayreadmeHelp": "项目打开后，如果有一个名为 'README' 的角色，将自动显示该角色内的 README。",
+  "tw.settingsModal.enablehtmlsupportreadme": "启用 HTML 支持",
+  "tw.settingsModal.enablehtmlsupportreadmeHelp": "允许在 README 中使用 HTML 标签。",
+  "tw.settingsModal.skipcustomextwarn": "跳过自定义扩展警告",
+  "tw.settingsModal.skipcustomextwarnhelp": "项目加载时，无需依次同意每个自定义扩展请求。只需点击一次 '全部同意' 即可。",
+  "tw.settingsModal.enableextensionpreview": "加载扩展时启用扩展预览（已弃用）",
+  "tw.settingsModal.enableextensionpreviewhelp": "加载自定义扩展前，可以预览要加载的扩展。",
+  "tw.settingsModal.enablevscodelayout": "启用 VSCode 布局（需要刷新）",
+  "tw.settingsModal.enablevscodelayouthelp": "将界面布局更改为类似 VSCode 的风格。",
+  "tw.settingsModal.enablecoblielayout": "启用移动布局（需要刷新）",
+  "tw.settingsModal.enablecoblielayouthelp": "调整舞台和角色区域的位置，使其更适合移动设备编辑。"
 }

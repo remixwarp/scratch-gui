@@ -8,6 +8,7 @@ import MediaQuery from 'react-responsive';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import tabStyles from 'react-tabs/style/react-tabs.css';
 import VM from 'scratch-vm';
+import {AESettings} from '../../lib/settings.js';
 
 import Blocks from '../../containers/blocks.jsx';
 import MultiWorkspaces from '../../components/blocks/multi-workspaces.jsx';
@@ -234,6 +235,32 @@ const GUIComponent = props => {
             return false;
         }
     });
+    
+    // Initialize AESettings
+    const [aeSettings, setAeSettings] = useState(new AESettings());
+    
+    // Update aeSettings when settings change
+    useEffect(() => {
+        const updateAeSettings = () => {
+            setAeSettings(new AESettings());
+        };
+        
+        // Listen for storage changes
+        window.addEventListener('storage', updateAeSettings);
+        
+        // Listen for custom ae settings change event
+        window.addEventListener('ae-settings-changed', updateAeSettings);
+        
+        // Also check for changes every second
+        const interval = setInterval(updateAeSettings, 1000);
+        
+        // Cleanup
+        return () => {
+            window.removeEventListener('storage', updateAeSettings);
+            window.removeEventListener('ae-settings-changed', updateAeSettings);
+            clearInterval(interval);
+        };
+    }, []);
     
     // Handle startup count and donation modal
     useEffect(() => {
@@ -812,9 +839,14 @@ const GUIComponent = props => {
                     onToggleLoginOpen={onToggleLoginOpen}
                 />
                 <Box className={styles.bodyWrapper}>
-                    <Box className={styles.flexWrapper}>
+                    <Box className={styles.flexWrapper} style={aeSettings.get('EnableMobileLayout') ? {
+                        flexDirection: 'column',
+                        alignItems: 'stretch'
+                    } : {}}>
                         <Box
-                            className={styles.editorWrapper}
+                            className={classNames(styles.editorWrapper, {
+                                [styles.vscodeLayout]: aeSettings.get('EnableVSCodeLayout')
+                            })}
                             ref={editorWrapperRef}
                         >
                             <NativeFindBar
