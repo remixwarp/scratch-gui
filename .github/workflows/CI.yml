@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Save dist as artifact
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            static/microbit
+            static/penguinmod
+            src/generated
+      # Temp: Save package-lock.json
+      #- name: Upload package-lock.json
+      #  uses: actions/upload-artifact@v4
+      #  with:
+      #    name: package-lock.json
+      #    path: package-lock.json
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/develop'
+
+    steps:
+    - name: Checkout repo (with push access)
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        persist-credentials: true
+
+    - name: Download dist
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: .
+
+    # Temp: Download package-lock.json
+    #- name: Download package-lock.json
+    #  uses: actions/download-artifact@v4
+    #  with:
+    #    name: package-lock.json
+    #    path: package-lock.json
+
+    - name: Deploy to develop-builds
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Backup downloaded directories
+        rm -rf /tmp/static /tmp/src
+        mkdir -p /tmp/static /tmp/src
+        cp -r static/microbit /tmp/static/
+        cp -r static/penguinmod /tmp/static/
+        cp -r src/generated /tmp/src/
+
+        # Fetch all branches
+        git fetch origin
+
+        # Checkout or create develop-builds based on develop
+        if git show-ref --verify --quiet refs/remotes/origin/develop-builds; then
+          git checkout develop-builds
+          git pull origin develop-builds
+        else
+          git checkout -b develop-builds origin/develop
+        fi
+
+        # Sync code with develop
+        git merge origin/develop --no-edit
+
+        # Replace directories
+        rm -rf static/microbit static/penguinmod src/generated
+        mkdir -p static/microbit static/penguinmod src/generated
+        cp -r /tmp/static/microbit/* static/microbit/
+        cp -r /tmp/static/penguinmod/* static/penguinmod/
+        cp -r /tmp/src/generated/* src/generated/
+
+        # Force add directories (ignore .gitignore)
+        git add -f static/microbit static/penguinmod src/generated
+
+        # Commit if changed
+        git commit -m "chore: update build artifacts from develop" || echo "No changes"
+
+        # Push
+        git push origin develop-builds
