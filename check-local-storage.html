@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Local Storage</title>
+</head>
+<body>
+    <h1>Check Local Storage</h1>
+    <p>Current AESettings:</p>
+    <pre id="aesettings"></pre>
+    <button onclick="resetAESettings()">Reset AESettings</button>
+    <script>
+        // Check current AESettings
+        const currentSettings = localStorage.getItem('AESettings');
+        document.getElementById('aesettings').textContent = currentSettings || 'No AESettings found';
+        
+        // Reset AESettings to default
+        function resetAESettings() {
+            const defaultSettings = {
+                enableREADMEAutoDisplay: true,
+                enableHTMLSupportInREADME: false,
+                skipExtWarn: false,
+                EnableExtensionPreview: false,
+                EnableVSCodeLayout: false,
+                EnableMobileLayout: false
+            };
+            localStorage.setItem('AESettings', JSON.stringify(defaultSettings));
+            document.getElementById('aesettings').textContent = JSON.stringify(defaultSettings, null, 2);
+            alert('AESettings has been reset to default');
+        }
+    </script>
+</body>
+</html>
