@@ -1,7 +1,7 @@
 const manifest = {
   editorOnly: true,
-  name: "Coder Style",
-  description: "Ultra-minimalist block style: colored text only, no visible borders, parentheses style for inputs",
+  name: "代码风格",
+  description: "极简主义积木风格：仅彩色文本，无可见边框，输入框采用括号风格",
   credits: [
     {
       name: "02engine"
@@ -21,7 +21,7 @@ const manifest = {
   settings: [
     {
       dynamic: true,
-      name: "Block opacity",
+      name: "积木透明度",
       id: "block-opacity",
       type: "number",
       default: 0.02,
@@ -31,7 +31,7 @@ const manifest = {
     },
     {
       dynamic: true,
-      name: "C-shape block opacity",
+      name: "C形积木透明度",
       id: "c-shape-opacity",
       type: "number",
       default: 0.08,
@@ -41,7 +41,7 @@ const manifest = {
     },
     {
       dynamic: true,
-      name: "Boolean block opacity",
+      name: "布尔积木透明度",
       id: "boolean-opacity",
       type: "number",
       default: 0.15,
@@ -51,7 +51,7 @@ const manifest = {
     },
     {
       dynamic: true,
-      name: "Input block opacity",
+      name: "输入积木透明度",
       id: "input-opacity",
       type: "number",
       default: 0.12,

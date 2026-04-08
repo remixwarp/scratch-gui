@@ -340,7 +340,7 @@ const BilmeModal = props => {
                 console.log('Applying theme:', theme.name, 'UUID:', theme.uuid);
                 
                 const response = await fetch(
-                    `https://theme.bilup.org/api/theme/export?uuid=${theme.uuid}&platform=RemixWarp`
+                    `https://theme.bilup.org/api/theme/export?uuid=${theme.uuid}&platform=bilup`
                 );
                 
                 if (!response.ok) {

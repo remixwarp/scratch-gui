@@ -752,6 +752,12 @@ class Blocks extends React.Component {
                     blocksSvg.style.backgroundColor = newColors.workspace;
                 }
 
+                // Update blocklyMainBackground fill color
+                const blocklyMainBackground = this.blocks && this.blocks.querySelector('.blocklyMainBackground');
+                if (blocklyMainBackground && newColors.workspace) {
+                    blocklyMainBackground.setAttribute('fill', newColors.workspace);
+                }
+
                 // Update grid color if available
                 if (newColors.gridColor && workspace.grid_ && workspace.grid_.pattern) {
                     workspace.grid_.pattern.setAttribute('fill', newColors.gridColor);
