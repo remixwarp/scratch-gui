@@ -10,7 +10,7 @@
 
 .body-wrapper {
     flex-grow: 1;
-    background-color: $ui-primary;
+    background-color: $page-background;
 }
 
 .body-wrapper * {
@@ -65,40 +65,40 @@
 
     display: flex;
     flex-direction: column;
-    background-color: #1e1e1e;
-    color: #d4d4d4;
+    background-color: $page-background;
+    color: $text-primary;
 }
 
 .editor-wrapper.vscodeLayout .tab-list {
-    background-color: #252526;
-    border-bottom: 1px solid #3e3e42;
-    color: #cccccc;
+    background-color: $ui-tertiary;
+    border-bottom: 1px solid $ui-black-transparent;
+    color: $text-primary;
 }
 
 .editor-wrapper.vscodeLayout .tab {
-    background-color: #2d2d30;
-    border: 1px solid #3e3e42;
-    color: #cccccc;
+    background-color: $ui-tertiary;
+    border: 1px solid $ui-black-transparent;
+    color: $text-primary-transparent;
 }
 
 .editor-wrapper.vscodeLayout .tab:hover {
-    background-color: #3a3a3d;
-    border-color: #3a3a3d;
+    background-color: $ui-tertiary;
+    border-color: $looks-secondary;
 }
 
 .editor-wrapper.vscodeLayout .tab.is-selected {
-    background-color: #1e1e1e;
-    border-color: #3e3e42;
-    color: #ffffff;
+    background-color: $ui-white;
+    border-color: $ui-black-transparent;
+    color: $looks-secondary;
 }
 
 .editor-wrapper.vscodeLayout .blocks-wrapper {
-    background-color: #1e1e1e;
+    background-color: $page-background;
 }
 
 .editor-wrapper.vscodeLayout .extension-button-container {
-    background-color: #0e639c;
-    border-color: #0e639c;
+    background-color: $looks-secondary;
+    border-color: $looks-secondary;
 }
 
 .editor-wrapper.vscodeLayout .extension-button {

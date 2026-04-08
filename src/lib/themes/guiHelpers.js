@@ -266,6 +266,8 @@ const applyWallpaper = wallpaper => {
         // Set workspace background to the theme-defined color
         if (blockColors.workspace) {
             document.documentElement.style.setProperty('--editorTheme3-workspace-background', blockColors.workspace);
+            // Also set the blocks-wrapper background color to match
+            target.style.backgroundColor = blockColors.workspace;
         }
         
         // Remove transparency from blocks workspace
