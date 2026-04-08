@@ -11,7 +11,7 @@
   },
   "main": "./dist/scratch-gui.js",
   "scripts": {
-    "build": "npm run clean && webpack --colors --bail",
+    "build": "npm run prepublish && npm run clean && webpack --colors --bail",
     "clean": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist",
     "deploy": "NODE_ENV=production npm run build && touch build/.nojekyll && gh-pages -t -d build -m \"Build for $(git log --pretty=format:%H -n1)\"",
     "prepublish": "node scripts/prepublish.mjs",
@@ -103,7 +103,7 @@
     "redux-throttle": "0.1.1",
     "scratch-audio": "github:remixwarp/scratch-audio#main",
     "scratch-blocks": "github:remixwarp/scratch-blocks#main",
-    "scratch-paint": "github:remixwarp/scratch-paint#main",
+    "scratch-paint": "github:Bilup/scratch-paint#develop",
     "scratch-render": "github:remixwarp/scratch-render#main",
     "scratch-vm": "github:remixwarp/scratch-vm#main",
     "style-loader": "^0.23.0",

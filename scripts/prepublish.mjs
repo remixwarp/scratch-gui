@@ -142,7 +142,11 @@ ${code}
 
 const prepublish = async () => {
     await downloadMicrobitHex();
-    await syncPenguinMod();
+    try {
+        await syncPenguinMod();
+    } catch (error) {
+        console.warn('PenguinMod sync failed, continuing with build:', error.message);
+    }
 };
 
 prepublish().then(

@@ -61,18 +61,10 @@ const applyTransparencyToElement = (element, hasWallpaper, wallpaperOpacity = 0.
             hexToRgba(guiColors, backgroundOpacity) :
             `rgba(229, 240, 255, ${backgroundOpacity})`;
         element.style.backgroundColor = backgroundColor;
-        // Also update fill property for SVG elements
-        if (element.tagName.toLowerCase() === 'svg' || element.tagName.toLowerCase() === 'path' || element.tagName.toLowerCase() === 'rect') {
-            element.setAttribute('fill', backgroundColor);
-        }
     } else {
         // Use the theme-defined workspace background color
         const workspaceColor = document.documentElement.style.getPropertyValue('--editorTheme3-workspace-background') || '#FFFFFF';
         element.style.backgroundColor = workspaceColor;
-        // Also update fill property for SVG elements
-        if (element.tagName.toLowerCase() === 'svg' || element.tagName.toLowerCase() === 'path' || element.tagName.toLowerCase() === 'rect') {
-            element.setAttribute('fill', workspaceColor);
-        }
     }
 };
 
@@ -91,11 +83,6 @@ const applyBlocksWorkspaceTransparency = (hasWallpaper, wallpaperOpacity = 0.3, 
         const fallbackSvg = document.querySelector('svg.blocklySvg');
         if (fallbackSvg) {
             applyTransparencyToElement(fallbackSvg, hasWallpaper, wallpaperOpacity);
-            // Also find and update blocklyMainBackground
-            const blocklyMainBackground = fallbackSvg.querySelector('.blocklyMainBackground');
-            if (blocklyMainBackground) {
-                applyTransparencyToElement(blocklyMainBackground, hasWallpaper, wallpaperOpacity);
-            }
             return;
         }
         
@@ -113,12 +100,6 @@ const applyBlocksWorkspaceTransparency = (hasWallpaper, wallpaperOpacity = 0.3, 
     }
     
     applyTransparencyToElement(blocksSvg, hasWallpaper, wallpaperOpacity);
-    
-    // Also find and update blocklyMainBackground
-    const blocklyMainBackground = blocksSvg.querySelector('.blocklyMainBackground');
-    if (blocklyMainBackground) {
-        applyTransparencyToElement(blocklyMainBackground, hasWallpaper, wallpaperOpacity);
-    }
 };
 
 
@@ -278,6 +259,7 @@ const applyWallpaper = wallpaper => {
         target.style.backgroundAttachment = '';
         document.documentElement.style.removeProperty('--wallpaper-overlay-opacity');
         document.documentElement.style.removeProperty('--wallpaper-darkness');
+        document.documentElement.style.removeProperty('--editorTheme3-workspace-background');
         
         // Remove transparency from blocks workspace
         applyBlocksWorkspaceTransparency(false);
