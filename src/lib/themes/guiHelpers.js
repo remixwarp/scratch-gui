@@ -259,7 +259,14 @@ const applyWallpaper = wallpaper => {
         target.style.backgroundAttachment = '';
         document.documentElement.style.removeProperty('--wallpaper-overlay-opacity');
         document.documentElement.style.removeProperty('--wallpaper-darkness');
-        document.documentElement.style.removeProperty('--editorTheme3-workspace-background');
+        
+        // Get block colors from the current theme
+        const blockColors = require('./blocks/three').blockColors;
+        
+        // Set workspace background to the theme-defined color
+        if (blockColors.workspace) {
+            document.documentElement.style.setProperty('--editorTheme3-workspace-background', blockColors.workspace);
+        }
         
         // Remove transparency from blocks workspace
         applyBlocksWorkspaceTransparency(false);
