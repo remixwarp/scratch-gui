@@ -93,4 +93,10 @@ export default {
   "tab-styles": () => import(/* webpackChunkName: "addon-entry-tab-styles" */ "../addons/tab-styles/_runtime_entry.js"),
   "window-theme": () => import(/* webpackChunkName: "addon-entry-window-theme" */ "../addons/window-theme/_runtime_entry.js"),
   "workspace-tabs": () => import(/* webpackChunkName: "addon-entry-workspace-tabs" */ "../addons/workspace-tabs/_runtime_entry.js"),
+  "coder-style": () => import(/* webpackChunkName: "addon-entry-coder-style" */ "../addons/coder-style/_runtime_entry.js"),
+  "comment-vscode-sync": () => import(/* webpackChunkName: "addon-entry-comment-vscode-sync" */ "../addons/comment-vscode-sync/_runtime_entry.js"),
+  "Terminal": () => import(/* webpackChunkName: "addon-entry-Terminal" */ "../addons/Terminal/_runtime_entry.js"),
+  "astras-copilot": () => import(/* webpackChunkName: "addon-entry-astras-copilot" */ "../addons/astras-copilot/_runtime_entry.js"),
+  "my-blocks-plus": () => import(/* webpackChunkName: "addon-entry-my-blocks-plus" */ "../addons/my-blocks-plus/_runtime_entry.js"),
+  "hide-menubar": () => import(/* webpackChunkName: "addon-entry-hide-menubar" */ "../addons/hide-menubar/_runtime_entry.js"),
 };

@@ -95,7 +95,9 @@ const addons = [
     'Terminal',
     'astras-copilot',
     'my-blocks-plus',
-    'hide-menubar'
+    'hide-menubar',
+    'bookmark',
+    'show-fps'
 ];
 
 const newAddons = [
