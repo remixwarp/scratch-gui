@@ -74,7 +74,7 @@ const messages = defineMessages({
         id: 'tw.settingsModal.enablehtmlsupportreadmeHelp'
     },
     skipcustomextwarn: {
-        defaultMessage: '跳过自定义扩展警告',
+        defaultMessage: '跳过自定义扩展警告（需刷新）',
         description: 'Skip custom extension warning label',
         id: 'tw.settingsModal.skipcustomextwarn'
     },
@@ -84,7 +84,7 @@ const messages = defineMessages({
         id: 'tw.settingsModal.skipcustomextwarnhelp'
     },
     enableextensionpreview: {
-        defaultMessage: '加载扩展时启用扩展预览（已弃用）',
+        defaultMessage: '加载扩展时启用扩展预览（已弃用，需刷新）',
         description: 'extension preview label',
         id: 'tw.settingsModal.enableextensionpreview'
     },
@@ -884,14 +884,14 @@ const pageConfigurations = {
                         component: SkipCustomExtWarn,
                         props: props => ({
                             value: AEsettings.get('skipExtWarn') || false,
-                            onChange: (e) => { AEsettings.set("skipExtWarn", e.target.checked); notifySettingsChange(); }
+                            onChange: (e) => { AEsettings.set("skipExtWarn", e.target.checked); notifySettingsChange(); location.reload(); }
                         })
                     },
                     {
                         component: EnableExtensionPreview,
                         props: props => ({
                             value: AEsettings.get('EnableExtensionPreview') || false,
-                            onChange: (e) => { AEsettings.set("EnableExtensionPreview", e.target.checked); notifySettingsChange(); }
+                            onChange: (e) => { AEsettings.set("EnableExtensionPreview", e.target.checked); notifySettingsChange(); location.reload(); }
                         })
                     },
                     {
