@@ -150,7 +150,7 @@ const base = {
             ]
         })
     ]
-};
+}
 
 if (!process.env.CI) {
     base.plugins.push(new webpack.ProgressPlugin());

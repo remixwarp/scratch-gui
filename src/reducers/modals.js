@@ -30,8 +30,6 @@ const MODAL_AI_AGENT = 'aiAgentModal';
 const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 const MODAL_WARPTHEME = 'bilmeModal';
 
-const MODAL_PREVIEW_EXT = 'previewExt';
-const MODAL_EXTENSION_CHOOSER = 'extensionChooser';
 const MODAL_TUTORIAL = 'tutorialModal';
 const MODAL_VIDEO = 'videoModal';
 const MODAL_GANDI_HELP = 'gandiHelpModal';
@@ -65,8 +63,6 @@ const initialState = {
     [MODAL_AI_AGENT]: false,
     [MODAL_EXTENSION_LOAD_CHOICE]: false,
     [MODAL_WARPTHEME]: false,
-    [MODAL_PREVIEW_EXT]: false,
-    [MODAL_EXTENSION_CHOOSER]: false,
     [MODAL_TUTORIAL]: false,
     [MODAL_VIDEO]: false,
     [MODAL_GANDI_HELP]: false,
@@ -325,18 +321,6 @@ const openGandiHelpModal = function () {
 const closeGandiHelpModal = function () {
     return closeModal(MODAL_GANDI_HELP);
 };
-const openPreviewExt = function () {
-    return openModal(MODAL_PREVIEW_EXT);
-};
-const closePreviewExt = function () {
-    return closeModal(MODAL_PREVIEW_EXT);
-};
-const openExtensionChooser = function () {
-    return openModal(MODAL_EXTENSION_CHOOSER);
-};
-const closeExtensionChooser = function () {
-    return closeModal(MODAL_EXTENSION_CHOOSER);
-};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -402,12 +386,6 @@ export {
     closeVideoModal,
     openGandiHelpModal,
     closeGandiHelpModal,
-    openPreviewExt,
-    closePreviewExt,
-    openExtensionChooser,
-    closeExtensionChooser,
     MODAL_GANDI_HELP,
-    MODAL_PREVIEW_EXT,
-    MODAL_EXTENSION_CHOOSER,
     MODAL_WARPTHEME
 };

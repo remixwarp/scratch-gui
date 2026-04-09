@@ -9,8 +9,6 @@ import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import tabStyles from 'react-tabs/style/react-tabs.css';
 import VM from 'scratch-vm';
 import {AESettings} from '../../lib/settings.js';
-import ExtensionChooser from '../../containers/extension-chooser.jsx';
-import aePreviewExt from '../../containers/ae-preview-ext.jsx';
 import Blocks from '../../containers/blocks.jsx';
 import MultiWorkspaces from '../../components/blocks/multi-workspaces.jsx';
 import CostumeTab from '../../containers/costume-tab.jsx';
@@ -70,7 +68,6 @@ import {Theme} from '../../lib/themes';
 
 import {setStageSize} from '../../reducers/stage-size';
 import {showOnboarding} from '../../reducers/onboarding';
-import {openExtensionChooser} from '../../reducers/modals';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
@@ -82,22 +79,6 @@ const Settings = new AESettings();
 if (localStorage.getItem('AESettings') === "undefined" || localStorage.getItem('AESettings') === undefined) {
     Settings.reset()
 }
-let vscodeLayoutRef = false;
-
-const updateVscodeLayoutRef = () => {
-    const storedSettings = localStorage.getItem('AESettings');
-    try {
-        vscodeLayoutRef = JSON.parse(storedSettings).EnableVSCodeLayout;
-    } catch (e) {
-        vscodeLayoutRef = false;
-    }
-};
-
-// Initial update
-updateVscodeLayoutRef();
-
-// Listen for settings changes
-window.addEventListener('ae-settings-changed', updateVscodeLayoutRef);
 
 // Donation modal component
 const DonationModal = ({visible, onClose, count}) => {
@@ -261,7 +242,39 @@ const GUIComponent = props => {
         }
     });
     
-
+    // Initialize vscodeLayout state
+    const [vscodeLayout, setVscodeLayout] = useState(() => {
+        try {
+            const storedSettings = localStorage.getItem('AESettings');
+            return JSON.parse(storedSettings).EnableVSCodeLayout;
+        } catch (e) {
+            return false;
+        }
+    });
+    
+    // Update vscodeLayout when settings change
+    useEffect(() => {
+        const updateVscodeLayout = () => {
+            try {
+                const storedSettings = localStorage.getItem('AESettings');
+                setVscodeLayout(JSON.parse(storedSettings).EnableVSCodeLayout);
+            } catch (e) {
+                setVscodeLayout(false);
+            }
+        };
+        
+        // Listen for storage changes
+        window.addEventListener('storage', updateVscodeLayout);
+        
+        // Listen for custom ae settings change event
+        window.addEventListener('ae-settings-changed', updateVscodeLayout);
+        
+        // Cleanup
+        return () => {
+            window.removeEventListener('storage', updateVscodeLayout);
+            window.removeEventListener('ae-settings-changed', updateVscodeLayout);
+        };
+    }, []);
     
     // Handle startup count and donation modal
     useEffect(() => {
@@ -664,8 +677,6 @@ const GUIComponent = props => {
             <BilmeModal />
             {onboardingVisible && <Onboarding />}
             {props.gandiHelpModal && <GandiHelp onClose={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/CLOSE_MODAL', modal: 'gandiHelpModal'})} />}
-            {props.extensionChooserVisible && <ExtensionChooser />}
-            {props.previewExtVisible && <aePreviewExt />}
         </React.Fragment>
     ), [
         securityManager,
@@ -681,9 +692,7 @@ const GUIComponent = props => {
         gitModalVisible,
         shortcutManagerModalVisible,
         onboardingVisible,
-        props.gandiHelpModal,
-        props.extensionChooserVisible,
-        props.previewExtVisible
+        props.gandiHelpModal
     ]);
 
     const minDimensions = useMemo(() => ({
@@ -851,7 +860,7 @@ const GUIComponent = props => {
                     } : {}}>
                         <Box
                             className={classNames(styles.editorWrapper, {
-                                [styles.vscodeLayout]: vscodeLayoutRef
+                                [styles.vscodeLayout]: vscodeLayout
                             })}
                             ref={editorWrapperRef}
                         >
@@ -864,7 +873,7 @@ const GUIComponent = props => {
                             <Tabs
                                 forceRenderTabPanel
                                 className={
-                                    vscodeLayoutRef
+                                    vscodeLayout
                                         ? `${tabClassNames.tabs} ${tabClassNames.vscodeList}`
                                         : tabClassNames.tabs
                                 }
@@ -874,7 +883,7 @@ const GUIComponent = props => {
                                 onSelect={onActivateTab}
                             >
                                 <TabList className={
-                                    vscodeLayoutRef
+                                    vscodeLayout
                                         ? `${tabClassNames.tabList} ${tabClassNames.vscode}`
                                         : tabClassNames.tabList
                                 }>
@@ -948,7 +957,7 @@ const GUIComponent = props => {
                                         <button
                                             className={styles.extensionButton}
                                             title={intl.formatMessage(messages.addExtension)}
-                                            onClick={props.onOpenExtensionChooser}
+                                            onClick={onExtensionButtonClick}
                                         >
                                             <ExtensionIcon
                                                 className={styles.extensionButtonIcon}
@@ -1165,16 +1174,13 @@ const mapStateToProps = state => ({
     extensionLoadChoiceModalVisible: state.scratchGui.modals.extensionLoadChoiceModal,
     extensionLoadChoiceData: state.scratchGui.modals.extensionLoadChoiceData,
     gandiHelpModal: state.scratchGui.modals.gandiHelpModal,
-    extensionChooserVisible: state.scratchGui.modals.extensionChooser,
-    previewExtVisible: state.scratchGui.modals.previewExt,
     editingTarget: state.scratchGui.targets && state.scratchGui.targets.editingTarget
 });
 
 const mapDispatchToProps = dispatch => ({
     dispatch: dispatch,
     onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
-    onOpenOnboarding: () => dispatch(showOnboarding()),
-    onOpenExtensionChooser: () => dispatch(openExtensionChooser())
+    onOpenOnboarding: () => dispatch(showOnboarding())
 });
 
 export default injectIntl(connect(

@@ -5,7 +5,7 @@ import { defineMessages, injectIntl, intlShape, FormattedMessage } from 'react-i
 
 import add from './add.svg';
 import custom from './custom.png';
-import Modal from '../../containers/windowed-modal.jsx';
+import Modal from '../../containers/modal.jsx';
 import Box from '../box/box.jsx';
 import AddonHooks from '../../addons/hooks';
 
@@ -108,7 +108,7 @@ const ExtensionChooser = props => {
     const handleRemoveExtension = (extensionId) => {
         if (!vm || !vm.extensionManager) return;
 
-        vm.extensionManager.removeExtension(extensionId);
+        vm.extensionManager.unloadExtension(extensionId);
 
     };
 
