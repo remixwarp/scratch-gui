@@ -324,7 +324,7 @@
         "tw.settingsModal.caseSensitiveListsHelp": "使列表区分大小写。这意味着 “a” 和 “A” 会被视为不同的值。此选项不推荐用于大多数项目，但在大量使用列表的项目中可显著提升性能。",
         "tw.settingsModal.realLayerIndexes": "真实图层索引",
         "tw.settingsModal.realLayerIndexesHelp": "允许通过修改图层索引，直接改变渲染顺序数组中的位置，而不再将图层数量限制为可绘制对象的数量。",
-        "tw.settingsModal.ae": "AE 设置",
+        "tw.settingsModal.ae": "AstraEditor 设置",
         "tw.settingsModal.autodisplayreadme": "自动显示 README",
         "tw.settingsModal.autodisplayreadmeHelp": "项目打开后，如果有一个名为 'README' 的角色，将自动显示该角色内的 README。",
         "tw.settingsModal.enablehtmlsupportreadme": "启用 HTML 支持",

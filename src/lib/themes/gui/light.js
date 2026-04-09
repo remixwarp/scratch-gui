@@ -94,7 +94,11 @@ const guiColors = {
     'paint-filter-icon-gray': 'none'
 };
 
-const blockColors = {};
+const blockColors = {
+    workspace: '#F9F9F9',
+    toolbox: '#FFFFFF',
+    flyout: '#F9F9F9'
+};
 
 export {
     name,

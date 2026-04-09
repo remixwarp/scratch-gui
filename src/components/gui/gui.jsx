@@ -52,7 +52,7 @@ import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import AIModal from '../../containers/ai-modal.jsx';
 import AIChatModal from '../../containers/ai-chat-modal.jsx';
 import AIAgentModal from '../../containers/ai-agent-modal.jsx';
-import SuperRefactorModal from '../../containers/super-refactor-modal.jsx';
+
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 import TutorialModal from '../../containers/tutorial-modal.jsx';
 import VideoModal from '../../containers/video-modal.jsx';
@@ -654,7 +654,6 @@ const GUIComponent = props => {
             <AIModal />
             <AIChatModal />
             <AIAgentModal />
-            <SuperRefactorModal />
             <SimpleDialog />
             <TutorialModal />
             <VideoModal />
@@ -839,7 +838,7 @@ const GUIComponent = props => {
                     onToggleLoginOpen={onToggleLoginOpen}
                 />
                 <Box className={styles.bodyWrapper}>
-                    <Box className={styles.flexWrapper} style={aeSettings.get('EnableMobileLayout') ? {
+                    <Box className={styles.flexWrapper} style={(aeSettings.get('EnableMobileLayout') && !['localhost', '127.0.0.1'].includes(window.location.hostname)) ? {
                         flexDirection: 'column',
                         alignItems: 'stretch'
                     } : {}}>

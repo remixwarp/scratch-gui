@@ -29,7 +29,7 @@ const MODAL_AI_CHAT = 'aiChatModal';
 const MODAL_AI_AGENT = 'aiAgentModal';
 const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 const MODAL_WARPTHEME = 'bilmeModal';
-const MODAL_SUPER_REFACTOR = 'superRefactorModal';
+
 const MODAL_TUTORIAL = 'tutorialModal';
 const MODAL_VIDEO = 'videoModal';
 const MODAL_GANDI_HELP = 'gandiHelpModal';
@@ -63,13 +63,10 @@ const initialState = {
     [MODAL_AI_AGENT]: false,
     [MODAL_EXTENSION_LOAD_CHOICE]: false,
     [MODAL_WARPTHEME]: false,
-    [MODAL_SUPER_REFACTOR]: false,
     [MODAL_TUTORIAL]: false,
     [MODAL_VIDEO]: false,
     [MODAL_GANDI_HELP]: false,
     extensionLoadChoiceData: null,
-    superRefactorCode: '{}',
-    superRefactorOnSave: null,
     videoModalData: null
 };
 
@@ -80,8 +77,6 @@ const reducer = function (state, action) {
         return Object.assign({}, state, {
             [action.modal]: true,
             extensionLoadChoiceData: action.extensionLoadChoiceData || state.extensionLoadChoiceData,
-            superRefactorCode: action.superRefactorCode || state.superRefactorCode,
-            superRefactorOnSave: action.superRefactorOnSave || state.superRefactorOnSave,
             videoModalData: action.tutorial || state.videoModalData
         });
     case CLOSE_MODAL:
@@ -209,17 +204,7 @@ const openAIAgentModal = function (config) {
 const closeAIAgentModal = function () {
     return closeModal(MODAL_AI_AGENT);
 };
-const openSuperRefactorModal = function (code, onSave) {
-    return {
-        type: OPEN_MODAL,
-        modal: MODAL_SUPER_REFACTOR,
-        superRefactorCode: code,
-        superRefactorOnSave: onSave
-    };
-};
-const closeSuperRefactorModal = function () {
-    return closeModal(MODAL_SUPER_REFACTOR);
-};
+
 const openSimpleDialog = function (dialogConfig) {
     return {
         type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
@@ -368,8 +353,6 @@ export {
     closeAIChatModal,
     openAIAgentModal,
     closeAIAgentModal,
-    openSuperRefactorModal,
-    closeSuperRefactorModal,
     openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,

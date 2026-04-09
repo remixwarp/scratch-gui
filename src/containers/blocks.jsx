@@ -749,7 +749,7 @@ class Blocks extends React.Component {
                 // Update workspace background
                 const blocksSvg = this.blocks && this.blocks.querySelector('svg.blocklySvg');
                 if (blocksSvg && newColors.workspace) {
-                    blocksSvg.style.setProperty('background-color', newColors.workspace, 'important');
+                    blocksSvg.style.backgroundColor = newColors.workspace;
                 }
 
                 // Update blocklyMainBackground fill color
@@ -893,6 +893,22 @@ class Blocks extends React.Component {
                             el.style.setProperty('fill', newColors.scrollbar, 'important');
                         });
                     }
+                    if (newColors.workspace) {
+                        // Update all workspace backgrounds (including right-side workspace)
+                        const workspaceSvgs = document.querySelectorAll('svg.blocklySvg');
+                        workspaceSvgs.forEach(svg => {
+                            svg.style.setProperty('background-color', newColors.workspace, 'important');
+                        });
+                        const mainBackgrounds = document.querySelectorAll('.blocklyMainBackground');
+                        mainBackgrounds.forEach(bg => {
+                            bg.setAttribute('fill', newColors.workspace);
+                        });
+                        // Update workspace zoom buttons background
+                        const zoomButtons = document.querySelectorAll('.blocklyZoom');
+                        zoomButtons.forEach(zoom => {
+                            zoom.style.setProperty('background-color', newColors.workspace, 'important');
+                        });
+                    }
                 }
             }, 100);
 
@@ -918,6 +934,22 @@ class Blocks extends React.Component {
                         if (flyoutBackground) {
                             flyoutBackground.setAttribute('fill', newColors.flyout);
                         }
+                    }
+                    if (newColors.workspace) {
+                        // Update all workspace backgrounds (including right-side workspace)
+                        const workspaceSvgs = document.querySelectorAll('svg.blocklySvg');
+                        workspaceSvgs.forEach(svg => {
+                            svg.style.setProperty('background-color', newColors.workspace, 'important');
+                        });
+                        const mainBackgrounds = document.querySelectorAll('.blocklyMainBackground');
+                        mainBackgrounds.forEach(bg => {
+                            bg.setAttribute('fill', newColors.workspace);
+                        });
+                        // Update workspace zoom buttons background
+                        const zoomButtons = document.querySelectorAll('.blocklyZoom');
+                        zoomButtons.forEach(zoom => {
+                            zoom.style.setProperty('background-color', newColors.workspace, 'important');
+                        });
                     }
                 }
             }, 300);

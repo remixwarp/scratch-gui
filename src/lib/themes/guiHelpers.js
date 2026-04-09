@@ -275,30 +275,8 @@ const applyWallpaper = wallpaper => {
         document.documentElement.style.removeProperty('--wallpaper-overlay-opacity');
         document.documentElement.style.removeProperty('--wallpaper-darkness');
         
-        // Get current theme from localStorage
-        const themeData = JSON.parse(localStorage.getItem('tw:theme') || '{}');
-        const currentGuiTheme = themeData.gui || 'light';
-        
-        // Get block colors based on current theme
-        let blockColors;
-        if (currentGuiTheme === 'dark') {
-            blockColors = require('./blocks/dark').blockColors;
-        } else {
-            blockColors = require('./blocks/three').blockColors;
-        }
-        
-        // Set workspace background to the theme-defined color
-        if (blockColors.workspace) {
-            document.documentElement.style.setProperty('--editorTheme3-workspace-background', blockColors.workspace);
-            // Also set the blocks-wrapper background color to match
-            target.style.setProperty('background-color', blockColors.workspace, 'important');
-            
-            // Also directly set the svg.blocklySvg background color
-            const blocksSvg = document.querySelector('svg.blocklySvg');
-            if (blocksSvg) {
-                blocksSvg.style.setProperty('background-color', blockColors.workspace, 'important');
-            }
-        }
+        // Note: Workspace background color is already set by applyGuiColors via CSS variables
+        // We don't need to set it again here to avoid overriding the theme system
         
         // Remove transparency from blocks workspace
         applyBlocksWorkspaceTransparency(false);
