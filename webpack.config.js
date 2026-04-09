@@ -47,45 +47,7 @@ const base = {
                 {from: /^\/addons\/?$/, to: '/addons.html'}
             ]
         },
-        // 代理超级重构后端服务器API
-        proxy: {
-            '/api/save-file': {
-                target: 'http://localhost:3456',
-                changeOrigin: true,
-                logLevel: 'debug'
-            }
-        },
-        // 启动时自动启动后端服务器
-        before: function(app, server, compiler) {
-            const { spawn } = require('child_process');
-            const path = require('path');
-            const net = require('net');
 
-            const SERVER_PORT = 3456;
-            const SERVER_SCRIPT = path.resolve(__dirname, 'scripts/dev-server.js');
-
-            // 检查端口是否被占用
-            function checkPort(port) {
-                return new Promise((resolve) => {
-                    const testServer = net.createServer();
-                    testServer.once('error', (err) => {
-                        if (err.code === 'EADDRINUSE') {
-                            resolve(true);
-                        } else {
-                            resolve(false);
-                        }
-                    });
-                    testServer.once('listening', () => {
-                        testServer.close();
-                        resolve(false);
-                    });
-                    testServer.listen(port);
-                });
-            }
-
-
-        }
-    },
     output: {
         library: 'GUI',
         filename: process.env.NODE_ENV === 'production' ?
