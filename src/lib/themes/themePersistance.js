@@ -1,4 +1,4 @@
-import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT} from './index.js';
+import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, BLOCKS_DARK, MENUBAR_ALIGN_DEFAULT} from './index.js';
 import {customThemeManager, CustomTheme} from './custom-themes.js';
 import {applyGuiColors} from './guiHelpers.js';
 
@@ -28,7 +28,7 @@ const systemPreferencesTheme = () => {
         return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
     }
     if (PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches) {
-        return new Theme(ACCENT_DEFAULT, 'dark', BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
+        return new Theme(ACCENT_DEFAULT, 'dark', BLOCKS_DARK, MENUBAR_ALIGN_DEFAULT);
     }
     return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
 };
@@ -102,10 +102,23 @@ const detectTheme = () => {
             wallpaper.gridVisible = true;
         }
 
+        // Determine the correct blocks based on gui theme
+        const guiTheme = parsed.gui || systemPreferences.gui;
+        let blocks = parsed.blocks || systemPreferences.blocks;
+        
+        // If gui is dark but blocks is not dark, use dark blocks
+        if (guiTheme === 'dark' && blocks !== 'dark') {
+            blocks = BLOCKS_DARK;
+        }
+        // If gui is light but blocks is dark, use default blocks
+        else if (guiTheme !== 'dark' && blocks === 'dark') {
+            blocks = BLOCKS_THREE;
+        }
+        
         return new Theme(
             parsed.accent || systemPreferences.accent,
-            parsed.gui || systemPreferences.gui,
-            parsed.blocks || systemPreferences.blocks,
+            guiTheme,
+            blocks,
             parsed.menuBarAlign || systemPreferences.menuBarAlign,
             wallpaper,
             parsed.fonts || {system: [], google: [], history: []}

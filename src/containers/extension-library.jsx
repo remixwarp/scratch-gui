@@ -338,7 +338,7 @@ const fetchLibrary = async () => {
         console.warn('Failed to load AstraEditor extensions:', error);
     }
 
-    return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions, ...remixwarpExtensions, ...astraExtensions];
+    return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions, ...remixwarpExtensions, ...astraExtensions, ...engineExtensions];
 };
 
 class ExtensionLibrary extends React.PureComponent {

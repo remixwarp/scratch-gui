@@ -5,5 +5,6 @@ export default [
     {tag: 'astra', intlLabel: 'AstraEditor'},
     {tag: 'mistium', intlLabel: 'Mistium'},
     {tag: 'sharkpools', intlLabel: 'SharkPools'},
-    {tag: 'penguinmod', intlLabel: 'PenguinMod'}
+    {tag: 'penguinmod', intlLabel: 'PenguinMod'},
+    {tag: '02engine', intlLabel: '02Engine'}
 ];

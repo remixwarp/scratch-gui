@@ -60,11 +60,26 @@ const applyTransparencyToElement = (element, hasWallpaper, wallpaperOpacity = 0.
         const backgroundColor = guiColors.startsWith('#') ?
             hexToRgba(guiColors, backgroundOpacity) :
             `rgba(229, 240, 255, ${backgroundOpacity})`;
-        element.style.backgroundColor = backgroundColor;
+        // Use setProperty with !important to override CSS !important rules
+        element.style.setProperty('background-color', backgroundColor, 'important');
     } else {
         // Use the theme-defined workspace background color
-        const workspaceColor = document.documentElement.style.getPropertyValue('--editorTheme3-workspace-background') || '#FFFFFF';
-        element.style.backgroundColor = workspaceColor;
+        let workspaceColor = document.documentElement.style.getPropertyValue('--editorTheme3-workspace-background');
+        
+        // If no workspace color is set or it's transparent, determine based on current theme
+        if (!workspaceColor || workspaceColor === 'transparent') {
+            const themeData = JSON.parse(localStorage.getItem('tw:theme') || '{}');
+            const currentGuiTheme = themeData.gui || 'light';
+            
+            if (currentGuiTheme === 'dark') {
+                workspaceColor = '#1e1e1e'; // Dark theme workspace color
+            } else {
+                workspaceColor = '#FFFFFF'; // Light theme workspace color
+            }
+        }
+        
+        // Use setProperty with !important to override CSS !important rules
+        element.style.setProperty('background-color', workspaceColor, 'important');
     }
 };
 
@@ -260,14 +275,29 @@ const applyWallpaper = wallpaper => {
         document.documentElement.style.removeProperty('--wallpaper-overlay-opacity');
         document.documentElement.style.removeProperty('--wallpaper-darkness');
         
-        // Get block colors from the current theme
-        const blockColors = require('./blocks/three').blockColors;
+        // Get current theme from localStorage
+        const themeData = JSON.parse(localStorage.getItem('tw:theme') || '{}');
+        const currentGuiTheme = themeData.gui || 'light';
+        
+        // Get block colors based on current theme
+        let blockColors;
+        if (currentGuiTheme === 'dark') {
+            blockColors = require('./blocks/dark').blockColors;
+        } else {
+            blockColors = require('./blocks/three').blockColors;
+        }
         
         // Set workspace background to the theme-defined color
         if (blockColors.workspace) {
             document.documentElement.style.setProperty('--editorTheme3-workspace-background', blockColors.workspace);
             // Also set the blocks-wrapper background color to match
-            target.style.backgroundColor = blockColors.workspace;
+            target.style.setProperty('background-color', blockColors.workspace, 'important');
+            
+            // Also directly set the svg.blocklySvg background color
+            const blocksSvg = document.querySelector('svg.blocklySvg');
+            if (blocksSvg) {
+                blocksSvg.style.setProperty('background-color', blockColors.workspace, 'important');
+            }
         }
         
         // Remove transparency from blocks workspace

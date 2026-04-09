@@ -749,7 +749,7 @@ class Blocks extends React.Component {
                 // Update workspace background
                 const blocksSvg = this.blocks && this.blocks.querySelector('svg.blocklySvg');
                 if (blocksSvg && newColors.workspace) {
-                    blocksSvg.style.backgroundColor = newColors.workspace;
+                    blocksSvg.style.setProperty('background-color', newColors.workspace, 'important');
                 }
 
                 // Update blocklyMainBackground fill color

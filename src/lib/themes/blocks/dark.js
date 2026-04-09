@@ -76,7 +76,10 @@ const blockColors = {
     text: 'rgba(255, 255, 255, .7)',
     textFieldText: '#E5E5E5',
     textField: '#4C4C4C',
-    menuHover: 'rgba(255, 255, 255, 0.3)'
+    menuHover: 'rgba(255, 255, 255, 0.3)',
+    workspace: '#1e1e1e',
+    toolbox: '#1e1e1e',
+    flyout: '#1e1e1e'
 };
 
 const extensions = {};
