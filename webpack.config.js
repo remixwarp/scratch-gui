@@ -46,8 +46,8 @@ const base = {
                 {from: /^\/\d+\/embed\/?$/, to: '/embed.html'},
                 {from: /^\/addons\/?$/, to: '/addons.html'}
             ]
-        },
-
+        }
+    },
     output: {
         library: 'GUI',
         filename: process.env.NODE_ENV === 'production' ?

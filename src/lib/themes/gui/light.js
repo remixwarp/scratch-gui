@@ -97,7 +97,12 @@ const guiColors = {
 const blockColors = {
     workspace: '#F9F9F9',
     toolbox: '#FFFFFF',
-    flyout: '#F9F9F9'
+    flyout: '#F9F9F9',
+    // Text colors for blocks in light mode
+    text: '#FFFFFF',
+    toolboxText: '#575E75',
+    blackText: '#FFFFFF',
+    textFieldText: '#575E75'
 };
 
 export {

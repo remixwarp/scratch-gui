@@ -105,6 +105,42 @@
     color: #ffffff;
 }
 
+/* VS Code Layout */
+.vscode {
+    background-color: $ui-tertiary;
+    border-bottom: 1px solid $ui-black-transparent;
+    color: $text-primary;
+    width: 100% !important;
+    height: 40px !important;
+    align-items: center !important;
+    padding-left: 1rem !important;
+}
+
+.vscodeList {
+    flex-direction: column;
+}
+
+.vscode .tab {
+    background-color: $ui-tertiary;
+    border: 1px solid $ui-black-transparent;
+    color: $text-primary-transparent;
+    height: 32px !important;
+    top: 0 !important;
+    margin-right: 8px !important;
+    border-radius: 4px 4px 0 0 !important;
+}
+
+.vscode .tab:hover {
+    background-color: $ui-tertiary;
+    border-color: $looks-secondary;
+}
+
+.vscode .tab.is-selected {
+    background-color: $ui-white;
+    border-color: $ui-black-transparent;
+    color: $looks-secondary;
+}
+
 .tab-list {
     height: $stage-menu-height;
     width: 250px; /* Match width of the toolbox */

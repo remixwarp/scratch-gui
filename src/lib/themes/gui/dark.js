@@ -77,7 +77,11 @@ const blockColors = {
     buttonActiveBackground: '#222222',
     buttonForeground: '#cccccc',
     zoomIconFilter: 'invert(100%)',
-    gridColor: '#484848'
+    gridColor: '#484848',
+    // Text colors for blocks in dark mode
+    text: '#000000',
+    blackText: '#000000',
+    textFieldText: '#000000'
 };
 
 export {

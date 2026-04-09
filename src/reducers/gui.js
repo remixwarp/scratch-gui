@@ -37,6 +37,7 @@ import onboardingReducer, {onboardingInitialState} from './onboarding';
 import toastReducer, {toastInitialState} from './toast';
 import shortcutsReducer, {shortcutsInitialState} from './shortcuts';
 import sharedBackpackReducer from './shared-backpack';
+import aePreviewExtDataReducer, {aePreviewExtDataInitialState} from './ae-preview-ext-data';
 import throttle from 'redux-throttle';
 
 import decks from '../lib/libraries/decks/index.jsx';
@@ -85,7 +86,8 @@ const guiInitialState = {
         backpacks: [],
         selectedBackpackId: null,
         createDialogOpen: false
-    }
+    },
+    aePreviewExtData: aePreviewExtDataInitialState
 };
 
 const initPlayer = function (currentState) {
@@ -211,7 +213,8 @@ const guiReducer = combineReducers({
     workspaceMetrics: workspaceMetricsReducer,
     onboarding: onboardingReducer,
     shortcuts: shortcutsReducer,
-    sharedBackpack: sharedBackpackReducer
+    sharedBackpack: sharedBackpackReducer,
+    aePreviewExtData: aePreviewExtDataReducer
 });
 
 export {

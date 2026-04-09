@@ -815,6 +815,14 @@ class Blocks extends React.Component {
                 });
             }
 
+            // Update block text colors
+            if (newColors.text) {
+                const blockTexts = document.querySelectorAll('.blocklyText, .blocklyBasicField_label');
+                blockTexts.forEach(text => {
+                    text.style.fill = newColors.text;
+                });
+            }
+
             // Update separator lines in toolbox
             if (newColors.toolboxText) {
                 const separators = document.querySelectorAll('.blocklyTreeSeparator');
@@ -885,6 +893,12 @@ class Blocks extends React.Component {
                         const labels = document.querySelectorAll('.blocklyTreeLabel, .blocklyFlyoutLabelText');
                         labels.forEach(label => {
                             label.style.setProperty('fill', textColor, 'important');
+                        });
+                    }
+                    if (newColors.text) {
+                        const blockTexts = document.querySelectorAll('.blocklyText, .blocklyBasicField_label');
+                        blockTexts.forEach(text => {
+                            text.style.setProperty('fill', newColors.text, 'important');
                         });
                     }
                     if (newColors.scrollbar) {
