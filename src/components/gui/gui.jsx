@@ -51,6 +51,7 @@ import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import AIModal from '../../containers/ai-modal.jsx';
 import AIChatModal from '../../containers/ai-chat-modal.jsx';
 import AIAgentModal from '../../containers/ai-agent-modal.jsx';
+import ExtensionEditorModal from '../../containers/extension-editor-modal.jsx';
 
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 import TutorialModal from '../../containers/tutorial-modal.jsx';
@@ -670,6 +671,7 @@ const GUIComponent = props => {
             <AIModal />
             <AIChatModal />
             <AIAgentModal />
+            <ExtensionEditorModal />
             <SimpleDialog />
             <TutorialModal />
             <VideoModal />

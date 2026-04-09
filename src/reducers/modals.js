@@ -29,6 +29,7 @@ const MODAL_AI_CHAT = 'aiChatModal';
 const MODAL_AI_AGENT = 'aiAgentModal';
 const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 const MODAL_WARPTHEME = 'bilmeModal';
+const MODAL_EXTENSION_EDITOR = 'extensionEditorModal';
 
 const MODAL_TUTORIAL = 'tutorialModal';
 const MODAL_VIDEO = 'videoModal';
@@ -63,6 +64,7 @@ const initialState = {
     [MODAL_AI_AGENT]: false,
     [MODAL_EXTENSION_LOAD_CHOICE]: false,
     [MODAL_WARPTHEME]: false,
+    [MODAL_EXTENSION_EDITOR]: false,
     [MODAL_TUTORIAL]: false,
     [MODAL_VIDEO]: false,
     [MODAL_GANDI_HELP]: false,
@@ -321,6 +323,12 @@ const openGandiHelpModal = function () {
 const closeGandiHelpModal = function () {
     return closeModal(MODAL_GANDI_HELP);
 };
+const openExtensionEditorModal = function () {
+    return openModal(MODAL_EXTENSION_EDITOR);
+};
+const closeExtensionEditorModal = function () {
+    return closeModal(MODAL_EXTENSION_EDITOR);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -386,6 +394,9 @@ export {
     closeVideoModal,
     openGandiHelpModal,
     closeGandiHelpModal,
+    openExtensionEditorModal,
+    closeExtensionEditorModal,
     MODAL_GANDI_HELP,
-    MODAL_WARPTHEME
+    MODAL_WARPTHEME,
+    MODAL_EXTENSION_EDITOR
 };
