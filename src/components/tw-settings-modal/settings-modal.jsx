@@ -20,96 +20,96 @@ const BufferedInput = BufferedInputHOC(Input);
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Project Settings',
+        defaultMessage: '项目设置',
         description: 'Title of settings modal',
         id: 'tw.settingsModal.title'
     },
     help: {
-        defaultMessage: 'Click for help',
+        defaultMessage: '点击获取帮助',
         description: 'Hover text of help icon in settings',
         id: 'tw.settingsModal.help'
     },
     headerFeatured: {
-        defaultMessage: 'Featured',
+        defaultMessage: '推荐',
         description: 'Settings modal section',
         id: 'tw.settingsModal.featured'
     },
     headerRemoveLimits: {
-        defaultMessage: 'Remove Limits',
+        defaultMessage: '移除限制',
         description: 'Settings modal section',
         id: 'tw.settingsModal.removeLimits'
     },
     headerDangerZone: {
-        defaultMessage: 'Danger Zone',
+        defaultMessage: '危险区域',
         description: 'Settings modal section',
         id: 'tw.settingsModal.dangerZone'
     },
     headerExperimental: {
-        defaultMessage: 'Experimental',
+        defaultMessage: '实验性',
         id: 'mw.settings.experimental'
     },
     headerAE: {
-        defaultMessage: 'AE Settings',
+        defaultMessage: 'AE 设置',
         description: 'AE Settings modal section',
         id: 'tw.settingsModal.ae'
     },
     autodisplayreadme: {
-        defaultMessage: 'Automatically Display README',
+        defaultMessage: '自动显示 README',
         description: 'Auto Displat Readme label',
         id: 'tw.settingsModal.autodisplayreadme'
     },
     autodisplayreadmeHelp: {
-        defaultMessage: 'After the project is opened, if there is a Sprite named \'README\', the README inside the Sprite will be automatically displayed.',
+        defaultMessage: '项目打开后，如果有一个名为 \'README\' 的角色，将自动显示该角色内的 README。',
         description: 'Auto Displat Readme label help',
         id: 'tw.settingsModal.autodisplayreadmeHelp'
     },
     enablehtmlsupportreadme: {
-        defaultMessage: 'Enable HTML Support',
+        defaultMessage: '启用 HTML 支持',
         description: 'Enable HTML Support in README label',
         id: 'tw.settingsModal.enablehtmlsupportreadme'
     },
     enablehtmlsupportreadmeHelp: {
-        defaultMessage: 'Allows you to use HTML tags in the README.',
+        defaultMessage: '允许在 README 中使用 HTML 标签。',
         description: 'Enable HTML Support in README help',
         id: 'tw.settingsModal.enablehtmlsupportreadmeHelp'
     },
     skipcustomextwarn: {
-        defaultMessage: 'Skip custom extension warning',
+        defaultMessage: '跳过自定义扩展警告',
         description: 'Skip custom extension warning label',
         id: 'tw.settingsModal.skipcustomextwarn'
     },
     skipcustomextwarnhelp: {
-        defaultMessage: 'When the project loads, you do not need to agree to each custom extension request sequentially. You only need to click \'Agree All\' once.',
+        defaultMessage: '项目加载时，无需依次同意每个自定义扩展请求。只需点击一次 \'全部同意\' 即可。',
         description: 'Skip custom extension warning help',
         id: 'tw.settingsModal.skipcustomextwarnhelp'
     },
     enableextensionpreview: {
-        defaultMessage: 'Enable extension preview when load extension (Deprecated)',
+        defaultMessage: '加载扩展时启用扩展预览（已弃用）',
         description: 'extension preview label',
         id: 'tw.settingsModal.enableextensionpreview'
     },
     enableextensionpreviewhelp: {
-        defaultMessage: 'Before loading custom extensions, you can preview the extensions you want to load.',
+        defaultMessage: '加载自定义扩展前，可以预览要加载的扩展。',
         description: 'extension preview help',
         id: 'tw.settingsModal.enableextensionpreviewhelp'
     },
     enablevscodelayout: {
-        defaultMessage: 'Enable VSCode Layout (Need Refresh)',
+        defaultMessage: '启用 VSCode 布局（需要刷新）',
         description: 'EnableVSCodeLayout label',
         id: 'tw.settingsModal.enablevscodelayout'
     },
     enablevscodelayouthelp: {
-        defaultMessage: 'Change the interface layout to a style similar to VSCode.',
+        defaultMessage: '将界面布局更改为类似 VSCode 的风格。',
         description: 'EnableVSCodeLayout help',
         id: 'tw.settingsModal.enablevscodelayouthelp'
     },
     enablecoblielayout: {
-        defaultMessage: 'Enable Mobile Layout (Need Refresh)',
+        defaultMessage: '启用移动布局（需要刷新）',
         description: 'EnableMobileLayout label',
         id: 'tw.settingsModal.enablecoblielayout'
     },
     enablecoblielayouthelp: {
-        defaultMessage: 'Adjust the stage and sprite area positions to make them slightly more suitable for Mobile editing.',
+        defaultMessage: '调整舞台和角色区域的位置，使其更适合移动设备编辑。',
         description: 'EnableMobileLayout help',
         id: 'tw.settingsModal.enablecoblielayouthelp'
     }
@@ -252,16 +252,12 @@ const AutoDisplayREADME = props => (
         {...props}
         label={
             <FormattedMessage
-                defaultMessage="Automatically Display README"
-                description="Auto Displat Readme label"
-                id="tw.settingsModal.autodisplayreadme"
+                {...messages.autodisplayreadme}
             />
         }
         help={
             <FormattedMessage
-                defaultMessage="After the project is opened, if there is a Sprite named 'README', the README inside the Sprite will be automatically displayed."
-                description="Auto Displat Readme label help"
-                id="tw.settingsModal.autodisplayreadmeHelp"
+                {...messages.autodisplayreadmeHelp}
             />
         }
     />
@@ -272,16 +268,12 @@ const EnableHTMLSupportREADME = props => (
         {...props}
         label={
             <FormattedMessage
-                defaultMessage="Enable HTML Support"
-                description="Enable HTML Support in README label"
-                id="tw.settingsModal.enablehtmlsupportreadme"
+                {...messages.enablehtmlsupportreadme}
             />
         }
         help={
             <FormattedMessage
-                defaultMessage="Allows you to use HTML tags in the README."
-                description="Enable HTML Support in README help"
-                id="tw.settingsModal.enablehtmlsupportreadmeHelp"
+                {...messages.enablehtmlsupportreadmeHelp}
             />
         }
     />
@@ -292,16 +284,12 @@ const SkipCustomExtWarn = props => (
         {...props}
         label={
             <FormattedMessage
-                defaultMessage="Skip custom extension warning"
-                description="Skip custom extension warning label"
-                id="tw.settingsModal.skipcustomextwarn"
+                {...messages.skipcustomextwarn}
             />
         }
         help={
             <FormattedMessage
-                defaultMessage="When the project loads, you do not need to agree to each custom extension request sequentially. You only need to click 'Agree All' once."
-                description="Skip custom extension warning help"
-                id="tw.settingsModal.skipcustomextwarnhelp"
+                {...messages.skipcustomextwarnhelp}
             />
         }
     />
@@ -312,16 +300,12 @@ const EnableExtensionPreview = props => (
         {...props}
         label={
             <FormattedMessage
-                defaultMessage="Enable extension preview when load extension (Deprecated)"
-                description="extension preview label"
-                id="tw.settingsModal.enableextensionpreview"
+                {...messages.enableextensionpreview}
             />
         }
         help={
             <FormattedMessage
-                defaultMessage="Before loading custom extensions, you can preview the extensions you want to load."
-                description="extension preview help"
-                id="tw.settingsModal.enableextensionpreviewhelp"
+                {...messages.enableextensionpreviewhelp}
             />
         }
     />
@@ -332,16 +316,12 @@ const EnableVSCodeLayout = props => (
         {...props}
         label={
             <FormattedMessage
-                defaultMessage="Enable VSCode Layout (Need Refresh)"
-                description="EnableVSCodeLayout label"
-                id="tw.settingsModal.enablevscodelayout"
+                {...messages.enablevscodelayout}
             />
         }
         help={
             <FormattedMessage
-                defaultMessage="Change the interface layout to a style similar to VSCode."
-                description="EnableVSCodeLayout help"
-                id="tw.settingsModal.enablevscodelayouthelp"
+                {...messages.enablevscodelayouthelp}
             />
         }
     />
@@ -352,16 +332,12 @@ const EnableMobileLayout = props => (
         {...props}
         label={
             <FormattedMessage
-                defaultMessage="Enable Mobile Layout (Need Refresh)"
-                description="EnableMobileLayout label"
-                id="tw.settingsModal.enablecoblielayout"
+                {...messages.enablecoblielayout}
             />
         }
         help={
             <FormattedMessage
-                defaultMessage="Adjust the stage and sprite area positions to make them slightly more suitable for Mobile editing."
-                description="EnableMobileLayout help"
-                id="tw.settingsModal.enablecoblielayouthelp"
+                {...messages.enablecoblielayouthelp}
             />
         }
     />
