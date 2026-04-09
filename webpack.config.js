@@ -66,6 +66,10 @@ const base = {
             'exports-loader': require.resolve('exports-loader')
         }
     },
+    node: {
+        __dirname: false,
+        __filename: false
+    },
     module: {
         rules: [{
             test: /\.jsx?$/,
@@ -149,7 +153,10 @@ const base = {
                 }
             ]
         })
-    ]
+    ],
+    externals: {
+        'electron': 'commonjs electron'
+    }
 }
 
 if (!process.env.CI) {

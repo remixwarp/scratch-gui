@@ -52,6 +52,15 @@ import {
     openSimpleDialog,
     openTutorialModal
 } from '../../reducers/modals';
+
+// IPC for opening extension editor
+let ipcRenderer = null;
+try {
+  ipcRenderer = require('electron').ipcRenderer;
+} catch (e) {
+  // Not in Electron environment
+  ipcRenderer = null;
+}
 import {showOnboarding} from '../../reducers/onboarding';
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
@@ -2678,6 +2687,35 @@ class MenuBar extends React.Component {
                                             description="Menu bar item for keyboard shortcuts"
                                             id="tw.menuBar.keyboardShortcuts"
                                         />
+                                    </MenuItem>
+                                </MenuSection>
+                                <MenuSection>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onRequestCloseTools();
+                                            // Open extension editor window
+                                            console.log('Opening extension editor...');
+                                            console.log('ipcRenderer available:', !!ipcRenderer);
+                                            if (ipcRenderer) {
+                                                console.log('Sending IPC request to open extension editor...');
+                                                ipcRenderer.invoke('open-extension-editor')
+                                                    .then(() => {
+                                                        console.log('IPC request successful');
+                                                    })
+                                                    .catch((error) => {
+                                                        console.error('IPC request failed:', error);
+                                                        // Fallback if IPC fails
+                                                        window.open('https://editors.astras.top/scratch-extension-editor/', '_blank');
+                                                    });
+                                            } else {
+                                                // Fallback for non-Electron environment
+                                                console.log('ipcRenderer not available, using fallback');
+                                                window.open('https://editors.astras.top/scratch-extension-editor/', '_blank');
+                                            }
+                                        }}
+                                    >
+                                        <PackagePlus />
+                                        {this.props.locale === 'zh-cn' ? '扩展编辑器' : 'Extension Editor'}
                                     </MenuItem>
                                 </MenuSection>
                             </MenuBarMenu>
