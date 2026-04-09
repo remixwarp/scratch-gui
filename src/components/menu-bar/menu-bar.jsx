@@ -50,7 +50,8 @@ import {
     openExtensionManagerModal,
     openShortcutManagerModal,
     openSimpleDialog,
-    openTutorialModal
+    openTutorialModal,
+    openExtensionEditorModal
 } from '../../reducers/modals';
 
 // IPC for opening extension editor
@@ -2694,24 +2695,7 @@ class MenuBar extends React.Component {
                                         onClick={() => {
                                             this.props.onRequestCloseTools();
                                             // Open extension editor window
-                                            console.log('Opening extension editor...');
-                                            console.log('ipcRenderer available:', !!ipcRenderer);
-                                            if (ipcRenderer) {
-                                                console.log('Sending IPC request to open extension editor...');
-                                                ipcRenderer.invoke('open-extension-editor')
-                                                    .then(() => {
-                                                        console.log('IPC request successful');
-                                                    })
-                                                    .catch((error) => {
-                                                        console.error('IPC request failed:', error);
-                                                        // Fallback if IPC fails
-                                                        window.open('https://editors.astras.top/scratch-extension-editor/', '_blank');
-                                                    });
-                                            } else {
-                                                // Fallback for non-Electron environment
-                                                console.log('ipcRenderer not available, using fallback');
-                                                window.open('https://editors.astras.top/scratch-extension-editor/', '_blank');
-                                            }
+                                            this.props.dispatch(openExtensionEditorModal());
                                         }}
                                     >
                                         <PackagePlus />
