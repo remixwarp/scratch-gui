@@ -138,7 +138,7 @@ const persistTheme = theme => {
             nonDefaultSettings.menuBarAlign = theme.menuBarAlign;
         }
         // Always save wallpaper settings if they exist
-        if (theme.wallpaper && (theme.wallpaper.url || theme.wallpaper.history.length > 0)) {
+        if (theme.wallpaper && (theme.wallpaper.url || (theme.wallpaper.history && theme.wallpaper.history.length > 0))) {
             nonDefaultSettings.wallpaper = theme.wallpaper;
         }
 

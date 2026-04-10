@@ -4,6 +4,7 @@ const guiColors = {
     'motion-tertiary': '#388e3c', // darker green
 
     'looks-secondary': '#4caf50', // bright green
+    'looks-tertiary': 'hsla(122, 39%, 25%, 1)', // dark green
     'looks-transparent': '#4caf5059', // more transparent green
     'looks-light-transparent': '#4caf5026', // very transparent green
     'looks-secondary-dark': 'hsla(122, 39%, 35%, 1)', // dark green

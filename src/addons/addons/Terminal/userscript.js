@@ -175,14 +175,18 @@ export default async function ({ addon, console }) {
 
   // 创建打开终端按钮 - 放在 SPA 分析器按钮旁边
   const terminalButton = document.createElement("button");
+  // 保持原始类名，确保按钮能够正确显示
   terminalButton.className = addon.tab.scratchClass('menu-bar_menu-bar-button', {
     others: 'sa-terminal-button'
   });
-  // 使用intl获取翻译
+  // 使用intl获取翻译，确保在不同语言环境下显示正确的文本
   const terminalText = addon.tab.t("Terminal/@name") || "Terminal";
   terminalButton.textContent = terminalText;
   terminalButton.title = "打开终端窗口";
   terminalButton.addEventListener("click", openTerminalWindow);
+  
+  // 存储终端文本，供VS Code布局使用
+  let storedTerminalText = terminalText;
 
   addon.tab.displayNoneWhileDisabled(terminalButton);
 
@@ -203,26 +207,104 @@ export default async function ({ addon, console }) {
 
   // 插入终端按钮
   const insertTerminalButton = () => {
-    const analyzeButton = findAnalyzeButton();
-    if (analyzeButton && !terminalButton.parentNode) {
-      analyzeButton.parentNode.insertBefore(terminalButton, analyzeButton.nextSibling);
-      return true;
-    }
-    // 如果没有找到分析器按钮，插入到标签栏
-    const tabBar = document.querySelector('[class*="react-tabs_react-tabs__tab-list"]');
-    if (tabBar && !terminalButton.parentNode) {
-      tabBar.appendChild(terminalButton);
-      return true;
-    }
-    // 尝试插入到编辑器包装器中
-    const editorWrapper = document.querySelector('.editor-wrapper');
-    if (editorWrapper && !terminalButton.parentNode) {
-      terminalButton.style.position = 'absolute';
-      terminalButton.style.top = '10px';
-      terminalButton.style.left = '10px';
-      terminalButton.style.zIndex = '1000';
-      editorWrapper.appendChild(terminalButton);
-      return true;
+    // 尝试不同的插入位置
+    const insertionPoints = [
+      // 1. 分析器按钮旁边
+      () => {
+        const analyzeButton = document.querySelector('.sa-analyze-button');
+        if (analyzeButton) {
+          analyzeButton.parentNode.insertBefore(terminalButton, analyzeButton.nextSibling);
+          return true;
+        }
+        return false;
+      },
+      // 2. 编辑器包装器内
+      () => {
+        const editorWrapper = document.querySelector('.editor-wrapper');
+        if (editorWrapper) {
+          terminalButton.style.position = 'absolute';
+          terminalButton.style.top = '10px';
+          terminalButton.style.left = '10px';
+          terminalButton.style.zIndex = '1000';
+          terminalButton.style.padding = '5px 10px';
+          terminalButton.style.backgroundColor = '#f0f0f0';
+          terminalButton.style.border = '1px solid #ccc';
+          terminalButton.style.borderRadius = '4px';
+          terminalButton.style.cursor = 'pointer';
+          editorWrapper.appendChild(terminalButton);
+          return true;
+        }
+        return false;
+      },
+      // 3. 标签栏内
+      () => {
+        const tabBar = document.querySelector('[class*="react-tabs_react-tabs__tab-list"]');
+        if (tabBar) {
+          // 检查是否是VS Code布局
+          const isVSCodeLayout = tabBar.classList.contains('vscode');
+          if (isVSCodeLayout) {
+            // 为VS Code布局添加特殊样式
+            terminalButton.className = 'sa-terminal-button';
+            terminalButton.style.width = '40px';
+            terminalButton.style.height = '40px';
+            terminalButton.style.flexGrow = '0';
+            terminalButton.style.borderRadius = '0';
+            terminalButton.style.margin = '0';
+            terminalButton.style.padding = '10px';
+            terminalButton.style.flexDirection = 'column';
+            terminalButton.style.justifyContent = 'center';
+            terminalButton.style.alignItems = 'center';
+            terminalButton.style.fontSize = '0';
+            terminalButton.style.backgroundColor = 'transparent';
+            terminalButton.style.border = '0';
+            terminalButton.style.marginBottom = '10px';
+            terminalButton.style.display = 'flex';
+            
+            // 添加终端图标
+            const terminalIcon = document.createElement('div');
+            terminalIcon.style.width = '2rem';
+            terminalIcon.style.height = '2rem';
+            terminalIcon.style.display = 'flex';
+            terminalIcon.style.justifyContent = 'center';
+            terminalIcon.style.alignItems = 'center';
+            terminalIcon.innerHTML = '&#x231B;'; // 终端图标
+            terminalIcon.style.color = '#666';
+            
+            // 清空按钮内容并添加图标
+            terminalButton.innerHTML = '';
+            terminalButton.appendChild(terminalIcon);
+            // 保持title属性，显示语言相关的提示
+            terminalButton.title = storedTerminalText + " - 打开终端窗口";
+          } else {
+            // 普通布局下的样式
+            terminalButton.style.padding = '5px 10px';
+            terminalButton.style.marginLeft = '10px';
+            // 确保显示正确的语言文本
+            terminalButton.textContent = storedTerminalText;
+          }
+          tabBar.appendChild(terminalButton);
+          return true;
+        }
+        return false;
+      },
+      // 4. 菜单栏内
+      () => {
+        const menuBar = document.querySelector('.menu-bar');
+        if (menuBar) {
+          terminalButton.style.padding = '5px 10px';
+          terminalButton.style.marginLeft = '10px';
+          menuBar.appendChild(terminalButton);
+          return true;
+        }
+        return false;
+      }
+    ];
+
+    // 尝试每个插入点
+    for (const insertionFn of insertionPoints) {
+      if (insertionFn() && terminalButton.parentNode) {
+        return true;
+      }
     }
     return false;
   };

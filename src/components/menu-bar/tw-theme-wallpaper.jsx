@@ -339,7 +339,7 @@ const WallpaperMenu = injectIntl(({
         prevIsOpen.current = isOpen;
     }, [isOpen, theme, onChangeTheme]);
     const handleWallpaperAdd = (url, opacity, darkness) => {
-        const history = [...(theme.wallpaper.history || [])];
+        const history = [...((theme.wallpaper && theme.wallpaper.history) || [])];
         if (!history.includes(url)) {
             history.unshift(url);
             if (history.length > 10) { // Keep last 10 wallpapers
@@ -348,7 +348,7 @@ const WallpaperMenu = injectIntl(({
         }
 
         const newWallpaper = {
-            ...theme.wallpaper,
+            ...(theme.wallpaper || {}),
             history
         };
 
@@ -357,9 +357,9 @@ const WallpaperMenu = injectIntl(({
     
 
     const handleRemoveWallpaper = urlToRemove => {
-        const history = (theme.wallpaper.history || []).filter(u => u !== urlToRemove);
+        const history = ((theme.wallpaper && theme.wallpaper.history) || []).filter(u => u !== urlToRemove);
         const newWallpaper = {
-            ...theme.wallpaper,
+            ...(theme.wallpaper || {}),
             history
         };
         onPreviewTheme(theme.set('wallpaper', newWallpaper));
@@ -367,7 +367,7 @@ const WallpaperMenu = injectIntl(({
 
     const handleOpacityChange = opacity => {
         const newWallpaper = {
-            ...theme.wallpaper,
+            ...(theme.wallpaper || {}),
             opacity
         };
         onPreviewTheme(theme.set('wallpaper', newWallpaper));
@@ -375,7 +375,7 @@ const WallpaperMenu = injectIntl(({
 
     const handleDarknessChange = darkness => {
         const newWallpaper = {
-            ...theme.wallpaper,
+            ...(theme.wallpaper || {}),
             darkness
         };
         onPreviewTheme(theme.set('wallpaper', newWallpaper));
@@ -383,7 +383,7 @@ const WallpaperMenu = injectIntl(({
 
     const handleGridVisibilityChange = gridVisible => {
         const newWallpaper = {
-            ...theme.wallpaper,
+            ...(theme.wallpaper || {}),
             gridVisible
         };
         onPreviewTheme(theme.set('wallpaper', newWallpaper));
@@ -391,7 +391,7 @@ const WallpaperMenu = injectIntl(({
 
     const handleWallpaperSelect = url => {
         const newWallpaper = {
-            ...theme.wallpaper,
+            ...(theme.wallpaper || {}),
             url
         };
         onPreviewTheme(theme.set('wallpaper', newWallpaper));

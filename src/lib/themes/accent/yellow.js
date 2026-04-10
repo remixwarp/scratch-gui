@@ -4,6 +4,7 @@ const guiColors = {
     'motion-tertiary': '#e6b800', // darker yellow
 
     'looks-secondary': '#ffcc00', // bright yellow
+    'looks-tertiary': 'hsla(48, 100%, 30%, 1)', // dark yellow
     'looks-transparent': '#ffcc0059', // more transparent yellow
     'looks-light-transparent': '#ffcc0026', // very transparent yellow
     'looks-secondary-dark': 'hsla(48, 100%, 40%, 1)', // dark yellow

@@ -4,6 +4,7 @@ const guiColors = {
     'motion-tertiary': '#e65c00', // darker orange
 
     'looks-secondary': '#ff7f2a', // bright orange
+    'looks-tertiary': 'hsla(25, 100%, 35%, 1)', // dark orange
     'looks-transparent': '#ff7f2a59', // more transparent orange
     'looks-light-transparent': '#ff7f2a26', // very transparent orange
     'looks-secondary-dark': 'hsla(25, 100%, 45%, 1)', // dark orange

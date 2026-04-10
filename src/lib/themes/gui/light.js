@@ -26,8 +26,8 @@ const guiColors = {
 
     'ui-black-transparent': 'hsla(0, 0%, 0%, 0.15)', /* 15% transparent version of black */
 
-    'text-primary': 'hsla(225, 15%, 40%, 1)', /* #575E75 */
-    'text-primary-transparent': 'hsla(225, 15%, 40%, 0.75)',
+    'text-primary': 'hsla(225, 15%, 30%, 1)', /* #40475C */
+    'text-primary-transparent': 'hsla(225, 15%, 30%, 0.75)',
 
     'red-primary': 'hsla(20, 100%, 55%, 1)', /* #FF661A */
     'red-tertiary': 'hsla(20, 100%, 45%, 1)', /* #E64D00 */
@@ -99,7 +99,7 @@ const blockColors = {
     toolbox: '#FFFFFF',
     flyout: '#F9F9F9',
     // Text colors for blocks in light mode
-    text: '#FFFFFF',
+    text: '#575E75',
     toolboxText: '#575E75',
     blackText: '#575E75',
     textFieldText: '#575E75'

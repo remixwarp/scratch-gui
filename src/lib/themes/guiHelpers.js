@@ -212,7 +212,7 @@ const applyWallpaper = wallpaper => {
         return;
     }
 
-    if (wallpaper.url) {
+    if (wallpaper && wallpaper.url) {
         // Apply opacity by creating a semi-transparent overlay
         const opacity = Math.max(0.1, Math.min(1, wallpaper.opacity || 0.3));
         const overlayOpacity = 1 - opacity;
