@@ -1,0 +1,353 @@
+/* 超级重构模态框样式 */
+.super-refactor-modal {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.super-refactor-modal.dark-theme {
+    background: #2d2d2d;
+    color: #e0e0e0;
+}
+
+.super-refactor-modal .addon-window-content {
+    padding: 0;
+}
+
+.super-refactor-modal .modal-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.super-refactor-modal .file-list {
+    width: 280px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+.super-refactor-modal.dark-theme .file-list {
+    background: #2d2d2d;
+    border-color: #444;
+}
+
+.super-refactor-modal .file-list-header {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+    background: #f5f5f5;
+}
+
+.super-refactor-modal.dark-theme .file-list-header {
+    background: #3a3a3a;
+    border-bottom-color: #444;
+}
+
+.super-refactor-modal .search-box {
+    display: flex;
+    gap: 5px;
+}
+
+.super-refactor-modal .search-box input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.super-refactor-modal.dark-theme .search-box input {
+    background: #3a3a3a;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+.super-refactor-modal .search-box button {
+    padding: 6px 10px;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.super-refactor-modal .file-list-content {
+    flex: 1;
+    overflow: auto;
+}
+
+.super-refactor-modal .file-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    background: #fff;
+    color: #333;
+    border-bottom: 1px solid #ccc;
+    font-size: 12px;
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.super-refactor-modal.dark-theme .file-item {
+    background: #2d2d2d;
+    color: #e0e0e0;
+    border-bottom-color: #444;
+}
+
+.super-refactor-modal .file-item:hover {
+    background: #f0f0f0;
+}
+
+.super-refactor-modal.dark-theme .file-item:hover {
+    background: #3a3a3a;
+}
+
+.super-refactor-modal .file-item.selected {
+    background: #4d97ff;
+    color: white;
+}
+
+.super-refactor-modal .editor-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.super-refactor-modal .editor-header {
+    padding: 10px 15px;
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px 4px 0 0;
+    border-bottom: none;
+    font-size: 13px;
+    font-family: monospace;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #333;
+}
+
+.super-refactor-modal.dark-theme .editor-header {
+    background: #3a3a3a;
+    color: #e0e0e0;
+    border-color: #444;
+}
+
+.super-refactor-modal .editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.super-refactor-modal .editor-actions button {
+    padding: 4px 8px;
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 10px;
+}
+
+.super-refactor-modal.dark-theme .editor-actions button {
+    background: #4a4a4a;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+.super-refactor-modal .editor-actions button.active {
+    background: #4d97ff;
+    color: white;
+    font-weight: bold;
+}
+
+.super-refactor-modal .code-editor {
+    flex: 1;
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 0 0 4px 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.super-refactor-modal.dark-theme .code-editor {
+    border-color: #444;
+}
+
+.super-refactor-modal .line-numbers {
+    width: 40px;
+    background: #f5f5f5;
+    border-right: 1px solid #ccc;
+    overflow: hidden;
+    padding: 15px 0;
+}
+
+.super-refactor-modal.dark-theme .line-numbers {
+    background: #3a3a3a;
+    border-right-color: #444;
+}
+
+.super-refactor-modal .line-numbers div {
+    padding: 0 10px;
+    text-align: right;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.5;
+    font-family: monospace;
+}
+
+.super-refactor-modal.dark-theme .line-numbers div {
+    color: #999;
+}
+
+.super-refactor-modal .editor-content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.super-refactor-modal .syntax-highlight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 15px;
+    font-family: "Consolas, 'Courier New', monospace";
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: auto;
+    pointer-events: none;
+}
+
+.super-refactor-modal .editor-textarea {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 15px;
+    font-family: "Consolas, 'Courier New', monospace";
+    font-size: 13px;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    background: transparent;
+    color: transparent;
+    caret-color: #333;
+    border: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: auto;
+}
+
+.super-refactor-modal.dark-theme .editor-textarea {
+    caret-color: #e0e0e0;
+}
+
+.super-refactor-modal .preview-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ccc;
+    border-radius: 0 0 4px 4px;
+    background: #f5f5f5;
+    overflow: auto;
+}
+
+.super-refactor-modal.dark-theme .preview-container {
+    background: #3a3a3a;
+    border-color: #444;
+}
+
+.super-refactor-modal .preview-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    margin: 20px;
+}
+
+.super-refactor-modal .preview-content img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.super-refactor-modal .preview-content svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.super-refactor-modal .modal-footer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #ccc;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.super-refactor-modal.dark-theme .modal-footer {
+    border-top-color: #444;
+}
+
+.super-refactor-modal .message {
+    padding: 8px 16px;
+    background: #4d97ff;
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-left: 15px;
+}
+
+.super-refactor-modal .message.success {
+    background: #4CAF50;
+}
+
+.super-refactor-modal .message.error {
+    background: #f44336;
+}
+
+/* 滚动条样式 */
+.super-refactor-modal ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.super-refactor-modal ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.super-refactor-modal.dark-theme ::-webkit-scrollbar-track {
+    background: #3a3a3a;
+}
+
+.super-refactor-modal ::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.super-refactor-modal.dark-theme ::-webkit-scrollbar-thumb {
+    background: #555;
+}
+
+.super-refactor-modal ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.super-refactor-modal.dark-theme ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}

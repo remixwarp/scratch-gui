@@ -7,6 +7,7 @@ import VM from 'scratch-vm';
 import {injectIntl, intlShape} from 'react-intl';
 
 import ErrorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
+import SuperRefactorModal from './super-refactor-modal.jsx';
 import {
     getIsError,
     getIsShowingProject,
