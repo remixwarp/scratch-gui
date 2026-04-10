@@ -8,8 +8,9 @@ import * as accentRainbow from './accent/rainbow';
 import * as accentGreenTea from './accent/green-tea';
 import * as accentPaleBlue from './accent/pale-blue';
 import * as accentEggplantPurple from './accent/eggplant-purple';
-import * as accent02e from './accent/02e';
-import * as accentae from './accent/ae';
+import * as accentPink from './accent/pink';
+import * as accentAE from './accent/ae';
+import * as accent02 from './accent/02e';
 
 const ACCENTS = [
     {
@@ -43,9 +44,9 @@ const ACCENTS = [
         id: 'tw.accent.green-tea'
     },
     {
-        name: 'RemixWarp',
+        name: 'Pale Blue',
         accent: accentPaleBlue,
-        description: 'RemixWarp accent color',
+        description: 'Pale Blue accent color',
         id: 'tw.accent.pale-blue'
     },
     {
@@ -73,16 +74,22 @@ const ACCENTS = [
         id: 'tw.accent.rainbow'
     },
     {
-        name: '02Engine',
-        accent: accent02e,
-        description: '02Engine accent color',
-        id: 'tw.accent.02e'
+        name: 'Pink',
+        accent: accentPink,
+        description: 'Pink accent color',
+        id: 'tw.accent.pink'
     },
     {
-        name: 'AstraEditor',
-        accent: accentae,
-        description: 'AstraEditor accent color',
+        name: 'AE',
+        accent: accentAE,
+        description: 'AE accent color',
         id: 'tw.accent.ae'
+    },
+    {
+        name: '02',
+        accent: accent02,
+        description: '02 accent color',
+        id: 'tw.accent.02e'
     }
 ];
 
@@ -95,7 +102,7 @@ for (const accent of ACCENTS) {
         id: accent.id
     };
 }
-const ACCENT_DEFAULT = ACCENTS[5].name.toLowerCase();
+const ACCENT_DEFAULT = ACCENTS[1].name.toLowerCase();
 
 export {
     ACCENTS,

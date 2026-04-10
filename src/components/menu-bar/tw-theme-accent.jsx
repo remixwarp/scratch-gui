@@ -7,40 +7,25 @@ import {connect} from 'react-redux';
 import {Check} from 'lucide-react';
 import ChevronDown from './ChevronDown.jsx';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
-import {ACCENT_MAP, ACCENT_RED, ACCENT_PURPLE, ACCENT_BLUE, ACCENT_RAINBOW, Theme} from '../../lib/themes/index.js';
+import {ACCENT_MAP, Theme} from '../../lib/themes/index.js';
 import {openAccentMenu, accentMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
 
 // Keep the original accent messages for FormattedMessage component
-const ACCENT_MESSAGES = {
-    [ACCENT_RED]: {
-        id: 'tw.menuBar.accent.red',
-        defaultMessage: 'Red',
-        description: 'Accent color option: red'
-    },
-    [ACCENT_PURPLE]: {
-        id: 'tw.menuBar.accent.purple',
-        defaultMessage: 'Purple',
-        description: 'Accent color option: purple'
-    },
-    [ACCENT_BLUE]: {
-        id: 'tw.menuBar.accent.blue',
-        defaultMessage: 'Blue',
-        description: 'Accent color option: blue'
-    },
-    [ACCENT_RAINBOW]: {
-        id: 'tw.menuBar.accent.rainbow',
-        defaultMessage: 'Rainbow',
-        description: 'Accent color option: rainbow'
-    }
-};
+const ACCENT_MESSAGES = {};
+for (const key in ACCENT_MAP) {
+    ACCENT_MESSAGES[key] = {
+        id: ACCENT_MAP[key].id,
+        defaultMessage: ACCENT_MAP[key].defaultMessage,
+        description: ACCENT_MAP[key].description
+    };
+}
 
 // Use accent values for styles
-const ACCENT_VALUES = {};
 for (const key in ACCENT_MAP) {
-    ACCENT_VALUES[key] = ACCENT_MAP[key];
+    ACCENT_MAP[key] = ACCENT_MAP[key].accent;
 }
 
 const icons = {
@@ -60,8 +45,8 @@ const ColorIcon = props => (icons[props.id] ? (
         className={styles.accentIconOuter}
         style={{
             // menu-bar-background is var(...), don't want to evaluate with the current values
-            backgroundColor: ACCENT_VALUES[props.id].guiColors['looks-secondary'],
-            backgroundImage: ACCENT_VALUES[props.id].guiColors['menu-bar-background-image']
+            backgroundColor: ACCENT_MAP[props.id].guiColors['looks-secondary'],
+            backgroundImage: ACCENT_MAP[props.id].guiColors['menu-bar-background-image']
         }}
     />
 ));
@@ -70,28 +55,21 @@ ColorIcon.propTypes = {
     id: PropTypes.string
 };
 
-const AccentMenuItem = props => {
-    const accentMessage = ACCENT_MESSAGES[props.id] || {
-        id: 'tw.menuBar.accent.unknown',
-        defaultMessage: 'Unknown',
-        description: 'Unknown accent color'
-    };
-    return (
-        <MenuItem
-            onClick={props.onClick}
-            title={accentMessage.defaultMessage}
-            aria-label={accentMessage.defaultMessage}
-        >
-            <div className={styles.option}>
-                <Check className={classNames(styles.check, {[styles.selected]: props.isSelected})} />
-                <ColorIcon id={props.id} />
-                <span className={styles.accentLabel}>
-                    <FormattedMessage {...accentMessage} />
-                </span>
-            </div>
-        </MenuItem>
-    );
-};
+const AccentMenuItem = props => (
+    <MenuItem
+        onClick={props.onClick}
+        title={ACCENT_MESSAGES[props.id].defaultMessage}
+        aria-label={ACCENT_MESSAGES[props.id].defaultMessage}
+    >
+        <div className={styles.option}>
+            <Check className={classNames(styles.check, {[styles.selected]: props.isSelected})} />
+            <ColorIcon id={props.id} />
+            <span className={styles.accentLabel}>
+                <FormattedMessage {...ACCENT_MESSAGES[props.id]} />
+            </span>
+        </div>
+    </MenuItem>
+);
 
 AccentMenuItem.propTypes = {
     id: PropTypes.string,

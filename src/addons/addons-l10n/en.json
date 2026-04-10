@@ -460,5 +460,7 @@
   "gui.collaboration.captchaLabel": "Answer",
   "gui.collaboration.verifyCaptcha": "Verify",
   "gui.collaboration.newCaptcha": "New Challenge",
-  "gui.collaboration.cancelVerification": "Cancel"
+  "gui.collaboration.cancelVerification": "Cancel",
+  "Terminal/@name": "Terminal",
+  "Terminal/@description": "Add a button to open a separate terminal window with xterm.js"
 }
