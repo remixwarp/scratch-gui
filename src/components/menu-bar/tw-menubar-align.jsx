@@ -15,15 +15,10 @@ import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
 
 const AlignIcon = ({id}) => {
-    const icons = Object.entries(MENUBAR_ALIGN).reduce((acc, [key, value]) => {
-        acc[key] = value.icon;
-        return acc;
-    }, {});
-
     return (
         <img
             className={styles.accentIconOuter}
-            src={icons[id]}
+            src={MENUBAR_ALIGN[id].icon}
             draggable={false}
             width={24}
             height={24}
