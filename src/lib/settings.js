@@ -1,3 +1,4 @@
+
 export class AESettings {
         constructor() {
                 this.storageKey = "AESettings";
@@ -6,7 +7,7 @@ export class AESettings {
                         enableHTMLSupportInREADME: false,
                         skipExtWarn: false,
                         EnableExtensionPreview: false,
-                        EnableVSCodeLayout: false,
+                        EnableVSCodeLayout: true,
                         EnableMobileLayout: false
                 };
                 this.init();
@@ -22,25 +23,20 @@ export class AESettings {
         getAll() {
                 const stored = localStorage.getItem(this.storageKey);
                 if (!stored || stored === 'undefined' || stored === 'null') {
-                        return {};
+                        return this.initset;
                 }
                 try {
                         return JSON.parse(stored);
                 } catch (e) {
                         console.warn('Failed to parse settings from localStorage:', e);
                         // If parsing fails, return default settings
-                        return {};
+                        return this.initset;
                 }
         }
 
         get(id) {
-
                 const settings = this.getAll();
-                if (settings[id] !== undefined) {
-                        return settings[id];
-                }
-                // Return default value if not found
-                return this.initset[id];
+                return settings[id] !== undefined ? settings[id] : this.initset[id];
         }
 
         set(id, value) {

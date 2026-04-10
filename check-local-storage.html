@@ -2,31 +2,43 @@
 <html>
 <head>
     <title>Check Local Storage</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .setting { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .value { font-weight: bold; }
+    </style>
 </head>
 <body>
-    <h1>Check Local Storage</h1>
-    <p>Current AESettings:</p>
-    <pre id="aesettings"></pre>
-    <button onclick="resetAESettings()">Reset AESettings</button>
+    <h1>Local Storage Check</h1>
+    <div id="settings"></div>
+    
     <script>
-        // Check current AESettings
-        const currentSettings = localStorage.getItem('AESettings');
-        document.getElementById('aesettings').textContent = currentSettings || 'No AESettings found';
+        // Check AESettings in localStorage
+        const aeSettings = localStorage.getItem('AESettings');
+        const settingsDiv = document.getElementById('settings');
         
-        // Reset AESettings to default
-        function resetAESettings() {
-            const defaultSettings = {
-                enableREADMEAutoDisplay: true,
-                enableHTMLSupportInREADME: false,
-                skipExtWarn: false,
-                EnableExtensionPreview: false,
-                EnableVSCodeLayout: false,
-                EnableMobileLayout: false
-            };
-            localStorage.setItem('AESettings', JSON.stringify(defaultSettings));
-            document.getElementById('aesettings').textContent = JSON.stringify(defaultSettings, null, 2);
-            alert('AESettings has been reset to default');
+        if (aeSettings) {
+            try {
+                const parsedSettings = JSON.parse(aeSettings);
+                settingsDiv.innerHTML = '<h2>AESettings:</h2>';
+                
+                for (const [key, value] of Object.entries(parsedSettings)) {
+                    settingsDiv.innerHTML += `
+                        <div class="setting">
+                            <strong>${key}:</strong> <span class="value">${value}</span>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                settingsDiv.innerHTML = '<p style="color: red;">Error parsing AESettings: ' + e.message + '</p>';
+            }
+        } else {
+            settingsDiv.innerHTML = '<p>AESettings not found in localStorage</p>';
         }
+        
+        // Check other relevant settings
+        settingsDiv.innerHTML += '<h2>Other Relevant Settings:</h2>';
+        settingsDiv.innerHTML += `<div class="setting"><strong>mw:multi-workspaces:</strong> <span class="value">${localStorage.getItem('mw:multi-workspaces')}</span></div>`;
     </script>
 </body>
 </html>

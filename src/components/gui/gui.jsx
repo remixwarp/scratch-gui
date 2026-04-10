@@ -59,6 +59,10 @@ import VideoModal from '../../containers/video-modal.jsx';
 import UpdateLogModal from '../../containers/update-log-modal.jsx';
 import BilmeModal from '../../containers/bl-bilme-modal.jsx';
 import GandiHelp from '../gandi-help/gandi-help.jsx';
+import AEReadMe from '../../containers/ae-readme.jsx'
+import { loadData } from '../ae-readme/ae-readme.jsx'
+
+const Settings = new AESettings();
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import Onboarding from '../../containers/onboarding.jsx';
@@ -74,11 +78,17 @@ import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-enviro
 
 import styles from './gui.css';
 
-const Settings = new AESettings();
 /* 检测设置 */
 
 if (localStorage.getItem('AESettings') === "undefined" || localStorage.getItem('AESettings') === undefined) {
     Settings.reset()
+}
+const storedSettings = localStorage.getItem('AESettings');
+let initialVSCodeLayout = false;
+try {
+    initialVSCodeLayout = JSON.parse(storedSettings).EnableVSCodeLayout;
+} catch (e) {
+    initialVSCodeLayout = false;
 }
 
 // Donation modal component
@@ -243,37 +253,28 @@ const GUIComponent = props => {
         }
     });
     
-    // Initialize vscodeLayout state
-    const [vscodeLayout, setVscodeLayout] = useState(() => {
-        try {
-            const storedSettings = localStorage.getItem('AESettings');
-            return JSON.parse(storedSettings).EnableVSCodeLayout;
-        } catch (e) {
-            return false;
-        }
-    });
+    const [vscodeLayout, setVSCodeLayout] = useState(initialVSCodeLayout);
     
-    // Update vscodeLayout when settings change
+    // 监听设置变化，更新vscodeLayout
     useEffect(() => {
-        const updateVscodeLayout = () => {
+        const updateVSCodeLayout = () => {
+            const storedSettings = localStorage.getItem('AESettings');
             try {
-                const storedSettings = localStorage.getItem('AESettings');
-                setVscodeLayout(JSON.parse(storedSettings).EnableVSCodeLayout);
+                const settings = JSON.parse(storedSettings);
+                setVSCodeLayout(settings.EnableVSCodeLayout);
             } catch (e) {
-                setVscodeLayout(false);
+                setVSCodeLayout(false);
             }
         };
         
-        // Listen for storage changes
-        window.addEventListener('storage', updateVscodeLayout);
+        // 监听storage变化
+        window.addEventListener('storage', updateVSCodeLayout);
         
-        // Listen for custom ae settings change event
-        window.addEventListener('ae-settings-changed', updateVscodeLayout);
+        // 初始更新
+        updateVSCodeLayout();
         
-        // Cleanup
         return () => {
-            window.removeEventListener('storage', updateVscodeLayout);
-            window.removeEventListener('ae-settings-changed', updateVscodeLayout);
+            window.removeEventListener('storage', updateVSCodeLayout);
         };
     }, []);
     
@@ -314,6 +315,8 @@ const GUIComponent = props => {
             window.removeEventListener('mw-settings-changed', handleSettingsChange);
         };
     }, []);
+
+
     const handleEnableProcedureReturns = useCallback(() => {
         try {
             const workspace = AddonHooks.blocklyWorkspace;
@@ -562,6 +565,23 @@ const GUIComponent = props => {
         vm,
         ...componentProps
     } = omit(props, 'dispatch');
+    
+    const updateCanShowReadme = () => {
+        if (!vm || !vm.editingTarget || !vm.editingTarget.comments) {
+            setCanShowReadme(false);
+            return;
+        }
+        const comments = Object.values(vm.editingTarget.comments);
+        const readMe = [];
+        comments.forEach(comment => {
+            if (comment.text && comment.text.slice(0, 7) === "#README") {
+                readMe.push(comment.text.slice(8, comment.text.length));
+            }
+        });
+        return readMe.length != 0;
+    };
+    
+    const [canShowReadme, setCanShowReadme] = useState(false);
     if (children) {
         return <Box {...componentProps}>{children}</Box>;
     }
@@ -575,6 +595,48 @@ const GUIComponent = props => {
             return () => clearTimeout(timer);
         }
     }, [isEmbedded, isPlayerOnly, onOpenOnboarding]);
+
+    useEffect(() => {
+        // 监听show-onboarding事件，用于重播教程
+        const handleShowOnboarding = () => {
+            if (typeof onOpenOnboarding === 'function') {
+                onOpenOnboarding();
+            }
+        };
+        
+        window.addEventListener('show-onboarding', handleShowOnboarding);
+        
+        return () => {
+            window.removeEventListener('show-onboarding', handleShowOnboarding);
+        };
+    }, [onOpenOnboarding]);
+
+    useEffect(() => {
+        if (!vm) return;
+
+        const handleCommentEvent = (e) => {
+            setCanShowReadme(updateCanShowReadme());
+        };
+        const showReadmeDefault = (e) => {
+            if (!Settings.get('enableREADMEAutoDisplay')) return
+            for (const target of vm.runtime.targets) {
+                if (target.sprite && target.sprite.name === "README") {
+                    loadData(target.comments);
+                    props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'readme'});
+                    break
+                }
+            }
+        }
+
+        vm.runtime.on('PROJECT_CHANGED', handleCommentEvent);
+        vm.runtime.on('PROJECT_LOADED', handleCommentEvent);
+        vm.runtime.on('PROJECT_LOADED', showReadmeDefault);
+        return () => {
+            vm.runtime.off('PROJECT_CHANGED', handleCommentEvent);
+            vm.runtime.off('PROJECT_LOADED', handleCommentEvent);
+            vm.runtime.off('PROJECT_LOADED', showReadmeDefault);
+        };
+    }, [vm, props.dispatch]);
 
     useEffect(() => {
         // Initialize shortcut system
@@ -629,8 +691,8 @@ const GUIComponent = props => {
         tabPanel: classNames(tabStyles.reactTabsTabPanel, styles.tabPanel),
         tabPanelSelected: classNames(tabStyles.reactTabsTabPanelSelected, styles.isSelected),
         tabSelected: classNames(tabStyles.reactTabsTabSelected, styles.isSelected),
-        vscode: styles.vscode,
-        vscodeList: styles.vscodeList
+        vscode: classNames(tabStyles.reactTabsTabList, styles.vscode),
+        vscodeList: classNames(tabStyles.reactTabs, styles.vscodeList)
     }), []);
 
     const unconstrainedWidth = useMemo(() => (
@@ -876,7 +938,7 @@ const GUIComponent = props => {
                                 forceRenderTabPanel
                                 className={
                                     vscodeLayout
-                                        ? `${tabClassNames.tabs} ${tabClassNames.vscodeList}`
+                                        ? `${tabClassNames.vscodeList}`
                                         : tabClassNames.tabs
                                 }
                                 selectedIndex={activeTabIndex}
@@ -886,23 +948,25 @@ const GUIComponent = props => {
                             >
                                 <TabList className={
                                     vscodeLayout
-                                        ? `${tabClassNames.tabList} ${tabClassNames.vscode}`
+                                        ? `${tabClassNames.vscode}`
                                         : tabClassNames.tabList
                                 }>
                                     <Tab className={tabClassNames.tab}>
                                         <BlocksIcon size={20} />
-                                        <FormattedMessage
-                                            defaultMessage="Code"
-                                            description="Button to get to the code panel"
-                                            id="gui.gui.codeTab"
-                                        />
+                                        {!vscodeLayout && (
+                                            <FormattedMessage
+                                                defaultMessage="Code"
+                                                description="Button to get to the code panel"
+                                                id="gui.gui.codeTab"
+                                            />
+                                        )}
                                     </Tab>
                                     <Tab
                                         className={tabClassNames.tab}
                                         onClick={onActivateCostumesTab}
                                     >
                                         <CostumesIcon size={20} />
-                                        {targetIsStage ? (
+                                        {!vscodeLayout && (targetIsStage ? (
                                             <FormattedMessage
                                                 defaultMessage="Backdrops"
                                                 description="Button to get to the backdrops panel"
@@ -914,19 +978,39 @@ const GUIComponent = props => {
                                                 description="Button to get to the costumes panel"
                                                 id="gui.gui.costumesTab"
                                             />
-                                        )}
+                                        ))}
                                     </Tab>
                                     <Tab
                                         className={tabClassNames.tab}
                                         onClick={onActivateSoundsTab}
                                     >
                                         <SoundsIcon size={20} />
-                                        <FormattedMessage
-                                            defaultMessage="Sounds"
-                                            description="Button to get to the sounds panel"
-                                            id="gui.gui.soundsTab"
-                                        />
+                                        {!vscodeLayout && (
+                                            <FormattedMessage
+                                                defaultMessage="Sounds"
+                                                description="Button to get to the sounds panel"
+                                                id="gui.gui.soundsTab"
+                                            />
+                                        )}
                                     </Tab>
+                                    {canShowReadme &&
+                                        <button
+                                            className={styles.readmeButton}
+                                            style={!vscodeLayout ? {
+                                                margin: "auto",
+                                                marginLeft: "20px"
+                                            } : {}}
+                                            onClick={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'readme'})}
+                                        >
+                                            {vscodeLayout ? (
+                                                <img src="https://raw.githubusercontent.com/astraeditor/astraeditor-scratch-gui/main/src/components/gui/readme.svg" draggable={false} alt="readme" style={{
+                                                    width: "30px",
+                                                    filter: 'grayscale(100%)'
+                                                }} />
+                                            ) : (
+                                                "README"
+                                            )}
+                                        </button>}
                                 </TabList>
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     <Box className={styles.blocksWrapper}>

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import bindAll from 'lodash.bindall';
 import SecurityManagerModal from '../components/tw-security-manager-modal/security-manager-modal.jsx';
+import { AESettings } from '../lib/settings.js'
 
 /* eslint-disable require-atomic-updates */
 
@@ -180,6 +181,10 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {Promise<boolean>} Whether the extension can be loaded
      */
     async canLoadExtensionFromProject (url) {
+        const skipExtWarn = new AESettings().get('skipExtWarn');
+        if (skipExtWarn) {
+            manuallyTrustExtension(url);
+        }
         return true;
     }
 

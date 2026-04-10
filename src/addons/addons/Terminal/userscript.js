@@ -178,7 +178,9 @@ export default async function ({ addon, console }) {
   terminalButton.className = addon.tab.scratchClass('menu-bar_menu-bar-button', {
     others: 'sa-terminal-button'
   });
-  terminalButton.textContent = "Terminal";
+  // 使用intl获取翻译
+  const terminalText = addon.tab.t("Terminal/@name") || "Terminal";
+  terminalButton.textContent = terminalText;
   terminalButton.title = "打开终端窗口";
   terminalButton.addEventListener("click", openTerminalWindow);
 
@@ -210,6 +212,16 @@ export default async function ({ addon, console }) {
     const tabBar = document.querySelector('[class*="react-tabs_react-tabs__tab-list"]');
     if (tabBar && !terminalButton.parentNode) {
       tabBar.appendChild(terminalButton);
+      return true;
+    }
+    // 尝试插入到编辑器包装器中
+    const editorWrapper = document.querySelector('.editor-wrapper');
+    if (editorWrapper && !terminalButton.parentNode) {
+      terminalButton.style.position = 'absolute';
+      terminalButton.style.top = '10px';
+      terminalButton.style.left = '10px';
+      terminalButton.style.zIndex = '1000';
+      editorWrapper.appendChild(terminalButton);
       return true;
     }
     return false;

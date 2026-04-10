@@ -16,6 +16,9 @@ import Geolocate from './geolocate.jsx';
 import Embed from './embed.jsx';
 import DelayedMountPropertyHOC from './delayed-mount-property-hoc.jsx';
 import styles from './security-manager-modal.css';
+import { AESettings } from '../../lib/settings.js'
+
+const settings = new AESettings();
 
 const messages = defineMessages({
     title: {
@@ -37,7 +40,7 @@ const SecurityManagerModalComponent = props => (
     >
         <Box className={styles.body}>
             {props.type === SecurityModals.LoadExtension ? (
-                <LoadExtensionModal {...props.data} />
+                <LoadExtensionModal {...props.data} onSkip={() => settings.get('skipExtWarn')} />
             ) : props.type === SecurityModals.Fetch ? (
                 <FetchModal {...props.data} />
             ) : props.type === SecurityModals.OpenWindow ? (
@@ -70,6 +73,21 @@ const SecurityManagerModalComponent = props => (
                         id="tw.securityManager.deny"
                     />
                 </button>
+                {settings.get('skipExtWarn') && props.type === SecurityModals.LoadExtension && (
+                    <button
+                        className={styles.allowButton}
+                        onClick={() => {
+                            props.onAllowed();
+                        }}
+                        disabled={!props.enableButtons}
+                    >
+                        <FormattedMessage
+                            defaultMessage="全部同意"
+                            description="Button to allow all extensions at once"
+                            id="tw.securityManager.allowAll"
+                        />
+                    </button>
+                )}
                 <button
                     className={styles.allowButton}
                     onClick={props.onAllowed}

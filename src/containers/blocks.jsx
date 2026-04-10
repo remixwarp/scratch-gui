@@ -817,9 +817,17 @@ class Blocks extends React.Component {
 
             // Update block text colors
             if (newColors.text) {
-                const blockTexts = document.querySelectorAll('.blocklyText, .blocklyBasicField_label');
+                const blockTexts = document.querySelectorAll('.blocklyText, .blocklyBasicField_label, .blocklyFieldLabel, .blocklyFieldDropdown');
                 blockTexts.forEach(text => {
                     text.style.fill = newColors.text;
+                });
+            }
+            
+            // Update input field text colors
+            if (newColors.textFieldText) {
+                const inputFields = document.querySelectorAll('.blocklyFieldInput, .blocklyFieldNumber, .blocklyText.blocklyFieldInput, .blocklyText.blocklyFieldNumber');
+                inputFields.forEach(field => {
+                    field.style.fill = newColors.textFieldText;
                 });
             }
 
@@ -896,9 +904,17 @@ class Blocks extends React.Component {
                         });
                     }
                     if (newColors.text) {
-                        const blockTexts = document.querySelectorAll('.blocklyText, .blocklyBasicField_label');
+                        const blockTexts = document.querySelectorAll('.blocklyText, .blocklyBasicField_label, .blocklyFieldLabel, .blocklyFieldDropdown');
                         blockTexts.forEach(text => {
                             text.style.setProperty('fill', newColors.text, 'important');
+                        });
+                    }
+                    
+                    // Update input field text colors
+                    if (newColors.textFieldText) {
+                        const inputFields = document.querySelectorAll('.blocklyFieldInput, .blocklyFieldNumber, .blocklyText.blocklyFieldInput, .blocklyText.blocklyFieldNumber');
+                        inputFields.forEach(field => {
+                            field.style.setProperty('fill', newColors.textFieldText, 'important');
                         });
                     }
                     if (newColors.scrollbar) {
@@ -1449,7 +1465,7 @@ class Blocks extends React.Component {
                 <DroppableBlocks
                     componentRef={this.setBlocks}
                     onDrop={this.handleDrop}
-                    gridVisible={this.props.theme.wallpaper.gridVisible !== false}
+                    gridVisible={(this.props.theme.wallpaper && this.props.theme.wallpaper.gridVisible) !== false}
                     paletteWidth={typeof this.state.flyoutWidth === 'number' ?
                         (60 + this.state.flyoutWidth) : null}
                     paletteResizingEnabled={this.state.paletteResizeEnabled && !isFullScreen}
@@ -1549,7 +1565,7 @@ Blocks.defaultOptions = {
 Blocks.defaultProps = {
     isVisible: true,
     options: Blocks.defaultOptions,
-    theme: Theme.defaults.light
+    theme: Theme.light
 };
 
 const mapStateToProps = state => ({

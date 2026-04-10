@@ -1,4 +1,4 @@
-import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT} from './index.js';
+import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE} from './index.js';
 import {customThemeManager, CustomTheme} from './custom-themes.js';
 import {applyGuiColors} from './guiHelpers.js';
 
@@ -12,25 +12,14 @@ const STORAGE_KEY = 'tw:theme';
  * @returns {Theme} detected theme
  */
 const systemPreferencesTheme = () => {
-    const defaultsAvailable = Theme && Theme.defaults && Theme.defaults.light;
-    if (defaultsAvailable) {
-        if (PREFERS_HIGH_CONTRAST_QUERY && PREFERS_HIGH_CONTRAST_QUERY.matches) {
-            return Theme.defaults.highContrast;
-        }
-        if (PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches) {
-            return Theme.defaults.dark;
-        }
-        return Theme.defaults.light;
-    }
-
-    // Fallback: construct a minimal Theme if Theme.defaults isn't initialized yet
+    // Use Theme class static properties instead of Theme.defaults
     if (PREFERS_HIGH_CONTRAST_QUERY && PREFERS_HIGH_CONTRAST_QUERY.matches) {
-        return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
+        return Theme.highContrast;
     }
     if (PREFERS_DARK_QUERY && PREFERS_DARK_QUERY.matches) {
-        return new Theme(ACCENT_DEFAULT, 'dark', BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
+        return Theme.dark;
     }
-    return new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, MENUBAR_ALIGN_DEFAULT);
+    return Theme.light;
 };
 
 /**
@@ -68,10 +57,10 @@ const detectTheme = () => {
 
         // Migrate legacy preferences
         if (local === 'dark') {
-            return Theme.defaults.dark;
+            return Theme.dark;
         }
         if (local === 'light') {
-            return Theme.defaults.light;
+            return Theme.light;
         }
 
         const parsed = JSON.parse(local);
@@ -155,9 +144,9 @@ const persistTheme = theme => {
 
         // Always save fonts settings if they exist
         if (theme.fonts &&
-            (theme.fonts.system.length > 0 ||
-             theme.fonts.google.length > 0 ||
-             theme.fonts.history.length > 0)) {
+            ((theme.fonts.system && theme.fonts.system.length > 0) ||
+             (theme.fonts && theme.fonts.google && theme.fonts.google.length > 0) ||
+             (theme.fonts && theme.fonts.history && theme.fonts.history.length > 0))) {
             nonDefaultSettings.fonts = theme.fonts;
         }
     }

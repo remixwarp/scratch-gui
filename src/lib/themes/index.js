@@ -1,12 +1,36 @@
 import defaultsDeep from 'lodash.defaultsdeep';
 
+import * as accentPurple from './accent/purple';
+import * as accentBlue from './accent/blue';
+import * as accentRed from './accent/red';
+import * as accentRainbow from './accent/rainbow';
+
+import * as guiLight from './gui/light';
+import * as guiDark from './gui/dark';
+
 import * as blocksThree from './blocks/three';
 import * as blocksHighContrast from './blocks/high-contrast';
 import * as blocksDark from './blocks/dark';
 
-import {ACCENT_MAP, ACCENT_DEFAULT} from './accents';
-import {GUI_MAP, GUI_DEFAULT} from './gui';
-import {MENUBAR_ALIGN, MENUBAR_ALIGN_DEFAULT} from './menubar';
+const ACCENT_PURPLE = 'purple';
+const ACCENT_BLUE = 'blue';
+const ACCENT_RED = 'red';
+const ACCENT_RAINBOW = 'rainbow';
+const ACCENT_MAP = {
+    [ACCENT_PURPLE]: accentPurple,
+    [ACCENT_BLUE]: accentBlue,
+    [ACCENT_RED]: accentRed,
+    [ACCENT_RAINBOW]: accentRainbow
+};
+const ACCENT_DEFAULT = ACCENT_BLUE;
+
+const GUI_LIGHT = 'light';
+const GUI_DARK = 'dark';
+const GUI_MAP = {
+    [GUI_LIGHT]: guiLight,
+    [GUI_DARK]: guiDark
+};
+const GUI_DEFAULT = GUI_DARK;
 
 const BLOCKS_THREE = 'three';
 const BLOCKS_DARK = 'dark';
@@ -26,12 +50,12 @@ const BLOCKS_MAP = {
         blocksMediaFolder: 'blocks-media/high-contrast',
         colors: defaultsDeep({}, blocksHighContrast.blockColors, defaultBlockColors),
         extensions: blocksHighContrast.extensions,
-        customExtensionColors: blocksHighContrast.customExtensionColors,
+        customExtensionColors: blocksHighContrast.customExtensionColors,        
         useForStage: true
     },
     [BLOCKS_DARK]: {
         blocksMediaFolder: 'blocks-media/default',
-        colors: defaultsDeep({}, blocksDark.blockColors, defaultBlockColors),
+        colors: defaultsDeep({}, blocksDark.blockColors, defaultBlockColors),   
         extensions: blocksDark.extensions,
         customExtensionColors: blocksDark.customExtensionColors,
         useForStage: false
@@ -49,8 +73,7 @@ const BLOCKS_MAP = {
 let themeObjectsCreated = 0;
 
 class Theme {
-    constructor (accent, gui, blocks, menuBarAlign, wallpaper, fonts, name) {
-        if (!name) name = gui;
+    constructor (accent, gui, blocks) {
         // do not modify these directly
         /** @readonly */
         this.id = ++themeObjectsCreated;
@@ -60,38 +83,19 @@ class Theme {
         this.gui = Object.prototype.hasOwnProperty.call(GUI_MAP, gui) ? gui : GUI_DEFAULT;
         /** @readonly */
         this.blocks = Object.prototype.hasOwnProperty.call(BLOCKS_MAP, blocks) ? blocks : BLOCKS_DEFAULT;
-        /** @readonly */
-        this.menuBarAlign = Object
-            .keys(MENUBAR_ALIGN)
-            .includes(menuBarAlign) ?
-            menuBarAlign : MENUBAR_ALIGN_DEFAULT;
-    
-        /** @readonly */
-        this.wallpaper = wallpaper || {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []};
-        /** @readonly */
-        this.fonts = fonts || {system: [], google: [], history: []};
-
-        /** @readonly */
-        this.name = name;
     }
 
-    static defaults = Object.create(null);
+    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT);        
+    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT);
+    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST);
 
     set (what, to) {
         if (what === 'accent') {
-            return new Theme(to, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, this.name);
+            return new Theme(to, this.gui, this.blocks);
         } else if (what === 'gui') {
-            return new Theme(this.accent, to, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, this.name);
+            return new Theme(this.accent, to, this.blocks);
         } else if (what === 'blocks') {
-            return new Theme(this.accent, this.gui, to, this.menuBarAlign, this.wallpaper, this.fonts, this.name);
-        } else if (what === 'menuBarAlign') {
-            return new Theme(this.accent, this.gui, this.blocks, to, this.wallpaper, this.fonts, this.name);
-        } else if (what === 'wallpaper') {
-            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, to, this.fonts, this.name);
-        } else if (what === 'fonts') {
-            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, to, this.name);
-        } else if (what === 'name') {
-            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts, to);
+            return new Theme(this.accent, this.gui, to);
         }
         throw new Error(`Unknown theme property: ${what}`);
     }
@@ -103,16 +107,16 @@ class Theme {
     getGuiColors () {
         return defaultsDeep(
             {},
-            ACCENT_MAP[this.accent].guiColors,
+            (ACCENT_MAP[this.accent] && ACCENT_MAP[this.accent].guiColors) || {},
             GUI_MAP[this.gui].guiColors,
-            BLOCKS_MAP[this.blocks].colors
+            guiLight.guiColors
         );
     }
 
     getBlockColors () {
         return defaultsDeep(
             {},
-            ACCENT_MAP[this.accent].blockColors,
+            (ACCENT_MAP[this.accent] && ACCENT_MAP[this.accent].blockColors) || {},
             GUI_MAP[this.gui].blockColors,
             BLOCKS_MAP[this.blocks].colors
         );
@@ -130,43 +134,55 @@ class Theme {
         if (BLOCKS_MAP[this.blocks].useForStage) {
             return this.getBlockColors();
         }
-        return Theme.defaults.light.getBlockColors();
+        return Theme.light.getBlockColors();
     }
 
     getCustomExtensionColors () {
         return BLOCKS_MAP[this.blocks].customExtensionColors;
     }
+}
 
-    getBlocksThemeId () {
-        return `${this.blocks}-${BLOCKS_MAP[this.blocks].blocksMediaFolder}`;
+// Menu bar alignment options
+const MENUBAR_ALIGN = {
+    left: {
+        defaultMessage: 'Left',
+        description: 'Menu bar alignment option: left',
+        id: 'tw.menuBar.align.left',
+        icon: 'https://raw.githubusercontent.com/astraeditor/astraeditor-scratch-gui/main/src/components/menu-bar/icons/align-left.svg'
+    },
+    center: {
+        defaultMessage: 'Center',
+        description: 'Menu bar alignment option: center',
+        id: 'tw.menuBar.align.center',
+        icon: 'https://raw.githubusercontent.com/astraeditor/astraeditor-scratch-gui/main/src/components/menu-bar/icons/align-center.svg'
+    },
+    right: {
+        defaultMessage: 'Right',
+        description: 'Menu bar alignment option: right',
+        id: 'tw.menuBar.align.right',
+        icon: 'https://raw.githubusercontent.com/astraeditor/astraeditor-scratch-gui/main/src/components/menu-bar/icons/align-right.svg'
     }
-}
-const keys = Object.keys(GUI_MAP);
-for (const key of keys) {
-    Theme.defaults[key] = new Theme(
-        ACCENT_DEFAULT, key, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT,
-        {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []},
-        {system: [], google: [], history: []},
-        GUI_MAP[key].name
-        
-    );
-}
+};
 
 export {
     Theme,
     defaultBlockColors,
 
+    ACCENT_RED,
+    ACCENT_PURPLE,
+    ACCENT_BLUE,
+    ACCENT_RAINBOW,
     ACCENT_MAP,
-    GUI_MAP,
-    MENUBAR_ALIGN,
 
-    ACCENT_DEFAULT,
-    GUI_DEFAULT,
-    MENUBAR_ALIGN_DEFAULT,
+    GUI_LIGHT,
+    GUI_DARK,
+    GUI_MAP,
 
     BLOCKS_THREE,
     BLOCKS_DARK,
     BLOCKS_HIGH_CONTRAST,
     BLOCKS_CUSTOM,
-    BLOCKS_MAP
+    BLOCKS_MAP,
+
+    MENUBAR_ALIGN
 };

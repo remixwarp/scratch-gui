@@ -536,8 +536,13 @@ class OnboardingTutorial extends Component {
                         }}
                         onClick={() => {
                             localStorage.removeItem('mw:has-seen-onboarding');
-                            this.handleClose();
-                            setTimeout(() => this.openWindow(), 100);
+                            // 先关闭教程，然后重新打开，这样会重置步骤
+                            this.props.onClose();
+                            setTimeout(() => {
+                                if (window.dispatchEvent) {
+                                    window.dispatchEvent(new Event('show-onboarding'));
+                                }
+                            }, 100);
                         }}
                     >
                         {`↻ ${intl.formatMessage(messages.replayTutorial)}`}

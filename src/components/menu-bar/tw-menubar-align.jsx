@@ -37,22 +37,29 @@ AlignIcon.propTypes = {
     id: PropTypes.string
 };
 
-const AlignMenuItem = props => (
-    <MenuItem onClick={props.onClick}>
-        <div className={styles.option}>
-            <Check
-                size={15}
-                className={classNames(styles.check, {[styles.selected]: props.isSelected})}
-            />
-            <AlignIcon id={props.id} />
-            <span className={styles.themeName}>
-                <FormattedMessage
-                    {...MENUBAR_ALIGN[props.id]}
+const AlignMenuItem = props => {
+    const alignMessage = MENUBAR_ALIGN[props.id] || {
+        id: 'tw.menuBar.align.unknown',
+        defaultMessage: 'Unknown',
+        description: 'Unknown menu bar alignment'
+    };
+    return (
+        <MenuItem onClick={props.onClick}>
+            <div className={styles.option}>
+                <Check
+                    size={15}
+                    className={classNames(styles.check, {[styles.selected]: props.isSelected})}
                 />
-            </span>
-        </div>
-    </MenuItem>
-);
+                <AlignIcon id={props.id} />
+                <span className={styles.themeName}>
+                    <FormattedMessage
+                        {...alignMessage}
+                    />
+                </span>
+            </div>
+        </MenuItem>
+    );
+};
 
 AlignMenuItem.propTypes = {
     id: PropTypes.string,

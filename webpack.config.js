@@ -78,7 +78,10 @@ const base = {
                 path.resolve(__dirname, 'src'),
                 /node_modules[\\/]scratch-[^\\/]+[\\/]src/,
                 /node_modules[\\/]pify/,
-                /node_modules[\\/]@vernier[\\/]godirect/
+                /node_modules[\\/]@vernier[\\/]godirect/,
+                /node_modules[\\/]domelementtype/,
+                /node_modules[\\/]domutils/,
+                /node_modules[\\/]react-markdown/
             ],
             options: {
                 // Explicitly disable babelrc so we don't catch various config

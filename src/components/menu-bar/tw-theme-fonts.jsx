@@ -40,17 +40,18 @@ class FontsThemeMenu extends React.Component {
 
     getSelectedFontName = () => {
         const {theme} = this.props;
-        if (theme.fonts.google.length > 0) return theme.fonts.google[0];
-        if (theme.fonts.system.length > 0) return theme.fonts.system[0];
+        if (theme.fonts && theme.fonts.google && theme.fonts.google.length > 0) return theme.fonts.google[0];
+        if (theme.fonts && theme.fonts.system && theme.fonts.system.length > 0) return theme.fonts.system[0];
         return null;
     };
 
     setSelectedFont = ({google = [], system = [], historyFont}) => {
         const family = (historyFont || '').trim();
+        const existingHistory = this.props.theme.fonts && this.props.theme.fonts.history ? this.props.theme.fonts.history : [];
         const history = family ? [
-            ...this.props.theme.fonts.history.filter(f => f !== family),
+            ...existingHistory.filter(f => f !== family),
             family
-        ].slice(-10) : this.props.theme.fonts.history;
+        ].slice(-10) : existingHistory;
 
         const newFonts = {
             system,
@@ -61,10 +62,11 @@ class FontsThemeMenu extends React.Component {
     };
 
     resetFonts = () => {
+        const existingHistory = this.props.theme.fonts && this.props.theme.fonts.history ? this.props.theme.fonts.history : [];
         const newFonts = {
             system: [],
             google: [],
-            history: this.props.theme.fonts.history
+            history: existingHistory
         };
         this.props.onChangeTheme(this.props.theme.set('fonts', newFonts));
     };
@@ -108,7 +110,8 @@ class FontsThemeMenu extends React.Component {
     render () {
         const {isOpen, isRtl, theme, onOpen} = this.props;
         const selectedFont = this.getSelectedFontName();
-        const history = [...theme.fonts.history].reverse();
+        const existingHistory = theme.fonts && theme.fonts.history ? theme.fonts.history : [];
+        const history = [...existingHistory].reverse();
 
         return (
             <MenuItem expanded={isOpen}>

@@ -56,6 +56,57 @@
     background-color: var(--editorTheme3-workspace-background) !important;
 }
 
+/* Ensure block text is always gray */
+:global(.blocklyDraggable > .blocklyText),
+:global(.blocklyBasicField_label),
+:global(.blocklyFieldLabel),
+:global(.blocklyFieldDropdown),
+:global(.blocklyFieldVariable),
+:global(.blocklyFieldColour),
+:global(.blocklyFieldCheckbox),
+:global(.blocklyFieldAngle),
+:global(.blocklyFieldDate) {
+    fill: var(--editorTheme3-blockText, #FFFFFF) !important;
+    color: var(--editorTheme3-blockText, #FFFFFF) !important;
+}
+
+/* Ensure input field text is always gray */
+:global(.blocklyFieldInput),
+:global(.blocklyFieldNumber),
+:global(.blocklyFieldInput input),
+:global(.blocklyFieldNumber input),
+:global(.blocklyText.blocklyFieldInput),
+:global(.blocklyText.blocklyFieldNumber),
+:global(.blocklyInput .blocklyText),
+:global(.blocklyNumberInput .blocklyText),
+:global(.blocklyFieldInput .blocklyText),
+:global(.blocklyFieldNumber .blocklyText),
+:global(.blocklyInputText),
+:global(.blocklyInputText .blocklyText),
+:global(.blocklyBasicField .blocklyText),
+:global(svg .blocklyFieldInput .blocklyText),
+:global(svg .blocklyFieldNumber .blocklyText),
+:global(.blocklyFieldInput text),
+:global(.blocklyFieldInput tspan),
+:global(.blocklyFieldNumber text),
+:global(.blocklyFieldNumber tspan) {
+    fill: var(--editorTheme3-inputColor-text, #575E75) !important;
+    color: var(--editorTheme3-inputColor-text, #575E75) !important;
+    text-fill: var(--editorTheme3-inputColor-text, #575E75) !important;
+    -webkit-text-fill-color: var(--editorTheme3-inputColor-text, #575E75) !important;
+    font-weight: normal !important;
+}
+
+/* Ensure input field backgrounds are white */
+:global(.blocklyFieldInput),
+:global(.blocklyFieldNumber),
+:global(.blocklyInput),
+:global(.blocklyNumberInput) {
+    fill: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    border-color: #CCCCCC !important;
+}
+
 :global(svg.blocklyToolbox) {
     background-color: var(--editorTheme3-toolbox-background) !important;
 }

@@ -422,21 +422,21 @@ const WallpaperMenu = injectIntl(({
                     onOpacityChange={handleOpacityChange}
                     onDarknessChange={handleDarknessChange}
                     onGridVisibilityChange={handleGridVisibilityChange}
-                    currentOpacity={theme.wallpaper.opacity}
-                    currentDarkness={theme.wallpaper.darkness || 0}
-                    currentGridVisible={theme.wallpaper.gridVisible !== false}
+                    currentOpacity={(theme.wallpaper && theme.wallpaper.opacity) || 1}
+                    currentDarkness={(theme.wallpaper && theme.wallpaper.darkness) || 0}
+                    currentGridVisible={(theme.wallpaper && theme.wallpaper.gridVisible) !== false}
                 />
                 <div className={styles.menuSeparator} />
                 <WallpaperMenuItem
                     url=""
-                    isSelected={!theme.wallpaper.url}
+                    isSelected={!(theme.wallpaper && theme.wallpaper.url)}
                     onClick={() => handleWallpaperSelect('')}
                 />
-                {theme.wallpaper.history.map(url => (
+                {(theme.wallpaper && theme.wallpaper.history || []).map(url => (
                     <WallpaperMenuItem
                         key={url}
                         url={url}
-                        isSelected={theme.wallpaper.url === url}
+                        isSelected={(theme.wallpaper && theme.wallpaper.url) === url}
                         onClick={() => handleWallpaperSelect(url)}
                         onRemove={handleRemoveWallpaper}
                     />

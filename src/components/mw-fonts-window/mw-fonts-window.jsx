@@ -172,7 +172,7 @@ class MWFontsWindow extends React.Component {
     resetFonts = () => this.setSelectedFont({google: [], system: []});
 
     getSelectedFontName = () =>
-        this.props.theme.fonts.google[0] || this.props.theme.fonts.system[0] || null;
+        (this.props.theme.fonts && this.props.theme.fonts.google && this.props.theme.fonts.google[0]) || (this.props.theme.fonts && this.props.theme.fonts.system && this.props.theme.fonts.system[0]) || null;
 
     // DRY: Unified history selection
     selectFromHistory = async family => {

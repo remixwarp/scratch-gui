@@ -101,7 +101,7 @@ const blockColors = {
     // Text colors for blocks in light mode
     text: '#FFFFFF',
     toolboxText: '#575E75',
-    blackText: '#FFFFFF',
+    blackText: '#575E75',
     textFieldText: '#575E75'
 };
 

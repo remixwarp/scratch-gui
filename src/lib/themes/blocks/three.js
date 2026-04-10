@@ -79,6 +79,9 @@ const blockColors = {
         tertiary: '#24827F',
         quaternary: '#1B615F'
     },
+    text: '#FFFFFF',
+    blackText: '#575E75',
+    textFieldText: '#575E75',
     toolboxHover: '#4C97FF',
     toolboxSelected: '#E9EEF2',
     scrollbar: '#CECDCE',

@@ -73,6 +73,9 @@ const blockColors = {
         tertiary: '#34e4d0',
         quaternary: '#34e4d0'
     },
+    text: '#FFFFFF',
+    blackText: '#575E75',
+    textFieldText: '#575E75',
     textField: '#4C4C4C',
     menuHover: 'rgba(255, 255, 255, 0.3)'
 };
