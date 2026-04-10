@@ -30,6 +30,7 @@ const MODAL_AI_AGENT = 'aiAgentModal';
 const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 const MODAL_WARPTHEME = 'bilmeModal';
 const MODAL_EXTENSION_EDITOR = 'extensionEditorModal';
+const MODAL_SUPER_REFACTOR = 'superRefactorModal';
 
 const MODAL_TUTORIAL = 'tutorialModal';
 const MODAL_VIDEO = 'videoModal';
@@ -65,6 +66,7 @@ const initialState = {
     [MODAL_EXTENSION_LOAD_CHOICE]: false,
     [MODAL_WARPTHEME]: false,
     [MODAL_EXTENSION_EDITOR]: false,
+    [MODAL_SUPER_REFACTOR]: false,
     [MODAL_TUTORIAL]: false,
     [MODAL_VIDEO]: false,
     [MODAL_GANDI_HELP]: false,
@@ -329,6 +331,12 @@ const openExtensionEditorModal = function () {
 const closeExtensionEditorModal = function () {
     return closeModal(MODAL_EXTENSION_EDITOR);
 };
+const openSuperRefactorModal = function () {
+    return openModal(MODAL_SUPER_REFACTOR);
+};
+const closeSuperRefactorModal = function () {
+    return closeModal(MODAL_SUPER_REFACTOR);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -396,7 +404,10 @@ export {
     closeGandiHelpModal,
     openExtensionEditorModal,
     closeExtensionEditorModal,
+    openSuperRefactorModal,
+    closeSuperRefactorModal,
     MODAL_GANDI_HELP,
     MODAL_WARPTHEME,
-    MODAL_EXTENSION_EDITOR
+    MODAL_EXTENSION_EDITOR,
+    MODAL_SUPER_REFACTOR
 };

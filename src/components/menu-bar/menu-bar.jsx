@@ -51,7 +51,8 @@ import {
     openShortcutManagerModal,
     openSimpleDialog,
     openTutorialModal,
-    openExtensionEditorModal
+    openExtensionEditorModal,
+    openSuperRefactorModal
 } from '../../reducers/modals';
 
 // IPC for opening extension editor
@@ -161,7 +162,7 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
-    Zap, Gauge, BookOpen
+    Zap, Gauge, BookOpen, Code
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -2377,6 +2378,21 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     )}
+                                    {this.props.superRefactor && (
+                                        <MenuItem
+                                            onClick={() => {
+                                                this.props.onOpenSuperRefactorModal();
+                                                this.props.onRequestCloseEdit();
+                                            }}
+                                        >
+                                            <Code />
+                                            <FormattedMessage
+                                                defaultMessage="超级重构"
+                                                description="Menu bar item for super refactor"
+                                                id="tw.menuBar.superRefactor"
+                                            />
+                                        </MenuItem>
+                                    )}
                                     <ChangeUsername>{changeUsername => (
                                         <MenuItem onClick={changeUsername}>
                                             <UserPen />
@@ -3131,7 +3147,8 @@ const mapDispatchToProps = dispatch => ({
     onSetAutosaveEnabled: enabled => dispatch(setAutosaveEnabled(enabled)),
     onSetAutosaveInterval: interval => dispatch(setAutosaveInterval(interval)),
     onSetAutosaveNotifications: showNotifications => dispatch(setAutosaveNotifications(showNotifications)),
-    onSetTimeTravelMode: mode => dispatch(setTimeTravel(mode))
+    onSetTimeTravelMode: mode => dispatch(setTimeTravel(mode)),
+    onOpenSuperRefactorModal: () => dispatch(openSuperRefactorModal())
 });
 
 export default compose(

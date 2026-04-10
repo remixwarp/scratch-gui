@@ -307,16 +307,22 @@ export default async function ({ addon, console, msg }) {
         return hasVideoSensing || hasFaceDetection;
     };
 
-    // Auto-show when video extension is loaded
+    // Auto-show when video extension is loaded only if user setting allows
     const vm = addon.tab.traps.vm;
     if (vm && vm.extensionManager) {
         const originalLoadExtension = vm.extensionManager.loadExtensionIdSync.bind(vm.extensionManager);
         vm.extensionManager.loadExtensionIdSync = function(extensionId) {
             const result = originalLoadExtension(extensionId);
             if (extensionId === 'videoSensing' || extensionId === 'faceDetection') {
-                // Auto show controls when video extension is loaded
-                controlsContainer.classList.remove('hidden');
-                triggerBtn.style.display = 'none';
+                // Only show controls if user setting allows
+                isVisible = addon.settings.get('showControls');
+                if (isVisible) {
+                    controlsContainer.classList.remove('hidden');
+                    triggerBtn.style.display = 'none';
+                } else {
+                    controlsContainer.classList.add('hidden');
+                    triggerBtn.style.display = 'flex';
+                }
             }
             return result;
         };
