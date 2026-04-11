@@ -166,55 +166,6 @@ export default async function ({ addon, console, msg }) {
     const metrics = getProjectComplexity();
     const modal = createComplexityModal();
     
-    // Determine complexity level for styling
-    let complexityClass = 'sa-block-count-complexity-low';
-    if (metrics.complexityScore > 100) {
-      complexityClass = 'sa-block-count-complexity-high';
-    } else if (metrics.complexityScore > 50) {
-      complexityClass = 'sa-block-count-complexity-medium';
-    }
-    
-    modal.innerHTML = `
-      <h2>${msg('complexity-title')}</h2>
-      
-      <div class="sa-block-count-stats-grid">
-        <div class="sa-block-count-stat-card">
-          <h3>${msg('basic-stats')}</h3>
-          <div class="sa-block-count-stat-list">
-            <div><strong>${msg('total-blocks')}:</strong> ${metrics.blockCount}</div>
-            <div><strong>${msg('total-scripts')}:</strong> ${metrics.scriptCount}</div>
-            <div><strong>${msg('total-sprites')}:</strong> ${metrics.spriteCount}</div>
-          </div>
-        </div>
-        
-        <div class="sa-block-count-stat-card">
-          <h3>${msg('complexity-metrics')}</h3>
-          <div class="sa-block-count-stat-list">
-            <div><strong>${msg('complexity-score')}:</strong> 
-              <span class="sa-block-count-complexity-score ${complexityClass}">${metrics.complexityScore}</span>
-            </div>
-            <div><strong>${msg('max-nesting')}:</strong> ${metrics.maxDepth}</div>
-            <div><strong>${msg('avg-nesting')}:</strong> ${metrics.averageDepth}</div>
-            <div><strong>${msg('longest-script')}:</strong> ${metrics.longestScript} ${msg('blocks-unit')}</div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="sa-block-count-block-types">
-        <h3>${msg('block-types')}</h3>
-        <div class="sa-block-count-types-grid">
-          <div><strong>${msg('custom-blocks')}:</strong> ${metrics.customBlockCount}</div>
-          <div><strong>${msg('conditional-blocks')}:</strong> ${metrics.conditionalBlockCount}</div>
-          <div><strong>${msg('loop-blocks')}:</strong> ${metrics.loopBlockCount}</div>
-          <div><strong>${msg('event-blocks')}:</strong> ${metrics.eventBlockCount}</div>
-        </div>
-      </div>
-      
-      <div style="text-align: right;">
-        <button class="sa-block-count-close sa-block-count-close-btn">${msg('close')}</button>
-      </div>
-    `;
-    
     // Add backdrop
     const backdrop = document.createElement('div');
     backdrop.style.cssText = `
@@ -227,6 +178,8 @@ export default async function ({ addon, console, msg }) {
       z-index: 999;
     `;
     
+    let languageChangeListener;
+    
     const closeModal = () => {
       if (document.body.contains(backdrop)) {
         document.body.removeChild(backdrop);
@@ -235,6 +188,9 @@ export default async function ({ addon, console, msg }) {
         document.body.removeChild(modal);
       }
       document.removeEventListener('keydown', handleKeydown);
+      if (languageChangeListener) {
+        addon.tab.redux.removeEventListener('statechanged', languageChangeListener);
+      }
     };
     
     const handleKeydown = (e) => {
@@ -243,8 +199,73 @@ export default async function ({ addon, console, msg }) {
       }
     };
     
+    // Create a function to update the modal content
+    const updateModalContent = () => {
+      // Determine complexity level for styling
+      let complexityClass = 'sa-block-count-complexity-low';
+      if (metrics.complexityScore > 100) {
+        complexityClass = 'sa-block-count-complexity-high';
+      } else if (metrics.complexityScore > 50) {
+        complexityClass = 'sa-block-count-complexity-medium';
+      }
+      
+      modal.innerHTML = `
+        <h2>${msg('complexity-title')}</h2>
+        
+        <div class="sa-block-count-stats-grid">
+          <div class="sa-block-count-stat-card">
+            <h3>${msg('basic-stats')}</h3>
+            <div class="sa-block-count-stat-list">
+              <div><strong>${msg('total-blocks')}:</strong> ${metrics.blockCount}</div>
+              <div><strong>${msg('total-scripts')}:</strong> ${metrics.scriptCount}</div>
+              <div><strong>${msg('total-sprites')}:</strong> ${metrics.spriteCount}</div>
+            </div>
+          </div>
+          
+          <div class="sa-block-count-stat-card">
+            <h3>${msg('complexity-metrics')}</h3>
+            <div class="sa-block-count-stat-list">
+              <div><strong>${msg('complexity-score')}:</strong> 
+                <span class="sa-block-count-complexity-score ${complexityClass}">${metrics.complexityScore}</span>
+              </div>
+              <div><strong>${msg('max-nesting')}:</strong> ${metrics.maxDepth}</div>
+              <div><strong>${msg('avg-nesting')}:</strong> ${metrics.averageDepth}</div>
+              <div><strong>${msg('longest-script')}:</strong> ${metrics.longestScript} ${msg('blocks-unit')}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="sa-block-count-block-types">
+          <h3>${msg('block-types')}</h3>
+          <div class="sa-block-count-types-grid">
+            <div><strong>${msg('custom-blocks')}:</strong> ${metrics.customBlockCount}</div>
+            <div><strong>${msg('conditional-blocks')}:</strong> ${metrics.conditionalBlockCount}</div>
+            <div><strong>${msg('loop-blocks')}:</strong> ${metrics.loopBlockCount}</div>
+            <div><strong>${msg('event-blocks')}:</strong> ${metrics.eventBlockCount}</div>
+          </div>
+        </div>
+        
+        <div style="text-align: right;">
+          <button class="sa-block-count-close sa-block-count-close-btn">${msg('close')}</button>
+        </div>
+      `;
+      
+      // Reattach event listeners after updating content
+      modal.querySelector('.sa-block-count-close').addEventListener('click', closeModal);
+    };
+    
+    // Initial content update
+    updateModalContent();
+    
+    // Add language change listener
+    languageChangeListener = (e) => {
+      if (e.action && e.action.type === 'scratch-gui/locales/SELECT_LOCALE') {
+        updateModalContent();
+      }
+    };
+    addon.tab.redux.addEventListener('statechanged', languageChangeListener);
+    
     backdrop.addEventListener('click', closeModal);
-    modal.querySelector('.sa-block-count-close').addEventListener('click', closeModal);
     document.addEventListener('keydown', handleKeydown);
     
     document.body.appendChild(backdrop);
@@ -303,6 +324,13 @@ export default async function ({ addon, console, msg }) {
         };
         vm.on("PROJECT_CHANGED", handler);
         vm.runtime.on("PROJECT_LOADED", handler);
+        
+        // Add language change listener
+        addon.tab.redux.addEventListener('statechanged', (e) => {
+          if (e.action && e.action.type === 'scratch-gui/locales/SELECT_LOCALE') {
+            updateDisplay();
+          }
+        });
       }
     } else {
       let timeout = setTimeout(function () {

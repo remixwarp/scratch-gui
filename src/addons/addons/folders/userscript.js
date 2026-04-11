@@ -1308,7 +1308,6 @@ export default async function ({ addon, console, msg }) {
   {
     const spriteSelectorItemElement = await addon.tab.waitForElement("[class^='sprite-selector_sprite-wrapper']", {
       reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
-      reduxEvents: ["scratch-gui/locales/SELECT_LOCALE"],
     });
     vm = addon.tab.traps.vm;
     reactInternalKey = Object.keys(spriteSelectorItemElement).find((i) => i.startsWith(REACT_INTERNAL_PREFIX));
@@ -1321,19 +1320,36 @@ export default async function ({ addon, console, msg }) {
     patchSpriteSelectorItem(spriteSelectorItemInstance.constructor);
     sortableHOCInstance.saInitialSetup();
     patchVM();
+    
+    // Add language change listener to force re-render
+    addon.tab.redux.addEventListener('statechanged', (e) => {
+      if (e.action && e.action.type === 'scratch-gui/locales/SELECT_LOCALE') {
+        // Force re-render by updating state
+        if (sortableHOCInstance.setState) {
+          sortableHOCInstance.setState({ folders: [...(sortableHOCInstance.state && sortableHOCInstance.state.folders) || []] });
+        }
+      }
+    });
   }
 
   // Costume and sound list
   {
     const selectorListItem = await addon.tab.waitForElement("[class*='selector_list-item']", {
       reduxCondition: (state) => state.scratchGui.editorTab.activeTabIndex !== 0 && !state.scratchGui.mode.isPlayerOnly,
-      reduxEvents: ["scratch-gui/locales/SELECT_LOCALE"],
     });
     const sortableHOCInstance = getSortableHOCFromElement(selectorListItem);
     verifySortableHOC(sortableHOCInstance);
     patchSortableHOC(sortableHOCInstance.constructor, TYPE_ASSETS);
     sortableHOCInstance.saInitialSetup();
+    
+    // Add language change listener to force re-render
+    addon.tab.redux.addEventListener('statechanged', (e) => {
+      if (e.action && e.action.type === 'scratch-gui/locales/SELECT_LOCALE') {
+        // Force re-render by updating state
+        if (sortableHOCInstance.setState) {
+          sortableHOCInstance.setState({ folders: [...(sortableHOCInstance.state && sortableHOCInstance.state.folders) || []] });
+        }
+      }
+    });
   }
-  
-
 }
