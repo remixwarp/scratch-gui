@@ -889,37 +889,37 @@ a:active, a:focus {
 }
 
 .editorButtonActive {
-    background: $looks-secondary;
+    background: $ui-primary;
     color: white;
-    border-color: $looks-secondary;
+    border-color: $ui-primary;
 }
 
 .editorButtonActive + .categoryToggleButton {
-    background: $looks-secondary;
+    background: $ui-primary;
     color: white;
-    border-color: $looks-secondary;
+    border-color: $ui-primary;
 }
 
 .editorButtonWrapper:hover .editorButtonActive,
 .editorButtonWrapper:hover .editorButtonActive + .categoryToggleButton {
-    background: $looks-secondary-dark;
-    border-color: $looks-secondary-dark;
+    background: darken($ui-primary, 10%);
+    border-color: darken($ui-primary, 10%);
 }
 
 .editorButton:hover {
     background: $ui-white;
-    border-color: $looks-secondary;
+    border-color: $ui-primary;
 }
 
 .editorButtonActive {
-    background: $looks-secondary;
+    background: $ui-primary;
     color: white;
-    border-color: $looks-secondary;
+    border-color: $ui-primary;
 }
 
 .editorButtonActive:hover {
-    background: $looks-secondary-dark;
-    border-color: $looks-secondary-dark;
+    background: darken($ui-primary, 10%);
+    border-color: darken($ui-primary, 10%);
 }
 
 .categoryMenu {
@@ -958,18 +958,18 @@ a:active, a:focus {
 
 .categoryButton:hover {
     background: $ui-white;
-    border-color: $looks-secondary;
+    border-color: $ui-primary;
 }
 
 .categoryButtonActive {
-    background: $looks-secondary;
+    background: $ui-primary;
     color: white;
-    border-color: $looks-secondary;
+    border-color: $ui-primary;
 }
 
 .categoryButtonActive:hover {
-    background: $looks-secondary-dark;
-    border-color: $looks-secondary-dark;
+    background: darken($ui-primary, 10%);
+    border-color: darken($ui-primary, 10%);
 }
 
 /* Responsive */

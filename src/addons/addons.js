@@ -97,7 +97,8 @@ const addons = [
     'my-blocks-plus',
     'hide-menubar',
     'bookmark',
-    'show-fps'
+    'show-fps',
+    'batch-color-replace'
 ];
 
 const newAddons = [

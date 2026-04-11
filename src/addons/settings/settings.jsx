@@ -1582,24 +1582,40 @@ class AddonSettingsComponent extends React.Component {
                                                 [styles.editorButtonActive]: this.state.selectedEditors.length === 5
                                             })}
                                             onClick={() => {
-                                                // 选择所有编辑器
-                                                this.setState({
-                                                    selectedEditors: ['remixwarp', '02engine', 'astraeditor', 'turbowarp', 'bilup'],
-                                                    editorCategories: {
-                                                        remixwarp: 'all',
-                                                        '02engine': 'all',
-                                                        astraeditor: 'all',
-                                                        turbowarp: 'all',
-                                                        bilup: 'all'
-                                                    },
-                                                    openCategoryMenus: {
-                                                        remixwarp: false,
-                                                        '02engine': false,
-                                                        astraeditor: false,
-                                                        turbowarp: false,
-                                                        bilup: false
-                                                    }
-                                                });
+                                                // 切换选择所有编辑器
+                                                if (this.state.selectedEditors.length === 5) {
+                                                    // 当前已选择所有编辑器，取消选择
+                                                    this.setState({
+                                                        selectedEditors: [],
+                                                        editorCategories: {},
+                                                        openCategoryMenus: {
+                                                            remixwarp: false,
+                                                            '02engine': false,
+                                                            astraeditor: false,
+                                                            turbowarp: false,
+                                                            bilup: false
+                                                        }
+                                                    });
+                                                } else {
+                                                    // 当前未选择所有编辑器，选择所有
+                                                    this.setState({
+                                                        selectedEditors: ['remixwarp', '02engine', 'astraeditor', 'turbowarp', 'bilup'],
+                                                        editorCategories: {
+                                                            remixwarp: 'all',
+                                                            '02engine': 'all',
+                                                            astraeditor: 'all',
+                                                            turbowarp: 'all',
+                                                            bilup: 'all'
+                                                        },
+                                                        openCategoryMenus: {
+                                                            remixwarp: false,
+                                                            '02engine': false,
+                                                            astraeditor: false,
+                                                            turbowarp: false,
+                                                            bilup: false
+                                                        }
+                                                    });
+                                                }
                                             }}
                                         >
                                             全部

@@ -99,4 +99,5 @@ export default {
   "astras-copilot": () => import(/* webpackChunkName: "addon-entry-astras-copilot" */ "../addons/astras-copilot/_runtime_entry.js"),
   "my-blocks-plus": () => import(/* webpackChunkName: "addon-entry-my-blocks-plus" */ "../addons/my-blocks-plus/_runtime_entry.js"),
   "hide-menubar": () => import(/* webpackChunkName: "addon-entry-hide-menubar" */ "../addons/hide-menubar/_runtime_entry.js"),
+  "batch-color-replace": () => import(/* webpackChunkName: "addon-entry-batch-color-replace" */ "../addons/batch-color-replace/_runtime_entry.js"),
 };
