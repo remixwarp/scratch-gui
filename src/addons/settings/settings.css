@@ -414,7 +414,7 @@ a:active, a:focus {
     transition-property: background;
 }
 .switch[state="on"] {
-    background: var(--looks-secondary);
+    background: $looks-secondary;
 }
 .switch::before {
     content: "";

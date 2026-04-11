@@ -1,18 +1,18 @@
 import PropTypes from 'prop-types';
-import React, {useState, useEffect, useCallback, useRef} from 'react';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
-import {connect} from 'react-redux';
+import React, { useState } from 'react';
+import { defineMessages, injectIntl, intlShape } from 'react-intl';
+import { connect } from 'react-redux';
+import { openVideoModal } from '../../reducers/modals.js';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
-import {openVideoModal} from '../../reducers/modals.js';
 
 import styles from './tutorial-modal.css';
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Tutorial',
+        defaultMessage: '视频教程',
         description: 'Title of modal that appears when opening the Tutorial',
         id: 'tw.tutorialModal.title'
     },
@@ -31,79 +31,12 @@ const messages = defineMessages({
         description: 'Category for tutorial facts',
         id: 'tw.tutorialModal.category.facts'
     },
-    tutorial1Title: {
-        defaultMessage: 'RemixWarp 入门教程',
-        description: 'Title of the first tutorial',
-        id: 'tw.tutorialModal.tutorial1.title'
-    },
-    tutorial1Description: {
-        defaultMessage: '学习如何使用 RemixWarp 编辑器的基本功能',
-        description: 'Description of the first tutorial',
-        id: 'tw.tutorialModal.tutorial1.description'
+    categoryExtension: {
+        defaultMessage: 'Extension',
+        description: 'Category for tutorial extensions',
+        id: 'tw.tutorialModal.category.extension'
     }
 });
-
-const tutorialData = [
-    //all
-    {
-        id: 'tutorial1',
-        bvid: 'BV1DUnhzkEJb',
-        category: 1
-    },
-    //tips
-    {
-        id: 'tutorial2',
-        bvid: 'BV18fxVz6EiE',
-        category: 2
-    },
-    //facts
-    {
-        id: 'tutorial3',
-        bvid: 'BV1hi2HBcEuD',
-        category: 3
-    },
-    //extension
-    {
-        id: 'tutorial4',
-        bvid: 'BV1q3aezREjd',
-        category: 4
-    },
-    {
-        id: 'tutorial5',
-        bvid: 'BV1FDUTBGE2H',
-        category: 4
-    },
-    {
-        id: 'tutorial6',
-        bvid: 'BV1khhyzZEyS',
-        category: 4
-    },
-    {
-        id: 'tutorial7',
-        bvid: 'BV1BAeyzZEf3',
-        category: 4
-    },
-    {
-        id: 'tutorial8',
-        bvid: 'BV1vBpRzsEDK',
-        category: 4
-    },
-    {
-        id: 'tutorial9',
-        bvid: 'BV16Exvz7E6N',
-        category: 4
-    },
-    {
-        id: 'tutorial10',
-        bvid: 'BV1XPWbz1Ezb',
-        category: 4
-    },
-    {
-        id: 'tutorial11',
-        bvid: 'BV1Sm1kBJEBg',
-        category: 4
-    }
-];
 
 const getCategoryInfo = (categoryId) => {
     const categories = {
@@ -115,171 +48,120 @@ const getCategoryInfo = (categoryId) => {
     return categories[categoryId] || categories[1];
 };
 
+const tutorialData = [
+
+    {
+        id: 'BV1DUnhzkEJb',
+        bvid: 'BV1DUnhzkEJb',
+        category: 2,
+        bt: 'Turbowarp怎么加载自定义扩展？（附带gandi教程）',
+        jj: '怎么加载自定义扩展一个视频告诉你！',
+        fm: require('./images/BV1DUnhzkEJb.jpg')
+    },
+    //tips
+    {
+        id: 'BV18fxVz6EiE',
+        bvid: 'BV18fxVz6EiE',
+        category: 2,
+        bt: 'Scratch扩展合并器！合并多段扩展代码',
+        jj: '这个想法小时候就想做了，现在有AI，总算是把小时候的梦给圆上了 这个工具说实话，其实没啥用（主要是为了圆梦） 体验网址：https://yunpa.vip/10000why.html 下载链接：https://yunpavip.lanzn.com/iKVd237rpdhi 无密码',
+        fm: require('./images/BV18fxVz6EiE.jpg')
+    },
+    //facts
+    {
+        id: 'BV1hi2HBcEuD',
+        bvid: 'BV1hi2HBcEuD',
+        category: 3,
+        bt: '为什么0.1+0.2不等于0.3？一期视频讲清！',
+        jj: 'IEEE754标准经度有限，只能存近似值，指数偏移并不精确等，最终导致0.1+0.2≠0.3。',
+        fm: require('./images/BV1hi2HBcEuD.jpg')
+    },
+    //extension
+    {
+        id: 'BV1q3aezREjd',
+        bvid: 'BV1q3aezREjd',
+        category: 4,
+        bt: '简单几个扩展积木实现网页社区？还开源！',
+        jj: '本视频/扩展由10000why制作，支持二创，严禁获取源码后生称自己为原作者！ 我之后会出一些运用此积木的示例作品，在删除角色一游戏中就添加了这个扩展（感兴趣的可以看下我之前的视频） https://yunpavip.lanzn.com/irS7j35hqrze 密码:视频结尾会说 希望你能给我个三连，最好能关注一下，非常感谢你的支持 总之还看什么简介呢快去看视频！',
+        fm: require('./images/BV1q3aezREjd.jpg')
+    },
+    {
+        id: 'BV1FDUTBGE2H',
+        bvid: 'BV1FDUTBGE2H',
+        category: 4,
+        bt: 'Scratch云列表，当然是真的（免费开源）',
+        jj: 'github：https://github.com/xiao-xiao-lang/bilibili-/blob/%E5%BC%80%E6%BA%90%E5%85%B6%E4%BB%96%E9%A1%B9%E7%9B%AE/%E4%BA%91%E5%88%97%E8%A1%A8json.js 蓝奏云（无需登录）：https://wwet.lanzouu.com/ijLc73bz0wzc',
+        fm: require('./images/BV1FDUTBGE2H.jpg')
+    },
+    {
+        id: 'BV1khhyzZEyS',
+        bvid: 'BV1khhyzZEyS',
+        category: 4,
+        bt: '一个Scratch摇杆扩展积木',
+        jj: '这是一个scratch摇杆扩展，不需要填写任何内容，自动模拟按键/判定 使用自研九宫格算法，因为是自研的算法所以有很多bug，请在使用的时候勾选在非沙和环境下运行 这个扩展只能使用tubowarp里面的自定义扩展打开或者是其他支持自定义扩展的编辑器 下载链接：https://wwtd.lanzn.com/iH0xU34sjceb 密码:视频结尾会说（传统） （有必要说一下：主体代码由AI生成） 希望你能给up点个关注，谢谢，小up都是这么一步一步走过来的 总之别看简介了，快看视频啊！求三连！',
+        fm: require('./images/BV1khhyzZEyS.jpg')
+    },
+    {
+        id: 'BV1BAeyzZEf3',
+        bvid: 'BV1BAeyzZEf3',
+        category: 4,
+        bt: '一个万能的Scratch方向键积木',
+        jj: '无需任何调试，一个积木实现移动端操作，支持长按等 蓝凑云下载链接： https://wwtd.lanzn.com/iqDVn34mf9kj 密码:视频结尾会说！或者联系我 用的作者做的扩展了，也点个关注呗，小up都很不容易的 （有必要说一下：这个扩展主题由ai制作）',
+        fm: require('./images/BV1BAeyzZEf3.jpg')
+    },
+    {
+        id: 'BV1vBpRzsEDK',
+        bvid: 'BV1vBpRzsEDK',
+        category: 4,
+        bt: '超多积木的B站Scratch扩展！还开源！',
+        jj: '全球首发！自制 B站扩展！ 源码/文档：http://yunpa.vip/10000why扩展文档 js文件下载：https://yunpavip.lanzn.com/iJemi36mrgaf 密码:视频结尾会说 turbowarp网页体验此扩展：https://turbowarp.org/editor?extension=https://yunpa.vip/10000why扩展文档/扩展.js 别看简介了，快去看视频吧！ (有必要说一下，这个扩展主体由AI制作，避免一些人…) ',
+        fm: require('./images/BV1vBpRzsEDK.jpg')
+    },
+    {
+        id: 'BV16Exvz7E6N',
+        bvid: 'BV16Exvz7E6N',
+        category: 4,
+        bt: '云变量扩展⁈ 已开源！',
+        jj: '注意事项： 请勿改动，这个扩展的任何代码，这会影响其他使用此扩展的用户 下载链接：https://yunpavip.lanzn.com/iSzAd37yf8ad 提取码：视频结尾会写',
+        fm: require('./images/BV16Exvz7E6N.jpg')
+    },
+    {
+        id: 'BV1XPWbz1Ezb',
+        bvid: 'BV1XPWbz1Ezb',
+        category: 4,
+        bt: '功能丰富的框选扩展！在Scratch中实现红警？',
+        jj: '这个扩展和视频制作花了Up很长时间，求个三连不过分吧？ 下载网址：https://yunpavip.lanzn.com/ijo8338rz01a Bro认为bro的视频封面发生了技术爆炸 总之，别看简介了，快去看视频啊！',
+        fm: require('./images/BV1XPWbz1Ezb.jpg')
+    },
+    {
+        id: 'BV1Sm1kBJEBg',
+        bvid: 'BV1Sm1kBJEBg',
+        category: 4,
+        bt: 'Scratch音频编码扩展，实现实时免费通话！',
+        jj: '本扩展10000why原创，支持二创，但禁止声称自己为原创 下载链接：https://yunpavip.lanzn.com/ipu0G3a4qqbg （无提取码）',
+        fm: require('./images/BV1Sm1kBJEBg.jpg')
+    }
+];
+
 const TutorialModal = props => {
     const [selectedCategory, setSelectedCategory] = useState(1);
-    const [tutorialDetails, setTutorialDetails] = useState({});
-    const [loading, setLoading] = useState(false);
-    const [loadingProgress, setLoadingProgress] = useState({
-        total: 0,
-        loaded: 0,
-        failed: 0
-    });
-    const isLoadingRef = useRef(false); // 使用ref跟踪加载状态，避免重复加载
 
     const filteredTutorials = tutorialData.filter(tutorial => 
         selectedCategory === 1 || tutorial.category === selectedCategory
     );
 
-    // 使用 useCallback 定义 fetchVideoDetails，避免在 useEffect 中使用时出现依赖问题
-    const fetchVideoDetails = useCallback(async (bvid) => {
-        try {
-            // 使用B站公开API获取视频信息，通过CORS代理绕过跨域限制
-            console.log('Fetching video details for:', bvid);
-            const apiUrl = `https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`;
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
-            const response = await fetch(proxyUrl);
-            console.log('Response status:', response.status);
-            const data = await response.json();
-            console.log('Response data:', data);
-            
-            if (data.code === 0) {
-                const details = {
-                    bvid: bvid,
-                    title: data.data.title,
-                    description: data.data.desc,
-                    thumbnail: data.data.pic,
-                    videoUrl: `https://www.bilibili.com/video/${bvid}`,
-                    author: data.data.owner.name,
-                    views: data.data.stat.view,
-                    duration: data.data.duration,
-                    loadFailed: false
-                };
-                console.log('Fetched video details:', details);
-                setTutorialDetails(prev => ({ ...prev, [bvid]: details }));
-                return details;
-            } else {
-                console.error('API error:', data.message);
-                throw new Error(data.message);
-            }
-        } catch (error) {
-            console.error('Failed to fetch video details:', error);
-            // 即使API调用失败，也使用默认数据，避免用户看到错误
-            const defaultDetails = {
-                bvid: bvid,
-                title: '加载信息失败',
-                description: '无法获取视频信息，但视频可以正常播放',
-                thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Mb2FkaW5nLi4uPC90ZXh0Pjwvc3ZnPg==',
-                videoUrl: `https://www.bilibili.com/video/${bvid}`,
-                author: '未知',
-                views: 0,
-                duration: 0,
-                loadFailed: true
-            };
-            setTutorialDetails(prev => ({ ...prev, [bvid]: defaultDetails }));
-            return defaultDetails;
-        }
-    }, []);
-
-    // 组件挂载时串行获取所有教程的视频详情，添加延迟避免被API限制
-    useEffect(() => {
-        // 避免重复加载
-        if (isLoadingRef.current) {
-            console.log('Already loading, skipping...');
-            return;
-        }
-        
-        const fetchAllVideoDetails = async () => {
-            isLoadingRef.current = true;
-            setLoading(true);
-            // 初始化进度
-            const total = tutorialData.length;
-            let loaded = 0;
-            let failed = 0;
-            setLoadingProgress({ total, loaded, failed });
-            
-            try {
-                // 串行加载所有教程，每个请求之间添加延迟
-                for (const tutorial of tutorialData) {
-                    try {
-                        // 检查缓存，如果有缓存且未失败，跳过
-                        const cachedDetails = tutorialDetails[tutorial.bvid];
-                        if (!cachedDetails || cachedDetails.loadFailed) {
-                            const result = await fetchVideoDetails(tutorial.bvid);
-                            // 更新进度
-                            if (result.loadFailed) {
-                                failed++;
-                            } else {
-                                loaded++;
-                            }
-                            // 每2个视频更新一次进度，减少UI更新频率
-                            if ((loaded + failed) % 2 === 0 || (loaded + failed) === total) {
-                                setLoadingProgress({ total, loaded, failed });
-                            }
-                            // 添加随机延迟，模拟人类操作
-                            const delay = Math.floor(Math.random() * 2000) + 1000; // 1-3秒
-                            console.log(`Waiting ${delay}ms before next request...`);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                        } else {
-                            // 缓存命中，更新进度
-                            loaded++;
-                            // 每2个视频更新一次进度，减少UI更新频率
-                            if (loaded % 2 === 0 || loaded === total) {
-                                setLoadingProgress({ total, loaded, failed });
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Failed to fetch tutorial details:', tutorial.bvid, error);
-                        // 更新失败进度
-                        failed++;
-                        // 每2个视频更新一次进度，减少UI更新频率
-                        if ((loaded + failed) % 2 === 0 || (loaded + failed) === total) {
-                            setLoadingProgress({ total, loaded, failed });
-                        }
-                        // 失败后也添加延迟
-                        await new Promise(resolve => setTimeout(resolve, 1500));
-                    }
-                }
-                // 最终更新进度
-                setLoadingProgress({ total, loaded, failed });
-            } catch (error) {
-                console.error('Error in fetchAllVideoDetails:', error);
-            } finally {
-                setLoading(false);
-                isLoadingRef.current = false;
-                console.log('All tutorials loaded');
-            }
+    const handleTutorialClick = (tutorial) => {
+        const tutorialDetails = {
+            bvid: tutorial.bvid,
+            title: tutorial.bt || '视频教程',
+            description: tutorial.jj || '点击播放视频教程',
+            thumbnail: tutorial.fm || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5MaW5rIFN0cmF0Y2g8L3RleHQ+PC9zdmc+',
+            videoUrl: `https://www.bilibili.com/video/${tutorial.bvid}`,
+            author: 'RemixWarp',
+            views: 0,
+            duration: 0
         };
-        fetchAllVideoDetails();
-    }, [fetchVideoDetails, tutorialDetails]);
-
-    const handleTutorialClick = async (tutorial) => {
-        console.log('Tutorial clicked:', tutorial);
-        try {
-            let details = tutorialDetails[tutorial.bvid];
-            
-            if (!details) {
-                console.log('Fetching fresh details for:', tutorial.bvid);
-                details = await fetchVideoDetails(tutorial.bvid);
-            } else {
-                console.log('Using cached details:', details);
-            }
-            
-            console.log('Opening video modal with:', { ...tutorial, ...details });
-            props.openVideoModal({ ...tutorial, ...details });
-            console.log('openVideoModal called');
-        } catch (error) {
-            console.error('Failed to open video:', error);
-        }
-    };
-
-    const handleReload = async (e, tutorial) => {
-        e.stopPropagation();
-        console.log('Reloading tutorial:', tutorial.bvid);
-        try {
-            await fetchVideoDetails(tutorial.bvid);
-        } catch (error) {
-            console.error('Failed to reload tutorial:', error);
-        }
+        props.openVideoModal({ ...tutorial, ...tutorialDetails });
     };
 
     return (
@@ -311,20 +193,6 @@ const TutorialModal = props => {
 
                 <div className={styles.tutorialGrid}>
                     {filteredTutorials.map(tutorial => {
-                        const details = tutorialDetails[tutorial.bvid] || {
-                            title: 'Loading...',
-                            description: 'Fetching video information...',
-                            thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Mb2FkaW5nLi4uPC90ZXh0Pjwvc3ZnPg==',
-                            author: 'Loading...',
-                            views: 0
-                        };
-                        
-                        const handleImageError = (e) => {
-                            console.log('Image failed to load, using placeholder');
-                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5MaW5rIFN0cmF0Y2g8L3RleHQ+PC9zdmc+';
-                            // 图片加载失败不影响整体加载状态
-                        };
-                        
                         return (
                             <div 
                                 key={tutorial.id} 
@@ -333,10 +201,9 @@ const TutorialModal = props => {
                             >
                                 <div className={styles.tutorialThumbnail}>
                                     <img 
-                                        src={details.thumbnail} 
-                                        alt={details.title}
-                                        className={styles.thumbnailImage}
-                                        onError={handleImageError}
+                                        src={tutorial.fm} 
+                                        alt={tutorial.bt || `教程 ${tutorial.id}`}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                     />
                                     <div className={styles.playButton}>
                                         <span className={styles.playIcon}>▶</span>
@@ -344,52 +211,16 @@ const TutorialModal = props => {
                                 </div>
                                 <div className={styles.tutorialInfo}>
                                     <h3 className={styles.tutorialTitle}>
-                                        {details.title}
+                                        {tutorial.bt || `教程 ${tutorial.id.replace('tutorial', '')}`}
                                     </h3>
                                     <p className={styles.tutorialDescription}>
-                                        {details.description}
+                                        {tutorial.jj || `BV号: ${tutorial.bvid}`}
                                     </p>
-                                    {details.loadFailed && (
-                                        <button
-                                            className={styles.reloadButton}
-                                            onClick={(e) => handleReload(e, tutorial)}
-                                        >
-                                            重新加载
-                                        </button>
-                                    )}
-                                    <div className={styles.tutorialMetadata}>
-                                        <div className={styles.tutorialAuthor}>
-                                            <span>UP: {details.author}</span>
-                                        </div>
-                                        <div className={styles.tutorialViews}>
-                                            <span>{details.views} 播放</span>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         );
                     })}
                 </div>
-
-                {loading && (
-                    <div className={styles.loadingOverlay}>
-                        <div className={styles.loadingSpinner}>
-                            加载中...
-                            <div className={styles.loadingProgress}>
-                                <div className={styles.progressBar}>
-                                    <div 
-                                        className={styles.progressFill} 
-                                        style={{ width: `${(loadingProgress.loaded / loadingProgress.total) * 100}%` }}
-                                    />
-                                </div>
-                                <div className={styles.progressInfo}>
-                                    {loadingProgress.loaded}/{loadingProgress.total} 已加载
-                                    {loadingProgress.failed > 0 && ` (${loadingProgress.failed} 失败)`}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </Box>
         </Modal>
     );

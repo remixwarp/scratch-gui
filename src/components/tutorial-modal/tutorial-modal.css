@@ -1,7 +1,8 @@
 @import "../../css/colors.css";
 
 .modal-content {
-    max-width: 900px;
+    max-width: none;
+    width: 90%;
     margin-top: 50px;
 }
 
@@ -26,10 +27,10 @@
     margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid $ui-black-transparent;
+    justify-content: center;
 }
 
 .categoryTab {
-    flex: 1;
     padding: 0.75rem 1.5rem;
     border: 1px solid $ui-black-transparent;
     background: $ui-tertiary;
@@ -51,9 +52,9 @@
 }
 
 .tutorialGrid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
     padding: 1rem;
 }
 
@@ -62,11 +63,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    flex-basis: 300px;
-    max-width: 300px;
     position: relative;
     height: 160px;
-    margin: 0.5rem;
     padding: 1rem 1rem 0 1rem;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     color: $text-primary;
