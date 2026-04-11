@@ -227,6 +227,7 @@
         "tw.menuBar.menuBarAlign": "菜单栏对齐方式",
         "tw.menuBar.align.left": "左对齐",
         "tw.menuBar.align.center": "居中对齐",
+        "tw.menuBar.align.right": "右对齐",
         "tw.customThemes.create": "从当前主题创建新主题",
         "tw.customThemes.createGradient": "创建渐变主题",
         "tw.customThemes.export": "导出全部主题",

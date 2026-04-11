@@ -95,11 +95,14 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageConta
         typeof stageContainerWidth === 'number' &&
         Number.isFinite(stageContainerWidth) &&
         stageContainerWidth > 0) {
-        const availableContentWidth = Math.max(0, stageContainerWidth - 2);
-        const fitScale = availableContentWidth / stageDimensions.width;
-        stageDimensions.scale *= fitScale;
-        stageDimensions.width *= fitScale;
-        stageDimensions.height *= fitScale;
+        const metadata = STAGE_DISPLAY_SCALE_METADATA[stageSize];
+        if (!metadata.width) { // Only adjust for container width if not using fixed width
+            const availableContentWidth = Math.max(0, stageContainerWidth - 2);
+            const fitScale = availableContentWidth / stageDimensions.width;
+            stageDimensions.scale *= fitScale;
+            stageDimensions.width *= fitScale;
+            stageDimensions.height *= fitScale;
+        }
     }
 
     // Round off dimensions to prevent resampling/blurriness
