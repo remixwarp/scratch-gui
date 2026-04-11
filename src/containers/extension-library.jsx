@@ -61,6 +61,7 @@ const fetchLibrary = async () => {
     let penguinmodExtensions = [];
     let remixwarpExtensions = [];
     let astraExtensions = [];
+    let engineExtensions = [];
 
     try {
         const twRes = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
@@ -336,6 +337,49 @@ const fetchLibrary = async () => {
         }
     } catch (error) {
         console.warn('Failed to load AstraEditor extensions:', error);
+    }
+
+    try {
+        const engineRes = await fetch('/extensions/02engine/02engine-extensions/extensions.json');
+        if (!engineRes.ok) {
+            console.warn(`02Engine extensions: HTTP status ${engineRes.status}`);
+        } else {
+            const engineData = await engineRes.json();
+            engineExtensions = engineData.extensions.map(extension => ({
+                name: extension.name,
+                nameTranslations: extension.nameTranslations || {},
+                description: extension.description,
+                descriptionTranslations: extension.descriptionTranslations || {},
+                extensionId: extension.id,
+                extensionURL: `/extensions/02engine/02engine-extensions/extension/${extension.slug}.js`,
+                iconURL: `/extensions/02engine/02engine-extensions/image/${extension.image}`,
+                tags: ['02engine'],
+                credits: (extension.by || []).map(credit => {
+                    if (credit.link) {
+                        return (
+                            <a
+                                href={credit.link}
+                                target="_blank"
+                                rel="noreferrer"
+                                key={credit.name}
+                            >
+                                {credit.name}
+                            </a>
+                        );
+                    }
+                    return credit.name;
+                }),
+                docsURI: extension.docs ? `/extensions/02engine/02engine-extensions/doc/${extension.slug}/index.html` : null,
+                samples: extension.samples ? extension.samples.map(sample => ({
+                    href: `${process.env.ROOT}editor?project_url=${window.location.origin}/extensions/02engine/02engine-extensions/samples/${encodeURIComponent(sample)}.sb3`,
+                    text: sample
+                })) : null,
+                incompatibleWithScratch: true,
+                featured: true
+            }));
+        }
+    } catch (error) {
+        console.warn('Failed to load 02Engine extensions:', error);
     }
 
     return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions, ...remixwarpExtensions, ...astraExtensions, ...engineExtensions];
