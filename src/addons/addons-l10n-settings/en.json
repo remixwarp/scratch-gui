@@ -467,5 +467,11 @@
   "zebra-striping/@settings-name-intensity": "Intensity (0-100%)",
   "zebra-striping/@settings-name-shade": "Shade",
   "zebra-striping/@settings-select-shade-darker": "Darker",
-  "zebra-striping/@settings-select-shade-lighter": "Lighter"
+  "zebra-striping/@settings-select-shade-lighter": "Lighter",
+  "window-theme/@name": "Window Theme",
+  "window-theme/@description": "Switch between different window styles: MistWarp (default), macOS Style, or Windows 10 Style.",
+  "tab-styles/@name": "Tab Styles",
+  "tab-styles/@description": "Change the appearance of the editor tabs to look like other editors",
+  "simple-project-analyzer/@name": "Simple Project Analyzer",
+  "simple-project-analyzer/@description": "Analyze your Scratch project and get insights about its structure and complexity"
 }

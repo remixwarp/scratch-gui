@@ -1,7 +1,7 @@
 export const manifest = {
-  "name": "simple-project-analyzer",
-  "displayName": "Simple Project Analyzer",
-  "description": "Analyze your Scratch project and get insights about its structure and complexity",
+  "name": "simple-project-analyzer/name",
+  "displayName": "simple-project-analyzer/name",
+  "description": "simple-project-analyzer/description",
   "version": "1.0.0",
   "author": "AstraEditor Team",
   "tags": ["project", "analysis", "statistics"],

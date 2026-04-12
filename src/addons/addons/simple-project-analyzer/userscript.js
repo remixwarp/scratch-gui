@@ -1321,18 +1321,17 @@ export default async function ({ addon, msg, safeMsg, console }) {
   // 创建并初始化分析器
   const analyzer = new SimpleProjectAnalyzer();
 
-  // 等待编辑器加载完成
-  addon.tab.waitForElement('[class*="menu-bar_menu-bar"], [class*="react-tabs_react-tabs__tab-list"], [class*="gui_gui"], [class*="scratchCategorySelector_categorySelector"]', {
-    markAsSeen: true
-  }).then(() => {
-    console.log('Simple Project Analyzer: Editor loaded, initializing...');
-    analyzer.init();
-  }).catch((error) => {
-    console.error('Simple Project Analyzer: Failed to wait for editor elements:', error);
-    // 即使等待失败，也尝试初始化
-    console.log('Simple Project Analyzer: Attempting to initialize anyway...');
-    analyzer.init();
-  });
+  // 直接初始化插件，不等待元素加载
+  console.log('Simple Project Analyzer: Initializing plugin directly...');
+  analyzer.init();
+
+  // 每隔一段时间检查按钮是否存在，如果不存在则重新创建
+  setInterval(() => {
+    if (!analyzer.analyzeButton || !analyzer.analyzeButton.offsetParent) {
+      console.log('Simple Project Analyzer: Button not found, recreating...');
+      analyzer.createAnalyzeButton();
+    }
+  }, 5000);
 
   // 添加错误处理，确保插件即使在初始化失败时也不会影响其他功能
   window.addEventListener('error', (e) => {
