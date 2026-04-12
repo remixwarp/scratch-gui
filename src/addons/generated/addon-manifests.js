@@ -98,6 +98,7 @@ import _Terminal from "../addons/Terminal/_manifest_entry.js";
 import _astras_copilot from "../addons/astras-copilot/_manifest_entry.js";
 import _my_blocks_plus from "../addons/my-blocks-plus/_manifest_entry.js";
 import _hide_menubar from "../addons/hide-menubar/_manifest_entry.js";
+import _simple_project_analyzer from "../addons/simple-project-analyzer/_manifest_entry.js";
 export default {
   "calculator": _calculator,
   "cat-blocks": _cat_blocks,
@@ -198,4 +199,5 @@ export default {
   ,"astras-copilot": _astras_copilot
   ,"my-blocks-plus": _my_blocks_plus
   ,"hide-menubar": _hide_menubar
+  ,"simple-project-analyzer": _simple_project_analyzer
 };

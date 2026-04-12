@@ -1088,7 +1088,7 @@ class AddonList extends React.Component {
             remixwarp: ['calculator', 'daily-quote', 'workspace-tabs', 'stage-camera', 'window-theme'],
             
             // AE与TW对比多出的存入AE
-            astraeditor: ['Terminal', 'astras-copilot', 'my-blocks-plus', 'hide-menubar'],
+            astraeditor: ['Terminal', 'astras-copilot', 'my-blocks-plus', 'hide-menubar', 'simple-project-analyzer'],
             
             // 02与TW对比多出的存入02
             '02engine': ['coder-style', 'comment-vscode-sync']

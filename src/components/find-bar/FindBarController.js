@@ -2,15 +2,49 @@ import BlockItem from '../../lib/find-bar/BlockItem';
 
 import Dropdown from './Dropdown';
 
+const normalizeType = type => {
+    const upper = type.toUpperCase();
+    if (upper.startsWith('OPERATOR'))  return 'OPERATORS' + upper.slice(8);
+    if (upper === 'SOUND_SETEFFECTTO') return 'SOUND_SETEFFECTO';
+    const controlMap = {
+        'CONTROL_WAIT_UNTIL': 'CONTROL_WAITUNTIL',
+        'CONTROL_REPEAT_UNTIL': 'CONTROL_REPEATUNTIL',
+        'CONTROL_FOR_EACH': 'CONTROL_FOREACH',
+        'CONTROL_START_AS_CLONE': 'CONTROL_STARTASCLONE',
+        'CONTROL_CREATE_CLONE_OF': 'CONTROL_CREATECLONEOF',
+        'CONTROL_DELETE_THIS_CLONE': 'CONTROL_DELETETHISCLONE',
+        'CONTROL_INCR_COUNTER': 'CONTROL_INCRCOUNTER',
+        'CONTROL_CLEAR_COUNTER': 'CONTROL_CLEARCOUNTER',
+        'CONTROL_ALL_AT_ONCE': 'CONTROL_ALLATONCE'
+    };
+    if (controlMap[upper]) return controlMap[upper];
+    return upper;
+};
+
 const getMessages = (ScratchBlocks, blockJson) => [
     ScratchBlocks.Msg,
     Object.fromEntries(
-        blockJson.flatMap(b => (b ? [[b.type.toUpperCase(), `${b.type.split('_', 1)[0]}: ${b.message0}`]] : []))
+        blockJson.flatMap(b => {
+            if (!b) return [];
+            const normalizedType = normalizeType(b.type);
+            const messages = [];
+            let i = 0;
+            while (b[`message${i}`] !== undefined) {
+                messages.push(b[`message${i}`]);
+                i++;
+            }
+            if (messages.length === 0) return [];
+            return [[normalizedType, `${b.type.split('_', 1)[0]}: ${messages.join(' ')}`]];
+        })
     )
 ];
 
 const getColours = blockJson => Object.fromEntries(
-    blockJson.flatMap(b => (b ? [[b.type.toUpperCase(), b.colour]] : []))
+    blockJson.flatMap(b => {
+        if (!b) return [];
+        const normalizedType = normalizeType(b.type);
+        return [[normalizedType, b.colour]];
+    })
 );
 
 export default class FindBarController {
@@ -359,11 +393,7 @@ export default class FindBarController {
 
                 this.clearChildren(li);
 
-                if (li.data && li.data.cls === 'flag') {
-                    // 添加绿旗表情符号
-                    const textNode = document.createTextNode('当 🟩 被点击');
-                    li.appendChild(textNode);
-                } else if (match.matchInOpcode && opcode) {
+                if (match.matchInOpcode && opcode) {
                     li.appendChild(document.createTextNode(displayName));
                     li.appendChild(document.createTextNode(' ('));
 
@@ -394,16 +424,9 @@ export default class FindBarController {
             }
             li.style.display = 'block';
 
+            const displayName = li.displayName;
             this.clearChildren(li);
-            
-            if (li.data && li.data.cls === 'flag') {
-                // 添加绿旗表情符号
-                const textNode = document.createTextNode('当 🟩 被点击');
-                li.appendChild(textNode);
-            } else {
-                const displayName = li.displayName;
-                li.appendChild(document.createTextNode(displayName));
-            }
+            li.appendChild(document.createTextNode(displayName));
         }
     }
 
@@ -633,14 +656,8 @@ export default class FindBarController {
             let desc = '';
             for (const fieldRow of fields.fieldRow) {
                 desc = desc ? `${desc} ` : '';
-                if (
-                    fieldRow instanceof this.ScratchBlocks.FieldImage &&
-                    fieldRow.src_.endsWith('green-flag.svg')
-                ) {
-                    desc += this.msgAny('/_general/blocks/green-flag');
-                } else {
-                    desc += fieldRow.getText();
-                }
+                if (fieldRow.src_ === "static/blocks-media/default/green-flag.svg") desc += this.msgAny('_general/blocks/green-flag');
+                else desc += fieldRow.getText();
             }
             return desc;
         };
@@ -661,8 +678,7 @@ export default class FindBarController {
             }
 
             if (root.type === 'event_whenflagclicked') {
-                // 特殊处理绿旗积木，使用绿旗SVG图标
-                addBlock('flag', '当 被点击', root, root.type);
+                addBlock('flag', getDescFromField(root), root, root.type);
                 continue;
             }
 
@@ -742,54 +758,7 @@ export default class FindBarController {
                 blockType !== 'event_broadcast' &&
                 blockType !== 'event_broadcastandwait'
             ) {
-                // 修复操作码与翻译键名的映射
-                let translatedKey = blockType;
-                
-                // 特殊处理操作码与中文翻译的映射
-                const opcodeMap = {
-                    'sound_seteffectto': '设置音效为',
-                    'operator_add': '加',
-                    'operator_subtract': '减',
-                    'operator_multiply': '乘',
-                    'operator_divide': '除',
-                    'operator_random': '随机数',
-                    'operator_gt': '大于',
-                    'operator_lt': '小于',
-                    'operator_equals': '等于',
-                    'operator_and': '与',
-                    'operator_or': '或',
-                    'operator_not': '不',
-                    'operator_join': '连接',
-                    'operator_letter_of': '字母',
-                    'operator_length': '长度',
-                    'operator_contains': '包含',
-                    'operator_mod': '取余数',
-                    'operator_round': '四舍五入',
-                    'operator_mathop': '数学运算',
-                    'control_if_else': '如果…那么…否则',
-                    'control_wait_until': '等待直到',
-                    'control_repeat_until': '重复执行直到',
-                    'control_for_each': '对每个执行',
-                    'control_create_clone_of': '创建克隆体',
-                    'control_delete_this_clone': '删除此克隆体'
-                };
-                
-                let displayText = blockType;
-                if (opcodeMap[blockType]) {
-                    displayText = opcodeMap[blockType];
-                }
-                
-                // 为不同类型的积木设置正确的类名，以便显示正确的颜色
-                let blockClass = blockType;
-                if (blockType.startsWith('control_')) {
-                    blockClass = 'control';
-                } else if (blockType.startsWith('operator_')) {
-                    blockClass = 'operators';
-                } else if (blockType.startsWith('sound_')) {
-                    blockClass = 'sounds';
-                }
-                
-                addBlock(blockClass, displayText, block, blockType);
+                addBlock(blockType, blockType, block, blockType);
             }
         }
 
