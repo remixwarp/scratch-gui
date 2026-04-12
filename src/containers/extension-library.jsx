@@ -351,8 +351,8 @@ const fetchLibrary = async () => {
                 description: extension.description,
                 descriptionTranslations: extension.descriptionTranslations || {},
                 extensionId: extension.id,
-                extensionURL: `/extensions/02engine/02engine-extensions/extension/${extension.slug}.js`,
-                iconURL: `/extensions/02engine/02engine-extensions/image/${extension.image}`,
+                extensionURL: `/extensions/02engine/02engine-extensions/extension/${encodeURIComponent(extension.slug)}.js`,
+                iconURL: `/extensions/02engine/02engine-extensions/image/${encodeURIComponent(extension.image)}`,
                 tags: ['02engine'],
                 credits: (extension.by || []).map(credit => {
                     if (credit.link) {
@@ -369,7 +369,7 @@ const fetchLibrary = async () => {
                     }
                     return credit.name;
                 }),
-                docsURI: extension.docs ? `/extensions/02engine/02engine-extensions/doc/${extension.slug}/index.html` : null,
+                docsURI: extension.docs ? `/extensions/02engine/02engine-extensions/doc/${encodeURIComponent(extension.slug)}/index.html` : null,
                 samples: extension.samples ? extension.samples.map(sample => ({
                     href: `${process.env.ROOT}editor?project_url=${window.location.origin}/extensions/02engine/02engine-extensions/samples/${encodeURIComponent(sample)}.sb3`,
                     text: sample

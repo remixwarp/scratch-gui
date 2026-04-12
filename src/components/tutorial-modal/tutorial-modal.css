@@ -81,6 +81,132 @@
     border-color: $looks-secondary;
 }
 
+.addTutorialButton {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: $looks-secondary;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.addTutorialButton:hover {
+    background: #4a90e2;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.addIcon {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.addTutorialModal {
+    background: $ui-white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    color: $text-primary;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.closeIconButton {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: $text-primary;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.closeIconButton:hover {
+    background: $ui-tertiary;
+}
+
+.addTutorialModal p {
+    color: $text-primary;
+    margin-bottom: 1.5rem;
+}
+
+.qqLink {
+    display: inline-block;
+    background: $looks-secondary;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    margin-bottom: 2rem;
+}
+
+.qqLink:hover {
+    background: #4a90e2;
+    transform: translateY(-2px);
+}
+
+.confirmButton {
+    background: $ui-tertiary;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 200px;
+}
+
+.confirmButton:hover {
+    background: $ui-secondary;
+}
+
 .tutorialThumbnail {
     position: relative;
     width: 100%;

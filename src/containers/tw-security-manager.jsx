@@ -31,26 +31,32 @@ const isTrustedExtension = () => true;
 const parseURL = url => {
     let parsed;
     try {
+        // 尝试解析为完整URL
         parsed = new URL(url);
+        const protocols = [
+            // The important one we want to exclude is javascript:
+            'http:',
+            'https:',
+            'ws:',
+            'wss:',
+            'data:',
+            'blob:',
+            'mailto:',
+            'steam:',
+            'calculator:'
+        ];
+        if (!protocols.includes(parsed.protocol)) {
+            return null;
+        }
+        return parsed;
     } catch (e) {
+        // 处理相对路径（本地扩展）
+        if (url.startsWith('/')) {
+            // 相对路径被认为是有效的本地扩展路径
+            return { protocol: 'local:', href: url };
+        }
         return null;
     }
-    const protocols = [
-        // The important one we want to exclude is javascript:
-        'http:',
-        'https:',
-        'ws:',
-        'wss:',
-        'data:',
-        'blob:',
-        'mailto:',
-        'steam:',
-        'calculator:'
-    ];
-    if (!protocols.includes(parsed.protocol)) {
-        return null;
-    }
-    return parsed;
 };
 
 const allowedAudio = false;

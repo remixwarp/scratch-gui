@@ -1,6 +1,7 @@
 {
   "extensions": [
     {
+      
       "name": "Animated Text",
       "nameTranslations": {
         "de": "Animierter Text",

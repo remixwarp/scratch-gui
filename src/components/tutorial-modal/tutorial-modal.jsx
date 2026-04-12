@@ -145,6 +145,7 @@ const tutorialData = [
 
 const TutorialModal = props => {
     const [selectedCategory, setSelectedCategory] = useState(1);
+    const [showAddTutorialModal, setShowAddTutorialModal] = useState(false);
 
     const filteredTutorials = tutorialData.filter(tutorial => 
         selectedCategory === 1 || tutorial.category === selectedCategory
@@ -162,6 +163,14 @@ const TutorialModal = props => {
             duration: 0
         };
         props.openVideoModal({ ...tutorial, ...tutorialDetails });
+    };
+
+    const handleAddTutorialClick = () => {
+        setShowAddTutorialModal(true);
+    };
+
+    const handleCloseAddTutorialModal = () => {
+        setShowAddTutorialModal(false);
     };
 
     return (
@@ -221,6 +230,36 @@ const TutorialModal = props => {
                         );
                     })}
                 </div>
+                <div 
+                    className={styles.addTutorialButton}
+                    onClick={handleAddTutorialClick}
+                >
+                    <div className={styles.addIcon}>+</div>
+                </div>
+                {showAddTutorialModal && (
+                    <div className={styles.modalOverlay} onClick={handleCloseAddTutorialModal}>
+                        <div className={styles.addTutorialModal} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <h3>加入教程</h3>
+                                <button className={styles.closeIconButton} onClick={handleCloseAddTutorialModal}>
+                                    ×
+                                </button>
+                            </div>
+                            <p>点击下方链接加入腾讯频道，提交你的视频教程：</p>
+                            <a 
+                                href="https://pd.qq.com/s/6cn3ldjnw?b=5" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className={styles.qqLink}
+                            >
+                                【RemixWarp重构跃迁】腾讯频道
+                            </a>
+                            <button className={styles.confirmButton} onClick={handleCloseAddTutorialModal}>
+                                关闭
+                            </button>
+                        </div>
+                    </div>
+                )}
             </Box>
         </Modal>
     );
