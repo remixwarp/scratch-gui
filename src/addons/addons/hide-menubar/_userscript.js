@@ -169,7 +169,7 @@ export default async function ({ addon, msg, Window }) {
 			text.style.setProperty('--rotate', '180deg');
 			// 调整VSCode布局下的按钮位置
 			if (isVSCodeLayout) {
-				button.style.right = '20px';
+				button.style.right = '100px';
 				button.style.top = '50%';
 				button.style.transform = 'translateY(-50%)';
 				button.style.left = 'auto';
@@ -189,7 +189,7 @@ export default async function ({ addon, msg, Window }) {
 		text.style.setProperty('--rotate', '0');
 		// 调整VSCode布局下的按钮位置
 		if (isVSCodeLayout) {
-			button.style.right = '20px';
+			button.style.right = '100px';
 			button.style.top = '50%';
 			button.style.transform = 'translateY(-50%)';
 			button.style.left = 'auto';
