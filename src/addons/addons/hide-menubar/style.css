@@ -17,12 +17,10 @@
 }
 .hide-switch {
         position: absolute;
-        left: 0;
         width: 30px;
         height: 30px;
         background-color: var(--editor-menu-background);
-        transform: translateY(var(--traslate));
-        transition: transform 0.25s ease, opacity 0.25s ease;
+        transition: all 0.25s ease;
         border-radius: 10px;
         border: 0;
         z-index: 480;
