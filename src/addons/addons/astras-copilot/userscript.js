@@ -774,7 +774,7 @@ export default async function () {
             background-color: var(--looks-secondary);
             color: white;
             border: none;
-            margin-left: 40px;
+            margin-left: 100px;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
