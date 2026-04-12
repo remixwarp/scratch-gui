@@ -986,7 +986,7 @@ export default async function () {
                 border: 1px solid ${getCurrentTheme() === 'dark' ? '#555' : '#ddd'};
                 border-radius: 5px;
                 background: ${getCurrentTheme() === 'dark' ? '#3a3a3a' : '#fff'};
-                color: inherit;
+                color: ${getCurrentTheme() === 'dark' ? '#e0e0e0' : '#333'};
                 font-size: 12px;
                 `;
                 modelInput.onchange = () => {
@@ -1101,6 +1101,7 @@ export default async function () {
                     userInput.style.color = isDark ? '#fff' : '#000';
                     modelInput.style.backgroundColor = isDark ? '#3a3a3a' : '#fff';
                     modelInput.style.borderColor = isDark ? '#555' : '#ddd';
+                    modelInput.style.color = isDark ? '#e0e0e0' : '#333';
                     clearBtn.style.backgroundColor = isDark ? '#444' : '#e0e0e0';
                 };
 

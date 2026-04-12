@@ -1,8 +1,7 @@
 const manifest = {
   "editorOnly": true,
-  "noTranslations": true,
-  "name": "Window Theme",
-  "description": "Switch between different window styles: MistWarp (default), macOS, or Windows 10.",
+  "name": "window-theme/name",
+  "description": "window-theme/description",
   "credits": [
     {
       "name": "Mistium",
