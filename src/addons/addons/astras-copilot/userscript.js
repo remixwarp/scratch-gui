@@ -774,11 +774,12 @@ export default async function () {
             background-color: var(--looks-secondary);
             color: white;
             border: none;
-            margin-left: 10px;
+            margin-left: 20px;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
             transition: transform 0.2s, box-shadow 0.2s;
+            order: 2;
             `;
             chatButton.onmouseover = () => {
                 chatButton.style.transform = 'scale(1.05)';

@@ -882,7 +882,12 @@ const pageConfigurations = {
                         component: EnableHTMLSupportREADME,
                         props: props => ({
                             value: AEsettings.get('enableHTMLSupportInREADME') || false,
-                            onChange: (e) => { AEsettings.set("enableHTMLSupportInREADME", e.target.checked); notifySettingsChange(); }
+                            onChange: (e) => { 
+                                AEsettings.set("enableHTMLSupportInREADME", e.target.checked); 
+                                notifySettingsChange(); 
+                                // 显示刷新提示并刷新页面
+                                location.reload();
+                            }
                         })
                     },
                     {
