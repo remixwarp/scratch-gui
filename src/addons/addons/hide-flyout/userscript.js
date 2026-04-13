@@ -293,6 +293,16 @@ export default async function ({ addon, console, msg }) {
     lockObject.appendChild(lockButton);
     flyOut.appendChild(lockObject);
 
+    // 调整VS Code布局下的锁定按钮位置
+    checkVSCodeLayout();
+    if (isVSCodeLayout) {
+      // 在VS Code布局下，强制将锁定按钮定位到右侧
+      lockObject.style.position = "absolute";
+      lockObject.style.right = "15px";
+      lockObject.style.top = "3px";
+      lockObject.style.transform = "none";
+    }
+
     onmouseleave(null, 0);
     toggle = false;
 
