@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React from 'react';
 import { defineMessages, injectIntl, intlShape } from 'react-intl';
 
 import Modal from '../../containers/windowed-modal.jsx';
@@ -16,120 +16,58 @@ const messages = defineMessages({
 });
 
 const VideoModal = props => {
-    console.log('VideoModal props:', props);
-    
-    const [windowPosition, setWindowPosition] = useState({ x: 100, y: 100 });
-    const [windowSize, setWindowSize] = useState({ width: 800, height: 450 });
-    const [isDragging, setIsDragging] = useState(false);
-    const [isResizing, setIsResizing] = useState(false);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-    const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
-
-    const handleMouseDown = (e, type) => {
-        if (type === 'drag') {
-            setIsDragging(true);
-            setDragOffset({
-                x: e.clientX - windowPosition.x,
-                y: e.clientY - windowPosition.y
-            });
-        } else if (type === 'resize') {
-            setIsResizing(true);
-            setResizeStart({
-                x: e.clientX,
-                y: e.clientY,
-                width: windowSize.width,
-                height: windowSize.height
-            });
-        }
-    };
-
-    const handleMouseMove = (e) => {
-        if (isDragging) {
-            setWindowPosition({
-                x: e.clientX - dragOffset.x,
-                y: e.clientY - dragOffset.y
-            });
-        } else if (isResizing) {
-            const newWidth = Math.max(400, resizeStart.width + (e.clientX - resizeStart.x));
-            const newHeight = Math.max(225, resizeStart.height + (e.clientY - resizeStart.y));
-            setWindowSize({ width: newWidth, height: newHeight });
-        }
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-        setIsResizing(false);
-    };
-
     if (!props.visible || !props.tutorial) {
         return null;
     }
     
     return (
-        <div 
-            className={styles.videoOverlay}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
+        <Modal
+            id="video-modal"
+            visible={props.visible}
+            onRequestClose={props.onClose}
+            contentLabel={props.tutorial.title}
+            width={800}
+            height={450}
+            minWidth={400}
+            minHeight={225}
+            resizable={true}
+            maximizable={true}
         >
-            <div 
-                className={styles.videoWindow}
-                style={{
-                    left: `${windowPosition.x}px`,
-                    top: `${windowPosition.y}px`,
-                    width: `${windowSize.width}px`,
-                    height: `${windowSize.height}px`
-                }}
-            >
-                <div 
-                    className={styles.videoHeader}
-                    onMouseDown={(e) => handleMouseDown(e, 'drag')}
-                >
-                    <h3>{props.tutorial.title}</h3>
-                    <button 
-                        className={styles.closeButton}
-                        onClick={props.onClose}
-                    >
-                        ×
-                    </button>
-                </div>
-                <div className={styles.videoContent}>
-                    <iframe
-                        src={`//player.bilibili.com/player.html?isOutside=true&bvid=${props.tutorial.bvid}&p=1`}
-                        scrolling="no"
-                        border="0"
-                        frameBorder="no"
-                        frameSpacing="0"
-                        allowFullScreen={true}
-                        className={styles.videoIframe}
-                    />
-                    <button 
-                        className={styles.useResourceButton}
-                        onClick={() => {
-                            if (props.tutorial.url) {
-                                window.open(props.tutorial.url, '_blank');
-                            } else {
-                                alert('作者没有为此视频设置资源');
-                            }
-                        }}
-                    >
-                        使用视频资源
-                    </button>
-                </div>
-                <div 
-                    className={styles.resizeHandle}
-                    onMouseDown={(e) => handleMouseDown(e, 'resize')}
+            <div className={styles.videoContainer}>
+                <iframe
+                    src={`//player.bilibili.com/player.html?isOutside=true&bvid=${props.tutorial.bvid}&p=1`}
+                    scrolling="no"
+                    border="0"
+                    frameBorder="no"
+                    frameSpacing="0"
+                    allowFullScreen={true}
+                    className={styles.videoIframe}
                 />
+                <button 
+                    className={styles.useResourceButton}
+                    onClick={() => {
+                        if (props.tutorial.url) {
+                            window.open(props.tutorial.url, '_blank');
+                        } else {
+                            alert('作者没有为此视频设置资源');
+                        }
+                    }}
+                >
+                    使用视频资源
+                </button>
             </div>
-        </div>
+        </Modal>
     );
 };
 
 VideoModal.propTypes = {
     intl: intlShape.isRequired,
     onClose: PropTypes.func.isRequired,
+    visible: PropTypes.bool.isRequired,
     tutorial: PropTypes.shape({
         title: PropTypes.string.isRequired,
-        videoUrl: PropTypes.string.isRequired
+        bvid: PropTypes.string.isRequired,
+        url: PropTypes.string
     }).isRequired
 };
 

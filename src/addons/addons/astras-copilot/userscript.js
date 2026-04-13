@@ -774,7 +774,7 @@ export default async function () {
             background-color: var(--looks-secondary);
             color: white;
             border: none;
-            margin-left: 20px;
+            margin-left: 0px;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
@@ -977,6 +977,7 @@ export default async function () {
                 modelLabel.innerText = 'Model:';
                 modelLabel.style.fontSize = '12px';
                 modelLabel.style.opacity = '0.8';
+                modelLabel.style.color = getCurrentTheme() === 'dark' ? '#e0e0e0' : '#666';
 
                 const modelInput = document.createElement('input');
                 modelInput.type = 'text';
@@ -1008,7 +1009,7 @@ export default async function () {
                 border: 1px solid ${getCurrentTheme() === 'dark' ? '#555' : '#ddd'};
                 border-radius: 8px;
                 background: ${getCurrentTheme() === 'dark' ? '#3a3a3a' : '#fff'};
-                color: inherit;
+                color: ${getCurrentTheme() === 'dark' ? '#fff' : '#333'};
                 resize: none;
                 font-family: inherit;
                 box-sizing: border-box;
@@ -1100,6 +1101,7 @@ export default async function () {
                     userInput.style.backgroundColor = isDark ? '#3a3a3a' : '#fff';
                     userInput.style.borderColor = isDark ? '#555' : '#ddd';
                     userInput.style.color = isDark ? '#fff' : '#000';
+                    modelLabel.style.color = isDark ? '#e0e0e0' : '#666';
                     modelInput.style.backgroundColor = isDark ? '#3a3a3a' : '#fff';
                     modelInput.style.borderColor = isDark ? '#555' : '#ddd';
                     modelInput.style.color = isDark ? '#e0e0e0' : '#333';
