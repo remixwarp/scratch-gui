@@ -60,7 +60,7 @@ const tutorialData = [
         bt: '用Turbowarp制作天气软件！完全开源！',
         jj: '蓝奏云：https://www.lanzoum.com/ixRmt343b6sb。“开源，是世界上最伟大的精神”',
         fm: require('./images/BV1bEYRzvEHd.jpg'),
-        url: 'https://remixwarp.pages.dev/editor?project_url=https://rw-vep.pages.dev/BV1bEYRzvEHd.sb3'
+        url: 'https://rw-vep.pages.dev/BV1bEYRzvEHd.sb3'
     },
     {
         id: 'BV1bQtQzmEDz',
@@ -69,7 +69,7 @@ const tutorialData = [
         bt: 'Turbowarp使用天气API',
         jj: '作品：https://www.lanzoum.com/iqXzu33ch7jc 感谢观看，一键三连支持一下！',
         fm: require('./images/BV1bQtQzmEDz.jpg'),
-        url: 'https://remixwarp.pages.dev/editor?project_url=https://rw-vep.pages.dev/BV1bQtQzmEDz.sb3'
+        url: 'https://rw-vep.pages.dev/BV1bQtQzmEDz.sb3'
     },
     {
         id: 'BV1dj8kziEYD',
@@ -94,7 +94,7 @@ const tutorialData = [
         bt: '什么！？scratch不用画笔也能做时钟，快来看，有文件下载！',
         jj: '什么！？scratch不用画笔也能做时钟，快来看，有文件下载！ 蓝奏云链接：https://wwrx.lanzoum.com/iAslk2xpmp8b',
         fm: require('./images/BV1HC7uzdEWr.jpg'),
-        url: 'https://remixwarp.pages.dev/editor?project_url=https://rw-vep.pages.dev/BV1HC7uzdEWr.sb3'
+        url: 'https://rw-vep.pages.dev/BV1HC7uzdEWr.sb3'
     },
     {
         id: 'BV1jR7uzEEHd',
@@ -103,7 +103,7 @@ const tutorialData = [
         bt: 'scratch非线性动画教程',
         jj: '蓝奏云：https://wwrx.lanzoum.com/iUw5F2xpm30b',
         fm: require('./images/BV1jR7uzEEHd.jpg'),
-        url: 'https://remixwarp.pages.dev/editor?project_url=https://rw-vep.pages.dev/BV1jR7uzEEHd.sb3'
+        url: 'https://rw-vep.pages.dev/BV1jR7uzEEHd.sb3'
     },
     {
         id: 'BV1J9pgziEpL',
@@ -185,7 +185,7 @@ const tutorialData = [
         bt: 'Turbowarp云变量聊天室制作教程，教你制作一个简单的聊天室！',
         jj: '一个基础的聊天室教程，如果喜欢我的视频，可以一键三连加关注哟！ 作品下载链接：https://f-code.lanzoum.com/ifQim3emfo3c',
         fm: require('./images/BV1mgB6BHEre.jpg'),
-        url: 'https://remixwarp.pages.dev/editor?project_url=https://rw-vep.pages.dev/BV1mgB6BHEre.sb3'
+        url: 'https://rw-vep.pages.dev/BV1mgB6BHEre.sb3'
     },
     {
         id: 'BV14tvzBgEA7',
@@ -330,7 +330,7 @@ const tutorialData = [
         bt: '4分钟内在Turbowarp里做一个文件管理？非常简单！',
         jj: '这个代码完全开源，您可以直接在您的任何作品使用，网址放在评论区啦！ 可以三连支持一下我嘛~',
         fm: require('./images/BV1Z9QABeENg.jpg'),
-        url: 'https://remixwarp.pages.dev/editor?project_url=https://rw-vep.pages.dev/BV1Z9QABeENg.sb3'
+        url: 'https://rw-vep.pages.dev/BV1Z9QABeENg.sb3'
     },
     {
         id: 'BV1DUnhzkEJb',
@@ -347,7 +347,8 @@ const tutorialData = [
         category: 4,
         bt: 'Scratch扩展合并器！合并多段扩展代码',
         jj: '这个想法小时候就想做了，现在有AI，总算是把小时候的梦给圆上了 这个工具说实话，其实没啥用（主要是为了圆梦） 体验网址：https://yunpa.vip/10000why.html 下载链接：https://yunpavip.lanzn.com/iKVd237rpdhi 无密码',
-        fm: require('./images/BV18fxVz6EiE.jpg')
+        fm: require('./images/BV18fxVz6EiE.jpg'),
+        url: 'https://rw-vep.pages.dev/BV18fxVz6EiE.html'
     },
     //facts
     {
@@ -365,7 +366,8 @@ const tutorialData = [
         category: 5,
         bt: '简单几个扩展积木实现网页社区？还开源！',
         jj: '本视频/扩展由10000why制作，支持二创，严禁获取源码后生称自己为原作者！ 我之后会出一些运用此积木的示例作品，在删除角色一游戏中就添加了这个扩展（感兴趣的可以看下我之前的视频） https://yunpavip.lanzn.com/irS7j35hqrze 密码:视频结尾会说 希望你能给我个三连，最好能关注一下，非常感谢你的支持 总之还看什么简介呢快去看视频！',
-        fm: require('./images/BV1q3aezREjd.jpg')
+        fm: require('./images/BV1q3aezREjd.jpg'),
+        url: 'https://rw-vep.pages.dev/BV1q3aezREjd.js'
     },
     {
         id: 'BV1FDUTBGE2H',
@@ -381,7 +383,8 @@ const tutorialData = [
         category: 5,
         bt: '一个Scratch摇杆扩展积木',
         jj: '这是一个scratch摇杆扩展，不需要填写任何内容，自动模拟按键/判定 使用自研九宫格算法，因为是自研的算法所以有很多bug，请在使用的时候勾选在非沙和环境下运行 这个扩展只能使用tubowarp里面的自定义扩展打开或者是其他支持自定义扩展的编辑器 下载链接：https://wwtd.lanzn.com/iH0xU34sjceb 密码:视频结尾会说（传统） （有必要说一下：主体代码由AI生成） 希望你能给up点个关注，谢谢，小up都是这么一步一步走过来的 总之别看简介了，快看视频啊！求三连！',
-        fm: require('./images/BV1khhyzZEyS.jpg')
+        fm: require('./images/BV1khhyzZEyS.jpg'),
+        url: 'https://rw-vep.pages.dev/BV1khhyzZEyS.js'
     },
     {
         id: 'BV1BAeyzZEf3',
@@ -389,7 +392,8 @@ const tutorialData = [
         category: 5,
         bt: '一个万能的Scratch方向键积木',
         jj: '无需任何调试，一个积木实现移动端操作，支持长按等 蓝凑云下载链接： https://wwtd.lanzn.com/iqDVn34mf9kj 密码:视频结尾会说！或者联系我 用的作者做的扩展了，也点个关注呗，小up都很不容易的 （有必要说一下：这个扩展主题由ai制作）',
-        fm: require('./images/BV1BAeyzZEf3.jpg')
+        fm: require('./images/BV1BAeyzZEf3.jpg'),
+        url: 'https://rw-vep.pages.dev/BV1BAeyzZEf3.js'
     },
     {
         id: 'BV1vBpRzsEDK',
@@ -397,7 +401,8 @@ const tutorialData = [
         category: 5,
         bt: '超多积木的B站Scratch扩展！还开源！',
         jj: '全球首发！自制 B站扩展！ 源码/文档：http://yunpa.vip/10000why扩展文档 js文件下载：https://yunpavip.lanzn.com/iJemi36mrgaf 密码:视频结尾会说 turbowarp网页体验此扩展：https://turbowarp.org/editor?extension=https://yunpa.vip/10000why扩展文档/扩展.js 别看简介了，快去看视频吧！ (有必要说一下，这个扩展主体由AI制作，避免一些人…) ',
-        fm: require('./images/BV1vBpRzsEDK.jpg')
+        fm: require('./images/BV1vBpRzsEDK.jpg'),
+        url: 'https://rw-vep.pages.dev/BV1vBpRzsEDK.js'
     },
     {
         id: 'BV16Exvz7E6N',
@@ -405,7 +410,8 @@ const tutorialData = [
         category: 5,
         bt: '云变量扩展⁈ 已开源！',
         jj: '注意事项： 请勿改动，这个扩展的任何代码，这会影响其他使用此扩展的用户 下载链接：https://yunpavip.lanzn.com/iSzAd37yf8ad 提取码：视频结尾会写',
-        fm: require('./images/BV16Exvz7E6N.jpg')
+        fm: require('./images/BV16Exvz7E6N.jpg'),
+        url: 'https://rw-vep.pages.dev/BV16Exvz7E6N.js'
     },
     {
         id: 'BV1XPWbz1Ezb',
@@ -413,7 +419,8 @@ const tutorialData = [
         category: 5,
         bt: '功能丰富的框选扩展！在Scratch中实现红警？',
         jj: '这个扩展和视频制作花了Up很长时间，求个三连不过分吧？ 下载网址：https://yunpavip.lanzn.com/ijo8338rz01a Bro认为bro的视频封面发生了技术爆炸 总之，别看简介了，快去看视频啊！',
-        fm: require('./images/BV1XPWbz1Ezb.jpg')
+        fm: require('./images/BV1XPWbz1Ezb.jpg'),
+        url: 'https://rw-vep.pages.dev/BV1XPWbz1Ezb.js'
     },
     {
         id: 'BV1Sm1kBJEBg',
@@ -421,7 +428,8 @@ const tutorialData = [
         category: 5,
         bt: 'Scratch音频编码扩展，实现实时免费通话！',
         jj: '本扩展10000why原创，支持二创，但禁止声称自己为原创 下载链接：https://yunpavip.lanzn.com/ipu0G3a4qqbg （无提取码）',
-        fm: require('./images/BV1Sm1kBJEBg.jpg')
+        fm: require('./images/BV1Sm1kBJEBg.jpg'),
+        url: 'https://rw-vep.pages.dev/BV1Sm1kBJEBg.js'
     }
 ];
 
