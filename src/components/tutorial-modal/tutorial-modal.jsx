@@ -375,7 +375,8 @@ const tutorialData = [
         category: 5,
         bt: 'Scratch云列表，当然是真的（免费开源）',
         jj: 'github：https://github.com/xiao-xiao-lang/bilibili-/blob/%E5%BC%80%E6%BA%90%E5%85%B6%E4%BB%96%E9%A1%B9%E7%9B%AE/%E4%BA%91%E5%88%97%E8%A1%A8json.js 蓝奏云（无需登录）：https://wwet.lanzouu.com/ijLc73bz0wzc',
-        fm: require('./images/BV1FDUTBGE2H.jpg')
+        fm: require('./images/BV1FDUTBGE2H.jpg'),
+        url: 'https://rw-vep.pages.dev/BV1FDUTBGE2H.js'
     },
     {
         id: 'BV1khhyzZEyS',
