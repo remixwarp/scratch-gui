@@ -307,5 +307,9 @@
   "workspace-tabs/no-matching-bookmarks": "没有匹配的书签",
   "workspace-tabs/no-bookmarks": "没有书签",
   "workspace-tabs/search-placeholder": "搜索书签...",
-  "workspace-tabs/bookmarks": "书签"
+  "workspace-tabs/bookmarks": "书签",
+  "comment-vscode-sync/not-connected": "未连接到服务器",
+  "comment-vscode-sync/synced-tooltip": "已同步到 VSCode",
+  "comment-vscode-sync/send-failed": "发送失败",
+  "comment-vscode-sync/sync-tooltip": "同步到 VSCode"
 }

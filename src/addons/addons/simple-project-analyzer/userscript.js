@@ -58,6 +58,7 @@ export default async function ({ addon, msg, safeMsg, console }) {
         // 添加自定义样式，确保按钮可见
         this.analyzeButton.style.padding = '8px 12px';
         this.analyzeButton.style.margin = '0 4px';
+        this.analyzeButton.style.marginLeft = '10px';
         this.analyzeButton.style.backgroundColor = '#4CAF50';
         this.analyzeButton.style.color = 'white';
         this.analyzeButton.style.border = 'none';
@@ -65,6 +66,7 @@ export default async function ({ addon, msg, safeMsg, console }) {
         this.analyzeButton.style.cursor = 'pointer';
         this.analyzeButton.style.fontSize = '14px';
         this.analyzeButton.style.fontWeight = 'bold';
+        this.analyzeButton.style.order = '3';
 
         // 禁用时隐藏按钮
         addon.tab.displayNoneWhileDisabled(this.analyzeButton);
