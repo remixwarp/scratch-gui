@@ -71,6 +71,14 @@
   transform: translate(15px, 3px);
 }
 
+/* VS Code布局下的锁定按钮位置 */
+.tab-list.vscode ~ .tab-panel .sa-lock-object {
+  transform: translate(calc(var(--sa-flyout-width) - 15px - 32px), 3px);
+}
+[dir="rtl"] .tab-list.vscode ~ .tab-panel .sa-lock-object {
+  transform: translate(15px, 3px);
+}
+
 .sa-lock-button {
   display: flex;
   cursor: pointer;

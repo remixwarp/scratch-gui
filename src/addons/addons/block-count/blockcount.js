@@ -293,6 +293,7 @@ export default async function ({ addon, console, msg }) {
         display.style.padding = '4px 8px';
         display.style.borderRadius = '4px';
         display.style.transition = 'background-color 0.2s';
+        display.style.marginLeft = '80px';
         display.style.marginRight = '10px';
         display.style.whiteSpace = 'nowrap';
         

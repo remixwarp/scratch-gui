@@ -58,7 +58,7 @@ export default async function ({ addon, msg, safeMsg, console }) {
         // 添加自定义样式，确保按钮可见
         this.analyzeButton.style.padding = '8px 12px';
         this.analyzeButton.style.margin = '0 4px';
-        this.analyzeButton.style.marginLeft = '10px';
+        this.analyzeButton.style.marginLeft = '40px';
         this.analyzeButton.style.backgroundColor = '#4CAF50';
         this.analyzeButton.style.color = 'white';
         this.analyzeButton.style.border = 'none';
@@ -67,6 +67,8 @@ export default async function ({ addon, msg, safeMsg, console }) {
         this.analyzeButton.style.fontSize = '14px';
         this.analyzeButton.style.fontWeight = 'bold';
         this.analyzeButton.style.order = '3';
+        this.analyzeButton.style.position = 'relative';
+        this.analyzeButton.style.zIndex = '1000';
 
         // 禁用时隐藏按钮
         addon.tab.displayNoneWhileDisabled(this.analyzeButton);
@@ -79,44 +81,24 @@ export default async function ({ addon, msg, safeMsg, console }) {
         // 尝试多个位置来添加按钮
         let buttonAdded = false;
 
-        if (VSCodeLayout) {
-          // VS Code布局下，尝试添加到左侧栏
-          try {
-            console.log('Simple Project Analyzer: Trying to add button to left sidebar (VS Code layout)...');
-            // 查找左侧栏
-            const leftSidebar = document.querySelector('[class*="gui_sidebar"]');
-            if (leftSidebar) {
-              console.log('Simple Project Analyzer: Found left sidebar');
-              // 查找左侧栏中的所有按钮
-              const sidebarButtons = leftSidebar.querySelectorAll('button');
-              console.log('Simple Project Analyzer: Found', sidebarButtons.length, 'buttons in left sidebar');
-              if (sidebarButtons.length >= 2) {
-                // 在倒数第2个按钮后插入
-                const secondLastButton = sidebarButtons[sidebarButtons.length - 2];
-                secondLastButton.parentElement.insertBefore(this.analyzeButton, secondLastButton.nextSibling);
-                console.log('Simple Project Analyzer: Added analyze button to left sidebar in VS Code layout');
-                buttonAdded = true;
-              } else if (sidebarButtons.length > 0) {
-                // 如果有按钮，添加到最后一个按钮后
-                const lastButton = sidebarButtons[sidebarButtons.length - 1];
-                lastButton.parentElement.insertBefore(this.analyzeButton, lastButton.nextSibling);
-                console.log('Simple Project Analyzer: Added analyze button to left sidebar after last button');
-                buttonAdded = true;
-              } else {
-                // 如果没有按钮，添加到左侧栏末尾
-                leftSidebar.appendChild(this.analyzeButton);
-                console.log('Simple Project Analyzer: Added analyze button to left sidebar end');
-                buttonAdded = true;
-              }
-            } else {
-              console.log('Simple Project Analyzer: Left sidebar not found');
-            }
-          } catch (e) {
-            console.error('Simple Project Analyzer: Failed to add analyze button to left sidebar:', e);
+        // 不考虑VS Code布局，直接尝试添加到菜单栏
+        try {
+          console.log('Simple Project Analyzer: Trying to add button to menu bar...');
+          // 查找菜单栏
+          const menuBar = document.querySelector('[class^="menu-bar_main-menu"]');
+          if (menuBar) {
+            console.log('Simple Project Analyzer: Found menu bar');
+            menuBar.appendChild(this.analyzeButton);
+            console.log('Simple Project Analyzer: Added analyze button to menu bar');
+            buttonAdded = true;
+          } else {
+            console.log('Simple Project Analyzer: Menu bar not found');
           }
+        } catch (e) {
+          console.error('Simple Project Analyzer: Failed to add analyze button to menu bar:', e);
         }
 
-        // 如果在VS Code布局下没有添加成功，或者不是VS Code布局，尝试添加到查找功能右边
+        // 如果添加到菜单栏失败，尝试添加到查找功能右边
         if (!buttonAdded) {
           try {
             console.log('Simple Project Analyzer: Trying to add button to find bar...');

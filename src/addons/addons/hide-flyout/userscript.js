@@ -9,10 +9,31 @@ export default async function ({ addon, console, msg }) {
   let flyoutLock = false;
   let closeOnMouseUp = false;
   let scrollAnimation = true;
+  let isVSCodeLayout = false;
 
   const SVG_NS = "http://www.w3.org/2000/svg";
 
   const Blockly = await addon.tab.traps.getBlockly();
+
+  function getAESettings() {
+    let aeSettings = {};
+    try {
+      aeSettings = JSON.parse(localStorage.getItem('AESettings') || '{}');
+    } catch (e) {
+      aeSettings = {};
+    }
+    return aeSettings;
+  }
+
+  function checkVSCodeLayout() {
+    const aeSettings = getAESettings();
+    isVSCodeLayout = Boolean(aeSettings.EnableVSCodeLayout);
+  }
+
+  checkVSCodeLayout();
+
+  // 监听设置变化
+  window.addEventListener('ae-settings-changed', checkVSCodeLayout);
 
   function getSpeedValue() {
     let data = {
