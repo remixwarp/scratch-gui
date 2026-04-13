@@ -160,7 +160,7 @@ const tutorialData = [
         bt: '【TW教程】turbowarp也能获取API！获取教程',
         jj: '这是一个教大家使用http来获取API数据的教程~ 有一些是HTTPS协议，请用下面这个我开发的扩展： https://wwbpx.lanzoum.com/izZAq3cxyyif 密码：code 记得三连支持一下！',
         fm: require('./images/BV1qi2jBdEL1.jpg'),
-        url: 'https://remixwarp.pages.dev/editor?extension=https://rw-vep.pages.dev/BV1qi2jBdEL1.js'
+        url: 'https://rw-vep.pages.dev/BV1qi2jBdEL1.js'
     },
     {
         id: 'BV14Lm3BZEvx',

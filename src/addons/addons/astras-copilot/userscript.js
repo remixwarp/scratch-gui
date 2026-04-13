@@ -775,6 +775,7 @@ export default async function () {
             color: white;
             border: none;
             margin-left: 0px;
+            margin-top: -15px;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
