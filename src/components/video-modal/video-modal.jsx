@@ -102,6 +102,9 @@ const VideoModal = props => {
                         allowFullScreen={true}
                         className={styles.videoIframe}
                     />
+                    <button className={styles.useResourceButton}>
+                        使用视频资源
+                    </button>
                 </div>
                 <div 
                     className={styles.resizeHandle}
