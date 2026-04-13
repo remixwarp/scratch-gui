@@ -167,18 +167,11 @@ export default async function ({ addon, msg, Window }) {
 			topBar.style.position = 'relative';
 			topBar.style.top = '0';
 			text.style.setProperty('--rotate', '180deg');
-			// 调整VSCode布局下的按钮位置
-			if (isVSCodeLayout) {
-				button.style.right = '10px';
-				button.style.top = '50%';
-				button.style.transform = 'translateY(-50%)';
-				button.style.left = 'auto';
-			} else {
-				button.style.left = '40px';
-				button.style.top = `${topBarHeight - 10}px`;
-				button.style.right = 'auto';
-				button.style.transform = '';
-			}
+			// 始终将按钮保持在右侧
+		button.style.right = '10px';
+		button.style.top = isVSCodeLayout ? '50%' : `${topBarHeight - 10}px`;
+		button.style.transform = isVSCodeLayout ? 'translateY(-50%)' : '';
+		button.style.left = 'auto';
 			button.style.opacity = '100%';
 			isVisible = true;
 			updateWorkspace();
@@ -187,18 +180,11 @@ export default async function ({ addon, msg, Window }) {
 		topBar.style.position = 'absolute';
 		topBar.style.top = isVisible ? '0' : `-${topBarHeight}px`;
 		text.style.setProperty('--rotate', '0');
-		// 调整VSCode布局下的按钮位置
-		if (isVSCodeLayout) {
-			button.style.right = '10px';
-			button.style.top = '50%';
-			button.style.transform = 'translateY(-50%)';
-			button.style.left = 'auto';
-		} else {
-			button.style.left = '40px';
-			button.style.top = isVisible ? `${topBarHeight - 10}px` : '-10px';
-			button.style.right = 'auto';
-			button.style.transform = '';
-		}
+		// 始终将按钮保持在右侧
+		button.style.right = '10px';
+		button.style.top = isVSCodeLayout ? '50%' : (isVisible ? `${topBarHeight - 10}px` : '-10px');
+		button.style.transform = isVSCodeLayout ? 'translateY(-50%)' : '';
+		button.style.left = 'auto';
 		button.style.opacity = isVisible ? '100%' : '50%';
 		updateWorkspace();
 	}

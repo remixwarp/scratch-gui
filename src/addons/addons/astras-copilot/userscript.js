@@ -779,7 +779,7 @@ export default async function () {
             cursor: pointer;
             font-weight: bold;
             transition: transform 0.2s, box-shadow 0.2s;
-            order: 2;
+            order: 4;
             `;
             chatButton.onmouseover = () => {
                 chatButton.style.transform = 'scale(1.05)';

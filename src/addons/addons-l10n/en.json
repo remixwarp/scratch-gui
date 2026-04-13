@@ -307,5 +307,9 @@
   "workspace-tabs/no-matching-bookmarks": "No matching bookmarks",
   "workspace-tabs/no-bookmarks": "No bookmarks",
   "workspace-tabs/search-placeholder": "Search bookmarks...",
-  "workspace-tabs/bookmarks": "Bookmarks"
+  "workspace-tabs/bookmarks": "Bookmarks",
+  "comment-vscode-sync/not-connected": "Not connected to server",
+  "comment-vscode-sync/synced-tooltip": "Synced to VSCode",
+  "comment-vscode-sync/send-failed": "Send failed",
+  "comment-vscode-sync/sync-tooltip": "Sync to VSCode"
 }

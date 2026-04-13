@@ -102,7 +102,16 @@ const VideoModal = props => {
                         allowFullScreen={true}
                         className={styles.videoIframe}
                     />
-                    <button className={styles.useResourceButton}>
+                    <button 
+                        className={styles.useResourceButton}
+                        onClick={() => {
+                            if (props.tutorial.url) {
+                                window.open(props.tutorial.url, '_blank');
+                            } else {
+                                alert('作者没有为此视频设置资源');
+                            }
+                        }}
+                    >
                         使用视频资源
                     </button>
                 </div>
