@@ -252,13 +252,13 @@ a:active, a:focus {
 
 .dropdown-button:hover {
     background-color: $ui-white;
-    border-color: $looks-secondary;
+    border-color: var(--looks-secondary);
 }
 
 .dropdown-button-active {
-    background-color: $looks-secondary;
+    background-color: var(--looks-secondary);
     color: white;
-    border-color: $looks-secondary;
+    border-color: var(--looks-secondary);
 }
 
 .dropdown-submenu {
@@ -414,7 +414,7 @@ a:active, a:focus {
     transition-property: background;
 }
 .switch[state="on"] {
-    background: $looks-secondary;
+    background: var(--looks-secondary);
 }
 .switch::before {
     content: "";
@@ -519,22 +519,22 @@ a:active, a:focus {
 
 .tag-button:hover {
     background: $ui-white;
-    border-color: $looks-secondary;
+    border-color: var(--looks-secondary);
 }
 
 .tag-button:focus {
-    box-shadow: 0 0 0 2px $looks-transparent;
+    box-shadow: 0 0 0 2px var(--looks-transparent);
 }
 
 .tag-button-active {
-    background: $looks-secondary;
+    background: var(--looks-secondary);
     color: white;
-    border-color: $looks-secondary;
+    border-color: var(--looks-secondary);
 }
 
 .tag-button-active:hover {
-    background: $looks-secondary-dark;
-    border-color: $looks-secondary-dark;
+    background: var(--looks-secondary-dark);
+    border-color: var(--looks-secondary-dark);
 }
 
 .clear-tags-button {
@@ -652,8 +652,8 @@ a:active, a:focus {
 }
 .setting input:focus, .setting input:active {
     outline: none;
-    border-color: $looks-secondary;
-    box-shadow: 0 0 0 3px $looks-transparent;
+    border-color: var(--looks-secondary);
+    box-shadow: 0 0 0 3px var(--looks-transparent);
 }
 .setting input[type="checkbox"] {
     height: 20px;
@@ -682,8 +682,8 @@ a:active, a:focus {
 }
 .setting textarea:focus, .setting textarea:active {
     outline: none;
-    border-color: $looks-secondary;
-    box-shadow: 0 0 0 3px $looks-transparent;
+    border-color: var(--looks-secondary);
+    box-shadow: 0 0 0 3px var(--looks-transparent);
 }
 .setting input[type="color"] {
     height: 30px;
@@ -739,11 +739,11 @@ a:active, a:focus {
 }
 .select-option.selected {
     color: white;
-    background: $looks-secondary;
+    background: var(--looks-secondary);
 }
 .select-option:active, .select-option:focus-within {
     outline: none;
-    box-shadow: 0 0 0 3px $looks-transparent;
+    box-shadow: 0 0 0 3px var(--looks-transparent);
     z-index: 10;
 }
 
@@ -885,7 +885,7 @@ a:active, a:focus {
 .editorButtonWrapper:hover .editorButton,
 .editorButtonWrapper:hover .categoryToggleButton {
     background: $ui-white;
-    border-color: $looks-secondary;
+    border-color: var(--looks-secondary);
 }
 
 .editorButtonActive {
@@ -958,7 +958,7 @@ a:active, a:focus {
 
 .categoryButton:hover {
     background: $ui-white;
-    border-color: $ui-primary;
+    border-color: var(--looks-secondary);
 }
 
 .categoryButtonActive {
@@ -1019,18 +1019,18 @@ a:active, a:focus {
 
 .alignButton:hover {
     background: $ui-white;
-    border-color: $looks-secondary;
+    border-color: var(--looks-secondary);
 }
 
 .alignButtonActive {
-    background: $looks-secondary;
+    background: var(--looks-secondary);
     color: white;
-    border-color: $looks-secondary;
+    border-color: var(--looks-secondary);
 }
 
 .alignButtonActive:hover {
-    background: $looks-secondary-dark;
-    border-color: $looks-secondary-dark;
+    background: var(--looks-secondary-dark);
+    border-color: var(--looks-secondary-dark);
 }
 
 /* 分类菜单对齐样式 */

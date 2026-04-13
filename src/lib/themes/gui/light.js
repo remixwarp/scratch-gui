@@ -98,11 +98,12 @@ const blockColors = {
     workspace: '#F9F9F9',
     toolbox: '#FFFFFF',
     flyout: '#F9F9F9',
-    // Text colors for blocks in light mode
-    text: '#575E75',
+    // Text colors for blocks in light mode (same as dark mode)
+    text: '#FFFFFF',
     toolboxText: '#575E75',
     blackText: '#575E75',
-    textFieldText: '#575E75'
+    textFieldText: '#575E75',
+    flyoutLabelColor: '#575E75'
 };
 
 export {

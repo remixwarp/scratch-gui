@@ -126,7 +126,7 @@ class Theme {
     getGuiColors () {
         return defaultsDeep(
             {},
-            (ACCENT_MAP[this.accent] && ACCENT_MAP[this.accent].guiColors) || {},
+            (ACCENT_MAP[this.accent] && ACCENT_MAP[this.accent].accent && ACCENT_MAP[this.accent].accent.guiColors) || {},
             GUI_MAP[this.gui].guiColors,
             guiLight.guiColors
         );
@@ -135,7 +135,7 @@ class Theme {
     getBlockColors () {
         return defaultsDeep(
             {},
-            (ACCENT_MAP[this.accent] && ACCENT_MAP[this.accent].blockColors) || {},
+            (ACCENT_MAP[this.accent] && ACCENT_MAP[this.accent].accent && ACCENT_MAP[this.accent].accent.blockColors) || {},
             GUI_MAP[this.gui].blockColors,
             BLOCKS_MAP[this.blocks].colors
         );
