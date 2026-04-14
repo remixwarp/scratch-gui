@@ -336,11 +336,9 @@ class AddonWindow {
             this.isDragging = true;
             this.bringToFront();
             
-            // Get the current position of the window
             const currentX = parseInt(this.element.style.left, 10) || this.x;
             const currentY = parseInt(this.element.style.top, 10) || this.y;
             
-            // Calculate offset relative to current window position
             this.dragOffset = {
                 x: e.clientX - currentX,
                 y: e.clientY - currentY
@@ -351,7 +349,99 @@ class AddonWindow {
             
             e.preventDefault();
         });
+
+        this.addTouchDragFunctionality();
     }
+
+    addTouchDragFunctionality () {
+        const checkMobileTouchDragEnabled = () => {
+            try {
+                const stored = localStorage.getItem('AESettings');
+                if (!stored) return false;
+                const settings = JSON.parse(stored);
+                return settings.EnableMobileTouchDrag === true;
+            } catch (e) {
+                return false;
+            }
+        };
+
+        if (!checkMobileTouchDragEnabled()) {
+            const checkInterval = setInterval(() => {
+                if (checkMobileTouchDragEnabled()) {
+                    clearInterval(checkInterval);
+                    this.setupTouchDrag();
+                }
+            }, 1000);
+            this._touchDragCheckInterval = checkInterval;
+        } else {
+            this.setupTouchDrag();
+        }
+    }
+
+    setupTouchDrag () {
+        this.headerElement.addEventListener('touchstart', e => {
+            if (e.target.tagName === 'BUTTON') return;
+            if (e.touches.length !== 1) return;
+
+            this.isDragging = true;
+            this.isTouchDragging = true;
+            this.bringToFront();
+
+            const touch = e.touches[0];
+            const currentX = parseInt(this.element.style.left, 10) || this.x;
+            const currentY = parseInt(this.element.style.top, 10) || this.y;
+
+            this.dragOffset = {
+                x: touch.clientX - currentX,
+                y: touch.clientY - currentY
+            };
+
+            this._lastTouchX = touch.clientX;
+            this._lastTouchY = touch.clientY;
+
+            document.addEventListener('touchmove', this.handleTouchDrag, { passive: false });
+            document.addEventListener('touchend', this.handleTouchDragEnd);
+            document.addEventListener('touchcancel', this.handleTouchDragEnd);
+
+            e.preventDefault();
+        }, { passive: false });
+    }
+
+    handleTouchDrag = e => {
+        if (!this.isDragging || !this.isTouchDragging) return;
+        if (e.touches.length !== 1) return;
+
+        const touch = e.touches[0];
+        const newX = touch.clientX - this.dragOffset.x;
+        const newY = touch.clientY - this.dragOffset.y;
+
+        const minVisiblePixels = 50;
+        const minX = -(this.width - minVisiblePixels);
+        const maxX = window.innerWidth - minVisiblePixels;
+        const minY = getMenuBarHeight();
+        const maxY = Math.max(minY, window.innerHeight - minVisiblePixels);
+
+        this.x = Math.max(minX, Math.min(newX, maxX));
+        this.y = Math.max(minY, Math.min(newY, maxY));
+
+        this.element.style.left = `${this.x}px`;
+        this.element.style.top = `${this.y}px`;
+
+        this._lastTouchX = touch.clientX;
+        this._lastTouchY = touch.clientY;
+
+        this.onMove(this.x, this.y);
+
+        e.preventDefault();
+    };
+
+    handleTouchDragEnd = () => {
+        this.isDragging = false;
+        this.isTouchDragging = false;
+        document.removeEventListener('touchmove', this.handleTouchDrag);
+        document.removeEventListener('touchend', this.handleTouchDragEnd);
+        document.removeEventListener('touchcancel', this.handleTouchDragEnd);
+    };
     
     handleDrag = e => {
         if (!this.isDragging) return;
@@ -395,7 +485,6 @@ class AddonWindow {
                 zIndex: '10'
             };
             
-            // Set position and cursor for each handle
             switch (direction) {
             case 'n':
                 Object.assign(styles, {
@@ -477,6 +566,13 @@ class AddonWindow {
                 e.stopPropagation();
                 this.startResize(e, direction);
             });
+
+            handle.addEventListener('touchstart', e => {
+                e.stopPropagation();
+                if (e.touches.length === 1) {
+                    this.startTouchResize(e, direction);
+                }
+            }, { passive: false });
             
             this.element.appendChild(handle);
         });
@@ -500,6 +596,43 @@ class AddonWindow {
         document.addEventListener('mousemove', this.handleResize);
         document.addEventListener('mouseup', this.handleResizeEnd);
         
+        e.preventDefault();
+    }
+
+    startTouchResize (e, direction) {
+        const checkMobileTouchDragEnabled = () => {
+            try {
+                const stored = localStorage.getItem('AESettings');
+                if (!stored) return false;
+                const settings = JSON.parse(stored);
+                return settings.EnableMobileTouchDrag === true;
+            } catch (e) {
+                return false;
+            }
+        };
+
+        if (!checkMobileTouchDragEnabled()) return;
+
+        this.isResizing = true;
+        this.isTouchResizing = true;
+        this.resizeDirection = direction;
+        this.bringToFront();
+
+        const touch = e.touches[0];
+        const rect = this.element.getBoundingClientRect();
+        this.resizeStart = {
+            x: touch.clientX,
+            y: touch.clientY,
+            width: rect.width,
+            height: rect.height,
+            left: rect.left,
+            top: rect.top
+        };
+
+        document.addEventListener('touchmove', this.handleTouchResize, { passive: false });
+        document.addEventListener('touchend', this.handleTouchResizeEnd);
+        document.addEventListener('touchcancel', this.handleTouchResizeEnd);
+
         e.preventDefault();
     }
     
@@ -574,6 +707,81 @@ class AddonWindow {
         this.isResizing = false;
         document.removeEventListener('mousemove', this.handleResize);
         document.removeEventListener('mouseup', this.handleResizeEnd);
+    };
+
+    handleTouchResize = e => {
+        if (!this.isResizing || !this.isTouchResizing) return;
+        if (e.touches.length !== 1) return;
+
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - this.resizeStart.x;
+        const deltaY = touch.clientY - this.resizeStart.y;
+        const direction = this.resizeDirection;
+
+        let newWidth = this.resizeStart.width;
+        let newHeight = this.resizeStart.height;
+        let newX = this.resizeStart.left;
+        let newY = this.resizeStart.top;
+
+        if (direction.includes('e')) newWidth += deltaX;
+        if (direction.includes('w')) {
+            newWidth -= deltaX;
+            newX = this.resizeStart.left + deltaX;
+        }
+        if (direction.includes('s')) newHeight += deltaY;
+        if (direction.includes('n')) {
+            newHeight -= deltaY;
+            newY = this.resizeStart.top + deltaY;
+        }
+
+        const originalNewWidth = newWidth;
+        const originalNewHeight = newHeight;
+
+        newWidth = Math.max(this.minWidth, newWidth);
+        newHeight = Math.max(this.minHeight, newHeight);
+
+        if (this.maxWidth) newWidth = Math.min(this.maxWidth, newWidth);
+        if (this.maxHeight) newHeight = Math.min(this.maxHeight, newHeight);
+
+        if (direction.includes('w') && newWidth !== originalNewWidth) {
+            newX = this.resizeStart.left + (this.resizeStart.width - newWidth);
+        }
+        if (direction.includes('n') && newHeight !== originalNewHeight) {
+            newY = this.resizeStart.top + (this.resizeStart.height - newHeight);
+        }
+
+        const minY = getMenuBarHeight();
+        if (newY < minY) {
+            const bottom = this.resizeStart.top + this.resizeStart.height;
+            newY = minY;
+            newHeight = Math.max(this.minHeight, bottom - newY);
+            if (this.maxHeight) newHeight = Math.min(this.maxHeight, newHeight);
+            if (direction.includes('n')) {
+                newY = Math.max(minY, bottom - newHeight);
+            }
+        }
+
+        this.width = newWidth;
+        this.height = newHeight;
+        this.x = newX;
+        this.y = newY;
+
+        this.element.style.width = `${newWidth}px`;
+        this.element.style.height = `${newHeight}px`;
+        this.element.style.left = `${newX}px`;
+        this.element.style.top = `${newY}px`;
+
+        this.onResize(newWidth, newHeight);
+
+        e.preventDefault();
+    };
+
+    handleTouchResizeEnd = () => {
+        this.isResizing = false;
+        this.isTouchResizing = false;
+        document.removeEventListener('touchmove', this.handleTouchResize);
+        document.removeEventListener('touchend', this.handleTouchResizeEnd);
+        document.removeEventListener('touchcancel', this.handleTouchResizeEnd);
     };
     
     addScrollbarStyling () {
@@ -676,6 +884,10 @@ class AddonWindow {
     
     destroy (callOnClose = true) {
         this.hide();
+        if (this._touchDragCheckInterval) {
+            clearInterval(this._touchDragCheckInterval);
+            this._touchDragCheckInterval = null;
+        }
         if (callOnClose) {
             this.onClose();
         }

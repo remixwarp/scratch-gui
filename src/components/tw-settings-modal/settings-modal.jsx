@@ -113,6 +113,16 @@ const messages = defineMessages({
         description: 'EnableMobileLayout help',
         id: 'tw.settingsModal.enablecoblielayouthelp'
     },
+    enablemobiletouchdrag: {
+        defaultMessage: '开启移动端模式',
+        description: 'EnableMobileTouchDrag label',
+        id: 'tw.settingsModal.enablemobiletouchdrag'
+    },
+    enablemobiletouchdraghelp: {
+        defaultMessage: '开启后，所有可缩放的自由窗口（包括扩展、插件、AI窗口）都可以用手指在屏幕上进行触屏拖动。',
+        description: 'EnableMobileTouchDrag help',
+        id: 'tw.settingsModal.enablemobiletouchdraghelp'
+    },
     aeWarning: {
         defaultMessage: '警告：部分高级设置可能需要刷新页面才能生效。如果设置未生效，请尝试刷新页面。',
         description: 'Warning about advanced settings',
@@ -343,6 +353,22 @@ const EnableMobileLayout = props => (
         help={
             <FormattedMessage
                 {...messages.enablecoblielayouthelp}
+            />
+        }
+    />
+);
+
+const EnableMobileTouchDrag = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                {...messages.enablemobiletouchdrag}
+            />
+        }
+        help={
+            <FormattedMessage
+                {...messages.enablemobiletouchdraghelp}
             />
         }
     />
@@ -860,6 +886,13 @@ const pageConfigurations = {
                         props: props => ({
                             value: props.multiWorkspaces,
                             onChange: props.onMultiWorkspacesChange
+                        })
+                    },
+                    {
+                        component: EnableMobileTouchDrag,
+                        props: props => ({
+                            value: AEsettings.get('EnableMobileTouchDrag') || false,
+                            onChange: (e) => { AEsettings.set("EnableMobileTouchDrag", e.target.checked); notifySettingsChange(); location.reload(); }
                         })
                     }
                 ]
