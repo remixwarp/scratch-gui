@@ -108,7 +108,9 @@ class Theme {
 
     set (what, to) {
         if (what === 'accent') {
-            return new Theme(to, this.gui, this.blocks, this.menuBarAlign);
+            // Ensure the accent exists in ACCENT_MAP
+            const validAccent = Object.prototype.hasOwnProperty.call(ACCENT_MAP, to) ? to : ACCENT_DEFAULT;
+            return new Theme(validAccent, this.gui, this.blocks, this.menuBarAlign);
         } else if (what === 'gui') {
             return new Theme(this.accent, to, this.blocks, this.menuBarAlign);
         } else if (what === 'blocks') {

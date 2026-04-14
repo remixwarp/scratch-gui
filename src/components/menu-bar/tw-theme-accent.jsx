@@ -33,24 +33,40 @@ const icons = {
 
 };
 
-const ColorIcon = props => (icons[props.id] ? (
-    <img
-        className={styles.accentIconOuter}
-        src={icons[props.id]}
-        draggable={false}
-        // Image is decorative
-        alt=""
-    />
-) : (
-    <div
-        className={styles.accentIconOuter}
-        style={{
-            // menu-bar-background is var(...), don't want to evaluate with the current values
-            backgroundColor: ACCENT_MAP[props.id].accent.guiColors['looks-secondary'],
-            backgroundImage: ACCENT_MAP[props.id].accent.guiColors['menu-bar-background-image']
-        }}
-    />
-));
+const ColorIcon = props => {
+    const accent = ACCENT_MAP[props.id];
+    if (!accent || !accent.accent || !accent.accent.guiColors) {
+        // Fallback to default accent if the specified one doesn't exist
+        const defaultAccent = ACCENT_MAP[ACCENT_DEFAULT];
+        return (
+            <div
+                className={styles.accentIconOuter}
+                style={{
+                    backgroundColor: defaultAccent.accent.guiColors['looks-secondary'],
+                    backgroundImage: defaultAccent.accent.guiColors['menu-bar-background-image']
+                }}
+            />
+        );
+    }
+    return icons[props.id] ? (
+        <img
+            className={styles.accentIconOuter}
+            src={icons[props.id]}
+            draggable={false}
+            // Image is decorative
+            alt=""
+        />
+    ) : (
+        <div
+            className={styles.accentIconOuter}
+            style={{
+                // menu-bar-background is var(...), don't want to evaluate with the current values
+                backgroundColor: accent.accent.guiColors['looks-secondary'],
+                backgroundImage: accent.accent.guiColors['menu-bar-background-image']
+            }}
+        />
+    );
+};
 
 ColorIcon.propTypes = {
     id: PropTypes.string
