@@ -182,10 +182,23 @@ const applyTheme = theme => {
     persistTheme(theme);
 };
 
-try {
-    applyTheme(detectTheme());
-} catch (e) {
-    console.error('Failed to apply theme:', e);
+// Apply theme after DOM is ready
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                applyTheme(detectTheme());
+            } catch (e) {
+                console.error('Failed to apply theme:', e);
+            }
+        });
+    } else {
+        try {
+            applyTheme(detectTheme());
+        } catch (e) {
+            console.error('Failed to apply theme:', e);
+        }
+    }
 }
 
 export {
