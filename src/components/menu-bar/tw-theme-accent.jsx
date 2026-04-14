@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import {Check} from 'lucide-react';
 import ChevronDown from './ChevronDown.jsx';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
-import {ACCENT_MAP, Theme} from '../../lib/themes/index.js';
+import {ACCENT_MAP, ACCENT_DEFAULT, Theme} from '../../lib/themes/index.js';
 import {openAccentMenu, accentMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
