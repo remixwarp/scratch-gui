@@ -23,9 +23,10 @@ for (const key in ACCENT_MAP) {
     };
 }
 
-// Use accent values for styles
+// Create a separate map for accent values if needed
+const ACCENT_VALUES = {};
 for (const key in ACCENT_MAP) {
-    ACCENT_MAP[key] = ACCENT_MAP[key].accent;
+    ACCENT_VALUES[key] = ACCENT_MAP[key].accent;
 }
 
 const icons = {
@@ -45,8 +46,8 @@ const ColorIcon = props => (icons[props.id] ? (
         className={styles.accentIconOuter}
         style={{
             // menu-bar-background is var(...), don't want to evaluate with the current values
-            backgroundColor: ACCENT_MAP[props.id].guiColors['looks-secondary'],
-            backgroundImage: ACCENT_MAP[props.id].guiColors['menu-bar-background-image']
+            backgroundColor: ACCENT_MAP[props.id].accent.guiColors['looks-secondary'],
+            backgroundImage: ACCENT_MAP[props.id].accent.guiColors['menu-bar-background-image']
         }}
     />
 ));
