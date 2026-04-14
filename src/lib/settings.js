@@ -8,7 +8,8 @@ export class AESettings {
                         skipExtWarn: false,
                         EnableExtensionPreview: false,
                         EnableVSCodeLayout: true,
-                        EnableMobileLayout: false
+                        EnableMobileLayout: false,
+                        EnableMobileTouchDrag: false
                 };
                 this.init();
         }
