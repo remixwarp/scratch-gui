@@ -7,10 +7,23 @@ const initialState = {
     theme: detectTheme()
 };
 
-try {
-    applyGuiColors(initialState.theme);
-} catch (e) {
-    console.error('Failed to apply initial GUI colors for theme:', e);
+// Apply GUI colors after DOM is ready
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                applyGuiColors(initialState.theme);
+            } catch (e) {
+                console.error('Failed to apply initial GUI colors for theme:', e);
+            }
+        });
+    } else {
+        try {
+            applyGuiColors(initialState.theme);
+        } catch (e) {
+            console.error('Failed to apply initial GUI colors for theme:', e);
+        }
+    }
 }
 
 const reducer = (state = initialState, action) => {
@@ -24,6 +37,24 @@ const reducer = (state = initialState, action) => {
 
 const setTheme = theme => {
     console.log('setTheme', theme);
+    // Apply GUI colors when theme changes
+    if (typeof document !== 'undefined') {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                try {
+                    applyGuiColors(theme);
+                } catch (e) {
+                    console.error('Failed to apply GUI colors for theme:', e);
+                }
+            });
+        } else {
+            try {
+                applyGuiColors(theme);
+            } catch (e) {
+                console.error('Failed to apply GUI colors for theme:', e);
+            }
+        }
+    }
     return {
         type: SET_THEME,
         theme
