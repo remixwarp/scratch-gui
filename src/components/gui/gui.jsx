@@ -256,6 +256,253 @@ const GUIComponent = props => {
     
     const [vscodeLayout, setVSCodeLayout] = useState(initialVSCodeLayout);
     
+    const {
+        accountNavOpen,
+        activeTabIndex,
+        alertsVisible,
+        authorId,
+        authorThumbnailUrl,
+        authorUsername,
+        basePath,
+        backdropLibraryVisible,
+        backpackHost,
+        backpackVisible,
+        blocksId,
+        blocksTabVisible,
+        cardsVisible,
+        canChangeLanguage,
+        canChangeTheme,
+        canCreateNew,
+        canEditTitle,
+        canManageFiles,
+        canRemix,
+        canSave,
+        canCreateCopy,
+        canShare,
+        canUseCloud,
+        children,
+        connectionModalVisible,
+        costumeLibraryVisible,
+        soundLibraryVisible,
+        costumesTabVisible,
+        customStageSize,
+        enableCommunity,
+        intl,
+        extensionLibraryVisible,
+        isCreating,
+        isEmbedded,
+        isFullScreen,
+        isPlayerOnly,
+        isRtl,
+        isShared,
+        isWindowFullScreen,
+        isTelemetryEnabled,
+        isTotallyNormal,
+        loading,
+        locale,
+        logo,
+        renderLogin,
+        onClickAbout,
+        onClickAccountNav,
+        onCloseAccountNav,
+        onClickAddonSettings,
+        onClickDesktopSettings,
+        onClickNewWindow,
+        onClickPackager,
+        onLogOut,
+        onOpenExtensionLibrary,
+        onOpenExtensionManagerModal,
+        onOpenRegistration,
+        onToggleLoginOpen,
+        onActivateCostumesTab,
+        onActivateSoundsTab,
+        onActivateTab,
+        onClickLogo,
+        onExtensionButtonClick,
+        onOpenCustomExtensionModal,
+        onProjectTelemetryEvent,
+        onRequestCloseBackdropLibrary,
+        onRequestCloseCostumeLibrary,
+        onRequestCloseExtensionLibrary,
+        onRequestCloseSoundLibrary,
+        onRequestCloseTelemetryModal,
+        onSeeCommunity,
+        onSetStageSize: _onSetStageSize,
+        onSetFullScreen: _onSetFullScreen,
+        onShare,
+        onShowPrivacyPolicy,
+        onStartSelectingFileUpload,
+        onTelemetryModalCancel,
+        onTelemetryModalOptIn,
+        onTelemetryModalOptOut,
+        securityManager,
+        showComingSoon,
+        showOpenFilePicker,
+        showSaveFilePicker,
+        soundsTabVisible,
+        stageSizeMode,
+        targetIsStage,
+        telemetryModalVisible,
+        theme,
+        tipsLibraryVisible,
+        onOpenOnboarding,
+        onboardingVisible,
+        usernameModalVisible,
+        settingsModalVisible,
+        customExtensionModalVisible,
+        extensionLoadChoiceModalVisible,
+        extensionLoadChoiceData,
+        fontsModalVisible,
+        unknownPlatformModalVisible,
+        invalidProjectModalVisible,
+        gitModalVisible,
+        shortcutManagerModalVisible,
+        editingTarget,
+        vm,
+        // SBFileUploaderHOC props
+        requestProjectUpload,
+        onLoadingStarted,
+        onLoadingFinished,
+        onLoadingFailed,
+        onSetProjectTitle,
+        loadingState,
+        ...componentProps
+    } = omit(props, 'dispatch');
+    
+    // Log all props for debugging
+    useEffect(() => {
+        console.log('GUIComponent props:', {
+            requestProjectUpload: !!requestProjectUpload,
+            onLoadingStarted: !!onLoadingStarted,
+            onLoadingFinished: !!onLoadingFinished,
+            onLoadingFailed: !!onLoadingFailed,
+            onSetProjectTitle: !!onSetProjectTitle,
+            loadingState: loadingState,
+            vm: !!vm,
+            onStartSelectingFileUpload: !!onStartSelectingFileUpload
+        });
+    }, [requestProjectUpload, onLoadingStarted, onLoadingFinished, onLoadingFailed, onSetProjectTitle, loadingState, vm, onStartSelectingFileUpload]);
+    
+    // Handle drag and drop for SB3 files
+    const handleDragOver = useCallback(e => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Drag over detected');
+    }, []);
+    
+    const handleDrop = useCallback(e => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Drop detected');
+        
+        const files = e.dataTransfer.files;
+        console.log('Files dropped:', files);
+        
+        if (files.length > 0) {
+            const file = files[0];
+            console.log('File:', file);
+            
+            // Check if the file is a Scratch project file
+            if (file.name.endsWith('.sb3') || file.name.endsWith('.sb2') || file.name.endsWith('.sb') || file.name.endsWith('.html')) {
+                console.log('Scratch project file detected:', file.name);
+                
+                // Directly handle the file upload
+                if (requestProjectUpload && onLoadingStarted && onLoadingFinished && onLoadingFailed && onSetProjectTitle && vm) {
+                    console.log('Directly handling file upload');
+                    
+                    // Request project upload to show loading screen
+                    requestProjectUpload(loadingState);
+                    
+                    // Show loading screen
+                    onLoadingStarted();
+                    
+                    // Read the file
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        console.log('File read successfully');
+                        const filename = file.name;
+                        let loadingSuccess = false;
+                        
+                        // Stop current project
+                        vm.quit();
+                        
+                        let projectData = reader.result;
+
+                        if (filename && filename.endsWith('.html')) {
+                            console.log('HTML file detected, unpackaging');
+                            try {
+                                const blob = new Blob([projectData], {type: 'text/html'});
+                                import('../../lib/unpackager').then(({default: unpackage}) => {
+                                    unpackage(blob).then(unpackaged => {
+                                        console.log('HTML file unpackaged successfully');
+                                        projectData = unpackaged.data;
+                                        loadProjectData();
+                                    }).catch(error => {
+                                        console.error('Failed to unpackage HTML file:', error);
+                                        onLoadingFailed(error);
+                                        onLoadingFinished(loadingState, false);
+                                    });
+                                });
+                            } catch (error) {
+                                console.error('Failed to unpackage HTML file:', error);
+                                onLoadingFailed(error);
+                                onLoadingFinished(loadingState, false);
+                            }
+                        } else {
+                            loadProjectData();
+                        }
+
+                        function loadProjectData() {
+                            console.log('Loading project data');
+                            vm.loadProject(projectData)
+                                .then(() => {
+                                    console.log('Project loaded successfully');
+                                    if (filename) {
+                                        const uploadedProjectTitle = filename.match(/^(.*)\.(?:sb[23]?|html)$/) ? filename.match(/^(.*)\.(?:sb[23]?|html)$/)[1].substring(0, 100) : '';
+                                        onSetProjectTitle(uploadedProjectTitle);
+                                        console.log('Project title set to:', uploadedProjectTitle);
+                                    }
+                                    if (vm.renderer) {
+                                        vm.renderer.draw();
+                                        console.log('Renderer drawn');
+                                    }
+                                    loadingSuccess = true;
+                                })
+                                .catch(error => {
+                                    console.error('Failed to load project:', error);
+                                    onLoadingFailed(error);
+                                })
+                                .then(() => {
+                                    console.log('Loading finished, success:', loadingSuccess);
+                                    onLoadingFinished(loadingState, loadingSuccess);
+                                });
+                        }
+                    };
+                    
+                    reader.onerror = (error) => {
+                        console.error('File reader error:', error);
+                        onLoadingFailed(error);
+                        onLoadingFinished(loadingState, false);
+                    };
+                    
+                    console.log('Reading file as array buffer');
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    console.error('Missing required props for file upload:', {
+                        requestProjectUpload: !!requestProjectUpload,
+                        onLoadingStarted: !!onLoadingStarted,
+                        onLoadingFinished: !!onLoadingFinished,
+                        onLoadingFailed: !!onLoadingFailed,
+                        onSetProjectTitle: !!onSetProjectTitle,
+                        vm: !!vm
+                    });
+                }
+            } else {
+                console.log('Not a Scratch project file:', file.name);
+            }
+        }
+    }, [requestProjectUpload, onLoadingStarted, onLoadingFinished, onLoadingFailed, onSetProjectTitle, vm, loadingState]);
+    
     // 监听设置变化，更新vscodeLayout
     useEffect(() => {
         const updateVSCodeLayout = () => {
@@ -460,112 +707,6 @@ const GUIComponent = props => {
             }
         };
     }, [measureStageContainerWidth]);
-
-    const {
-        accountNavOpen,
-        activeTabIndex,
-        alertsVisible,
-        authorId,
-        authorThumbnailUrl,
-        authorUsername,
-        basePath,
-        backdropLibraryVisible,
-        backpackHost,
-        backpackVisible,
-        blocksId,
-        blocksTabVisible,
-        cardsVisible,
-        canChangeLanguage,
-        canChangeTheme,
-        canCreateNew,
-        canEditTitle,
-        canManageFiles,
-        canRemix,
-        canSave,
-        canCreateCopy,
-        canShare,
-        canUseCloud,
-        children,
-        connectionModalVisible,
-        costumeLibraryVisible,
-        soundLibraryVisible,
-        costumesTabVisible,
-        customStageSize,
-        enableCommunity,
-        intl,
-        extensionLibraryVisible,
-        isCreating,
-        isEmbedded,
-        isFullScreen,
-        isPlayerOnly,
-        isRtl,
-        isShared,
-        isWindowFullScreen,
-        isTelemetryEnabled,
-        isTotallyNormal,
-        loading,
-        locale,
-        logo,
-        renderLogin,
-        onClickAbout,
-        onClickAccountNav,
-        onCloseAccountNav,
-        onClickAddonSettings,
-        onClickDesktopSettings,
-        onClickNewWindow,
-        onClickPackager,
-        onLogOut,
-        onOpenExtensionLibrary,
-        onOpenExtensionManagerModal,
-        onOpenRegistration,
-        onToggleLoginOpen,
-        onActivateCostumesTab,
-        onActivateSoundsTab,
-        onActivateTab,
-        onClickLogo,
-        onExtensionButtonClick,
-        onOpenCustomExtensionModal,
-        onProjectTelemetryEvent,
-        onRequestCloseBackdropLibrary,
-        onRequestCloseCostumeLibrary,
-        onRequestCloseExtensionLibrary,
-        onRequestCloseSoundLibrary,
-        onRequestCloseTelemetryModal,
-        onSeeCommunity,
-        onSetStageSize: _onSetStageSize,
-        onSetFullScreen: _onSetFullScreen,
-        onShare,
-        onShowPrivacyPolicy,
-        onStartSelectingFileUpload,
-        onTelemetryModalCancel,
-        onTelemetryModalOptIn,
-        onTelemetryModalOptOut,
-        securityManager,
-        showComingSoon,
-        showOpenFilePicker,
-        showSaveFilePicker,
-        soundsTabVisible,
-        stageSizeMode,
-        targetIsStage,
-        telemetryModalVisible,
-        theme,
-        tipsLibraryVisible,
-        onOpenOnboarding,
-        onboardingVisible,
-        usernameModalVisible,
-        settingsModalVisible,
-        customExtensionModalVisible,
-        extensionLoadChoiceModalVisible,
-        extensionLoadChoiceData,
-        fontsModalVisible,
-        unknownPlatformModalVisible,
-        invalidProjectModalVisible,
-        gitModalVisible,
-        shortcutManagerModalVisible,
-        editingTarget,
-        vm,
-        ...componentProps
-    } = omit(props, 'dispatch');
     
     const updateCanShowReadme = () => {
         if (!vm || !vm.editingTarget || !vm.editingTarget.comments) {
@@ -810,6 +951,8 @@ const GUIComponent = props => {
                 className={styles.pageWrapper}
                 dir={isRtl ? 'rtl' : 'ltr'}
                 style={minDimensions}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
                 {...componentProps}
             >
                 {alwaysEnabledModals}

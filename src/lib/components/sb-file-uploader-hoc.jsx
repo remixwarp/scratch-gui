@@ -50,6 +50,8 @@ const SBFileUploaderHOC = function (WrappedComponent) {
             ]);
             // tw: We have multiple instances of this HOC alive at a time. This flag fixes issues that arise from that.
             this.expectingFileUploadFinish = false;
+            // Store instance reference for drag and drop functionality
+            window.SBFileUploaderInstance = this;
         }
         componentDidUpdate (prevProps) {
             if (this.props.isLoadingUpload && !prevProps.isLoadingUpload && this.expectingFileUploadFinish) {
