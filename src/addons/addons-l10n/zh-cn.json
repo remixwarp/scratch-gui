@@ -311,5 +311,14 @@
   "comment-vscode-sync/not-connected": "未连接到服务器",
   "comment-vscode-sync/synced-tooltip": "已同步到 VSCode",
   "comment-vscode-sync/send-failed": "发送失败",
-  "comment-vscode-sync/sync-tooltip": "同步到 VSCode"
+  "comment-vscode-sync/sync-tooltip": "同步到 VSCode",
+  "stage-camera/stage-window": "舞台窗口",
+  "stage-camera/camera-title": "相机",
+  "stage-camera/hide": "隐藏",
+  "stage-camera/zoom-in": "放大",
+  "stage-camera/zoom-out": "缩小",
+  "stage-camera/reset": "重置",
+  "stage-camera/window-mode": "窗口模式",
+  "stage-camera/show-camera": "显示相机控制",
+  "stage-camera/fixed-mode": "固定模式"
 }

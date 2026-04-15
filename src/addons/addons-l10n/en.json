@@ -311,5 +311,14 @@
   "comment-vscode-sync/not-connected": "Not connected to server",
   "comment-vscode-sync/synced-tooltip": "Synced to VSCode",
   "comment-vscode-sync/send-failed": "Send failed",
-  "comment-vscode-sync/sync-tooltip": "Sync to VSCode"
+  "comment-vscode-sync/sync-tooltip": "Sync to VSCode",
+  "stage-camera/stage-window": "Stage Window",
+  "stage-camera/camera-title": "Camera",
+  "stage-camera/hide": "Hide",
+  "stage-camera/zoom-in": "Zoom In",
+  "stage-camera/zoom-out": "Zoom Out",
+  "stage-camera/reset": "Reset",
+  "stage-camera/window-mode": "Window Mode",
+  "stage-camera/show-camera": "Show Camera Controls",
+  "stage-camera/fixed-mode": "Fixed Mode"
 }
