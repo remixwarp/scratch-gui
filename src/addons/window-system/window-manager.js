@@ -16,6 +16,18 @@ let nextOnTopZIndex = WINDOW_ON_TOP_Z_INDEX_BASE;
 let windowCount = 0;
 const activeWindows = new Map();
 
+// Cross-window communication channel
+let broadcastChannel;
+const windowId = `window-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+try {
+    broadcastChannel = new BroadcastChannel('remixwarp-window-system');
+    broadcastChannel.onmessage = handleBroadcastMessage;
+} catch (e) {
+    console.warn('BroadcastChannel not supported, falling back to localStorage');
+    // Fallback to localStorage if BroadcastChannel is not supported
+    window.addEventListener('storage', handleStorageMessage);
+}
+
 import getMenuBarHeight from '../../lib/utils/menu-bar-height';
 
 class AddonWindow {
@@ -339,13 +351,25 @@ class AddonWindow {
             const currentX = parseInt(this.element.style.left, 10) || this.x;
             const currentY = parseInt(this.element.style.top, 10) || this.y;
             
+            // Calculate drag offset based on screen coordinates
             this.dragOffset = {
-                x: e.clientX - currentX,
-                y: e.clientY - currentY
+                x: e.screenX - (window.screenX + currentX),
+                y: e.screenY - (window.screenY + currentY)
             };
             
             document.addEventListener('mousemove', this.handleDrag);
             document.addEventListener('mouseup', this.handleDragEnd);
+            
+            // Send drag start message to other windows
+            sendMessage('WINDOW_DRAG_START', {
+                windowId: this.id,
+                x: window.screenX + currentX,
+                y: window.screenY + currentY,
+                screenX: e.screenX,
+                screenY: e.screenY,
+                clientX: e.clientX,
+                clientY: e.clientY
+            });
             
             e.preventDefault();
         });
@@ -391,17 +415,31 @@ class AddonWindow {
             const currentX = parseInt(this.element.style.left, 10) || this.x;
             const currentY = parseInt(this.element.style.top, 10) || this.y;
 
+            // Calculate drag offset based on screen coordinates
             this.dragOffset = {
-                x: touch.clientX - currentX,
-                y: touch.clientY - currentY
+                x: touch.screenX - (window.screenX + currentX),
+                y: touch.screenY - (window.screenY + currentY)
             };
 
             this._lastTouchX = touch.clientX;
             this._lastTouchY = touch.clientY;
+            this._lastScreenX = touch.screenX;
+            this._lastScreenY = touch.screenY;
 
             document.addEventListener('touchmove', this.handleTouchDrag, { passive: false });
             document.addEventListener('touchend', this.handleTouchDragEnd);
             document.addEventListener('touchcancel', this.handleTouchDragEnd);
+
+            // Send drag start message to other windows
+            sendMessage('WINDOW_DRAG_START', {
+                windowId: this.id,
+                x: window.screenX + currentX,
+                y: window.screenY + currentY,
+                screenX: touch.screenX,
+                screenY: touch.screenY,
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
 
             e.preventDefault();
         }, { passive: false });
@@ -412,8 +450,23 @@ class AddonWindow {
         if (e.touches.length !== 1) return;
 
         const touch = e.touches[0];
-        const newX = touch.clientX - this.dragOffset.x;
-        const newY = touch.clientY - this.dragOffset.y;
+        
+        // Get screen coordinates for touch
+        const screenX = touch.screenX;
+        const screenY = touch.screenY;
+
+        // Calculate new position based on screen coordinates
+        const newX = screenX - this.dragOffset.x;
+        const newY = screenY - this.dragOffset.y;
+
+        // Check if the touch is outside the current window bounds
+        const isOutsideWindow = touch.clientX < 0 || touch.clientX > window.innerWidth || 
+                               touch.clientY < 0 || touch.clientY > window.innerHeight;
+        
+        // Always update the window position in the current editor
+        // Calculate position relative to the current window
+        const relativeX = screenX - window.screenX - this.dragOffset.x;
+        const relativeY = screenY - window.screenY - this.dragOffset.y;
 
         const minVisiblePixels = 50;
         const minX = -(this.width - minVisiblePixels);
@@ -421,16 +474,58 @@ class AddonWindow {
         const minY = getMenuBarHeight();
         const maxY = Math.max(minY, window.innerHeight - minVisiblePixels);
 
-        this.x = Math.max(minX, Math.min(newX, maxX));
-        this.y = Math.max(minY, Math.min(newY, maxY));
+        this.x = Math.max(minX, Math.min(relativeX, maxX));
+        this.y = Math.max(minY, Math.min(relativeY, maxY));
 
         this.element.style.left = `${this.x}px`;
         this.element.style.top = `${this.y}px`;
 
         this._lastTouchX = touch.clientX;
         this._lastTouchY = touch.clientY;
+        this._lastScreenX = screenX;
+        this._lastScreenY = screenY;
 
         this.onMove(this.x, this.y);
+
+        if (isOutsideWindow) {
+            // Send drag move message to other windows for preview
+            sendMessage('WINDOW_DRAG_MOVE', {
+                windowId: this.id,
+                x: newX,
+                y: newY,
+                screenX: screenX,
+                screenY: screenY,
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                windowData: {
+                    title: this.title,
+                    width: this.width,
+                    height: this.height,
+                    minWidth: this.minWidth,
+                    minHeight: this.minHeight,
+                    maxWidth: this.maxWidth,
+                    maxHeight: this.maxHeight,
+                    resizable: this.resizable,
+                    modal: this.modal,
+                    closable: this.closable,
+                    minimizable: this.minimizable,
+                    maximizable: this.maximizable,
+                    className: this.className,
+                    alwaysOnTop: this.alwaysOnTop
+                }
+            });
+        } else {
+            // Send drag move message to other windows
+            sendMessage('WINDOW_DRAG_MOVE', {
+                windowId: this.id,
+                x: newX,
+                y: newY,
+                screenX: screenX,
+                screenY: screenY,
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+        }
 
         e.preventDefault();
     };
@@ -441,35 +536,160 @@ class AddonWindow {
         document.removeEventListener('touchmove', this.handleTouchDrag);
         document.removeEventListener('touchend', this.handleTouchDragEnd);
         document.removeEventListener('touchcancel', this.handleTouchDragEnd);
+        
+        // Check if the touch is outside the current window bounds when dragging ends
+        const touchPos = { x: this._lastTouchX || 0, y: this._lastTouchY || 0 };
+        const isOutsideWindow = touchPos.x < 0 || touchPos.x > window.innerWidth || 
+                               touchPos.y < 0 || touchPos.y > window.innerHeight;
+        
+        if (isOutsideWindow) {
+            // Transfer the window to another editor window using screen coordinates
+            this.checkWindowTransfer(this._lastScreenX || 0, this._lastScreenY || 0);
+        }
+        
+        // Send drag end message to other windows
+        sendMessage('WINDOW_DRAG_END', {
+            windowId: this.id
+        });
     };
     
     handleDrag = e => {
         if (!this.isDragging) return;
         
-        const newX = e.clientX - this.dragOffset.x;
-        const newY = e.clientY - this.dragOffset.y;
+        // Get screen coordinates instead of client coordinates
+        const screenX = e.screenX;
+        const screenY = e.screenY;
+        
+        // Update last mouse position
+        this._lastMouseX = e.clientX;
+        this._lastMouseY = e.clientY;
+        this._lastScreenX = screenX;
+        this._lastScreenY = screenY;
+        
+        // Calculate new position based on screen coordinates
+        const newX = screenX - this.dragOffset.x;
+        const newY = screenY - this.dragOffset.y;
+        
+        // Check if the mouse is outside the current window bounds
+        const isOutsideWindow = e.clientX < 0 || e.clientX > window.innerWidth || 
+                               e.clientY < 0 || e.clientY > window.innerHeight;
+        
+        // Always update the window position in the current editor
+        // Calculate position relative to the current window
+        const relativeX = screenX - window.screenX - this.dragOffset.x;
+        const relativeY = screenY - window.screenY - this.dragOffset.y;
         
         // Allow window to move mostly off-screen but keep 50px visible
-        // Don't allow the top of the window to go above the top of the page
         const minVisiblePixels = 50;
         const minX = -(this.width - minVisiblePixels);
         const maxX = window.innerWidth - minVisiblePixels;
         const minY = getMenuBarHeight();
         const maxY = Math.max(minY, window.innerHeight - minVisiblePixels);
         
-        this.x = Math.max(minX, Math.min(newX, maxX));
-        this.y = Math.max(minY, Math.min(newY, maxY));
+        this.x = Math.max(minX, Math.min(relativeX, maxX));
+        this.y = Math.max(minY, Math.min(relativeY, maxY));
         
         this.element.style.left = `${this.x}px`;
         this.element.style.top = `${this.y}px`;
         
         this.onMove(this.x, this.y);
+        
+        if (isOutsideWindow) {
+            // Send drag move message to other windows for preview
+            sendMessage('WINDOW_DRAG_MOVE', {
+                windowId: this.id,
+                x: newX,
+                y: newY,
+                screenX: screenX,
+                screenY: screenY,
+                windowData: {
+                    title: this.title,
+                    width: this.width,
+                    height: this.height,
+                    minWidth: this.minWidth,
+                    minHeight: this.minHeight,
+                    maxWidth: this.maxWidth,
+                    maxHeight: this.maxHeight,
+                    resizable: this.resizable,
+                    modal: this.modal,
+                    closable: this.closable,
+                    minimizable: this.minimizable,
+                    maximizable: this.maximizable,
+                    className: this.className,
+                    alwaysOnTop: this.alwaysOnTop
+                }
+            });
+        } else {
+            // Send drag move message to other windows
+            sendMessage('WINDOW_DRAG_MOVE', {
+                windowId: this.id,
+                x: newX,
+                y: newY,
+                screenX: screenX,
+                screenY: screenY,
+                clientX: e.clientX,
+                clientY: e.clientY
+            });
+        }
     };
     
     handleDragEnd = () => {
         this.isDragging = false;
         document.removeEventListener('mousemove', this.handleDrag);
         document.removeEventListener('mouseup', this.handleDragEnd);
+        
+        // Check if the mouse is outside the current window bounds when dragging ends
+        const mousePos = { x: this._lastMouseX || 0, y: this._lastMouseY || 0 };
+        const isOutsideWindow = mousePos.x < 0 || mousePos.x > window.innerWidth || 
+                               mousePos.y < 0 || mousePos.y > window.innerHeight;
+        
+        if (isOutsideWindow) {
+            // Transfer the window to another editor window using screen coordinates
+            this.checkWindowTransfer(this._lastScreenX || 0, this._lastScreenY || 0);
+        }
+        
+        // Send drag end message to other windows
+        sendMessage('WINDOW_DRAG_END', {
+            windowId: this.id
+        });
+    };
+    
+    // Check if the window should be transferred to another editor window
+    checkWindowTransfer = (screenX, screenY) => {
+        // Get the window data to transfer
+        const windowData = {
+            id: this.id,
+            title: this.title,
+            width: this.width,
+            height: this.height,
+            minWidth: this.minWidth,
+            minHeight: this.minHeight,
+            maxWidth: this.maxWidth,
+            maxHeight: this.maxHeight,
+            resizable: this.resizable,
+            modal: this.modal,
+            closable: this.closable,
+            minimizable: this.minimizable,
+            maximizable: this.maximizable,
+            className: this.className,
+            alwaysOnTop: this.alwaysOnTop,
+            // Use screen coordinates for position
+            x: screenX - 100, // Adjust for cursor position
+            y: screenY - 50,
+            // Capture window content
+            content: this.contentElement.innerHTML
+        };
+        
+        // Send window transfer message to other windows
+        sendMessage('WINDOW_TRANSFER', {
+            windowData,
+            sourceWindowId: this.id,
+            screenX,
+            screenY
+        });
+        
+        // Close the window in the current instance
+        this.close();
     };
     
     addResizeHandles () {
@@ -1057,5 +1277,269 @@ const WindowManager = {
         }
     }
 };
+
+// Broadcast message handler
+function handleBroadcastMessage(event) {
+    const { type, data, senderWindowId } = event.data;
+    
+    // Ignore messages from ourselves
+    if (senderWindowId === windowId) return;
+    
+    switch (type) {
+        case 'WINDOW_DRAG_START':
+            handleWindowDragStart(data);
+            break;
+        case 'WINDOW_DRAG_MOVE':
+            handleWindowDragMove(data);
+            break;
+        case 'WINDOW_DRAG_END':
+            handleWindowDragEnd(data);
+            break;
+        case 'WINDOW_TRANSFER':
+            handleWindowTransfer(data);
+            break;
+        case 'WINDOW_SYNC':
+            handleWindowSync(data);
+            break;
+    }
+}
+
+// LocalStorage fallback message handler
+function handleStorageMessage(event) {
+    if (event.key !== 'remixwarp-window-message') return;
+    
+    try {
+        const message = JSON.parse(event.newValue);
+        if (!message) return;
+        
+        const { type, data, senderWindowId } = message;
+        
+        // Ignore messages from ourselves
+        if (senderWindowId === windowId) return;
+        
+        switch (type) {
+            case 'WINDOW_DRAG_START':
+                handleWindowDragStart(data);
+                break;
+            case 'WINDOW_DRAG_MOVE':
+                handleWindowDragMove(data);
+                break;
+            case 'WINDOW_DRAG_END':
+                handleWindowDragEnd(data);
+                break;
+            case 'WINDOW_TRANSFER':
+                handleWindowTransfer(data);
+                break;
+            case 'WINDOW_SYNC':
+                handleWindowSync(data);
+                break;
+        }
+    } catch (e) {
+        console.error('Error parsing storage message:', e);
+    }
+}
+
+// Send message to other windows
+function sendMessage(type, data) {
+    const message = { type, data, timestamp: Date.now(), senderWindowId: windowId };
+    
+    if (broadcastChannel) {
+        broadcastChannel.postMessage(message);
+    } else {
+        // Fallback to localStorage
+        try {
+            localStorage.setItem('remixwarp-window-message', JSON.stringify(message));
+            localStorage.removeItem('remixwarp-window-message');
+        } catch (e) {
+            console.error('Error sending message via localStorage:', e);
+        }
+    }
+}
+
+// Handle window drag start
+function handleWindowDragStart(data) {
+    // Notify other windows that a window is being dragged
+    console.log('Window drag started:', data);
+}
+
+// Preview windows map
+const previewWindows = new Map();
+
+// Handle window drag move
+function handleWindowDragMove(data) {
+    const { windowId, screenX, screenY, windowData } = data;
+    
+    // If windowData is provided, create or update preview window
+    if (windowData) {
+        // Calculate position relative to the current window using screen coordinates
+        // Adjust for window header height and cursor position
+        const headerHeight = 44; // Approximate header height
+        const relativeX = screenX - window.screenX - 100; // Adjust for cursor position
+        const relativeY = screenY - window.screenY - headerHeight;
+        
+        // Ensure the window is within bounds
+        const minVisiblePixels = 50;
+        const minX = -(windowData.width - minVisiblePixels);
+        const maxX = window.innerWidth - minVisiblePixels;
+        const minY = getMenuBarHeight();
+        const maxY = Math.max(minY, window.innerHeight - minVisiblePixels);
+        
+        // Calculate new position
+        let newX = relativeX;
+        let newY = relativeY;
+        
+        // Check if window is near the edge of the editor
+        // If window is near the top edge, adjust position to show the entire window
+        if (newY < minY) {
+            newY = minY;
+        }
+        
+        // If window is near the left edge, adjust position to show the entire window
+        if (newX < minX) {
+            newX = minX;
+        }
+        
+        // If window is near the right edge, adjust position to show the entire window
+        if (newX + windowData.width > window.innerWidth) {
+            newX = window.innerWidth - windowData.width;
+        }
+        
+        // If window is near the bottom edge, adjust position to show the entire window
+        if (newY + windowData.height > window.innerHeight) {
+            newY = window.innerHeight - windowData.height;
+        }
+        
+        // Ensure position is within bounds
+        newX = Math.max(minX, Math.min(newX, maxX));
+        newY = Math.max(minY, Math.min(newY, maxY));
+        
+        // Check if preview window already exists
+        if (previewWindows.has(windowId)) {
+            // Update existing preview window
+            const previewWindow = previewWindows.get(windowId);
+            previewWindow.element.style.left = `${newX}px`;
+            previewWindow.element.style.top = `${newY}px`;
+        } else {
+            // Create new preview window
+            const previewWindow = WindowManager.createWindow({
+                ...windowData,
+                id: `${windowId}-preview`,
+                x: newX,
+                y: newY,
+                title: `${windowData.title} (预览)`,
+                alwaysOnTop: true
+            });
+            
+            // Make preview window semi-transparent
+            previewWindow.element.style.opacity = '0.7';
+            previewWindow.element.style.pointerEvents = 'none';
+            
+            // Show the preview window
+            previewWindow.show();
+            
+            // Store preview window
+            previewWindows.set(windowId, previewWindow);
+        }
+    }
+}
+
+// Handle window drag end
+function handleWindowDragEnd(data) {
+    const { windowId } = data;
+    
+    // Remove preview window if it exists
+    if (previewWindows.has(windowId)) {
+        const previewWindow = previewWindows.get(windowId);
+        previewWindow.close();
+        previewWindows.delete(windowId);
+    }
+    
+    // Notify other windows that the drag has ended
+    console.log('Window drag ended:', data);
+}
+
+// Handle window transfer
+function handleWindowTransfer(data) {
+    // Create the transferred window in this instance
+    const { windowData, sourceWindowId, screenX, screenY } = data;
+    
+    console.log('Received window transfer:', windowData);
+    
+    // Remove preview window if it exists
+    if (previewWindows.has(sourceWindowId)) {
+        const previewWindow = previewWindows.get(sourceWindowId);
+        previewWindow.close();
+        previewWindows.delete(sourceWindowId);
+    }
+    
+    // Calculate position relative to the current window using screen coordinates
+    // Adjust for window header height and cursor position
+    const headerHeight = 44; // Approximate header height
+    const relativeX = screenX - window.screenX - 100; // Adjust for cursor position
+    const relativeY = screenY - window.screenY - headerHeight;
+    
+    // Ensure the window is within bounds
+    const minVisiblePixels = 50;
+    const minX = -(windowData.width - minVisiblePixels);
+    const maxX = window.innerWidth - minVisiblePixels;
+    const minY = getMenuBarHeight();
+    const maxY = Math.max(minY, window.innerHeight - minVisiblePixels);
+    
+    // Calculate new position
+    let newX = relativeX;
+    let newY = relativeY;
+    
+    // Check if window is near the edge of the editor
+    // If window is near the top edge, adjust position to show the entire window
+    if (newY < minY) {
+        newY = minY;
+    }
+    
+    // If window is near the left edge, adjust position to show the entire window
+    if (newX < minX) {
+        newX = minX;
+    }
+    
+    // If window is near the right edge, adjust position to show the entire window
+    if (newX + windowData.width > window.innerWidth) {
+        newX = window.innerWidth - windowData.width;
+    }
+    
+    // If window is near the bottom edge, adjust position to show the entire window
+    if (newY + windowData.height > window.innerHeight) {
+        newY = window.innerHeight - windowData.height;
+    }
+    
+    // Ensure position is within bounds
+    newX = Math.max(minX, Math.min(newX, maxX));
+    newY = Math.max(minY, Math.min(newY, maxY));
+    
+    // Create a new window with the transferred data
+    const newWindow = WindowManager.createWindow({
+        ...windowData,
+        x: newX,
+        y: newY
+    });
+    
+    // Restore window content if available
+    if (windowData.content) {
+        newWindow.setContent(windowData.content);
+    }
+    
+    // Show the transferred window
+    newWindow.show();
+    
+    // Acknowledge the transfer
+    sendMessage('WINDOW_TRANSFER_ACK', {
+        sourceWindowId,
+        transferredWindowId: newWindow.id
+    });
+}
+
+// Handle window sync
+function handleWindowSync(data) {
+    // Sync window state between instances
+    console.log('Window sync received:', data);
+}
 
 export default WindowManager;
