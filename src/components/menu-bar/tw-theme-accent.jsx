@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import {Check} from 'lucide-react';
 import ChevronDown from './ChevronDown.jsx';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
-import {ACCENT_MAP, ACCENT_DEFAULT, Theme} from '../../lib/themes/index.js';
+import {ACCENT_MAP, Theme} from '../../lib/themes/index.js';
 import {openAccentMenu, accentMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
@@ -34,35 +34,41 @@ const icons = {
 };
 
 const ColorIcon = props => {
-    const accent = ACCENT_MAP[props.id];
-    if (!accent || !accent.accent || !accent.accent.guiColors) {
-        // Fallback to default accent if the specified one doesn't exist
-        const defaultAccent = ACCENT_MAP[ACCENT_DEFAULT];
+    const accentId = props.id || 'pale-blue';
+    const accent = ACCENT_MAP[accentId] && ACCENT_MAP[accentId].accent;
+    
+    if (icons[accentId]) {
+        return (
+            <img
+                className={styles.accentIconOuter}
+                src={icons[accentId]}
+                draggable={false}
+                // Image is decorative
+                alt=""
+            />
+        );
+    }
+    
+    if (accent && accent.guiColors) {
         return (
             <div
                 className={styles.accentIconOuter}
                 style={{
-                    backgroundColor: defaultAccent.accent.guiColors['looks-secondary'],
-                    backgroundImage: defaultAccent.accent.guiColors['menu-bar-background-image']
+                    // menu-bar-background is var(...), don't want to evaluate with the current values
+                    backgroundColor: accent.guiColors['looks-secondary'],
+                    backgroundImage: accent.guiColors['menu-bar-background-image']
                 }}
             />
         );
     }
-    return icons[props.id] ? (
-        <img
-            className={styles.accentIconOuter}
-            src={icons[props.id]}
-            draggable={false}
-            // Image is decorative
-            alt=""
-        />
-    ) : (
+    
+    // Fallback to a default style if accent is not found
+    return (
         <div
             className={styles.accentIconOuter}
             style={{
-                // menu-bar-background is var(...), don't want to evaluate with the current values
-                backgroundColor: accent.accent.guiColors['looks-secondary'],
-                backgroundImage: accent.accent.guiColors['menu-bar-background-image']
+                backgroundColor: '#4A90E2',
+                backgroundImage: 'none'
             }}
         />
     );
