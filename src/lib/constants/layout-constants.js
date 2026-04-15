@@ -18,7 +18,12 @@ const STAGE_SIZE_MODES = keyMirror({
     /**
      * Display the stage at its full size.
      */
-    full: null
+    full: null,
+
+    /**
+     * Display the stage at its initial size (scale 1).
+     */
+    initial: null
 });
 
 /**
@@ -32,7 +37,9 @@ const STAGE_DISPLAY_SIZES = keyMirror({
 
     constrained: null,
 
-    full: null
+    full: null,
+
+    initial: null
 });
 
 // zoom level to start with
@@ -47,7 +54,7 @@ const UNCONSTRAINED_NON_STAGE_WIDTH = 1096 - FIXED_WIDTH;
 
 const STAGE_DISPLAY_SCALE_METADATA = {
     [STAGE_DISPLAY_SIZES.large]: {
-        width: FIXED_WIDTH
+        scale: 0.85
     },
     [STAGE_DISPLAY_SIZES.small]: {
         width: FIXED_WIDTH * 0.5
@@ -56,6 +63,9 @@ const STAGE_DISPLAY_SCALE_METADATA = {
         scale: 0.85
     },
     [STAGE_DISPLAY_SIZES.full]: {
+        scale: 0.85
+    },
+    [STAGE_DISPLAY_SIZES.initial]: {
         scale: 1
     }
 };

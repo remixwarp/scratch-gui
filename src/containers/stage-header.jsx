@@ -35,19 +35,11 @@ class StageHeader extends React.Component {
         }
     }
     checkInvalidStageSizeMode () {
-        // Switch from "large" to "full" when the large option isn't even displayed in the interface
-        if (this.props.stageSizeMode === STAGE_SIZE_MODES.large && !this.showFixedLargeSize()) {
-            this.props.onSetStageFull();
-        }
+        // No need to check for invalid stage size mode anymore
     }
     showFixedLargeSize () {
-        // Fixed width "large" mode should only be available when it would be smaller than the constrained
-        // full stage, otherwise there are some sizes where switching to the smaller size would make it
-        // larger instead of smaller.
-        const constrainedScale = STAGE_DISPLAY_SCALE_METADATA[STAGE_DISPLAY_SIZES.constrained].scale;
-        const constrainedWidth = this.props.customStageSize.width * constrainedScale;
-        const largeWidth = STAGE_DISPLAY_SCALE_METADATA[STAGE_DISPLAY_SIZES.large].width;
-        return constrainedWidth > largeWidth;
+        // Always return false since we're not using fixed width mode anymore
+        return false;
     }
     render () {
         const {
@@ -97,6 +89,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
     onSetStageLarge: () => dispatch(setStageSize(STAGE_SIZE_MODES.large)),
     onSetStageSmall: () => dispatch(setStageSize(STAGE_SIZE_MODES.small)),
+    onSetStageInitial: () => dispatch(setStageSize(STAGE_SIZE_MODES.initial)),
     onSetStageFull: () => dispatch(setStageSize(STAGE_SIZE_MODES.full)),
     onSetStageFullScreen: () => dispatch(setFullScreen(true)),
     onSetStageUnFullScreen: () => dispatch(setFullScreen(false)),
