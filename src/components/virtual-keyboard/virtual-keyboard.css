@@ -1,0 +1,109 @@
+.keyboardContent {
+    padding: 15px;
+    height: 100%;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    font-size: 10px;
+}
+
+.keyboardRows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.keyboardRow {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+    min-height: 40px;
+}
+
+.key {
+    background: linear-gradient(135deg, 
+        var(--ui-primary, #ffffff) 0%, 
+        var(--ui-secondary, #f8f9fa) 100%);
+    border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+    border-radius: 6px;
+    padding: 0.8em 1.2em;
+    font-size: 1.4em;
+    font-weight: 600;
+    color: var(--text-primary, #2d3748);
+    cursor: pointer;
+    flex: 1;
+    min-width: 30px;
+    min-height: 40px;
+    text-align: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.key.space {
+    flex: 3;
+    min-width: 150px;
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+/* 响应式字体大小 */
+@media (max-height: 300px) {
+    .keyboardContent {
+        font-size: 8px;
+    }
+}
+
+@media (min-height: 400px) {
+    .keyboardContent {
+        font-size: 12px;
+    }
+}
+
+@media (min-height: 500px) {
+    .keyboardContent {
+        font-size: 14px;
+    }
+}
+
+.key:hover {
+    background: linear-gradient(135deg, 
+        var(--ui-secondary, #f8f9fa) 0%, 
+        var(--ui-primary, #ffffff) 100%);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.key:active {
+    background: var(--ui-secondary, #f8f9fa);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(0);
+}
+
+.virtual-keyboard-window {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+@media (max-width: 768px) {
+    .key {
+        padding: 10px 12px;
+        font-size: 14px;
+        min-width: 36px;
+    }
+}
+
+@media (max-width: 480px) {
+    .keyboardContent {
+        padding: 10px;
+    }
+    
+    .key {
+        padding: 8px 10px;
+        font-size: 12px;
+        min-width: 32px;
+    }
+}

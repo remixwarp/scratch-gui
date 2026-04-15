@@ -35,6 +35,9 @@ import getMenuBarHeight from './menu-bar-height';
  * @return {STAGE_DISPLAY_SIZES} - the stage size enum value we should use in this situation.
  */
 const resolveStageSize = (stageSizeMode, isUnconstrained) => {
+    if (stageSizeMode === STAGE_SIZE_MODES.initial) {
+        return STAGE_DISPLAY_SIZES.initial;
+    }
     if (stageSizeMode === STAGE_SIZE_MODES.full && !isUnconstrained) {
         return STAGE_DISPLAY_SIZES.constrained;
     }
@@ -94,7 +97,8 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageConta
     if (!isFullScreen &&
         typeof stageContainerWidth === 'number' &&
         Number.isFinite(stageContainerWidth) &&
-        stageContainerWidth > 0) {
+        stageContainerWidth > 0 &&
+        stageSize !== STAGE_DISPLAY_SIZES.initial) {
         const metadata = STAGE_DISPLAY_SCALE_METADATA[stageSize];
         if (!metadata.width) { // Only adjust for container width if not using fixed width
             const availableContentWidth = Math.max(0, stageContainerWidth - 2);

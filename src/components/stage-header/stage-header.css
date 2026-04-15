@@ -51,6 +51,20 @@
     border-radius: 5px;
 }
 
+.stageButtonsGroup {
+    display: flex;
+    align-items: center;
+}
+
+.stageButtonsGroup > * {
+    margin-left: 0.2rem;
+}
+
+[dir="rtl"] .stageButtonsGroup > * {
+    margin-left: 0;
+    margin-right: 0.2rem;
+}
+
 [dir="ltr"] .stage-size-toggle-group,
 [dir="ltr"] .settings-button {
     margin-right: .2rem;

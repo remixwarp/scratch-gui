@@ -1,9 +1,9 @@
-import {STAGE_DISPLAY_SIZES} from '../lib/constants/layout-constants.js';
+import {STAGE_SIZE_MODES} from '../lib/constants/layout-constants.js';
 
 const SET_STAGE_SIZE = 'scratch-gui/StageSize/SET_STAGE_SIZE';
 
 const initialState = {
-    stageSize: STAGE_DISPLAY_SIZES.full
+    stageSize: STAGE_SIZE_MODES.initial
 };
 
 const reducer = function (state, action) {

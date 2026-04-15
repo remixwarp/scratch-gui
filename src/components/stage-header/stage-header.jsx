@@ -1,9 +1,11 @@
 import classNames from 'classnames';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useState } from 'react';
 import {connect} from 'react-redux';
 import VM from 'scratch-vm';
+import VirtualKeyboard from '../virtual-keyboard/virtual-keyboard.jsx';
+import { Keyboard } from 'lucide-react';
 
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
@@ -37,6 +39,11 @@ const messages = defineMessages({
         description: 'Button to change stage size to small',
         id: 'gui.stageHeader.stageSizeSmall'
     },
+    initialStageSizeMessage: {
+        defaultMessage: 'Switch to initial stage size',
+        description: 'Button to change stage size to initial size',
+        id: 'gui.stageHeader.stageSizeInitial'
+    },
     fullStageSizeMessage: {
         defaultMessage: 'Switch to full stage',
         description: 'Button to change stage size to its full size',
@@ -61,6 +68,11 @@ const messages = defineMessages({
         defaultMessage: 'Open settings',
         description: 'Button to open settings in embeds',
         id: 'tw.openAdvanced'
+    },
+    virtualKeyboardMessage: {
+        defaultMessage: 'Virtual Keyboard',
+        description: 'Button to open virtual keyboard',
+        id: 'tw.virtualKeyboard'
     }
 });
 
@@ -76,8 +88,9 @@ const StageHeaderComponent = function (props) {
         onSetStageFullScreen,
         onSetStageUnFullScreen,
         onSetStageLarge,
-        onSetStageSmall,
-        onSetStageFull,
+    onSetStageSmall,
+    onSetStageInitial,
+    onSetStageFull,
         onOpenSettings,
         isEmbedded,
         stageContainerWidth,
@@ -86,7 +99,22 @@ const StageHeaderComponent = function (props) {
         vm
     } = props;
 
+    const [showKeyboard, setShowKeyboard] = useState(false);
+
     let header = null;
+
+    const checkMobileTouchDragEnabled = () => {
+        try {
+            const stored = localStorage.getItem('AESettings');
+            if (!stored) return false;
+            const settings = JSON.parse(stored);
+            return settings.EnableMobileTouchDrag === true;
+        } catch (e) {
+            return false;
+        }
+    };
+
+    const isMobileModeEnabled = checkMobileTouchDragEnabled();
 
     const useContainerWidth = !(isFullScreen || isEmbedded) && typeof stageContainerWidth === 'number';
     const stageDimensions = getStageDimensions(
@@ -175,18 +203,16 @@ const StageHeaderComponent = function (props) {
                                 isSelected: stageSizeMode === STAGE_SIZE_MODES.small,
                                 title: props.intl.formatMessage(messages.smallStageSizeMessage)
                             },
-                            ...(showFixedLargeSize ? [
-                                {
-                                    handleClick: onSetStageLarge,
-                                    icon: largeStageIcon,
-                                    iconClassName: styles.stageButtonIcon,
-                                    isSelected: stageSizeMode === STAGE_SIZE_MODES.large,
-                                    title: props.intl.formatMessage(messages.largeStageSizeMessage)
-                                }
-                            ] : []),
+                            {
+                                handleClick: onSetStageInitial,
+                                icon: fullStageIcon,
+                                iconClassName: styles.stageButtonIcon,
+                                isSelected: stageSizeMode === STAGE_SIZE_MODES.initial,
+                                title: props.intl.formatMessage(messages.initialStageSizeMessage)
+                            },
                             {
                                 handleClick: onSetStageFull,
-                                icon: showFixedLargeSize ? fullStageIcon : largeStageIcon,
+                                icon: largeStageIcon,
                                 iconClassName: styles.stageButtonIcon,
                                 isSelected: stageSizeMode === STAGE_SIZE_MODES.full,
                                 title: props.intl.formatMessage(messages.fullStageSizeMessage)
@@ -211,7 +237,19 @@ const StageHeaderComponent = function (props) {
                         key="editor" // addons require the HTML element to be not be re-used by in-editor buttons
                     >
                         {stageControls}
-                        <div>
+                        <div className={styles.stageButtonsGroup}>
+                            {isMobileModeEnabled && (
+                                <Button
+                                    className={styles.stageButton}
+                                    onClick={() => setShowKeyboard(true)}
+                                >
+                                    <Keyboard
+                                        alt={props.intl.formatMessage(messages.virtualKeyboardMessage)}
+                                        className={styles.icon}
+                                        title={props.intl.formatMessage(messages.virtualKeyboardMessage)}
+                                    />
+                                </Button>
+                            )}
                             <Button
                                 className={styles.stageButton}
                                 onClick={onSetStageFullScreen}
@@ -229,7 +267,15 @@ const StageHeaderComponent = function (props) {
         );
     }
 
-    return header;
+    return (
+        <>
+            {header}
+            <VirtualKeyboard
+                visible={showKeyboard}
+                onClose={() => setShowKeyboard(false)}
+            />
+        </>
+    );
 };
 
 const mapStateToProps = state => ({
@@ -251,6 +297,7 @@ StageHeaderComponent.propTypes = {
     onSetStageUnFullScreen: PropTypes.func.isRequired,
     onSetStageLarge: PropTypes.func.isRequired,
     onSetStageSmall: PropTypes.func.isRequired,
+    onSetStageInitial: PropTypes.func.isRequired,
     onSetStageFull: PropTypes.func.isRequired,
     onOpenSettings: PropTypes.func.isRequired,
     isEmbedded: PropTypes.bool.isRequired,
