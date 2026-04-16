@@ -319,6 +319,89 @@ class GradientUtils {
 }
 
 /**
+ * Utility functions for pixel art theme creation
+ */
+class PixelUtils {
+    /**
+     * Create a CSS background image from pixel data
+     * @param {Array} pixelData - 2D array of pixel colors
+     * @param {number} pixelSize - Size of each pixel in pixels
+     * @returns {string} CSS background-image string
+     */
+    static createPixelBackground(pixelData, pixelSize = 1) {
+        if (!Array.isArray(pixelData) || pixelData.length === 0) {
+            return '';
+        }
+
+        const width = pixelData[0].length;
+        const height = pixelData.length;
+        const canvas = document.createElement('canvas');
+        canvas.width = width * pixelSize;
+        canvas.height = height * pixelSize;
+        const ctx = canvas.getContext('2d');
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const color = pixelData[y][x];
+                if (color) {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                }
+            }
+        }
+
+        return canvas.toDataURL('image/png');
+    }
+
+    /**
+     * Create a pixel art accent theme
+     * @param {Array} pixelData - 2D array of pixel colors
+     * @param {string} primaryColor - Primary accent color
+     * @param {object} options - Additional options
+     * @returns {object} Custom accent theme object
+     */
+    static createPixelAccent(pixelData, primaryColor, options = {}) {
+        const baseColors = GradientUtils.generateAccentColors(primaryColor, options);
+        const pixelSize = options.pixelSize || 2;
+        const pixelBackground = this.createPixelBackground(pixelData, pixelSize);
+
+        return {
+            guiColors: {
+                ...baseColors,
+                'menu-bar-background-image': `url(${pixelBackground})`,
+                'menu-bar-background-repeat': 'repeat',
+                'menu-bar-background-size': `${pixelSize * 10}px ${pixelSize * 10}px`
+            },
+            blockColors: {
+                checkboxActiveBackground: primaryColor,
+                checkboxActiveBorder: GradientUtils.darkenColor(primaryColor, 10)
+            },
+            pixelData: pixelData,
+            pixelSize: pixelSize
+        };
+    }
+
+    /**
+     * Generate a default pixel art pattern
+     * @param {number} width - Width of the pattern
+     * @param {number} height - Height of the pattern
+     * @returns {Array} 2D array of pixel colors
+     */
+    static generateDefaultPixelPattern(width = 10, height = 10) {
+        const pattern = [];
+        for (let y = 0; y < height; y++) {
+            const row = [];
+            for (let x = 0; x < width; x++) {
+                // Create a simple checkerboard pattern
+                row.push((x + y) % 2 === 0 ? '#ffffff' : '#000000');
+            }
+            pattern.push(row);
+        }
+        return pattern;
+    }
+}
+
+/**
  * CustomTheme class extends Theme with additional metadata
  */
 class CustomTheme extends Theme {
@@ -493,7 +576,19 @@ class CustomTheme extends Theme {
      * @returns {object} Theme data
      */
     export () {
-        const accentExport = this._exportGradient();
+        let accentExport = null;
+        
+        // Check if it's a pixel theme
+        if (this.customAccent && this.customAccent.pixelData) {
+            accentExport = {
+                pixelData: this.customAccent.pixelData,
+                pixelSize: this.customAccent.pixelSize || 2,
+                guiColors: this.customAccent.guiColors
+            };
+        } else {
+            // Otherwise export as gradient
+            accentExport = this._exportGradient();
+        }
 
         return {
             uuid: this.uuid,
@@ -686,6 +781,15 @@ class CustomTheme extends Theme {
             const direction = accentToUse.direction || '90';
             const primaryColor = colors[0] ? colors[0].color : '#ff6b6b';
             accentToUse = GradientUtils.createGradientAccent(colors, primaryColor, {direction});
+        } else if (accentToUse && typeof accentToUse === 'object' && Array.isArray(accentToUse.pixelData)) {
+            // Check if accent is in pixel format (pixelData array)
+            const pixelData = accentToUse.pixelData;
+            const primaryColor = accentToUse.guiColors && accentToUse.guiColors['motion-primary'] ? accentToUse.guiColors['motion-primary'] : '#ff6b6b';
+            const pixelSize = accentToUse.pixelSize || 2;
+            accentToUse = PixelUtils.createPixelAccent(pixelData, primaryColor, {pixelSize});
+        } else if (accentToUse && typeof accentToUse === 'object' && accentToUse.guiColors) {
+            // Use the accent directly if it's already a full accent object
+            accentToUse = accentToUse;
         }
 
         const theme = new CustomTheme(
@@ -1296,6 +1400,107 @@ class CustomThemeManager {
     }
 
     /**
+     * Create a custom pixel art theme
+     * @param {string} name - Theme name
+     * @param {string} description - Theme description
+     * @param {Array} pixelData - 2D array of pixel colors
+     * @param {string} primaryColor - Primary accent color
+     * @param {object} options - Additional options
+     * @param {Theme} baseTheme - Base theme for GUI and block settings
+     * @returns {CustomTheme} the new theme
+     */
+    createPixelTheme (name, description, pixelData, primaryColor, options = {}, baseTheme) {
+        if (!name || typeof name !== 'string') {
+            throw new Error('Theme name is required');
+        }
+
+        // Generate pixel art accent
+        const pixelAccent = PixelUtils.createPixelAccent(pixelData, primaryColor, options);
+
+        const customTheme = new CustomTheme(
+            name.trim(),
+            description.trim(),
+            pixelAccent, // Custom pixel accent
+            baseTheme?.gui || 'light',
+            baseTheme?.blocks || 'three',
+            baseTheme?.menuBarAlign || 'left',
+            baseTheme?.wallpaper || null,
+            baseTheme?.fonts || null
+        );
+
+        this.addTheme(customTheme);
+        return customTheme;
+    }
+
+    /**
+     * Update pixel art for an existing custom theme
+     * @param {string} uuid - Theme UUID
+     * @param {Array} pixelData - New pixel data
+     * @param {string} primaryColor - New primary accent color
+     * @param {object} options - Additional options
+     * @returns {CustomTheme} Updated theme
+     */
+    updateThemePixelArt (uuid, pixelData, primaryColor, options = {}) {
+        const existingTheme = this.themes.get(uuid);
+        if (!existingTheme) {
+            throw new Error('Theme not found');
+        }
+
+        // Generate new pixel art accent
+        const pixelAccent = PixelUtils.createPixelAccent(pixelData, primaryColor, options);
+
+        // Create updated theme with new pixel art
+        const updatedTheme = new CustomTheme(
+            existingTheme.name,
+            existingTheme.description,
+            pixelAccent, // Updated pixel accent
+            existingTheme.gui,
+            existingTheme.blocks,
+            existingTheme.menuBarAlign,
+            existingTheme.wallpaper,
+            existingTheme.fonts,
+            existingTheme.author
+        );
+
+        // Preserve original UUID and creation date
+        Object.defineProperty(updatedTheme, 'uuid', {value: uuid, writable: false});
+        Object.defineProperty(updatedTheme, 'createdAt', {value: existingTheme.createdAt, writable: false});
+
+        this.themes.set(uuid, updatedTheme);
+        this.saveCustomThemes();
+
+        return updatedTheme;
+    }
+
+    /**
+     * Check if a theme has pixel art
+     * @param {string} uuid - Theme UUID
+     * @returns {boolean} True if theme has pixel art
+     */
+    hasPixelArt (uuid) {
+        const theme = this.themes.get(uuid);
+        return theme && theme.customAccent && theme.customAccent.pixelData;
+    }
+
+    /**
+     * Get pixel art information from a custom theme
+     * @param {string} uuid - Theme UUID
+     * @returns {object|null} Pixel art information or null if not a pixel art theme
+     */
+    getThemePixelInfo (uuid) {
+        const theme = this.themes.get(uuid);
+        if (!theme || !this.hasPixelArt(uuid)) {
+            return null;
+        }
+
+        return {
+            pixelData: theme.customAccent.pixelData,
+            pixelSize: theme.customAccent.pixelSize || 2,
+            primaryColor: theme.customAccent.guiColors['motion-primary'] || '#ff6b6b'
+        };
+    }
+
+    /**
      * Get storage diagnostics
      * @returns {object} Storage information
      */
@@ -1333,5 +1538,6 @@ export {
     CustomTheme,
     CustomThemeManager,
     GradientUtils,
+    PixelUtils,
     customThemeManager
 };

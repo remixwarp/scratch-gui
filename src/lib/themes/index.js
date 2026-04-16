@@ -84,7 +84,7 @@ const BLOCKS_MAP = {
 let themeObjectsCreated = 0;
 
 class Theme {
-    constructor (accent, gui, blocks, menuBarAlign) {
+    constructor (accent, gui, blocks, menuBarAlign, wallpaper, fonts) {
         // do not modify these directly
         /** @readonly */
         this.id = ++themeObjectsCreated;
@@ -97,6 +97,10 @@ class Theme {
         /** @readonly */
         this.menuBarAlign = Object.keys(MENUBAR_ALIGN).includes(menuBarAlign) ? menuBarAlign : MENUBAR_ALIGN_DEFAULT;
         /** @readonly */
+        this.wallpaper = wallpaper || {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []};
+        /** @readonly */
+        this.fonts = fonts || {system: [], google: [], history: []};
+        /** @readonly */
         this.name = GUI_MAP[this.gui].name;
     }
 
@@ -108,13 +112,17 @@ class Theme {
 
     set (what, to) {
         if (what === 'accent') {
-            return new Theme(to, this.gui, this.blocks, this.menuBarAlign);
+            return new Theme(to, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts);
         } else if (what === 'gui') {
-            return new Theme(this.accent, to, this.blocks, this.menuBarAlign);
+            return new Theme(this.accent, to, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts);
         } else if (what === 'blocks') {
-            return new Theme(this.accent, this.gui, to, this.menuBarAlign);
+            return new Theme(this.accent, this.gui, to, this.menuBarAlign, this.wallpaper, this.fonts);
         } else if (what === 'menuBarAlign') {
-            return new Theme(this.accent, this.gui, this.blocks, to);
+            return new Theme(this.accent, this.gui, this.blocks, to, this.wallpaper, this.fonts);
+        } else if (what === 'wallpaper') {
+            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, to, this.fonts);
+        } else if (what === 'fonts') {
+            return new Theme(this.accent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, to);
         }
         throw new Error(`Unknown theme property: ${what}`);
     }
@@ -165,7 +173,7 @@ class Theme {
 const keys = Object.keys(GUI_MAP);
 for (const key of keys) {
     Theme.defaults[key] = new Theme(
-        ACCENT_DEFAULT, key, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT
+        ACCENT_DEFAULT, key, BLOCKS_DEFAULT, MENUBAR_ALIGN_DEFAULT, {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []}, {system: [], google: [], history: []}
     );
 }
 

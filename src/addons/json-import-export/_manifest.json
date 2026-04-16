@@ -1,0 +1,28 @@
+{
+  "name": "JSON Import Export",
+  "description": "Export blocks to JSON and import blocks from JSON",
+  "tags": ["blocks", "developer"],
+  "version": "1.0",
+  "icon": "icon.svg",
+  "settings": [
+    {
+      "id": "enabled",
+      "name": "Enable JSON Import/Export",
+      "description": "Adds options to export blocks to JSON and import blocks from JSON",
+      "type": "boolean",
+      "default": false
+    }
+  ],
+  "userscripts": [
+    {
+      "url": "userscript.js",
+      "if": "settings.enabled"
+    }
+  ],
+  "userstyles": [
+    {
+      "url": "userstyle.css",
+      "if": "settings.enabled"
+    }
+  ]
+}

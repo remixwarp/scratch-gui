@@ -6,15 +6,16 @@ import {connect, Provider} from 'react-redux';
 
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {Theme} from '../../lib/themes/index.js';
-import {customThemeManager, CustomTheme, GradientUtils} from '../../lib/themes/custom-themes.js';
+import {customThemeManager, CustomTheme, GradientUtils, PixelUtils} from '../../lib/themes/custom-themes.js';
 import {closeSettingsMenu, openCustomThemes, customThemesOpen} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 
 import ChevronDown from './ChevronDown.jsx';
+import PixelEditorApp from './tw-theme-pixel.jsx';
 import styles from './settings-menu.css';
 
-import {Check, Palette, CirclePlus, Download, FolderInput, Edit, Trash} from 'lucide-react';
+import {Check, Palette, CirclePlus, Download, FolderInput, Edit, Trash, Palette as PaletteIcon} from 'lucide-react';
 import WindowManager from '../../addons/window-system/window-manager';
 import showAlert from '../../addons/window-system/alert';
 import ReactDOM from 'react-dom';
@@ -965,6 +966,7 @@ class CustomThemeMenu extends React.Component {
             selectedPreset: '',
             showGradientCreator: false,
             showGradientEditor: false,
+            showPixelEditor: false,
             editingThemeUuid: null,
             originalThemeBeforePreview: null
         };
@@ -973,9 +975,11 @@ class CustomThemeMenu extends React.Component {
         this.createThemeWindow = null;
         this.gradientCreatorWindow = null;
         this.gradientEditorWindow = null;
+        this.pixelEditorWindow = null;
         this.createThemeContainer = null;
         this.gradientCreatorContainer = null;
         this.gradientEditorContainer = null;
+        this.pixelEditorContainer = null;
 
         this._isMounted = false;
         this._activeFileReader = null;
@@ -1078,6 +1082,34 @@ class CustomThemeMenu extends React.Component {
         } catch (e) {
             // Ignore render errors
         }
+        try {
+            if (this.pixelEditorContainer) {
+                ReactDOM.render(
+                    React.createElement(Provider, {store: this.context.store},
+                        React.createElement(IntlProvider, {locale: this.props.locale || 'en', messages: this.props.messages || {}},
+                            React.createElement(PixelEditorApp, {
+                                initialName: this.state.createName,
+                                initialDescription: this.state.createDescription,
+                                onCreate: (name, description, pixelData, primaryColor) => {
+                                    this.handleCreatePixelTheme(name, description, pixelData, primaryColor)
+                                        .then(success => {
+                                            if (this.pixelEditorWindow && success) {
+                                                this.pixelEditorWindow.close();
+                                            }
+                                        });
+                                },
+                                onCancel: () => {
+                                    if (this.pixelEditorWindow) this.pixelEditorWindow.close();
+                                }
+                            })
+                        )
+                    ),
+                    this.pixelEditorContainer
+                );
+            }
+        } catch (e) {
+            // Ignore render errors
+        }
     }
 
     // TODO: Migrate to functional component with useEffect cleanup
@@ -1108,6 +1140,15 @@ class CustomThemeMenu extends React.Component {
         if (originalThemeBeforePreview) {
             this.props.onChangeTheme(originalThemeBeforePreview);
         }
+
+        // Clean up pixel editor window
+        if (this.pixelEditorContainer) {
+            try {
+                ReactDOM.unmountComponentAtNode(this.pixelEditorContainer);
+            } catch (e) {}
+            this.pixelEditorContainer = null;
+        }
+        this.pixelEditorWindow = null;
     }
 
     safeForceUpdate = () => {
@@ -1380,6 +1421,102 @@ class CustomThemeMenu extends React.Component {
         this.gradientEditorWindow.show();
     };
 
+    openPixelEditorWindow = () => {
+        if (this.pixelEditorWindow) {
+            this.pixelEditorWindow.show().bringToFront();
+            return;
+        }
+
+        this.pixelEditorContainer = document.createElement('div');
+
+        this.pixelEditorWindow = WindowManager.createWindow({
+            id: 'tw-pixel-editor-window',
+            title: this.props.intl.formatMessage({
+                defaultMessage: 'Create Pixel Theme',
+                description: 'Title of the create pixel theme window',
+                id: 'tw.customTheme.createPixelWindowTitle'
+            }),
+            width: 800,
+            height: 600,
+            minWidth: 600,
+            minHeight: 400,
+            className: 'tw-pixel-editor-window',
+            onClose: () => {
+                try {
+                    const {originalThemeBeforePreview} = this.state;
+                    if (originalThemeBeforePreview && this._isMounted) {
+                        this.props.onChangeTheme(originalThemeBeforePreview);
+                        this.safeSetState({originalThemeBeforePreview: null});
+                    }
+
+                    if (this.pixelEditorContainer) {
+                        try {
+                            ReactDOM.unmountComponentAtNode(this.pixelEditorContainer);
+                        } catch (e) {}
+                        this.pixelEditorContainer = null;
+                        this.safeForceUpdate();
+                    }
+                } catch (e) {}
+                this.pixelEditorWindow = null;
+                this.pixelEditorContainer = null;
+            }
+        });
+
+        try {
+            const contentElement = this.pixelEditorWindow.getContentElement();
+            if (contentElement) {
+                contentElement.innerHTML = '';
+                ReactDOM.render(
+                    React.createElement(Provider, {store: this.context.store},
+                        React.createElement(IntlProvider, {locale: this.props.locale || 'en', messages: this.props.messages || {}},
+                            React.createElement(PixelEditorApp, {
+                                initialName: this.state.createName,
+                                initialDescription: this.state.createDescription,
+                                onPreview: (name, description, pixelData, primaryColor) => {
+                                    return this.handlePreviewPixelTheme(
+                                        name,
+                                        description,
+                                        pixelData,
+                                        primaryColor
+                                    );
+                                },
+                                onCreate: (name, description, pixelData, primaryColor) => {
+                                    this.handleCreatePixelTheme(name, description, pixelData, primaryColor)
+                                        .then(success => {
+                                            if (this.pixelEditorWindow && success) {
+                                                this.pixelEditorWindow.close();
+                                            }
+                                        });
+                                },
+                                onCancel: () => {
+                                    const {originalThemeBeforePreview} = this.state;
+                                    if (originalThemeBeforePreview && this._isMounted) {
+                                        this.props.onChangeTheme(originalThemeBeforePreview);
+                                        this.safeSetState({originalThemeBeforePreview: null});
+                                    }
+                                    if (this.pixelEditorWindow) this.pixelEditorWindow.close();
+                                }
+                            })
+                        )
+                    ),
+                    contentElement
+                );
+            }
+        } catch (e) {
+            console.warn('Failed to render pixel editor content into container', e);
+        }
+
+        try {
+            const contentEl = this.pixelEditorWindow.getContentElement();
+            if (contentEl) contentEl.style.pointerEvents = 'auto';
+        } catch (e) {
+            // Ignore if unavailable
+        }
+
+        this.safeForceUpdate();
+        this.pixelEditorWindow.show();
+    };
+
     handleCreateTheme = async (passedName, passedDescription) => {
         const createName = typeof passedName === 'string' ? passedName : this.state.createName;
         
@@ -1474,6 +1611,48 @@ class CustomThemeMenu extends React.Component {
                 defaultMessage: 'Failed to create gradient theme: {errorMessage}',
                 description: 'Error message when gradient theme creation fails',
                 id: 'tw.customThemes.error.gradientThemeCreationFailed'
+            }, {errorMessage: error.message}));
+        }
+    };
+
+    handleCreatePixelTheme = async (name, description, pixelData, primaryColor) => {
+        const createName = typeof name === 'string' ? name : (this.state.createName || '');
+        const createDescription = typeof description === 'string' ? description : (this.state.createDescription || '');
+        const theme = this.props.theme;
+
+        if (!createName.trim()) {
+            await showAlert(this.props.intl.formatMessage({
+                defaultMessage: 'Theme name is required',
+                description: 'Error message when theme name is empty',
+                id: 'tw.customThemes.error.themeNameRequired'
+            }));
+            return;
+        }
+
+        try {
+            const customTheme = customThemeManager.createPixelTheme(
+                createName.trim(),
+                createDescription.trim(),
+                pixelData,
+                primaryColor,
+                {},
+                theme
+            );
+
+            this.safeSetState({
+                customThemes: customThemeManager.getAllThemes(),
+                showPixelEditor: false,
+                createName: '',
+                createDescription: ''
+            });
+
+            this.props.onChangeTheme(customTheme);
+            return true;
+        } catch (error) {
+            await showAlert(this.props.intl.formatMessage({
+                defaultMessage: 'Failed to create pixel theme: {errorMessage}',
+                description: 'Error message when pixel theme creation fails',
+                id: 'tw.customThemes.error.pixelThemeCreationFailed'
             }, {errorMessage: error.message}));
         }
     };
@@ -1719,6 +1898,40 @@ class CustomThemeMenu extends React.Component {
         return true;
     };
 
+    handlePreviewPixelTheme = (name, description, pixelData, primaryColor) => {
+        const {originalThemeBeforePreview} = this.state;
+
+        // Treat empty name as signal to stop preview (restore original theme)
+        if (!name || originalThemeBeforePreview) {
+            if (originalThemeBeforePreview) {
+                this.props.onChangeTheme(originalThemeBeforePreview);
+                this.safeSetState({originalThemeBeforePreview: null});
+                return true;
+            }
+            return false;
+        }
+
+        const {theme: currentTheme} = this.props;
+
+        const pixelAccent = PixelUtils.createPixelAccent(pixelData, primaryColor);
+
+        const previewTheme = new CustomTheme(
+            name,
+            description,
+            pixelAccent,
+            currentTheme.gui || 'light',
+            currentTheme.blocks || 'three',
+            currentTheme.menuBarAlign || 'left',
+            currentTheme.wallpaper,
+            currentTheme.fonts
+        );
+
+        this.safeSetState({originalThemeBeforePreview: currentTheme});
+
+        this.props.onChangeTheme(previewTheme);
+        return true;
+    };
+
     handleExportThemes = async () => {
         try {
             const exportData = customThemeManager.exportAllThemes();
@@ -1808,6 +2021,17 @@ class CustomThemeMenu extends React.Component {
                 }
                 
                 await showAlert(message);
+                
+                // 应用导入的第一个主题
+                if (results.imported > 0) {
+                    const updatedThemes = customThemeManager.getAllThemes();
+                    // 找到最新导入的主题（通常是最后一个）
+                    const latestTheme = updatedThemes[updatedThemes.length - 1];
+                    if (latestTheme) {
+                        this.props.onChangeTheme(latestTheme);
+                    }
+                }
+                
                 this.safeSetState({
                     customThemes: customThemeManager.getAllThemes()
                 });
@@ -1963,6 +2187,21 @@ class CustomThemeMenu extends React.Component {
                         </div>
                     </MenuItem>
 
+                    {/* Create pixel theme */}
+                    <MenuItem
+                        className={styles.customThemeAction}
+                        onClick={this.openPixelEditorWindow}
+                    >
+                        <div className={styles.option}>
+                            <CirclePlus className={styles.customThemeActionIcon} />
+                            <FormattedMessage
+                                defaultMessage="Create Pixel Theme"
+                                description="Create pixel theme menu item"
+                                id="tw.customThemes.createPixel"
+                            />
+                        </div>
+                    </MenuItem>
+
                     {/* Export themes */}
                     <MenuItem
                         className={styles.customThemeAction}
@@ -1989,6 +2228,21 @@ class CustomThemeMenu extends React.Component {
                                 defaultMessage="Import"
                                 description="Import custom themes"
                                 id="tw.customThemes.import"
+                            />
+                        </div>
+                    </MenuItem>
+
+                    {/* Import pixel theme */}
+                    <MenuItem
+                        className={styles.customThemeAction}
+                        onClick={() => this.fileInputRef.current?.click()}
+                    >
+                        <div className={styles.option}>
+                            <FolderInput className={styles.customThemeActionIcon} />
+                            <FormattedMessage
+                                defaultMessage="Import Pixel Theme"
+                                description="Import pixel custom themes"
+                                id="tw.customThemes.importPixel"
                             />
                         </div>
                     </MenuItem>

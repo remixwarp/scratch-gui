@@ -34,7 +34,7 @@ const icons = {
 };
 
 const ColorIcon = props => {
-    const accentId = props.id || 'pale-blue';
+    const accentId = props.id || 'pale blue';
     const accent = ACCENT_MAP[accentId] && ACCENT_MAP[accentId].accent;
     
     if (icons[accentId]) {

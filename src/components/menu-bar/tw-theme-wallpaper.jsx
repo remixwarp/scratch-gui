@@ -114,6 +114,7 @@ const WallpaperInputForm = injectIntl(({intl, onSubmit, onOpacityChange, onDarkn
     };
 
     const handleFileChange = e => {
+        e.stopPropagation();
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
@@ -349,6 +350,9 @@ const WallpaperMenu = injectIntl(({
 
         const newWallpaper = {
             ...(theme.wallpaper || {}),
+            url,
+            opacity,
+            darkness,
             history
         };
 
@@ -465,7 +469,6 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
-        dispatch(closeSettingsMenu());
         applyTheme(theme);
     },
     onPreviewTheme: theme => {
