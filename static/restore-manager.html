@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>还原点管理器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #4a90e2;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #4a90e2;
+            font-size: 18px;
+        }
+        .info {
+            background: #e8f4f8;
+            border-left: 4px solid #4a90e2;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .info p {
+            margin: 0;
+            line-height: 1.5;
+        }
+        .interval-selector {
+            margin-bottom: 20px;
+        }
+        .interval-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .interval-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 100%;
+        }
+        .restore-points {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .restore-point {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            transition: all 0.3s;
+        }
+        .restore-point:hover {
+            border-color: #4a90e2;
+            background: #f0f8ff;
+        }
+        .restore-point-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .restore-point-title {
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+        }
+        .restore-point-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #4a90e2;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #357abd;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        .restore-point-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .restore-point-stats {
+            font-size: 12px;
+            color: #999;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #999;
+            font-size: 14px;
+        }
+        .total-size {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .total-size span {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>还原点管理器</h1>
+
+    <div class="section">
+        <h2>还原点管理</h2>
+        <div class="info">
+            <p>RemixWarp 会定期在计算机上保存还原点，以便在忘记保存时帮助恢复作品。这是恢复的最后手段。您的计算机可能会随时悄悄删除这些还原点。请勿依赖此功能。</p>
+        </div>
+
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #856404;">⚠️ 重要提示</h3>
+            <p>如果你是由报错信息引入到此界面，那么请选择下载你的作品文件。并且转到其他编辑器进行操作，还原点是您恢复作品的最后手段。</p>
+            <p>点击转到 Bilup 编辑器：<a href="https://editor.bilup.org/editor.html" target="_blank" style="color: #007bff; text-decoration: none; font-weight: bold;">https://editor.bilup.org/editor.html</a></p>
+            <hr style="border: 1px solid #ffeaa7; margin: 15px 0;">
+            <h4 style="margin-top: 0; color: #856404;">🐛 反馈 Bug</h4>
+            <p>点击链接加入腾讯频道【RemixWarp重构跃迁】：<a href="https://pd.qq.com/s/6em7c4w9l" target="_blank" style="color: #007bff; text-decoration: none; font-weight: bold;">https://pd.qq.com/s/6em7c4w9l</a></p>
+            <p style="font-size: 14px; color: #666;">发帖时请说明：</p>
+            <ul style="font-size: 14px; color: #666; margin-top: 5px;">
+                <li>当时是由什么操作引发的错误</li>
+                <li>错误信息的全部内容</li>
+                <li>最好提供错误界面的截图</li>
+                <li>如果可能，提供操作过程的视频</li>
+            </ul>
+        </div>
+
+        <div class="interval-selector">
+            <label for="interval">还原点创建频率：</label>
+            <select id="interval" onchange="updateInterval(this.value)">
+                <option value="60000">每 1 分钟</option>
+                <option value="300000" selected>每 5 分钟</option>
+                <option value="600000">每 10 分钟</option>
+                <option value="900000">每 15 分钟</option>
+                <option value="1800000">每 30 分钟</option>
+                <option value="-1">永不</option>
+            </select>
+        </div>
+
+        <div id="restore-points" class="restore-points">
+            <div class="loading">加载中...</div>
+        </div>
+
+        <div class="total-size">
+            预计占用空间：<span id="total-size">0 KB</span><br>
+            <small>多个还原点使用的同一造型或声音只会被存储一次。</small>
+        </div>
+
+        <div style="text-align: center; margin-top: 15px;">
+            <button class="btn btn-danger" onclick="deleteAllRestorePoints()">删除全部</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <div class="footer">
+        <p>© 2026 RemixWarp</p>
+    </div>
+
+    <script>
+        const DB_NAME = 'TW_RestorePoints';
+        const DB_VERSION = 2;
+        const METADATA_STORE = 'meta';
+        const PROJECT_STORE = 'projects';
+        const ASSET_STORE = 'assets';
+        const THUMBNAIL_STORE = 'thumbnails';
+
+        let db = null;
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(METADATA_STORE)) {
+                        db.createObjectStore(METADATA_STORE, {
+                            autoIncrement: true
+                        });
+                    }
+                    if (!db.objectStoreNames.contains(PROJECT_STORE)) {
+                        db.createObjectStore(PROJECT_STORE);
+                    }
+                    if (!db.objectStoreNames.contains(ASSET_STORE)) {
+                        db.createObjectStore(ASSET_STORE);
+                    }
+                    if (!db.objectStoreNames.contains(THUMBNAIL_STORE)) {
+                        db.createObjectStore(THUMBNAIL_STORE);
+                    }
+                };
+
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+
+                request.onerror = () => {
+                    reject(new Error(`Could not open database: ${request.error}`));
+                };
+            });
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp * 1000);
+            const now = new Date();
+            const diff = now - date;
+            
+            const minutes = Math.floor(diff / (1000 * 60));
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+            if (minutes < 1) return '刚刚';
+            if (minutes < 60) return `${minutes}分钟前`;
+            if (hours < 24) return `${hours}小时前`;
+            if (days < 7) return `${days}天前`;
+            
+            return date.toLocaleString('zh-CN');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => {
+                statusEl.innerHTML = '';
+            }, 5000);
+        }
+
+        async function getAllRestorePoints() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([METADATA_STORE], 'readonly');
+                const metadataStore = transaction.objectStore(METADATA_STORE);
+                const request = metadataStore.openCursor(null, 'prev');
+
+                const restorePoints = [];
+                let totalSize = 0;
+                const countedAssets = new Set();
+
+                request.onsuccess = () => {
+                    const cursor = request.result;
+                    if (cursor) {
+                        const metadata = cursor.value;
+                        metadata.id = cursor.key;
+                        restorePoints.push(metadata);
+
+                        totalSize += metadata.projectSize || 0;
+                        totalSize += metadata.thumbnailSize || 0;
+                        
+                        if (metadata.assets) {
+                            for (const [assetId, assetSize] of Object.entries(metadata.assets)) {
+                                if (!countedAssets.has(assetId)) {
+                                    countedAssets.add(assetId);
+                                    totalSize += assetSize || 0;
+                                }
+                            }
+                        }
+
+                        cursor.continue();
+                    } else {
+                        resolve({ restorePoints, totalSize });
+                    }
+                };
+
+                request.onerror = () => {
+                    reject(new Error('Failed to get restore points'));
+                };
+            });
+        }
+
+        async function deleteRestorePoint(id) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([METADATA_STORE, PROJECT_STORE, ASSET_STORE, THUMBNAIL_STORE], 'readwrite');
+                const metadataStore = transaction.objectStore(METADATA_STORE);
+                const request = metadataStore.delete(id);
+
+                request.onsuccess = () => {
+                    resolve();
+                };
+
+                request.onerror = () => {
+                    reject(new Error('Failed to delete restore point'));
+                };
+            });
+        }
+
+        async function deleteAllRestorePoints() {
+            if (!confirm('确定要删除所有还原点吗？此操作无法撤销。')) {
+                return;
+            }
+
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([METADATA_STORE, PROJECT_STORE, ASSET_STORE, THUMBNAIL_STORE], 'readwrite');
+                
+                const deleteAll = async () => {
+                    for (const storeName of [METADATA_STORE, PROJECT_STORE, ASSET_STORE, THUMBNAIL_STORE]) {
+                        await new Promise(resolveStore => {
+                            const store = transaction.objectStore(storeName);
+                            const request = store.clear();
+                            request.onsuccess = () => resolveStore();
+                            request.onerror = () => reject(new Error(`Failed to clear ${storeName}`));
+                        });
+                    }
+                    resolve();
+                };
+
+                deleteAll().catch(reject);
+            });
+        }
+
+        async function exportRestorePoint(id) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([METADATA_STORE, PROJECT_STORE, ASSET_STORE], 'readonly');
+                
+                const getMetadata = () => new Promise((resolve, reject) => {
+                    const metadataStore = transaction.objectStore(METADATA_STORE);
+                    const request = metadataStore.get(id);
+                    request.onsuccess = () => {
+                        if (request.result) {
+                            resolve(request.result);
+                        } else {
+                            reject(new Error('Restore point not found'));
+                        }
+                    };
+                    request.onerror = () => reject(new Error('Failed to get metadata'));
+                });
+
+                const getProjectJSON = () => new Promise((resolve, reject) => {
+                    const projectStore = transaction.objectStore(PROJECT_STORE);
+                    const request = projectStore.get(id);
+                    request.onsuccess = () => {
+                        if (request.result) {
+                            resolve(request.result);
+                        } else {
+                            reject(new Error('Project data not found'));
+                        }
+                    };
+                    request.onerror = () => reject(new Error('Failed to get project data'));
+                });
+
+                const getAssets = (assetIds) => new Promise((resolve, reject) => {
+                    const assetStore = transaction.objectStore(ASSET_STORE);
+                    const assets = [];
+                    let remaining = assetIds.length;
+
+                    if (remaining === 0) {
+                        resolve([]);
+                        return;
+                    }
+
+                    assetIds.forEach(assetId => {
+                        const request = assetStore.get(assetId);
+                        request.onsuccess = () => {
+                            if (request.result) {
+                                assets.push({ id: assetId, data: request.result });
+                            }
+                            remaining--;
+                            if (remaining === 0) {
+                                resolve(assets);
+                            }
+                        };
+                        request.onerror = () => {
+                            remaining--;
+                            if (remaining === 0) {
+                                resolve(assets);
+                            }
+                        };
+                    });
+                });
+
+                Promise.all([getMetadata(), getProjectJSON()])
+                    .then(([metadata, projectJSON]) => {
+                        const assetIds = metadata.assets ? Object.keys(metadata.assets) : [];
+                        return getAssets(assetIds).then(assets => [metadata, projectJSON, assets]);
+                    })
+                    .then(([metadata, projectJSON, assets]) => {
+                        // Create zip file
+                        const zip = new JSZip();
+                        zip.file('project.json', projectJSON);
+                        assets.forEach(asset => {
+                            zip.file(asset.id, asset.data);
+                        });
+
+                        return zip.generateAsync({
+                            type: 'blob',
+                            compression: 'DEFLATE'
+                        }).then(blob => {
+                            resolve({ blob, title: metadata.title || 'RestorePoint' });
+                        });
+                    })
+                    .catch(reject);
+            });
+        }
+
+        function downloadBlob(filename, blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        async function handleDownload(id, title) {
+            try {
+                const { blob, title: restoreTitle } = await exportRestorePoint(id);
+                downloadBlob(`${restoreTitle || 'RestorePoint'}.sb3`, blob);
+                showStatus('下载成功', 'success');
+            } catch (error) {
+                showStatus(`下载失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleDelete(id) {
+            if (!confirm('确定要删除这个还原点吗？')) {
+                return;
+            }
+
+            try {
+                await deleteRestorePoint(id);
+                showStatus('删除成功', 'success');
+                refreshRestorePoints();
+            } catch (error) {
+                showStatus(`删除失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function refreshRestorePoints() {
+            const container = document.getElementById('restore-points');
+            const totalSizeEl = document.getElementById('total-size');
+
+            try {
+                const { restorePoints, totalSize } = await getAllRestorePoints();
+                
+                totalSizeEl.textContent = formatSize(totalSize);
+
+                if (restorePoints.length === 0) {
+                    container.innerHTML = '<div class="empty-state">暂无还原点</div>';
+                    return;
+                }
+
+                container.innerHTML = restorePoints.map(rp => `
+                    <div class="restore-point">
+                        <div class="restore-point-header">
+                            <div class="restore-point-title">${escapeHtml(rp.title || '未命名')}</div>
+                            <div class="restore-point-actions">
+                                <button class="btn btn-primary" onclick="handleDownload(${rp.id}, '${escapeHtml(rp.title || 'RestorePoint')}')">下载</button>
+                                <button class="btn btn-danger" onclick="handleDelete(${rp.id})">删除</button>
+                            </div>
+                        </div>
+                        <div class="restore-point-info">
+                            ${formatTime(rp.created)}
+                        </div>
+                        <div class="restore-point-stats">
+                            ${formatSize(rp.projectSize || 0)}, ${rp.assets ? Object.keys(rp.assets).length : 0} 个素材
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        function updateInterval(interval) {
+            try {
+                localStorage.setItem('tw:restore-point-interval', interval);
+                showStatus('设置已保存', 'success');
+            } catch (error) {
+                showStatus('保存失败', 'error');
+            }
+        }
+
+        // Load current interval setting
+        function loadIntervalSetting() {
+            try {
+                const stored = localStorage.getItem('tw:restore-point-interval');
+                if (stored) {
+                    document.getElementById('interval').value = stored;
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        // Initialize
+        initDB()
+            .then(() => {
+                loadIntervalSetting();
+                refreshRestorePoints();
+            })
+            .catch(error => {
+                document.getElementById('restore-points').innerHTML = `<div class="empty-state">初始化失败: ${error.message}</div>`;
+            });
+
+        // Load JSZip
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

@@ -13,7 +13,8 @@ import {
     getIsShowingProject,
     requestNewProject,
     manualUpdateProject,
-    saveProjectAsCopy
+    saveProjectAsCopy,
+    projectError
 } from '../reducers/project-state';
 import {
     activateTab,
@@ -41,7 +42,8 @@ import {
     openSettingsModal,
     openRestorePointModal,
     openShortcutManagerModal,
-    openSimpleDialog
+    openSimpleDialog,
+    openInvalidProjectModal
 } from '../reducers/modals';
 
 import FontLoaderHOC from '../lib/components/font-loader-hoc.jsx';
@@ -82,6 +84,8 @@ class GUI extends React.Component {
         this.props.onVmInit(this.props.vm);
         setProjectIdMetadata(this.props.projectId);
 
+
+
         initializeShortcuts(
             {
                 requestNewProject: this.props.requestNewProject,
@@ -114,6 +118,11 @@ class GUI extends React.Component {
         );
     }
     componentDidUpdate (prevProps) {
+        if (window.location.search.includes('testError=1') && !prevProps.invalidProjectModalVisible) {
+            console.log('Test error triggered in componentDidUpdate');
+            this.props.onOpenInvalidProjectModal();
+        }
+
         if (this.props.projectId !== prevProps.projectId) {
             if (this.props.projectId !== null) {
                 this.props.onUpdateProjectId(this.props.projectId);
@@ -194,6 +203,10 @@ class GUI extends React.Component {
             </GUIComponent>
         );
     }
+
+    componentWillUnmount () {
+        collaborationService.getInstance()?.disconnect();
+    }
 }
 
 GUI.propTypes = {
@@ -210,7 +223,10 @@ GUI.propTypes = {
     isScratchDesktop: PropTypes.bool,
     isShowingProject: PropTypes.bool,
     isTotallyNormal: PropTypes.bool,
+    invalidProjectModalVisible: PropTypes.bool,
     loadingStateVisible: PropTypes.bool,
+    onError: PropTypes.func,
+    onOpenInvalidProjectModal: PropTypes.func,
     onProjectLoaded: PropTypes.func,
     onSeeCommunity: PropTypes.func,
     onStorageInit: PropTypes.func,
@@ -296,7 +312,9 @@ const mapDispatchToProps = dispatch => ({
     openSoundLibrary: () => dispatch(openSoundLibrary()),
     openExtensionManagerModal: () => dispatch(openExtensionManagerModal()),
     openSettingsModal: () => dispatch(openSettingsModal()),
-    openRestorePointModal: () => dispatch(openRestorePointModal())
+    openRestorePointModal: () => dispatch(openRestorePointModal()),
+    onError: error => dispatch(projectError(error)),
+    onOpenInvalidProjectModal: () => dispatch(openInvalidProjectModal())
 });
 
 const ConnectedGUI = injectIntl(connect(

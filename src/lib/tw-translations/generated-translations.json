@@ -181,6 +181,7 @@
         "tw.invalidProject.options": "你可以从自动创建的还原点或其他备份中恢复这个作品的旧版本。",
         "tw.invalidProject.reportIt": "上报",
         "tw.invalidProject.restorePoints": "查看还原点",
+        "tw.invalidProject.crossSync": "跨站同步",
         "tw.invalidProject.title": "错误",
         "tw.invalidProject.validationError": "这个错误通常意味着作品的一小部分已损坏，但其他部分仍然正常。这很容易修复，所以请{reportIt}。",
         "tw.lightMode": "切换到暗色主题",

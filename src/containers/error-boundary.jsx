@@ -51,6 +51,14 @@ class ErrorBoundary extends React.Component {
         window.location.replace(window.location.origin + window.location.pathname);
     }
 
+    handleViewRestorePoints () {
+        // 在新标签页打开独立的还原点管理器页面
+        const restoreManagerUrl = window.location.protocol === 'file:' ?
+            'https://remixwarp.top/restore-manager.html' :
+            `${window.location.origin}/restore-manager.html`;
+        window.open(restoreManagerUrl, '_blank');
+    }
+
     formatErrorMessage () {
         let message = '';
 
@@ -80,6 +88,7 @@ class ErrorBoundary extends React.Component {
                 <CrashMessageComponent
                     errorMessage={this.formatErrorMessage()}
                     onReload={this.handleReload}
+                    onViewRestorePoints={this.handleViewRestorePoints}
                 />
             );
         }

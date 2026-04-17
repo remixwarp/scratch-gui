@@ -47,16 +47,28 @@ const CrashMessage = props => (
                     />
                 </p>
             )}
-            <button
-                className={styles.reloadButton}
-                onClick={props.onReload}
-            >
-                <FormattedMessage
-                    defaultMessage="Reload"
-                    description="Button to reload the page when page crashes"
-                    id="gui.crashMessage.reload"
-                />
-            </button>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button
+                    className={styles.reloadButton}
+                    onClick={props.onReload}
+                >
+                    <FormattedMessage
+                        defaultMessage="重新载入"
+                        description="Button to reload the page when page crashes"
+                        id="gui.crashMessage.reload"
+                    />
+                </button>
+                <button
+                    className={styles.reloadButton}
+                    onClick={props.onViewRestorePoints}
+                >
+                    <FormattedMessage
+                        defaultMessage="查看还原点"
+                        description="Button to view restore points when page crashes"
+                        id="gui.crashMessage.viewRestorePoints"
+                    />
+                </button>
+            </div>
         </Box>
     </div>
 );
@@ -64,7 +76,8 @@ const CrashMessage = props => (
 CrashMessage.propTypes = {
     eventId: PropTypes.string,
     errorMessage: PropTypes.string,
-    onReload: PropTypes.func.isRequired
+    onReload: PropTypes.func.isRequired,
+    onViewRestorePoints: PropTypes.func
 };
 
 export default CrashMessage;
