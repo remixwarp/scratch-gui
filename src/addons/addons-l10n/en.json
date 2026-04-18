@@ -364,5 +364,6 @@
   "dev-inspector/download-include": "Download",
   "dev-inspector/reload-include": "Reload",
   "dev-inspector/refresh-include": "Refresh",
-  "dev-inspector/error-showing-block-json": "Error showing block JSON: "
+  "dev-inspector/error-showing-block-json": "Error showing block JSON: ",
+  "clones": "{cloneCount} clones"
 }

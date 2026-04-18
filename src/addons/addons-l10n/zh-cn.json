@@ -364,5 +364,6 @@
   "dev-inspector/download-include": "下载",
   "dev-inspector/reload-include": "重新加载",
   "dev-inspector/refresh-include": "刷新",
-  "dev-inspector/error-showing-block-json": "显示积木 JSON 时出错: "
+  "dev-inspector/error-showing-block-json": "显示积木 JSON 时出错: ",
+  "clones": "{cloneCount} 个克隆体"
 }
