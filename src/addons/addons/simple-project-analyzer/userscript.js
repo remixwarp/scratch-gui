@@ -14,6 +14,8 @@ async function loadChartJS() {
   });
 }
 import icon from '!../../../lib/tw-recolor/build!./SPA.svg'
+import WindowManager from '../../window-system/window-manager.js';
+
 export default async function ({ addon, msg, safeMsg, console }) {
   // 加载Chart.js库
   await loadChartJS();
@@ -22,8 +24,7 @@ export default async function ({ addon, msg, safeMsg, console }) {
   class SimpleProjectAnalyzer {
     constructor() {
       this.analyzeButton = null;
-      this.analyzeModal = null;
-      this.removeModal = null;
+      this.analyzeWindow = null;
       this.chartInstance = null;
       this.mathLogicChartInstance = null;
       this.drScratchChartInstance = null;
@@ -31,6 +32,11 @@ export default async function ({ addon, msg, safeMsg, console }) {
 
     // 创建分析按钮
     async createAnalyzeButton() {
+      // 如果按钮已存在且在DOM中，直接返回
+      if (this.analyzeButton && document.contains(this.analyzeButton)) {
+        return;
+      }
+
       try {
         console.log('Simple Project Analyzer: Creating analyze button...');
         
@@ -75,7 +81,7 @@ export default async function ({ addon, msg, safeMsg, console }) {
 
         this.analyzeButton.addEventListener('click', () => {
           console.log('Simple Project Analyzer: Analyze button clicked');
-          this.showAnalysisModal();
+          this.showAnalysisWindow();
         });
 
         // 尝试多个位置来添加按钮
@@ -195,30 +201,56 @@ export default async function ({ addon, msg, safeMsg, console }) {
       }
     }
 
-    // 显示分析结果模态框
-    showAnalysisModal() {
-      // 如果模态框已存在，先移除
-      if (this.analyzeModal) {
-        this.analyzeModal.remove();
+    // 显示分析结果窗口
+    showAnalysisWindow() {
+      // 如果窗口已存在，显示并聚焦
+      if (this.analyzeWindow) {
+        this.analyzeWindow.show().bringToFront();
+        return;
       }
 
-      // 使用 addon.tab.createModal 创建模态框
-      const { backdrop, container, content, closeButton, remove } = addon.tab.createModal(msg('modal-title'), {
-        isOpen: true
+      // 创建自由窗口
+      this.analyzeWindow = WindowManager.createWindow({
+        id: 'simple-project-analyzer',
+        title: msg('modal-title', '项目复杂度分析'),
+        width: 900,
+        height: 700,
+        minWidth: 700,
+        minHeight: 500,
+        className: 'sa-project-analyzer-window',
+        onClose: () => {
+          this.analyzeWindow = null;
+          // 销毁图表实例
+          if (this.chartInstance) {
+            this.chartInstance.destroy();
+            this.chartInstance = null;
+          }
+          if (this.mathLogicChartInstance) {
+            this.mathLogicChartInstance.destroy();
+            this.mathLogicChartInstance = null;
+          }
+          if (this.drScratchChartInstance) {
+            this.drScratchChartInstance.destroy();
+            this.drScratchChartInstance = null;
+          }
+        }
       });
 
-      this.analyzeModal = backdrop;
-      this.removeModal = remove;
+      // 创建内容容器
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'sa-analyze-content-wrapper';
+      contentWrapper.style.cssText = `
+        height: 100%;
+        overflow-y: auto;
+        padding: 15px;
+        box-sizing: border-box;
+      `;
 
-      // 添加自定义 CSS 类
-      container.classList.add('sa-analyze-modal-popup');
-      content.classList.add('sa-analyze-modal-content');
-
-      // 生成分析结果HTML（类似子目录中的界面）
+      // 生成分析结果HTML
       const analysisHTML = this.generateAnalysisHTML();
 
-      // 设置模态框内容
-      content.innerHTML = `
+      // 设置内容
+      contentWrapper.innerHTML = `
         <div class="sa-analyze-loading" id="saAnalyzeLoading">
           <div class="sa-analyze-spinner"></div>
           <p>${msg('analyzing')}</p>
@@ -228,34 +260,11 @@ export default async function ({ addon, msg, safeMsg, console }) {
         </div>
       `;
 
-      // 添加关闭事件监听器
-      backdrop.addEventListener('click', () => this.closeModal());
-      closeButton.addEventListener('click', () => this.closeModal());
+      this.analyzeWindow.setContent(contentWrapper);
+      this.analyzeWindow.show();
 
       // 异步分析项目
       this.analyzeProject();
-    }
-
-    closeModal() {
-      if (this.removeModal) {
-        this.removeModal();
-        this.analyzeModal = null;
-        this.removeModal = null;
-        
-        // 销毁图表实例
-        if (this.chartInstance) {
-          this.chartInstance.destroy();
-          this.chartInstance = null;
-        }
-        if (this.mathLogicChartInstance) {
-          this.mathLogicChartInstance.destroy();
-          this.mathLogicChartInstance = null;
-        }
-        if (this.drScratchChartInstance) {
-          this.drScratchChartInstance.destroy();
-          this.drScratchChartInstance = null;
-        }
-      }
     }
 
     // 分析项目
@@ -1311,10 +1320,12 @@ export default async function ({ addon, msg, safeMsg, console }) {
 
   // 每隔一段时间检查按钮是否存在，如果不存在则重新创建
   setInterval(() => {
-    if (!analyzer.analyzeButton || !analyzer.analyzeButton.offsetParent) {
-      console.log('Simple Project Analyzer: Button not found, recreating...');
-      analyzer.createAnalyzeButton();
+    // 检查按钮是否已存在且在DOM中
+    if (analyzer.analyzeButton && document.contains(analyzer.analyzeButton)) {
+      return;
     }
+    console.log('Simple Project Analyzer: Button not found in DOM, recreating...');
+    analyzer.createAnalyzeButton();
   }, 5000);
 
   // 添加错误处理，确保插件即使在初始化失败时也不会影响其他功能
