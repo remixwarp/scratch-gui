@@ -31,4 +31,110 @@ export default async function ({ addon, console }) {
   } else {
     vm.runtime.once('PROJECT_LOADED', loadExtensions);
   }
+
+  const updateCustomBlocksVisibility = () => {
+    const hideCustomBlocks = addon.settings.get('hideCustomBlocks');
+    
+    // 移除旧的样式元素
+    let styleElement = document.getElementById('my-blocks-plus-hide-custom-blocks');
+    if (styleElement) {
+      styleElement.remove();
+    }
+    
+    if (hideCustomBlocks) {
+      // 添加基本的 CSS 样式
+      styleElement = document.createElement('style');
+      styleElement.id = 'my-blocks-plus-hide-custom-blocks';
+      styleElement.textContent = `
+        /* 隐藏默认的自定义积木分类 */
+        .scratchCategoryId-more {
+          display: none !important;
+          visibility: hidden !important;
+          height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+      `;
+      document.head.appendChild(styleElement);
+      
+      // 使用 JavaScript 查找并隐藏自定义积木分类
+      const hideCustomCategories = () => {
+        console.log('[my-blocks-plus] 执行隐藏自定义积木分类');
+        
+        // 查找所有分类项
+        const categoryItems = document.querySelectorAll('.scratchCategoryMenuItem');
+        console.log('[my-blocks-plus] 找到分类项数量:', categoryItems.length);
+        
+        categoryItems.forEach(item => {
+          // 检查分类项的文本内容
+          const label = item.querySelector('.scratchCategoryMenuItemLabel');
+          if (label) {
+            const text = label.textContent.trim();
+            console.log('[my-blocks-plus] 分类文本:', text);
+            
+            if (text === '自制积木' || text === '自定义积木') {
+              console.log('[my-blocks-plus] 找到自定义积木分类，隐藏它');
+              item.style.display = 'none';
+              item.style.visibility = 'hidden';
+              item.style.height = '0';
+              item.style.margin = '0';
+              item.style.padding = '0';
+              item.style.overflow = 'hidden';
+            }
+          }
+          
+          // 检查分类项的类名
+          if (item.classList.contains('scratchCategoryId-more')) {
+            console.log('[my-blocks-plus] 找到 scratchCategoryId-more 分类，隐藏它');
+            item.style.display = 'none';
+            item.style.visibility = 'hidden';
+          }
+        });
+      };
+      
+      // 立即执行一次
+      hideCustomCategories();
+      
+      // 延迟执行一次，确保 DOM 已经完全加载
+      setTimeout(hideCustomCategories, 1000);
+      
+      // 再次延迟执行，确保所有扩展都已加载
+      setTimeout(hideCustomCategories, 3000);
+      
+      // 监听 DOM 变化，确保动态添加的分类也能被隐藏
+      const observer = new MutationObserver(() => {
+        hideCustomCategories();
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      
+      // 保存 observer 引用，以便在禁用时清理
+      if (!window.myBlocksPlusObserver) {
+        window.myBlocksPlusObserver = observer;
+      }
+    } else {
+      // 显示所有被隐藏的分类
+      const categoryItems = document.querySelectorAll('.scratchCategoryMenuItem');
+      categoryItems.forEach(item => {
+        item.style.display = '';
+        item.style.visibility = '';
+        item.style.height = '';
+        item.style.margin = '';
+        item.style.padding = '';
+        item.style.overflow = '';
+      });
+      
+      // 清理 observer
+      if (window.myBlocksPlusObserver) {
+        window.myBlocksPlusObserver.disconnect();
+        window.myBlocksPlusObserver = null;
+      }
+    }
+  };
+
+  addon.settings.addEventListener('change', updateCustomBlocksVisibility);
+  updateCustomBlocksVisibility();
 }

@@ -16,7 +16,7 @@ const manifest = {
     },
     {
       "type": "info",
-      "text": "警告：它会加载新扩展，且无法在扩展管理器中移除。",
+      "text": "警告：它会加载新扩展，且无法在AstraEditor扩展管理器中移除。",
       "id": "warn"
     }
   ],
@@ -33,9 +33,20 @@ const manifest = {
     {
       "name": "KOSHINO",
       "link": "https://github.com/KOSHINOawa"
+    },
+    {
+      "name": "笑小朗",
     }
   ],
   "dynamicDisable": true,
-  "tags": ["new"]
+  "tags": ["new"],
+  "settings": [
+    {
+      "type": "boolean",
+      "id": "hideCustomBlocks",
+      "name": "启用隐藏自定义积木",
+      "default": false
+    }
+  ]
 };
 export default manifest;
