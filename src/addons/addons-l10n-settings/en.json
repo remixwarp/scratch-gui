@@ -286,7 +286,7 @@
   "hide-delete-button/@settings-name-costumes": "Costumes and backdrops",
   "hide-delete-button/@settings-name-sounds": "Sounds",
   "hide-delete-button/@settings-name-sprites": "Sprites",
-  "hide-flyout/@description": "Hides the block palette unless you're hovering over it. Click the lock icon to lock it in place temporarily. Or use the \"category click\" mode to show/hide it when you click a block category.",
+  "hide-flyout/@description": "Hides the block palette unless you're hovering over it. Click the lock icon to lock it in place temporarily. Or use the \"category click\" mode to show/hide it when you click a block category. (This addon is not compatible with the Code Layout addon.)",
   "hide-flyout/@info-hoverExplanation": "\"Palette area hover\" mode only extends the viewing area. If you want to be able to drag blocks into that area without them getting trashed, use one of the other modes.",
   "hide-flyout/@name": "Auto-hiding block palette",
   "hide-flyout/@settings-name-lockLoad": "Open by default",

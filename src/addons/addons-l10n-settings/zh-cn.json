@@ -31,7 +31,7 @@
   "data-category-tweaks-v2/@settings-name-separateLocalVariables": "分离“仅适用于当前角色”的变量",
   "block-palette-icons/@description": "在标识块类别的彩色圆圈内添加图标。",
   "block-palette-icons/@name": "积木调色板类别图标",
-  "hide-flyout/@description": "隐藏积木栏，除非鼠标悬停在积木栏上方。点击锁定图标来固定积木栏，也可以使用“类别区点击”模式，当点击积木类别图标时显示/隐藏积木栏。",
+  "hide-flyout/@description": "隐藏积木栏，除非鼠标悬停在积木栏上方。点击锁定图标来固定积木栏，也可以使用“类别区点击”模式，当点击积木类别图标时显示/隐藏积木栏。（该插件与Vs Code的布局互不兼容）",
   "hide-flyout/@info-hoverExplanation": "“积木区悬停”模式可能会将你的脚本删除。你还可以试试其他模式。",
   "hide-flyout/@name": "自动隐藏积木区",
   "hide-flyout/@settings-name-lockLoad": "默认打开",
