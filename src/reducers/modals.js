@@ -27,6 +27,7 @@ const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
 const MODAL_AI = 'aiModal';
 const MODAL_AI_CHAT = 'aiChatModal';
 const MODAL_AI_AGENT = 'aiAgentModal';
+const MODAL_BAIDU_AI = 'baiduAIModal';
 const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 const MODAL_WARPTHEME = 'bilmeModal';
 const MODAL_EXTENSION_EDITOR = 'extensionEditorModal';
@@ -63,6 +64,7 @@ const initialState = {
     [MODAL_AI]: false,
     [MODAL_AI_CHAT]: false,
     [MODAL_AI_AGENT]: false,
+    [MODAL_BAIDU_AI]: false,
     [MODAL_EXTENSION_LOAD_CHOICE]: false,
     [MODAL_WARPTHEME]: false,
     [MODAL_EXTENSION_EDITOR]: false,
@@ -207,6 +209,16 @@ const openAIAgentModal = function (config) {
 };
 const closeAIAgentModal = function () {
     return closeModal(MODAL_AI_AGENT);
+};
+const openBaiduAIModal = function (config) {
+    return {
+        type: OPEN_MODAL,
+        modal: MODAL_BAIDU_AI,
+        aiConfig: config
+    };
+};
+const closeBaiduAIModal = function () {
+    return closeModal(MODAL_BAIDU_AI);
 };
 
 const openSimpleDialog = function (dialogConfig) {
@@ -369,6 +381,8 @@ export {
     closeAIChatModal,
     openAIAgentModal,
     closeAIAgentModal,
+    openBaiduAIModal,
+    closeBaiduAIModal,
     openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,
@@ -409,5 +423,6 @@ export {
     MODAL_GANDI_HELP,
     MODAL_WARPTHEME,
     MODAL_EXTENSION_EDITOR,
-    MODAL_SUPER_REFACTOR
+    MODAL_SUPER_REFACTOR,
+    MODAL_BAIDU_AI
 };

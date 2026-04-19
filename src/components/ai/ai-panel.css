@@ -554,3 +554,12 @@
   background: var(--ui-tertiary-active, #d0d0d0);
 }
 
+/* 百度AI面板样式 */
+.container .baiduAIFrame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  flex: 1;
+}
+

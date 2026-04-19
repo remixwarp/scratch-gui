@@ -473,5 +473,7 @@
   "tab-styles/@name": "Tab Styles",
   "tab-styles/@description": "Change the appearance of the editor tabs to look like other editors",
   "simple-project-analyzer/@name": "Simple Project Analyzer",
-  "simple-project-analyzer/@description": "Analyze your Scratch project and get insights about its structure and complexity"
+  "simple-project-analyzer/@description": "Analyze your Scratch project and get insights about its structure and complexity",
+  "gui.menuBar.baiduAI": "百度AI",
+  "gui.menuBar.baiduAI.description": "Menu bar item for Baidu AI"
 }
