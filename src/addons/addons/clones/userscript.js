@@ -28,7 +28,7 @@ export default async function ({ addon, console, msg }) {
 
   const cache = Array(301)
     .fill()
-    .map((_, i) => msg("clones", { cloneCount: i }));
+    .map((_, i) => msg("clones/clones", { cloneCount: i }));
 
   function doCloneChecks(force) {
     const v = vm.runtime._cloneCounter;
@@ -45,7 +45,7 @@ export default async function ({ addon, console, msg }) {
     if (showIconOnly) {
       count.dataset.str = v;
     } else {
-      count.dataset.str = cache[v] || msg("clones", { cloneCount: v });
+      count.dataset.str = cache[v] || msg("clones/clones", { cloneCount: v });
     }
 
     if (v === 0 || (addon.tab.editorMode !== "editor" && !showOnProjectPage)) countContainerContainer.style.display = "none";

@@ -20,7 +20,7 @@ import dataURLToBlob from '../lib/utils/data-uri-to-blob';
 import EventTargetShim from './event-target';
 import AddonHooks from './hooks';
 import addons from './generated/addon-manifests';
-import addonMessages from './addons-l10n/en.json';
+let addonMessages = {};
 import l10nEntries from './generated/l10n-entries';
 import addonEntries from './generated/addon-entries';
 import {addContextMenu} from './contextmenu';
@@ -128,7 +128,13 @@ const getLocale = () => {
 const language = getLocale();
 
 const getTranslations = async () => {
-    if (Object.prototype.hasOwnProperty.call(l10nEntries, language)) {
+    // 先加载英文翻译作为默认
+    if (Object.prototype.hasOwnProperty.call(l10nEntries, 'en')) {
+        const enMessages = await l10nEntries['en']();
+        Object.assign(addonMessages, enMessages);
+    }
+    // 然后加载当前语言的翻译覆盖默认值
+    if (language !== 'en' && Object.prototype.hasOwnProperty.call(l10nEntries, language)) {
         const localeMessages = await l10nEntries[language]();
         Object.assign(addonMessages, localeMessages);
     }

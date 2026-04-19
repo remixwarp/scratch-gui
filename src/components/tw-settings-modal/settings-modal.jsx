@@ -908,7 +908,12 @@ const pageConfigurations = {
                         component: AutoDisplayREADME,
                         props: props => ({
                             value: AEsettings.get('enableREADMEAutoDisplay') || false,
-                            onChange: (e) => { AEsettings.set("enableREADMEAutoDisplay", e.target.checked); notifySettingsChange(); }
+                            onChange: (e) => { 
+                                AEsettings.set("enableREADMEAutoDisplay", e.target.checked); 
+                                notifySettingsChange(); 
+                                // 显示刷新提示并刷新页面
+                                location.reload();
+                            }
                         })
                     },
                     {
