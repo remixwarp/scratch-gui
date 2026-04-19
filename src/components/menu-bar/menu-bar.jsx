@@ -66,7 +66,7 @@ try {
 import {showOnboarding} from '../../reducers/onboarding';
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
-import {openAIChatModal, openAIAgentModal, openGandiHelpModal} from '../../reducers/modals';
+import {openAIChatModal, openAIAgentModal, openBaiduAIModal, openGandiHelpModal} from '../../reducers/modals';
 import {
     isTimeTravel220022BC,
     isTimeTravel1920,
@@ -2710,6 +2710,18 @@ class MenuBar extends React.Component {
                                                         id="gui.menuBar.aiAgent"
                                                     />
                                                 </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => {
+                                                        this.props.onClickBaiduAI();
+                                                        this.props.onRequestCloseTools();
+                                                    }}
+                                                >
+                                                    <FormattedMessage
+                                                        defaultMessage="百度AI"
+                                                        description="Menu bar item for Baidu AI"
+                                                        id="gui.menuBar.baiduAI"
+                                                    />
+                                                </MenuItem>
                                             </MenuSection>
                                         </Submenu>
                                     </MenuItem>
@@ -3193,6 +3205,7 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseAI: () => dispatch(closeAIMenu()),
     onClickAIChat: () => dispatch(openAIChatModal()),
     onClickAIAgent: () => dispatch(openAIAgentModal()),
+    onClickBaiduAI: () => dispatch(openBaiduAIModal()),
     onClickLogin: () => dispatch(openLoginMenu()),
     onRequestCloseLogin: () => dispatch(closeLoginMenu()),
     onClickMode: () => dispatch(openModeMenu()),
