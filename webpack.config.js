@@ -132,6 +132,10 @@ const base = {
         {
             test: /\.raw\.(js|jsx|json|md)$/,
             use: 'raw-loader'
+        },
+        {
+            test: /\.json$/,
+            type: 'json'
         }]
     },
     plugins: [

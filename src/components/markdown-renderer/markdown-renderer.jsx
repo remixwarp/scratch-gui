@@ -63,16 +63,17 @@ class MarkdownRenderer extends React.PureComponent {
         });
 
         // 处理 CODEBLOCK0, CODEBLOCK1 等占位符（AI 有时仍会输出这种格式）
-        // 将这些占位符转换为特殊的引用块标记
-        const codeBlockQuotes = [];
-        processedText = processedText.replace(/CODEBLOCK\s*(\d+)/gi, (match, num) => {
-            const index = codeBlockQuotes.length;
-            codeBlockQuotes.push({
-                num: num,
-                content: `print("Hello, RemixWarp!")`
-            });
-            return `__CODE_BLOCK_QUOTE_${index}__`;
-        });
+        // 直接移除这些占位符，因为它们通常是AI生成的错误格式
+        processedText = processedText.replace(/CODEBLOCK\s*(\d+)/gi, '');
+        
+        // 同时处理可能的CODEBLOCK标记变体
+        processedText = processedText.replace(/CODE_BLOCK_\d+/gi, '');
+        processedText = processedText.replace(/__CODE_BLOCK_\d+__/gi, '');
+        processedText = processedText.replace(/__CODE_BLOCK_QUOTE_\d+__/gi, '');
+        
+        // 清理可能的空行
+        processedText = processedText.replace(/\n{3,}/g, '\n\n');
+        processedText = processedText.replace(/^\n+|\n+$/g, '');
 
         // 提取块级数学公式
         processedText = processedText.replace(/\$\$\n?([\s\S]*?)\$\$/g, (match, formula) => {
@@ -205,19 +206,11 @@ class MarkdownRenderer extends React.PureComponent {
             html = html.replace(`__MATH_BLOCK_${index}__`, mathHtml);
         });
 
-        // 恢复代码块引用（CODEBLOCK占位符）
-        codeBlockQuotes.forEach((block, index) => {
-            const escapedContent = block.content.replace(/&/g, '&amp;')
-                                               .replace(/</g, '&lt;')
-                                               .replace(/>/g, '&gt;');
-            const quoteHtml = `
-                <blockquote class="code-block-quote">
-                    <strong>代码块 ${block.num}</strong>
-                    <pre><code>${escapedContent}</code></pre>
-                </blockquote>
-            `;
-            html = html.replace(`__CODE_BLOCK_QUOTE_${index}__`, quoteHtml);
-        });
+        // 清理可能的空行和多余空格
+        html = html.replace(/\n{3,}/g, '\n\n');
+        html = html.replace(/^\n+|\n+$/g, '');
+        html = html.replace(/\s+$/gm, '');
+        html = html.replace(/^\s+/gm, '');
 
         // 段落 (将剩余文本包装在段落中)
         const lines = html.split('\n');

@@ -1466,11 +1466,19 @@ class MenuBar extends React.Component {
 
     handleExportSettings = async () => {
         try {
+            console.log('开始导出设置');
+            
+            // 动态导入JSZip
+            const { default: JSZip } = await import('@turbowarp/jszip');
+            console.log('JSZip库加载完成');
+            
             // 收集所有设置数据
             let addonSettings = null;
             try {
                 // 尝试导出插件设置，即使 theme 有问题也能继续
+                console.log('开始收集插件设置');
                 addonSettings = settingsStore.export({theme: this.props.theme || {isDark: () => false}});
+                console.log('插件设置收集完成');
             } catch (themeError) {
                 console.error('Error exporting addon settings:', themeError);
                 // 如果 theme 有问题，使用默认值
@@ -1492,28 +1500,38 @@ class MenuBar extends React.Component {
                 'tw:addons',
                 'tw:custom-themes',
                 'tw:persisted_unsandboxed',
-                'tw:restore-point-interval'
+                'tw:restore-point-interval',
+                'AESettings',
+                'mw:super-refactor',
+                'mw:multi-workspaces',
+                'mw:has-seen-onboarding'
             ];
 
+            console.log('开始收集localStorage设置');
             for (const key of keysToExport) {
                 const value = localStorage.getItem(key);
                 if (value !== null) {
                     localStorageSettings[key] = value;
                 }
             }
+            console.log('localStorage设置收集完成，共', Object.keys(localStorageSettings).length, '项');
 
             // 收集工作区书签
+            console.log('开始收集工作区书签');
             const workspaceBookmarks = {
                 bookmarks: this.state.workspaceBookmarks || [],
                 categories: this.state.workspaceBookmarksCategories || ['General'],
                 collapsedCategories: this.state.workspaceBookmarksCollapsedCategories || []
             };
+            console.log('工作区书签收集完成');
 
             // 收集 Redux 状态中的相关设置
+            console.log('开始收集Redux设置');
             const reduxSettings = {
                 locale: this.props.locale,
                 isRtl: this.props.isRtl
             };
+            console.log('Redux设置收集完成');
 
             const settingsData = {
                 version: '1.1.0',
@@ -1526,6 +1544,7 @@ class MenuBar extends React.Component {
             };
 
             // 创建压缩包
+            console.log('开始创建压缩包');
             const zip = new JSZip();
             zip.file('settings.json', JSON.stringify(settingsData, null, 2));
             zip.file('version.json', JSON.stringify({
@@ -1536,6 +1555,7 @@ class MenuBar extends React.Component {
 
             // 生成压缩文件
             const content = await zip.generateAsync({type: 'blob'});
+            console.log('压缩包生成完成，大小:', content.size, 'bytes');
 
             // 保存文件
             const blob = new Blob([content], {type: 'application/zip'});
@@ -1549,40 +1569,53 @@ class MenuBar extends React.Component {
             URL.revokeObjectURL(url);
 
             // 显示成功消息
+            console.log('设置导出完成');
             this.showAlert('成功', '设置已成功导出');
         } catch (error) {
             console.error('Error exporting settings:', error);
-            this.showAlert('错误', '导出设置失败，请重试。');
+            let errorMessage = '导出设置失败';
+            errorMessage += '：' + error.message;
+            this.showAlert('错误', errorMessage);
         } finally {
             this.props.onRequestCloseFile();
         }
     };
 
-    handleImportSettings = () => {
+    handleImportSettings = async () => {
         // 创建文件输入元素
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.rws';
+        input.accept = '.rwc';
         input.onchange = async (e) => {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
 
             try {
+                console.log('开始导入设置文件:', file.name);
+                
+                // 动态导入JSZip
+                const { default: JSZip } = await import('@turbowarp/jszip');
+                console.log('JSZip库加载完成');
+                
                 // 读取文件
                 const reader = new FileReader();
                 reader.onload = async (event) => {
                     try {
+                        console.log('文件读取完成，开始解析压缩包');
+                        
                         // 解析压缩包
                         const zip = new JSZip();
                         const content = await zip.loadAsync(event.target.result);
+                        console.log('压缩包解析完成，文件列表:', Object.keys(content.files));
 
                         // 读取设置文件
                         const settingsFile = content.file('settings.json');
                         if (!settingsFile) {
-                            throw new Error('Invalid settings file');
+                            throw new Error('设置文件不存在');
                         }
 
                         const settingsData = JSON.parse(await settingsFile.async('text'));
+                        console.log('设置文件解析完成，版本:', settingsData.version);
 
                         // 确认覆盖现有设置
                         if (!confirm('确定要导入设置吗？这将覆盖您当前的设置。')) {
@@ -1591,13 +1624,27 @@ class MenuBar extends React.Component {
 
                         // 导入插件设置
                         if (settingsData.addonSettings) {
-                            settingsStore.import(settingsData.addonSettings);
+                            try {
+                                console.log('开始导入插件设置');
+                                settingsStore.import(settingsData.addonSettings);
+                                console.log('插件设置导入完成');
+                            } catch (addonError) {
+                                console.error('Error importing addon settings:', addonError);
+                                // 继续执行，不中断导入过程
+                            }
                         }
 
                         // 导入 localStorage 设置
                         if (settingsData.localStorageSettings) {
-                            for (const [key, value] of Object.entries(settingsData.localStorageSettings)) {
-                                localStorage.setItem(key, value);
+                            try {
+                                console.log('开始导入localStorage设置，共', Object.keys(settingsData.localStorageSettings).length, '项');
+                                for (const [key, value] of Object.entries(settingsData.localStorageSettings)) {
+                                    localStorage.setItem(key, value);
+                                }
+                                console.log('localStorage设置导入完成');
+                            } catch (localStorageError) {
+                                console.error('Error importing localStorage settings:', localStorageError);
+                                // 继续执行，不中断导入过程
                             }
                         }
 
@@ -1614,21 +1661,61 @@ class MenuBar extends React.Component {
 
                         // 导入工作区书签
                         if (settingsData.workspaceBookmarks) {
-                            this.setState({
-                                workspaceBookmarks: settingsData.workspaceBookmarks.bookmarks || [],
-                                workspaceBookmarksCategories: settingsData.workspaceBookmarks.categories || ['General'],
-                                workspaceBookmarksCollapsedCategories: settingsData.workspaceBookmarks.collapsedCategories || []
-                            }, () => {
-                                this.saveWorkspaceBookmarksToProject();
-                            });
+                            try {
+                                console.log('开始导入工作区书签');
+                                this.setState({
+                                    workspaceBookmarks: settingsData.workspaceBookmarks.bookmarks || [],
+                                    workspaceBookmarksCategories: settingsData.workspaceBookmarks.categories || ['General'],
+                                    workspaceBookmarksCollapsedCategories: settingsData.workspaceBookmarks.collapsedCategories || []
+                                }, () => {
+                                    this.saveWorkspaceBookmarksToProject();
+                                    console.log('工作区书签导入完成');
+                                });
+                            } catch (bookmarkError) {
+                                console.error('Error importing workspace bookmarks:', bookmarkError);
+                                // 继续执行，不中断导入过程
+                            }
+                        }
+
+                        // 导入 Redux 状态中的设置
+                        if (settingsData.reduxSettings) {
+                            try {
+                                console.log('开始导入Redux设置');
+                                if (settingsData.reduxSettings.locale) {
+                                    if (this.props.selectLocale) {
+                                        this.props.selectLocale(settingsData.reduxSettings.locale);
+                                        console.log('语言设置导入完成');
+                                    } else {
+                                        console.warn('selectLocale方法不存在');
+                                    }
+                                }
+                            } catch (reduxError) {
+                                console.error('Error importing Redux settings:', reduxError);
+                                // 继续执行，不中断导入过程
+                            }
                         }
 
                         // 显示成功消息并提示刷新
+                        console.log('设置导入完成');
                         this.showAlert('成功', '设置已成功导入。请刷新页面以应用更改。');
                     } catch (error) {
                         console.error('Error importing settings:', error);
-                        this.showAlert('错误', '导入设置失败，请检查文件格式。');
+                        let errorMessage = '导入设置失败';
+                        if (error.message.includes('设置文件不存在')) {
+                            errorMessage += '：设置文件不存在';
+                        } else if (error.message.includes('Unexpected token')) {
+                            errorMessage += '：JSON 格式错误';
+                        } else if (error.message.includes('loadAsync')) {
+                            errorMessage += '：压缩文件格式错误';
+                        } else {
+                            errorMessage += '：' + error.message;
+                        }
+                        this.showAlert('错误', errorMessage);
                     }
+                };
+                reader.onerror = (error) => {
+                    console.error('文件读取错误:', error);
+                    this.showAlert('错误', '读取文件时发生错误');
                 };
                 reader.readAsArrayBuffer(file);
             } catch (error) {
