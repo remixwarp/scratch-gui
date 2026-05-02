@@ -70,6 +70,49 @@ if (fs.existsSync(controlVerticalPath)) {
     }
 }
 
+const compressedVerticalPath = path.join(scratchBlocksPath, 'blocks_compressed_vertical.js');
+if (fs.existsSync(compressedVerticalPath)) {
+    let content = fs.readFileSync(compressedVerticalPath, 'utf8');
+
+    const replacements = [
+        ['CONTROL_SWITCH",message0:Blockly.Msg.CONTROL_SWITCH', 'CONTROL_SWITCH",message0:Blockly.Msg.CONTROL_SWITCH'],
+        ['CONTROL_CASE",message0:Blockly.Msg.CONTROL_CASE', 'CONTROL_CASE",message0:Blockly.Msg.CONTROL_CASE'],
+        ['CONTROL_CASE_FALLTHROUGH",message0:Blockly.Msg.CONTROL_CASE_FALLTHROUGH', 'CONTROL_CASE_FALLTHROUGH",message0:Blockly.Msg.CONTROL_CASE_FALLTHROUGH'],
+        ['CONTROL_DEFAULT",message0:Blockly.Msg.CONTROL_DEFAULT', 'CONTROL_DEFAULT",message0:Blockly.Msg.CONTROL_DEFAULT'],
+        ['CONTROL_BREAK",message0:Blockly.Msg.CONTROL_BREAK', 'CONTROL_BREAK",message0:Blockly.Msg.CONTROL_BREAK'],
+        ['CONTROL_CONTINUE",message0:Blockly.Msg.CONTROL_CONTINUE', 'CONTROL_CONTINUE",message0:Blockly.Msg.CONTROL_CONTINUE']
+    ];
+
+    let modified = false;
+    for (const [oldStr, newStr] of replacements) {
+        if (content.includes(oldStr) && !content.includes('CONTROL_CONTINUE"]')) {
+            const oldBlock = `Blockly.Blocks.control_continue={init:function(){this.jsonInit({message0:Blockly.Msg.CONTROL_CONTINUE,category:Blockly.Categories.control,extensions:["colours_control","shape_statement"]})}}`;
+            const newBlock = `Blockly.Blocks.control_continue={init:function(){this.jsonInit({message0:Blockly.Msg.CONTROL_CONTINUE,category:Blockly.Categories.control,extensions:["colours_control","shape_statement"]})}}`;
+            if (content.includes(oldBlock)) {
+                content = content.replace(oldBlock, newBlock);
+                modified = true;
+            }
+        }
+    }
+
+    if (modified) {
+        fs.writeFileSync(compressedVerticalPath, content);
+        console.log('Patched blocks_compressed_vertical.js');
+    }
+}
+
+const shimCompressedVerticalPath = path.join(scratchBlocksPath, 'shim', 'blocks_compressed_vertical.js');
+if (fs.existsSync(shimCompressedVerticalPath)) {
+    let content = fs.readFileSync(shimCompressedVerticalPath, 'utf8');
+
+    if (content.includes('"CONTROL_CONTINUE": "continue"') || content.includes("'CONTROL_CONTINUE': 'continue'")) {
+        content = content.replace(/"CONTROL_CONTINUE": "continue"/g, '"CONTROL_CONTINUE": "继续"');
+        content = content.replace(/'CONTROL_CONTINUE': 'continue'/g, "'CONTROL_CONTINUE': '继续'");
+        fs.writeFileSync(shimCompressedVerticalPath, content);
+        console.log('Patched shim/blocks_compressed_vertical.js');
+    }
+}
+
 const scratch3ControlPath = path.join(scratchVmPath, 'src', 'blocks', 'scratch3_control.js');
 if (fs.existsSync(scratch3ControlPath)) {
     let content = fs.readFileSync(scratch3ControlPath, 'utf8');
