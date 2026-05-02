@@ -851,8 +851,8 @@
         "shortcut.cut": "剪切",
         "shortcut.closeWindow": "关闭窗口",
         "tw.customThemes.createDialog.createButton": "创建",
-        "tw.tutorialModal.title": "教程",
         "tw.tutorialModal.tutorial1.title": "RemixWarp 入门教程",
         "tw.tutorialModal.tutorial1.description": "学习如何使用 RemixWarp 编辑器的基本功能"
-    }
+    },
+    "gui.opcodeLabels.costumes": "造型"
 }
