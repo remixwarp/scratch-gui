@@ -8,9 +8,9 @@ import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {Theme} from '../../lib/themes/index.js';
 import {openFontsMenu, fontsMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
+import {openFontsModal} from '../../reducers/modals.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import {loadGoogleFont, isGoogleFont} from '../../lib/themes/google-fonts.js';
-import openMWFontsWindow from '../../lib/mw/open-mw-fonts-window.js';
 
 import styles from './settings-menu.css';
 
@@ -98,12 +98,7 @@ class FontsThemeMenu extends React.Component {
     };
 
     handleOpenFontsWindow = () => {
-        openMWFontsWindow({
-            vm: this.props.vm,
-            store: this.context.store,
-            locale: this.props.locale,
-            messages: this.props.messages
-        });
+        this.props.onOpenFontsModal();
         this.props.onCloseSettingsMenu();
     };
 
@@ -224,22 +219,13 @@ FontsThemeMenu.propTypes = {
     onChangeTheme: PropTypes.func,
     onOpen: PropTypes.func,
     onCloseSettingsMenu: PropTypes.func,
-    locale: PropTypes.string,
-    messages: PropTypes.object,
-    vm: PropTypes.shape({
-        wm: PropTypes.shape({
-            createWindow: PropTypes.func
-        })
-    }),
+    onOpenFontsModal: PropTypes.func,
     theme: PropTypes.instanceOf(Theme)
 };
 
 const mapStateToProps = state => ({
     isOpen: fontsMenuOpen(state),
     isRtl: state.locales.isRtl,
-    locale: state.locales.locale,
-    messages: state.locales.messages,
-    vm: state.scratchGui.vm,
     theme: state.scratchGui.theme.theme
 });
 
@@ -250,7 +236,8 @@ const mapDispatchToProps = dispatch => ({
         applyTheme(theme);
     },
     onOpen: () => dispatch(openFontsMenu()),
-    onCloseSettingsMenu: () => dispatch(closeSettingsMenu())
+    onCloseSettingsMenu: () => dispatch(closeSettingsMenu()),
+    onOpenFontsModal: () => dispatch(openFontsModal())
 });
 
 export default connect(

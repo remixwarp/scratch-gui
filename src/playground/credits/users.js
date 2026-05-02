@@ -53,6 +53,11 @@ const contributors = [
         username: 'DLGrass',
         uid:"3546642852612185"
     },
+    {
+        userID: '196023961',
+        username: 'PYC5635',
+        uid:"521949499"
+    }
 
 ].map(fromHardcoded);
 
@@ -67,11 +72,13 @@ const addonDevelopers = [
     },
     {
         userID: '222322998',
-        username: 'xiao-xiao-lang'
+        username: 'xiao-xiao-lang',
+        uid:"3546876326447960"
     },
     {
         userID: '148440803',
-        username: 'RyaninCn11'
+        username: 'RyaninCn11',
+        uid:"1413670374"
     }
 
 ].map(fromHardcoded);
@@ -92,11 +99,13 @@ const docs = [
     },
     {
         userID: '222322998',
-        username: 'xiao-xiao-lang'
+        username: 'xiao-xiao-lang',
+        uid:"3546876326447960"
     },
     {
         userID: '148440803',
-        username: 'RyaninCn11'
+        username: 'RyaninCn11',
+        uid:"1413670374"
     }
 ].map(fromHardcoded);
 
@@ -111,11 +120,13 @@ const translators = [
     },
     {
         userID: '222322998',
-        username: 'xiao-xiao-lang'
+        username: 'xiao-xiao-lang',
+        uid:"3546876326447960"
     },
     {
         userID: '148440803',
-        username: 'RyaninCn11'
+        username: 'RyaninCn11',
+        uid:"1413670374"
     }
 ].map(fromHardcoded);
 

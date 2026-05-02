@@ -1,6 +1,30 @@
 {
   "extensions": [
     {
+      "name": "寻路 (舞台坐标)",
+      "description": "多种寻路算法扩展，支持A*、BFS、Dijkstra、JPS等算法，可在舞台上显示调试窗口",
+      "extensionId": "pathfinding",
+      "extensionURL": "/extensions/remixwarp/寻路.js",
+      "iconURL": "/extensions/remixwarp/寻路.png",
+      "tags": [
+        "remixwarp"
+      ],
+      "credits": [
+        {
+          "name": "该账号差一点注销",
+          "link": "https://space.bilibili.com/3546902484224452"
+        }
+      ],
+      "incompatibleWithScratch": true,
+      "featured": true,
+      "samples": [
+        {
+          "href": "/extensions/remixwarp/寻路示例作品.sb3",
+          "text": "示例作品"
+        }
+      ]
+    },
+    {
       "name": "Windows of OS",
       "description": "An extension that simulates an operating system, including CMD terminal, register management, external program loading, custom windows, and GUI components.",
       "descriptionTranslations": {

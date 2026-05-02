@@ -133,6 +133,11 @@ const Credits = () => {
 
     return (
         <main className={styles.main}>
+            <header className={styles.headerContainer}>
+                <h1 className={styles.headerText}>
+                    {language === 'en' ? `${APP_NAME} Credits` : `${APP_NAME} 鸣谢`}
+                </h1>
+            </header>
             <div className={styles.languageSelector}>
                 <button 
                     className={language === 'en' ? styles.active : ''}
@@ -147,11 +152,6 @@ const Credits = () => {
                     中文
                 </button>
             </div>
-            <header className={styles.headerContainer}>
-                <h1 className={styles.headerText}>
-                    {language === 'en' ? `${APP_NAME} Credits` : `${APP_NAME} 鸣谢`}
-                </h1>
-            </header>
             <section>
                 <p>
                     {language === 'en' 
