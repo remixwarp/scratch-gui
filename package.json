@@ -11,7 +11,6 @@
   },
   "main": "./dist/scratch-gui.js",
   "scripts": {
-    "postinstall": "node scripts/apply-patches.mjs",
     "build": "npm run prepublish && npm run clean && webpack --colors --bail",
     "clean": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist",
     "deploy": "NODE_ENV=production npm run build && touch build/.nojekyll && gh-pages -t -d build -m \"Build for $(git log --pretty=format:%H -n1)\"",
@@ -30,7 +29,8 @@
     "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint",
     "generate-files": "node scripts/generate-file-contents.js",
     "server": "node server/index.js",
-    "dev:all": "concurrently \"npm start\" \"npm run server\""
+    "dev:all": "concurrently \"npm start\" \"npm run server\"",
+    "postinstall": "node scripts/postinstall.js"
   },
   "config": {
     "commitizen": {
@@ -156,6 +156,7 @@
     "webpack": "4.47.0",
     "webpack-cli": "3.3.12",
     "webpack-dev-server": "3.11.2",
+    "patch-package": "^6.2.2",
     "yauzl": "2.10.0"
   },
   "jest": {
