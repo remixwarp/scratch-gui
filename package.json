@@ -11,6 +11,7 @@
   },
   "main": "./dist/scratch-gui.js",
   "scripts": {
+    "postinstall": "node scripts/apply-patches.mjs",
     "build": "npm run prepublish && npm run clean && webpack --colors --bail",
     "clean": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist",
     "deploy": "NODE_ENV=production npm run build && touch build/.nojekyll && gh-pages -t -d build -m \"Build for $(git log --pretty=format:%H -n1)\"",
