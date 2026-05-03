@@ -110,7 +110,7 @@ const fetchLibrary = async () => {
     }
 
     try {
-        const mistiumRes = await fetch('/extensions/mistium/extensions-index.json');
+        const mistiumRes = await fetch('https://rw-extensions.pages.dev/mistium/extensions-index.json');
         if (!mistiumRes.ok) {
             console.warn(`Mistium extensions: HTTP status ${mistiumRes.status}`);
         } else {
@@ -246,7 +246,7 @@ const fetchLibrary = async () => {
     }
 
     try {
-        const remixwarpRes = await fetch('/extensions/remixwarp/extensions-index.json');
+        const remixwarpRes = await fetch('https://rw-extensions.pages.dev/remixwarp/extensions-index.json');
         if (!remixwarpRes.ok) {
             console.warn(`RemixWarp extensions: HTTP status ${remixwarpRes.status}`);
         } else {
@@ -281,7 +281,7 @@ const fetchLibrary = async () => {
                 }),
                 docsURI: extension.docsURI || null,
                 samples: extension.samples ? extension.samples.map(sample => ({
-                    href: `${process.env.ROOT}editor?project_url=${window.location.origin}${sample.href}`,
+                    href: `${process.env.ROOT}editor?project_url=${sample.href.startsWith('http') ? sample.href : window.location.origin + sample.href}`,
                     text: sample.text
                 })) : null,
                 incompatibleWithScratch: extension.incompatibleWithScratch || true,
@@ -293,7 +293,7 @@ const fetchLibrary = async () => {
     }
 
     try {
-        const astraRes = await fetch('/extensions/astraeditor/extensions-index.json');
+        const astraRes = await fetch('https://rw-extensions.pages.dev/astraeditor/extensions-index.json');
         if (!astraRes.ok) {
             console.warn(`AstraEditor extensions: HTTP status ${astraRes.status}`);
         } else {
@@ -340,7 +340,7 @@ const fetchLibrary = async () => {
     }
 
     try {
-        const engineRes = await fetch('/extensions/02engine/02engine-extensions/extensions.json');
+        const engineRes = await fetch('https://rw-extensions.pages.dev/02engine/02engine-extensions/extensions.json');
         if (!engineRes.ok) {
             console.warn(`02Engine extensions: HTTP status ${engineRes.status}`);
         } else {
@@ -351,8 +351,8 @@ const fetchLibrary = async () => {
                 description: extension.description,
                 descriptionTranslations: extension.descriptionTranslations || {},
                 extensionId: extension.id,
-                extensionURL: `/extensions/02engine/02engine-extensions/extension/${encodeURIComponent(extension.slug)}.js`,
-                iconURL: `/extensions/02engine/02engine-extensions/image/${encodeURIComponent(extension.image)}`,
+                extensionURL: `https://rw-extensions.pages.dev/02engine/02engine-extensions/extension/${encodeURIComponent(extension.slug)}.js`,
+                iconURL: `https://rw-extensions.pages.dev/02engine/02engine-extensions/image/${encodeURIComponent(extension.image)}`,
                 tags: ['02engine'],
                 credits: (extension.by || []).map(credit => {
                     if (credit.link) {
@@ -369,11 +369,14 @@ const fetchLibrary = async () => {
                     }
                     return credit.name;
                 }),
-                docsURI: extension.docs ? `/extensions/02engine/02engine-extensions/doc/${encodeURIComponent(extension.slug)}/index.html` : null,
-                samples: extension.samples ? extension.samples.map(sample => ({
-                    href: `${process.env.ROOT}editor?project_url=${window.location.origin}/extensions/02engine/02engine-extensions/samples/${encodeURIComponent(sample)}.sb3`,
-                    text: sample
-                })) : null,
+                docsURI: extension.docs ? `https://rw-extensions.pages.dev/02engine/02engine-extensions/doc/${encodeURIComponent(extension.slug)}/index.html` : null,
+                samples: extension.samples ? extension.samples.map(sample => {
+                    const sampleUrl = `https://rw-extensions.pages.dev/02engine/02engine-extensions/samples/${encodeURIComponent(sample)}.sb3`;
+                    return {
+                        href: `${process.env.ROOT}editor?project_url=${sampleUrl}`,
+                        text: sample
+                    };
+                }) : null,
                 incompatibleWithScratch: true,
                 featured: true
             }));
