@@ -5,7 +5,7 @@ const Loading = () => {
     const [displayText, setDisplayText] = useState('');
 
     useEffect(() => {
-        const fullText = '[""^*/';
+        const fullText = '["ˍ"*/';
         let index = 0;
         
         const typeInterval = setInterval(() => {
@@ -13,19 +13,45 @@ const Loading = () => {
                 setDisplayText(fullText.substring(0, index));
                 index++;
             } else {
+                clearInterval(typeInterval);
                 setTimeout(() => {
                     setDisplayText('');
                     index = 0;
-                }, 500);
+                    const restartInterval = setInterval(() => {
+                        if (index <= fullText.length) {
+                            setDisplayText(fullText.substring(0, index));
+                            index++;
+                        } else {
+                            clearInterval(restartInterval);
+                            setTimeout(() => {
+                                setDisplayText('');
+                            }, 1000);
+                        }
+                    }, 150);
+                }, 1000);
             }
-        }, 100);
+        }, 150);
 
         return () => clearInterval(typeInterval);
     }, []);
 
     return (
         <div className={styles.container}>
-            <div className={styles.typingText}>{displayText}</div>
+            <span 
+                className={styles.typingText} 
+                style={{
+                    color: '#ffffff',
+                    fontSize: '28px',
+                    fontWeight: 'bold',
+                    minHeight: '36px',
+                    letterSpacing: '2px',
+                    zIndex: 9999,
+                    position: 'relative',
+                    display: 'block'
+                }}
+            >
+                {displayText}
+            </span>
             <div className={styles.spinner} />
         </div>
     );

@@ -149,7 +149,7 @@ VideoModal.propTypes = {
         title: PropTypes.string.isRequired,
         bvid: PropTypes.string.isRequired,
         url: PropTypes.string
-    }).isRequired,
+    }),
     vm: PropTypes.object
 };
 

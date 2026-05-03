@@ -21,7 +21,7 @@
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 28px;
     font-weight: bold;
-    color: #ff0000 !important;
+    color: var(--page-foreground, white);
     min-height: 36px;
     letter-spacing: 2px;
     z-index: 9999;

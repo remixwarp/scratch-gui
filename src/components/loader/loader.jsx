@@ -70,10 +70,12 @@ class LoaderComponent extends React.Component {
         this.randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
         
         this.state = {
-            displayText: TYPE_STRING,
-            typingPhase: 'display'
+            displayText: TYPE_STRING
         };
-        this.typingTimeout = null;
+        this.typingInterval = null;
+        this.lastUpdateTime = Date.now();
+        this.currentIndex = TYPE_STRING.length;
+        
         this.startTyping();
     }
     
@@ -93,47 +95,49 @@ class LoaderComponent extends React.Component {
             this.props.vm.off('ASSET_PROGRESS', this.handleAssetProgress);
             this.props.vm.runtime.off('PROJECT_LOADED', this.handleProjectLoaded);
         }
-        if (this.typingTimeout) {
-            clearTimeout(this.typingTimeout);
+        if (this.typingInterval) {
+            clearInterval(this.typingInterval);
         }
     }
     
     startTyping = () => {
-        if (this.typingTimeout) {
-            clearTimeout(this.typingTimeout);
+        if (this.typingInterval) {
+            clearInterval(this.typingInterval);
         }
         
+        this.currentIndex = 0;
         this.setState({
-            displayText: '',
-            typingPhase: 'typing'
+            displayText: ''
         });
         
-        let charIndex = 0;
-        
-        const typeChar = () => {
-            charIndex++;
-            if (charIndex <= TYPE_STRING.length) {
+        this.typingInterval = setInterval(() => {
+            const now = Date.now();
+            if (now - this.lastUpdateTime > 3000) {
                 this.setState({
-                    displayText: TYPE_STRING.substring(0, charIndex)
+                    displayText: TYPE_STRING
                 });
-                this.typingTimeout = setTimeout(typeChar, 150);
+                this.currentIndex = TYPE_STRING.length;
+                return;
+            }
+            
+            if (this.currentIndex <= TYPE_STRING.length) {
+                this.setState({
+                    displayText: TYPE_STRING.substring(0, this.currentIndex)
+                });
+                this.lastUpdateTime = now;
+                this.currentIndex++;
             } else {
                 this.setState({
-                    typingPhase: 'display'
+                    displayText: TYPE_STRING
                 });
-                this.typingTimeout = setTimeout(() => {
+                setTimeout(() => {
+                    this.currentIndex = 0;
                     this.setState({
-                        displayText: '',
-                        typingPhase: 'erase'
+                        displayText: ''
                     });
-                    this.typingTimeout = setTimeout(() => {
-                        this.startTyping();
-                    }, 500);
                 }, 1000);
             }
-        };
-        
-        this.typingTimeout = setTimeout(typeChar, 300);
+        }, 150);
     }
     
     handleAssetProgress (finished, total) {
@@ -175,7 +179,19 @@ class LoaderComponent extends React.Component {
                 })}
             >
                 <div className={styles.container}>
-                    <div className={styles.typingText}>
+                    <div 
+                        className={styles.typingText}
+                        style={{
+                            color: '#ffffff',
+                            fontSize: '24px',
+                            fontWeight: 'bold',
+                            minHeight: '30px',
+                            letterSpacing: '2px',
+                            marginBottom: '15px',
+                            display: 'block',
+                            zIndex: 100
+                        }}
+                    >
                         {this.state.displayText}
                     </div>
                     

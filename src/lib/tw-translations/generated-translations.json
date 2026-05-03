@@ -849,10 +849,16 @@
         "shortcut.copy": "复制",
         "shortcut.paste": "粘贴",
         "shortcut.cut": "剪切",
+        "shortcut.aiChat": "打开 AI 聊天",
+        "shortcut.aiAgent": "打开 AI 助手",
         "shortcut.closeWindow": "关闭窗口",
         "tw.customThemes.createDialog.createButton": "创建",
         "tw.tutorialModal.tutorial1.title": "RemixWarp 入门教程",
-        "tw.tutorialModal.tutorial1.description": "学习如何使用 RemixWarp 编辑器的基本功能"
+        "tw.tutorialModal.tutorial1.description": "学习如何使用 RemixWarp 编辑器的基本功能",
+        "gui.aiModal.chatTitle": "AI 聊天",
+        "gui.aiModal.agentTitle": "AI 助手",
+        "gui.aiModal.baiduTitle": "百度 AI",
+        "gui.stageHeader.stageSizeInitial": "恢复默认大小"
     },
     "gui.opcodeLabels.costumes": "造型"
 }

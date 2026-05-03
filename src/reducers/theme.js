@@ -7,10 +7,21 @@ const initialState = {
     theme: detectTheme()
 };
 
-try {
-    applyGuiColors(initialState.theme);
-} catch (e) {
-    console.error('Failed to apply initial GUI colors for theme:', e);
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    try {
+        applyGuiColors(initialState.theme);
+    } catch (e) {
+        console.error('Failed to apply initial GUI colors for theme:', e);
+    }
+} else {
+    const applyInitialTheme = () => {
+        try {
+            applyGuiColors(initialState.theme);
+        } catch (e) {
+            console.error('Failed to apply initial GUI colors for theme:', e);
+        }
+    };
+    window.addEventListener('DOMContentLoaded', applyInitialTheme, {once: true});
 }
 
 const reducer = (state = initialState, action) => {
