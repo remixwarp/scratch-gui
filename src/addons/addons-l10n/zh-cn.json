@@ -328,7 +328,7 @@
     "block-count/max-nesting": "最大嵌套层级",
     "block-count/avg-nesting": "平均嵌套层级",
     "block-count/longest-script": "最长脚本",
-    "block-count/custom-blocks": "自定义积木",
+    "block-count/custom-blocks": "函数",
     "block-count/conditional-blocks": "条件积木",
     "block-count/loop-blocks": "循环积木",
     "block-count/event-blocks": "事件积木",

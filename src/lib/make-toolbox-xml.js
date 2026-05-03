@@ -826,7 +826,7 @@ const myBlocks = function (isInitialSetup, isStage, targetId, colors) {
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
     return `
     <category
-        name="%{BKY_CATEGORY_MYBLOCKS}"
+        name="函数"
         id="myBlocks"
         colour="${colors.primary}"
         secondaryColour="${colors.tertiary}"
