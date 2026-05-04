@@ -13,6 +13,7 @@ import ToggleButtons from '../toggle-buttons/toggle-buttons.jsx';
 import Controls from '../../containers/controls.jsx';
 import {getStageDimensions} from '../../lib/utils/screen';
 import {STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} from '../../lib/constants/layout-constants';
+import BlockCounterToggle from '../block-counter/block-counter-toggle.jsx';
 
 import largeStageIcon from '!../../lib/tw-recolor/build!./icon--large-stage.svg';
 import smallStageIcon from '!../../lib/tw-recolor/build!./icon--small-stage.svg';
@@ -91,7 +92,7 @@ const StageHeaderComponent = function (props) {
     onSetStageSmall,
     onSetStageInitial,
     onSetStageFull,
-        onOpenSettings,
+    onOpenSettings,
         isEmbedded,
         stageContainerWidth,
         stageSize,
@@ -100,6 +101,37 @@ const StageHeaderComponent = function (props) {
     } = props;
 
     const [showKeyboard, setShowKeyboard] = useState(false);
+    const [showBlockCounter, setShowBlockCounter] = useState(() => {
+        const saved = localStorage.getItem('blockCounterClosed');
+        return saved !== 'true';
+    });
+
+    // 监听storage变化，同步状态
+    React.useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'blockCounterClosed') {
+                setShowBlockCounter(e.newValue !== 'true');
+            }
+        };
+        
+        const handleBlockCounterClosed = () => {
+            setShowBlockCounter(false);
+        };
+        
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('blockCounterClosed', handleBlockCounterClosed);
+        
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('blockCounterClosed', handleBlockCounterClosed);
+        };
+    }, []);
+
+    const toggleBlockCounter = () => {
+        const newValue = !showBlockCounter;
+        setShowBlockCounter(newValue);
+        localStorage.setItem('blockCounterClosed', newValue ? 'true' : 'false');
+    };
 
     let header = null;
 
@@ -238,6 +270,14 @@ const StageHeaderComponent = function (props) {
                     >
                         {stageControls}
                         <div className={styles.stageButtonsGroup}>
+                            <BlockCounterToggle 
+                                isVisible={!showBlockCounter}
+                                onClick={() => {
+                                    localStorage.setItem('blockCounterClosed', 'false');
+                                    setShowBlockCounter(true);
+                                    window.dispatchEvent(new CustomEvent('blockCounterShow'));
+                                }}
+                            />
                             {isMobileModeEnabled && (
                                 <Button
                                     className={styles.stageButton}

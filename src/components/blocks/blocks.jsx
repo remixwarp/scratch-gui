@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import React from 'react';
 import Box from '../box/box.jsx';
+import BlockCounter from '../block-counter/block-counter.jsx';
 import styles from './blocks.css';
 
 const BlocksComponent = props => {
@@ -35,6 +36,7 @@ const BlocksComponent = props => {
                     onMouseDown={onPaletteResizePointerDown}
                 />
             ) : null}
+            <BlockCounter />
         </Box>
     );
 };
