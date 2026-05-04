@@ -8,6 +8,8 @@ export default async function ({ addon, console }) {
 
   const shouldWatchMouseCursor = true;
 
+  let yarnBallManager = null;
+
   Blockly.BlockSvg.prototype.CAT_BLOCKS = true;
 
   Blockly.BlockSvg.START_HAT_HEIGHT = 31;
@@ -198,6 +200,11 @@ export default async function ({ addon, console }) {
     this.waveCount = 0;
     this.waveTimer = null;
     this.isHoveringCat = false;
+    this.yarnBallOffsetX = 0;
+    this.yarnBallOffsetY = 0;
+    this.isChasingYarn = false;
+    this.yarnTargetX = 0;
+    this.yarnTargetY = 0;
 
     var LEFT_EAR_UP = "c-1,-12.5 5.3,-23.3 8.4,-24.8c3.7,-1.8 16.5,13.1 18.4,15.4";
     var LEFT_EAR_DOWN = "c-5.8,-4.8 -8,-18 -4.9,-19.5c3.7,-1.8 24.5,11.1 31.7,10.1";
@@ -271,6 +278,16 @@ export default async function ({ addon, console }) {
     this.catPath_.ear2.addEventListener("mouseleave", function () {
       that.isHoveringCat = false;
       that.stopWaveDetection();
+    });
+
+    this.svgGroup_.addEventListener("pointerdown", function () {
+      that.catYarnOffsetX = 0;
+      that.catYarnOffsetY = 0;
+      if (that.isChasingYarn) {
+        that.isChasingYarn = false;
+        clearTimeout(that.yarnMoveTimer);
+        that.scheduleNextYarnMove();
+      }
     });
 
     if (this.RTL) {
@@ -434,6 +451,135 @@ export default async function ({ addon, console }) {
     scheduleNext();
   };
 
+  Blockly.BlockSvg.prototype.updateYarnBall = function () {
+    if (!this.yarnBallGroup) {
+      this.yarnBallGroup = Blockly.utils.createSvgElement("g", {
+        "class": "cat-yarn-ball"
+      }, this.svgGroup_);
+      
+      var paths = [
+        "M493.77290073 493.77290073m-437.45037274 0a437.45037275 437.45037275 0 1 0 874.90074548 0 437.45037275 437.45037275 0 1 0-874.90074548 0Z",
+        "M493.77290073 56.32252799c241.5919104 0 437.45037275 195.85846235 437.45037274 437.45037274 0 241.5919104-195.85846235 437.45037275-437.45037274 437.45037274-46.4791021 0-91.30119563-7.24941392-133.30637225-20.71261153a434.21920522 434.21920522 0 0 1-42.46085571-141.54999278A472.57896368 472.57896368 0 0 1 165.68512117 420.86450608c0-118.06189037 43.16508372-225.97460029 114.54074668-308.94932574A435.29626146 435.29626146 0 0 1 493.77290073 56.32252799z",
+        "M760.75847468 147.20947178a436.7047187 436.7047187 0 0 1 170.46479879 346.56342895c0 241.5919104-195.85846235 437.45037275-437.45037274 437.45037274a436.7047187 436.7047187 0 0 1-346.56342895-170.46479879A435.58623763 435.58623763 0 0 0 414.23646932 851.68684206c241.5919104 0 437.45037275-195.85846235 437.45037274-437.45037274 0-99.00628741-32.89162881-190.34890786-88.36000427-263.67155434z",
+        "M493.77290073 56.32252799c241.5919104 0 437.45037275 195.85846235 437.45037274 437.45037274 0 241.5919104-195.85846235 437.45037275-437.45037274 437.45037274C252.18099033 931.22327347 56.32252799 735.36481113 56.32252799 493.77290073 56.32252799 252.18099033 252.18099033 56.32252799 493.77290073 56.32252799z m0 34.2172364C271.07089279 90.53976439 90.53976439 271.07089279 90.53976439 493.77290073s180.53112961 403.23313755 403.23313634 403.23313755 403.23313755-180.53112961 403.23313755-403.23313755S716.47490867 90.53976439 493.77290073 90.53976439z",
+        "M908.52225115 838.3064953a17.10861821 17.10861821 0 0 1 19.17987863 28.33485368c-39.35396386 26.59499425-86.28874262 37.57267839-140.22438517 33.14017895l-11.68191337-1.2013307c-52.40290964-6.33805938-126.88546323 3.10689185-222.95055929 28.66625467a17.10861821 17.10861821 0 1 1-8.78214804-33.05732931c94.03526045-24.97941049 169.01491675-35.29429143 225.47749759-30.61324064l10.35630698 1.03563022c51.03587723 6.2137837 93.66243343-2.65121397 128.62532267-26.30501687zM260.13463347 132.75206755a17.10861821 17.10861821 0 1 1 27.79632618 19.88410784c-75.22820764 105.38577162-102.61028196 214.7483648-82.72617412 328.99913532 20.04980835 114.99642334 65.86610725 200.08383525 137.24177021 256.13216427a17.10861821 17.10861821 0 0 1-21.12686459 26.92639524c-78.50080119-61.68215916-128.41819614-154.3503872-149.79361329-277.1347532-21.54111644-123.57144485 8.16076967-242.13043792 88.56713079-354.80704947z",
+        "M492.15731697 364.65047537c99.50339011-78.83220219 226.22315164-103.35593601 378.83368061-74.02687572a17.10861821 17.10861821 0 0 1-6.46233505 33.59585683c-143.33127702-27.54777483-259.94328534-4.97102697-351.12020529 67.23313967-114.62359632 90.84551775-156.00739579 183.59659542-164.45814162 300.6642804-4.47392427 61.80643484 17.31574352 160.93699792 32.0631239 185.17075437a17.10861821 17.10861821 0 1 1-29.2047834 17.7714214c-18.59992629-30.48896497-41.92232699-136.70324148-36.99272606-205.38626321 9.11354902-125.97410869 54.47417006-227.63161008 177.34138691-325.02231374z",
+        "M908.02514845 441.78424415a17.10861821 17.10861821 0 1 1-8.11934484 33.2230298c-121.50018443-29.74331092-219.59511609-14.37455338-295.7761043 45.48489671-95.81654471 75.26963367-126.96831408 152.81765429-126.96831287 248.50992332 0 34.0515347 11.93046471 81.15201517 29.86758659 128.16964479a17.10861821 17.10861821 0 0 1-31.93884823 12.2204421c-19.3041543-50.62162417-32.14597476-101.24324955-32.14597476-140.43151171 0-105.42719644 35.21144059-193.00012183 140.01725986-275.35346893 85.12883675-66.86031265 193.99432723-83.92750482 325.10516338-51.82295608z",
+        "M901.47996255 570.40956682a17.10861821 17.10861821 0 0 1-4.01824639 33.96868384c-70.34003152-8.28504534-128.62532267 6.17235888-175.85007882 43.28936061-72.74269415 57.08395922-96.27222258 115.61780171-96.27222259 188.15337054 0 13.58747329 1.44988327 30.07471312 4.14252207 48.13611069a17.10861821 17.10861821 0 0 1-33.88583299 4.97102697 374.15262981 374.15262981 0 0 1-4.43249945-53.10713766c0-82.27049623 27.54777483-150.82924351 109.32116837-215.07976699 54.68129659-42.95795841 121.99728711-59.65232355 200.9951898-50.29022318zM400.73184688 78.56787365a17.10861821 17.10861821 0 0 1 27.96202667 19.71840736C362.66206459 191.78301273 336.19134601 290.78930015 348.86746476 395.84366956c6.13093285 50.87017552 17.56429486 96.27222258 34.17581037 136.20613879a17.10861821 17.10861821 0 1 1-31.56602121 13.13179663c-17.89569707-42.95795841-30.07471312-91.38404526-36.578473-145.23683817-13.71174897-113.71224178 15.03735657-221.08642418 85.83306596-321.37689316zM553.59092599 86.64579246a17.10861821 17.10861821 0 1 1 29.61903526 17.06719339 399.2977408 399.2977408 0 0 0-53.6870912 194.53285474c-0.41425184 20.83688843 0.16570049 40.88669677 1.73985943 60.19085107a17.10861821 17.10861821 0 1 1-34.09295952 2.77549087 632.27320487 632.27320487 0 0 1-1.82271028-63.67057116A433.47355117 433.47355117 0 0 1 553.59092599 86.64579246zM737.56034845 137.55739402c7.74651662 5.38527881 9.65207776 16.07298677 4.26679774 23.81950459a407.41708444 407.41708444 0 0 0-48.05325984 92.99962904c-6.29663456 17.15004302-11.68191337 34.01010988-16.15583764 50.53877453a17.10861821 17.10861821 0 1 1-32.97447965-8.90642373c4.72247562-17.52287005 10.35630577-35.29429143 16.98434252-53.39711503 13.38034798-36.45419732 30.73751632-70.00862932 52.11293226-100.78757167a17.10861821 17.10861821 0 0 1 23.81950461-4.26679773z",
+        "M735.32338631 494.51855477a20.71261275 20.71261275 0 0 1 3.72827022 41.2595238c-53.85279169 4.88817611-109.77684502 49.46171828-166.73652978 135.91616261a20.71261275 20.71261275 0 0 1-34.59006222-22.78387317c63.21489328-95.94082038 128.70817351-148.1366035 197.59832178-154.39181324z"
+      ];
+      
+      var fills = ["#faece0", "#faece0", "#faece0", "#f15571", "#f15571", "#f15571", "#f15571", "#f15571", "#f3848e"];
+      
+      this.yarnBallPaths = [];
+      for (let i = 0; i < paths.length; i++) {
+        var path = Blockly.utils.createSvgElement("path", {
+          "d": paths[i],
+          "fill": fills[i]
+        }, this.yarnBallGroup);
+        this.yarnBallPaths.push(path);
+      }
+    }
+    
+    var scale = 0.03;
+    var translateX = this.yarnBallOffsetX + 10;
+    var translateY = this.yarnBallOffsetY - 15;
+    this.yarnBallGroup.setAttribute("transform", "translate(" + translateX + ", " + translateY + ") scale(" + scale + ")");
+  };
+
+  Blockly.BlockSvg.prototype.moveYarnBallRandomly = function () {
+    if (!this.workspace || this.isInFlyout) return;
+    
+    var scale = this.workspace.scale || 1;
+    
+    var baseX = 30 / scale;
+    var baseY = 0 / scale;
+    
+    var rangeX = 200 / scale;
+    var rangeY = 150 / scale;
+    
+    this.yarnTargetX = baseX + (Math.random() - 0.5) * rangeX * 2;
+    this.yarnTargetY = baseY + (Math.random() - 0.5) * rangeY * 2;
+    
+    this.isChasingYarn = true;
+    
+    this.animateYarnBall();
+  };
+
+  Blockly.BlockSvg.prototype.animateYarnBall = function () {
+    if (!this.isChasingYarn || this.isInFlyout) return;
+    
+    var dx = this.yarnTargetX - this.yarnBallOffsetX;
+    var dy = this.yarnTargetY - this.yarnBallOffsetY;
+    var distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance < 3) {
+      this.isChasingYarn = false;
+      this.scheduleNextYarnMove();
+      return;
+    }
+    
+    var speed = 0.06;
+    this.yarnBallOffsetX += dx * speed;
+    this.yarnBallOffsetY += dy * speed;
+    
+    var catDx = this.yarnBallOffsetX - (this.catYarnOffsetX || 0);
+      var catDy = this.yarnBallOffsetY - (this.catYarnOffsetY || 0);
+      
+      var catDistance = Math.sqrt(catDx * catDx + catDy * catDy);
+      if (catDistance > 0.5) {
+        var catSpeed = 0.08;
+        this.catYarnOffsetX = (this.catYarnOffsetX || 0) + catDx * catSpeed;
+        this.catYarnOffsetY = (this.catYarnOffsetY || 0) + catDy * catSpeed;
+        
+        var maxOffsetX = 80;
+        var maxOffsetY = 60;
+        this.catYarnOffsetX = Math.max(-maxOffsetX, Math.min(maxOffsetX, this.catYarnOffsetX));
+        this.catYarnOffsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, this.catYarnOffsetY));
+        
+        var yarnBallScreenX = this.yarnBallOffsetX + this.catYarnOffsetX;
+        var yarnBallScreenY = this.yarnBallOffsetY + this.catYarnOffsetY;
+        
+        var catEyeDx = (yarnBallScreenX - 45) * 0.02;
+        var catEyeDy = (yarnBallScreenY + 3) * 0.02;
+        catEyeDx = Math.max(-3, Math.min(3, catEyeDx));
+        catEyeDy = Math.max(-2, Math.min(2, catEyeDy));
+        
+        if (this.catPath_.svgFace.eye) {
+          this.catPath_.svgFace.eye.setAttribute("cx", 59.2 + catEyeDx);
+          this.catPath_.svgFace.eye.setAttribute("cy", -3.3 + catEyeDy);
+        }
+        if (this.catPath_.svgFace.eye2) {
+          this.catPath_.svgFace.eye2.setAttribute("cx", 29.1 + catEyeDx);
+          this.catPath_.svgFace.eye2.setAttribute("cy", -3.3 + catEyeDy);
+        }
+        
+        if (this.svgGroup_) {
+          this.svgGroup_.setAttribute("transform", "translate(" + this.catYarnOffsetX + ", " + this.catYarnOffsetY + ")");
+        }
+      }
+    
+    this.updateYarnBall();
+    
+    requestAnimationFrame(() => this.animateYarnBall());
+  };
+
+  Blockly.BlockSvg.prototype.scheduleNextYarnMove = function () {
+    var delay = 2000 + Math.random() * 3000;
+    clearTimeout(this.yarnMoveTimer);
+    this.yarnMoveTimer = setTimeout(() => {
+      if (!this.isInFlyout && this.workspace) {
+        this.moveYarnBallRandomly();
+      }
+    }, delay);
+  };
+
+  Blockly.BlockSvg.prototype.startChaseYarn = function () {
+    if (this.isInFlyout) return;
+    this.moveYarnBallRandomly();
+    this.addHappiness(3);
+  };
+
   let workspacePositionRect = null;
   Blockly.BlockSvg.prototype.getCatFacePosition = function () {
     if (!workspacePositionRect) {
@@ -487,8 +633,18 @@ export default async function ({ addon, console }) {
     if (this.hasInitCatStuff) {
       if (this.isInFlyout) {
         this.hideHappinessDisplay();
+        if (this.yarnBallGroup) {
+          this.yarnBallGroup.setAttribute("display", "none");
+        }
       } else {
         this.updateHappinessDisplay();
+        this.updateYarnBall();
+        if (this.yarnBallGroup) {
+          this.yarnBallGroup.removeAttribute("display");
+        }
+        if (!this.yarnMoveTimer && !this.isChasingYarn) {
+          this.scheduleNextYarnMove();
+        }
       }
     }
     return r;
@@ -500,6 +656,7 @@ export default async function ({ addon, console }) {
     clearTimeout(this.earFn);
     clearTimeout(this.ear2Fn);
     clearTimeout(this.waveTimer);
+    clearTimeout(this.yarnMoveTimer);
     if (this.happinessDecayInterval) {
       clearTimeout(this.happinessDecayInterval);
       this.happinessDecayInterval = null;
@@ -524,6 +681,13 @@ export default async function ({ addon, console }) {
         }
       } else {
         document.addEventListener("mousemove", this.windowListener);
+      }
+    }
+    if (isGlowingStack) {
+      this.catYarnOffsetX = 0;
+      this.catYarnOffsetY = 0;
+      if (this.svgGroup_) {
+        this.svgGroup_.setAttribute("transform", "");
       }
     }
     return originalSetGlowStack.call(this, isGlowingStack);
