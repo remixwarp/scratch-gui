@@ -3,6 +3,8 @@
   "cat-blocks/@info-watch": "当编辑器打开时，“看向鼠标”设置可能会影响性能。",
   "cat-blocks/@name": "猫积木",
   "cat-blocks/@settings-name-watch": "跟随鼠标",
+  "cat-blocks-extended/@description": "获取2026年愚人节RemixWarp编辑器并未上线的愚人节功能",
+  "cat-blocks-extended/@name": "猫积木拓展",
   "editor-devtools/@description": "为编辑器添加了新的菜单选项：复制/粘贴积木，更好的积木整理，以及更多功能！",
   "editor-devtools/@name": "开发者工具",
   "editor-devtools/@settings-name-enableCleanUpPlus": "增强“整理积木”",

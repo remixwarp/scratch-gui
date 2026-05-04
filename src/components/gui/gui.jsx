@@ -25,6 +25,7 @@ import BackdropLibrary from '../../containers/backdrop-library.jsx';
 import Watermark from '../../containers/watermark.jsx';
 
 import Backpack from '../../containers/backpack.jsx';
+
 import BrowserModal from '../browser-modal/browser-modal.jsx';
 import TipsLibrary from '../../containers/tips-library.jsx';
 import Cards from '../../containers/cards.jsx';
@@ -1293,6 +1294,7 @@ const GUIComponent = props => {
                 onClose={handleCloseDonationModal} 
                 count={donationCount} 
             />
+
         </Box>
         );
     }}</MediaQuery>);

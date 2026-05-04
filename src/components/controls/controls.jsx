@@ -34,6 +34,8 @@ const Controls = function (props) {
         framerate,
         interpolation,
         isSmall,
+        actualFps,
+        isEditor,
         ...componentProps
     } = props;
     return (
@@ -58,6 +60,8 @@ const Controls = function (props) {
                 <FramerateIndicator
                     framerate={framerate}
                     interpolation={interpolation}
+                    actualFps={actualFps}
+                    isEditor={isEditor}
                 />
             )}
         </div>
@@ -73,13 +77,16 @@ Controls.propTypes = {
     framerate: PropTypes.number,
     interpolation: PropTypes.bool,
     isSmall: PropTypes.bool,
-    turbo: PropTypes.bool
+    turbo: PropTypes.bool,
+    actualFps: PropTypes.number,
+    isEditor: PropTypes.bool
 };
 
 Controls.defaultProps = {
     active: false,
     turbo: false,
-    isSmall: false
+    isSmall: false,
+    isEditor: true
 };
 
 export default injectIntl(Controls);

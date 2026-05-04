@@ -288,5 +288,7 @@
     "comment-vscode-sync/sync-tooltip": "Edit in VSCode",
     "comment-vscode-sync/synced-tooltip": "Synced to VSCode",
     "comment-vscode-sync/not-connected": "Not connected to 02Engine Toolbox Server",
-    "comment-vscode-sync/send-failed": "Failed to send, please check connection"
+    "comment-vscode-sync/send-failed": "Failed to send, please check connection",
+    "simple-project-analyzer/computational-thinking-score": "Computational Thinking Score",
+    "simple-project-analyzer/relative-intensity": "Relative Intensity"
 }
