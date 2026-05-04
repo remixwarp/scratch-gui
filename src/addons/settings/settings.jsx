@@ -1085,7 +1085,7 @@ class AddonList extends React.Component {
             bilup: ['autosave', 'no-category-text', 'green-flag-order', 'remove-extension-button', 'tab-styles', 'sprite-folders'],
             
             // RW与BL对比多出的存入RW
-            remixwarp: ['calculator', 'daily-quote', 'workspace-tabs', 'stage-camera', 'window-theme'],
+            remixwarp: ['calculator', 'daily-quote', 'workspace-tabs', 'stage-camera', 'window-theme', 'cat-blocks-extended'],
             
             // AE与TW对比多出的存入AE
             astraeditor: ['Terminal', 'astras-copilot', 'my-blocks-plus', 'hide-menubar', 'simple-project-analyzer'],

@@ -61,6 +61,8 @@
   "cat-blocks/@info-watch": "The \"watch mouse cursor\" setting may impact performance when the editor is open.",
   "cat-blocks/@name": "Cat blocks",
   "cat-blocks/@settings-name-watch": "Watch mouse cursor",
+  "cat-blocks-extended/@description": "Get April Fools' Day features that weren't released in RemixWarp editor for April Fools' Day 2026.",
+  "cat-blocks-extended/@name": "Cat Blocks Extended",
   "clones/@description": "Adds a counter above the stage in the editor which shows the total amount of clones.",
   "clones/@name": "Clone counter",
   "clones/@settings-name-projectpage": "Show on project page",

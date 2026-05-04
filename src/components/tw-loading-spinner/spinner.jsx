@@ -22,7 +22,7 @@ const Loading = () => {
                             setDisplayText(fullText.substring(0, index));
                             index++;
                         } else {
-                            clearInterval(restartInterval);
+                            clearInterval(restartInterval); 
                             setTimeout(() => {
                                 setDisplayText('');
                             }, 1000);
