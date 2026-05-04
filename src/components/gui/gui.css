@@ -105,11 +105,6 @@
     color: #ffffff;
 }
 
-.editor-wrapper.vscodeLayout .sprite-selector-item.is-selected .sprite-info {
-    background: $looks-secondary;
-    color: #ffffff;
-}
-
 /* VS Code Layout */
 .vscode {
     flex-direction: column !important;
