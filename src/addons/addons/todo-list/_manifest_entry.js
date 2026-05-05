@@ -1,21 +1,16 @@
 const manifest = {
   "editorOnly": true,
-  "name": "Simple Project Analyzer",
-  "description": "Analyses your Scratch project and shows detailed statistics including Dr.Scratch scoring, block distribution and more.",
+  "name": "Todo List",
+  "description": "Adds a todo list feature to the Scratch editor",
   "credits": [
     {
-      name: "Cyberexplorer",
-      link: "https://github.com/LanwyWriteXU"
-    },
-    {
-      name: "KOSHINO",
-      link: "https://github.com/KOSHINOawa"
+      name: "AstraEditor Team",
+      link: "https://github.com/AstraEditor"
     }
   ],
   "tags": [
-    "recommended",
+    "productivity",
     "new",
-    "development",
     "astraeditor"
   ],
   "dynamicDisable": true,

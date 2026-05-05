@@ -1130,10 +1130,10 @@ const GUIComponent = props => {
                                 onSelect={onActivateTab}
                             >
                                 <TabList className={
-                                    vscodeLayout
-                                        ? `${tabClassNames.vscode}`
-                                        : tabClassNames.tabList
-                                }>
+                                    vscodeLayout ?
+                                        `${tabClassNames.vscode}` :
+                                        tabClassNames.tabList
+                                } style={{display: 'flex', alignItems: 'center', flexWrap: 'nowrap'}}>
                                     <Tab className={tabClassNames.tab}>
                                         <BlocksIcon size={20} />
                                         {!vscodeLayout && (
@@ -1180,8 +1180,9 @@ const GUIComponent = props => {
                                         <button
                                             className={styles.readmeButton}
                                             style={!vscodeLayout ? {
-                                                margin: "auto",
-                                                marginLeft: "20px"
+                                                marginLeft: "92px",
+                                                flexShrink: 0,
+                                                whiteSpace: 'nowrap'
                                             } : {}}
                                             onClick={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'readme'})}
                                         >

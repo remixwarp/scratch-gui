@@ -1,3 +1,4 @@
+
 // 加载Chart.js库
 async function loadChartJS() {
   return new Promise((resolve, reject) => {
@@ -14,25 +15,21 @@ async function loadChartJS() {
   });
 }
 import icon from '!../../../lib/tw-recolor/build!./SPA.svg'
-import WindowManager from '../../window-system/window-manager.js';
 
 export default async function ({ addon, msg, safeMsg, console }) {
-  // 加载Chart.js库
   await loadChartJS();
   
-  // 项目分析器类
   class SimpleProjectAnalyzer {
     constructor() {
       this.analyzeButton = null;
-      this.analyzeWindow = null;
+      this.analyzeModal = null;
+      this.removeModal = null;
       this.chartInstance = null;
       this.mathLogicChartInstance = null;
       this.drScratchChartInstance = null;
     }
 
-    // 创建分析按钮
     async createAnalyzeButton() {
-      // 如果按钮已存在且在DOM中，直接返回
       if (this.analyzeButton && document.contains(this.analyzeButton)) {
         return;
       }
@@ -40,7 +37,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       try {
         console.log('Simple Project Analyzer: Creating analyze button...');
         
-        // 尝试获取 VSCodeLayout 设置，添加错误处理
         let VSCodeLayout = false;
         try {
           const aeSettings = localStorage.getItem('AESettings');
@@ -57,40 +53,31 @@ export default async function ({ addon, msg, safeMsg, console }) {
           others: 'sa-analyze-button'
         });
 
-        // 确保按钮显示中文
-        this.analyzeButton.textContent = '分析';
-        this.analyzeButton.title = '分析项目统计信息';
+        if (VSCodeLayout) {
+          const img = document.createElement('img');
+          img.src = icon();
+          img.style.filter = "grayscale(100%)"
+          img.marginTop = '5px';
+          img.width = '20px';
+          img.height = '20px';
+          img.alt = '分析';
+          this.analyzeButton.appendChild(img);
+        } else {
+          this.analyzeButton.textContent = msg('analyze-button', '分析');
+        }
+        this.analyzeButton.title = msg('analyze-tooltip', '分析项目统计信息');
 
-        // 添加自定义样式，确保按钮可见
-        this.analyzeButton.style.padding = '8px 12px';
-        this.analyzeButton.style.margin = '0 4px';
-        this.analyzeButton.style.marginLeft = '40px';
-        this.analyzeButton.style.backgroundColor = '#4CAF50';
-        this.analyzeButton.style.color = 'white';
-        this.analyzeButton.style.border = 'none';
-        this.analyzeButton.style.borderRadius = '4px';
-        this.analyzeButton.style.cursor = 'pointer';
-        this.analyzeButton.style.fontSize = '14px';
-        this.analyzeButton.style.fontWeight = 'bold';
-        this.analyzeButton.style.order = '3';
-        this.analyzeButton.style.position = 'relative';
-        this.analyzeButton.style.zIndex = '1000';
-
-        // 禁用时隐藏按钮
         addon.tab.displayNoneWhileDisabled(this.analyzeButton);
 
         this.analyzeButton.addEventListener('click', () => {
           console.log('Simple Project Analyzer: Analyze button clicked');
-          this.showAnalysisWindow();
+          this.showAnalysisModal();
         });
 
-        // 尝试多个位置来添加按钮
         let buttonAdded = false;
 
-        // 不考虑VS Code布局，直接尝试添加到菜单栏
         try {
           console.log('Simple Project Analyzer: Trying to add button to menu bar...');
-          // 查找菜单栏
           const menuBar = document.querySelector('[class^="menu-bar_main-menu"]');
           if (menuBar) {
             console.log('Simple Project Analyzer: Found menu bar');
@@ -104,15 +91,12 @@ export default async function ({ addon, msg, safeMsg, console }) {
           console.error('Simple Project Analyzer: Failed to add analyze button to menu bar:', e);
         }
 
-        // 如果添加到菜单栏失败，尝试添加到查找功能右边
         if (!buttonAdded) {
           try {
             console.log('Simple Project Analyzer: Trying to add button to find bar...');
-            // 尝试查找查找功能
             const findBar = document.querySelector('.react-tabs');
             if (findBar && findBar.parentElement) {
               console.log('Simple Project Analyzer: Found find bar');
-              // 在查找功能右边添加按钮
               findBar.parentElement.insertBefore(this.analyzeButton, findBar.nextSibling);
               console.log('Simple Project Analyzer: Added analyze button to find bar');
               buttonAdded = true;
@@ -124,11 +108,9 @@ export default async function ({ addon, msg, safeMsg, console }) {
           }
         }
 
-        // 如果还是没有添加成功，尝试添加到标签栏
         if (!buttonAdded) {
           try {
             console.log('Simple Project Analyzer: Trying to add button to tab bar...');
-            // 查找标签栏
             const tabBar = document.querySelector('[class*="react-tabs_react-tabs__tab-list"]');
             if (tabBar) {
               console.log('Simple Project Analyzer: Found tab bar');
@@ -143,11 +125,9 @@ export default async function ({ addon, msg, safeMsg, console }) {
           }
         }
 
-        // 如果还是没有添加成功，尝试添加到菜单栏
         if (!buttonAdded) {
           try {
             console.log('Simple Project Analyzer: Trying to add button to menu bar...');
-            // 查找菜单栏
             const menuBar = document.querySelector('[class*="menu-bar_menu-bar"]');
             if (menuBar) {
               console.log('Simple Project Analyzer: Found menu bar');
@@ -162,12 +142,10 @@ export default async function ({ addon, msg, safeMsg, console }) {
           }
         }
 
-        // 如果还是没有添加成功，尝试添加到body作为最后的 fallback
         if (!buttonAdded) {
           try {
             console.log('Simple Project Analyzer: Trying to add button to body as fallback...');
             document.body.appendChild(this.analyzeButton);
-            // 设置绝对定位，确保按钮可见
             this.analyzeButton.style.position = 'fixed';
             this.analyzeButton.style.top = '10px';
             this.analyzeButton.style.right = '10px';
@@ -180,10 +158,8 @@ export default async function ({ addon, msg, safeMsg, console }) {
           }
         }
 
-        // 检查按钮是否成功添加
         if (buttonAdded) {
           console.log('Simple Project Analyzer: Analyze button created and added successfully');
-          // 测试按钮是否可见
           const isVisible = this.analyzeButton.offsetParent !== null;
           console.log('Simple Project Analyzer: Button visibility:', isVisible);
           if (!isVisible) {
@@ -201,93 +177,76 @@ export default async function ({ addon, msg, safeMsg, console }) {
       }
     }
 
-    // 显示分析结果窗口
-    showAnalysisWindow() {
-      // 如果窗口已存在，显示并聚焦
-      if (this.analyzeWindow) {
-        this.analyzeWindow.show().bringToFront();
-        return;
+    showAnalysisModal() {
+      if (this.analyzeModal) {
+        this.analyzeModal.remove();
       }
 
-      // 创建自由窗口
-      this.analyzeWindow = WindowManager.createWindow({
-        id: 'simple-project-analyzer',
-        title: msg('modal-title', '项目复杂度分析'),
-        width: 900,
-        height: 700,
-        minWidth: 700,
-        minHeight: 500,
-        className: 'sa-project-analyzer-window',
-        onClose: () => {
-          this.analyzeWindow = null;
-          // 销毁图表实例
-          if (this.chartInstance) {
-            this.chartInstance.destroy();
-            this.chartInstance = null;
-          }
-          if (this.mathLogicChartInstance) {
-            this.mathLogicChartInstance.destroy();
-            this.mathLogicChartInstance = null;
-          }
-          if (this.drScratchChartInstance) {
-            this.drScratchChartInstance.destroy();
-            this.drScratchChartInstance = null;
-          }
-        }
+      const { backdrop, container, content, closeButton, remove } = addon.tab.createModal(msg('modal-title', '项目复杂度分析'), {
+        isOpen: true
       });
 
-      // 创建内容容器
-      const contentWrapper = document.createElement('div');
-      contentWrapper.className = 'sa-analyze-content-wrapper';
-      contentWrapper.style.cssText = `
-        height: 100%;
-        overflow-y: auto;
-        padding: 15px;
-        box-sizing: border-box;
-      `;
+      this.analyzeModal = backdrop;
+      this.removeModal = remove;
 
-      // 生成分析结果HTML
+      container.classList.add('sa-analyze-modal-popup');
+      content.classList.add('sa-analyze-modal-content');
+
       const analysisHTML = this.generateAnalysisHTML();
 
-      // 设置内容
-      contentWrapper.innerHTML = `
+      content.innerHTML = `
         <div class="sa-analyze-loading" id="saAnalyzeLoading">
           <div class="sa-analyze-spinner"></div>
-          <p>${msg('analyzing')}</p>
+          <p>${msg('analyzing', '分析中...')}</p>
         </div>
         <div class="sa-analyze-results" id="saAnalyzeResults" style="display: none;">
           ${analysisHTML}
         </div>
       `;
 
-      this.analyzeWindow.setContent(contentWrapper);
-      this.analyzeWindow.show();
+      backdrop.addEventListener('click', () => this.closeModal());
+      closeButton.addEventListener('click', () => this.closeModal());
 
-      // 异步分析项目
       this.analyzeProject();
     }
 
-    // 分析项目
+    closeModal() {
+      if (this.removeModal) {
+        this.removeModal();
+        this.analyzeModal = null;
+        this.removeModal = null;
+        
+        if (this.chartInstance) {
+          this.chartInstance.destroy();
+          this.chartInstance = null;
+        }
+        if (this.mathLogicChartInstance) {
+          this.mathLogicChartInstance.destroy();
+          this.mathLogicChartInstance = null;
+        }
+        if (this.drScratchChartInstance) {
+          this.drScratchChartInstance.destroy();
+          this.drScratchChartInstance = null;
+        }
+      }
+    }
+
     async analyzeProject() {
       try {
-        // 使用 vm.toJSON 获取项目数据
         const vm = addon.tab.traps.vm;
         const projectJSON = JSON.parse(vm.toJSON());
         
-        // 执行分析
         const analysis = this.performAnalysis(projectJSON);
 
-        // 更新UI
         this.updateAnalysisResults(analysis);
       } catch (error) {
         console.error(msg('analysis-error', '分析项目时出错:'), error);
         document.getElementById('saAnalyzeLoading').innerHTML = `
-          <p style="color: #d32f2f;">${msg('analysis-error')}</p>
+          <p style="color: #d32f2f;">${msg('analysis-error', '分析项目时出错')}</p>
         `;
       }
     }
 
-    // 执行分析
     performAnalysis(projectData) {
       const analysis = {
         totalBlocks: 0,
@@ -307,28 +266,22 @@ export default async function ({ addon, msg, safeMsg, console }) {
         listCount: 0
       };
 
-      // 分析扩展
       this.analyzeExtensions(analysis, projectData);
       
-      // 创建扩展名称映射
       const extensionNameMap = {};
       analysis.extensions.forEach(ext => {
         extensionNameMap[ext.id] = ext.name;
       });
       
-      // 分析代码块
       this.analyzeBlocks(analysis, projectData, extensionNameMap);
       
-      // 分析精灵和舞台
       this.analyzeSprites(analysis, projectData);
       
-      // 分析有效积木和函数定义
       this.analyzeEffectiveBlocks(analysis, projectData);
       
       return analysis;
     }
 
-    // 分析代码块
     analyzeBlocks(analysis, projectData, extensionNameMap = {}) {
       const targets = projectData.targets || [];
       
@@ -346,7 +299,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       });
     }
 
-    // 获取积木类型
     getBlockCategory(opcode, extensionNameMap = {}) {
       if (opcode.startsWith('motion_')) return msg('motion', '运动');
       if (opcode.startsWith('looks_')) return msg('looks', '外观');
@@ -358,25 +310,20 @@ export default async function ({ addon, msg, safeMsg, console }) {
       if (opcode.startsWith('data_')) return msg('data', '数据');
       if (opcode.startsWith('video_')) return msg('video', '视频');
       
-      // 自定义函数和参数
       if (opcode.startsWith('procedures_')) return msg('custom-functions', '自定义函数');
       if (opcode.startsWith('argument_')) return msg('custom-functions', '自定义函数');
       
-      // 扩展积木处理
       if (!this.isStandardBlock(opcode)) {
         const extensionId = this.getExtensionIdFromOpcode(opcode);
-        // 优先使用解析的中文名称
         if (extensionNameMap[extensionId]) {
           return extensionNameMap[extensionId];
         }
-        // 回退到默认名称
         return this.getExtensionNameFromId(extensionId);
       }
       
       return msg('other', '其他');
     }
 
-    // 检查是否为标准积木
     isStandardBlock(opcode) {
       const standardCategories = [
         'motion_', 'looks_', 'sound_', 'event_', 'control_', 
@@ -387,7 +334,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       return standardCategories.some(category => opcode.startsWith(category));
     }
 
-    // 从积木操作码提取扩展ID
     getExtensionIdFromOpcode(opcode) {
       const underscoreIndex = opcode.indexOf('_');
       if (underscoreIndex > 0) {
@@ -396,7 +342,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       return opcode;
     }
 
-    // 从扩展ID获取扩展名称
     getExtensionNameFromId(extensionId) {
       const defaultExtensionNames = {
         'music': 'Music',
@@ -414,15 +359,12 @@ export default async function ({ addon, msg, safeMsg, console }) {
       return defaultExtensionNames[extensionId] || extensionId;
     }
 
-    // 分析扩展
     analyzeExtensions(analysis, projectData) {
       const extensions = projectData.extensions || [];
       const extensionURLs = projectData.extensionURLs || {};
       
-      // 获取所有扩展积木操作码
       const extensionBlocks = this.getExtensionBlocks(projectData);
       
-      // 分析扩展信息
       extensions.forEach(ext => {
         let extensionName = this.getExtensionNameFromId(ext);
         let extensionColor = null;
@@ -438,7 +380,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
         analysis.extensions.push(extensionInfo);
       });
       
-      // 检查画笔扩展使用情况
       const penBlocks = extensionBlocks.filter(block => block.extensionId === 'pen');
       if (penBlocks.length > 0 && !extensions.includes('pen')) {
         const penExtensionInfo = {
@@ -452,7 +393,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       }
     }
 
-    // 获取扩展积木
     getExtensionBlocks(projectData) {
       const extensionBlocks = [];
       const targets = projectData.targets || [];
@@ -473,7 +413,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       return extensionBlocks;
     }
 
-    // 分析精灵和舞台
     analyzeSprites(analysis, projectData) {
       const targets = projectData.targets || [];
       const sprites = targets.filter(t => !t.isStage);
@@ -481,7 +420,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       
       analysis.sprites = sprites.length;
       
-      // 统计造型和声音
       targets.forEach(target => {
         if (target.costumes) {
           analysis.costumeCount += target.costumes.length;
@@ -498,7 +436,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       });
     }
 
-    // 分析有效积木和函数定义
     analyzeEffectiveBlocks(analysis, projectData) {
       const targets = projectData.targets || [];
       
@@ -506,12 +443,10 @@ export default async function ({ addon, msg, safeMsg, console }) {
         const blocks = target.blocks || {};
         Object.values(blocks).forEach(block => {
           if (block.opcode) {
-            // 统计有效积木（非 shadow）
             if (!block.shadow) {
               analysis.effectiveBlocks++;
             }
             
-            // 统计函数定义
             if (block.opcode === 'procedures_definition') {
               analysis.functionDefinitions++;
             }
@@ -520,7 +455,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       });
     }
 
-    // 计算Dr.Scratch评分
     calculateDrScratchScores(projectData) {
       const scores = {
         [msg('abstraction', '抽象和问题分解')]: 0,
@@ -533,27 +467,25 @@ export default async function ({ addon, msg, safeMsg, console }) {
       };
 
       const targets = projectData.targets || [];
-      const blockTypes = new Set(); // 存储所有使用的积木块种类
-      const eventBlockTypes = new Set(); // 存储事件积木块种类
-      const controlBlockTypes = new Set(); // 存储控制积木块种类
-      const operatorBlockTypes = new Set(); // 存储运算积木块种类
-      const dataBlockTypes = new Set(); // 存储数据积木块种类
-      const sensingBlockTypes = new Set(); // 存储侦测积木块种类
-      const motionBlockTypes = new Set(); // 存储运动积木块种类
-      const looksBlockTypes = new Set(); // 存储外观积木块种类
-      const soundBlockTypes = new Set(); // 存储声音积木块种类
-      const procedureBlockTypes = new Set(); // 存储自定义积木块种类
+      const blockTypes = new Set();
+      const eventBlockTypes = new Set();
+      const controlBlockTypes = new Set();
+      const operatorBlockTypes = new Set();
+      const dataBlockTypes = new Set();
+      const sensingBlockTypes = new Set();
+      const motionBlockTypes = new Set();
+      const looksBlockTypes = new Set();
+      const soundBlockTypes = new Set();
+      const procedureBlockTypes = new Set();
       const variableNames = new Set();
       const listNames = new Set();
 
-      // 收集所有积木块种类
       targets.forEach(target => {
         const blocks = target.blocks || {};
         Object.values(blocks).forEach(block => {
           if (block.opcode) {
             blockTypes.add(block.opcode);
             
-            // 分类收集积木块种类
             if (block.opcode.startsWith('event_')) {
               eventBlockTypes.add(block.opcode);
             }
@@ -584,7 +516,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
           }
         });
 
-        // 收集变量和列表名称
         if (target.variables) {
           Object.values(target.variables).forEach(variable => {
             if (Array.isArray(variable) && variable.length > 0) {
@@ -601,26 +532,22 @@ export default async function ({ addon, msg, safeMsg, console }) {
         }
       });
 
-      // 1. 抽象和问题分解 (Abstraction and problem decomposition)
-      // 完全基于积木块种类评分
       const spriteCount = targets.filter(t => !t.isStage).length;
       const hasMultipleSprites = spriteCount > 1;
-      const hasMultipleScripts = eventBlockTypes.size > 1; // 多种事件积木表示多个脚本
+      const hasMultipleScripts = eventBlockTypes.size > 1;
       const hasCustomBlocks = procedureBlockTypes.has('procedures_definition');
       const hasClones = controlBlockTypes.has('control_create_clone_of') || controlBlockTypes.has('control_start_as_clone');
       
       if (hasMultipleSprites && hasMultipleScripts) {
-        scores[msg('abstraction', '抽象和问题分解')] = 1; // Basic
+        scores[msg('abstraction', '抽象和问题分解')] = 1;
       }
       if (hasCustomBlocks) {
-        scores[msg('abstraction', '抽象和问题分解')] = 2; // Developing
+        scores[msg('abstraction', '抽象和问题分解')] = 2;
       }
       if (hasClones) {
-        scores[msg('abstraction', '抽象和问题分解')] = 3; // Proficiency
+        scores[msg('abstraction', '抽象和问题分解')] = 3;
       }
 
-      // 2. 并行性 (Parallelism)
-      // 基于不同的事件积木块种类
       const hasGreenFlag = eventBlockTypes.has('event_whenflagclicked');
       const hasKeyEvents = eventBlockTypes.has('event_whenkeypressed');
       const hasClickEvents = eventBlockTypes.has('event_whenthisspriteclicked');
@@ -630,17 +557,15 @@ export default async function ({ addon, msg, safeMsg, console }) {
       const hasBackdropEvents = eventBlockTypes.has('event_whenbackdropswitchesto');
       
       if (hasGreenFlag && eventBlockTypes.size > 1) {
-        scores[msg('parallelism', '并行性')] = 1; // Basic - 多个绿旗脚本
+        scores[msg('parallelism', '并行性')] = 1;
       }
       if ((hasKeyEvents || hasClickEvents) && (eventBlockTypes.size > 2)) {
-        scores[msg('parallelism', '并行性')] = 2; // Developing - 按键或点击事件
+        scores[msg('parallelism', '并行性')] = 2;
       }
       if (hasMessageEvents || hasCloneEvents || hasSensorEvents || hasBackdropEvents) {
-        scores[msg('parallelism', '并行性')] = 3; // Proficiency - 消息、克隆或传感器事件
+        scores[msg('parallelism', '并行性')] = 3;
       }
 
-      // 3. 逻辑思维 (Logical thinking)
-      // 基于不同的逻辑积木块种类
       const hasIf = controlBlockTypes.has('control_if');
       const hasIfElse = controlBlockTypes.has('control_if_else');
       const hasLogicOps = operatorBlockTypes.has('operator_and') || 
@@ -648,17 +573,15 @@ export default async function ({ addon, msg, safeMsg, console }) {
                          operatorBlockTypes.has('operator_not');
       
       if (hasIf) {
-        scores[msg('logic', '逻辑思维')] = 1; // Basic
+        scores[msg('logic', '逻辑思维')] = 1;
       }
       if (hasIfElse) {
-        scores[msg('logic', '逻辑思维')] = 2; // Developing
+        scores[msg('logic', '逻辑思维')] = 2;
       }
       if (hasLogicOps) {
-        scores[msg('logic', '逻辑思维')] = 3; // Proficiency
+        scores[msg('logic', '逻辑思维')] = 3;
       }
 
-      // 4. 同步 (Synchronization)
-      // 基于不同的同步积木块种类
       const hasWait = controlBlockTypes.has('control_wait');
       const hasBroadcast = eventBlockTypes.has('event_broadcast');
       const hasReceiveMessage = eventBlockTypes.has('event_whenbroadcastreceived');
@@ -670,33 +593,29 @@ export default async function ({ addon, msg, safeMsg, console }) {
       const hasBroadcastAndWait = eventBlockTypes.has('event_broadcastandwait');
       
       if (hasWait) {
-        scores[msg('synchronization', '同步')] = 1; // Basic
+        scores[msg('synchronization', '同步')] = 1;
       }
       if (hasBroadcast || hasReceiveMessage || hasStopAll || hasStopThis || hasStopOther) {
-        scores[msg('synchronization', '同步')] = 2; // Developing
+        scores[msg('synchronization', '同步')] = 2;
       }
       if (hasWaitUntil || hasBackdropChange || hasBroadcastAndWait) {
-        scores[msg('synchronization', '同步')] = 3; // Proficiency
+        scores[msg('synchronization', '同步')] = 3;
       }
 
-      // 5. 流程控制 (Flow control)
-      // 基于不同的流程控制积木块种类
-      const hasSequence = blockTypes.size > 0; // 任何积木块都表示有序列
+      const hasSequence = blockTypes.size > 0;
       const hasRepeat = controlBlockTypes.has('control_repeat') || controlBlockTypes.has('control_forever');
       const hasRepeatUntil = controlBlockTypes.has('control_repeat_until');
       
       if (hasSequence) {
-        scores[msg('flow-control', '流程控制')] = 1; // Basic
+        scores[msg('flow-control', '流程控制')] = 1;
       }
       if (hasRepeat) {
-        scores[msg('flow-control', '流程控制')] = 2; // Developing
+        scores[msg('flow-control', '流程控制')] = 2;
       }
       if (hasRepeatUntil) {
-        scores[msg('flow-control', '流程控制')] = 3; // Proficiency
+        scores[msg('flow-control', '流程控制')] = 3;
       }
 
-      // 6. 用户交互 (User Interactivity)
-      // 基于不同的交互积木块种类
       const hasGreenFlagEvent = eventBlockTypes.has('event_whenflagclicked');
       const hasKeyPressedEvent = eventBlockTypes.has('event_whenkeypressed');
       const hasSpriteClickedEvent = eventBlockTypes.has('event_whenthisspriteclicked');
@@ -711,39 +630,35 @@ export default async function ({ addon, msg, safeMsg, console }) {
                                  soundBlockTypes.has('sound_changevolumeby');
       
       if (hasGreenFlagEvent) {
-        scores[msg('user-interactivity', '用户交互')] = 1; // Basic
+        scores[msg('user-interactivity', '用户交互')] = 1;
       }
       if (hasKeyPressedEvent || hasSpriteClickedEvent || hasAskWait || hasMouseBlocks) {
-        scores[msg('user-interactivity', '用户交互')] = 2; // Developing
+        scores[msg('user-interactivity', '用户交互')] = 2;
       }
       if (hasSensorGreater || hasVideo || hasAudioInteraction) {
-        scores[msg('user-interactivity', '用户交互')] = 3; // Proficiency
+        scores[msg('user-interactivity', '用户交互')] = 3;
       }
 
-      // 7. 数据表示 (Data representation)
-      // 基于不同的数据积木块种类
       const hasSpriteModifiers = motionBlockTypes.size > 0 || looksBlockTypes.size > 0 || soundBlockTypes.size > 0;
       const hasVariableOperations = variableNames.size > 0 && dataBlockTypes.size > 0;
       const hasListOperations = listNames.size > 0 && Array.from(dataBlockTypes).some(type => type.includes('list'));
       
       if (hasSpriteModifiers) {
-        scores[msg('data-representation', '数据表示')] = 1; // Basic
+        scores[msg('data-representation', '数据表示')] = 1;
       }
       if (hasVariableOperations) {
-        scores[msg('data-representation', '数据表示')] = 2; // Developing
+        scores[msg('data-representation', '数据表示')] = 2;
       }
       if (hasListOperations) {
-        scores[msg('data-representation', '数据表示')] = 3; // Proficiency
+        scores[msg('data-representation', '数据表示')] = 3;
       }
 
       return scores;
     }
 
-    // 计算数学逻辑评分
     calculateMathLogicScores(projectData) {
       const targets = projectData.targets || [];
       
-      // 统计各类积木块数量
       let operatorCount = 0;
       let controlCount = 0;
       let dataCount = 0;
@@ -768,15 +683,14 @@ export default async function ({ addon, msg, safeMsg, console }) {
       });
 
       const scores = {
-        [msg('operation-complexity', 'Operation Complexity')]: operatorCount,
-        [msg('logic-depth', 'Logic Depth')]: controlCount,
-        [msg('data-magnitude', 'Data Magnitude')]: dataCount
+        [msg('operation-complexity', '运算复杂度')]: operatorCount,
+        [msg('logic-depth', '逻辑深度')]: controlCount,
+        [msg('data-magnitude', '数据规模')]: dataCount
       };
 
       return scores;
     }
 
-    // 格式化文件大小
     formatFileSize(bytes) {
       if (bytes === 0) return '0 B';
       
@@ -787,11 +701,9 @@ export default async function ({ addon, msg, safeMsg, console }) {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    // 生成分析结果HTML
     generateAnalysisHTML() {
       return `
         <div class="sa-analyze-modal-body">
-          <!-- 项目统计部分 -->
           <div class="sa-analyze-section">
             <h3 class="sa-analyze-section-title">${msg('project-stats', '项目统计')}</h3>
             <div class="sa-analyze-stats-grid" id="saStatsGrid">
@@ -834,7 +746,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
             </div>
           </div>
 
-          <!-- 代码类型分布 -->
           <div class="sa-analyze-section">
             <h3 class="sa-analyze-section-title">${msg('block-distribution', '代码类型分布')}</h3>
             <div class="sa-analyze-chart-container">
@@ -842,7 +753,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
             </div>
           </div>
 
-          <!-- Dr.Scratch评分系统 -->
           <div class="sa-analyze-section">
             <h3 class="sa-analyze-section-title">${msg('dr-scratch-score', 'Dr.Scratch评分系统')}</h3>
             <div class="sa-analyze-row">
@@ -862,7 +772,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
             </div>
           </div>
 
-          <!-- 核心数学能力评估 -->
           <div class="sa-analyze-section">
             <h3 class="sa-analyze-section-title">${msg('math-logic-assessment', '核心数学能力评估')}</h3>
             <div class="sa-analyze-row">
@@ -882,7 +791,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
             </div>
           </div>
 
-          <!-- 使用的扩展 -->
           <div class="sa-analyze-section">
             <h3 class="sa-analyze-section-title">${msg('extensions-used', '使用的扩展')}</h3>
             <div class="sa-analyze-extension-list" id="saExtensionList">
@@ -893,33 +801,25 @@ export default async function ({ addon, msg, safeMsg, console }) {
       `;
     }
 
-    // 更新分析结果
     updateAnalysisResults(analysis) {
-      // 更新统计数据
       this.updateStats(analysis);
       
-      // 更新代码类型分布图
       this.displayCodeTypeChart(analysis);
       
-      // 计算并更新Dr.Scratch评分
       const vm = addon.tab.traps.vm;
       const projectJSON = JSON.parse(vm.toJSON());
       const drScratchScores = this.calculateDrScratchScores(projectJSON);
       this.displayDrScratchScores(drScratchScores);
       
-      // 计算并更新数学逻辑评分
       const mathLogicScores = this.calculateMathLogicScores(projectJSON);
       this.displayMathLogicScores(mathLogicScores);
       
-      // 更新扩展列表
       this.displayExtensions(analysis.extensions);
 
-      // 显示结果，隐藏加载
       document.getElementById('saAnalyzeLoading').style.display = 'none';
       document.getElementById('saAnalyzeResults').style.display = 'block';
     }
 
-    // 更新统计数据
     updateStats(analysis) {
       const statsGrid = document.getElementById('saStatsGrid');
       const totalExtensionBlocks = analysis.extensions.reduce((sum, ext) => sum + ext.blocks.length, 0);
@@ -964,14 +864,12 @@ export default async function ({ addon, msg, safeMsg, console }) {
       `;
     }
 
-    // 显示代码类型分布图
     displayCodeTypeChart(analysis) {
       const canvas = document.getElementById('saCodeTypeChart');
       if (!canvas) return;
       
       const ctx = canvas.getContext('2d');
       
-      // 定义标准类别的固定顺序
       const standardOrder = [
         msg('motion', '运动'),
         msg('looks', '外观'),
@@ -984,7 +882,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
         msg('custom-functions', '自定义函数')
       ];
       
-      // 分离标准和扩展类别
       const standardCategories = {};
       const extensionCategories = {};
       
@@ -996,7 +893,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
         }
       });
       
-      // 按固定顺序排列标准类别
       const orderedStandard = {};
       standardOrder.forEach(category => {
         if (standardCategories[category]) {
@@ -1004,18 +900,15 @@ export default async function ({ addon, msg, safeMsg, console }) {
         }
       });
       
-      // 按字母顺序排序扩展类别
       const sortedExtensions = {};
       Object.keys(extensionCategories).sort().forEach(category => {
         sortedExtensions[category] = extensionCategories[category];
       });
       
-      // 合并排序后的数据
       const sortedCodeTypes = { ...orderedStandard, ...sortedExtensions };
       const sortedLabels = Object.keys(sortedCodeTypes);
       const sortedData = Object.values(sortedCodeTypes);
       
-      // 定义每个类别的颜色
       const categoryColors = {
         [msg('motion', '运动')]: '#4C97FF',
         [msg('looks', '外观')]: '#9966FF',
@@ -1028,7 +921,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
         [msg('custom-functions', '自定义函数')]: '#FF6680'
       };
       
-      // 为扩展生成默认颜色
       const extensionColors = [
         '#3498DB', '#E74C3C', '#F39C12', '#27AE60', '#16A085', 
         '#2ECC71', '#E67E22', '#95A5A6', '#34495E', '#7F8C8D', 
@@ -1036,28 +928,23 @@ export default async function ({ addon, msg, safeMsg, console }) {
         '#C0392B', '#BDC3C7', '#7F8C8D', '#95A5A6'
       ];
       
-      // 为每个标签分配对应颜色
       const assignedColors = sortedLabels.map((label, index) => {
         if (categoryColors[label]) {
           return categoryColors[label];
         } else {
-          // 检查是否是具有自定义颜色的扩展
           const extension = analysis.extensions.find(ext => ext.name === label);
           if (extension && extension.color) {
             return extension.color;
           }
-          // 使用预定义的扩展颜色
           return extensionColors[index % extensionColors.length];
         }
       });
       
-      // 销毁现有图表
       if (this.chartInstance) {
         this.chartInstance.destroy();
         this.chartInstance = null;
       }
       
-      // 创建新图表
       this.chartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -1097,7 +984,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       });
     }
 
-    // 显示Dr.Scratch评分
     displayDrScratchScores(scores) {
       const canvas = document.getElementById('saDrScratchChart');
       if (!canvas) return;
@@ -1108,10 +994,8 @@ export default async function ({ addon, msg, safeMsg, console }) {
       const data = Object.values(scores);
       const totalScore = data.reduce((sum, val) => sum + val, 0);
       
-      // 更新总分
       document.getElementById('saDrScratchTotalScore').textContent = totalScore;
       
-      // 计算等级
       let level = msg('beginner', '初学者');
       if (totalScore >= 18) {
         level = msg('expert', '专家级');
@@ -1124,7 +1008,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       }
       document.getElementById('saDrScratchScoreLevel').textContent = `${msg('evaluation-level', '评估等级')}：${level}`;
       
-      // 更新评分详情
       const detailsHTML = labels.map(label => `
         <div class="sa-analyze-score-item">
           <div class="sa-analyze-score-label">${label}</div>
@@ -1139,13 +1022,11 @@ export default async function ({ addon, msg, safeMsg, console }) {
       const summaryHTML = detailsContainer.querySelector('.sa-analyze-score-summary').outerHTML;
       detailsContainer.innerHTML = summaryHTML + detailsHTML;
       
-      // 销毁现有图表
       if (this.drScratchChartInstance) {
         this.drScratchChartInstance.destroy();
         this.drScratchChartInstance = null;
       }
       
-      // 创建雷达图
       this.drScratchChartInstance = new Chart(ctx, {
         type: 'radar',
         data: {
@@ -1183,7 +1064,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       });
     }
 
-    // 显示数学逻辑评分
     displayMathLogicScores(scores) {
       const canvas = document.getElementById('saMathLogicChart');
       if (!canvas) return;
@@ -1194,10 +1074,8 @@ export default async function ({ addon, msg, safeMsg, console }) {
       const data = Object.values(scores);
       const totalScore = data.reduce((sum, val) => sum + val, 0);
       
-      // 更新总分
       document.getElementById('saMathTotalScore').textContent = totalScore;
       
-      // 计算等级
       let level = msg('beginner', '初级');
       if (totalScore >= 20) {
         level = msg('advanced', '高级');
@@ -1208,7 +1086,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       }
       document.getElementById('saMathScoreLevel').textContent = `${msg('evaluation-level', '评估等级')}：${level}`;
       
-      // 更新评分详情
       const detailsHTML = labels.map(label => `
         <div class="sa-analyze-score-item">
           <div class="sa-analyze-score-label">${label}</div>
@@ -1220,17 +1097,14 @@ export default async function ({ addon, msg, safeMsg, console }) {
       const summaryHTML = detailsContainer.querySelector('.sa-analyze-score-summary').outerHTML;
       detailsContainer.innerHTML = summaryHTML + detailsHTML;
       
-      // 销毁现有图表
       if (this.mathLogicChartInstance) {
         this.mathLogicChartInstance.destroy();
         this.mathLogicChartInstance = null;
       }
       
-      // 数据标准化
       const maxValue = Math.max(...data, 1);
       const normalizedData = data.map(value => value / maxValue);
       
-      // 创建雷达图
       this.mathLogicChartInstance = new Chart(ctx, {
         type: 'radar',
         data: {
@@ -1277,7 +1151,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       });
     }
 
-    // 显示扩展列表
     displayExtensions(extensions) {
       const extensionList = document.getElementById('saExtensionList');
       
@@ -1303,7 +1176,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
       extensionList.innerHTML = html;
     }
 
-    // 初始化插件
     async init() {
       console.log('Simple Project Analyzer: Initializing plugin...');
       await this.createAnalyzeButton();
@@ -1311,16 +1183,12 @@ export default async function ({ addon, msg, safeMsg, console }) {
     }
   }
 
-  // 创建并初始化分析器
   const analyzer = new SimpleProjectAnalyzer();
 
-  // 直接初始化插件，不等待元素加载
   console.log('Simple Project Analyzer: Initializing plugin directly...');
   analyzer.init();
 
-  // 每隔一段时间检查按钮是否存在，如果不存在则重新创建
   setInterval(() => {
-    // 检查按钮是否已存在且在DOM中
     if (analyzer.analyzeButton && document.contains(analyzer.analyzeButton)) {
       return;
     }
@@ -1328,7 +1196,6 @@ export default async function ({ addon, msg, safeMsg, console }) {
     analyzer.createAnalyzeButton();
   }, 5000);
 
-  // 添加错误处理，确保插件即使在初始化失败时也不会影响其他功能
   window.addEventListener('error', (e) => {
     if (e.message.includes('simple-project-analyzer') || e.message.includes('sa-analyze-button')) {
       console.error('Simple Project Analyzer error:', e);

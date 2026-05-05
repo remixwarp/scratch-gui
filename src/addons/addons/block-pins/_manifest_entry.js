@@ -1,0 +1,45 @@
+const manifest = {
+  "editorOnly": true,
+  "name": "Block Pinning",
+  "description": "Pin your favourite Blocks to the top of the Toolbox.",
+  "credits": [
+    {
+      "name": "SharkPool",
+      "link": "https://github.com/SharkPool-SP/"
+    }
+  ],
+  "info": [
+    {
+      "type": "notice",
+      "text": "Warning: Expect pinned Blocks with Checkboxes to behave weirdly when checked.",
+      "id": "checkbox-notice"
+    }
+  ],
+  "settings": [
+    {
+      "dynamic": false,
+      "name": "Automatically load Extensions from pinned Blocks",
+      "id": "autoLoadExts",
+      "type": "boolean",
+      "default": true
+    }
+  ],
+  "userscripts": [
+    { "url": "userscript.js" }
+  ],
+  "tags": [
+    "editor",
+    "new",
+    "astraeditor"
+  ],
+  "enabledByDefault": false,
+  "l10n": {
+    "defaultLocale": "en",
+    "locales": ["en", "zh-cn"]
+  },
+  "permissions": [
+    "vm",
+    "tab"
+  ]
+};
+export default manifest;

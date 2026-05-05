@@ -484,5 +484,13 @@
   "tw-straighten-comments/@description": "强制积木注释始终通过一条水平直线连接到其源积木，而不是以倾斜角度连接。",
   "tw-straighten-comments/@name": "保持积木注释连接为直线",
   "sprite-folders/@name": "角色文件列表视图",
-  "sprite-folders/@description": "将角色列表转换为 VSCode 风格的文件浏览器，支持文件夹（使用 // 文件夹命名方式）。"
+  "sprite-folders/@description": "将角色列表转换为 VSCode 风格的文件浏览器，支持文件夹（使用 // 文件夹命名方式）。",
+  "todo-list/@name": "待办列表",
+  "todo-list/@description": "在编辑器中添加待办列表功能，帮助你管理项目任务和进度。",
+  "block-pins/@name": "积木置顶",
+  "block-pins/@description": "将常用积木固定到工具箱顶部，方便快速访问。",
+  "tw-comment-markdown-editor/@name": "注释 Markdown 编辑器",
+  "tw-comment-markdown-editor/@description": "为注释框添加 Markdown 编辑和预览功能，支持标题、粗体、代码等语法，使用 Ctrl+M 快速切换编辑和预览模式。",
+  "bookmark/@name": "书签",
+  "bookmark/@description": "为项目添加书签，快速导航到代码的不同部分，保存工作区位置以便稍后返回。"
 }

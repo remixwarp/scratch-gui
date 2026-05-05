@@ -99,7 +99,11 @@ import _Terminal from "../addons/Terminal/_manifest_entry.js";
 import _astras_copilot from "../addons/astras-copilot/_manifest_entry.js";
 import _my_blocks_plus from "../addons/my-blocks-plus/_manifest_entry.js";
 import _hide_menubar from "../addons/hide-menubar/_manifest_entry.js";
+import _batch_color_replace from "../addons/batch-color-replace/_manifest_entry.js";
 import _simple_project_analyzer from "../addons/simple-project-analyzer/_manifest_entry.js";
+import _todo_list from "../addons/todo-list/_manifest_entry.js";
+import _block_pins from "../addons/block-pins/_manifest_entry.js";
+import _tw_comment_markdown_editor from "../addons/tw-comment-markdown-editor/_manifest_entry.js";
 export default {
   "calculator": _calculator,
   "cat-blocks": _cat_blocks,
@@ -188,18 +192,22 @@ export default {
   "autosave": _autosave,
   "no-category-text": _no_category_text,
   "green-flag-order": _green_flag_order,
-  "remove-extension-button": _remove_extension_button
-  ,"daily-quote": _daily_quote
-  ,"stage-camera": _stage_camera
-  ,"sprite-folders": _sprite_folders
-  ,"tab-styles": _tab_styles
-  ,"window-theme": _window_theme
-  ,"workspace-tabs": _workspace_tabs
-  ,"coder-style": _coder_style
-  ,"comment-vscode-sync": _comment_vscode_sync
-  ,"Terminal": _Terminal
-  ,"astras-copilot": _astras_copilot
-  ,"my-blocks-plus": _my_blocks_plus
-  ,"hide-menubar": _hide_menubar
-  ,"simple-project-analyzer": _simple_project_analyzer
+  "remove-extension-button": _remove_extension_button,
+  "daily-quote": _daily_quote,
+  "stage-camera": _stage_camera,
+  "sprite-folders": _sprite_folders,
+  "tab-styles": _tab_styles,
+  "window-theme": _window_theme,
+  "workspace-tabs": _workspace_tabs,
+  "coder-style": _coder_style,
+  "comment-vscode-sync": _comment_vscode_sync,
+  "Terminal": _Terminal,
+  "astras-copilot": _astras_copilot,
+  "my-blocks-plus": _my_blocks_plus,
+  "hide-menubar": _hide_menubar,
+  "batch-color-replace": _batch_color_replace,
+  "simple-project-analyzer": _simple_project_analyzer,
+  "todo-list": _todo_list,
+  "block-pins": _block_pins,
+  "tw-comment-markdown-editor": _tw_comment_markdown_editor
 };

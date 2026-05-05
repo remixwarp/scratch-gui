@@ -102,4 +102,7 @@ export default {
   "hide-menubar": () => import(/* webpackChunkName: "addon-entry-hide-menubar" */ "../addons/hide-menubar/_runtime_entry.js"),
   "batch-color-replace": () => import(/* webpackChunkName: "addon-entry-batch-color-replace" */ "../addons/batch-color-replace/_runtime_entry.js"),
   "simple-project-analyzer": () => import(/* webpackChunkName: "addon-entry-simple-project-analyzer" */ "../addons/simple-project-analyzer/_runtime_entry.js"),
+  "todo-list": () => import(/* webpackChunkName: "addon-entry-todo-list" */ "../addons/todo-list/_runtime_entry.js"),
+  "block-pins": () => import(/* webpackChunkName: "addon-entry-block-pins" */ "../addons/block-pins/_runtime_entry.js"),
+  "tw-comment-markdown-editor": () => import(/* webpackChunkName: "addon-entry-tw-comment-markdown-editor" */ "../addons/tw-comment-markdown-editor/_runtime_entry.js"),
 };

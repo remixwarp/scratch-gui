@@ -99,7 +99,11 @@ const addons = [
     'hide-menubar',
     'bookmark',
     'show-fps',
-    'batch-color-replace'
+    'batch-color-replace',
+    'simple-project-analyzer',
+    'todo-list',
+    'block-pins',
+    'tw-comment-markdown-editor'
 ];
 
 const newAddons = [

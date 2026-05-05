@@ -98,9 +98,11 @@ const CustomModalComponent = (props) => {
                             ))}
                         </div>
                     }
-                    <ReactMarkdown className={styles.body} escapeHtml={settings.get('enableHTMLSupportInREADME') ? false : true}>
-                        {readMe[nowTab].text.replaceAll('\n', '\n\n')}
-                    </ReactMarkdown>
+                    <div className={styles.body}>
+                        {readMe[nowTab].text.split('\n').map((line, i) => (
+                            <p key={i}>{line}</p>
+                        ))}
+                    </div>
                 </Box>
 
             </Modal >
