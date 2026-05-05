@@ -1180,7 +1180,7 @@ const GUIComponent = props => {
                                         <button
                                             className={styles.readmeButton}
                                             style={!vscodeLayout ? {
-                                                marginLeft: "92px",
+                                                marginLeft: "130px",
                                                 flexShrink: 0,
                                                 whiteSpace: 'nowrap'
                                             } : {}}

@@ -7,44 +7,115 @@ export default async function ({ addon, console }) {
     if (addon.self.disabled) return;
 
     const commentElements = document.querySelectorAll('.blocklyBubbleCanvas > g');
+    console.log('Markdown Editor: Found', commentElements.length, 'comment elements');
 
-    commentElements.forEach(commentEl => {
-      if (commentEl.dataset.markdownProcessed) return;
+    commentElements.forEach((commentEl, index) => {
+      console.log('Markdown Editor: Processing comment element', index, commentEl);
+      
+      if (commentEl.dataset.markdownProcessed) {
+        console.log('Markdown Editor: Already processed, skipping');
+        return;
+      }
 
       const textarea = commentEl.querySelector('textarea');
-      if (!textarea) return;
+      console.log('Markdown Editor: Found textarea:', !!textarea);
+      if (!textarea) {
+        console.log('Markdown Editor: No textarea found, skipping');
+        return;
+      }
 
-      const topBar = commentEl.querySelector('.scratchCommentBody') || commentEl.querySelector('[class*="TopBar"]') || commentEl.firstElementChild;
-      if (!topBar) return;
+      const scratchCommentBody = commentEl.querySelector('.scratchCommentBody');
+      const topBarClass = commentEl.querySelector('[class*="TopBar"]');
+      const firstChild = commentEl.firstElementChild;
+      console.log('Markdown Editor: scratchCommentBody:', !!scratchCommentBody, 'topBarClass:', !!topBarClass, 'firstChild:', !!firstChild);
+      
+      const topBar = scratchCommentBody || topBarClass || firstChild;
+      if (!topBar) {
+        console.log('Markdown Editor: No topBar found, skipping');
+        return;
+      }
 
       commentEl.dataset.markdownProcessed = 'true';
 
       const toggleContainer = document.createElement('div');
       toggleContainer.className = 'tw-md-toggle-container';
+      toggleContainer.style.cssText = `
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 2px 6px;
+        background: transparent;
+        gap: 6px;
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        z-index: 100;
+      `;
 
       const modeIndicator = document.createElement('span');
       modeIndicator.className = 'tw-md-mode-indicator';
       modeIndicator.textContent = '编辑模式';
+      modeIndicator.style.cssText = `
+        font-size: 14px;
+        color: #888;
+        margin-right: 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        opacity: 0.8;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+      `;
 
       const toggleButton = document.createElement('button');
       toggleButton.className = 'tw-md-toggle-button';
       toggleButton.innerHTML = '编辑';
       toggleButton.dataset.mode = 'edit';
       toggleButton.title = '切换到预览模式 (Ctrl+M)';
+      toggleButton.style.cssText = `
+        background: rgba(200, 200, 200, 0.5);
+        color: #555;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        opacity: 0.9;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      `;
 
       toggleContainer.appendChild(modeIndicator);
       toggleContainer.appendChild(toggleButton);
 
       const previewContainer = document.createElement('div');
       previewContainer.className = 'tw-md-preview-container';
-      previewContainer.style.display = 'none';
+      previewContainer.style.cssText = `
+        display: none;
+        width: 100%;
+        height: 100%;
+        padding: 12px;
+        background: transparent;
+        color: #333;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 16px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        max-height: 100%;
+      `;
 
-      toggleContainer.appendChild(toggleButton);
       topBar.appendChild(toggleContainer);
+      console.log('Markdown Editor: Added toggle container to topBar');
 
       const contentArea = commentEl.querySelector('.scratchCommentTextarea')?.parentElement || textarea.parentElement;
       if (contentArea) {
         contentArea.appendChild(previewContainer);
+        console.log('Markdown Editor: Added preview container to contentArea');
       }
 
       toggleButton.addEventListener('click', (e) => {
@@ -76,8 +147,32 @@ export default async function ({ addon, console }) {
           toggleButton.dataset.mode = 'preview';
           toggleButton.innerHTML = '预览';
           toggleButton.title = '切换到编辑模式 (Ctrl+M)';
+          toggleButton.style.cssText = `
+            background: rgba(76, 175, 80, 0.4);
+            color: #2E7D32;
+            border: 1px solid rgba(76, 175, 80, 0.4);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0.9;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          `;
           modeIndicator.textContent = '预览模式';
-          modeIndicator.classList.add('preview-mode');
+          modeIndicator.style.cssText = `
+            font-size: 14px;
+            color: #4CAF50;
+            margin-right: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            opacity: 1;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+          `;
           textarea.style.display = 'none';
           previewContainer.style.display = 'block';
 
@@ -86,8 +181,32 @@ export default async function ({ addon, console }) {
           toggleButton.dataset.mode = 'edit';
           toggleButton.innerHTML = '编辑';
           toggleButton.title = '切换到预览模式 (Ctrl+M)';
+          toggleButton.style.cssText = `
+            background: rgba(200, 200, 200, 0.5);
+            color: #555;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0.9;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          `;
           modeIndicator.textContent = '编辑模式';
-          modeIndicator.classList.remove('preview-mode');
+          modeIndicator.style.cssText = `
+            font-size: 14px;
+            color: #888;
+            margin-right: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            opacity: 0.8;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+          `;
           textarea.style.display = 'block';
           previewContainer.style.display = 'none';
 
@@ -100,6 +219,8 @@ export default async function ({ addon, console }) {
           renderMarkdown(textarea.value, previewContainer);
         }
       });
+
+      console.log('Processed comment element:', commentEl);
     });
   };
 
@@ -169,9 +290,14 @@ export default async function ({ addon, console }) {
         textarea.style.display = 'block';
       }
     });
+
+    console.log('Markdown comment editor addon disabled');
   });
 
   addon.self.addEventListener('enabled', () => {
     setTimeout(processCommentElements, 500);
+    console.log('Markdown comment editor addon enabled');
   });
+
+  console.log('Markdown comment editor addon loaded');
 }
