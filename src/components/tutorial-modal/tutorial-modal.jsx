@@ -1,14 +1,19 @@
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { defineMessages, injectIntl, intlShape } from 'react-intl';
 import { connect } from 'react-redux';
 import { openVideoModal } from '../../reducers/modals.js';
+import { Upload, Video, Globe, User, ArrowLeft, Trash2 } from 'lucide-react';
+import favoriteInactiveIcon from '../library-item/favorite-inactive.svg';
+import favoriteActiveIcon from '../library-item/favorite-active.svg';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 
 import styles from './tutorial-modal.css';
+
+const STORAGE_KEY = 'remixwarp_personal_tutorials';
 
 const messages = defineMessages({
     title: {
@@ -41,6 +46,7 @@ const messages = defineMessages({
 const getCategoryInfo = (categoryId) => {
     const categories = {
         1: { id: 1, key: 'all', defaultMessage: '所有' },
+        8: { id: 8, key: 'local', defaultMessage: '本地视频' },
         2: { id: 2, key: 'basics', defaultMessage: '基础知识' },
         3: { id: 3, key: 'advanced', defaultMessage: '进阶算法' },
         4: { id: 4, key: 'tips', defaultMessage: '小技巧' },
@@ -53,15 +59,6 @@ const getCategoryInfo = (categoryId) => {
 
 const tutorialData = [
 
-    {
-        id: 'BV1bEYRzvEHd',
-        bvid: 'BV1bEYRzvEHd',
-        category: 3,
-        bt: '用Turbowarp制作天气软件！完全开源！',
-        jj: '蓝奏云：https://www.lanzoum.com/ixRmt343b6sb。“开源，是世界上最伟大的精神”',
-        fm: require('./images/BV1bEYRzvEHd.jpg'),
-        url: 'https://rw-vep.pages.dev/BV1bEYRzvEHd.sb3'
-    },
     {
         id: 'BV1bQtQzmEDz',
         bvid: 'BV1bQtQzmEDz',
@@ -437,32 +434,302 @@ const tutorialData = [
 const TutorialModal = props => {
     const [selectedCategory, setSelectedCategory] = useState(1);
     const [showAddTutorialModal, setShowAddTutorialModal] = useState(false);
+    const [addMode, setAddMode] = useState(null);
+    const [bvInput, setBvInput] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [feedbackMessage, setFeedbackMessage] = useState('');
+    const [personalTutorials, setPersonalTutorials] = useState([]);
+    const [expandedDescriptions, setExpandedDescriptions] = useState({});
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterType, setFilterType] = useState('all'); // all, personal, public
+    const [editingTutorial, setEditingTutorial] = useState(null);
+    const [favorites, setFavorites] = useState([]);
+
+    useEffect(() => {
+        const savedFavorites = localStorage.getItem('remixwarp_favorites');
+        if (savedFavorites) {
+            try {
+                setFavorites(JSON.parse(savedFavorites));
+            } catch (e) {
+                setFavorites([]);
+            }
+        }
+    }, []);
+
+    const toggleFavorite = (tutorialId) => {
+        const updated = favorites.includes(tutorialId) 
+            ? favorites.filter(id => id !== tutorialId)
+            : [...favorites, tutorialId];
+        setFavorites(updated);
+        localStorage.setItem('remixwarp_favorites', JSON.stringify(updated));
+    };
+
+    useEffect(() => {
+        const savedTutorials = localStorage.getItem(STORAGE_KEY);
+        if (savedTutorials) {
+            try {
+                const parsed = JSON.parse(savedTutorials);
+                const tutorialsWithFiles = parsed.map(t => {
+                    if (t.filePath && !t.localFile) {
+                        const file = new File([], t.fileName || '本地文件', { type: t.fileType || 'application/octet-stream' });
+                        return { ...t, localFile: file, fm: t.thumbnail || t.fm };
+                    }
+                    return t;
+                });
+                setPersonalTutorials(tutorialsWithFiles);
+            } catch (e) {
+                console.error('加载本地教程失败:', e);
+                setPersonalTutorials([]);
+            }
+        }
+    }, []);
+
+    const saveTutorialsToStorage = (tutorials) => {
+        const toSave = tutorials.map(t => ({
+            id: t.id,
+            bvid: t.bvid,
+            category: t.category,
+            bt: t.bt,
+            jj: t.jj,
+            fm: t.fm,
+            url: t.url,
+            isPersonal: t.isPersonal,
+            filePath: t.filePath || null,
+            fileName: t.fileName || null,
+            fileType: t.fileType || null,
+            thumbnail: t.fm || t.thumbnail
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    };
 
     const filteredTutorials = tutorialData.filter(tutorial => 
         selectedCategory === 1 || tutorial.category === selectedCategory
     );
 
+    // 合并所有教程（公共+个人）
+    const allTutorials = [...tutorialData, ...personalTutorials];
+
+    let displayTutorials = [];
+    if (selectedCategory === 1) {
+        displayTutorials = allTutorials;
+    } else if (selectedCategory === 8) {
+        displayTutorials = personalTutorials;
+    } else if (selectedCategory === 9) {
+        displayTutorials = allTutorials.filter(t => favorites.includes(t.id));
+    } else {
+        displayTutorials = filteredTutorials;
+    }
+    
+    const searchFilteredTutorials = displayTutorials.filter(tutorial => {
+        const matchesSearch = searchQuery.trim() === '' || 
+            tutorial.bt?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            tutorial.jj?.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        return matchesSearch;
+    });
+
     const handleTutorialClick = (tutorial) => {
-        const tutorialDetails = {
-            bvid: tutorial.bvid,
-            title: tutorial.bt || '视频教程',
-            description: tutorial.jj || '点击播放视频教程',
-            thumbnail: tutorial.fm || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5MaW5rIFN0cmF0Y2g8L3RleHQ+PC9zdmc+',
-            videoUrl: `https://www.bilibili.com/video/${tutorial.bvid}`,
-            author: 'RemixWarp',
-            views: 0,
-            duration: 0,
-            url: tutorial.url
-        };
-        props.openVideoModal({ ...tutorial, ...tutorialDetails });
+        if (!tutorial.bvid && tutorial.localFile) {
+            const videoUrl = URL.createObjectURL(tutorial.localFile);
+            const tutorialDetails = {
+                bvid: null,
+                title: tutorial.bt || '本地教程',
+                description: tutorial.jj || '本地教程文件',
+                thumbnail: tutorial.fm,
+                videoUrl: videoUrl,
+                author: '本地',
+                views: 0,
+                duration: 0,
+                url: null,
+                isLocal: true,
+                localFile: tutorial.localFile
+            };
+            props.openVideoModal({ ...tutorial, ...tutorialDetails });
+        } else {
+            const tutorialDetails = {
+                bvid: tutorial.bvid,
+                title: tutorial.bt || '视频教程',
+                description: tutorial.jj || '点击播放视频教程',
+                thumbnail: tutorial.fm || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5MaW5rIFN0cmF0Y2g8L3RleHQ+PC9zdmc+',
+                videoUrl: `https://www.bilibili.com/video/${tutorial.bvid}`,
+                author: 'RemixWarp',
+                views: 0,
+                duration: 0,
+                url: tutorial.url
+            };
+            props.openVideoModal({ ...tutorial, ...tutorialDetails });
+        }
     };
 
     const handleAddTutorialClick = () => {
         setShowAddTutorialModal(true);
+        setAddMode(null);
+        setFeedbackMessage('');
     };
 
     const handleCloseAddTutorialModal = () => {
         setShowAddTutorialModal(false);
+        setAddMode(null);
+        setBvInput('');
+        setLoading(false);
+        setUploadProgress(0);
+        setFeedbackMessage('');
+    };
+
+    const handleSelectAddMode = (mode) => {
+        setAddMode(mode);
+        setFeedbackMessage('');
+    };
+
+    const handleBackToModeSelect = () => {
+        setAddMode(null);
+        setBvInput('');
+        setFeedbackMessage('');
+    };
+
+    const validateBVId = (bv) => {
+        const bvRegex = /^BV[0-9A-Za-z]{10,12}$/;
+        return bvRegex.test(bv);
+    };
+
+    const handleAddBVVideo = async () => {
+        if (!bvInput.trim()) {
+            setFeedbackMessage({ type: 'error', text: '请输入B站BV号' });
+            return;
+        }
+
+        const bvid = bvInput.trim();
+        if (!validateBVId(bvid)) {
+            setFeedbackMessage({ type: 'error', text: '请输入有效的B站BV号' });
+            return;
+        }
+
+        setLoading(true);
+        setFeedbackMessage('');
+
+        try {
+            const videoUrl = `https://www.bilibili.com/video/${bvid}`;
+            
+            const newTutorial = {
+                id: bvid,
+                bvid: bvid,
+                category: 8,
+                bt: `B站视频 - ${bvid}`,
+                jj: '点击播放视频',
+                fm: `https://player.bilibili.com/player.html?isOutside=true&bvid=${bvid}&p=1`,
+                url: videoUrl,
+                isPersonal: true
+            };
+            
+            setPersonalTutorials(prev => {
+                const updated = [...prev, newTutorial];
+                saveTutorialsToStorage(updated);
+                return updated;
+            });
+            setFeedbackMessage({ type: 'success', text: '教程添加成功！' });
+            setBvInput('');
+            setSelectedCategory(8);
+            
+            setTimeout(() => {
+                handleCloseAddTutorialModal();
+            }, 1000);
+        } catch (error) {
+            console.error('添加教程失败:', error);
+            setFeedbackMessage({ type: 'error', text: `添加失败: ${error.message}` });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        setLoading(true);
+        setUploadProgress(0);
+        setFeedbackMessage('');
+
+        const reader = new FileReader();
+        
+        const progressInterval = setInterval(() => {
+            setUploadProgress(prev => {
+                if (prev >= 90) return 90;
+                return prev + Math.random() * 15;
+            });
+        }, 200);
+
+        reader.onload = (e) => {
+            clearInterval(progressInterval);
+            setUploadProgress(100);
+
+            const newTutorial = {
+                id: `local_${Date.now()}`,
+                bvid: null,
+                category: 8,
+                bt: file.name.replace(/\.[^/.]+$/, ''),
+                jj: '本地教程文件',
+                fm: e.target.result,
+                isPersonal: true,
+                localFile: file,
+                filePath: null,
+                fileName: file.name,
+                fileType: file.type
+            };
+
+            setPersonalTutorials(prev => {
+                const updated = [...prev, newTutorial];
+                saveTutorialsToStorage(updated);
+                return updated;
+            });
+            setFeedbackMessage({ type: 'success', text: '本地教程添加成功！' });
+            setSelectedCategory(8);
+            event.target.value = '';
+
+            setTimeout(() => {
+                handleCloseAddTutorialModal();
+            }, 1500);
+
+            setLoading(false);
+        };
+
+        reader.onerror = () => {
+            clearInterval(progressInterval);
+            setFeedbackMessage({ type: 'error', text: '文件读取失败' });
+            setLoading(false);
+        };
+
+        reader.readAsDataURL(file);
+    };
+
+    const handleDeleteTutorial = (e, tutorialId) => {
+        e.stopPropagation();
+        setPersonalTutorials(prev => {
+            const updated = prev.filter(t => t.id !== tutorialId);
+            saveTutorialsToStorage(updated);
+            return updated;
+        });
+    };
+
+    const toggleDescription = (tutorialId) => {
+        setExpandedDescriptions(prev => ({
+            ...prev,
+            [tutorialId]: !prev[tutorialId]
+        }));
+    };
+
+    const saveTutorialEdit = () => {
+        if (!editingTutorial) return;
+        
+        setPersonalTutorials(prev => {
+            const updated = prev.map(t => 
+                t.id === editingTutorial.id ? editingTutorial : t
+            );
+            saveTutorialsToStorage(updated);
+            return updated;
+        });
+        
+        setEditingTutorial(null);
     };
 
     return (
@@ -473,12 +740,35 @@ const TutorialModal = props => {
             id="tutorialModal"
         >
             <Box className={styles.body}>
-                <h2 className={styles.title}>
-                    {props.intl.formatMessage(messages.title)}
-                </h2>
+                <div className={styles.headerRow}>
+                    <h2 className={styles.title}>
+                        {props.intl.formatMessage(messages.title)}
+                    </h2>
+                    <div className={styles.searchFilterBar}>
+                        <input
+                            type="text"
+                            className={styles.searchInput}
+                            placeholder="搜索教程..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
                 
                 <div className={styles.categoryTabs}>
-                    {[1, 2, 3, 4, 5, 6, 7].map(categoryId => {
+                    <Button
+                        className={`${styles.categoryTab} ${selectedCategory === 1 ? styles.active : ''}`}
+                        onClick={() => setSelectedCategory(1)}
+                    >
+                        全部
+                    </Button>
+                    <Button
+                        className={`${styles.categoryTab} ${selectedCategory === 9 ? styles.active : ''}`}
+                        onClick={() => setSelectedCategory(9)}
+                    >
+                        收藏
+                    </Button>
+                    {[8, 2, 3, 4, 5, 6, 7].map(categoryId => {
                         const categoryInfo = getCategoryInfo(categoryId);
                         return (
                             <Button
@@ -493,11 +783,11 @@ const TutorialModal = props => {
                 </div>
 
                 <div className={styles.tutorialGrid}>
-                    {filteredTutorials.map(tutorial => {
+                    {searchFilteredTutorials.map(tutorial => {
                         return (
                             <div 
                                 key={tutorial.id} 
-                                className={styles.tutorialCard}
+                                className={`${styles.tutorialCard} ${tutorial.isPersonal ? styles.personalCard : ''}`}
                                 onClick={() => handleTutorialClick(tutorial)}
                             >
                                 <div className={styles.tutorialThumbnail}>
@@ -506,6 +796,39 @@ const TutorialModal = props => {
                                         alt={tutorial.bt || `教程 ${tutorial.id}`}
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                     />
+                                    {tutorial.isPersonal && (
+                                        <>
+                                            <div className={styles.personalBadge}>个人</div>
+                                            <button 
+                                                className={styles.editButton}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEditingTutorial({...tutorial});
+                                                }}
+                                            >
+                                                ✏️
+                                            </button>
+                                            <button 
+                                                className={styles.deleteButton}
+                                                onClick={(e) => handleDeleteTutorial(e, tutorial.id)}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </>
+                                    )}
+                                    <button 
+                                        className={`${styles.favoriteButton} ${favorites.includes(tutorial.id) ? styles.favorited : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleFavorite(tutorial.id);
+                                        }}
+                                    >
+                                        <img 
+                                            src={favorites.includes(tutorial.id) ? favoriteActiveIcon : favoriteInactiveIcon}
+                                            className={styles.favoriteIcon}
+                                            alt="收藏"
+                                        />
+                                    </button>
                                     <div className={styles.playButton}>
                                         <span className={styles.playIcon}>▶</span>
                                     </div>
@@ -514,9 +837,22 @@ const TutorialModal = props => {
                                     <h3 className={styles.tutorialTitle}>
                                         {tutorial.bt || `教程 ${tutorial.id.replace('tutorial', '')}`}
                                     </h3>
-                                    <p className={styles.tutorialDescription}>
-                                        {tutorial.jj || `BV号: ${tutorial.bvid}`}
-                                    </p>
+                                    <div className={styles.descriptionContainer}>
+                                        <p className={`${styles.tutorialDescription} ${expandedDescriptions[tutorial.id] ? styles.expanded : ''}`}>
+                                            {tutorial.jj || (tutorial.bvid ? `BV号: ${tutorial.bvid}` : '本地文件')}
+                                        </p>
+                                        {tutorial.jj && tutorial.jj.length > 30 && (
+                                            <button 
+                                                className={`${styles.expandButton} ${expandedDescriptions[tutorial.id] ? styles.expanded : ''}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleDescription(tutorial.id);
+                                                }}
+                                            >
+                                                ▼
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -531,24 +867,173 @@ const TutorialModal = props => {
                 {showAddTutorialModal && (
                     <div className={styles.modalOverlay} onClick={handleCloseAddTutorialModal}>
                         <div className={styles.addTutorialModal} onClick={(e) => e.stopPropagation()}>
+                            {!addMode ? (
+                                <>
+                                    <div className={styles.modalHeader}>
+                                        <h3>添加教程</h3>
+                                        <button className={styles.closeIconButton} onClick={handleCloseAddTutorialModal}>
+                                            ×
+                                        </button>
+                                    </div>
+                                    <div className={styles.modeSelection}>
+                                        <div 
+                                            className={styles.modeCard}
+                                            onClick={() => handleSelectAddMode('personal')}
+                                        >
+                                            <div className={styles.modeIconWrapper}>
+                                                <User className={styles.modeIcon} size={32} />
+                                            </div>
+                                            <h4>添加个人教程</h4>
+                                            <p>上传本地文件或输入B站BV号，仅您个人可见</p>
+                                        </div>
+                                        <div 
+                                            className={styles.modeCard}
+                                            onClick={() => handleSelectAddMode('public')}
+                                        >
+                                            <div className={styles.modeIconWrapper}>
+                                                <Globe className={styles.modeIcon} size={32} />
+                                            </div>
+                                            <h4>分享公共教程</h4>
+                                            <p>添加教程资源，所有用户可浏览查看</p>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : addMode === 'personal' ? (
+                                <>
+                                    <div className={styles.modalHeader}>
+                                        <button className={styles.backButton} onClick={handleBackToModeSelect}>
+                                            <ArrowLeft size={16} />
+                                            <span>返回</span>
+                                        </button>
+                                        <h3>添加个人教程</h3>
+                                        <button className={styles.closeIconButton} onClick={handleCloseAddTutorialModal}>
+                                            ×
+                                        </button>
+                                    </div>
+                                    <div className={styles.personalForm}>
+                                        <div className={styles.uploadSection}>
+                                            <label className={styles.uploadLabel}>
+                                                <input 
+                                                    type="file" 
+                                                    accept=".jpg,.jpeg,.png,.gif,.mp4,.webm" 
+                                                    onChange={handleFileUpload}
+                                                    disabled={loading}
+                                                    className={styles.fileInput}
+                                                />
+                                                <Upload className={styles.uploadIcon} size={32} />
+                                                <span>上传本地教程文件</span>
+                                            </label>
+                                            {uploadProgress > 0 && (
+                                                <div className={styles.uploadProgress}>
+                                                    <div className={styles.uploadBar}>
+                                                        <div 
+                                                            className={styles.uploadFill} 
+                                                            style={{ width: `${uploadProgress}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className={styles.uploadText}>
+                                                        {uploadProgress < 100 ? '上传中...' : '上传完成'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className={styles.divider}>
+                                            <span>或</span>
+                                        </div>
+                                        <div className={styles.bvInputSection}>
+                                            <label>输入B站BV号</label>
+                                            <input 
+                                                type="text"
+                                                value={bvInput}
+                                                onChange={(e) => setBvInput(e.target.value)}
+                                                placeholder="例如: BV1234567890"
+                                                disabled={loading}
+                                                className={styles.bvInput}
+                                            />
+                                            <button 
+                                                onClick={handleAddBVVideo}
+                                                disabled={loading}
+                                                className={styles.addButton}
+                                            >
+                                                {loading ? '加载中...' : '添加视频'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {feedbackMessage && (
+                                        <div className={`${styles.feedbackMessage} ${styles[feedbackMessage.type]}`}>
+                                            {feedbackMessage.text}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <div className={styles.modalHeader}>
+                                        <button className={styles.backButton} onClick={handleBackToModeSelect}>
+                                            <ArrowLeft size={16} />
+                                            <span>返回</span>
+                                        </button>
+                                        <h3>分享公共教程</h3>
+                                        <button className={styles.closeIconButton} onClick={handleCloseAddTutorialModal}>
+                                            ×
+                                        </button>
+                                    </div>
+                                    <p className={styles.publicDescription}>
+                                        点击下方链接加入腾讯频道，提交你的视频教程供所有用户浏览：
+                                    </p>
+                                    <a 
+                                        href="https://pd.qq.com/s/6cn3ldjnw?b=5" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className={styles.qqLink}
+                                    >
+                                        【RemixWarp重构跃迁】腾讯频道
+                                    </a>
+                                    <button className={styles.confirmButton} onClick={handleCloseAddTutorialModal}>
+                                        关闭
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+                
+                {editingTutorial && (
+                    <div className={styles.modalOverlay} onClick={() => setEditingTutorial(null)}>
+                        <div className={styles.editTutorialModal} onClick={(e) => e.stopPropagation()}>
                             <div className={styles.modalHeader}>
-                                <h3>加入教程</h3>
-                                <button className={styles.closeIconButton} onClick={handleCloseAddTutorialModal}>
+                                <h3>编辑教程</h3>
+                                <button className={styles.closeIconButton} onClick={() => setEditingTutorial(null)}>
                                     ×
                                 </button>
                             </div>
-                            <p>点击下方链接加入腾讯频道，提交你的视频教程：</p>
-                            <a 
-                                href="https://pd.qq.com/s/6cn3ldjnw?b=5" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className={styles.qqLink}
-                            >
-                                【RemixWarp重构跃迁】腾讯频道
-                            </a>
-                            <button className={styles.confirmButton} onClick={handleCloseAddTutorialModal}>
-                                关闭
-                            </button>
+                            <div className={styles.editForm}>
+                                <div className={styles.formGroup}>
+                                    <label>标题</label>
+                                    <input 
+                                        type="text"
+                                        value={editingTutorial.bt || ''}
+                                        onChange={(e) => setEditingTutorial({...editingTutorial, bt: e.target.value})}
+                                        className={styles.editInput}
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>简介</label>
+                                    <textarea 
+                                        value={editingTutorial.jj || ''}
+                                        onChange={(e) => setEditingTutorial({...editingTutorial, jj: e.target.value})}
+                                        className={styles.editTextarea}
+                                        rows={4}
+                                    />
+                                </div>
+                                <div className={styles.editButtons}>
+                                    <button className={styles.cancelButton} onClick={() => setEditingTutorial(null)}>
+                                        取消
+                                    </button>
+                                    <button className={styles.saveButton} onClick={saveTutorialEdit}>
+                                        保存
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}

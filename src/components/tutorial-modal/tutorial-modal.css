@@ -7,27 +7,60 @@
 }
 
 .body {
-    background: $ui-white;
+    background: $ui-primary;
     padding: 2rem 2.5rem;
-    max-height: 80vh;
+    height: calc(100vh - 120px);
     overflow-y: auto;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .title {
-    margin: 0 0 1.5rem 0;
+    margin: 0;
     font-size: 1.5rem;
     font-weight: 600;
     color: $text-primary;
 }
 
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.searchFilterBar {
+    flex-shrink: 0;
+}
+
+.searchInput {
+    width: 250px;
+    padding: 0.5rem 1rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    background: $ui-tertiary;
+    color: $text-primary;
+    font-size: 0.875rem;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: $looks-secondary;
+}
+
 .categoryTabs {
     display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 0.75rem;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid $ui-black-transparent;
     justify-content: center;
+    align-content: flex-start;
 }
 
 .categoryTab {
@@ -53,9 +86,18 @@
 
 .tutorialGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-    padding: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    padding: 1rem 1rem 6rem 1rem;
+    flex: 1;
+    min-height: 0;
+    align-content: flex-start;
+}
+
+.buttonContainer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
 }
 
 .tutorialCard {
@@ -64,11 +106,11 @@
     align-items: center;
     justify-content: flex-start;
     position: relative;
-    height: 160px;
-    padding: 1rem 1rem 0 1rem;
+    height: 140px;
+    padding: 0.75rem 0.75rem 0 0.75rem;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     color: $text-primary;
-    background: $ui-white;
+    background: $ui-secondary;
     border-width: 2px;
     border-style: solid;
     border-color: $ui-black-transparent;
@@ -83,8 +125,8 @@
 
 .addTutorialButton {
     position: fixed;
-    bottom: 2rem;
-    right: 2rem;
+    bottom: 4rem;
+    right: 4rem;
     width: 56px;
     height: 56px;
     border-radius: 50%;
@@ -124,12 +166,12 @@
 }
 
 .addTutorialModal {
-    background: $ui-white;
+    background: $ui-secondary;
     border-radius: 0.5rem;
     padding: 1.5rem;
     width: 90%;
     max-width: 400px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     text-align: center;
 }
 
@@ -210,7 +252,7 @@
 .tutorialThumbnail {
     position: relative;
     width: 100%;
-    height: 100px;
+    height: 85px;
     overflow: hidden;
     background: $ui-secondary;
     border-radius: 0.25rem;
@@ -250,13 +292,13 @@
 
 .tutorialInfo {
     width: 100%;
-    padding: 0.5rem 0 0 0;
+    padding: 0.375rem 0 0 0;
 }
 
 .tutorialTitle {
     width: 100%;
-    margin: 0 0 0.25rem 0;
-    font-size: 0.875rem;
+    margin: 0 0 0.125rem 0;
+    font-size: 0.75rem;
     font-weight: bold;
     color: $text-primary;
     overflow: hidden;
@@ -265,16 +307,52 @@
     min-width: 0;
 }
 
-.tutorialDescription {
+.descriptionContainer {
+    display: flex;
+    align-items: center;
     width: 100%;
+    gap: 0.25rem;
+}
+
+.tutorialDescription {
+    flex: 1;
     margin: 0;
-    font-size: 0.75rem;
+    font-size: 0.625rem;
     color: $text-primary;
-    opacity: 0.75;
+    opacity: 0.7;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    line-height: 1.2;
+    line-height: 1.1;
+    transition: all 0.2s ease;
+}
+
+.tutorialDescription.expanded {
+    white-space: normal;
+    text-overflow: unset;
+    max-height: 40px;
+}
+
+.expandButton {
+    background: none;
+    border: none;
+    color: $text-primary;
+    opacity: 0.6;
+    font-size: 0.5rem;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.expandButton:hover {
+    opacity: 1;
+}
+
+.expandButton.expanded {
+    transform: rotate(180deg);
 }
 
 .reloadButton {
@@ -359,7 +437,7 @@
 
 .videoWindow {
     position: absolute;
-    background: $ui-white;
+    background: $ui-secondary;
     border-radius: 0.5rem;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -460,6 +538,343 @@
     font-weight: 500;
 }
 
+.personalCard {
+    border-color: $looks-secondary;
+    border-width: 2px;
+}
+
+.personalBadge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: $looks-secondary;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.deleteButton {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(244, 67, 54, 0.9);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    padding: 0;
+}
+
+.tutorialCard:hover .deleteButton {
+    opacity: 1;
+}
+
+.deleteButton:hover {
+    background: #f44336;
+}
+
+.favoriteButton {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.favoriteButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.favoriteIcon {
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+}
+
+.editButton {
+    position: absolute;
+    top: 4px;
+    left: 32px;
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    padding: 0;
+    font-size: 12px;
+}
+
+.tutorialCard:hover .editButton {
+    opacity: 1;
+}
+
+.editButton:hover {
+    background: #4CAF50;
+}
+
+.modeSelection {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    padding: 1rem 0;
+}
+
+.modeCard {
+    flex: 1;
+    max-width: 200px;
+    padding: 1.5rem;
+    background: $ui-tertiary;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    border: 2px solid transparent;
+}
+
+.modeCard:hover {
+    background: $ui-primary;
+    border-color: $looks-secondary;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modeIconWrapper {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 0.75rem auto;
+    background: $looks-secondary;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modeIcon {
+    color: white;
+}
+
+.modeCard h4 {
+    margin: 0 0 0.5rem 0;
+    color: $text-primary;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.modeCard p {
+    margin: 0;
+    color: $text-primary;
+    font-size: 0.875rem;
+    opacity: 0.8;
+    line-height: 1.4;
+}
+
+.backButton {
+    background: none;
+    border: none;
+    font-size: 0.875rem;
+    color: $looks-secondary;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.backButton:hover {
+    background: $ui-tertiary;
+}
+
+.personalForm {
+    padding: 1rem 0;
+}
+
+.uploadSection {
+    margin-bottom: 1rem;
+}
+
+.uploadLabel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    border: 2px dashed $ui-black-transparent;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: $ui-tertiary;
+    gap: 0.5rem;
+}
+
+.uploadLabel:hover {
+    border-color: $looks-secondary;
+    background: $ui-primary;
+}
+
+.uploadIcon {
+    color: $looks-secondary;
+}
+
+.uploadLabel span {
+    color: $text-primary;
+    font-size: 0.875rem;
+}
+
+.fileInput {
+    display: none;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    color: $text-primary;
+    opacity: 0.5;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: $ui-black-transparent;
+}
+
+.bvInputSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.bvInputSection label {
+    color: $text-primary;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.bvInput {
+    padding: 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    color: $text-primary;
+    background: $ui-primary;
+    transition: border-color 0.2s ease;
+}
+
+.bvInput:focus {
+    outline: none;
+    border-color: $looks-secondary;
+}
+
+.bvInput:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.addButton {
+    background: $looks-secondary;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.addButton:hover:not(:disabled) {
+    background: #4a90e2;
+}
+
+.addButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.uploadProgress {
+    margin-top: 0.75rem;
+}
+
+.uploadBar {
+    width: 100%;
+    height: 6px;
+    background: $ui-tertiary;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.uploadFill {
+    height: 100%;
+    background: $looks-secondary;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.uploadText {
+    font-size: 0.75rem;
+    color: $text-primary;
+    opacity: 0.7;
+    margin-top: 0.25rem;
+    display: block;
+    text-align: center;
+}
+
+.feedbackMessage {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.feedbackMessage.success {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.feedbackMessage.error {
+    background: rgba(244, 67, 54, 0.1);
+    color: #f44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.publicDescription {
+    color: $text-primary;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    line-height: 1.5;
+}
+
 @media (max-width: 768px) {
     .tutorialGrid {
         grid-template-columns: 1fr;
@@ -474,4 +889,130 @@
         max-width: 95%;
         max-height: 80%;
     }
+    
+    .modeSelection {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .modeCard {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .addTutorialModal {
+        width: 95%;
+        max-width: none;
+        margin: 1rem;
+    }
+    
+    .categoryTab {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
 }
+
+/* 编辑教程模态框样式 */
+.editTutorialModal {
+    position: relative;
+    background: $ui-secondary;
+    border-radius: 0.75rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.2s ease;
+}
+
+.editForm {
+    padding: 1.5rem;
+}
+
+.formGroup {
+    margin-bottom: 1.25rem;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: $text-primary;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.editInput {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    background: $ui-primary;
+    color: $text-primary;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.editInput:focus {
+    outline: none;
+    border-color: $looks-secondary;
+}
+
+.editTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    background: $ui-primary;
+    color: $text-primary;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 100px;
+    box-sizing: border-box;
+}
+
+.editTextarea:focus {
+    outline: none;
+    border-color: $looks-secondary;
+}
+
+.editButtons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.cancelButton {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    background: $ui-tertiary;
+    color: $text-primary;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+    background: $ui-secondary;
+}
+
+.saveButton {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: $looks-secondary;
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.saveButton:hover {
+    background: #4a90e2;
+}
+
+

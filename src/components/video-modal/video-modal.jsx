@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { defineMessages, injectIntl, intlShape } from 'react-intl';
 
 import Modal from '../../containers/windowed-modal.jsx';
@@ -18,10 +18,27 @@ const messages = defineMessages({
 
 const VideoModal = props => {
     const [showExtensionDialog, setShowExtensionDialog] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+    
+    useEffect(() => {
+        if (props.visible && props.tutorial && props.tutorial.isLocal && props.tutorial.videoUrl) {
+            setIsLoaded(true);
+        }
+    }, [props.visible, props.tutorial]);
+    
+    useEffect(() => {
+        return () => {
+            if (props.tutorial && props.tutorial.isLocal && props.tutorial.videoUrl) {
+                URL.revokeObjectURL(props.tutorial.videoUrl);
+            }
+        };
+    }, []);
     
     if (!props.visible || !props.tutorial) {
         return null;
     }
+    
+    const isLocalVideo = props.tutorial.isLocal && props.tutorial.videoUrl;
     
     return (
         <Modal
@@ -37,25 +54,42 @@ const VideoModal = props => {
             maximizable={true}
         >
             <div className={styles.videoContainer}>
-                <iframe
-                    src={`//player.bilibili.com/player.html?isOutside=true&bvid=${props.tutorial.bvid}&p=1`}
-                    scrolling="no"
-                    border="0"
-                    frameBorder="no"
-                    frameSpacing="0"
-                    allowFullScreen={true}
-                    className={styles.videoIframe}
-                />
-                <button 
+                {isLocalVideo ? (
+                    <video
+                        src={props.tutorial.videoUrl}
+                        controls
+                        autoPlay
+                        className={styles.videoElement}
+                        poster={props.tutorial.thumbnail}
+                    />
+                ) : (
+                    <>
+                        <iframe
+                            src={`//player.bilibili.com/player.html?isOutside=true&bvid=${props.tutorial.bvid}&p=1`}
+                            scrolling="no"
+                            border="0"
+                            frameBorder="no"
+                            frameSpacing="0"
+                            allowFullScreen={true}
+                            className={styles.videoIframe}
+                            onLoad={() => setIsLoaded(true)}
+                        />
+                        {!isLoaded && (
+                            <div className={styles.loadingOverlay}>
+                                <div className={styles.loadingSpinner}>加载中...</div>
+                            </div>
+                        )}
+                    </>
+                )}
+                
+                {!isLocalVideo && props.tutorial.url && (
+                    <button 
                         className={styles.useResourceButton}
                         onClick={() => {
                             if (props.tutorial.url) {
-                                // 检查是否是JS扩展文件
                                 if (props.tutorial.url.endsWith('.js')) {
-                                    // 显示自定义弹窗
                                     setShowExtensionDialog(true);
                                 } else {
-                                    // 不是JS文件，直接打开
                                     window.open(props.tutorial.url, '_blank');
                                 }
                             } else {
@@ -65,6 +99,7 @@ const VideoModal = props => {
                     >
                         使用视频资源
                     </button>
+                )}
             </div>
             
             {/* 扩展文件选择弹窗 */}
@@ -87,7 +122,6 @@ const VideoModal = props => {
                             <button 
                                 className={styles.dialogButton}
                                 onClick={() => {
-                                    // 下载扩展文件
                                     fetch(props.tutorial.url)
                                         .then(response => response.blob())
                                         .then(blob => {
@@ -113,7 +147,6 @@ const VideoModal = props => {
                             <button 
                                 className={styles.dialogButton + ' ' + styles.primaryButton}
                                 onClick={() => {
-                                    // 添加扩展到编辑器
                                     if (props.vm && props.vm.extensionManager) {
                                         props.vm.extensionManager.loadExtensionURL(props.tutorial.url)
                                             .then(() => {
@@ -147,8 +180,11 @@ VideoModal.propTypes = {
     visible: PropTypes.bool.isRequired,
     tutorial: PropTypes.shape({
         title: PropTypes.string.isRequired,
-        bvid: PropTypes.string.isRequired,
-        url: PropTypes.string
+        bvid: PropTypes.string,
+        url: PropTypes.string,
+        videoUrl: PropTypes.string,
+        thumbnail: PropTypes.string,
+        isLocal: PropTypes.bool
     }),
     vm: PropTypes.object
 };
