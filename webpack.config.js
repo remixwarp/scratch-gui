@@ -58,6 +58,7 @@ const base = {
     },
     resolve: {
         symlinks: false,
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
         alias: {
             'react': require.resolve('react'),
             'react-dom': require.resolve('react-dom'),
@@ -72,7 +73,7 @@ const base = {
     },
     module: {
         rules: [{
-            test: /\.jsx?$/,
+            test: /\.(jsx?|tsx?)$/,
             loader: 'babel-loader',
             include: [
                 path.resolve(__dirname, 'src'),
@@ -99,7 +100,8 @@ const base = {
                         bugfixes: true,
                         browserslistEnv: 'production'
                     }],
-                    '@babel/preset-react'
+                    '@babel/preset-react',
+                    '@babel/preset-typescript'
                 ]
             }
         },
@@ -127,6 +129,34 @@ const base = {
                         ];
                     }
                 }
+            }]
+        },
+        {
+            test: /\.less$/,
+            use: [{
+                loader: 'style-loader'
+            }, {
+                loader: 'css-loader',
+                options: {
+                    modules: true,
+                    importLoaders: 2,
+                    localIdentName: '[name]_[local]_[hash:base64:5]',
+                    camelCase: true
+                }
+            }, {
+                loader: 'postcss-loader',
+                options: {
+                    ident: 'postcss',
+                    plugins: function () {
+                        return [
+                            postcssImport,
+                            postcssVars,
+                            autoprefixer
+                        ];
+                    }
+                }
+            }, {
+                loader: 'less-loader'
             }]
         },
         {

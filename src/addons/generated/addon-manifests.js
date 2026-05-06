@@ -97,6 +97,7 @@ import _coder_style from "../addons/coder-style/_manifest_entry.js";
 import _comment_vscode_sync from "../addons/comment-vscode-sync/_manifest_entry.js";
 import _Terminal from "../addons/Terminal/_manifest_entry.js";
 import _astras_copilot from "../addons/astras-copilot/_manifest_entry.js";
+import _02agent from "../addons/02agent/_manifest_entry.js";
 import _my_blocks_plus from "../addons/my-blocks-plus/_manifest_entry.js";
 import _hide_menubar from "../addons/hide-menubar/_manifest_entry.js";
 import _batch_color_replace from "../addons/batch-color-replace/_manifest_entry.js";
@@ -203,6 +204,7 @@ export default {
   "comment-vscode-sync": _comment_vscode_sync,
   "Terminal": _Terminal,
   "astras-copilot": _astras_copilot,
+  "02agent": _02agent,
   "my-blocks-plus": _my_blocks_plus,
   "hide-menubar": _hide_menubar,
   "batch-color-replace": _batch_color_replace,

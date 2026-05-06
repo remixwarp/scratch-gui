@@ -10,6 +10,7 @@
         ["@babel/preset-env", {
             "bugfixes": true
         }],
-        "@babel/preset-react"
+        "@babel/preset-react",
+        "@babel/preset-typescript"
     ]
 }

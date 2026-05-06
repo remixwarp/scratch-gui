@@ -160,10 +160,10 @@
 .sa-todo-group-btn {
     display: flex;
     padding: 4px 12px;
-    border: 1px solid #00000020;
+    border: 1px solid var(--ui-black-transparent);
     border-radius: 12px;
-    background: #333;
-    color: #fff;
+    background: var(--ui-tertiary);
+    color: white;
     cursor: pointer;
     white-space: nowrap;
     transition: 0.25s ease;
@@ -173,7 +173,7 @@
 
 .sa-todo-group-btn.active {
     background: var(--looks-secondary);
-    text-shadow: #333 0 0 9px;
+    text-shadow: var(--ui-tertiary) 0 0 9px;
 }
 
 .sa-todo-popup,
@@ -226,6 +226,8 @@
     font-size: 14px;
     width: 100%;
     box-sizing: border-box;
+    background: var(--ui-secondary);
+    color: var(--text-primary);
 }
 
 .sa-todo-input:focus {
@@ -280,4 +282,223 @@
     align-items: center;
     justify-content: center;
     color: white;
+}
+
+.sa-todo-mode-tab {
+    position: relative;
+    height: 35px;
+}
+
+.sa-todo-mode-tab::after {
+    content: "";
+    position: absolute;
+    width: 50%;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    background-color: var(--looks-secondary);
+    transition: all 0.15s cubic-bezier(0, 0.7, 0.3, 0.99);
+}
+
+.sa-todo-mode-tab:has(button:nth-child(1).enable)::after {
+    left: 0;
+}
+
+.sa-todo-mode-tab:has(button:nth-child(2).enable)::after {
+    left: 50%;
+}
+
+.sa-todo-mode-tab-btn.enable,
+.sa-todo-mode-tab-btn.unable {
+    border: none;
+    transition: all 0.15s cubic-bezier(0, 0.7, 0.3, 0.99);
+    height: 30px;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sa-todo-mode-tab-btn.enable {
+    filter: brightness(1);
+    background: var(--ui-modal-background);
+}
+
+.sa-todo-mode-tab-btn.enable:hover,
+.sa-todo-mode-tab-btn.unable:hover {
+    filter: brightness(1);
+    background: var(--ui-modal-background);
+}
+
+.sa-todo-mode-tab-btn.enable:active,
+.sa-todo-mode-tab-btn.unable:active {
+    filter: brightness(0.9);
+    background: var(--ui-modal-background);
+}
+
+.sa-todo-tab-bar {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--ui-tertiary);
+}
+
+.sa-todo-tab {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.sa-todo-tab.active {
+    color: var(--looks-secondary);
+    border-bottom-color: var(--looks-secondary);
+}
+
+.sa-todo-tab:hover {
+    color: var(--text-primary);
+}
+
+.sa-todo-group-section {
+    display: none;
+}
+
+.sa-todo-group-section.active {
+    display: block;
+}
+
+.sa-todo-group-list {
+    list-style: none;
+    padding: 0;
+}
+
+.sa-todo-group-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: var(--ui-secondary);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.sa-todo-group-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.sa-todo-group-name {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.sa-todo-group-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.sa-todo-group-action-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ui-tertiary);
+    color: var(--text-secondary);
+}
+
+.sa-todo-group-action-btn:hover {
+    background: var(--ui-primary);
+    color: var(--text-primary);
+}
+
+.sa-todo-new-group-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--looks-secondary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 10px;
+}
+
+.sa-todo-new-group-btn:hover {
+    filter: brightness(1.1);
+}
+
+.sa-todo-group-form {
+    margin-bottom: 15px;
+}
+
+.sa-todo-group-form-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.sa-todo-group-form-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--ui-tertiary);
+    border-radius: 4px;
+    background: var(--ui-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.sa-todo-group-form-input:focus {
+    outline: none;
+    border-color: var(--looks-secondary);
+}
+
+.sa-todo-group-color-picker {
+    width: 60px;
+    height: 40px;
+    border: 1px solid var(--ui-tertiary);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.sa-todo-group-color-picker::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.sa-todo-group-color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 3px;
+}
+
+.sa-todo-group-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--ui-tertiary);
+    border-radius: 4px;
+    background: var(--ui-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.sa-todo-group-select:focus {
+    outline: none;
+    border-color: var(--looks-secondary);
+}
+
+.sa-todo-group-select option {
+    background: var(--ui-secondary);
+    color: var(--text-primary);
 }

@@ -1,4 +1,3 @@
-
 import { defineMessages, FormattedMessage, intlShape, injectIntl, useRef } from 'react-intl';
 import React, { useEffect, useState } from 'react';
 import Modal from '../../containers/modal.jsx';
@@ -25,12 +24,6 @@ const CustomModalComponent = (props) => {
         const readMe = [];
         comments.forEach(comment => {
             if (comment.text.slice(0, 7) == "#README") {
-                /*
-                #README #标题(可选，它会搜索到换行)
-                CONTENT...
-                
-                */
-
                 if (comment.text.slice(8, 9) == "#") {
                     let title = "";
                     const CheckTitle = comment.text.slice(
@@ -76,7 +69,9 @@ const CustomModalComponent = (props) => {
                 <Box>
                     {readMe.length > 1 &&
                         <div className={styles.Modaltab} style={{
-                            margin: "0"
+                            margin: "0",
+                            '--total-tabs': readMe.length,
+                            '--active-index': nowTab
                         }}>
                             {readMe.length > 1 && readMe.map((item, index) => (
                                 <button key={index} className={
@@ -100,7 +95,7 @@ const CustomModalComponent = (props) => {
                     }
                     <div className={styles.body}>
                         {readMe[nowTab].text.split('\n').map((line, i) => (
-                            <p key={i}>{line}</p>
+                            <p key={i} style={{margin: '0.5rem 0'}}>{line}</p>
                         ))}
                     </div>
                 </Box>

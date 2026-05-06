@@ -37,7 +37,6 @@ import {updateMetrics} from '../reducers/workspace-metrics';
 import {isTimeTravel2020} from '../reducers/time-travel';
 
 import installSystemClipboardForBlocks from '../lib/mw/system-clipboard.js';
-import initializeBlockDisableExtension from '../lib/block-disable-extensions.js';
 
 import {
     activateTab,
@@ -288,9 +287,6 @@ class Blocks extends React.Component {
         }
 
         gentlyRequestPersistentStorage();
-
-        // Initialize Copy JS Code functionality
-        initializeBlockDisableExtension(this.props.vm);
 
         // Defer attaching hover listeners until ScratchBlocks has finished injecting its DOM.
         setTimeout(() => {

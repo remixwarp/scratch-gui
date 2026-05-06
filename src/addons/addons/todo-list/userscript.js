@@ -122,7 +122,7 @@ export default async function ({ addon, msg, console }) {
                 border-radius: 4px;
                 font-size: 12px;
                 cursor: pointer;
-                background-color: ${selectedGroup === null ? '#4c97ff' : '#4c97ff60'};
+                background-color: ${selectedGroup === null ? 'var(--looks-secondary)' : 'var(--looks-secondary)60'};
                 color: white;
             `;
             allBtn.textContent = '全部';
@@ -226,7 +226,7 @@ export default async function ({ addon, msg, console }) {
 
                 const taskItem = document.createElement('li');
                 taskItem.style.cssText = `
-                    background-color: ${task.color || '#4c97ff'}a0;
+                    background-color: ${task.color || 'var(--looks-secondary)'}a0;
                     border-radius: 6px;
                     padding: 12px;
                     color: white;
@@ -280,7 +280,7 @@ export default async function ({ addon, msg, console }) {
                     align-items: center;
                     justify-content: center;
                     font-size: 12px;
-                    color: ${task.color || '#4c97ff'};
+                    color: ${task.color || 'var(--looks-secondary)'};
                     flex-shrink: 0;
                 `;
                 checkbox.textContent = task.done ? '✓' : '';
@@ -341,7 +341,7 @@ export default async function ({ addon, msg, console }) {
         addButton.style.cssText = `
             width: 100%;
             padding: 12px;
-            background-color: #4c97ff;
+            background-color: var(--looks-secondary);
             color: white;
             border: none;
             border-radius: 6px;
@@ -411,52 +411,68 @@ export default async function ({ addon, msg, console }) {
 
         const container = document.createElement('div');
         container.style.cssText = `
-            padding: 20px;
+            padding: 15px;
             height: 100%;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            background-color: #1a1a2e;
-        `;
-
-        const modeTab = document.createElement('div');
-        modeTab.style.cssText = `
-            display: flex;
-            background-color: #2d2d44;
-            border-radius: 4px;
-            margin-bottom: 15px;
+            background-color: var(--ui-modal-background);
             overflow: hidden;
         `;
 
+        const modeTab = document.createElement('div');
+        modeTab.className = 'sa-todo-mode-tab';
+        modeTab.style.cssText = `
+            display: flex;
+            background-color: var(--ui-tertiary);
+            border-radius: 4px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            flex-shrink: 0;
+        `;
+
         const taskTabBtn = document.createElement('button');
+        taskTabBtn.className = 'sa-todo-mode-tab-btn enable';
         taskTabBtn.style.cssText = `
             flex: 1;
-            padding: 12px;
-            background-color: #4c97ff;
+            padding: 10px 8px;
+            background-color: var(--looks-secondary);
             border: none;
             cursor: pointer;
             font-size: 14px;
             color: white;
+            min-height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
         `;
         taskTabBtn.textContent = '任务';
 
         const groupTabBtn = document.createElement('button');
+        groupTabBtn.className = 'sa-todo-mode-tab-btn unable';
         groupTabBtn.style.cssText = `
             flex: 1;
-            padding: 12px;
-            background-color: #2d2d44;
+            padding: 10px 8px;
+            background-color: var(--ui-tertiary);
             border: none;
             cursor: pointer;
             font-size: 14px;
-            color: #999;
+            color: var(--text-secondary);
+            min-height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
         `;
         groupTabBtn.textContent = '组';
 
+        const defaultColor = '#75C1C4';
         let config = {
             mode: 2,
             id: generateId(),
             name: '新的待办',
-            color: '#4c97ff',
+            color: defaultColor,
             task: {
                 startTime: Date.now(),
                 endTime: Date.now() + 86400000,
@@ -480,7 +496,7 @@ export default async function ({ addon, msg, console }) {
 
         preview.className = 'sa-todo-modal-preview';
         preview.style.cssText = `
-            background-color: ${config.color}a0;
+            background-color: ${defaultColor}a0;
             border-radius: 6px;
             padding: 15px;
             color: white;
@@ -501,8 +517,16 @@ export default async function ({ addon, msg, console }) {
         preview_title.value = config.name;
         preview_title.addEventListener('input', (e) => {
             config.name = e.target.value;
+            if (nameInputField) {
+                nameInputField.value = e.target.value;
+            }
             refreshPreview();
         });
+        const updateNameInputFromPreview = () => {
+            if (nameInputField) {
+                nameInputField.value = config.name;
+            }
+        };
 
         const preview_date = document.createElement('span');
         preview_date.style.cssText = `
@@ -516,12 +540,14 @@ export default async function ({ addon, msg, console }) {
 
         previewLabel.style.cssText = `
             font-size: 14px;
-            color: #999;
+            color: var(--text-secondary);
             margin-top: 15px;
             padding-bottom: 5px;
-            border-bottom: 1px dashed #3d3d5c;
+            border-bottom: 1px dashed var(--ui-tertiary);
         `;
         previewLabel.textContent = '预览';
+
+        let nameInputField = null;
 
         const inputField = (inputType, labelText, keyConfig) => {
             const row = document.createElement('div');
@@ -535,7 +561,7 @@ export default async function ({ addon, msg, console }) {
             const label = document.createElement('span');
             label.style.cssText = `
                 font-size: 14px;
-                color: #999;
+                color: var(--text-secondary);
                 width: 80px;
             `;
             label.textContent = labelText;
@@ -545,11 +571,11 @@ export default async function ({ addon, msg, console }) {
             input.style.cssText = `
                 flex: 1;
                 padding: 8px;
-                border: 1px solid #3d3d5c;
+                border: 1px solid var(--ui-tertiary);
                 border-radius: 4px;
                 font-size: 14px;
-                background-color: #2d2d44;
-                color: white;
+                background-color: var(--ui-secondary);
+                color: var(--text-primary);
                 outline: none;
             `;
 
@@ -571,6 +597,10 @@ export default async function ({ addon, msg, console }) {
                 });
             }
 
+            if (keyConfig.key === 'name' && inputType === 'text') {
+                nameInputField = input;
+            }
+
             row.appendChild(label);
             row.appendChild(input);
             return row;
@@ -589,7 +619,7 @@ export default async function ({ addon, msg, console }) {
             const selectorLabel = document.createElement('span');
             selectorLabel.style.cssText = `
                 font-size: 14px;
-                color: #999;
+                color: var(--text-secondary);
                 display: block;
                 margin-bottom: 8px;
             `;
@@ -635,6 +665,7 @@ export default async function ({ addon, msg, console }) {
         taskFields.appendChild(inputField('color', '颜色', { key: 'color' }));
         taskFields.appendChild(inputField('datetime-local', '开始时间', { key: 'task', key2: 'startTime' }));
         taskFields.appendChild(inputField('datetime-local', '结束时间', { key: 'task', key2: 'endTime' }));
+        taskFields.appendChild(inputField('text', '名称', { key: 'name' }));
         taskFields.appendChild(groupSelector);
 
         groupFields.appendChild(inputField('text', '名称', { key: 'name' }));
@@ -642,7 +673,7 @@ export default async function ({ addon, msg, console }) {
 
         preview_steps_create.style.cssText = `
             padding: 10px;
-            background-color: #4c97ff;
+            background-color: var(--looks-secondary);
             color: white;
             border: none;
             border-radius: 4px;
@@ -657,7 +688,7 @@ export default async function ({ addon, msg, console }) {
         const doneBtn = document.createElement('button');
         doneBtn.style.cssText = `
             padding: 10px;
-            background-color: #4c97ff;
+            background-color: var(--looks-secondary);
             color: white;
             border: none;
             border-radius: 4px;
@@ -693,20 +724,22 @@ export default async function ({ addon, msg, console }) {
         const editHeader = document.createElement('div');
         editHeader.style.cssText = `
             font-size: 14px;
-            color: #999;
+            color: var(--text-secondary);
             margin-bottom: 15px;
             padding-bottom: 5px;
-            border-bottom: 1px dashed #3d3d5c;
+            border-bottom: 1px dashed var(--ui-tertiary);
         `;
         editHeader.textContent = '编辑';
 
         const switchMode = (newMode) => {
             config.mode = newMode;
             if (newMode === 2) {
-                taskTabBtn.style.backgroundColor = '#4c97ff';
+                taskTabBtn.className = 'sa-todo-mode-tab-btn enable';
+                taskTabBtn.style.backgroundColor = 'var(--looks-secondary)';
                 taskTabBtn.style.color = 'white';
-                groupTabBtn.style.backgroundColor = '#2d2d44';
-                groupTabBtn.style.color = '#999';
+                groupTabBtn.className = 'sa-todo-mode-tab-btn unable';
+                groupTabBtn.style.backgroundColor = 'var(--ui-tertiary)';
+                groupTabBtn.style.color = 'var(--text-secondary)';
                 taskFields.style.display = '';
                 groupFields.style.display = 'none';
                 preview.style.display = '';
@@ -714,10 +747,12 @@ export default async function ({ addon, msg, console }) {
                 preview_steps_create.style.display = '';
                 refreshGroupSelector();
             } else {
-                groupTabBtn.style.backgroundColor = '#4c97ff';
+                groupTabBtn.className = 'sa-todo-mode-tab-btn enable';
+                groupTabBtn.style.backgroundColor = 'var(--looks-secondary)';
                 groupTabBtn.style.color = 'white';
-                taskTabBtn.style.backgroundColor = '#2d2d44';
-                taskTabBtn.style.color = '#999';
+                taskTabBtn.className = 'sa-todo-mode-tab-btn unable';
+                taskTabBtn.style.backgroundColor = 'var(--ui-tertiary)';
+                taskTabBtn.style.color = 'var(--text-secondary)';
                 taskFields.style.display = 'none';
                 groupFields.style.display = '';
                 preview.style.display = 'none';
@@ -733,13 +768,63 @@ export default async function ({ addon, msg, console }) {
         modeTab.appendChild(groupTabBtn);
 
         container.appendChild(modeTab);
-        container.appendChild(editHeader);
-        container.appendChild(taskFields);
-        container.appendChild(groupFields);
-        container.appendChild(preview_steps_create);
-        container.appendChild(doneBtn);
-        container.appendChild(previewLabel);
-        container.appendChild(preview);
+
+        const scrollContainer = document.createElement('div');
+        scrollContainer.style.cssText = `
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        `;
+
+        scrollContainer.appendChild(editHeader);
+        scrollContainer.appendChild(taskFields);
+        scrollContainer.appendChild(groupFields);
+        scrollContainer.appendChild(previewLabel);
+        scrollContainer.appendChild(preview);
+
+        container.appendChild(scrollContainer);
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+        `;
+
+        preview_steps_create.style.cssText = `
+            flex: 1;
+            padding: 10px;
+            background-color: var(--looks-secondary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0.5;
+            pointer-events: none;
+        `;
+        preview_steps_create.textContent = '新的步骤';
+
+        doneBtn.style.cssText = `
+            flex: 1;
+            padding: 10px;
+            background-color: var(--looks-secondary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        `;
+        doneBtn.textContent = '完成';
+
+        buttonContainer.appendChild(preview_steps_create);
+        buttonContainer.appendChild(doneBtn);
+
+        container.appendChild(buttonContainer);
 
         refreshGroupSelector();
 

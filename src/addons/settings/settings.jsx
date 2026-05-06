@@ -1091,7 +1091,7 @@ class AddonList extends React.Component {
             astraeditor: ['Terminal', 'astras-copilot', 'my-blocks-plus', 'hide-menubar', 'simple-project-analyzer', 'todo-list', 'block-pins', 'tw-comment-markdown-editor', 'bookmark'],
             
             // 02与TW对比多出的存入02
-            '02engine': ['coder-style', 'comment-vscode-sync']
+            '02engine': ['coder-style', 'comment-vscode-sync', '02agent']
         };
         
         // 收集所有选中编辑器的插件ID

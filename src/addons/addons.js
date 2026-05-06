@@ -95,6 +95,7 @@ const addons = [
     'comment-vscode-sync',
     'Terminal',
     'astras-copilot',
+    '02agent',
     'my-blocks-plus',
     'hide-menubar',
     'bookmark',
@@ -116,6 +117,7 @@ const newAddons = [
     'comment-vscode-sync',
     'Terminal',
     'astras-copilot',
+    '02agent',
     'my-blocks-plus',
     'hide-menubar'
 ];
