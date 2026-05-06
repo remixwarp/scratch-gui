@@ -13,7 +13,11 @@ export default {
         {
             name: '酷可@CCW',
             link: 'https://www.ccw.site/student/610b508176415b2f27e0f851'
-        }
+        },
+        {
+      name: "笑小朗",
+      link: "https://space.bilibili.com/3546876326447960",
+        },
     ],
     tags: ['02engine', 'editor', 'codeEditor'],
     enabledByDefault: false,
