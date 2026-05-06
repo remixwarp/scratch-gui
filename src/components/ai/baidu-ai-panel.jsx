@@ -26,6 +26,7 @@ class BaiduAIPanel extends React.PureComponent {
                     title="百度AI"
                     frameBorder="0"
                     allowFullScreen
+                    referrerPolicy="origin"
                 />
             </div>
         );

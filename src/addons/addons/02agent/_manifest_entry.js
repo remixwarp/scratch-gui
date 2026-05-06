@@ -34,7 +34,7 @@ export default {
             name: '将按钮添加到编辑器右上角',
             default: true,
             type: 'boolean'
-        },
-
-    ]
+        }
+    ],
+    stylesheets: []
 };

@@ -600,6 +600,18 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             if ("role" in item) {
               return (
                 <div key={item.id || index} className={`${chat.messageRow} ${chat.userMessage}`}>
+                  <div className={chat.messageTurnBody}>
+                    <div className={`${chat.messageBubble} ${chat.messageBubbleUser}`}>
+                      <pre className={chat.messageText}>{item.content}</pre>
+                      {item.attachments?.length ? (
+                        <MessageAttachments
+                          attachments={item.attachments}
+                          onOpenAttachment={onOpenWorkspaceAttachment}
+                          vm={vm}
+                        />
+                      ) : null}
+                    </div>
+                  </div>
                   <div className={`${chat.messageActionRail} ${chat.messageActionRailHorizontal}`}>
                     <button
                       type="button"
@@ -621,18 +633,6 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                         <img src={UndoIcon} aria-hidden="true" alt="" />
                       </button>
                     ) : null}
-                  </div>
-                  <div className={chat.messageTurnBody}>
-                    <div className={`${chat.messageBubble} ${chat.messageBubbleUser}`}>
-                      <pre className={chat.messageText}>{item.content}</pre>
-                      {item.attachments?.length ? (
-                        <MessageAttachments
-                          attachments={item.attachments}
-                          onOpenAttachment={onOpenWorkspaceAttachment}
-                          vm={vm}
-                        />
-                      ) : null}
-                    </div>
                   </div>
                 </div>
               );
