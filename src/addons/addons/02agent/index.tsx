@@ -7,6 +7,7 @@ import shell from "./ui/Shell.module.css";
 import Tooltip from "./shims/components/Tooltip";
 import ExpansionBox, { ExpansionRect } from "./shims/components/ExpansionBox";
 import { useStoredState } from "./hooks/useStoredState";
+import WindowManager from "../../../addons/window-system/window-manager";
 import { registerContextMenu } from "./contextMenu";
 import { AIAssistantIcon } from "./components/AIAssistantIcon";
 import { HistoryPanel } from "./components/HistoryPanel";
@@ -33,9 +34,9 @@ const DEFAULT_CONTAINER_INFO = {
   translateY: 50,
 };
 
-type ThemeMode = "dark" | "light";
+type ThemeMode = "dark" | "light" | "auto";
 type AgentProps = PluginContext & { 
-  editorThemeMode?: ThemeMode;
+  editorThemeMode?: "dark" | "light";
   showButtonInEditor?: boolean;
 };
 
@@ -49,7 +50,7 @@ const Agent: React.FC<AgentProps> = ({
   const [launcherPosition, setLauncherPosition] = useStoredState("02AGENT_LAUNCHER_POSITION", { x: 0, y: 0 });
   const [isAgentMenuOpen, setIsAgentMenuOpen] = React.useState(false);
   const [isComposerExpanded, setIsComposerExpanded] = React.useState(false);
-  const [themeMode, setThemeMode] = React.useState<ThemeMode>(editorThemeMode);
+  const [themeMode, setThemeMode] = React.useState<ThemeMode>("auto");
   const containerRef = React.useRef(null);
   const launcherDraggedRef = React.useRef(false);
   const agentMenuRef = React.useRef<HTMLDivElement | null>(null);
@@ -63,9 +64,7 @@ const Agent: React.FC<AgentProps> = ({
   const containerInfoRef = React.useRef(containerInfo);
   const useDrawerHistory = containerInfo.width < 760;
 
-  React.useEffect(() => {
-    setThemeMode(editorThemeMode);
-  }, [editorThemeMode]);
+  const effectiveThemeMode = themeMode === "auto" ? editorThemeMode : themeMode;
 
   React.useEffect(() => {
     containerInfoRef.current = containerInfo;
@@ -136,23 +135,62 @@ const Agent: React.FC<AgentProps> = ({
   }, []);
 
   const handleShow = React.useCallback(() => {
+    console.log('[02Agent] handleShow called');
+    let window = WindowManager.getWindow('02agent-window');
+    if (!window) {
+      window = WindowManager.createWindow({
+        id: '02agent-window',
+        title: '02Agent (RW版)',
+        width: containerInfoRef.current.width || 800,
+        height: containerInfoRef.current.height || 600,
+        minWidth: 400,
+        minHeight: 300,
+        resizable: true,
+        maximizable: true,
+        closable: true,
+        modal: false,
+        destroyOnMinimize: true,
+        onClose: () => {
+          setVisible(false);
+        }
+      });
+      const contentElement = window.contentElement;
+      if (contentElement) {
+        contentElement.style.height = '100%';
+        contentElement.style.maxHeight = '100%';
+        contentElement.style.display = 'flex';
+        contentElement.style.flexDirection = 'column';
+        contentElement.style.margin = '0';
+        contentElement.style.padding = '0';
+        contentElement.style.border = 'none';
+        contentElement.style.overflow = 'hidden';
+      }
+    }
+    window.show();
     setContainerInfo({
       ...containerInfoRef.current,
       ...getContainerPosition(),
     });
     setVisible(true);
+    console.log('[02Agent] visible set to true');
   }, [getContainerPosition, setContainerInfo]);
 
   React.useEffect(() => {
     const handleShow02Agent = (event) => {
       event.stopPropagation();
+      console.log('[02Agent] Event received, calling handleShow');
       handleShow();
     };
+    console.log('[02Agent] Registering event listener');
     window.addEventListener('02agent-show-plugin', handleShow02Agent);
     return () => window.removeEventListener('02agent-show-plugin', handleShow02Agent);
   }, [handleShow]);
 
   const handleClose = () => {
+    const window = WindowManager.getWindow('02agent-window');
+    if (window) {
+      window.hide();
+    }
     setVisible(false);
   };
 
@@ -311,7 +349,7 @@ const Agent: React.FC<AgentProps> = ({
       <section className={styles.aiAssistantRoot} ref={containerRef}>
         {showButtonInEditor && (
           <Tooltip
-            className={`tw-02agent-launcher-handle ${styles.icon} ${themeMode === "dark" ? styles.iconDark : styles.iconLight}`}
+            className={`tw-02agent-launcher-handle ${styles.icon} ${effectiveThemeMode === "dark" ? styles.iconDark : styles.iconLight}`}
             icon={<><AIAssistantIcon /><span>02Agent</span></>}
             onClick={() => {
               if (!launcherDraggedRef.current) handleShow();
@@ -320,203 +358,215 @@ const Agent: React.FC<AgentProps> = ({
           />
         )}
         {visible &&
-          ReactDOM.createPortal(
-            <ExpansionBox
-            id="02agent"
-            title={"02Agent"}
-            themeMode={themeMode}
-            containerInfo={containerInfo}
-            onClose={handleClose}
-            onSizeChange={handleSizeChange}
-            minWidth={400}
-            minHeight={300}
-            borderRadius={8}
-          >
-            <div
-              className={`${styles.container} ${shell.appShell} ${themeStyles.themeRoot} ${
-                themeMode === "dark" ? themeStyles.themeDark : themeStyles.themeLight
-              }`}
-            >
-              {/* Left Panel */}
-              {!useDrawerHistory && isLeftPanelOpen && (
-                <HistoryPanel
-                  sessions={sessions}
-                  currentSessionId={currentSessionId}
-                  onNewChat={handleNewChat}
-                  onSelectSession={handleSelectSession}
-                  onDeleteSession={handleDeleteSession}
-                />
-              )}
-
-              {/* Right Panel */}
-              <div className={shell.mainPanel}>
-                <div className={shell.topBar}>
-                  <div className={shell.topBarMain}>
-                    <div className={shell.topBarLeft}>
-                      <button
-                        type="button"
-                        className={shell.iconButton}
-                        onClick={() => setIsLeftPanelOpen((previous) => !previous)}
-                        title={isLeftPanelOpen ? "收起历史记录" : "展开历史记录"}
-                      >
-                        {useDrawerHistory ? "☰" : isLeftPanelOpen ? "←" : "☰"}
-                      </button>
-                      <div className={shell.workspaceTitle}>
-                        <span>02Agent</span>
-                        <small>Scratch code · live blocks</small>
-                      </div>
-                    </div>
-                    <div className={shell.topBarCenter}>
-                      <div className={shell.modelSelector} ref={agentMenuRef}>
-                        <button
-                          type="button"
-                          className={`${shell.modelSelectorTrigger} ${isAgentMenuOpen ? shell.modelSelectorTriggerActive : ""}`}
-                          onClick={() => setIsAgentMenuOpen((open) => !open)}
-                          aria-haspopup="listbox"
-                          aria-expanded={isAgentMenuOpen}
-                          title={currentAgent?.displayName || "选择模型"}
-                        >
-                          <span className={shell.modelSelectorText}>{currentAgent?.displayName || "未选择模型"}</span>
-                          <span className={shell.modelSelectorChevron}>{isAgentMenuOpen ? "▴" : "▾"}</span>
-                        </button>
-                        {isAgentMenuOpen ? (
-                          <div className={shell.modelMenu} role="listbox" aria-label="选择模型">
-                            {flattenedModels.map((model) => (
-                              <button
-                                key={model.id}
-                                type="button"
-                                className={`${shell.modelMenuItem} ${
-                                  model.id === currentAgent?.id ? shell.modelMenuItemActive : ""
-                                }`}
-                                onClick={() => {
-                                  setCurrentModelId(model.id);
-                                  setIsAgentMenuOpen(false);
-                                }}
-                                role="option"
-                                aria-selected={model.id === currentAgent?.id}
-                                title={`${model.displayName} (${model.modelName})`}
-                              >
-                                <span>{model.displayName}</span>
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                  <div className={shell.topBarActions}>
-                    <button
-                      type="button"
-                      className={shell.secondaryButton}
-                      onClick={() => void handleExportConversation()}
-                      title="复制精简会话文本，包含工具调用参数和返回结果"
-                    >
-                      导出会话
-                    </button>
-                    <button type="button" className={shell.secondaryButton} onClick={() => setShowSettings(true)}>
-                      设置
-                    </button>
-                  </div>
-                </div>
-
-                <ChatArea
-                  messages={messages}
-                  isGenerating={isGenerating}
-                  vm={vm}
-                  onOpenWorkspaceAttachment={handleOpenAttachment}
-                  onRestoreToUserMessage={handleRestoreToUserMessage}
-                  hasSnapshot={hasSnapshot}
-                />
-
-                <SelectionHint visible={isSelecting} />
-
-                <InputArea
-                  inputText={inputText}
-                  setInputText={setInputText}
-                  attachments={attachments}
-                  setAttachments={setAttachments}
-                  onSend={handleSend}
-                  onStopGenerating={handleStopGenerating}
-                  onStartBlockSelection={startSelecting}
-                  onCancelBlockSelection={cancelSelecting}
-                  isSelectingBlocks={isSelecting}
-                  enableReasoning={enableReasoning}
-                  onToggleReasoning={() => setEnableReasoning((previous) => !previous)}
-                  onOpenAttachment={handleOpenAttachment}
-                  isGenerating={isGenerating}
-                  isExpanded={isComposerExpanded}
-                  onToggleExpanded={() => setIsComposerExpanded((previous) => !previous)}
-                  vm={vm}
-                />
-
-                {/* Settings Modal */}
-                {showSettings && (
-                  <SettingsModal
-                    agents={agents}
-                    editingAgent={editingAgent}
-                    onSaveAgent={handleSaveAgent}
-                    onDeleteAgent={handleDeleteAgent}
-                    onExportAgent={handleExportAgent}
-                    onImportAgent={handleImportAgents}
-                    onEditAgent={setEditingAgent}
-                    themeMode={themeMode}
-                    onThemeModeChange={setThemeMode}
-                    onClose={() => {
-                      setShowSettings(false);
-                      setEditingAgent(null);
-                    }}
-                    isCompact={containerInfo.width < 760 || containerInfo.height < 560}
+          (() => {
+            const window = WindowManager.getWindow('02agent-window');
+            if (!window || !window.contentElement) return null;
+            const headerHeight = window.headerElement?.offsetHeight || 40;
+            const windowHeight = window.height || 600;
+            const contentHeight = windowHeight - headerHeight;
+            window.contentElement.style.height = `${contentHeight}px`;
+            window.contentElement.style.maxHeight = `${contentHeight}px`;
+            window.contentElement.style.display = 'flex';
+            window.contentElement.style.flexDirection = 'row';
+            window.contentElement.style.margin = '0';
+            window.contentElement.style.padding = '0';
+            window.contentElement.style.overflow = 'hidden';
+            return ReactDOM.createPortal(
+              <div
+                className={`${styles.container} ${shell.appShell} ${themeStyles.themeRoot} ${
+                  effectiveThemeMode === "dark" ? themeStyles.themeDark : themeStyles.themeLight
+                }`}
+                style={{ 
+                  height: "100%", 
+                  maxHeight: "100%", 
+                  display: "flex", 
+                  flexDirection: "row",
+                  margin: "0",
+                  padding: "0",
+                  overflow: "hidden"
+                }}
+              >
+                {/* Left Panel */}
+                {!useDrawerHistory && isLeftPanelOpen && (
+                  <HistoryPanel
+                    sessions={sessions}
+                    currentSessionId={currentSessionId}
+                    onNewChat={handleNewChat}
+                    onSelectSession={handleSelectSession}
+                    onDeleteSession={handleDeleteSession}
                   />
                 )}
 
-                <AttachmentInteractionLayer
-                  previewAttachment={previewAttachment}
-                  onClosePreview={() => setPreviewAttachment(null)}
-                />
-
-                {/* History Modal for Narrow Screen */}
-                {useDrawerHistory && isLeftPanelOpen && (
-                  <div className={styles.drawerOverlay} onClick={() => setIsLeftPanelOpen(false)}>
-                    <div className={styles.historyDrawer} onClick={(e) => e.stopPropagation()}>
-                      <div className={styles.modalHeader}>
-                        <div>
-                          <h3>历史对话</h3>
-                          <p>继续之前的上下文，或快速开始一个新会话。</p>
-                        </div>
-                        <button onClick={handleNewChat} className={styles.newChatBtn} title="新对话">
-                          +
+                {/* Right Panel */}
+                <div className={shell.mainPanel}>
+                  <div className={shell.topBar}>
+                    <div className={shell.topBarMain}>
+                      <div className={shell.topBarLeft}>
+                        <button
+                          type="button"
+                          className={shell.iconButton}
+                          onClick={() => setIsLeftPanelOpen((previous) => !previous)}
+                          title={isLeftPanelOpen ? "收起历史记录" : "展开历史记录"}
+                        >
+                          {useDrawerHistory ? "☰" : isLeftPanelOpen ? "←" : "☰"}
                         </button>
+                        <div className={shell.workspaceTitle}>
+                          <span>02Agent</span>
+                          <small>Scratch code · live blocks</small>
+                        </div>
                       </div>
-                      <div className={styles.modalHistoryList}>
-                        {sessions.length === 0 && <div className={styles.emptyTip}>暂无历史对话</div>}
-                        {sessions.map((s) => (
-                          <div
-                            key={s.id}
-                            className={`${styles.historyItem} ${currentSessionId === s.id ? styles.active : ""}`}
-                            onClick={() => handleSelectSession(s.id)}
+                      <div className={shell.topBarCenter}>
+                        <div className={shell.modelSelector} ref={agentMenuRef}>
+                          <button
+                            type="button"
+                            className={`${shell.modelSelectorTrigger} ${isAgentMenuOpen ? shell.modelSelectorTriggerActive : ""}`}
+                            onClick={() => setIsAgentMenuOpen((open) => !open)}
+                            aria-haspopup="listbox"
+                            aria-expanded={isAgentMenuOpen}
+                            title={currentAgent?.displayName || "选择模型"}
                           >
-                            <span className={styles.historyTitle}>{s.title}</span>
-                            <button
-                              className={styles.deleteSessionBtn}
-                              onClick={(e) => handleDeleteSession(s.id, e)}
-                              title="删除对话"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
+                            <span className={shell.modelSelectorText}>{currentAgent?.displayName || "未选择模型"}</span>
+                            <span className={shell.modelSelectorChevron}>{isAgentMenuOpen ? "▴" : "▾"}</span>
+                          </button>
+                          {isAgentMenuOpen ? (
+                            <div className={shell.modelMenu} role="listbox" aria-label="选择模型">
+                              {flattenedModels.map((model) => (
+                                <button
+                                  key={model.id}
+                                  type="button"
+                                  className={`${shell.modelMenuItem} ${
+                                    model.id === currentAgent?.id ? shell.modelMenuItemActive : ""
+                                  }`}
+                                  onClick={() => {
+                                    setCurrentModelId(model.id);
+                                    setIsAgentMenuOpen(false);
+                                  }}
+                                  role="option"
+                                  aria-selected={model.id === currentAgent?.id}
+                                  title={`${model.displayName} (${model.modelName})`}
+                                >
+                                  <span>{model.displayName}</span>
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
-                      <button className={styles.closeBtn} onClick={() => setIsLeftPanelOpen(false)}>
-                        关闭
+                    </div>
+                    <div className={shell.topBarActions}>
+                      <button
+                        type="button"
+                        className={shell.secondaryButton}
+                        onClick={() => void handleExportConversation()}
+                        title="复制精简会话文本，包含工具调用参数和返回结果"
+                      >
+                        导出会话
+                      </button>
+                      <button type="button" className={shell.secondaryButton} onClick={() => setShowSettings(true)}>
+                        设置
                       </button>
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          </ExpansionBox>,
-          document.body,
-        )}
+
+                  <ChatArea
+                    messages={messages}
+                    isGenerating={isGenerating}
+                    vm={vm}
+                    onOpenWorkspaceAttachment={handleOpenAttachment}
+                    onRestoreToUserMessage={handleRestoreToUserMessage}
+                    hasSnapshot={hasSnapshot}
+                  />
+
+                  <SelectionHint visible={isSelecting} />
+
+                  <InputArea
+                    inputText={inputText}
+                    setInputText={setInputText}
+                    attachments={attachments}
+                    setAttachments={setAttachments}
+                    onSend={handleSend}
+                    onStopGenerating={handleStopGenerating}
+                    onStartBlockSelection={startSelecting}
+                    onCancelBlockSelection={cancelSelecting}
+                    isSelectingBlocks={isSelecting}
+                    enableReasoning={enableReasoning}
+                    onToggleReasoning={() => setEnableReasoning((previous) => !previous)}
+                    onOpenAttachment={handleOpenAttachment}
+                    isGenerating={isGenerating}
+                    isExpanded={isComposerExpanded}
+                    onToggleExpanded={() => setIsComposerExpanded((previous) => !previous)}
+                    vm={vm}
+                  />
+
+                  {/* Settings Modal */}
+                  {showSettings && (
+                    <SettingsModal
+                      agents={agents}
+                      editingAgent={editingAgent}
+                      onSaveAgent={handleSaveAgent}
+                      onDeleteAgent={handleDeleteAgent}
+                      onExportAgent={handleExportAgent}
+                      onImportAgent={handleImportAgents}
+                      onEditAgent={setEditingAgent}
+                      themeMode={themeMode}
+                      onThemeModeChange={setThemeMode}
+                      onClose={() => {
+                        setShowSettings(false);
+                        setEditingAgent(null);
+                      }}
+                      isCompact={containerInfo.width < 760 || containerInfo.height < 560}
+                    />
+                  )}
+
+                  <AttachmentInteractionLayer
+                    previewAttachment={previewAttachment}
+                    onClosePreview={() => setPreviewAttachment(null)}
+                  />
+
+                  {/* History Modal for Narrow Screen */}
+                  {useDrawerHistory && isLeftPanelOpen && (
+                    <div className={styles.drawerOverlay} onClick={() => setIsLeftPanelOpen(false)}>
+                      <div className={styles.historyDrawer} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                          <div>
+                            <h3>历史对话</h3>
+                            <p>继续之前的上下文，或快速开始一个新会话。</p>
+                          </div>
+                          <button onClick={handleNewChat} className={styles.newChatBtn} title="新对话">
+                            +
+                          </button>
+                        </div>
+                        <div className={styles.modalHistoryList}>
+                          {sessions.length === 0 && <div className={styles.emptyTip}>暂无历史对话</div>}
+                          {sessions.map((s) => (
+                            <div
+                              key={s.id}
+                              className={`${styles.historyItem} ${currentSessionId === s.id ? styles.active : ""}`}
+                              onClick={() => handleSelectSession(s.id)}
+                            >
+                              <span className={styles.historyTitle}>{s.title}</span>
+                              <button
+                                className={styles.deleteSessionBtn}
+                                onClick={(e) => handleDeleteSession(s.id, e)}
+                                title="删除对话"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <button className={styles.closeBtn} onClick={() => setIsLeftPanelOpen(false)}>
+                          关闭
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>,
+              window.contentElement
+            );
+          })()
+        }
       </section>
       </Draggable>
       {/*<ConverterDebugger vm={vm} workspace={workspace} />*/}

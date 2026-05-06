@@ -7,8 +7,26 @@ const AgentHost = ({addonApi}) => {
     const vm = addon.tab.traps.vm;
     const [workspace, setWorkspace] = React.useState(() => addon.tab.traps.getWorkspace() || null);
     const getEditorThemeMode = React.useCallback(() => {
-        const theme = addon.tab.redux?.state?.scratchGui?.theme?.theme;
-        return typeof theme?.isDark === 'function' && theme.isDark() ? 'dark' : 'light';
+        const reduxState = addon.tab.redux?.state;
+        if (reduxState) {
+            const theme = reduxState.scratchGui?.theme?.theme;
+            if (typeof theme?.isDark === 'function') {
+                return theme.isDark() ? 'dark' : 'light';
+            }
+            const isDark = reduxState.scratchGui?.theme?.isDark;
+            if (typeof isDark === 'boolean') {
+                return isDark ? 'dark' : 'light';
+            }
+        }
+        const bodyClass = document.body.className;
+        if (bodyClass.includes('dark') || bodyClass.includes('Dark')) {
+            return 'dark';
+        }
+        const themeStyle = getComputedStyle(document.documentElement).getPropertyValue('--theme');
+        if (themeStyle.includes('dark')) {
+            return 'dark';
+        }
+        return 'light';
     }, [addon]);
     const [editorThemeMode, setEditorThemeMode] = React.useState(getEditorThemeMode);
     const [showButtonInEditor, setShowButtonInEditor] = React.useState(() => addon.settings.get('showButtonInEditor'));

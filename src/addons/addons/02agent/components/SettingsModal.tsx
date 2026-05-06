@@ -430,6 +430,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <strong>浅色</strong>
                       <span>适合明亮环境，保留同一套布局密度。</span>
                     </button>
+                    <button
+                      type="button"
+                      className={`${settings.themeChoice} ${themeMode === "auto" ? settings.themeChoiceActive : ""}`}
+                      onClick={() => onThemeModeChange("auto")}
+                    >
+                      <strong>跟随编辑器</strong>
+                      <span>自动跟随 Scratch 编辑器的主题。</span>
+                    </button>
                   </div>
                 </div>
               </section>
