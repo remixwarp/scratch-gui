@@ -78,12 +78,7 @@
 .assistantMessage .messageTurnBody {
   display: block;
 }
-.assistantMessage .messageActionRail {
-  right: -42px;
-}
-.userMessage .messageActionRail {
-  left: -42px;
-}
+
 .userMessage .messageTurnBody {
   display: flex;
   justify-content: flex-end;
@@ -339,21 +334,22 @@
   line-height: 1.55;
 }
 .messageActionRail {
-  position: absolute;
-  top: 2px;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--ai-transition-fast);
-}
-.messageActionRailHorizontal {
-  flex-direction: column;
-}
-.messageRow:hover .messageActionRail {
+  flex-direction: row;
+  gap: 8px;
   opacity: 1;
   pointer-events: auto;
+  padding: 6px 0;
+  justify-content: flex-start;
+}
+.messageActionRailHorizontal {
+  flex-direction: row;
+}
+.userMessage .messageActionRail {
+  justify-content: flex-end;
+}
+.assistantMessage .messageActionRail {
+  justify-content: flex-start;
 }
 .messageActionButton {
   width: 28px;

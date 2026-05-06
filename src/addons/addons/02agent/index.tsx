@@ -140,7 +140,7 @@ const Agent: React.FC<AgentProps> = ({
     if (!window) {
       window = WindowManager.createWindow({
         id: '02agent-window',
-        title: '02Agent (RW版)',
+        title: '02Agent (RW增强版)',
         width: containerInfoRef.current.width || 800,
         height: containerInfoRef.current.height || 600,
         minWidth: 400,
@@ -357,21 +357,20 @@ const Agent: React.FC<AgentProps> = ({
             tipText={"02Agent"}
           />
         )}
-        {visible &&
-          (() => {
-            const window = WindowManager.getWindow('02agent-window');
-            if (!window || !window.contentElement) return null;
-            const headerHeight = window.headerElement?.offsetHeight || 40;
-            const windowHeight = window.height || 600;
-            const contentHeight = windowHeight - headerHeight;
-            window.contentElement.style.height = `${contentHeight}px`;
-            window.contentElement.style.maxHeight = `${contentHeight}px`;
-            window.contentElement.style.display = 'flex';
-            window.contentElement.style.flexDirection = 'row';
-            window.contentElement.style.margin = '0';
-            window.contentElement.style.padding = '0';
-            window.contentElement.style.overflow = 'hidden';
-            return ReactDOM.createPortal(
+        {visible && (() => {
+          const window = WindowManager.getWindow('02agent-window');
+          if (!window || !window.contentElement) return null;
+          const headerHeight = window.headerElement?.offsetHeight || 40;
+          const windowHeight = window.height || 600;
+          const contentHeight = windowHeight - headerHeight;
+          window.contentElement.style.height = `${contentHeight}px`;
+          window.contentElement.style.maxHeight = `${contentHeight}px`;
+          window.contentElement.style.display = 'flex';
+          window.contentElement.style.flexDirection = 'row';
+          window.contentElement.style.margin = '0';
+          window.contentElement.style.padding = '0';
+          window.contentElement.style.overflow = 'hidden';
+          return ReactDOM.createPortal(
               <div
                 className={`${styles.container} ${shell.appShell} ${themeStyles.themeRoot} ${
                   effectiveThemeMode === "dark" ? themeStyles.themeDark : themeStyles.themeLight
@@ -565,8 +564,7 @@ const Agent: React.FC<AgentProps> = ({
               </div>,
               window.contentElement
             );
-          })()
-        }
+          })()}
       </section>
       </Draggable>
       {/*<ConverterDebugger vm={vm} workspace={workspace} />*/}
