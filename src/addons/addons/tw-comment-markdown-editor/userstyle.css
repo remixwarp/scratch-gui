@@ -1,3 +1,4 @@
+/* 切换开关容器 - 集成到拖动栏 */
 .tw-md-toggle-container {
   display: flex;
   justify-content: flex-end;
@@ -11,6 +12,7 @@
   z-index: 10;
 }
 
+/* 模式指示器 - 集成到拖动栏 */
 .tw-md-mode-indicator {
   font-size: 14px;
   color: var(--editorTheme3-commentText, #888);
@@ -29,6 +31,7 @@
   font-weight: 600;
 }
 
+/* 切换按钮 - 集成到拖动栏 */
 .tw-md-toggle-button {
   background: rgba(var(--editorTheme3-commentBorder-rgb, 200, 200, 200), 0.3);
   color: var(--editorTheme3-commentText, #555);
@@ -62,6 +65,7 @@
   border-color: rgba(76, 175, 80, 0.3);
 }
 
+/* 预览容器 - 无背景框 */
 .tw-md-preview-container {
   width: 100%;
   height: 100%;
@@ -78,6 +82,7 @@
   max-height: 100%;
 }
 
+/* 预览内容样式 */
 .tw-md-preview-container h1,
 .tw-md-preview-container h2,
 .tw-md-preview-container h3 {
@@ -104,6 +109,7 @@
   color: var(--editorTheme3-commentText, #555);
 }
 
+
 .tw-md-preview-container strong {
   font-weight: 600;
   color: var(--editorTheme3-commentText, #333);
@@ -124,6 +130,7 @@
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+/* 引用块样式 */
 .tw-md-preview-container blockquote {
   border-left: 4px solid #dfe2e5;
   padding: 0 16px;
@@ -173,6 +180,7 @@
   color: var(--editorTheme3-commentText, #666);
 }
 
+/* 确保注释框内的滚动条正常显示 */
 .tw-md-preview-container::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -196,6 +204,7 @@
   background-clip: content-box;
 }
 
+/* 确保注释框本身支持滚动 */
 .tw-md-preview-container {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.05);
