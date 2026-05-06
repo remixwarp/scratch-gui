@@ -14,7 +14,7 @@ const messages = defineMessages({
         id: 'onboarding.windowTitle'
     },
     step1Title: {
-        defaultMessage: 'Welcome to MistWarp!',
+        defaultMessage: 'Welcome to RemixWarp!',
         description: 'Title of the first onboarding step',
         id: 'onboarding.step1.title'
     },
