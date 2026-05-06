@@ -1,5 +1,7 @@
 import { defineMessages, FormattedMessage, intlShape, injectIntl, useRef } from 'react-intl';
 import React, { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import Modal from '../../containers/modal.jsx';
 import PropTypes from 'prop-types';
 import Box from '../box/box.jsx';
@@ -14,6 +16,22 @@ var data = null;
 export function loadData(loadData) {
     data = loadData;
 }
+
+const markdownComponents = {
+    h1: ({children}) => <h1 style={{fontSize: '1.8em', borderBottom: '2px solid #ddd', paddingBottom: '8px'}}>{children}</h1>,
+    h2: ({children}) => <h2 style={{fontSize: '1.5em', borderBottom: '1px solid #eee', paddingBottom: '6px'}}>{children}</h2>,
+    h3: ({children}) => <h3 style={{fontSize: '1.25em'}}>{children}</h3>,
+    p: ({children}) => <p style={{margin: '0.8em 0', lineHeight: '1.6'}}>{children}</p>,
+    code: ({inline, children}) => inline ? <code style={{background: '#f5f5f5', padding: '2px 6px', borderRadius: '4px'}}>{children}</code> : <pre style={{background: '#f5f5f5', padding: '12px', borderRadius: '6px', overflow: 'auto'}}><code>{children}</code></pre>,
+    pre: ({children}) => <pre style={{background: '#f5f5f5', padding: '12px', borderRadius: '6px', overflow: 'auto'}}>{children}</pre>,
+    ul: ({children}) => <ul style={{margin: '0.8em 0', paddingLeft: '24px'}}>{children}</ul>,
+    ol: ({children}) => <ol style={{margin: '0.8em 0', paddingLeft: '24px'}}>{children}</ol>,
+    li: ({children}) => <li style={{margin: '4px 0'}}>{children}</li>,
+    blockquote: ({children}) => <blockquote style={{borderLeft: '4px solid #4c97ff', margin: '0.8em 0', padding: '8px 16px', background: '#f5f9ff'}}>{children}</blockquote>,
+    a: ({href, children}) => <a href={href} style={{color: '#4c97ff', textDecoration: 'none'}} target="_blank" rel="noopener noreferrer">{children}</a>,
+    strong: ({children}) => <strong style={{fontWeight: 'bold'}}>{children}</strong>,
+    em: ({children}) => <em style={{fontStyle: 'italic'}}>{children}</em>,
+};
 
 const CustomModalComponent = (props) => {
     try {
@@ -94,9 +112,9 @@ const CustomModalComponent = (props) => {
                         </div>
                     }
                     <div className={styles.body}>
-                        {readMe[nowTab].text.split('\n').map((line, i) => (
-                            <p key={i} style={{margin: '0.5rem 0'}}>{line}</p>
-                        ))}
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                            {readMe[nowTab].text}
+                        </ReactMarkdown>
                     </div>
                 </Box>
 
