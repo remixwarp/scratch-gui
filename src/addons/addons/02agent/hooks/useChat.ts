@@ -509,8 +509,8 @@ export function useChat({
               provider: currentAgent.provider,
             }),
           ],
-          tools: scratchToolSchemas,
-          toolChoice: "auto",
+          tools: currentAgent.modelName?.includes("R1") || currentAgent.modelName?.includes("Qwen") ? undefined : scratchToolSchemas,
+          toolChoice: currentAgent.modelName?.includes("R1") || currentAgent.modelName?.includes("Qwen") ? undefined : "auto",
           enableReasoning,
           signal: abortControllerRef.current.signal,
           onReasoningDelta: (delta) => {

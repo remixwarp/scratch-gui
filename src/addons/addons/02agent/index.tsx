@@ -46,6 +46,8 @@ const Agent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "light" 
   const launcherDraggedRef = React.useRef(false);
   const agentMenuRef = React.useRef<HTMLDivElement | null>(null);
   const [enableReasoning, setEnableReasoning] = useStoredState<boolean>("02AGENT_ENABLE_REASONING", false);
+  const [showButtonInEditor, setShowButtonInEditor] = useStoredState<boolean>("02AGENT_SHOW_BUTTON_IN_EDITOR", true);
+  const [showButtonInToolsMenu, setShowButtonInToolsMenu] = useStoredState<boolean>("02AGENT_SHOW_BUTTON_IN_TOOLS_MENU", true);
 
   const [containerInfo, setContainerInfo] = useStoredState<ExpansionRect>(
     "02AGENT_CONTAINER_INFO",
@@ -292,14 +294,16 @@ const Agent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "light" 
         }}
       >
       <section className={styles.aiAssistantRoot} ref={containerRef}>
-        <Tooltip
-          className={`tw-02agent-launcher-handle ${styles.icon} ${themeMode === "dark" ? styles.iconDark : styles.iconLight}`}
-          icon={<><AIAssistantIcon /><span>02Agent</span></>}
-          onClick={() => {
-            if (!launcherDraggedRef.current) handleShow();
-          }}
-          tipText={"02Agent"}
-        />
+        {showButtonInEditor && (
+          <Tooltip
+            className={`tw-02agent-launcher-handle ${styles.icon} ${themeMode === "dark" ? styles.iconDark : styles.iconLight}`}
+            icon={<><AIAssistantIcon /><span>02Agent</span></>}
+            onClick={() => {
+              if (!launcherDraggedRef.current) handleShow();
+            }}
+            tipText={"02Agent"}
+          />
+        )}
         {visible &&
           ReactDOM.createPortal(
             <ExpansionBox

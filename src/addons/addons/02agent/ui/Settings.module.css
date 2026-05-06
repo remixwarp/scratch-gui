@@ -397,6 +397,26 @@
 .fileInput {
   display: none;
 }
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.checkboxItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.checkboxItem input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ai-accent-strong);
+}
+.checkboxItem span {
+  color: var(--ai-text-secondary);
+  font-size: 13px;
+}
 @media (max-width: 760px), (max-height: 560px) {
   .overlay {
     padding: 0;

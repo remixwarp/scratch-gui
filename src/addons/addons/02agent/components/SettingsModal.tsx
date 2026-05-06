@@ -46,7 +46,7 @@ const getDefaultModelForProvider = (provider: Agent["provider"]) => {
     return { name: "Claude 3.5 Sonnet", modelId: "claude-3-5-sonnet-latest" };
   }
   if (provider === "siliconflow") {
-    return { name: "DeepSeek-V3", modelId: "deepseek-ai/DeepSeek-V3" };
+    return { name: "DeepSeek-R1-0528-Qwen3-8B", modelId: "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B" };
   }
   return { name: "GPT-4o", modelId: "gpt-4o" };
 };

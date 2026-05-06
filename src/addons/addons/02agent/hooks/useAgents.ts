@@ -34,8 +34,8 @@ const DEFAULT_AGENTS: Agent[] = [
     models: [
       {
         id: "default-deepseek-model-1",
-        name: "DeepSeek-V3",
-        modelId: "deepseek-ai/DeepSeek-V3",
+        name: "DeepSeek-R1-0528-Qwen3-8B",
+        modelId: "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
       }
     ],
   },

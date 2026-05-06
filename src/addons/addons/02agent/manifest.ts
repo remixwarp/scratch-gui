@@ -20,4 +20,20 @@ export default {
       link: "https://space.bilibili.com/3546876326447960",
     },
   ],
+  settings: [
+    {
+      dynamic: true,
+      id: "showButtonInEditor",
+      name: "将按钮添加到编辑器右上角",
+      default: true,
+      type: "boolean",
+    },
+    {
+      dynamic: true,
+      id: "showButtonInToolsMenu",
+      name: "将按钮添加到工具-AI菜单",
+      default: true,
+      type: "boolean",
+    },
+  ],
 };
