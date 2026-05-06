@@ -2725,6 +2725,20 @@ class MenuBar extends React.Component {
                                                         id="gui.menuBar.aiAgent"
                                                     />
                                                 </MenuItem>
+                                            {SettingsStore.getAddonEnabled('02agent') && (
+                                                <MenuItem
+                                                    onClick={() => {
+                                                        window.dispatchEvent(new Event('02agent-show-plugin'));
+                                                        this.props.onRequestCloseTools();
+                                                    }}
+                                                >
+                                                    <FormattedMessage
+                                                        defaultMessage="02Agent"
+                                                        description="Menu bar item for 02Agent"
+                                                        id="gui.menuBar.02agent"
+                                                    />
+                                                </MenuItem>
+                                            )}
                                                 <MenuItem
                                                     onClick={() => {
                                                         this.props.onClickBaiduAI();

@@ -1,6 +1,6 @@
 export default {
     name: '02Agent',
-    description: '基于Gandi IDE AI assistant addon二次开发的AI助手，可以编写scratch代码',
+    description: '基于Gandi IDE AI assistant addon二次开发的AI助手，可以编写scratch代码开启后会自动将按钮添加到工具-AI菜单',
     credits: [
         {
             name: 'PPN-design',
@@ -15,8 +15,8 @@ export default {
             link: 'https://www.ccw.site/student/610b508176415b2f27e0f851'
         },
         {
-      name: "笑小朗",
-      link: "https://space.bilibili.com/3546876326447960",
+            name: '笑小朗',
+            link: 'https://space.bilibili.com/3546876326447960'
         },
     ],
     tags: ['02engine', 'editor', 'codeEditor'],
@@ -26,5 +26,15 @@ export default {
             url: 'userscript.js',
             matches: ['projects']
         }
+    ],
+    settings: [
+        {
+            dynamic: true,
+            id: 'showButtonInEditor',
+            name: '将按钮添加到编辑器右上角',
+            default: true,
+            type: 'boolean'
+        },
+
     ]
 };

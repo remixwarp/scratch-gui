@@ -34,9 +34,17 @@ const DEFAULT_CONTAINER_INFO = {
 };
 
 type ThemeMode = "dark" | "light";
-type AgentProps = PluginContext & { editorThemeMode?: ThemeMode };
+type AgentProps = PluginContext & { 
+  editorThemeMode?: ThemeMode;
+  showButtonInEditor?: boolean;
+};
 
-const Agent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "light" }) => {
+const Agent: React.FC<AgentProps> = ({ 
+  vm, 
+  workspace, 
+  editorThemeMode = "light",
+  showButtonInEditor = true 
+}) => {
   const [visible, setVisible] = React.useState(false);
   const [launcherPosition, setLauncherPosition] = useStoredState("02AGENT_LAUNCHER_POSITION", { x: 0, y: 0 });
   const [isAgentMenuOpen, setIsAgentMenuOpen] = React.useState(false);
@@ -46,8 +54,6 @@ const Agent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "light" 
   const launcherDraggedRef = React.useRef(false);
   const agentMenuRef = React.useRef<HTMLDivElement | null>(null);
   const [enableReasoning, setEnableReasoning] = useStoredState<boolean>("02AGENT_ENABLE_REASONING", false);
-  const [showButtonInEditor, setShowButtonInEditor] = useStoredState<boolean>("02AGENT_SHOW_BUTTON_IN_EDITOR", true);
-  const [showButtonInToolsMenu, setShowButtonInToolsMenu] = useStoredState<boolean>("02AGENT_SHOW_BUTTON_IN_TOOLS_MENU", true);
 
   const [containerInfo, setContainerInfo] = useStoredState<ExpansionRect>(
     "02AGENT_CONTAINER_INFO",
@@ -136,6 +142,15 @@ const Agent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "light" 
     });
     setVisible(true);
   }, [getContainerPosition, setContainerInfo]);
+
+  React.useEffect(() => {
+    const handleShow02Agent = (event) => {
+      event.stopPropagation();
+      handleShow();
+    };
+    window.addEventListener('02agent-show-plugin', handleShow02Agent);
+    return () => window.removeEventListener('02agent-show-plugin', handleShow02Agent);
+  }, [handleShow]);
 
   const handleClose = () => {
     setVisible(false);

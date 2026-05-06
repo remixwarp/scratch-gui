@@ -11,6 +11,7 @@ const AgentHost = ({addonApi}) => {
         return typeof theme?.isDark === 'function' && theme.isDark() ? 'dark' : 'light';
     }, [addon]);
     const [editorThemeMode, setEditorThemeMode] = React.useState(getEditorThemeMode);
+    const [showButtonInEditor, setShowButtonInEditor] = React.useState(() => addon.settings.get('showButtonInEditor'));
 
     React.useEffect(() => {
         let disposed = false;
@@ -41,7 +42,20 @@ const AgentHost = ({addonApi}) => {
         return () => redux.removeEventListener?.('statechanged', handleStateChanged);
     }, [addon, getEditorThemeMode]);
 
-    return <Agent vm={vm} workspace={workspace} editorThemeMode={editorThemeMode} />;
+    React.useEffect(() => {
+        const handleSettingsChange = () => {
+            setShowButtonInEditor(addon.settings.get('showButtonInEditor'));
+        };
+        addon.settings.addEventListener('change', handleSettingsChange);
+        return () => addon.settings.removeEventListener('change', handleSettingsChange);
+    }, [addon]);
+
+    return <Agent 
+        vm={vm} 
+        workspace={workspace} 
+        editorThemeMode={editorThemeMode}
+        showButtonInEditor={showButtonInEditor}
+    />;
 };
 
 export default addonApi => {
