@@ -1259,13 +1259,27 @@ function getModalBackgroundPosition(alignX, alignY, offsetX, offsetY) {
 async function addModalBackground() {
     try {
         const config = await getModalBackgroundConfig();
-        const modalContents = Array.from(document.querySelectorAll('[class*=\"modal_content\"]'));
-        if (!modalContents.length) return;
+        
+        // 查找模态窗口内容
+        const modalContents = Array.from(document.querySelectorAll('[class*="modal_content"]'));
+        // 查找自由窗口内容
+        const addonWindows = Array.from(document.querySelectorAll('.addon-window'));
+        
+        // 如果没有任何窗口，则返回
+        if (!modalContents.length && !addonWindows.length) return;
 
+        // 处理模态窗口
         const modalBackgrounds = Array.from(new Set(modalContents.map((content) => {
             const fullscreenShell = content.closest('.sa-modal-shell-fullscreen');
             return fullscreenShell || content;
         })));
+        
+        // 收集所有需要应用背景的窗口（模态窗口 + 自由窗口）
+        const allBackgroundTargets = [
+            ...modalBackgrounds,
+            ...addonWindows
+        ];
+        
         const resetModalBackground = (target) => {
             if (!target) return;
             target.classList.remove('sa-modal-background-enabled');
@@ -1281,7 +1295,7 @@ async function addModalBackground() {
 
         if (!config) {
             document.documentElement.style.setProperty('--enable-modal-background', 'var(--ui-modal-background)')
-            modalBackgrounds.forEach(resetModalBackground);
+            allBackgroundTargets.forEach(resetModalBackground);
             return;
         }
         document.documentElement.style.setProperty('--enable-modal-background', 'transparent');
@@ -1313,7 +1327,7 @@ async function addModalBackground() {
         }
         const backgroundPosition = getModalBackgroundPosition(config.alignX, config.alignY, config.offsetX, config.offsetY);
 
-        modalBackgrounds.forEach((bg) => {
+        allBackgroundTargets.forEach((bg) => {
             resetModalBackground(bg);
 
             bg.classList.add('sa-modal-background-enabled');
