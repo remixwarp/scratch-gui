@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
+import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
 
 import LibraryItem from '../../containers/library-item.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
@@ -363,6 +363,15 @@ class LibraryComponent extends React.Component {
                                 <Spinner
                                     large
                                     level="primary"
+                                />
+                            </div>
+                        )}
+                        {filteredData && filteredData.length === 0 && (
+                            <div className={styles.emptyState}>
+                                <FormattedMessage
+                                    defaultMessage="Loading extensions..."
+                                    description="Message shown when a tag category is loading"
+                                    id="gui.library.loadingExtensions"
                                 />
                             </div>
                         )}

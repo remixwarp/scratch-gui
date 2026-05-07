@@ -458,9 +458,26 @@ export default async function ({ addon, msg }) {
     bgDB = new BackgroundDB();
     await bgDB.open();
 
-    // 加载保存的背景
-    await refreshWorkSpaceBackground();
-    await initializeWallpaperRotation();
+    // 调试：打印积木区的 DOM 结构
+    setTimeout(() => {
+        console.log("=== 背景插件调试 ===");
+        console.log("查询 .blocks:", document.querySelector('.blocks'));
+        console.log("查询 [class*='blocks-wrapper_']:", document.querySelector("[class*='blocks-wrapper_']"));
+        console.log("查询 svg.blocklySvg:", document.querySelector('svg.blocklySvg'));
+        
+        // 查找所有可能的工作区容器
+        const possibleWorkspaces = document.querySelectorAll('[class*="blocks"], [class*="wrapper"]');
+        console.log("可能的工作区容器数量:", possibleWorkspaces.length);
+        possibleWorkspaces.forEach((el, i) => {
+            console.log(`容器 ${i}:`, el.className, el.tagName);
+        });
+    }, 2000);
+
+    // 加载保存的背景（延迟执行以确保工作区元素已加载）
+    setTimeout(async () => {
+        await refreshWorkSpaceBackground();
+        await initializeWallpaperRotation();
+    }, 3000);
 
     /**  
     * 监听工作区，防止blocks重绘时把我刚刚放进去的img干丢了
@@ -1354,9 +1371,9 @@ async function refreshWorkSpaceBackground() {
         );
         clearWallpaperTransitionTimeout();
         const wallpaper = await getActiveWorkspaceWallpaper();
-        const existingBackgrounds = Array.from(document.querySelectorAll('.sa-background-image'));
-        const existingBg = existingBackgrounds[0] || null;
-        existingBackgrounds.slice(1).forEach((backgroundImage) => backgroundImage.remove());
+        const existingWrappers = Array.from(document.querySelectorAll('.sa-background-wrapper'));
+        const existingBg = existingWrappers[0] || null;
+        existingWrappers.slice(1).forEach((wrapper) => wrapper.remove());
 
         if (!wallpaper || !wallpaper.link) {
             if (existingBg) {
@@ -1374,16 +1391,29 @@ async function refreshWorkSpaceBackground() {
             return;
         }
 
-        const workspace = document.querySelector('.blocks') || document.querySelector('[class*=gui_blocks-wrapper]');
+        const workspace = document.querySelector("[class*='blocks-wrapper_']") || document.querySelector('.blocks');
         if (!workspace) {
             isRefreshingBG = false;
             return;
         }
 
-        if (existingBg && existingBg.dataset.wallpaperId === wallpaper.id) {
-            existingBg.src = wallpaper.link;
-            existingBg.style.filter = `blur(${await getSetting('WorkSpaceBGBlur') || 0}px)`;
-            existingBg.style.opacity = `${await getSetting('WorkSpaceBGOpacity') || 0.5}`;
+        const blocksArea = document.querySelector("[class*='blocks_blocks_']");
+        const blocksSvg = document.querySelector('svg.blocklySvg');
+        
+        if (blocksArea) {
+            blocksArea.style.backgroundColor = 'transparent';
+            blocksArea.style.backgroundImage = 'none';
+        }
+        
+        if (blocksSvg) {
+            blocksSvg.style.setProperty('background-color', 'transparent', 'important');
+        }
+
+        const existingImg = existingBg ? existingBg.querySelector('.sa-background-image') : null;
+        if (existingImg && existingImg.dataset.wallpaperId === wallpaper.id) {
+            existingImg.src = wallpaper.link;
+            existingImg.style.filter = `blur(${await getSetting('WorkSpaceBGBlur') || 0}px)`;
+            existingImg.style.opacity = `${await getSetting('WorkSpaceBGOpacity') || 0.5}`;
             await resizeWorkspaceBackground();
             isRefreshingBG = false;
             return;
@@ -1411,23 +1441,49 @@ async function refreshWorkSpaceBackground() {
 
 async function createNewBackground(wallpaper, workspace, animationDuration) {
     clearWallpaperTransitionTimeout();
-    workspace.querySelectorAll('.sa-background-image').forEach((backgroundImage) => backgroundImage.remove());
+    workspace.querySelectorAll('.sa-background-wrapper').forEach((wrapper) => wrapper.remove());
+    
+    const blocksArea = document.querySelector("[class*='blocks_blocks_']");
+    
+    // Create a wrapper div for the background
+    const bgWrapper = document.createElement('div');
+    bgWrapper.className = 'sa-background-wrapper';
+    bgWrapper.style.position = 'absolute';
+    bgWrapper.style.top = '0';
+    bgWrapper.style.left = '0';
+    bgWrapper.style.width = '100%';
+    bgWrapper.style.height = '100%';
+    bgWrapper.style.zIndex = '0';
+    bgWrapper.style.overflow = 'hidden';
+    
     const background = document.createElement('img');
     background.className = 'sa-background-image';
     background.dataset.wallpaperId = wallpaper.id || '';
     background.src = wallpaper.link;
     background.style.filter = `blur(${await getSetting('WorkSpaceBGBlur') || 0}px)`;
-    background.style.clipPath = 'inset(0)';
-    background.style.opacity = '0'; // Start invisible
+    background.style.opacity = `${await getSetting('WorkSpaceBGOpacity') || 0.5}`;
     background.style.position = 'absolute';
+    background.style.top = '0';
+    background.style.left = '0';
+    background.style.width = '100%';
+    background.style.height = '100%';
+    background.style.objectFit = 'cover';
     background.draggable = false;
-    background.style.transition = `opacity ${animationDuration}ms ease-in`; // Add transition for fade in
-
-    workspace.prepend(background);
+    
+    bgWrapper.appendChild(background);
+    
+    // Insert the background wrapper before the blocks area
+    if (blocksArea && blocksArea.parentNode) {
+        blocksArea.parentNode.insertBefore(bgWrapper, blocksArea);
+    } else {
+        workspace.prepend(bgWrapper);
+    }
+    
+    // Ensure blocks area has higher z-index
+    if (blocksArea) {
+        blocksArea.style.position = 'relative';
+        blocksArea.style.zIndex = '1';
+    }
+    
     await resizeWorkspaceBackground();
-
-    // Trigger fade in
-    requestAnimationFrame(async () => {
-        background.style.opacity = `${await getSetting('WorkSpaceBGOpacity') || 0.5}`;
-    });
 }

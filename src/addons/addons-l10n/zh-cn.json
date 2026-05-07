@@ -609,6 +609,8 @@
   "background/rotation-interval": "轮换间隔（分钟）",
   "background/rotate-now": "立即轮换",
   "background/active": "设为活动",
+  "background/clear": "清除",
+  "background/background": "背景",
   "block-pins/move_to_top": "移到顶部",
     "block-pins/move_to_bottom": "移到底部",
     "block-pins/organize_by_category": "按类别排序",
