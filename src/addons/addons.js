@@ -104,7 +104,8 @@ const addons = [
     'simple-project-analyzer',
     'todo-list',
     'block-pins',
-    'tw-comment-markdown-editor'
+    'tw-comment-markdown-editor',
+    'background'
 ];
 
 const newAddons = [
