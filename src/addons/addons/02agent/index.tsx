@@ -70,6 +70,20 @@ const Agent: React.FC<AgentProps> = ({
     containerInfoRef.current = containerInfo;
   }, [containerInfo]);
 
+  React.useEffect(() => {
+    if (visible) {
+      const window = WindowManager.getWindow('02agent-window');
+      if (window && window.contentElement) {
+        const headerHeight = window.headerElement?.offsetHeight || 40;
+        const windowHeight = window.height || containerInfo.height || 600;
+        const contentHeight = windowHeight - headerHeight;
+        window.contentElement.style.height = `${contentHeight}px`;
+        window.contentElement.style.maxHeight = `${contentHeight}px`;
+        console.log('[02Agent] Content height updated:', contentHeight);
+      }
+    }
+  }, [visible, containerInfo]);
+
   // Use custom hooks for complex logic
   const {
     agents,
@@ -152,6 +166,22 @@ const Agent: React.FC<AgentProps> = ({
         destroyOnMinimize: true,
         onClose: () => {
           setVisible(false);
+        },
+        onResize: (newWidth: number, newHeight: number) => {
+          console.log('[02Agent] Window resized:', newWidth, newHeight);
+          setContainerInfo(prev => ({
+            ...prev,
+            width: newWidth,
+            height: newHeight
+          }));
+        },
+        onMove: (newX: number, newY: number) => {
+          console.log('[02Agent] Window moved:', newX, newY);
+          setContainerInfo(prev => ({
+            ...prev,
+            translateX: newX,
+            translateY: newY
+          }));
         }
       });
       const contentElement = window.contentElement;
