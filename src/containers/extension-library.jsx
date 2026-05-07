@@ -62,6 +62,7 @@ const fetchLibrary = async () => {
     let remixwarpExtensions = [];
     let astraExtensions = [];
     let engineExtensions = [];
+    let yesshapeExtensions = [];
 
     try {
         const twRes = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
@@ -385,7 +386,54 @@ const fetchLibrary = async () => {
         console.warn('Failed to load 02Engine extensions:', error);
     }
 
-    return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions, ...remixwarpExtensions, ...astraExtensions, ...engineExtensions];
+    try {
+        const yesshapeRes = await fetch('https://rw-extensions.pages.dev/yesshape/extensions-index.json');
+        if (!yesshapeRes.ok) {
+            console.warn(`Yesshape extensions: HTTP status ${yesshapeRes.status}`);
+        } else {
+            const yesshapeData = await yesshapeRes.json();
+            yesshapeExtensions = yesshapeData.extensions.map(extension => ({
+                name: extension.name,
+                nameTranslations: extension.nameTranslations || {},
+                description: extension.description,
+                descriptionTranslations: extension.descriptionTranslations || {},
+                extensionId: extension.extensionId,
+                extensionURL: extension.extensionURL,
+                iconURL: extension.iconURL,
+                tags: extension.tags || ['yesshape'],
+                credits: (extension.credits || []).map(credit => {
+                    if (typeof credit === 'object' && credit.name) {
+                        const link = credit.link || credit.url;
+                        if (link) {
+                            return (
+                                <a
+                                    href={link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    key={credit.name}
+                                >
+                                    {credit.name}
+                                </a>
+                            );
+                        }
+                        return credit.name;
+                    }
+                    return credit;
+                }),
+                docsURI: extension.docsURI || null,
+                samples: extension.samples ? extension.samples.map(sample => ({
+                    href: `${process.env.ROOT}editor?project_url=${sample.href.startsWith('http') ? sample.href : window.location.origin + sample.href}`,
+                    text: sample.text
+                })) : null,
+                incompatibleWithScratch: extension.incompatibleWithScratch || true,
+                featured: extension.featured || true
+            }));
+        }
+    } catch (error) {
+        console.warn('Failed to load Yesshape extensions:', error);
+    }
+
+    return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions, ...remixwarpExtensions, ...astraExtensions, ...engineExtensions, ...yesshapeExtensions];
 };
 
 class ExtensionLibrary extends React.PureComponent {

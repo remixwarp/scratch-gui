@@ -105,6 +105,7 @@ import _simple_project_analyzer from "../addons/simple-project-analyzer/_manifes
 import _todo_list from "../addons/todo-list/_manifest_entry.js";
 import _block_pins from "../addons/block-pins/_manifest_entry.js";
 import _tw_comment_markdown_editor from "../addons/tw-comment-markdown-editor/_manifest_entry.js";
+import _background from "../addons/background/_manifest_entry.js";
 export default {
   "calculator": _calculator,
   "cat-blocks": _cat_blocks,
@@ -211,5 +212,6 @@ export default {
   "simple-project-analyzer": _simple_project_analyzer,
   "todo-list": _todo_list,
   "block-pins": _block_pins,
-  "tw-comment-markdown-editor": _tw_comment_markdown_editor
+  "tw-comment-markdown-editor": _tw_comment_markdown_editor,
+  "background": _background
 };

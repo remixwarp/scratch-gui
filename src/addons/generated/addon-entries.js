@@ -106,4 +106,5 @@ export default {
   "todo-list": () => import(/* webpackChunkName: "addon-entry-todo-list" */ "../addons/todo-list/_runtime_entry.js"),
   "block-pins": () => import(/* webpackChunkName: "addon-entry-block-pins" */ "../addons/block-pins/_runtime_entry.js"),
   "tw-comment-markdown-editor": () => import(/* webpackChunkName: "addon-entry-tw-comment-markdown-editor" */ "../addons/tw-comment-markdown-editor/_runtime_entry.js"),
+  "background": () => import(/* webpackChunkName: "addon-entry-background" */ "../addons/background/_runtime_entry.js"),
 };

@@ -6,5 +6,6 @@ export default [
     {tag: 'mistium', intlLabel: 'Mistium'},
     {tag: 'sharkpools', intlLabel: 'SharkPools'},
     {tag: 'penguinmod', intlLabel: 'PenguinMod'},
-    {tag: '02engine', intlLabel: '02Engine'}
+    {tag: '02engine', intlLabel: '02Engine'},
+    {tag: 'yesshape', intlLabel: 'yesshape社区'}
 ];
