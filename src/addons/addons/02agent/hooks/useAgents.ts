@@ -37,6 +37,11 @@ const DEFAULT_AGENTS: Agent[] = [
         name: "DeepSeek-R1 (Chat)",
         modelId: "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
       },
+      {
+        id: "default-glm-model-1",
+        name: "GLM-Z1-9B-0414",
+        modelId: "THUDM/GLM-Z1-9B-0414",
+      },
     ],
   },
   {
@@ -48,8 +53,8 @@ const DEFAULT_AGENTS: Agent[] = [
     models: [
       {
         id: "default-qwen-model-1",
-        name: "Qwen3.5-4B（Agent）",
-        modelId: "Qwen/Qwen3.5-4B",
+        name: "Qwen/Qwen3-8B（Agent）",
+        modelId: "Qwen/Qwen3-8B",
       },
     ],
   },
