@@ -34,9 +34,23 @@ const DEFAULT_AGENTS: Agent[] = [
     models: [
       {
         id: "default-deepseek-model-1",
-        name: "DeepSeek-R1-0528-Qwen3-8B",
+        name: "DeepSeek-R1 (Chat)",
         modelId: "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
-      }
+      },
+    ],
+  },
+  {
+    id: "default-qwen",
+    name: "RemixWarp 免费AI Qwen3",
+    provider: "custom",
+    baseUrl: "https://api.siliconflow.cn/v1/chat/completions",
+    apiKey: "",
+    models: [
+      {
+        id: "default-qwen-model-1",
+        name: "Qwen3.5-4B（Agent）",
+        modelId: "Qwen/Qwen3.5-4B",
+      },
     ],
   },
 ];
@@ -97,6 +111,15 @@ export function useAgents() {
       setAgents(DEFAULT_AGENTS);
       setCurrentModelId(DEFAULT_AGENTS[0].models[0].id);
       return;
+    }
+
+    // 确保所有默认 AI 都存在
+    const existingAgentIds = new Set(agents.map(a => a.id));
+    const missingDefaultAgents = DEFAULT_AGENTS.filter(da => !existingAgentIds.has(da.id));
+    
+    if (missingDefaultAgents.length > 0) {
+      const nextAgents = [...agents, ...missingDefaultAgents];
+      setAgents(nextAgents);
     }
 
     if (!flattenedModels.some((model) => model.id === currentModelId)) {

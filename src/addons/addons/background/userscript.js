@@ -458,21 +458,6 @@ export default async function ({ addon, msg }) {
     bgDB = new BackgroundDB();
     await bgDB.open();
 
-    // 调试：打印积木区的 DOM 结构
-    setTimeout(() => {
-        console.log("=== 背景插件调试 ===");
-        console.log("查询 .blocks:", document.querySelector('.blocks'));
-        console.log("查询 [class*='blocks-wrapper_']:", document.querySelector("[class*='blocks-wrapper_']"));
-        console.log("查询 svg.blocklySvg:", document.querySelector('svg.blocklySvg'));
-        
-        // 查找所有可能的工作区容器
-        const possibleWorkspaces = document.querySelectorAll('[class*="blocks"], [class*="wrapper"]');
-        console.log("可能的工作区容器数量:", possibleWorkspaces.length);
-        possibleWorkspaces.forEach((el, i) => {
-            console.log(`容器 ${i}:`, el.className, el.tagName);
-        });
-    }, 2000);
-
     // 加载保存的背景（延迟执行以确保工作区元素已加载）
     setTimeout(async () => {
         await refreshWorkSpaceBackground();
