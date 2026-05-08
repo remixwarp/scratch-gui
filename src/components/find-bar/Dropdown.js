@@ -3,6 +3,25 @@ import BlockInstance from '../../lib/find-bar/BlockInstance';
 import Carousel from './Carousel';
 import {getReactInternalKey} from './dom-utils';
 
+const normalizeType = type => {
+    const upper = type.toUpperCase();
+    if (upper.startsWith('OPERATOR'))  return 'OPERATORS' + upper.slice(8);
+    if (upper === 'SOUND_SETEFFECTTO') return 'SOUND_SETEFFECTO';
+    const controlMap = {
+        'CONTROL_WAIT_UNTIL': 'CONTROL_WAITUNTIL',
+        'CONTROL_REPEAT_UNTIL': 'CONTROL_REPEATUNTIL',
+        'CONTROL_FOR_EACH': 'CONTROL_FOREACH',
+        'CONTROL_START_AS_CLONE': 'CONTROL_STARTASCLONE',
+        'CONTROL_CREATE_CLONE_OF': 'CONTROL_CREATECLONEOF',
+        'CONTROL_DELETE_THIS_CLONE': 'CONTROL_DELETETHISCLONE',
+        'CONTROL_INCR_COUNTER': 'CONTROL_INCRCOUNTER',
+        'CONTROL_CLEAR_COUNTER': 'CONTROL_CLEARCOUNTER',
+        'CONTROL_ALL_AT_ONCE': 'CONTROL_ALLATONCE'
+    };
+    if (controlMap[upper]) return controlMap[upper];
+    return upper;
+};
+
 const normalizeMessagePlaceholders = text => String(text).replace(/%\d+|%b|%s/g, '()');
 
 export default class Dropdown {
@@ -102,10 +121,14 @@ export default class Dropdown {
     addItem (proc, messagesList, colours) {
         const item = document.createElement('li');
         item.data = proc;
-        const name = proc.procCode.toUpperCase();
-        item.displayName = normalizeMessagePlaceholders(
-            messagesList[0][name] || messagesList[1][name] || (messagesList[2] ? messagesList[2](`block-switching/${proc.procCode}`) : null) || proc.procCode
-        );
+        const name = normalizeType(proc.procCode);
+        const msgAny = messagesList[2];
+        const blockSwitchingKey = `block-switching/${proc.procCode}`;
+        let displayName = msgAny ? msgAny(blockSwitchingKey) : null;
+        if (!displayName) {
+            displayName = messagesList[0][name] || messagesList[1][name] || proc.procCode;
+        }
+        item.displayName = normalizeMessagePlaceholders(displayName);
 
         const colorIds = {
             receive: 'events',
@@ -130,7 +153,7 @@ export default class Dropdown {
             const textNode = document.createTextNode('当 🟩 被点击');
             item.appendChild(textNode);
         } else {
-            item.innerText = proc.procCode;
+            item.innerText = item.displayName;
             let colorId = colorIds[proc.cls];
             if (!colorId) {
                 const code = proc.procCode.split('_', 1)[0];
