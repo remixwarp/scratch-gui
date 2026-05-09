@@ -12,6 +12,10 @@ const API_CONFIG = getApiConfig('siliconflow');
 const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/chat/completions';
 const MODEL = API_CONFIG ? API_CONFIG.model : 'deepseek-ai/DeepSeek-V3';
 
+const IMAGE_API_CONFIG = getApiConfig('siliconflowImages');
+const IMAGE_API_ENDPOINT = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/images/generations';
+const IMAGE_MODEL = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.model : 'Kwai-Kolors/Kolors';
+
 class AIPanel extends React.PureComponent {
     constructor (props) {
         super(props);
@@ -31,6 +35,7 @@ class AIPanel extends React.PureComponent {
             activeTab: 'works', // works, costume, control
             // 造型生成状态
             generatedSVG: null, // 存储生成的SVG代码
+            generatedImageUrl: null, // 存储生成的图片URL
             // API密钥
             apiKey: null
         };
@@ -40,6 +45,7 @@ class AIPanel extends React.PureComponent {
         this.handleMultiStepStart = this.handleMultiStepStart.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
         this.handleAddCostume = this.handleAddCostume.bind(this);
+        this.handleAddGeneratedImage = this.handleAddGeneratedImage.bind(this);
         this.messagesEnd = React.createRef();
         this.inputRef = React.createRef();
     }
@@ -424,6 +430,11 @@ class AIPanel extends React.PureComponent {
             return;
         }
 
+        if (isAgent && isCostumeTab) {
+            this.generateImage(input, apiKey);
+            return;
+        }
+
         fetch(API_ENDPOINT, {
             method: 'POST',
             headers: {
@@ -449,11 +460,6 @@ class AIPanel extends React.PureComponent {
             }
             if (!reply) reply = JSON.stringify(data);
             
-            // 如果是AI造型标签页，处理SVG生成
-            if (isAgent && isCostumeTab) {
-                this.handleCostumeGeneration(reply);
-            }
-            
             // 如果是AI操控标签页，解析并执行快捷键
             if (isAgent && isControlTab) {
                 this.handleControlCommand(reply);
@@ -467,6 +473,41 @@ class AIPanel extends React.PureComponent {
         .catch(err => {
             this.setState({loading: false, error: String(err)});
         });
+    }
+
+    async generateImage(prompt, apiKey) {
+        try {
+            const response = await fetch(IMAGE_API_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + apiKey
+                },
+                body: JSON.stringify({
+                    model: IMAGE_MODEL,
+                    prompt: prompt,
+                    image_size: '1024x1024',
+                    batch_size: 1,
+                    num_inference_steps: 20,
+                    guidance_scale: 7.5
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data && data.data && data.data[0] && data.data[0].url) {
+                const imageUrl = data.data[0].url;
+                this.setState(state => ({
+                    messages: [...state.messages, {from: 'assistant', text: `![生成的图片](${imageUrl})`}],
+                    loading: false,
+                    generatedImageUrl: imageUrl
+                }), this.scrollToBottom);
+            } else {
+                throw new Error('无法从响应中提取图片URL');
+            }
+        } catch (err) {
+            this.setState({loading: false, error: String(err)});
+        }
     }
 
     // 模拟键盘按下事件
@@ -798,6 +839,72 @@ ${JSON.stringify(projectData, null, 2)}
             console.error('Error stack:', error.stack);
             this.setState(state => ({
                 messages: [...state.messages, {from: 'system', text: `❌ 添加造型失败: ${error.message}`}]
+            }));
+        }
+    }
+
+    async handleAddGeneratedImage () {
+        const {generatedImageUrl} = this.state;
+        
+        if (!generatedImageUrl) {
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: '❌ 没有可添加的图片'}]
+            }));
+            return;
+        }
+        
+        if (!this.props.vm) {
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: '❌ 无法添加造型，VM实例不可用'}]
+            }));
+            return;
+        }
+        
+        try {
+            if (!this.props.vm.editingTarget) {
+                this.setState(state => ({
+                    messages: [...state.messages, {from: 'system', text: '❌ 没有选中的角色，请先选择一个角色'}]
+                }));
+                return;
+            }
+            
+            const response = await fetch(generatedImageUrl);
+            const blob = await response.blob();
+            const arrayBuffer = await blob.arrayBuffer();
+            
+            const targetId = this.props.vm.editingTarget.id;
+            
+            costumeUpload(arrayBuffer, 'image/png', this.props.vm, (vmCostumes) => {
+                console.log('Image costumes created:', vmCostumes);
+                
+                vmCostumes.forEach((costume, i) => {
+                    costume.name = `AI生成图片${Date.now()}${i ? i + 1 : ''}`;
+                });
+                
+                const promises = vmCostumes.map(costume => {
+                    return this.props.vm.addCostume(costume.md5, costume, targetId);
+                });
+                
+                Promise.all(promises).then(() => {
+                    this.setState(state => ({
+                        messages: [...state.messages, {from: 'system', text: '🎨 图片造型已添加到项目中！'}]
+                    }));
+                }).catch(error => {
+                    console.error('添加图片造型失败:', error);
+                    this.setState(state => ({
+                        messages: [...state.messages, {from: 'system', text: `❌ 添加图片造型失败: ${error.message}`}]
+                    }));
+                });
+            }, (error) => {
+                console.error('costumeUpload失败:', error);
+                this.setState(state => ({
+                    messages: [...state.messages, {from: 'system', text: `❌ 处理图片失败: ${error}`}]
+                }));
+            });
+        } catch (error) {
+            console.error('添加图片造型失败:', error);
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'system', text: `❌ 添加图片造型失败: ${error.message}`}]
             }));
         }
     }
@@ -2031,19 +2138,37 @@ ${JSON.stringify(projectData, null, 2)}
                             </div>
                         </div>
                         {/* 造型生成预览区域 */}
-                        {this.state.activeTab === 'costume' && this.state.generatedSVG && (
+                        {this.state.activeTab === 'costume' && (this.state.generatedSVG || this.state.generatedImageUrl) && (
                             <div className={styles.costumePreview}>
-                                <h4>SVG预览</h4>
-                                <div className={styles.svgPreview}>
-                                    <div dangerouslySetInnerHTML={{__html: this.state.generatedSVG}} />
-                                </div>
-                                <Button 
-                                    onClick={this.handleAddCostume} 
-                                    className={styles.addCostumeButton}
-                                    variant="primary"
-                                >
-                                    添加到造型
-                                </Button>
+                                {this.state.generatedImageUrl ? (
+                                    <>
+                                        <h4>图片预览</h4>
+                                        <div className={styles.imagePreview}>
+                                            <img src={this.state.generatedImageUrl} alt="生成的图片" />
+                                        </div>
+                                        <Button 
+                                            onClick={() => this.handleAddGeneratedImage()} 
+                                            className={styles.addCostumeButton}
+                                            variant="primary"
+                                        >
+                                            添加到造型
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h4>SVG预览</h4>
+                                        <div className={styles.svgPreview}>
+                                            <div dangerouslySetInnerHTML={{__html: this.state.generatedSVG}} />
+                                        </div>
+                                        <Button 
+                                            onClick={this.handleAddCostume} 
+                                            className={styles.addCostumeButton}
+                                            variant="primary"
+                                        >
+                                            添加到造型
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         )}
                         {/* 警告消息 - 放在底部 */}
@@ -2057,7 +2182,7 @@ ${JSON.stringify(projectData, null, 2)}
                             </div>
                             <div className={styles.warningContent}>
                                 <strong><span>警告：</span></strong>
-                                <span dangerouslySetInnerHTML={{__html: '内容为AI生成,请注意仔细鉴别<br/>此功能用于生成SVG造型，可直接使用。<br/>用来生成造型的是文字处理模型，可能会不满您的预期，敬请谅解。'}} />
+                                <span dangerouslySetInnerHTML={{__html: '内容为AI生成,请注意仔细鉴别<br/>此功能用于生成造型，可直接使用。'}} />
                             </div>
                         </div>
                         </div>

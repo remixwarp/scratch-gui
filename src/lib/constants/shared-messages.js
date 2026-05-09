@@ -12,7 +12,7 @@ export default defineMessages({
         id: 'gui.sharedMessages.costume'
     },
     sprite: {
-        defaultMessage: 'Sprite{index}',
+        defaultMessage: 'Flick Fox',
         description: 'Default name for a new sprite, scratch will automatically adjust the number if necessary',
         id: 'gui.sharedMessages.sprite'
     },
