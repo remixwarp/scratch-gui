@@ -12,7 +12,16 @@ let messages = defineMessages({
 messages = { ...messages, ...sharedMessages };
 
 // use the default message if a translation function is not passed
-const defaultTranslator = msgObj => msgObj.defaultMessage;
+const defaultTranslator = msgObj => {
+    if (msgObj.id === 'gui.sharedMessages.sprite') {
+        const lang = navigator.language || navigator.userLanguage;
+        if (lang.startsWith('zh')) {
+            return '轻盈狐';
+        }
+        return 'Flick Fox';
+    }
+    return msgObj.defaultMessage;
+};
 
 /**
  * Generate a localized version of the default project
@@ -51,7 +60,7 @@ const projectData = translateFunction => {
             },
             {
                 isStage: false,
-                name: translator(messages.sprite, {index: 1}),
+                name: (navigator.language || navigator.userLanguage || '').toLowerCase().startsWith('zh') ? '轻盈狐' : 'Flick Fox',
                 variables: {},
                 lists: {},
                 broadcasts: {},

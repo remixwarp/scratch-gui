@@ -10,6 +10,11 @@ const API_KEY_CONFIG = {
         model: 'deepseek-ai/DeepSeek-V3',
         decryptMethod: 'simple'
     },
+    siliconflowImages: {
+        endpoint: 'https://api.siliconflow.cn/v1/images/generations',
+        model: 'Kwai-Kolors/Kolors',
+        decryptMethod: 'simple'
+    },
     openai: {
         endpoint: 'https://api.openai.com/v1/chat/completions',
         model: 'gpt-4',
