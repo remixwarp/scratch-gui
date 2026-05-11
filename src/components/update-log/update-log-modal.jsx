@@ -1,55 +1,186 @@
- import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { FormattedMessage, injectIntl, intlShape } from 'react-intl';
 import Box from '../box/box.jsx';
 import styles from './update-log-modal.css';
 
 const STORAGE_KEY = 'remixwarp_last_seen_version';
-const DONT_SHOW_KEY = 'remixwarp_dont_show_updates';
+const POSITION_STORAGE_KEY = 'remixwarp_update_log_position';
 
 const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors, locale }) => {
-    const [dontShowAgain, setDontShowAgain] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
+    const [startDrag, setStartDrag] = useState({ x: 0, y: 0 });
+    const modalRef = useRef(null);
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        if (visible) {
+            const savedPosition = localStorage.getItem(POSITION_STORAGE_KEY);
+            if (savedPosition) {
+                try {
+                    const pos = JSON.parse(savedPosition);
+                    setPosition({ x: pos.x || 0, y: pos.y || 0 });
+                } catch (e) {
+                    console.error('Failed to parse saved position:', e);
+                    setPosition({ x: 0, y: 0 });
+                }
+            } else {
+                setPosition({ x: 0, y: 0 });
+            }
+        }
+    }, [visible]);
+
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEY, versions?.[0]?.version || '');
+    }, [visible, versions]);
+
+    const savePosition = useCallback((pos) => {
+        try {
+            localStorage.setItem(POSITION_STORAGE_KEY, JSON.stringify(pos));
+        } catch (e) {
+            console.error('Failed to save position:', e);
+        }
+    }, []);
+
+    const handleDragMove = useCallback((clientX, clientY) => {
+        if (!isDragging) return;
+
+        const deltaX = clientX - startDrag.x;
+        const deltaY = clientY - startDrag.y;
+
+        const newX = startPosition.x + deltaX;
+        const newY = startPosition.y + deltaY;
+
+        setPosition({ x: newX, y: newY });
+    }, [isDragging, startDrag, startPosition]);
+
+    useEffect(() => {
+        const handleMouseUp = () => {
+            savePosition(position);
+            setIsDragging(false);
+        };
+
+        const handleMouseMove = (e) => {
+            handleDragMove(e.clientX, e.clientY);
+        };
+
+        const handleTouchEnd = () => {
+            savePosition(position);
+            setIsDragging(false);
+        };
+
+        const handleTouchMove = (e) => {
+            if (e.touches && e.touches.length > 0) {
+                handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        };
+
+        if (isDragging) {
+            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('touchend', handleTouchEnd);
+            document.addEventListener('touchcancel', handleTouchEnd);
+            document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        }
+
+        return () => {
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('touchend', handleTouchEnd);
+            document.removeEventListener('touchcancel', handleTouchEnd);
+            document.removeEventListener('touchmove', handleTouchMove);
+        };
+    }, [isDragging, handleDragMove, position, savePosition]);
 
     const handleClose = () => {
-        if (dontShowAgain) {
-            localStorage.setItem(DONT_SHOW_KEY, 'true');
-        }
-        // 记录已查看的最新版本
-        if (versions && versions.length > 0) {
-            localStorage.setItem(STORAGE_KEY, versions[0].version);
-        }
+        savePosition(position);
         onClose();
     };
 
-    const handleCheckboxChange = (e) => {
-        setDontShowAgain(e.target.checked);
+    const handleOverlayClick = (e) => {
+        if (e.target === e.currentTarget) {
+            handleClose();
+        }
     };
+
+    const handleDragStart = useCallback((e) => {
+        e.preventDefault();
+        
+        const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+        
+        setIsDragging(true);
+        setStartDrag({ x: clientX, y: clientY });
+        setStartPosition({ x: position.x, y: position.y });
+    }, [position]);
+
+    const handleTouchStartPassive = useCallback((e) => {
+        const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+        
+        setIsDragging(true);
+        setStartDrag({ x: clientX, y: clientY });
+        setStartPosition({ x: position.x, y: position.y });
+    }, [position]);
 
     if (!visible || !versions || versions.length === 0) return null;
 
-    // 获取主题颜色，默认使用紫色主题
     const primaryColor = themeColors['motion-primary'] || '#9966ff';
     const secondaryColor = themeColors['motion-tertiary'] || '#8a4fff';
 
     return (
-        <div className={styles.modalOverlay}>
-            <div className={styles.modalContainer}>
-                <div className={styles.modalHeader} style={{
-                    background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
-                }}>
+        <div 
+            className={styles.modalOverlay}
+            onClick={handleOverlayClick}
+            onTouchEnd={handleOverlayClick}
+        >
+            <div 
+                className={styles.modalContainer}
+                ref={modalRef}
+                style={{
+                    transform: isDragging 
+                        ? `translate(${position.x}px, ${position.y}px)` 
+                        : `translate(${position.x}px, ${position.y}px)`,
+                    transition: isDragging ? 'none' : 'transform 0.3s ease-out'
+                }}
+            >
+                <div 
+                    className={`${styles.modalHeader} ${isDragging ? styles.dragging : ''}`}
+                    style={{
+                        background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
+                    }}
+                    onMouseDown={handleDragStart}
+                    onTouchStart={handleTouchStartPassive}
+                >
+                    <div className={styles.dragHandle}>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                            className={styles.dragIcon}
+                        >
+                            <path d="M11 4h6M11 20h6M4 11v6M20 11v6" />
+                            <path d="M4 4h6M14 4h6M4 11h6M14 11h6" />
+                        </svg>
+                    </div>
                     <h2 className={styles.title}>
                         {locale === 'zh-cn' ? '版本更新' : 'Version Update'}
                     </h2>
-                    <button
-                        className={styles.closeButton}
-                        onClick={handleClose}
-                        aria-label={locale === 'zh-cn' ? '关闭' : 'Close'}
-                    >
-                        ×
-                    </button>
                 </div>
 
-                <div className={styles.modalContent}>
+                <div 
+                    className={styles.modalContent}
+                    ref={containerRef}
+                >
                     <div className={styles.warningBanner}>
                         <div className={styles.warningIcon}>
                             <svg
@@ -75,8 +206,8 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors, locale 
                             </strong>
                             <span>
                                 {locale === 'zh-cn'
-                                    ? '此版本信息是从代码仓库读取的最新更新内容。由于部署需要一定时间，新功能可能需要等待一段时间才能在当前环境中显示。请耐心等待部署完成。具体时间请参考提交版本时间后的10~20分钟。'
-                                    : 'This version information is read from the code repository. Due to deployment time, new features may take a while to appear in the current environment. Please be patient. The specific time is approximately 10-20 minutes after the commit time.'}
+                                    ? '此版本信息是从代码仓库读取的最新更新内容。由于部署需要一定时间，新功能可能需要等待一段时间才能在当前环境中显示。请耐心等待部署完成。'
+                                    : 'This version information is read from the code repository. Due to deployment time, new features may take a while to appear in the current environment. Please be patient.'}
                             </span>
                         </div>
                     </div>
@@ -126,25 +257,14 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors, locale 
                 </div>
 
                 <div className={styles.modalFooter}>
-                    <label className={styles.checkboxLabel}>
-                        <input
-                            type="checkbox"
-                            checked={dontShowAgain}
-                            onChange={handleCheckboxChange}
-                            className={styles.checkbox}
-                        />
-                        <span className={styles.checkboxText}>
-                            {locale === 'zh-cn' ? '不再显示此版本更新' : 'Don\'t show this update again'}
-                        </span>
-                    </label>
                     <button
-                        className={styles.confirmButton}
+                        className={styles.closeButtonFull}
                         onClick={handleClose}
                         style={{
                             background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
                         }}
                     >
-                        {locale === 'zh-cn' ? '知道了' : 'Got it'}
+                        {locale === 'zh-cn' ? '关闭' : 'Close'}
                     </button>
                 </div>
             </div>
@@ -168,16 +288,9 @@ UpdateLogModal.propTypes = {
     locale: PropTypes.string
 };
 
-// 检查是否需要显示更新日志
 export const shouldShowUpdateLog = (currentVersion) => {
-    // 如果用户选择了不再显示
-    if (localStorage.getItem(DONT_SHOW_KEY) === 'true') {
-        return false;
-    }
-
     const lastSeenVersion = localStorage.getItem(STORAGE_KEY);
     
-    // 如果没有记录过版本，或者当前版本与上次查看的版本不同
     if (!lastSeenVersion || lastSeenVersion !== currentVersion) {
         return true;
     }
@@ -185,26 +298,22 @@ export const shouldShowUpdateLog = (currentVersion) => {
     return false;
 };
 
-// 解析提交信息中的版本号和更新内容
 export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
     const versionMatch = commitMessage.match(/__([\d.]+)__/);
     let version = versionMatch ? versionMatch[1] : null;
     
-    // 如果没有检测到版本号，自动递增版本号
     if (!version) {
         const versionParts = lastVersion.split('.').map(Number);
         if (versionParts.length >= 3) {
-            versionParts[2] += 1; // 增加第三位版本号
+            versionParts[2] += 1;
             version = versionParts.join('.');
         } else {
             version = lastVersion;
         }
     }
 
-    // 移除版本号标记，获取更新内容
     let content = commitMessage.replace(/__[\d.]+__/g, '').trim();
     
-    // 解析更新内容
     const changes = [];
     const lines = content.split('\n').filter(line => line.trim());
     
@@ -212,7 +321,6 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
         const trimmedLine = line.trim();
         let type = 'other';
         
-        // 根据关键词判断更新类型
         const lowerLine = trimmedLine.toLowerCase();
         if (lowerLine.includes('新增') || lowerLine.includes('添加') || lowerLine.includes('new') || lowerLine.includes('add')) {
             type = 'feature';
@@ -222,7 +330,6 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
             type = 'bugfix';
         }
         
-        // 移除列表标记
         const cleanText = trimmedLine.replace(/^[-*•]\s*/, '').replace(/^\d+\.\s*/, '');
         
         if (cleanText) {
@@ -233,7 +340,6 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
         }
     });
 
-    // 如果没有解析到任何内容，将整个提交信息作为一条更新
     if (changes.length === 0 && content) {
         changes.push({
             type: 'other',
@@ -244,7 +350,6 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
     return { version, changes };
 };
 
-// 获取当前日期字符串
 export const getCurrentDate = () => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;

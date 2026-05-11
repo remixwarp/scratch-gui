@@ -43,6 +43,7 @@ import AddonChannels from '../addons/channels';
 import { loadServiceWorker } from './load-service-worker';
 import runAddons from '../addons/entry';
 import { APP_NAME, FEEDBACK_URL, GITHUB_URL } from '../lib/constants/brand.js';
+import { AESettings } from '../lib/settings.js';
 
 import styles from './interface.css';
 
@@ -278,6 +279,13 @@ class Interface extends React.Component {
     }
     componentDidMount() {
         window.handleClickAddonSettings = this.handleClickAddonSettings;
+
+        // Parse URL parameters for mobile layout
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('mobile')) {
+            const settings = new AESettings();
+            settings.set('EnableMobileLayout', true);
+        }
     }
     componentDidUpdate(prevProps) {
         if (prevProps.isLoading && !this.props.isLoading) {

@@ -27,7 +27,7 @@ const messages = defineMessages({
 });
 
 function SecurityBanner({ intl }) {
-    const [isVisible, setIsVisible] = useState(!localStorage.getItem('tw-security-banner-dismissed'));
+    const [isVisible, setIsVisible] = useState(false); // 注释掉安全警告横幅
 
     const handleClose = () => {
         setIsVisible(false);
