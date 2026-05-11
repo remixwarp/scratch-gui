@@ -303,13 +303,7 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
     let version = versionMatch ? versionMatch[1] : null;
     
     if (!version) {
-        const versionParts = lastVersion.split('.').map(Number);
-        if (versionParts.length >= 3) {
-            versionParts[2] += 1;
-            version = versionParts.join('.');
-        } else {
-            version = lastVersion;
-        }
+        version = lastVersion + '1';
     }
 
     let content = commitMessage.replace(/__[\d.]+__/g, '').trim();
