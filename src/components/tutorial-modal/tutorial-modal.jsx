@@ -60,6 +60,24 @@ const getCategoryInfo = (categoryId) => {
 const tutorialData = [
 
     {
+        id: 'BV1Cu5m6kENy',
+        bvid: 'BV1Cu5m6kENy',
+        category: 2,
+        bt: '【Scratch教程】弹性移动教程！弹~',
+        jj: '让你的移动更弹~ \n\n这个教程适用于Scratch和所有Scratch改编而来的编辑器。',
+        fm: require('./images/BV1Cu5m6kENy.jpg'),
+        url: 'https://rw-vep.pages.dev/BV1Cu5m6kENy.sb3'
+    },
+    {
+        id: 'BV1p6LP6xEhQ',
+        bvid: 'BV1p6LP6xEhQ',
+        category: 2,
+        bt: '【Scratch教程】可拖动的进度条！超详细教程~',
+        jj: '这个教程有点长。 \n已上传共创世界和蓝奏云~',
+        fm: require('./images/BV1p6LP6xEhQ.jpg'),
+        url: 'https://rw-vep.pages.dev/BV1p6LP6xEhQ.sb3'
+    },
+    {
         id: 'BV1bQtQzmEDz',
         bvid: 'BV1bQtQzmEDz',
         category: 2,

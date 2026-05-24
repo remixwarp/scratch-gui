@@ -302,55 +302,152 @@ class SuperRefactorModalContainer extends React.Component {
     highlightSyntax (code, type) {
         if (!code) return '';
         
+        const vsCodeColors = {
+            background: '#1e1e1e',
+            foreground: '#cccccc',
+            comment: '#6a9955',
+            keyword: '#569cd6',
+            string: '#ce9178',
+            number: '#b5cea8',
+            functionName: '#dcdcaa',
+            className: '#4ec9b0',
+            attributeName: '#9cdcfe',
+            tagName: '#569cd6',
+            operator: '#d4d4d4',
+            punctuation: '#808080',
+            property: '#9cdcfe',
+            meta: '#858585'
+        };
+        
+        const escapeHtml = str => str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        
         if (type === 'json') {
-            return code
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"([^"]+)"(?=:)/g, '<span style="color: #9cdcfe;">$&</span>')
-                .replace(/:\s*("[^"]*"|\d+|true|false|null)/g, (match, value) => {
-                    if (value === 'true' || value === 'false') {
-                        return `: <span style="color: #569cd6;">${value}</span>`;
-                    } else if (value === 'null') {
-                        return `: <span style="color: #569cd6;">${value}</span>`;
-                    } else if (!isNaN(value)) {
-                        return `: <span style="color: #b5cea8;">${value}</span>`;
-                    } else {
-                        return `: <span style="color: #ce9178;">${value}</span>`;
-                    }
-                })
-                .replace(/\{/g, '<span style="color: #d4d4d4;">{</span>')
-                .replace(/\}/g, '<span style="color: #d4d4d4;">}</span>')
-                .replace(/\[/g, '<span style="color: #d4d4d4;">[</span>')
-                .replace(/\]/g, '<span style="color: #d4d4d4;">]</span>');
-        } else if (type === 'svg') {
-            let processed = code
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
+            let processed = escapeHtml(code);
+            processed = processed.replace(/"([^"]+)"(?=\s*:)/g, `<span style="color: ${vsCodeColors.property};">"$1"</span>`);
+            processed = processed.replace(/:\s*("[^"]*")/g, `<span style="color: ${vsCodeColors.punctuation};">:</span> <span style="color: ${vsCodeColors.string};">$1</span>`);
+            processed = processed.replace(/:\s*(\d+\.?\d*)/g, `<span style="color: ${vsCodeColors.punctuation};">:</span> <span style="color: ${vsCodeColors.number};">$1</span>`);
+            processed = processed.replace(/:\s*(true|false|null)/g, `<span style="color: ${vsCodeColors.punctuation};">:</span> <span style="color: ${vsCodeColors.keyword};">$1</span>`);
+            processed = processed.replace(/\{|\}|\[|\]/g, `<span style="color: ${vsCodeColors.punctuation};">$&</span>`);
+            processed = processed.replace(/,/g, `<span style="color: ${vsCodeColors.punctuation};">,</span>`);
+            return processed;
+        } else if (type === 'svg' || type === 'xml') {
+            let processed = escapeHtml(code);
             
-            processed = processed.replace(/(#[0-9a-fA-F]{3,6})/g, (match, color) => {
-                return `<span style="display: inline-flex; align-items: center; vertical-align: middle;"><span style="width: 14px; height: 14px; background: ${color}; border: 1px solid #666; margin-right: 4px; border-radius: 2px; flex-shrink: 0;"></span><span style="color: #ce9178;">${color}</span></span>`;
-            });
+            processed = processed.replace(/(#[0-9a-fA-F]{3,6})/g, `<span style="color: ${vsCodeColors.string};">$1</span>`);
+            processed = processed.replace(/(rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\))/g, `<span style="color: ${vsCodeColors.string};">$1</span>`);
+            processed = processed.replace(/(rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))/g, `<span style="color: ${vsCodeColors.string};">$1</span>`);
             
-            processed = processed.replace(/(rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\))/g, (match, color) => {
-                return `<span style="display: inline-flex; align-items: center; vertical-align: middle;"><span style="width: 14px; height: 14px; background: ${color}; border: 1px solid #666; margin-right: 4px; border-radius: 2px; flex-shrink: 0;"></span><span style="color: #ce9178;">${color}</span></span>`;
-            });
-            
-            processed = processed.replace(/(rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))/g, (match, color) => {
-                return `<span style="display: inline-flex; align-items: center; vertical-align: middle;"><span style="width: 14px; height: 14px; background: ${color}; border: 1px solid #666; margin-right: 4px; border-radius: 2px; flex-shrink: 0;"></span><span style="color: #ce9178;">${color}</span></span>`;
-            });
+            processed = processed.replace(/\b(\d+\.?\d*)\b/g, `<span style="color: ${vsCodeColors.number};">$1</span>`);
             
             processed = processed.replace(/&lt;(\w+)([^&gt;]*)&gt;/g, (match, tagName, attributes) => {
-                const processedAttributes = attributes.replace(/(\w+)=/g, '<span style="color: #9cdcfe;">$1</span>=')
-                    .replace(/"([^"]*)"/g, '<span style="color: #ce9178;">$&</span>');
-                return `<span style="color: #569cd6;">&lt;${tagName}</span><span style="color: #d4d4d4;">${processedAttributes}</span><span style="color: #569cd6;">&gt;</span>`;
-            })
-            .replace(/&lt;\/([^&gt;]+)&gt;/g, '<span style="color: #569cd6;">&lt;/$1&gt;</span>');
+                const attrRegex = /([\w:-]+)(\s*=\s*)("[^"]*"|'[^']*'|\w+)?/g;
+                let processedAttributes = attributes.replace(attrRegex, (m, name, eq, val) => {
+                    let result = `<span style="color: ${vsCodeColors.attributeName};">${name}</span>`;
+                    if (eq) {
+                        result += `<span style="color: ${vsCodeColors.punctuation};">${eq}</span>`;
+                        if (val) {
+                            result += `<span style="color: ${vsCodeColors.string};">${val}</span>`;
+                        }
+                    }
+                    return result;
+                });
+                
+                return `<span style="color: ${vsCodeColors.tagName};">&lt;${tagName}${processedAttributes}&gt;</span>`;
+            });
+            
+            processed = processed.replace(/&lt;\/(\w+)&gt;/g, `<span style="color: ${vsCodeColors.tagName};">&lt;/$1&gt;</span>`);
+            processed = processed.replace(/&lt;\?([^&gt;]+)\?&gt;/g, `<span style="color: ${vsCodeColors.meta};">$&</span>`);
+            processed = processed.replace(/&lt;\!\-\-([\s\S]*?)\-\-&gt;/g, `<span style="color: ${vsCodeColors.comment};">$&</span>`);
+            
+            return processed;
+        } else if (type === 'html') {
+            let processed = escapeHtml(code);
+            
+            processed = processed.replace(/&lt;(\w+)([^&gt;]*)&gt;/g, (match, tagName, attributes) => {
+                const attrRegex = /([\w:-]+)(\s*=\s*)("[^"]*"|'[^']*'|\w+)?/g;
+                let processedAttributes = attributes.replace(attrRegex, (m, name, eq, val) => {
+                    let result = `<span style="color: ${vsCodeColors.attributeName};">${name}</span>`;
+                    if (eq) {
+                        result += `<span style="color: ${vsCodeColors.punctuation};">${eq}</span>`;
+                        if (val) {
+                            result += `<span style="color: ${vsCodeColors.string};">${val}</span>`;
+                        }
+                    }
+                    return result;
+                });
+                
+                return `<span style="color: ${vsCodeColors.tagName};">&lt;${tagName}${processedAttributes}&gt;</span>`;
+            });
+            
+            processed = processed.replace(/&lt;\/(\w+)&gt;/g, `<span style="color: ${vsCodeColors.tagName};">&lt;/$1&gt;</span>`);
+            processed = processed.replace(/&lt;\!\-\-([\s\S]*?)\-\-&gt;/g, `<span style="color: ${vsCodeColors.comment};">$&</span>`);
+            
+            const jsxRegex = /(\{[\s\S]*?\})/g;
+            processed = processed.replace(jsxRegex, (match) => {
+                let jsContent = match.slice(1, -1);
+                jsContent = this.highlightSyntax(jsContent, 'jsx');
+                return `<span style="color: ${vsCodeColors.punctuation};">{</span>${jsContent}<span style="color: ${vsCodeColors.punctuation};">}</span>`;
+            });
+            
+            return processed;
+        } else if (type === 'jsx' || type === 'javascript') {
+            let processed = escapeHtml(code);
+            
+            const keywords = ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'default', 'break', 'continue', 'new', 'class', 'extends', 'import', 'export', 'from', 'async', 'await', 'try', 'catch', 'finally', 'throw', 'typeof', 'instanceof', 'in', 'of', 'with', 'delete', 'void', 'this', 'super', 'static', 'get', 'set', 'type', 'interface', 'implements', 'private', 'protected', 'public', 'abstract', 'declare', 'namespace', 'module', 'require', 'yield', 'enum', 'package', 'as', 'async', 'of', 'from'];
+            
+            keywords.forEach(keyword => {
+                const regex = new RegExp(`\\b(${keyword})\\b`, 'g');
+                processed = processed.replace(regex, `<span style="color: ${vsCodeColors.keyword};">$1</span>`);
+            });
+            
+            processed = processed.replace(/\b(true|false|null|undefined|NaN|Infinity)\b/g, `<span style="color: ${vsCodeColors.keyword};">$1</span>`);
+            processed = processed.replace(/\b(\d+\.?\d*)\b/g, `<span style="color: ${vsCodeColors.number};">$1</span>`);
+            processed = processed.replace(/("[^"]*"|'[^']*'|`[^`]*`)/g, `<span style="color: ${vsCodeColors.string};">$1</span>`);
+            processed = processed.replace(/(\/\/.*$)/gm, `<span style="color: ${vsCodeColors.comment};">$1</span>`);
+            processed = processed.replace(/\/\*[\s\S]*?\*\//g, `<span style="color: ${vsCodeColors.comment};">$&</span>`);
+            processed = processed.replace(/\b([A-Z][a-zA-Z0-9]*)\b/g, `<span style="color: ${vsCodeColors.className};">$1</span>`);
+            processed = processed.replace(/\b([a-z][a-zA-Z0-9]*)\s*(?=\()/g, `<span style="color: ${vsCodeColors.functionName};">$1</span>`);
+            processed = processed.replace(/(\{|\}|\[|\]|\(|\))/g, `<span style="color: ${vsCodeColors.punctuation};">$1</span>`);
+            processed = processed.replace(/(\+|\-|\*|\/|%|=|==|===|!=|!==|>|<|>=|<=|&&|\|\||!|\?:|\.)/g, `<span style="color: ${vsCodeColors.operator};">$1</span>`);
+            
+            return processed;
+        } else if (type === 'css') {
+            let processed = escapeHtml(code);
+            
+            processed = processed.replace(/(#[0-9a-fA-F]{3,6})/g, `<span style="color: ${vsCodeColors.string};">$1</span>`);
+            processed = processed.replace(/(rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\))/g, `<span style="color: ${vsCodeColors.string};">$1</span>`);
+            processed = processed.replace(/(rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))/g, `<span style="color: ${vsCodeColors.string};">$1</span>`);
+            
+            processed = processed.replace(/\b([a-z-]+)\s*(?=:)/g, `<span style="color: ${vsCodeColors.property};">$1</span>`);
+            processed = processed.replace(/:\s*([^;]+)/g, (match, value) => {
+                let result = `<span style="color: ${vsCodeColors.punctuation};">:</span> `;
+                const valueParts = value.trim().split(/(\b[\w-]+\b|\d+\.?\d*)/g);
+                valueParts.forEach(part => {
+                    if (/^(auto|none|inherit|initial|unset|revert|revert-layer)$/.test(part)) {
+                        result += `<span style="color: ${vsCodeColors.keyword};">${part}</span>`;
+                    } else if (/^\d+/.test(part)) {
+                        result += `<span style="color: ${vsCodeColors.number};">${part}</span>`;
+                    } else if (/^[a-z-]+$/.test(part)) {
+                        result += `<span style="color: ${vsCodeColors.string};">${part}</span>`;
+                    } else {
+                        result += part;
+                    }
+                });
+                return result;
+            });
+            
+            processed = processed.replace(/\/\*[\s\S]*?\*\//g, `<span style="color: ${vsCodeColors.comment};">$&</span>`);
+            processed = processed.replace(/\{\s*$/gm, `<span style="color: ${vsCodeColors.punctuation};">{</span>`);
+            processed = processed.replace(/^\s*\}/gm, `<span style="color: ${vsCodeColors.punctuation};">}</span>`);
+            processed = processed.replace(/;/g, `<span style="color: ${vsCodeColors.punctuation};">;</span>`);
             
             return processed;
         }
-        return code;
+        
+        return escapeHtml(code);
     }
 
     getLineNumbers (code) {
@@ -439,13 +536,23 @@ class SuperRefactorModalContainer extends React.Component {
                             const costumes = target.getCostumes ? target.getCostumes() : [];
                             const costumeIndex = costumes.findIndex(c => c.asset && c.asset.id === file.costume.asset.id);
                             if (costumeIndex !== -1) {
-                                // 更新造型数据
-                                const updatedCostume = {...file.costume};
-                                updatedCostume.asset.data = file.content;
+                                // 保存原来的编辑目标
+                                const originalEditingTarget = this.props.vm.editingTarget;
                                 
-                                // 这里需要调用相应的方法来更新造型
-                                // 注意：这只是一个示例，实际更新方法可能不同
-                                console.log('更新SVG造型:', file.name);
+                                // 临时设置为当前 target 作为编辑目标
+                                this.props.vm.editingTarget = target;
+                                
+                                // 调用 updateSvg 来更新造型
+                                this.props.vm.updateSvg(
+                                    costumeIndex,
+                                    file.content,
+                                    file.costume.rotationCenterX,
+                                    file.costume.rotationCenterY
+                                );
+                                
+                                // 恢复原来的编辑目标
+                                this.props.vm.editingTarget = originalEditingTarget;
+                                
                                 this.setState({ message: '✓ SVG造型已更新！' });
                                 setTimeout(() => this.setState({ message: '' }), 3000);
                                 return;
@@ -453,6 +560,8 @@ class SuperRefactorModalContainer extends React.Component {
                         }
                     }
                 }
+                this.setState({ message: '✗ 未找到对应的造型' });
+                setTimeout(() => this.setState({ message: '' }), 5000);
             } else {
                 this.setState({ message: '只有 project.json 和 SVG 可以应用到作品' });
                 setTimeout(() => this.setState({ message: '' }), 3000);
@@ -493,11 +602,11 @@ class SuperRefactorModalContainer extends React.Component {
     // 获取文件图标
     getFileIcon (type) {
         switch (type) {
-            case 'json': return '📄';
-            case 'image': return '🖼️';
-            case 'svg': return '🎨';
-            case 'sound': return '🔊';
-            default: return '📎';
+            case 'json': return '▤';
+            case 'image': return '▣';
+            case 'svg': return '◇';
+            case 'sound': return '♪';
+            default: return '▢';
         }
     }
 
@@ -534,7 +643,7 @@ class SuperRefactorModalContainer extends React.Component {
         // 是否可以编辑
         const canEdit = currentFileType === 'json' || currentFileType === 'svg';
         // 是否可以应用
-        const canApply = currentFileName === 'project.json';
+        const canApply = currentFileName === 'project.json' || currentFileType === 'svg';
         // 是否是SVG文件
         const isSvg = currentFileType === 'svg';
         // 是否显示切换按钮
@@ -554,15 +663,14 @@ class SuperRefactorModalContainer extends React.Component {
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    height: '580px',
+                    height: 'calc(100% - 40px)',
                     padding: '20px',
                     boxSizing: 'border-box',
                     overflow: 'hidden',
                     background: colors.background,
                     color: colors.text
                 }}>
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                        <h2 style={{margin: 0}}>超级重构 - 项目资源管理器</h2>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0}}>
                         <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
                             {files.length > 0 && (
                                 <div style={{
@@ -979,13 +1087,14 @@ class SuperRefactorModalContainer extends React.Component {
 
                     {/* 按钮 */}
                     <div style={{
-                        marginTop: '15px',
-                        paddingTop: '15px',
+                        marginTop: '10px',
+                        paddingTop: '10px',
                         borderTop: `1px solid ${colors.border}`,
                         display: 'flex',
                         justifyContent: 'flex-end',
                         gap: '10px',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        flexWrap: 'wrap'
                     }}>
                         <Button onClick={this.handleRefresh}>
                             刷新

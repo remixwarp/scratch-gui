@@ -249,7 +249,7 @@ export default async ({addon, console, msg}) => {
             if (!optionsWindow) return;
       
             // Update window title
-            optionsWindow.setTitle(`${msg('option-title')} - Recording`);
+            optionsWindow.setTitle(`${msg('option-title')} - ${msg('recording')}`);
       
             // Create status content
             const statusContent = document.createElement('div');
@@ -261,8 +261,8 @@ export default async ({addon, console, msg}) => {
             statusHeader.innerHTML = `
         <div class="media-recorder-status-icon">🎬</div>
         <div class="media-recorder-status-text">
-          <h3>Recording in Progress</h3>
-          <p>Your project is being recorded. You can stop anytime using the button below.</p>
+          <h3>${msg('recording-in-progress')}</h3>
+          <p>${msg('recording-description')}</p>
         </div>
       `;
             statusContent.appendChild(statusHeader);
@@ -275,7 +275,7 @@ export default async ({addon, console, msg}) => {
             const timeDisplay = document.createElement('div');
             timeDisplay.className = 'media-recorder-status-item';
             timeDisplay.innerHTML = `
-        <span class="media-recorder-status-label">Time:</span>
+        <span class="media-recorder-status-label">${msg('time')}:</span>
         <span class="media-recorder-status-value" id="recording-time">0s / ${opts.secs}s</span>
       `;
             statusInfo.appendChild(timeDisplay);
@@ -284,7 +284,7 @@ export default async ({addon, console, msg}) => {
             const sizeDisplay = document.createElement('div');
             sizeDisplay.className = 'media-recorder-status-item';
             sizeDisplay.innerHTML = `
-        <span class="media-recorder-status-label">Size:</span>
+        <span class="media-recorder-status-label">${msg('size')}:</span>
         <span class="media-recorder-status-value" id="recording-size">0 KB</span>
       `;
             statusInfo.appendChild(sizeDisplay);
@@ -298,7 +298,7 @@ export default async ({addon, console, msg}) => {
             // Cancel button (doesn't save)
             const cancelButton = document.createElement('button');
             cancelButton.className = 'media-recorder-button media-recorder-button-cancel';
-            cancelButton.textContent = 'Cancel Recording';
+            cancelButton.textContent = msg('cancel-recording');
             cancelButton.addEventListener('click', () => {
                 stopRecording(true); // Force stop without saving
             });
@@ -306,7 +306,7 @@ export default async ({addon, console, msg}) => {
             // End and save button
             const saveButton = document.createElement('button');
             saveButton.className = 'media-recorder-button media-recorder-button-save';
-            saveButton.textContent = 'End and Save';
+            saveButton.textContent = msg('end-and-save');
             saveButton.addEventListener('click', () => {
                 stopRecording(false); // Normal stop with saving
             });

@@ -346,7 +346,7 @@ class MenuBar extends React.Component {
             'handleConvertToTurbowarp',
             'handleConvertTo02Engine',
             'handleConvertToAstraEditor',
-            'handleConvertToRemixWarp',
+            'handleConvertToBilup',
             'handleConvertToGandi'
         ]);
     }
@@ -440,7 +440,7 @@ class MenuBar extends React.Component {
             'TurboWarp': { name: 'TurboWarp', url: 'https://turbowarp.org' },
             '02Engine': { name: '02Engine', url: 'https://02engine.02studio.xyz/' },
             'AstraEditor': { name: 'AstraEditor', url: 'https://www.astras.top/' },
-            'RemixWarp': { name: 'RemixWarp', url: 'https://remixwarp.pages.dev/' },
+            'Bilup': { name: 'Bilup', url: 'https://editor.bilup.org/' },
             'Gandi': { name: 'Gandi', url: 'https://getgandi.com/' }
         };
         return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
@@ -931,15 +931,15 @@ class MenuBar extends React.Component {
         this.handleCompatibilitySave('AstraEditor');
     }
 
-    handleConvertToRemixWarp () {
-        const issues = this.getCompatibilityIssues('RemixWarp');
+    handleConvertToBilup () {
+        const issues = this.getCompatibilityIssues('Bilup');
         if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('RemixWarp', issues);
+            const shouldContinue = this.showCompatibilityDialog('Bilup', issues);
             if (!shouldContinue) {
                 return;
             }
         }
-        this.handleCompatibilitySave('RemixWarp');
+        this.handleCompatibilitySave('Bilup');
     }
 
     handleConvertToGandi () {
@@ -2232,11 +2232,11 @@ class MenuBar extends React.Component {
                                                         id="gui.menuBar.compatibility.astraeditor"
                                                     />
                                                 </MenuItem>
-                                                <MenuItem onClick={this.handleConvertToRemixWarp}>
+                                                <MenuItem onClick={this.handleConvertToBilup}>
                                                     <FormattedMessage
-                                                        defaultMessage="RemixWarp"
-                                                        description="Convert to RemixWarp compatibility"
-                                                        id="gui.menuBar.compatibility.RemixWarp"
+                                                        defaultMessage="Bilup"
+                                                        description="Convert to Bilup compatibility"
+                                                        id="gui.menuBar.compatibility.Bilup"
                                                     />
                                                 </MenuItem>
                                                 <MenuItem onClick={this.handleConvertToGandi}>

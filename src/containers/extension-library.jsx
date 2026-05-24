@@ -11,6 +11,7 @@ import extensionLibraryContent, {
     galleryMore
 } from '../lib/libraries/extensions/index.jsx';
 import extensionTags from '../lib/libraries/tw-extension-tags';
+import twExtensionTranslations from '../lib/libraries/extensions/tw-extension-translations';
 
 import LibraryComponent from '../components/library/library.jsx';
 import extensionIcon from '../components/action-menu/icon--sprite.svg';
@@ -33,11 +34,14 @@ const toLibraryItem = extension => {
     return extension;
 };
 
-const translateGalleryItem = (extension, locale) => ({
-    ...extension,
-    name: extension.nameTranslations?.[locale] || extension.name,
-    description: extension.descriptionTranslations?.[locale] || extension.description
-});
+const translateGalleryItem = (extension, locale) => {
+    const localTranslations = twExtensionTranslations[extension.extensionId] || {};
+    return {
+        ...extension,
+        name: extension.nameTranslations?.[locale] || localTranslations.nameTranslations?.[locale] || extension.name,
+        description: extension.descriptionTranslations?.[locale] || localTranslations.descriptionTranslations?.[locale] || extension.description
+    };
+};
 
 const translateStaticItem = (item, locale) => {
     if (typeof item !== 'object' || item === null) return item;
@@ -63,6 +67,7 @@ const fetchLibrary = async () => {
     let astraExtensions = [];
     let engineExtensions = [];
     let yesshapeExtensions = [];
+    let bilupExtensions = [];
 
     try {
         const twRes = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
@@ -433,7 +438,54 @@ const fetchLibrary = async () => {
         console.warn('Failed to load Yesshape extensions:', error);
     }
 
-    return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions, ...remixwarpExtensions, ...astraExtensions, ...engineExtensions, ...yesshapeExtensions];
+    try {
+        const bilupRes = await fetch('https://rw-extensions.pages.dev/bilup/extensions-index.json');
+        if (!bilupRes.ok) {
+            console.warn(`Bilup extensions: HTTP status ${bilupRes.status}`);
+        } else {
+            const bilupData = await bilupRes.json();
+            bilupExtensions = bilupData.extensions.map(extension => ({
+                name: extension.name,
+                nameTranslations: extension.nameTranslations || {},
+                description: extension.description,
+                descriptionTranslations: extension.descriptionTranslations || {},
+                extensionId: extension.extensionId,
+                extensionURL: extension.extensionURL,
+                iconURL: extension.iconURL,
+                tags: extension.tags || ['bilup'],
+                credits: (extension.credits || []).map(credit => {
+                    if (typeof credit === 'object' && credit.name) {
+                        const link = credit.link || credit.url;
+                        if (link) {
+                            return (
+                                <a
+                                    href={link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    key={credit.name}
+                                >
+                                    {credit.name}
+                                </a>
+                            );
+                        }
+                        return credit.name;
+                    }
+                    return credit;
+                }),
+                docsURI: extension.docsURI || null,
+                samples: extension.samples ? extension.samples.map(sample => ({
+                    href: `${process.env.ROOT}editor?project_url=${sample.href.startsWith('http') ? sample.href : window.location.origin + sample.href}`,
+                    text: sample.text
+                })) : null,
+                incompatibleWithScratch: extension.incompatibleWithScratch || true,
+                featured: extension.featured || true
+            }));
+        }
+    } catch (error) {
+        console.warn('Failed to load Bilup extensions:', error);
+    }
+
+    return [...twExtensions, ...mistiumExtensions, ...sharkpoolsExtensions, ...penguinmodExtensions, ...remixwarpExtensions, ...astraExtensions, ...engineExtensions, ...yesshapeExtensions, ...bilupExtensions];
 };
 
 class ExtensionLibrary extends React.PureComponent {

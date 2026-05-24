@@ -7,5 +7,6 @@ export default [
     {tag: 'sharkpools', intlLabel: 'SharkPools'},
     {tag: 'penguinmod', intlLabel: 'PenguinMod'},
     {tag: '02engine', intlLabel: '02Engine'},
-    {tag: 'yesshape', intlLabel: 'yesshape社区'}
+    {tag: 'yesshape', intlLabel: 'OpenWarp'},
+    {tag: 'bilup', intlLabel: 'Bilup'}
 ];
