@@ -131,13 +131,13 @@
 }
 
 .primaryButton {
-    background: #4caf50;
+    background: #75C1C4;
     color: white;
-    border: 1px solid #4caf50;
+    border: 1px solid #75C1C4;
 }
 
 .primaryButton:hover {
-    background: #45a049;
+    background: #5fa9ac;
 }
 
 .videoElement {

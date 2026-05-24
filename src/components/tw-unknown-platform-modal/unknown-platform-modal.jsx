@@ -7,7 +7,7 @@ import styles from './unknown-platform-modal.css';
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Unknown Platform',
+        defaultMessage: 'Platform Information',
         description: 'Title of modal that appears when loading a project made with another mod',
         id: 'tw.unknownPlatform.title'
     }
@@ -27,14 +27,23 @@ const platformToString = platform => {
     return '(?)';
 };
 
-const UnknownPlatformModal = props => (
+const UnknownPlatformModal = props => {
+    const knownCompatiblePlatforms = ['Scratch', 'TurboWarp', '02Engine', 'AstraEditor', 'Bilup', 'Gandi'];
+    const isKnownPlatform = props.platform && knownCompatiblePlatforms.includes(props.platform.name);
+
+    return (
     <Modal
         className={styles.modalContent}
         onRequestClose={props.onClose}
         contentLabel={props.intl.formatMessage(messages.title)}
         id="unknownPlatformModal"
     >
-        <div className={styles.body}>
+        <div className={`${styles.body} ${isKnownPlatform ? styles.knownPlatformBody : ''}`}>
+            {isKnownPlatform && (
+                <div className={styles.successIcon}>
+                    ✨
+                </div>
+            )}
             <p>
                 <FormattedMessage
                     defaultMessage="The project was made using a different platform:"
@@ -48,18 +57,33 @@ const UnknownPlatformModal = props => (
                 {platformToString(props.platform)}
             </p>
 
-            <p>
-                <FormattedMessage
-                    // eslint-disable-next-line max-len
-                    defaultMessage="Compatibility with {APP_NAME} is not guaranteed. You can continue at your own risk, but we may not be able to help if you encounter any problems."
-                    // eslint-disable-next-line max-len
-                    description="Text in modal that appears when loading a project made with another mod."
-                    id="tw.unknownPlatform.2"
-                    values={{
-                        APP_NAME
-                    }}
-                />
-            </p>
+            {isKnownPlatform ? (
+                <p>
+                    <FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="This platform is known to be mostly compatible with {APP_NAME}. You should be able to edit and run this project without major issues."
+                        // eslint-disable-next-line max-len
+                        description="Text in modal for known compatible platforms."
+                        id="tw.unknownPlatform.2.known"
+                        values={{
+                            APP_NAME
+                        }}
+                    />
+                </p>
+            ) : (
+                <p>
+                    <FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="Compatibility with {APP_NAME} is not guaranteed. You can continue at your own risk, but we may not be able to help if you encounter any problems."
+                        // eslint-disable-next-line max-len
+                        description="Text in modal for unknown platforms."
+                        id="tw.unknownPlatform.2"
+                        values={{
+                            APP_NAME
+                        }}
+                    />
+                </p>
+            )}
 
             <button
                 className={styles.button}
@@ -75,7 +99,8 @@ const UnknownPlatformModal = props => (
             </button>
         </div>
     </Modal>
-);
+    );
+};
 
 UnknownPlatformModal.propTypes = {
     intl: intlShape,

@@ -9,6 +9,7 @@ import Button from '../button/button.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import Input from '../forms/input.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
+import SliderCaptcha from '../slider-captcha/slider-captcha.jsx';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -28,7 +29,11 @@ class CollaborationModal extends Component {
             connectionStep: props.isConnected ? 'connected' : 'join',
             error: null,
             pendingRequests: [],
-            showJoinRequest: false
+            showJoinRequest: false,
+            joinVerified: false,
+            createVerified: false,
+            joinCaptchaKey: 0,
+            createCaptchaKey: 0
         };
 
         this.autoJoinAttempted = new Set();
@@ -254,6 +259,11 @@ class CollaborationModal extends Component {
     }
 
     async handleJoinRoom () {
+        if (!this.state.joinVerified) {
+            this.setState({error: 'Please complete the verification first'});
+            return;
+        }
+        
         if (!this.state.roomId.trim()) {
             this.setState({error: 'Please enter a room ID'});
             return;
@@ -282,12 +292,19 @@ class CollaborationModal extends Component {
             this.setState({
                 error: `Failed to join room: ${error.message || 'Unknown error'}`,
                 isConnecting: false,
-                connectionStep: 'join'
+                connectionStep: 'join',
+                joinVerified: false,
+                joinCaptchaKey: this.state.joinCaptchaKey + 1
             });
         }
     }
 
     async handleCreateRoom () {
+        if (!this.state.createVerified) {
+            this.setState({error: 'Please complete the verification first'});
+            return;
+        }
+        
         const roomCode = this.generateRoomCode();
         const username = this.props.currentUsername;
 
@@ -311,7 +328,9 @@ class CollaborationModal extends Component {
             this.setState({
                 error: `Failed to create room: ${error.message || 'Unknown error'}`,
                 isConnecting: false,
-                connectionStep: 'join'
+                connectionStep: 'join',
+                createVerified: false,
+                createCaptchaKey: this.state.createCaptchaKey + 1
             });
         }
     }
@@ -670,10 +689,14 @@ class CollaborationModal extends Component {
                                 onSubmit={this.handleRoomIdChange}
                             />
                         </div>
+                        <SliderCaptcha
+                            key={this.state.joinCaptchaKey}
+                            onVerify={() => this.setState({joinVerified: true})}
+                        />
                         <Button
                             className={styles.primaryButton}
                             onClick={this.handleJoinRoom}
-                            disabled={this.state.isConnecting}
+                            disabled={this.state.isConnecting || !this.state.joinVerified}
                         >
                             <FormattedMessage
                                 defaultMessage="Join Room"
@@ -705,10 +728,14 @@ class CollaborationModal extends Component {
                                 id="gui.collaboration.createDescription"
                             />
                         </div>
+                        <SliderCaptcha
+                            key={this.state.createCaptchaKey}
+                            onVerify={() => this.setState({createVerified: true})}
+                        />
                         <Button
                             className={styles.secondaryButton}
                             onClick={this.handleCreateRoom}
-                            disabled={this.state.isConnecting}
+                            disabled={this.state.isConnecting || !this.state.createVerified}
                         >
                             <FormattedMessage
                                 defaultMessage="Create New Room"
