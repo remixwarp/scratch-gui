@@ -18,6 +18,7 @@ const messages = defineMessages({
 
 const VideoModal = props => {
     const [showExtensionDialog, setShowExtensionDialog] = useState(false);
+    const [showProjectDialog, setShowProjectDialog] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     
     useEffect(() => {
@@ -89,6 +90,8 @@ const VideoModal = props => {
                             if (props.tutorial.url) {
                                 if (props.tutorial.url.endsWith('.js')) {
                                     setShowExtensionDialog(true);
+                                } else if (props.tutorial.url.endsWith('.sb3')) {
+                                    setShowProjectDialog(true);
                                 } else {
                                     window.open(props.tutorial.url, '_blank');
                                 }
@@ -165,6 +168,46 @@ const VideoModal = props => {
                                 }}
                             >
                                 添加扩展
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 项目文件选择弹窗 */}
+            {showProjectDialog && (
+                <div className={styles.extensionDialogOverlay}>
+                    <div className={styles.extensionDialog}>
+                        <div className={styles.extensionDialogHeader}>
+                            <h3>项目文件选择</h3>
+                            <button 
+                                className={styles.extensionDialogCloseButton}
+                                onClick={() => setShowProjectDialog(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className={styles.extensionDialogContent}>
+                            <p>该视频资源为 Scratch 项目文件。请选择以下操作：</p>
+                        </div>
+                        <div className={styles.extensionDialogActions}>
+                            <button 
+                                className={styles.dialogButton}
+                                onClick={() => {
+                                    window.open(props.tutorial.url, '_blank');
+                                    setShowProjectDialog(false);
+                                }}
+                            >
+                                下载项目文件
+                            </button>
+                            <button 
+                                className={styles.dialogButton + ' ' + styles.primaryButton}
+                                onClick={() => {
+                                    const currentUrl = window.location.href.split('?')[0];
+                                    window.location.href = `${currentUrl}?project_url=${encodeURIComponent(props.tutorial.url)}`;
+                                }}
+                            >
+                                添加到编辑器
                             </button>
                         </div>
                     </div>
