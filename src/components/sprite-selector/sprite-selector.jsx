@@ -101,7 +101,7 @@ const SpriteSelectorComponent = function (props) {
             <SpriteList
                 editingTarget={editingTarget}
                 hoveredTarget={hoveredTarget}
-                items={Object.keys(sprites).map(id => sprites[id]).filter(sprite => sprite.isOriginal !== false)}
+                items={Object.keys(sprites).map(id => sprites[id])}
                 raised={raised}
                 selectedId={selectedId}
                 onDeleteSprite={onDeleteSprite}

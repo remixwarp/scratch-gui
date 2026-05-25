@@ -1287,7 +1287,7 @@ class CollaborationService {
         const targetName = payload.targetName;
         if (!targetName) return;
 
-        const target = this.vm.runtime.targets.find(t => t.sprite.name === targetName && !t.isStage && t.isOriginal);
+        const target = this.vm.runtime.targets.find(t => t.sprite.name === targetName && !t.isStage && t.isOriginal !== false);
         if (!target) {
             console.warn('[Collab] Target not found for name:', targetName);
             return;

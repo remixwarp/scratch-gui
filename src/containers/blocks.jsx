@@ -7,6 +7,7 @@ import React from 'react';
 import {intlShape, injectIntl, defineMessages} from 'react-intl';
 import VMScratchBlocks from '../lib/blocks';
 import VM from 'scratch-vm';
+import initializeBlockDisableExtension from '../lib/block-disable-extensions';
 
 import log from '../lib/utils/log.js';
 import Prompt from './prompt.jsx';
@@ -376,6 +377,9 @@ class Blocks extends React.Component {
         if (this.hatBlockCommentReminderEnabled) {
             this._checkHatBlockReminders();
         }
+
+        // Initialize Copy JS Code context menu for blocks
+        initializeBlockDisableExtension(this.props.vm);
 
         gentlyRequestPersistentStorage();
 

@@ -9,7 +9,7 @@ import Button from '../button/button.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import Input from '../forms/input.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
-import SliderCaptcha from '../slider-captcha/slider-captcha.jsx';
+import CaptchaModal from '../captcha-modal/captcha-modal.jsx';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -740,74 +740,12 @@ class CollaborationModal extends Component {
     renderCaptchaModal () {
         if (!this.state.activeCaptcha) return null;
 
-        const actionLabel = this.state.activeCaptcha === 'create'
-            ? this.props.intl.formatMessage({
-                id: 'gui.collaboration.captcha.createLabel',
-                defaultMessage: 'Create room verification',
-                description: 'Captcha modal title for create room'
-            })
-            : this.state.activeCaptcha === 'auto'
-                ? this.props.intl.formatMessage({
-                    id: 'gui.collaboration.captcha.autoLabel',
-                    defaultMessage: 'Room verification',
-                    description: 'Captcha modal title for URL room entry'
-                })
-                : this.props.intl.formatMessage({
-                    id: 'gui.collaboration.captcha.joinLabel',
-                    defaultMessage: 'Join room verification',
-                    description: 'Captcha modal title for join room'
-                });
-
         return (
-            <Modal
-                className={styles.captchaModal}
-                contentLabel={actionLabel}
-                onRequestClose={this.closeCaptchaModal}
+            <CaptchaModal
                 visible={Boolean(this.state.activeCaptcha)}
-            >
-                <Box className={styles.captchaModalContent}>
-                    <div className={styles.captchaModalHeader}>
-                        <h2>{actionLabel}</h2>
-                        <div className={styles.captchaModalInstructions}>
-                            {this.state.activeCaptcha === 'auto' ? (
-                                <FormattedMessage
-                                    defaultMessage="A room was opened from the URL. Please complete the slider verification before joining."
-                                    description="Instruction for URL room captcha modal"
-                                    id="gui.collaboration.captcha.autoInstruction"
-                                />
-                            ) : (
-                                <FormattedMessage
-                                    defaultMessage="Please complete the slider verification to continue."
-                                    description="Instruction for manual captcha modal"
-                                    id="gui.collaboration.captcha.manualInstruction"
-                                />
-                            )}
-                        </div>
-                    </div>
-                    <SliderCaptcha
-                        key={this.state.activeCaptcha}
-                        onVerify={this.handleCaptchaSuccess}
-                        onFail={this.handleCaptchaFail}
-                    />
-                    {this.state.captchaError && (
-                        <div className={styles.captchaError}>
-                            {this.state.captchaError}
-                        </div>
-                    )}
-                    <div className={styles.captchaButtonRow}>
-                        <Button
-                            className={styles.secondaryButton}
-                            onClick={this.closeCaptchaModal}
-                        >
-                            <FormattedMessage
-                                defaultMessage="Cancel"
-                                description="Button to cancel the captcha modal"
-                                id="gui.collaboration.captcha.cancel"
-                            />
-                        </Button>
-                    </div>
-                </Box>
-            </Modal>
+                onVerify={this.handleCaptchaSuccess}
+                onCancel={this.closeCaptchaModal}
+            />
         );
     }
 
