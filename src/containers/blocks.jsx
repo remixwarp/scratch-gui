@@ -202,10 +202,12 @@ class Blocks extends React.Component {
             if (typeof originalCreateEditor === 'function') {
                 ScratchBlockComment.prototype.createEditor_ = function () {
                     const result = originalCreateEditor.call(this);
-                    // Use class selector to avoid SVG namespace issues with XHTML body elements
-                    // inside a foreignObject. '.scratchCommentBody' is the class set on the
-                    // <body> element by the original createEditor_.
-                    const body = this.foreignObject_ && this.foreignObject_.querySelector('.scratchCommentBody');
+                    // After original createEditor_ runs, this.textarea_ is already
+                    // a child of the XHTML <body> inside the SVG <foreignObject>.
+                    // Using textarea_.parentElement avoids SVG namespace issues that
+                    // cause foreignObject_.querySelector('body') /
+                    // foreignObject_.querySelector('.scratchCommentBody') to return null.
+                    const body = this.textarea_ && this.textarea_.parentElement;
                     if (body && !body.querySelector('button.sc-clear-btn')) {
                         const HTML_NS = 'http://www.w3.org/1999/xhtml';
                         const buttonDiv = document.createElementNS(HTML_NS, 'div');
