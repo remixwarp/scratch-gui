@@ -48,6 +48,7 @@ import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.jsx';
 import {findTopBlock} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
+import RestorePointAPI from '../lib/api/restore-points';
 import CollaborationService from '../lib/collaboration-service.js';
 
 // TW: Strings we add to scratch-blocks are localized here
@@ -165,7 +166,7 @@ class Blocks extends React.Component {
         this.hatBlockCommentReminderEnabled = localStorage.getItem('mw:hat-block-comment-reminder') !== 'false';
         this.hatReminderCheckInterval = parseInt(localStorage.getItem('mw:hat-reminder-check-interval'), 10) || 500;
         this.hatReminderBlockThreshold = parseInt(localStorage.getItem('mw:hat-reminder-block-threshold'), 10) || 10;
-        this.hatReminderCommentText = localStorage.getItem('mw:hat-reminder-comment-text') || '记得写注释，不然别人和自己以后都看不懂！';
+        this.hatReminderCommentText = localStorage.getItem('mw:hat-reminder-comment-text') || '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）';
         this._hatReminderChecking = false;
         this._checkHatBlockReminders = debounce(this._checkHatBlockRemindersImpl.bind(this), this.hatReminderCheckInterval);
         this._handleHatReminderSettingChanged = this._handleHatReminderSettingChanged.bind(this);
@@ -198,6 +199,11 @@ class Blocks extends React.Component {
         if (ScratchBlockComment && !ScratchBlockComment.prototype._hatReminderPatched) {
             ScratchBlockComment.prototype._hatReminderPatched = true;
 
+            // Capture VM reference and project title for creating restore points
+            // before the "清空" (clear) button action.
+            const blocksVm = this.props.vm;
+            const projectTitle = this.props.projectTitle;
+
             const originalCreateEditor = ScratchBlockComment.prototype.createEditor_;
             if (typeof originalCreateEditor === 'function') {
                 ScratchBlockComment.prototype.createEditor_ = function () {
@@ -217,16 +223,49 @@ class Blocks extends React.Component {
                         clearBtn.className = 'sc-clear-btn';
                         clearBtn.textContent = '清空';
                         clearBtn.style.cssText = 'padding: 2px 10px; font-size: 12px; cursor: pointer; border: none; background: #ff8c1a; color: white; border-radius: 4px;';
-                        clearBtn.addEventListener('click', e => {
+                        const statusSpan = document.createElementNS(HTML_NS, 'span');
+                        statusSpan.className = 'sc-clear-status';
+                        statusSpan.style.cssText = 'display: none; font-size: 11px; color: #888; margin-right: 8px; white-space: nowrap;';
+                        this.clearStatusSpan_ = statusSpan;
+
+                        clearBtn.addEventListener('click', async e => {
                             e.stopPropagation();
                             e.preventDefault();
                             if (this.text_ && this.text_.length > 0) {
+                                // Create an immediate restore point BEFORE clearing
+                                // the comment, so the user can recover if needed.
+                                try {
+                                    await RestorePointAPI.createRestorePoint(
+                                        blocksVm,
+                                        projectTitle || '',
+                                        RestorePointAPI.TYPE_AUTOMATIC
+                                    );
+                                } catch (err) {
+                                    // Silently ignore restore point creation errors
+                                    // so the clear action still proceeds.
+                                }
                                 // setText fires a CommentChange event, which creates
                                 // an undo checkpoint in the workspace undo stack and
                                 // triggers PROJECT_CHANGED for restore point creation.
                                 this.setText('');
+
+                                // Show status notification in the bottom-right area
+                                // (same area used for real-time collaboration info)
+                                if (this.clearStatusSpan_) {
+                                    this.clearStatusSpan_.textContent = '已清空文本，清空前的项目已自动保存在还原点中';
+                                    this.clearStatusSpan_.style.display = 'inline';
+                                    if (this._clearStatusTimer) {
+                                        clearTimeout(this._clearStatusTimer);
+                                    }
+                                    this._clearStatusTimer = setTimeout(() => {
+                                        if (this.clearStatusSpan_) {
+                                            this.clearStatusSpan_.style.display = 'none';
+                                        }
+                                    }, 5000);
+                                }
                             }
                         });
+                        buttonDiv.appendChild(statusSpan);
                         buttonDiv.appendChild(clearBtn);
                         body.appendChild(buttonDiv);
                         this.clearButtonDiv_ = buttonDiv;
@@ -1825,6 +1864,7 @@ Blocks.propTypes = {
     useCatBlocks: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired,
     isFullScreen: PropTypes.bool,
+    projectTitle: PropTypes.string,
     workspaceMetrics: PropTypes.shape({
         targets: PropTypes.objectOf(PropTypes.object)
     })
@@ -1866,6 +1906,7 @@ const mapStateToProps = state => ({
     toolboxXML: state.scratchGui.toolbox.toolboxXML,
     customProceduresVisible: state.scratchGui.customProcedures.active,
     workspaceMetrics: state.scratchGui.workspaceMetrics,
+    projectTitle: state.scratchGui.projectTitle,
     useCatBlocks: isTimeTravel2020(state)
 });
 

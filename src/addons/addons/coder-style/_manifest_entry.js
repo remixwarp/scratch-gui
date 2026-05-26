@@ -60,7 +60,7 @@ const manifest = {
       step: 0.01
     }
   ],
-  tags: ["theme", "blocks"],
+  tags: ["02engine", "theme", "blocks"],
   enabledByDefault: false
 };
 export default manifest;

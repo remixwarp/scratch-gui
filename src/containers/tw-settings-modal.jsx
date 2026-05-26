@@ -37,7 +37,7 @@ class UsernameModal extends React.Component {
             hatBlockCommentReminder: localStorage.getItem('mw:hat-block-comment-reminder') !== 'false',
             hatReminderCheckInterval: parseInt(localStorage.getItem('mw:hat-reminder-check-interval'), 10) || 500,
             hatReminderBlockThreshold: parseInt(localStorage.getItem('mw:hat-reminder-block-threshold'), 10) || 10,
-            hatReminderCommentText: localStorage.getItem('mw:hat-reminder-comment-text') || '记得写注释，不然别人和自己以后都看不懂！'
+            hatReminderCommentText: localStorage.getItem('mw:hat-reminder-comment-text') || '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）'
         };
 
         bindAll(this, [
@@ -276,7 +276,7 @@ class UsernameModal extends React.Component {
         }
     }
     handleHatReminderCommentTextChange (value) {
-        const text = value || '记得写注释，不然别人和自己以后都看不懂！';
+        const text = value || '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）';
         this.setState({hatReminderCommentText: text});
         try {
             localStorage.setItem('mw:hat-reminder-comment-text', text);
@@ -291,7 +291,7 @@ class UsernameModal extends React.Component {
         const defaults = {
             hatReminderCheckInterval: 500,
             hatReminderBlockThreshold: 10,
-            hatReminderCommentText: '记得写注释，不然别人和自己以后都看不懂！'
+            hatReminderCommentText: '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）'
         };
         this.setState(defaults);
         try {
