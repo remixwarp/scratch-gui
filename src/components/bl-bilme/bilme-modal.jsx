@@ -450,6 +450,83 @@ const BilmeModal = props => {
     const getGradientStyle = theme => {
         if (!theme.colors?.gradient) return {};
     
+        // 检查是否为像素主题
+        if (isPixelTheme(theme.name)) {
+            // 尝试从主题数据中提取像素数据
+            let pixelData = null;
+            
+            // 检查是否有伪装的像素数据
+            if (theme.colors.gradient && theme.colors.gradient.length > 0) {
+                const firstColor = theme.colors.gradient[0].color;
+                if (firstColor && typeof firstColor === 'string' && firstColor.startsWith('PIXEL:')) {
+                    // 解析像素数据
+                    try {
+                        const pixelString = firstColor.substring(6);
+                        pixelData = pixelString.split(';').map(row => row.split(','));
+                    } catch (e) {
+                        console.error('Failed to parse pixel data:', e);
+                    }
+                }
+            }
+            
+            // 如果有像素数据，生成像素预览
+            if (pixelData && pixelData.length > 0) {
+                // 创建Canvas来生成预览图
+                const canvas = document.createElement('canvas');
+                // 预览图高度为120px，按比例计算宽度
+                const previewHeight = 120;
+                const scale = previewHeight / pixelData.length;
+                const previewWidth = Math.floor(pixelData[0].length * scale);
+                
+                canvas.width = previewWidth;
+                canvas.height = previewHeight;
+                const ctx = canvas.getContext('2d');
+                
+                // 绘制像素数据
+                for (let y = 0; y < pixelData.length; y++) {
+                    for (let x = 0; x < pixelData[y].length; x++) {
+                        const color = pixelData[y][x];
+                        if (color) {
+                            ctx.fillStyle = color;
+                            ctx.fillRect(Math.floor(x * scale), Math.floor(y * scale), Math.ceil(scale), Math.ceil(scale));
+                        }
+                    }
+                }
+                
+                return {
+                    background: `url(${canvas.toDataURL('image/png')})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                };
+            }
+            
+            // 回退到简单的像素风格背景
+            let primaryColor = '#ff6b6b';
+            if (theme.colors.gradient && theme.colors.gradient.length > 0) {
+                primaryColor = theme.colors.gradient[0].color?.startsWith('PIXEL:') ? '#ff6b6b' : theme.colors.gradient[0].color;
+            }
+            
+            return {
+                background: `
+                    repeating-linear-gradient(
+                        0deg,
+                        ${primaryColor} 0px,
+                        ${primaryColor} 2px,
+                        rgba(0,0,0,0.3) 2px,
+                        rgba(0,0,0,0.3) 4px
+                    ),
+                    repeating-linear-gradient(
+                        90deg,
+                        ${primaryColor} 0px,
+                        ${primaryColor} 2px,
+                        rgba(0,0,0,0.3) 2px,
+                        rgba(0,0,0,0.3) 4px
+                    )
+                `,
+                backgroundSize: '8px 8px'
+            };
+        }
+    
         const sortedColors = [...theme.colors.gradient].sort((a, b) => a.position - b.position);
         const gradientStops = sortedColors.map(c => `${c.color} ${c.position}%`).join(', ');
     
