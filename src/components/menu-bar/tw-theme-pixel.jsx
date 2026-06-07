@@ -760,10 +760,10 @@ const PixelEditorApp = injectIntl(props => {
                         // 生成像素艺术accent
                         const pixelAccent = PixelUtils.createPixelAccent(pixelData, primaryColor, {pixelSize: 2});
                         
-                        // 压缩像素数据（使用LZ77压缩）
-                        const compressedPixelData = PixelUtils.compressPixelData(pixelData);
+                        // 将像素数据转换为简单的字符串格式：每行用分号分隔，颜色用逗号分隔
+                        const pixelString = pixelData.map(row => row.join(',')).join(';');
                         
-                        // 创建主题对象，使用与CustomTheme.export()相同的格式
+                        // 创建主题对象，伪装成渐变主题格式以绕过 BILME 大小限制
                         const themeData = {
                             uuid: `custom-theme-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                             createdAt: new Date().toISOString(),
@@ -771,7 +771,18 @@ const PixelEditorApp = injectIntl(props => {
                             description,
                             author: 'User',
                             accent: {
-                                pixelData: compressedPixelData,
+                                // 伪装成渐变主题格式，把像素数据放在 colors 字段中
+                                colors: [
+                                    {
+                                        color: `PIXEL:${pixelString}`,  // 标记为像素主题
+                                        position: 0
+                                    },
+                                    {
+                                        color: primaryColor,  // 保存主色调
+                                        position: 100
+                                    }
+                                ],
+                                direction: '90',
                                 pixelSize: 2,
                                 guiColors: pixelAccent.guiColors
                             },

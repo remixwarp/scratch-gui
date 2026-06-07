@@ -846,11 +846,28 @@ class CustomTheme extends Theme {
         // Check if it's a pixel theme
         if (this.customAccent && this.customAccent.pixelData) {
             const pixelData = this.customAccent.pixelData;
-            // Compress pixel data if it's not already compressed
-            const compressedPixelData = PixelUtils.isCompressed(pixelData) ? 
-                pixelData : PixelUtils.compressPixelData(pixelData);
+            
+            // 将像素数据转换为简单的字符串格式：每行用分号分隔，颜色用逗号分隔
+            const pixelString = pixelData.map(row => row.join(',')).join(';');
+            
+            // 获取主色调
+            const primaryColor = this.customAccent.guiColors && 
+                this.customAccent.guiColors['motion-primary'] ? 
+                this.customAccent.guiColors['motion-primary'] : '#ff6b6b';
+            
             accentExport = {
-                pixelData: compressedPixelData,
+                // 伪装成渐变主题格式，把像素数据放在 colors 字段中
+                colors: [
+                    {
+                        color: `PIXEL:${pixelString}`,  // 标记为像素主题
+                        position: 0
+                    },
+                    {
+                        color: primaryColor,  // 保存主色调
+                        position: 100
+                    }
+                ],
+                direction: '90',
                 pixelSize: this.customAccent.pixelSize || 2,
                 guiColors: this.customAccent.guiColors
             };
@@ -1048,8 +1065,33 @@ class CustomTheme extends Theme {
             // Check if accent is in gradient format (colors array)
             const colors = accentToUse.colors;
             const direction = accentToUse.direction || '90';
-            const primaryColor = colors[0] ? colors[0].color : '#ff6b6b';
-            accentToUse = GradientUtils.createGradientAccent(colors, primaryColor, {direction});
+            
+            // 检查是否为伪装成渐变主题的像素主题
+            if (colors[0] && colors[0].color && typeof colors[0].color === 'string' && 
+                colors[0].color.startsWith('PIXEL:')) {
+                // 从 colors[0].color 中提取像素数据
+                try {
+                    const pixelString = colors[0].color.substring(6); // 去掉 'PIXEL:' 前缀
+                    
+                    // 解析简单字符串格式：每行用分号分隔，颜色用逗号分隔
+                    const pixelData = pixelString.split(';').map(row => row.split(','));
+                    
+                    // 获取主色调
+                    const primaryColor = colors[1] && colors[1].color ? colors[1].color : '#ff6b6b';
+                    const pixelSize = accentToUse.pixelSize || 2;
+                    
+                    accentToUse = PixelUtils.createPixelAccent(pixelData, primaryColor, {pixelSize});
+                } catch (e) {
+                    console.error('Failed to parse pixel data from colors:', e);
+                    // 回退到普通渐变主题
+                    const primaryColor = colors[0] ? colors[0].color : '#ff6b6b';
+                    accentToUse = GradientUtils.createGradientAccent(colors, primaryColor, {direction});
+                }
+            } else {
+                // 普通渐变主题
+                const primaryColor = colors[0] ? colors[0].color : '#ff6b6b';
+                accentToUse = GradientUtils.createGradientAccent(colors, primaryColor, {direction});
+            }
         } else if (accentToUse && typeof accentToUse === 'object' && accentToUse.pixelData) {
             // Check if accent is in pixel format (pixelData)
             let pixelData = accentToUse.pixelData;
