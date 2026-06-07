@@ -280,6 +280,16 @@
     position: relative;
 }
 
+.pixelBadge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 4px;
+    border-radius: 4px;
+    backdrop-filter: blur(4px);
+}
+
 .themeContent {
     padding: 16px;
     flex: 1;

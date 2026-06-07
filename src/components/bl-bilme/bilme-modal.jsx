@@ -568,7 +568,16 @@ const BilmeModal = props => {
                                 <div
                                     className={styles.themeHeader}
                                     style={getGradientStyle(theme)}
-                                />
+                                >
+                                    {isPixelTheme(theme.name) && (
+                                        <div className={styles.pixelBadge}>
+                                            <svg t="1780839989942" className="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+                                                <path d="M983.04 0H40.96A40.917333 40.917333 0 0 0 0 40.96v942.08a40.917333 40.917333 0 0 0 40.96 40.96h942.08a40.96 40.96 0 0 0 40.96-40.96V40.96a40.96 40.96 0 0 0-40.96-40.96z m-51.2 931.84H92.16V92.16h839.68v839.68z" fill="white" opacity="0.9"></path>
+                                                <path d="M512 151.552h367.018667v367.018667H512V151.552zM151.552 512h367.018667v367.018667H151.552V512z" fill="#ff6b6b"></path>
+                                            </svg>
+                                        </div>
+                                    )}
+                                </div>
                                 <div className={styles.themeContent}>
                                     <h3 className={styles.themeName}>{theme.name}</h3>
                                     <p className={styles.themeAuthor}>by {theme.authorName}</p>
