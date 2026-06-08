@@ -1,0 +1,427 @@
+@import "../../css/colors.css";
+@import "../../css/units.css";
+
+.modalContent {
+    padding: 1.5rem;
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.conversionRow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.sourceBox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1rem;
+    background-color: rgba(74, 158, 255, 0.15);
+    border: 1px solid rgba(74, 158, 255, 0.3);
+    border-radius: 0.5rem;
+    min-width: 120px;
+}
+
+.platformName {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+}
+
+.platformExtension {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-left: 0.375rem;
+}
+
+.arrowContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--motion-primary, #4a9eff);
+    flex-shrink: 0;
+}
+
+.arrow {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.targetSelect {
+    padding: 0.625rem 1rem;
+    font-size: 0.9375rem;
+    background-color: var(--input-background, #2a2a2e);
+    border: 1px solid var(--ui-tertiary, rgba(255, 255, 255, 0.12));
+    border-radius: 0.5rem;
+    color: var(--text-primary, #ffffff);
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    min-width: 150px;
+}
+
+.targetSelect:hover {
+    border-color: var(--ui-control-border, rgba(255, 255, 255, 0.2));
+}
+
+.targetSelect:focus {
+    outline: none;
+    border-color: var(--motion-primary, #4a9eff);
+    box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2);
+}
+
+.targetSelect:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.infoCard {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.conversionText {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+}
+
+.sourceText {
+    color: var(--motion-primary, #4a9eff);
+    font-weight: 500;
+}
+
+.targetText {
+    color: #81c784;
+    font-weight: 500;
+}
+
+.infoFooter {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.platformLink {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--motion-primary, #4a9eff);
+    text-decoration: none;
+    font-size: 0.8125rem;
+    transition: color 0.2s;
+}
+
+.platformLink:hover {
+    color: var(--motion-tertiary, #6bb3ff);
+    text-decoration: underline;
+}
+
+.linkText {
+    font-weight: 500;
+}
+
+.kitten4Warning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.25);
+    border-radius: 0.5rem;
+    margin-bottom: 1.25rem;
+    color: #ffc107;
+    font-size: 0.875rem;
+}
+
+.warningIconSmall {
+    flex-shrink: 0;
+}
+
+.issuesContainer {
+    margin-bottom: 1.25rem;
+}
+
+.errorSection {
+    background-color: rgba(245, 101, 101, 0.1);
+    border: 1px solid rgba(245, 101, 101, 0.2);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.warningSection {
+    background-color: rgba(255, 193, 7, 0.08);
+    border: 1px solid rgba(255, 193, 7, 0.2);
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.warningIcon {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+    color: #f56565;
+}
+
+.warningSection .warningIcon {
+    color: #ffc107;
+}
+
+.sectionTitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+}
+
+.issuesList {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.issueItem {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.issueItem:last-child {
+    border-bottom: none;
+}
+
+.errorBadge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    background-color: #f56565;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.6875rem;
+    font-weight: bold;
+    margin-right: 0.625rem;
+    flex-shrink: 0;
+}
+
+.warningBadge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border-radius: 50%;
+    font-size: 0.625rem;
+    margin-right: 0.625rem;
+    flex-shrink: 0;
+}
+
+.issueMessage {
+    font-size: 0.875rem;
+    color: var(--text-primary, #e0e0e0);
+    line-height: 1.5;
+}
+
+.issueDetails {
+    display: block;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 0.25rem;
+}
+
+.successMessage {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: rgba(67, 160, 71, 0.15);
+    border: 1px solid rgba(67, 160, 71, 0.3);
+    border-radius: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.successIcon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #43a047;
+    margin-right: 0.625rem;
+}
+
+.successText {
+    font-size: 0.875rem;
+    color: #81c784;
+    font-weight: 500;
+}
+
+.modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.625rem;
+    padding-top: 1rem;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cancelButton {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text-primary, #e0e0e0);
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.cancelButton:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.cancelButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.convertButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.5rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: white;
+    background-color: var(--motion-primary, #4a9eff);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.convertButton:hover:not(:disabled) {
+    background-color: var(--motion-tertiary, #3a8eff);
+}
+
+.convertButton:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.convertButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.convertButton.converting {
+    background-color: var(--motion-tertiary, #3a8eff);
+}
+
+.downloadIcon {
+    flex-shrink: 0;
+}
+
+.loadingText {
+    display: flex;
+    align-items: center;
+}
+
+.loadingText::after {
+    content: '';
+    display: inline-block;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-left: 0.5rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-color-scheme: light) {
+    .sourceBox {
+        background-color: rgba(74, 158, 255, 0.1);
+        border-color: rgba(74, 158, 255, 0.2);
+    }
+
+    .platformName {
+        color: var(--text-primary, #212529);
+    }
+
+    .platformExtension {
+        color: var(--text-secondary, #6c757d);
+    }
+
+    .targetSelect {
+        background-color: var(--input-background, #ffffff);
+        border-color: var(--ui-tertiary, #ced4da);
+        color: var(--text-primary, #212529);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    }
+
+    .targetSelect:hover {
+        border-color: var(--ui-control-border, #adb5bd);
+    }
+
+    .infoCard {
+        background-color: #ffffff;
+        border-color: #e0e0e0;
+    }
+
+    .conversionText {
+        color: var(--text-primary, #495057);
+    }
+
+    .sectionTitle {
+        color: var(--text-primary, #212529);
+    }
+
+    .issueMessage {
+        color: var(--text-primary, #212529);
+    }
+
+    .issueDetails {
+        color: var(--text-secondary, #6c757d);
+    }
+
+    .issueItem {
+        border-bottom-color: #e0e0e0;
+    }
+
+    .cancelButton {
+        color: var(--text-primary, #495057);
+        background-color: var(--ui-secondary, #e9ecef);
+        border-color: var(--ui-tertiary, #dee2e6);
+    }
+
+    .cancelButton:hover:not(:disabled) {
+        background-color: var(--ui-tertiary, #dee2e6);
+    }
+
+    .successText {
+        color: #2e7d32;
+    }
+}

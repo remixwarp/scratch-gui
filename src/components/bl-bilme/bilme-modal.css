@@ -272,12 +272,68 @@
 .themeCard:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    overflow: visible;
 }
 
 .themeHeader {
     height: 120px;
     background: linear-gradient(135deg, var(--motion-primary), var(--motion-tertiary));
     position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.themeHeader:hover {
+    overflow: visible;
+}
+
+.gradientPreview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.pixelPreviewWrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.pixelPreview {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.3s ease, width 0.3s ease;
+    transform-origin: left center;
+}
+
+.pixelPreviewPopup {
+    position: fixed;
+    bottom: auto;
+    left: auto;
+    width: 900px;
+    padding: 4px;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    pointer-events: none;
+}
+
+.previewSegment {
+    height: 24px;
+    border-radius: 3px;
+    flex-shrink: 0;
 }
 
 .pixelBadge {
@@ -288,6 +344,7 @@
     padding: 4px;
     border-radius: 4px;
     backdrop-filter: blur(4px);
+    z-index: 10;
 }
 
 .themeContent {

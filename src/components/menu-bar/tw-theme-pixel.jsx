@@ -584,10 +584,7 @@ const PixelEditorApp = injectIntl(props => {
                                     width: `${gridSize.width * pixelSize}px`,
                                     height: `${gridSize.height * pixelSize}px`,
                                     position: 'relative',
-                                    background: backgroundColor,
-                                    marginBottom: '16px',
-                                    border: 'none',
-                                    borderRadius: 0
+                                    marginBottom: '16px'
                                 }}
                             >
                                 {React.useMemo(() => {

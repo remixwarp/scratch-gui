@@ -55,6 +55,7 @@ import AIAgentModal from '../../containers/ai-agent-modal.jsx';
 import BaiduAIModal from '../../containers/baidu-ai-modal.jsx';
 import ExtensionEditorModal from '../../containers/extension-editor-modal.jsx';
 import SuperRefactorModal from '../../containers/super-refactor-modal.jsx';
+import CompatibilityModal from '../../containers/tv-compatibility-modal.jsx';
 
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 import TutorialModal from '../../containers/tutorial-modal.jsx';
@@ -911,6 +912,7 @@ const GUIComponent = props => {
             <BaiduAIModal />
             <ExtensionEditorModal />
             <SuperRefactorModal />
+            <CompatibilityModal />
             <SimpleDialog />
             <TutorialModal />
             <VideoModal />

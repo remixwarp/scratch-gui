@@ -40,6 +40,7 @@ const MODAL_CUSTOM_THEME = 'customtheme';
 const MODAL_README = 'readme';
 const MODAL_PREVIEW_EXT = 'previewExt';
 const MODAL_AE_FEATURES = 'aeFeaturesModal';
+const MODAL_COMPATIBILITY = 'compatibilityModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -80,6 +81,7 @@ const initialState = {
     [MODAL_README]: false,
     [MODAL_PREVIEW_EXT]: false,
     [MODAL_AE_FEATURES]: false,
+    [MODAL_COMPATIBILITY]: false,
     extensionLoadChoiceData: null,
     videoModalData: null
 };
@@ -381,6 +383,12 @@ const openAeFeaturesModal = function () {
 const closeAeFeaturesModal = function () {
     return closeModal(MODAL_AE_FEATURES);
 };
+const openCompatibilityModal = function () {
+    return openModal(MODAL_COMPATIBILITY);
+};
+const closeCompatibilityModal = function () {
+    return closeModal(MODAL_COMPATIBILITY);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -460,9 +468,12 @@ export {
     closePreviewExt,
     openAeFeaturesModal,
     closeAeFeaturesModal,
+    openCompatibilityModal,
+    closeCompatibilityModal,
     MODAL_GANDI_HELP,
     MODAL_WARPTHEME,
     MODAL_EXTENSION_EDITOR,
     MODAL_SUPER_REFACTOR,
-    MODAL_BAIDU_AI
+    MODAL_BAIDU_AI,
+    MODAL_COMPATIBILITY
 };

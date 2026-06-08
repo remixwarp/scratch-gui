@@ -268,6 +268,7 @@ const BilmeModal = props => {
     const [sortBy, setSortBy] = useState('newest');
     const [platformFilter, setPlatformFilter] = useState('all');
     const [colorFilter, setColorFilter] = useState('all');
+    const [popupPosition, setPopupPosition] = useState({top: 0, left: 0, visible: false, theme: null});
 
     // Fetch themes from Bilme API
     useEffect(() => {
@@ -384,6 +385,29 @@ const BilmeModal = props => {
         return pixelKeywords.some(keyword => lowerName.includes(keyword.toLowerCase()));
     };
 
+    const handleMouseEnter = (e, theme) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const popupWidth = 900;
+        const popupHeight = 24 * 4 + 4 * 3 + 8 * 2; // 4 segments * 24px + 3 gaps * 4px + 2 padding * 4px
+        
+        let left = rect.left + rect.width / 2 - popupWidth / 2;
+        let top = rect.top - popupHeight - 8;
+        
+        // 确保弹出框在视口内
+        left = Math.max(10, Math.min(left, window.innerWidth - popupWidth - 10));
+        top = Math.max(10, top);
+        
+        // 判断是否是深色主题
+        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark' || 
+                           document.documentElement.classList.contains('theme-dark');
+        
+        setPopupPosition({top, left, visible: true, theme, isDarkTheme});
+    };
+
+    const handleMouseLeave = () => {
+        setPopupPosition(prev => ({...prev, visible: false}));
+    };
+
     const handleApplyTheme = async theme => {
         try {
             console.log('Applying theme:', theme.name, 'UUID:', theme.uuid);
@@ -473,8 +497,8 @@ const BilmeModal = props => {
             if (pixelData && pixelData.length > 0) {
                 // 创建Canvas来生成预览图
                 const canvas = document.createElement('canvas');
-                // 预览图高度为120px，按比例计算宽度
-                const previewHeight = 120;
+                // 预览图高度为24px（编辑器菜单栏高度），按比例计算宽度
+                const previewHeight = 24;
                 const scale = previewHeight / pixelData.length;
                 const previewWidth = Math.floor(pixelData[0].length * scale);
                 
@@ -495,8 +519,9 @@ const BilmeModal = props => {
                 
                 return {
                     background: `url(${canvas.toDataURL('image/png')})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
+                    backgroundSize: 'auto 100%',
+                    backgroundPosition: 'left center',
+                    backgroundRepeat: 'repeat-x'
                 };
             }
             
@@ -641,11 +666,24 @@ const BilmeModal = props => {
                                 className={styles.themeCard}
                                 data-name={theme.name}
                                 data-platform={theme.platform}
+                                onMouseEnter={isPixelTheme(theme.name) ? e => handleMouseEnter(e, theme) : undefined}
+                                onMouseLeave={isPixelTheme(theme.name) ? handleMouseLeave : undefined}
                             >
                                 <div
                                     className={styles.themeHeader}
-                                    style={getGradientStyle(theme)}
                                 >
+                                    {/* 像素主题预览 */}
+                                    {isPixelTheme(theme.name) ? (
+                                        <div className={styles.pixelPreviewWrapper}>
+                                            <div 
+                                                className={styles.pixelPreview}
+                                                style={getGradientStyle(theme)}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div style={getGradientStyle(theme)} className={styles.gradientPreview} />
+                                    )}
+                                    
                                     {isPixelTheme(theme.name) && (
                                         <div className={styles.pixelBadge}>
                                             <svg t="1780839989942" className="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
@@ -707,6 +745,24 @@ const BilmeModal = props => {
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                 </button>
+                {popupPosition.visible && popupPosition.theme && (
+                    <div 
+                        className={styles.pixelPreviewPopup}
+                        style={{
+                            top: popupPosition.top,
+                            left: popupPosition.left,
+                            opacity: popupPosition.visible ? 1 : 0,
+                            visibility: popupPosition.visible ? 'visible' : 'hidden',
+                            background: popupPosition.isDarkTheme ? '#111111' : '#ffffff',
+                            border: popupPosition.isDarkTheme ? '1px solid #333333' : '1px solid #e0e0e0'
+                        }}
+                    >
+                        <div className={styles.previewSegment} style={getGradientStyle(popupPosition.theme)} />
+                        <div className={styles.previewSegment} style={getGradientStyle(popupPosition.theme)} />
+                        <div className={styles.previewSegment} style={getGradientStyle(popupPosition.theme)} />
+                        <div className={styles.previewSegment} style={getGradientStyle(popupPosition.theme)} />
+                    </div>
+                )}
             </Box>
         </Modal>
     );

@@ -52,7 +52,8 @@ import {
     openSimpleDialog,
     openTutorialModal,
     openExtensionEditorModal,
-    openSuperRefactorModal
+    openSuperRefactorModal,
+    openCompatibilityModal
 } from '../../reducers/modals';
 
 // IPC for opening extension editor
@@ -341,13 +342,7 @@ class MenuBar extends React.Component {
             'getPlatformInfo',
             'checkCustomExtensions',
             'getCompatibilityIssues',
-            'showCompatibilityDialog',
-            'handleConvertToScratch',
-            'handleConvertToTurbowarp',
-            'handleConvertTo02Engine',
-            'handleConvertToAstraEditor',
-            'handleConvertToBilup',
-            'handleConvertToGandi'
+            'openCompatibilityModalDialog'
         ]);
     }
     componentDidMount () {
@@ -356,6 +351,9 @@ class MenuBar extends React.Component {
 
         // Prevent the legacy addon from also injecting a bookmarks menu.
         window.__RemixWarpNativeWorkspaceBookmarks = true;
+        
+        // Expose menu bar instance for compatibility modal
+        window.__remixWarpMenuBarInstance = this;
 
         this.loadWorkspaceBookmarksFromProject();
         if (this.props.vm && this.props.vm.runtime) {
@@ -439,37 +437,35 @@ class MenuBar extends React.Component {
             'Scratch': { name: 'Scratch', url: 'https://scratch.mit.edu' },
             'TurboWarp': { name: 'TurboWarp', url: 'https://turbowarp.org' },
             '02Engine': { name: '02Engine', url: 'https://02engine.02studio.xyz/' },
-            'AstraEditor': { name: 'AstraEditor', url: 'https://www.astras.top/' },
+            'AstraEditor': { name: 'AstraEditor', url: 'https://editors.astras.top/' },
             'Bilup': { name: 'Bilup', url: 'https://editor.bilup.org/' },
-            'Gandi': { name: 'Gandi', url: 'https://getgandi.com/' }
+            'Gandi': { name: 'Gandi', url: 'https://getgandi.com/' },
+            'Kitten4': { name: 'Kitten4', url: 'https://www.codemao.cn/' }
         };
         return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
     }
 
     async handleCompatibilitySave (agentName) {
-        // Save with specific agent metadata
         if (this.props.vm && this.props.vm.saveProjectSb3DontZip) {
             try {
-                // Get project files without zipping
                 const projectFiles = this.props.vm.saveProjectSb3DontZip();
                 const jsonData = projectFiles['project.json'];
-
-                // Parse project.json
                 const projectJson = JSON.parse(new TextDecoder().decode(jsonData));
 
-                // Modify meta to indicate the target platform
+                if (agentName === 'Kitten4') {
+                    await this.convertToKitten4Format(projectJson, projectFiles);
+                    return;
+                }
+
                 if (!projectJson.meta) {
                     projectJson.meta = {};
                 }
                 projectJson.meta.agent = agentName;
 
-                // Modify meta.platform to match the target platform
                 const platformInfo = this.getPlatformInfo(agentName);
                 projectJson.meta.platform = platformInfo;
 
-                // Convert extensions to Gandi format if target is Gandi
                 if (agentName === 'Gandi') {
-                    // Add Gandi-specific metadata to project.json
                     projectJson.meta.gandiVersion = '1.0';
                     projectJson.meta.gandiCompatible = true;
                     projectJson.meta.gandiEditorVersion = '1.0';
@@ -478,20 +474,12 @@ class MenuBar extends React.Component {
                     projectJson.meta.gandiAuthor = 'Gandi Editor';
                     projectJson.meta.gandiCreatedWith = 'Gandi Editor';
                     
-                    // Ensure extensions array is present and empty
-                    // Gandi might not support custom extensions, so we clear them
                     projectJson.extensions = [];
-                    
-                    // Remove extensionURLs completely
-                    // Gandi might not support this property
                     delete projectJson.extensionURLs;
                     
-                    // Ensure all targets have Gandi-compatible properties
                     if (projectJson.targets) {
                         projectJson.targets.forEach(target => {
-                            // Ensure target has all required properties
                             if (!target.isStage) {
-                                // Add missing properties for sprites
                                 if (target.visible === undefined) target.visible = true;
                                 if (target.x === undefined) target.x = 0;
                                 if (target.y === undefined) target.y = 0;
@@ -501,7 +489,6 @@ class MenuBar extends React.Component {
                                 if (target.rotationStyle === undefined) target.rotationStyle = 'all around';
                             }
                             
-                            // Ensure costumes have all required properties
                             if (target.costumes) {
                                 target.costumes.forEach(costume => {
                                     if (costume.bitmapResolution === undefined) costume.bitmapResolution = 2;
@@ -511,7 +498,6 @@ class MenuBar extends React.Component {
                                 });
                             }
                             
-                            // Ensure sounds have all required properties
                             if (target.sounds) {
                                 target.sounds.forEach(sound => {
                                     if (sound.rate === undefined) sound.rate = 44100;
@@ -521,29 +507,22 @@ class MenuBar extends React.Component {
                         });
                     }
                     
-                    // Ensure monitors array is present
                     if (!projectJson.monitors) {
                         projectJson.monitors = [];
                     }
                     
-                    // Ensure project has correct semver
                     if (!projectJson.meta.semver) {
                         projectJson.meta.semver = '3.0.0';
                     }
                 }
 
-                // Convert back to Uint8Array
                 const modifiedJson = new TextEncoder().encode(JSON.stringify(projectJson));
                 projectFiles['project.json'] = modifiedJson;
 
-                // Create a new zip with the modified project.json
                 const JSZip = require('jszip');
                 const zip = new JSZip();
 
-                // Add only essential files to the zip
-                // Gandi might be strict about what files it accepts
                 for (const [filename, data] of Object.entries(projectFiles)) {
-                    // Only include project.json and asset files
                     if (filename === 'project.json' || 
                         filename.match(/^[a-f0-9]{32}\.[a-z0-9]{3}$/i) ||
                         filename.match(/^costumes\/.*$/) ||
@@ -552,27 +531,509 @@ class MenuBar extends React.Component {
                     }
                 }
 
-                // Generate the zip file with specific options for Gandi compatibility
                 const content = await zip.generateAsync({
                     type: 'uint8array',
                     compression: 'DEFLATE',
                     compressionOptions: {
                         level: 6
                     },
-                    // Ensure consistent file order for Gandi compatibility
                     platform: process.platform
                 });
 
-                // Download the file
                 const downloadBlob = require('../../lib/utils/download-blob').default;
                 downloadBlob(`project-${agentName.toLowerCase()}.sb3`, content);
 
             } catch (error) {
-                // eslint-disable-next-line no-console
                 console.error('Error during compatibility save:', error);
                 this.showAlert('Error', `Failed to convert project: ${error.message}`);
             }
         }
+    }
+
+    generateUUID () {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    async convertToKitten4Format (projectJson, projectFiles) {
+        const kittenProject = {
+            hidden_toolbox: { toolbox: [], blocks: [] },
+            work_source_label: 1,
+            codemao_value: '',
+            sample_id: '',
+            version: 25,
+            application_version: '4.11.19',
+            work_type: 'KITTEN',
+            size: { width: 620, height: 900 },
+            type: 1,
+            project_name: projectJson.meta?.name || '未命名项目',
+            theatre: {
+                scenes_order: [],
+                scenes: {},
+                actors: {},
+                videos: {},
+                styles: {},
+                groups: {},
+                timer: {}
+            },
+            variables: {},
+            variable_order: [],
+            cloud_variables: {},
+            audio: {},
+            audio_order: [],
+            midimusic: [],
+            midi_order: [],
+            matrix: {},
+            models: {},
+            toolbox: {
+                current_type: '',
+                physics: false,
+                physics2: false,
+                block_ai_classification: false,
+                block_ai_game: false,
+                block_hardware_arduino: false,
+                block_hardware_weeemake: false,
+                block_hardware_microbit: false,
+                cloud_variable: false,
+                cloud_list: false,
+                advanced: false,
+                camera: false,
+                video: false,
+                wood: false,
+                cognitive: false,
+                ai_lab: false,
+                midimusic: false,
+                mobile_control: false
+            },
+            toolbox_order: ['event', 'control', 'action', 'appearance', 'audio', 'pen', 'sensing', 'operator', 'data', 'data', 'procedure', 'mobile_control', 'physic', 'physics2', 'cloud_variable', 'cloud_list', 'advanced', 'ai_lab', 'ai_game', 'cognitive', 'camera', 'video', 'wood', 'arduino', 'weeemake', 'microbit', 'ai', 'midimusic'],
+            last_toolbox_order: ['event', 'control', 'action', 'appearance', 'audio', 'pen', 'sensing', 'operator', 'variable', 'list', 'procedure', 'mobile_control', 'physics', 'physics2', 'cloud_variable', 'cloud_list', 'advanced', 'ai_lab', 'ai_game', 'cognitive', 'camera', 'video', 'wood', 'arduino', 'weeemake', 'microbit', 'ai', 'midimusic'],
+            hardware_type: '',
+            device_widget_type: null,
+            is_partial: false,
+            ai_lab: {},
+            broadcasts: {},
+            painter: { color: [] }
+        };
+
+        const sceneId = this.generateUUID();
+        kittenProject.theatre.scenes_order.push(sceneId);
+
+        let sceneActors = [];
+        let actorIdCounter = 0;
+        let stageData = null;
+        let audioIdCounter = 0;
+
+        // 转换广播消息
+        if (projectJson.broadcasts) {
+            for (const [id, name] of Object.entries(projectJson.broadcasts)) {
+                kittenProject.broadcasts[id] = name;
+            }
+        }
+        
+        const blockOpcodeMap = {
+            motion_movesteps: 'self_go_forward',
+            motion_turnright: 'self_turn_right',
+            motion_turnleft: 'self_turn_left',
+            motion_gotoxy: 'self_move_to',
+            motion_glidesecstoxy: 'self_glide_xy',
+            motion_pointindirection: 'self_point_direction',
+            motion_changexby: 'self_change_x',
+            motion_setx: 'self_set_x',
+            motion_changeyby: 'self_change_y',
+            motion_sety: 'self_set_y',
+
+            looks_sayforsecs: 'self_say_sec',
+            looks_say: 'self_say',
+            looks_changesizeby: 'self_change_size',
+            looks_setsizeto: 'self_set_size',
+
+            sound_playuntildone: 'sound_play_until',
+            sound_setvolumeto: 'sound_set_volume',
+
+            event_whenflagclicked: 'start_on_click',
+            event_whenkeypressed: 'start_when_key',
+            event_whenthisspriteclicked: 'sprite_on_tap',
+            event_broadcast: 'broadcast',
+
+            control_wait: 'control_wait',
+            control_repeat: 'control_repeat',
+            control_forever: 'control_forever',
+            control_if: 'control_if',
+
+            operator_add: 'operator_add',
+            operator_subtract: 'operator_subtract',
+            operator_random: 'operator_random',
+
+            data_setvariableto: 'variable_set',
+            data_changevariableby: 'variable_change'
+        };
+
+        const convertBlocks = (scratchBlocks) => {
+            const kittenBlocks = {};
+            const kittenConnections = {};
+            if (!scratchBlocks) return { blocks: {}, connections: {}, comments: {} };
+
+            let shadowBlockCounter = 0;
+
+            for (const [blockId, block] of Object.entries(scratchBlocks)) {
+                const kittenType = blockOpcodeMap[block.opcode] || block.opcode;
+
+                const kittenBlock = {
+                    type: kittenType,
+                    id: blockId,
+                    comment: null,
+                    is_shadow: block.shadow || false,
+                    collapsed: false,
+                    disabled: false,
+                    deletable: true,
+                    movable: true,
+                    editable: true,
+                    visible: 'visible',
+                    shadows: {},
+                    fields: {},
+                    field_constraints: {},
+                    field_extra_attr: {},
+                    mutation: '',
+                    is_output: block.shadow ? true : false,
+                    parent_id: block.parent || null,
+                    location: [block.x || 0, block.y || 0]
+                };
+
+                if (block.inputs) {
+                    for (const [inputKey, inputValue] of Object.entries(block.inputs)) {
+                        if (inputValue && inputValue[1] !== undefined) {
+                            const value = inputValue[1];
+                            if (Array.isArray(value) && value[1] !== null) {
+                                const refBlockId = value[1];
+                                kittenBlock.fields[inputKey] = [refBlockId];
+
+                                if (!kittenConnections[blockId]) {
+                                    kittenConnections[blockId] = {};
+                                }
+                                kittenConnections[blockId][refBlockId] = {
+                                    type: 'input',
+                                    input_type: 'value',
+                                    input_name: inputKey
+                                };
+                            } else if (typeof value === 'string') {
+                                const shadowBlockId = `shadow_${blockId}_${inputKey}_${shadowBlockCounter++}`;
+                                const lowerInputKey = inputKey.toLowerCase();
+                                kittenBlock.fields[lowerInputKey] = [shadowBlockId];
+
+                                kittenBlocks[shadowBlockId] = {
+                                    type: 'math_number',
+                                    id: shadowBlockId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: {
+                                        NUM: value
+                                    },
+                                    field_constraints: {
+                                        NUM: {
+                                            min: null,
+                                            max: null,
+                                            precision: 0,
+                                            mod: null
+                                        }
+                                    },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: blockId
+                                };
+
+                                if (!kittenConnections[shadowBlockId]) {
+                                    kittenConnections[shadowBlockId] = {};
+                                }
+
+                                if (!kittenConnections[blockId]) {
+                                    kittenConnections[blockId] = {};
+                                }
+                                kittenConnections[blockId][shadowBlockId] = {
+                                    type: 'input',
+                                    input_type: 'value',
+                                    input_name: lowerInputKey
+                                };
+                            } else if (typeof value === 'number') {
+                                const shadowBlockId = `shadow_${blockId}_${inputKey}_${shadowBlockCounter++}`;
+                                const lowerInputKey = inputKey.toLowerCase();
+                                kittenBlock.fields[lowerInputKey] = [shadowBlockId];
+
+                                kittenBlocks[shadowBlockId] = {
+                                    type: 'math_number',
+                                    id: shadowBlockId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: {
+                                        NUM: String(value)
+                                    },
+                                    field_constraints: {
+                                        NUM: {
+                                            min: null,
+                                            max: null,
+                                            precision: 0,
+                                            mod: null
+                                        }
+                                    },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: blockId
+                                };
+
+                                if (!kittenConnections[shadowBlockId]) {
+                                    kittenConnections[shadowBlockId] = {};
+                                }
+
+                                if (!kittenConnections[blockId]) {
+                                    kittenConnections[blockId] = {};
+                                }
+                                kittenConnections[blockId][shadowBlockId] = {
+                                    type: 'input',
+                                    input_type: 'value',
+                                    input_name: lowerInputKey
+                                };
+                            }
+                        }
+                    }
+                }
+
+                if (block.fields) {
+                    for (const [fieldKey, fieldValue] of Object.entries(block.fields)) {
+                        if (Array.isArray(fieldValue)) {
+                            kittenBlock.fields[fieldKey] = [fieldValue[0]];
+                        }
+                    }
+                }
+
+                kittenBlocks[blockId] = kittenBlock;
+
+                if (block.next) {
+                    if (!kittenConnections[blockId]) {
+                        kittenConnections[blockId] = {};
+                    }
+                    kittenConnections[blockId][block.next] = {
+                        type: 'next'
+                    };
+                }
+            }
+
+            return { blocks: kittenBlocks, connections: kittenConnections, comments: {} };
+        };
+
+        const convertCostumes = (scratchCostumes) => {
+            const kittenStyles = {};
+            if (!scratchCostumes) return kittenStyles;
+
+            for (const [index, costume] of scratchCostumes.entries()) {
+                const styleId = this.generateUUID();
+                const assetId = costume.assetId || (costume.md5ext ? costume.md5ext.split('.')[0] : '');
+                const fileName = costume.md5ext || '';
+                
+                let dataUrl = '';
+                if (fileName && projectFiles[fileName]) {
+                    const data = projectFiles[fileName];
+                    const base64 = Buffer.from(data).toString('base64');
+                    const mimeType = costume.dataFormat === 'svg' ? 'image/svg+xml' : 'image/png';
+                    dataUrl = `data:${mimeType};base64,${base64}`;
+                }
+
+                kittenStyles[styleId] = {
+                    id: styleId,
+                    name: costume.name || `造型${index + 1}`,
+                    url: dataUrl,
+                    rotate_center: { x: 0, y: 0 },
+                    pivot: { x: 0, y: 0 },
+                    cdn_url: '',
+                    md5: assetId,
+                    file_name: fileName
+                };
+            }
+
+            return kittenStyles;
+        };
+
+        const convertSounds = (scratchSounds) => {
+            const kittenSounds = [];
+            if (!scratchSounds) return kittenSounds;
+
+            for (const [index, sound] of scratchSounds.entries()) {
+                const soundId = this.generateUUID();
+                const assetId = sound.assetId || sound.md5ext?.split('.')[0] || '';
+                
+                let dataUrl = '';
+                if (assetId && projectFiles[sound.md5ext]) {
+                    const data = projectFiles[sound.md5ext];
+                    const base64 = Buffer.from(data).toString('base64');
+                    const mimeType = sound.dataFormat === 'mp3' ? 'audio/mpeg' : 'audio/wav';
+                    dataUrl = `data:${mimeType};base64,${base64}`;
+                }
+
+                kittenSounds.push({
+                    id: soundId,
+                    name: sound.name || `声音${index + 1}`,
+                    url: dataUrl,
+                    rate: sound.rate || 44100,
+                    sample_count: sound.sampleCount || 0,
+                    md5: assetId,
+                    file_name: sound.md5ext || ''
+                });
+            }
+
+            return kittenSounds;
+        };
+
+        // 第一步：先收集所有角色和舞台样式
+        for (const target of projectJson.targets) {
+            if (target.isStage) {
+                let styles = convertCostumes(target.costumes);
+                let styleIds = Object.keys(styles);
+                
+                if (styleIds.length === 0) {
+                    const defaultStyleId = this.generateUUID();
+                    styles[defaultStyleId] = {
+                        id: defaultStyleId,
+                        name: '背景',
+                        url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MTkgODk5Ij48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZmIi8+PC9zdmc+',
+                        rotate_center: { x: 0, y: 0 },
+                        pivot: { x: 0, y: 0 },
+                        cdn_url: '',
+                        md5: '',
+                        file_name: ''
+                    };
+                    styleIds = [defaultStyleId];
+                }
+                
+                const currentStyleId = styleIds[0];
+                
+                // 将样式添加到 theatre.styles 中
+                for (const [styleId, style] of Object.entries(styles)) {
+                    kittenProject.theatre.styles[styleId] = style;
+                }
+                
+                stageData = {
+                    styles: styleIds,
+                    currentStyleId,
+                    name: target.name || '背景',
+                    blocks: convertBlocks(target.blocks)
+                };
+            } else {
+                const actorId = this.generateUUID();
+                sceneActors.push(actorId);
+                
+                let styles = convertCostumes(target.costumes);
+                const sounds = convertSounds(target.sounds);
+                let styleIds = Object.keys(styles);
+                
+                if (styleIds.length === 0) {
+                    const defaultStyleId = this.generateUUID();
+                    styles[defaultStyleId] = {
+                        id: defaultStyleId,
+                        name: target.name || '角色',
+                        url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2NjlmIi8+PC9zdmc+',
+                        rotate_center: { x: 0, y: 0 },
+                        pivot: { x: 0, y: 0 },
+                        cdn_url: '',
+                        md5: '',
+                        file_name: ''
+                    };
+                    styleIds = [defaultStyleId];
+                }
+                
+                const currentStyleId = styleIds[0];
+                
+                // 将样式添加到 theatre.styles 中
+                for (const [styleId, style] of Object.entries(styles)) {
+                    kittenProject.theatre.styles[styleId] = style;
+                }
+                
+                // 将声音添加到根级别的 audio 字段中
+                for (const sound of sounds) {
+                    const audioId = `audio-${audioIdCounter++}`;
+                    kittenProject.audio[audioId] = sound;
+                    kittenProject.audio_order.push(audioId);
+                }
+                
+                kittenProject.theatre.actors[actorId] = {
+                    name: target.name || `角色${actorIdCounter++}`,
+                    x: target.x || 0,
+                    y: target.y || 0,
+                    scale: target.size || 100,
+                    rotation: target.direction || 90,
+                    rotation_type: target.rotationStyle === 'left-right' ? 1 : (target.rotationStyle === 'donut' ? 2 : 0),
+                    id: actorId,
+                    visible: target.visible !== false,
+                    draggable: target.draggable || false,
+                    scene: sceneId,
+                    current_style_id: currentStyleId,
+                    styles: styleIds,
+                    lock: false,
+                    editable_in_tuition_mode: true,
+                    user_change_r_c: false,
+                    workspace_offset: { x: 100, y: 50 },
+                    block_data_json: convertBlocks(target.blocks)
+                };
+            }
+        }
+        
+        // 第二步：现在创建包含所有角色的舞台
+        if (stageData) {
+            kittenProject.theatre.scenes[sceneId] = {
+                id: sceneId,
+                name: stageData.name,
+                styles: stageData.styles,
+                actors: sceneActors,
+                x: 0,
+                y: 0,
+                scale: 100,
+                rotation: 0,
+                rotation_type: 0,
+                draggable: false,
+                visible: true,
+                screen_name: '屏幕',
+                group_order: [],
+                workspace_offset: { x: 194, y: 68 },
+                block_data_json: stageData.blocks,
+                current_style_id: stageData.currentStyleId
+            };
+        }
+
+        const groupId = this.generateUUID();
+        kittenProject.theatre.groups[groupId] = {
+            id: groupId,
+            name: '',
+            is_fold: false,
+            is_group: false,
+            actors: sceneActors,
+            scene: sceneId,
+            visible: true
+        };
+        kittenProject.theatre.scenes[sceneId].group_order = [groupId];
+
+        const kittenJson = JSON.stringify(kittenProject);
+        const content = new TextEncoder().encode(kittenJson);
+
+        const downloadBlob = require('../../lib/utils/download-blob').default;
+        downloadBlob('project.bcm4', content);
     }
 
     async convertExtensionsToGandiFormat (projectFiles, projectJson) {
@@ -844,7 +1305,86 @@ class MenuBar extends React.Component {
             }
         }
 
+        // Kitten4 extension detection - block all projects with extensions
+        if (targetPlatform === 'Kitten4') {
+            const hasExtensions = this.detectAnyExtensions();
+            if (hasExtensions) {
+                issues.push({
+                    type: 'extension',
+                    severity: 'error',
+                    message: '该项目包含扩展，不予转换',
+                    details: ''
+                });
+            }
+        }
+
         return issues;
+    }
+
+    detectAnyExtensions () {
+        if (!this.props.vm || !this.props.vm.runtime) {
+            return false;
+        }
+
+        const runtime = this.props.vm.runtime;
+        
+        // Check for Scratch official extensions
+        const officialExtensions = ['pen', 'music', 'video', 'text2speech', 'translate', 'microbit', 'ev3', 'makeymakey', 'wedo2', 'boost', 'gdxfor'];
+        
+        // Check loaded extensions in runtime (safely)
+        if (runtime.extensionManager) {
+            try {
+                if (typeof runtime.extensionManager.getLoadedExtensions === 'function') {
+                    const loadedExtensions = runtime.extensionManager.getLoadedExtensions();
+                    if (loadedExtensions && loadedExtensions.length > 0) {
+                        return true;
+                    }
+                } else if (runtime.extensionManager._loadedExtensions) {
+                    const loadedExtensions = Object.keys(runtime.extensionManager._loadedExtensions);
+                    if (loadedExtensions.length > 0) {
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.warn('Error checking loaded extensions:', e);
+            }
+        }
+
+        // Check extensionURLs in project
+        if (runtime.project && runtime.project.extensionURLs) {
+            const extensionURLs = runtime.project.extensionURLs;
+            if (Object.keys(extensionURLs).length > 0) {
+                return true;
+            }
+        }
+
+        // Check extensions array in project
+        if (runtime.project && runtime.project.extensions) {
+            if (runtime.project.extensions.length > 0) {
+                return true;
+            }
+        }
+
+        // Check for any blocks that belong to extensions
+        if (runtime.targets) {
+            for (const target of runtime.targets) {
+                if (target.blocks) {
+                    for (const blockId in target.blocks) {
+                        const block = target.blocks[blockId];
+                        if (block.opcode) {
+                            // Check if opcode starts with extension prefix (not core scratch opcodes)
+                            const coreOpcodes = ['motion_', 'looks_', 'sound_', 'event_', 'control_', 'sensing_', 'operator_', 'data_', 'procedures_'];
+                            const isCoreOpcode = coreOpcodes.some(prefix => block.opcode.startsWith(prefix));
+                            if (!isCoreOpcode && !block.opcode.startsWith('argument_reporter_')) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     showCompatibilityDialog (targetPlatform, issues) {
@@ -887,70 +1427,9 @@ class MenuBar extends React.Component {
         return confirm(message);
     }
 
-    handleConvertToScratch () {
-        const issues = this.getCompatibilityIssues('Scratch');
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('Scratch', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        this.handleCompatibilitySave('Scratch');
-    }
-
-    handleConvertToTurbowarp () {
-        const issues = this.getCompatibilityIssues('TurboWarp');
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('TurboWarp', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        this.handleCompatibilitySave('TurboWarp');
-    }
-
-    handleConvertTo02Engine () {
-        const issues = this.getCompatibilityIssues('02Engine');
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('02Engine', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        this.handleCompatibilitySave('02Engine');
-    }
-
-    handleConvertToAstraEditor () {
-        const issues = this.getCompatibilityIssues('AstraEditor');
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('AstraEditor', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        this.handleCompatibilitySave('AstraEditor');
-    }
-
-    handleConvertToBilup () {
-        const issues = this.getCompatibilityIssues('Bilup');
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('Bilup', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        this.handleCompatibilitySave('Bilup');
-    }
-
-    handleConvertToGandi () {
-        const issues = this.getCompatibilityIssues('Gandi');
-        if (issues.length > 0) {
-            const shouldContinue = this.showCompatibilityDialog('Gandi', issues);
-            if (!shouldContinue) {
-                return;
-            }
-        }
-        this.handleCompatibilitySave('Gandi');
+    openCompatibilityModalDialog () {
+        this.props.dispatch(openCompatibilityModal());
+        this.props.onRequestCloseFile();
     }
 
     handleClickNew () {
@@ -2186,93 +2665,13 @@ class MenuBar extends React.Component {
                                     <MenuSection>
                                         <MenuItem
                                             isRtl={this.props.isRtl}
-                                            expanded={false}
+                                            onClick={this.openCompatibilityModalDialog}
                                         >
-                                            <div className={styles.menuItemContent}>
-                                                <FormattedMessage
-                                                    defaultMessage="Compatibility Convert"
-                                                    description="Convert project to different editor formats"
-                                                    id="gui.menuBar.compatibility"
-                                                />
-                                                <ChevronDown size={8} />
-                                            </div>
-                                            <Submenu place={this.props.isRtl ? 'left' : 'right'}>
-                                                <div className={styles.menuSectionTitle}>
-                                                    <FormattedMessage
-                                                        defaultMessage="Save to"
-                                                        description="Save to compatibility editors"
-                                                        id="gui.menuBar.compatibility.saveTo"
-                                                    />
-                                                </div>
-                                                <MenuItem onClick={this.handleConvertToScratch}>
-                                                    <FormattedMessage
-                                                        defaultMessage="Scratch"
-                                                        description="Convert to Scratch compatibility"
-                                                        id="gui.menuBar.compatibility.scratch"
-                                                    />
-                                                </MenuItem>
-                                                <MenuItem onClick={this.handleConvertToTurbowarp}>
-                                                    <FormattedMessage
-                                                        defaultMessage="Turbowarp"
-                                                        description="Convert to Turbowarp compatibility"
-                                                        id="gui.menuBar.compatibility.turbowarp"
-                                                    />
-                                                </MenuItem>
-                                                <MenuItem onClick={this.handleConvertTo02Engine}>
-                                                    <FormattedMessage
-                                                        defaultMessage="02Engine"
-                                                        description="Convert to 02Engine compatibility"
-                                                        id="gui.menuBar.compatibility.02engine"
-                                                    />
-                                                </MenuItem>
-                                                <MenuItem onClick={this.handleConvertToAstraEditor}>
-                                                    <FormattedMessage
-                                                        defaultMessage="AstraEditor"
-                                                        description="Convert to AstraEditor compatibility"
-                                                        id="gui.menuBar.compatibility.astraeditor"
-                                                    />
-                                                </MenuItem>
-                                                <MenuItem onClick={this.handleConvertToBilup}>
-                                                    <FormattedMessage
-                                                        defaultMessage="Bilup"
-                                                        description="Convert to Bilup compatibility"
-                                                        id="gui.menuBar.compatibility.Bilup"
-                                                    />
-                                                </MenuItem>
-                                                <MenuItem onClick={this.handleConvertToGandi}>
-                                                    <div style={{display: 'flex', alignItems: 'center', width: '100%'}}>
-                                                        <FormattedMessage
-                                                            defaultMessage="Gandi"
-                                                            description="Convert to Gandi compatibility"
-                                                            id="gui.menuBar.compatibility.Gandi"
-                                                        />
-                                                        <button 
-                                                            onClick={(e) => {
-                                                                e.stopPropagation(); // 阻止事件冒泡，避免触发MenuItem的点击事件
-                                                                console.log('Gandi help button clicked');
-                                                                this.props.dispatch(openGandiHelpModal());
-                                                            }}
-                                                            style={{
-                                                                background: 'none',
-                                                                border: '1px solid #ccc',
-                                                                borderRadius: '50%',
-                                                                width: '20px',
-                                                                height: '20px',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                marginLeft: '16px',
-                                                                cursor: 'pointer',
-                                                                fontSize: '12px',
-                                                                color: '#666'
-                                                            }}
-                                                            title={this.props.locale === 'zh-cn' ? '答疑解惑' : 'Help'}
-                                                        >
-                                                            ?
-                                                        </button>
-                                                    </div>
-                                                </MenuItem>
-                                            </Submenu>
+                                            <FormattedMessage
+                                                defaultMessage="Compatibility Convert"
+                                                description="Convert project to different editor formats"
+                                                id="gui.menuBar.compatibility"
+                                            />
                                         </MenuItem>
                                     </MenuSection>
                                     {this.props.onClickPackager && (
