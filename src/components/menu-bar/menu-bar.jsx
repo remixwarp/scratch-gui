@@ -453,6 +453,16 @@ class MenuBar extends React.Component {
                 const projectJson = JSON.parse(new TextDecoder().decode(jsonData));
 
                 if (agentName === 'Kitten4') {
+                    console.log('=== Kitten4 Conversion Debug ===');
+                    console.log('Project targets:', projectJson.targets ? projectJson.targets.length : 0);
+                    if (projectJson.targets && projectJson.targets[1]) {
+                        const target = projectJson.targets[1];
+                        console.log('Target name:', target.name);
+                        console.log('Blocks count:', Object.keys(target.blocks || {}).length);
+                        for (const [blockId, block] of Object.entries(target.blocks || {})) {
+                            console.log('Block', blockId, '- opcode:', block.opcode, '- inputs:', JSON.stringify(block.inputs));
+                        }
+                    }
                     await this.convertToKitten4Format(projectJson, projectFiles);
                     return;
                 }
@@ -635,15 +645,24 @@ class MenuBar extends React.Component {
         
         const blockOpcodeMap = {
             motion_movesteps: 'self_go_forward',
-            motion_turnright: 'self_turn_right',
-            motion_turnleft: 'self_turn_left',
+            motion_turnright: 'self_rotate',
+            motion_turnleft: 'self_rotate',
+            motion_goto: 'self_move_specify',
+            motion_goto_menu: 'controller_shadow',
             motion_gotoxy: 'self_move_to',
-            motion_glidesecstoxy: 'self_glide_xy',
-            motion_pointindirection: 'self_point_direction',
-            motion_changexby: 'self_change_x',
-            motion_setx: 'self_set_x',
-            motion_changeyby: 'self_change_y',
-            motion_sety: 'self_set_y',
+            motion_glideto: 'self_glide_to',
+            motion_glideto_menu: 'controller_shadow',
+            motion_glidesecstoxy: 'self_glide_to',
+            motion_pointindirection: 'self_point_towards',
+            motion_pointtowards: 'self_face_to',
+            motion_pointtowards_menu: 'controller_shadow',
+            motion_changexby: 'self_change_coordinate',
+            motion_setx: 'self_set_position',
+            motion_changeyby: 'self_change_coordinate',
+            motion_sety: 'self_set_position',
+            motion_bounce: 'self_bounce_off_edge',
+            motion_ifonedgebounce: 'self_bounce_off_edge',
+            motion_setrotationstyle: 'self_set_rotation_type',
 
             looks_sayforsecs: 'self_say_sec',
             looks_say: 'self_say',
@@ -679,7 +698,13 @@ class MenuBar extends React.Component {
             let shadowBlockCounter = 0;
 
             for (const [blockId, block] of Object.entries(scratchBlocks)) {
-                const kittenType = blockOpcodeMap[block.opcode] || block.opcode;
+                let kittenType = blockOpcodeMap[block.opcode] || block.opcode;
+                const isMotionGoto = block.opcode === 'motion_goto';
+                const isMotionGlideto = block.opcode === 'motion_glideto';
+                const isMotionGlideSecsToXY = block.opcode === 'motion_glidesecstoxy';
+                const isMotionPointInDir = block.opcode === 'motion_pointindirection';
+                const isMotionPointTowards = block.opcode === 'motion_pointtowards';
+                const isMotionGotoXY = block.opcode === 'motion_gotoxy';
 
                 const kittenBlock = {
                     type: kittenType,
@@ -702,26 +727,494 @@ class MenuBar extends React.Component {
                     location: [block.x || 0, block.y || 0]
                 };
 
+                if (kittenType === 'self_move_specify') {
+                    kittenBlock.fields.target = '__random';
+                }
+
+                if (kittenType === 'self_face_to') {
+                    kittenBlock.fields.sprite = '__mouse';
+                }
+
+                if (block.opcode === 'motion_setrotationstyle') {
+                    if (block.fields && block.fields.STYLE) {
+                        const styleValue = Array.isArray(block.fields.STYLE) ? block.fields.STYLE[0] : block.fields.STYLE;
+                        let rotationType = '1';
+                        if (styleValue === 'all around') {
+                            rotationType = '3';
+                        } else if (styleValue === 'left-right') {
+                            rotationType = '1';
+                        } else if (styleValue === 'don\'t rotate') {
+                            rotationType = '2';
+                        }
+                        kittenBlock.fields.rotation_type = rotationType;
+                    }
+                }
+
+                if (isMotionGoto) {
+                    const menuInput = block.inputs && block.inputs.TO;
+                    if (menuInput && Array.isArray(menuInput[1]) && menuInput[1][0] === 3) {
+                        const menuBlockId = menuInput[1][1];
+                        const menuBlock = scratchBlocks[menuBlockId];
+                        if (menuBlock && menuBlock.fields && menuBlock.fields.TO) {
+                            const toValue = Array.isArray(menuBlock.fields.TO) ? menuBlock.fields.TO[0] : menuBlock.fields.TO;
+                            if (toValue === '_random_') {
+                                const randomXBlockId = `shadow_random_x_${shadowBlockCounter++}`;
+                                const randomYBlockId = `shadow_random_y_${shadowBlockCounter++}`;
+                                const randAXId = `rand_a_x_${shadowBlockCounter++}`;
+                                const randBXId = `rand_b_x_${shadowBlockCounter++}`;
+                                const randAYId = `rand_a_y_${shadowBlockCounter++}`;
+                                const randBYId = `rand_b_y_${shadowBlockCounter++}`;
+
+                                kittenBlocks[randAXId] = {
+                                    type: 'math_number',
+                                    id: randAXId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: { NUM: '-240' },
+                                    field_constraints: { NUM: { min: null, max: null, precision: 0, mod: null } },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: randomXBlockId
+                                };
+                                kittenBlocks[randBXId] = {
+                                    type: 'math_number',
+                                    id: randBXId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: { NUM: '240' },
+                                    field_constraints: { NUM: { min: null, max: null, precision: 0, mod: null } },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: randomXBlockId
+                                };
+                                kittenBlocks[randomXBlockId] = {
+                                    type: 'random',
+                                    id: randomXBlockId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {
+                                        a: `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${randAXId}" visible="visible"><field constraints="-Infinity,Infinity,0," name="NUM">-240</field></shadow>`,
+                                        b: `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${randBXId}" visible="visible"><field constraints="-Infinity,Infinity,0," name="NUM">240</field></shadow>`
+                                    },
+                                    fields: {},
+                                    field_constraints: {},
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: blockId
+                                };
+
+                                kittenBlocks[randAYId] = {
+                                    type: 'math_number',
+                                    id: randAYId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: { NUM: '-180' },
+                                    field_constraints: { NUM: { min: null, max: null, precision: 0, mod: null } },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: randomYBlockId
+                                };
+                                kittenBlocks[randBYId] = {
+                                    type: 'math_number',
+                                    id: randBYId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: { NUM: '180' },
+                                    field_constraints: { NUM: { min: null, max: null, precision: 0, mod: null } },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: randomYBlockId
+                                };
+                                kittenBlocks[randomYBlockId] = {
+                                    type: 'random',
+                                    id: randomYBlockId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {
+                                        a: `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${randAYId}" visible="visible"><field constraints="-Infinity,Infinity,0," name="NUM">-180</field></shadow>`,
+                                        b: `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${randBYId}" visible="visible"><field constraints="-Infinity,Infinity,0," name="NUM">180</field></shadow>`
+                                    },
+                                    fields: {},
+                                    field_constraints: {},
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: blockId
+                                };
+
+                                kittenBlock.shadows['x'] = `<shadow xmlns="http://www.w3.org/1999/xhtml" type="random" id="${randomXBlockId}" visible="visible"></shadow>`;
+                                kittenBlock.shadows['y'] = `<shadow xmlns="http://www.w3.org/1999/xhtml" type="random" id="${randomYBlockId}" visible="visible"></shadow>`;
+
+                                if (!kittenConnections[blockId]) kittenConnections[blockId] = {};
+                                kittenConnections[blockId][randomXBlockId] = { type: 'input', input_type: 'value', input_name: 'x' };
+                                kittenConnections[blockId][randomYBlockId] = { type: 'input', input_type: 'value', input_name: 'y' };
+                            }
+                        }
+                    }
+                }
+                
+                if (isMotionGlideto) {
+                    const menuInput = block.inputs && block.inputs.TO;
+                    if (menuInput && Array.isArray(menuInput[1]) && menuInput[1][0] === 3) {
+                        const menuBlockId = menuInput[1][1];
+                        const menuBlock = scratchBlocks[menuBlockId];
+                        if (menuBlock && menuBlock.fields && menuBlock.fields.TO) {
+                            const toValue = Array.isArray(menuBlock.fields.TO) ? menuBlock.fields.TO[0] : menuBlock.fields.TO;
+                            if (toValue === '_random_') {
+                                const randomXBlockId = `shadow_random_x_${shadowBlockCounter++}`;
+                                const randomYBlockId = `shadow_random_y_${shadowBlockCounter++}`;
+                                const randAXId = `rand_a_x_${shadowBlockCounter++}`;
+                                const randBXId = `rand_b_x_${shadowBlockCounter++}`;
+                                const randAYId = `rand_a_y_${shadowBlockCounter++}`;
+                                const randBYId = `rand_b_y_${shadowBlockCounter++}`;
+
+                                kittenBlocks[randAXId] = {
+                                    type: 'math_number',
+                                    id: randAXId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: { NUM: '-240' },
+                                    field_constraints: { NUM: { min: null, max: null, precision: 0, mod: null } },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: randomXBlockId
+                                };
+                                kittenBlocks[randBXId] = {
+                                    type: 'math_number',
+                                    id: randBXId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: { NUM: '240' },
+                                    field_constraints: { NUM: { min: null, max: null, precision: 0, mod: null } },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: randomXBlockId
+                                };
+                                kittenBlocks[randomXBlockId] = {
+                                    type: 'random',
+                                    id: randomXBlockId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {
+                                        a: `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${randAXId}" visible="visible"><field constraints="-Infinity,Infinity,0," name="NUM">-240</field></shadow>`,
+                                        b: `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${randBXId}" visible="visible"><field constraints="-Infinity,Infinity,0," name="NUM">240</field></shadow>`
+                                    },
+                                    fields: {},
+                                    field_constraints: {},
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: blockId
+                                };
+
+                                kittenBlocks[randAYId] = {
+                                    type: 'math_number',
+                                    id: randAYId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: { NUM: '-180' },
+                                    field_constraints: { NUM: { min: null, max: null, precision: 0, mod: null } },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: randomYBlockId
+                                };
+                                kittenBlocks[randBYId] = {
+                                    type: 'math_number',
+                                    id: randBYId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: { NUM: '180' },
+                                    field_constraints: { NUM: { min: null, max: null, precision: 0, mod: null } },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: randomYBlockId
+                                };
+                                kittenBlocks[randomYBlockId] = {
+                                    type: 'random',
+                                    id: randomYBlockId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {
+                                        a: `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${randAYId}" visible="visible"><field constraints="-Infinity,Infinity,0," name="NUM">-180</field></shadow>`,
+                                        b: `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${randBYId}" visible="visible"><field constraints="-Infinity,Infinity,0," name="NUM">180</field></shadow>`
+                                    },
+                                    fields: {},
+                                    field_constraints: {},
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: blockId
+                                };
+
+                                const timeShadowId = `shadow_time_${shadowBlockCounter++}`;
+                                kittenBlocks[timeShadowId] = {
+                                    type: 'math_number',
+                                    id: timeShadowId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: { NUM: '1' },
+                                    field_constraints: { NUM: { min: 0, max: null, precision: 0, mod: null } },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: blockId
+                                };
+
+                                kittenBlock.shadows['time'] = `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${timeShadowId}" visible="visible"><field constraints="0,Infinity,0," name="NUM">1</field></shadow>`;
+                                kittenBlock.shadows['x'] = `<shadow xmlns="http://www.w3.org/1999/xhtml" type="random" id="${randomXBlockId}" visible="visible"></shadow>`;
+                                kittenBlock.shadows['y'] = `<shadow xmlns="http://www.w3.org/1999/xhtml" type="random" id="${randomYBlockId}" visible="visible"></shadow>`;
+
+                                if (!kittenConnections[blockId]) kittenConnections[blockId] = {};
+                                kittenConnections[blockId][timeShadowId] = { type: 'input', input_type: 'value', input_name: 'time' };
+                                kittenConnections[blockId][randomXBlockId] = { type: 'input', input_type: 'value', input_name: 'x' };
+                                kittenConnections[blockId][randomYBlockId] = { type: 'input', input_type: 'value', input_name: 'y' };
+                            }
+                        }
+                    }
+                }
+
+                if (isMotionPointInDir) {
+                    const dirInput = block.inputs && block.inputs.DIRECTION;
+                    let shadowBlockId, numValue;
+                    
+                    if (dirInput && Array.isArray(dirInput[1]) && dirInput[1][0] === 4) {
+                        shadowBlockId = `shadow_dir_${shadowBlockCounter++}`;
+                        numValue = dirInput[1][1];
+                    } else {
+                        shadowBlockId = `shadow_dir_${shadowBlockCounter++}`;
+                        numValue = '90';
+                    }
+                    
+                    kittenBlocks[shadowBlockId] = {
+                        type: 'controller_shadow',
+                        id: shadowBlockId,
+                        comment: null,
+                        is_shadow: true,
+                        collapsed: false,
+                        disabled: false,
+                        deletable: true,
+                        movable: true,
+                        editable: true,
+                        visible: 'visible',
+                        location: [0, 0],
+                        shadows: {},
+                        fields: { NUM: numValue },
+                        field_constraints: { NUM: { min: -180, max: 180, precision: 0, mod: null } },
+                        field_extra_attr: {},
+                        mutation: '',
+                        is_output: true,
+                        parent_id: blockId
+                    };
+                    kittenBlock.shadows['degrees'] = `<shadow xmlns="http://www.w3.org/1999/xhtml" type="controller_shadow" id="${shadowBlockId}" visible="visible"><field constraints="-180,180,0,true" name="NUM">${numValue}</field></shadow>`;
+                    if (!kittenConnections[blockId]) kittenConnections[blockId] = {};
+                    kittenConnections[blockId][shadowBlockId] = { type: 'input', input_type: 'value', input_name: 'degrees' };
+                }
+
                 if (block.inputs) {
                     for (const [inputKey, inputValue] of Object.entries(block.inputs)) {
                         if (inputValue && inputValue[1] !== undefined) {
+                            if (isMotionGoto || isMotionPointTowards) {
+                                continue;
+                            }
+                            if (isMotionGlideto) {
+                                continue;
+                            }
+
                             const value = inputValue[1];
-                            if (Array.isArray(value) && value[1] !== null) {
+                            let lowerInputKey = inputKey.toLowerCase();
+
+                            if (block.opcode === 'motion_changexby' || block.opcode === 'motion_setx') {
+                                lowerInputKey = 'value';
+                            } else if (block.opcode === 'motion_changeyby' || block.opcode === 'motion_sety') {
+                                lowerInputKey = 'value';
+                            } else if ((isMotionGlideSecsToXY || isMotionGlideto) && inputKey === 'SECS') {
+                                lowerInputKey = 'time';
+                            } else if (isMotionPointInDir && inputKey === 'DIRECTION') {
+                                lowerInputKey = 'degrees';
+                            }
+
+                            if (Array.isArray(value) && value[0] === 4) {
+                                let numValue = value[1];
+                                let shadowType = 'math_number';
+                                let constraints = '-Infinity,Infinity,0,';
+                                
+                                if (block.opcode === 'motion_turnleft') {
+                                    numValue = String(-parseInt(numValue));
+                                }
+                                if (inputKey === 'SECS' || inputKey === 'SECONDS') {
+                                    constraints = '0,Infinity,0,';
+                                }
+                                if (isMotionPointInDir && inputKey === 'DIRECTION') {
+                                    shadowType = 'controller_shadow';
+                                    constraints = '-180,180,0,true';
+                                }
+
+                                const shadowBlockId = `shadow_${blockId}_${inputKey}_${shadowBlockCounter++}`;
+                                const shadowXml = `<shadow xmlns="http://www.w3.org/1999/xhtml" type="${shadowType}" id="${shadowBlockId}" visible="visible"><field constraints="${constraints}" name="NUM">${numValue}</field></shadow>`;
+                                kittenBlock.shadows[lowerInputKey] = shadowXml;
+
+                                kittenBlocks[shadowBlockId] = {
+                                    type: 'math_number',
+                                    id: shadowBlockId,
+                                    comment: null,
+                                    is_shadow: true,
+                                    collapsed: false,
+                                    disabled: false,
+                                    deletable: true,
+                                    movable: true,
+                                    editable: true,
+                                    visible: 'visible',
+                                    location: [0, 0],
+                                    shadows: {},
+                                    fields: { NUM: numValue },
+                                    field_constraints: { NUM: { min: null, max: null, precision: 0, mod: null } },
+                                    field_extra_attr: {},
+                                    mutation: '',
+                                    is_output: true,
+                                    parent_id: blockId
+                                };
+
+                                if (!kittenConnections[shadowBlockId]) kittenConnections[shadowBlockId] = {};
+                                if (!kittenConnections[blockId]) kittenConnections[blockId] = {};
+                                kittenConnections[blockId][shadowBlockId] = { type: 'input', input_type: 'value', input_name: lowerInputKey };
+                            } else if (Array.isArray(value) && value[0] === 3) {
                                 const refBlockId = value[1];
-                                kittenBlock.fields[inputKey] = [refBlockId];
-
-                                if (!kittenConnections[blockId]) {
-                                    kittenConnections[blockId] = {};
+                                const refBlock = scratchBlocks[refBlockId];
+                                let numValue = '0';
+                                if (refBlock && refBlock.fields && refBlock.fields.NUM) {
+                                    numValue = Array.isArray(refBlock.fields.NUM) ? refBlock.fields.NUM[0] : refBlock.fields.NUM;
+                                } else if (refBlock && refBlock.fields) {
+                                    const firstField = Object.values(refBlock.fields)[0];
+                                    if (firstField) {
+                                        numValue = Array.isArray(firstField) ? firstField[0] : firstField;
+                                    }
                                 }
-                                kittenConnections[blockId][refBlockId] = {
-                                    type: 'input',
-                                    input_type: 'value',
-                                    input_name: inputKey
-                                };
-                            } else if (typeof value === 'string') {
+
+                                if (block.opcode === 'motion_turnleft') {
+                                    numValue = String(-parseInt(numValue));
+                                }
+
+                                let constraints = '-Infinity,Infinity,0,';
+                                const shadowXml = `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${refBlockId}" visible="visible"><field constraints="${constraints}" name="NUM">${numValue}</field></shadow>`;
+                                kittenBlock.shadows[lowerInputKey] = shadowXml;
+
+                                if (!kittenConnections[blockId]) kittenConnections[blockId] = {};
+                                kittenConnections[blockId][refBlockId] = { type: 'input', input_type: 'value', input_name: lowerInputKey };
+                            } else if (typeof value === 'string' || typeof value === 'number') {
                                 const shadowBlockId = `shadow_${blockId}_${inputKey}_${shadowBlockCounter++}`;
-                                const lowerInputKey = inputKey.toLowerCase();
-                                kittenBlock.fields[lowerInputKey] = [shadowBlockId];
+                                const numValue = typeof value === 'number' ? String(value) : value;
+                                let constraints = '-Infinity,Infinity,0,';
+                                const shadowXml = `<shadow xmlns="http://www.w3.org/1999/xhtml" type="math_number" id="${shadowBlockId}" visible="visible"><field constraints="${constraints}" name="NUM">${numValue}</field></shadow>`;
+                                kittenBlock.shadows[lowerInputKey] = shadowXml;
 
                                 kittenBlocks[shadowBlockId] = {
                                     type: 'math_number',
@@ -736,82 +1229,17 @@ class MenuBar extends React.Component {
                                     visible: 'visible',
                                     location: [0, 0],
                                     shadows: {},
-                                    fields: {
-                                        NUM: value
-                                    },
-                                    field_constraints: {
-                                        NUM: {
-                                            min: null,
-                                            max: null,
-                                            precision: 0,
-                                            mod: null
-                                        }
-                                    },
+                                    fields: { NUM: numValue },
+                                    field_constraints: { NUM: { min: null, max: null, precision: 0, mod: null } },
                                     field_extra_attr: {},
                                     mutation: '',
                                     is_output: true,
                                     parent_id: blockId
                                 };
 
-                                if (!kittenConnections[shadowBlockId]) {
-                                    kittenConnections[shadowBlockId] = {};
-                                }
-
-                                if (!kittenConnections[blockId]) {
-                                    kittenConnections[blockId] = {};
-                                }
-                                kittenConnections[blockId][shadowBlockId] = {
-                                    type: 'input',
-                                    input_type: 'value',
-                                    input_name: lowerInputKey
-                                };
-                            } else if (typeof value === 'number') {
-                                const shadowBlockId = `shadow_${blockId}_${inputKey}_${shadowBlockCounter++}`;
-                                const lowerInputKey = inputKey.toLowerCase();
-                                kittenBlock.fields[lowerInputKey] = [shadowBlockId];
-
-                                kittenBlocks[shadowBlockId] = {
-                                    type: 'math_number',
-                                    id: shadowBlockId,
-                                    comment: null,
-                                    is_shadow: true,
-                                    collapsed: false,
-                                    disabled: false,
-                                    deletable: true,
-                                    movable: true,
-                                    editable: true,
-                                    visible: 'visible',
-                                    location: [0, 0],
-                                    shadows: {},
-                                    fields: {
-                                        NUM: String(value)
-                                    },
-                                    field_constraints: {
-                                        NUM: {
-                                            min: null,
-                                            max: null,
-                                            precision: 0,
-                                            mod: null
-                                        }
-                                    },
-                                    field_extra_attr: {},
-                                    mutation: '',
-                                    is_output: true,
-                                    parent_id: blockId
-                                };
-
-                                if (!kittenConnections[shadowBlockId]) {
-                                    kittenConnections[shadowBlockId] = {};
-                                }
-
-                                if (!kittenConnections[blockId]) {
-                                    kittenConnections[blockId] = {};
-                                }
-                                kittenConnections[blockId][shadowBlockId] = {
-                                    type: 'input',
-                                    input_type: 'value',
-                                    input_name: lowerInputKey
-                                };
+                                if (!kittenConnections[shadowBlockId]) kittenConnections[shadowBlockId] = {};
+                                if (!kittenConnections[blockId]) kittenConnections[blockId] = {};
+                                kittenConnections[blockId][shadowBlockId] = { type: 'input', input_type: 'value', input_name: lowerInputKey };
                             }
                         }
                     }
@@ -934,7 +1362,7 @@ class MenuBar extends React.Component {
                     styles: styleIds,
                     currentStyleId,
                     name: target.name || '背景',
-                    blocks: convertBlocks(target.blocks)
+                    block_data_json: convertBlocks(target.blocks)
                 };
             } else {
                 const actorId = this.generateUUID();
@@ -996,26 +1424,24 @@ class MenuBar extends React.Component {
         }
         
         // 第二步：现在创建包含所有角色的舞台
-        if (stageData) {
-            kittenProject.theatre.scenes[sceneId] = {
-                id: sceneId,
-                name: stageData.name,
-                styles: stageData.styles,
-                actors: sceneActors,
-                x: 0,
-                y: 0,
-                scale: 100,
-                rotation: 0,
-                rotation_type: 0,
-                draggable: false,
-                visible: true,
-                screen_name: '屏幕',
-                group_order: [],
-                workspace_offset: { x: 194, y: 68 },
-                block_data_json: stageData.blocks,
-                current_style_id: stageData.currentStyleId
-            };
-        }
+        kittenProject.theatre.scenes[sceneId] = {
+            id: sceneId,
+            name: stageData ? stageData.name : 'Stage',
+            styles: stageData ? stageData.styles : [],
+            actors: sceneActors,
+            x: 0,
+            y: 0,
+            scale: 100,
+            rotation: 0,
+            rotation_type: 0,
+            draggable: false,
+            visible: true,
+            screen_name: '屏幕',
+            group_order: [],
+            workspace_offset: { x: 194, y: 68 },
+            block_data_json: stageData ? stageData.block_data_json : { blocks: {}, connections: {}, comments: {} },
+            current_style_id: stageData ? stageData.currentStyleId : null
+        };
 
         const groupId = this.generateUUID();
         kittenProject.theatre.groups[groupId] = {
