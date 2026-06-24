@@ -1,7 +1,7 @@
 const manifest = {
   "editorOnly": true,
-  "name": "block-pins/name",
-  "description": "block-pins/description",
+  "name": "Block Pinning",
+  "description": "Pin your favourite Blocks to the top of the Toolbox.",
   "credits": [
     {
       "name": "SharkPool",
@@ -11,14 +11,14 @@ const manifest = {
   "info": [
     {
       "type": "notice",
-      "text": "block-pins/checkbox-notice",
+      "text": "Warning: Expect pinned Blocks with Checkboxes to behave weirdly when checked.",
       "id": "checkbox-notice"
     }
   ],
   "settings": [
     {
       "dynamic": false,
-      "name": "block-pins/auto-load-exts",
+      "name": "Automatically load Extensions from pinned Blocks",
       "id": "autoLoadExts",
       "type": "boolean",
       "default": true
