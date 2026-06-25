@@ -96,7 +96,7 @@ const ACCENTS = [
         id: 'tw.accent.02e'
     },
     {
-        name: 'CyberExplorer Pink',
+        name: 'CE Pink',
         accent: accentCE,
         description: 'CyberExplorer Pink accent color',
         id: 'tw.accent.ce'
