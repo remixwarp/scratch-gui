@@ -21,14 +21,6 @@ const manifest = {
   "dynamicDisable": true,
   "userstyles": [
     {
-      "url": "RemixWarp.css",
-      "if": {
-        "settings": {
-          "tab_style": "RemixWarp"
-        }
-      }
-    },
-    {
       "url": "turbowarp.css",
       "if": {
         "settings": {
