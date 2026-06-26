@@ -1,6 +1,6 @@
 import PropsTypes from "prop-types"
 
-let customGUITheme = localStorage.getItem("constomTheme");
+let customGUITheme = localStorage.getItem("customTheme");
 if (customGUITheme == null || customGUITheme === 'undefined' || customGUITheme === 'null') {
         customGUITheme = {
                 'motion-primary': '#ff4c4c',
@@ -77,7 +77,7 @@ const getColorOf = (id) => {
 
 
 const saveColors = () => {
-        localStorage.setItem("constomTheme", JSON.stringify(customGUITheme));
+        localStorage.setItem("customTheme", JSON.stringify(customGUITheme));
         localStorage.setItem("blockColors", JSON.stringify(customBlockColors));
 
 }
