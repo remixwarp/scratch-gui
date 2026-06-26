@@ -16,6 +16,8 @@ export default async function ({ addon, console, msg }) {
     let loopBlockCount = 0;
     let eventBlockCount = 0;
     let longestScript = 0;
+    let costumeCount = 0;
+    let soundCount = 0;
     
     let sprites = new Set(vm.runtime.targets.map((i) => i.sprite.blocks._blocks));
     
@@ -53,6 +55,14 @@ export default async function ({ addon, console, msg }) {
       });
     });
     
+    // Count costumes and sounds from all targets
+    vm.runtime.targets.forEach(target => {
+      if (target.sprite) {
+        costumeCount += target.sprite.costumes.length;
+        soundCount += target.sprite.sounds.length;
+      }
+    });
+    
     const averageDepth = scriptCount > 0 ? totalDepth / scriptCount : 0;
     const complexityScore = calculateComplexityScore({
       blockCount,
@@ -76,6 +86,8 @@ export default async function ({ addon, console, msg }) {
       conditionalBlockCount,
       loopBlockCount,
       eventBlockCount,
+      costumeCount,
+      soundCount,
       complexityScore,
       blockTypeCount
     };
@@ -1240,6 +1252,8 @@ export default async function ({ addon, console, msg }) {
                 <div><strong>${msg('total-blocks')}:</strong> ${metrics.blockCount}</div>
                 <div><strong>${msg('total-scripts')}:</strong> ${metrics.scriptCount}</div>
                 <div><strong>${msg('total-sprites')}:</strong> ${metrics.spriteCount}</div>
+                <div><strong>${msg('total-costumes')}:</strong> ${metrics.costumeCount}</div>
+                <div><strong>${msg('total-sounds')}:</strong> ${metrics.soundCount}</div>
               </div>
             </div>
             
