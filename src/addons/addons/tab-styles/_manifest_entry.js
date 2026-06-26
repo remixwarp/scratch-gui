@@ -43,6 +43,7 @@ const manifest = {
           "tab_style": "scratchbox"
         }
       }
+    },
     {
       "url": "remixwarp(v2).css",
       "if": {
