@@ -17,25 +17,26 @@ const manifest = {
     "recommended",
     "astraeditor"
     ],
+    "dynamicDisable": true,
     "userscripts": [
-        {
-            "url": "userscript.js"
-        }
-    ],
-    "userstyles": [
-        {
-            "url": "userstyle.css"
-        }
-    ],
-    "enabledByDefault": true,
-    "l10n": {
+    {
+      url: "userscript.js"
+    }
+  ],
+  "userstyles": [
+    {
+      url: "userstyle.css"
+    }
+  ],
+  "enabledByDefault": true,
+  "l10n": {
     "defaultLocale": "en",
     "locales": ["en", "zh-cn"]
-   },
-   "permissions": [
+  },
+  "permissions": [
     "vm",
     "tab",
     "storage"
-   ]
+  ]
 };
 export default manifest;
