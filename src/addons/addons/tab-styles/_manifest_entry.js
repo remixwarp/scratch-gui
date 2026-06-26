@@ -21,7 +21,7 @@ const manifest = {
   "dynamicDisable": true,
   "userstyles": [
     {
-      "url": "remixwarp.css",
+      "url": "RemixWarp.css",
       "if": {
         "settings": {
           "tab_style": "RemixWarp"
@@ -43,7 +43,13 @@ const manifest = {
           "tab_style": "scratchbox"
         }
       }
-    },
+    {
+      "url": "remixwarp(v2).css",
+      "if": {
+        "settings": {
+          "tab_style": "RemixWarp (V2)"
+        }
+      }
     {
       "url": "icon-only.css",
       "if": {
@@ -81,8 +87,8 @@ const manifest = {
             "id": "scratchbox"
         },
         {
-            "name": "RemixWarp",
-            "id": "remixwarp"
+            "name": "RemixWarp (V2)",
+            "id": "remixwarp(v2)"
         }
       ],
       "default": "RemixWarp"
