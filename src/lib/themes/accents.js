@@ -16,6 +16,7 @@ import * as accentAstraEditor from './accent/astraeditor';
 import * as accent02 from './accent/02e';
 import * as accentCE from './accent/ce';
 import * as accentMiku from './accent/miku';
+import * as accentMagenta from './accent/magenta';
 import * as accentTY from './accent/ty';
 import * as accentTrans from './accent/trans';
 import * as accentGay from './accent/gay';
@@ -135,6 +136,12 @@ const ACCENTS = [
         accent: accentMiku,
         description: 'Miku Green accent color',
         id: 'tw.accent.miku'
+    },
+    {
+        name: 'Magenta',
+        accent: accentMagenta,
+        description: 'Magenta accent color',
+        id: 'tw.accent.magenta'
     },
     {
         name: 'Tianyi Blue',
