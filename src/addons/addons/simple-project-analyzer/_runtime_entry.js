@@ -1,6 +1,8 @@
-import userscript from './userscript.js';
-import userstyle from './userstyle.css';
+import _css from "!css-loader!./userstyle.css";
+import _userScript from "./userscript.js";
 
-export const entry = userscript;
-export const style = userstyle;
-export default entry;
+export const resources = {
+  "userstyle.css": _css,
+};
+
+export default _userScript;
