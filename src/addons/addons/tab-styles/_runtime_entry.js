@@ -7,7 +7,7 @@ import _textOnlyCSS from "!css-loader!./text-only.css";
 export const resources = {
     "turbowarp.css": _turbowarpCSS,
     "scratchbox.css": _scratchboxCSS,
-    "remixwarp.css": _remixwarpCSS,
+    "remixwarp(v2).css": _remixwarpCSS,
     "icon-only.css": _iconOnlyCSS,
     "text-only.css": _textOnlyCSS
 };
