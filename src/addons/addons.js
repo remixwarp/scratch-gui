@@ -61,6 +61,7 @@ const addons = [
     'editor-extra-keys',
     'hide-delete-button',
     'no-script-bumping',
+    'novatheai'
     'disable-stage-drag-select',
     'move-to-top-bottom',
     'move-to-top-layer',
@@ -103,12 +104,14 @@ const addons = [
     'batch-color-replace',
     'simple-project-analyzer',
     'todo-list',
+    'todo'
     'block-pins',
     'tw-comment-markdown-editor',
     'background'
 ];
 
 const newAddons = [
+    'novatheai'
     'expanded-backpack',
     'autosave',
     'no-category-text',
