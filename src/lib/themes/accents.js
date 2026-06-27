@@ -1,8 +1,10 @@
 import * as accentPurple from './accent/purple';
 import * as accentBlue from './accent/blue';
+import * as accentLightBlue from './accent/light-blue';
 import * as accentRed from './accent/red';
 import * as accentOrange from './accent/orange';
 import * as accentYellow from './accent/yellow';
+import * as accentLimeGreen from './accent/lime';
 import * as accentGreen from './accent/green';
 import * as accentRainbow from './accent/rainbow';
 import * as accentGreenTea from './accent/green-tea';
@@ -57,6 +59,12 @@ const ACCENTS = [
         id: 'tw.accent.green'
     },
     {
+        name: 'Lime Green',
+        accent: accentLime,
+        description: 'Lime Green accent color',
+        id: 'tw.accent.lime-green'
+    },
+    {
         name: 'Green Tea',
         accent: accentGreenTea,
         description: 'Green Tea accent color',
@@ -67,6 +75,12 @@ const ACCENTS = [
         accent: accentPaleBlue,
         description: 'Pale Blue accent color',
         id: 'tw.accent.pale-blue'
+    },
+    {
+        name: 'Light Blue',
+        accent: accentLightBlue,
+        description: 'Light Blue accent color',
+        id: 'tw.accent.light-blue'
     },
     {
         name: 'Blue',
