@@ -1,6 +1,6 @@
 import _turbowarpCSS from "!css-loader!./turbowarp.css";
 import _scratchboxCSS from "!css-loader!./scratchbox.css";
-import _remixwarpCSS from "!css-loader!./remixwarp.css";
+import _remixwarpCSS from "!css-loader!./remixwarp(v2).css";
 import _iconOnlyCSS from "!css-loader!./icon-only.css";
 import _textOnlyCSS from "!css-loader!./text-only.css";
 

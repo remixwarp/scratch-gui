@@ -212,7 +212,7 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors, locale 
                         </div>
                     </div>
                     {versions.map((versionInfo, index) => (
-                        <div key={versionInfo.version} className={styles.versionSection}>
+                        <div key={`${versionInfo.version}-${index}`} className={styles.versionSection}>
                             <div className={styles.versionInfo}>
                                 <div
                                     className={styles.versionBadge}

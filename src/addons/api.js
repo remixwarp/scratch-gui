@@ -927,7 +927,7 @@ class AddonRunner {
         // This number just has to be larger than the maximum number of userstyles in a single addon.
         const baseStylePrecedence = getPrecedence(this.id) * 100;
 
-        if (this.manifest.userstyles) {
+        if (this.resources && this.manifest.userstyles) {
             for (let i = 0; i < this.manifest.userstyles.length; i++) {
                 const userstyle = this.manifest.userstyles[i];
                 const userstylePrecedence = baseStylePrecedence + i;
@@ -958,13 +958,15 @@ class AddonRunner {
 
         this.updateCssVariables();
 
-        if (this.manifest.userscripts) {
+        if (this.resources && this.manifest.userscripts) {
             for (const userscript of this.manifest.userscripts) {
                 if (!SettingsStore.evaluateCondition(userscript.if)) {
                     continue;
                 }
                 const fn = this.resources[userscript.url];
-                fn(this.publicAPI);
+                if (typeof fn === 'function') {
+                    fn(this.publicAPI);
+                }
             }
         }
 
