@@ -45,10 +45,10 @@ const manifest = {
       }
     },
     {
-      "url": "remixwarp.css",
+      "url": "remixwarp(v2).css",
       "if": {
         "settings": {
-          "tab_style": "remixwarp"
+          "tab_style": "remixwarp(v2)"
         }
       }
     },
@@ -89,8 +89,8 @@ const manifest = {
             "id": "scratchbox"
         },
         {
-            "name": "RemixWarp",
-            "id": "remixwarp"
+            "name": "RemixWarp(V2)",
+            "id": "remixwarp(v2)"
         }
       ],
       "default": "RemixWarp"
