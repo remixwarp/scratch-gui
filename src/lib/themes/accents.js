@@ -23,6 +23,7 @@ import * as accentGay from './accent/gay';
 import * as accentRotur from './accent/rotur';
 import * as accentSunset from './accent/sunset';
 import * as accentOcean from './accent/ocean';
+import * as accentOubi from './accent/oubi';
 import * as accentAurora from './accent/aurora';
 import * as accentCosmic from './accent/cosmic';
 import * as accentFire from './accent/fire';
@@ -178,6 +179,12 @@ const ACCENTS = [
         accent: accentOcean,
         description: 'Deep ocean gradient',
         id: 'tw.accent.ocean'
+    },
+    {
+        name: 'Oubi',
+        accent: accentOubi,
+        description: '??? gradient',
+        id: 'tw.accent.oubi'
     },
     {
         name: 'Aurora',
