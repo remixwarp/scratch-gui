@@ -1,7 +1,7 @@
 import defaultsDeep from 'lodash.defaultsdeep';
 
 import * as guiLight from './gui/light';
-import * as guiModenWhite from './gui/modern_white';
+import * as guiModenwhite from './gui/modern_white';
 import * as guiDark from './gui/dark';
 import * as guiDeepDark  from './gui/deep_dark';
 import * as guiMidnight from './gui/midnight';
