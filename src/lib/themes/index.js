@@ -1,7 +1,9 @@
 import defaultsDeep from 'lodash.defaultsdeep';
 
 import * as guiLight from './gui/light';
+import * as guiModenWhite from './gui/modern_white';
 import * as guiDark from './gui/dark';
+import * as guiDeepDark  from './gui/deep_dark';
 import * as guiMidnight from './gui/midnight';
 
 import * as blocksThree from './blocks/three';
@@ -34,14 +36,18 @@ const MENUBAR_ALIGN = {
 const MENUBAR_ALIGN_DEFAULT = 'left';
 
 const GUI_LIGHT = 'light';
+const GUI_MODENWHITE = 'modernwhite';
 const GUI_DARK = 'dark';
+const GUI_DEEPDARK = 'deepdark';
 const GUI_MIDNIGHT = 'midnight';
 const GUI_MAP = {
     [GUI_LIGHT]: guiLight,
+    [GUI_MODENWHITE]: guiModenwhite,
     [GUI_DARK]: guiDark,
+    [GUI_DEEPDARK]: guiDeepDark,
     [GUI_MIDNIGHT]: guiMidnight
 };
-const GUI_DEFAULT = GUI_DARK;
+const GUI_DEFAULT = GUI_LIGHT;
 
 const BLOCKS_THREE = 'three';
 const BLOCKS_DARK = 'dark';
@@ -185,7 +191,9 @@ export {
     ACCENT_DEFAULT,
 
     GUI_LIGHT,
+    GUI_MODENWHITE,
     GUI_DARK,
+    GUI_DEEPDARK,
     GUI_MIDNIGHT,
     GUI_MAP,
 
