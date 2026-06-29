@@ -10,20 +10,12 @@ import * as accentRainbow from './accent/rainbow';
 import * as accentGreenTea from './accent/green-tea';
 import * as accentPaleBlue from './accent/pale-blue';
 import * as accentEggplantPurple from './accent/eggplant-purple';
-import * as accentPink from './accent/pink';
-import * as accentAE from './accent/ae';
-import * as accentAstraEditor from './accent/astraeditor';
-import * as accent02 from './accent/02e';
-import * as accentCE from './accent/ce';
-import * as accentMiku from './accent/miku';
-import * as accentMagenta from './accent/magenta';
-import * as accentTY from './accent/ty';
 import * as accentTrans from './accent/trans';
 import * as accentGay from './accent/gay';
 import * as accentRotur from './accent/rotur';
+import * as accentPink from './accent/pink';
 import * as accentSunset from './accent/sunset';
 import * as accentOcean from './accent/ocean';
-import * as accentOubi from './accent/oubi';
 import * as accentAurora from './accent/aurora';
 import * as accentCosmic from './accent/cosmic';
 import * as accentFire from './accent/fire';
@@ -34,6 +26,14 @@ import * as accentCherry from './accent/cherry';
 import * as accentSky from './accent/sky';
 import * as accentForest from './accent/forest';
 import * as accentCoral from './accent/coral';
+import * as accentAE from './accent/ae';
+import * as accentAstraEditor from './accent/astraeditor';
+import * as accent02 from './accent/02e';
+import * as accentCE from './accent/ce';
+import * as accentMiku from './accent/miku';
+import * as accentMagenta from './accent/magenta';
+import * as accentTY from './accent/ty';
+import * as accentOubi from './accent/oubi';
 
 const ACCENTS = [
     {
