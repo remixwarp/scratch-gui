@@ -33,6 +33,7 @@ import * as accentMiku from './accent/miku';
 import * as accentMagenta from './accent/magenta';
 import * as accentTY from './accent/ty';
 import * as accentOubi from './accent/oubi';
+import * as accentOmniBlue from './accent/omnimax-blue';
 
 const ACCENTS = [
     {
@@ -244,6 +245,12 @@ const ACCENTS = [
         accent: accentOubi,
         description: 'Oubi gradient',
         id: 'tw.accent.oubi'
+    },
+    {
+        name: 'OmniMAX Blue',
+        accent: accentOmniBlue,
+        description: 'Default blue color',
+        id: 'tw.accent.omniblue'
     }
 ];
 
