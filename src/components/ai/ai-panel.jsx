@@ -6,7 +6,7 @@ import Button from '../button/button.jsx';
 import MarkdownRenderer from '../markdown-renderer/markdown-renderer.jsx';
 import {sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
 import {costumeUpload} from '../../lib/file-uploader.js';
-import {getApiKey, getApiConfig} from '../../lib/constants/api-keys.js';
+import {getApiConfig, getRequestToken} from '../../lib/constants/api-keys.js';
 
 const API_CONFIG = getApiConfig('siliconflow');
 const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/chat/completions';
@@ -15,6 +15,12 @@ const MODEL = API_CONFIG ? API_CONFIG.model : 'deepseek-ai/DeepSeek-V3';
 const IMAGE_API_CONFIG = getApiConfig('siliconflowImages');
 const IMAGE_API_ENDPOINT = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/images/generations';
 const IMAGE_MODEL = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.model : 'Kwai-Kolors/Kolors';
+
+// 构造发往 Worker 代理的请求头：不再携带 Authorization，密钥由 Worker 端注入。
+const buildProxyHeaders = () => ({
+    'Content-Type': 'application/json',
+    'X-Request-Token': getRequestToken()
+});
 
 class AIPanel extends React.PureComponent {
     constructor (props) {
@@ -35,9 +41,7 @@ class AIPanel extends React.PureComponent {
             activeTab: 'works', // works, costume, control
             // 造型生成状态
             generatedSVG: null, // 存储生成的SVG代码
-            generatedImageUrl: null, // 存储生成的图片URL
-            // API密钥
-            apiKey: null
+            generatedImageUrl: null // 存储生成的图片URL（密钥已迁移到 Worker 端）
         };
         this.handleChange = this.handleChange.bind(this);
         this.handleSend = this.handleSend.bind(this);
@@ -60,16 +64,7 @@ class AIPanel extends React.PureComponent {
         if (this.inputRef && this.inputRef.current) {
             this.inputRef.current.focus();
         }
-        
-        try {
-            const apiKey = getApiKey('siliconflow');
-            this.setState({apiKey});
-            if (!apiKey) {
-                console.warn('未找到硅基流动API密钥');
-            }
-        } catch (error) {
-            console.error('获取API密钥失败:', error);
-        }
+        // API 密钥已迁移到 Worker 端，浏览器侧不再需要读取密钥。
     }
 
     handleChange (e) {
@@ -421,26 +416,14 @@ class AIPanel extends React.PureComponent {
             this.simulateKeyPress('Alt', '2');
         }
 
-        const {apiKey} = this.state;
-        if (!apiKey) {
-            this.setState({
-                loading: false,
-                error: 'API密钥未配置，请在控制台查看错误信息'
-            });
-            return;
-        }
-
         if (isAgent && isCostumeTab) {
-            this.generateImage(input, apiKey);
+            this.generateImage(input);
             return;
         }
 
         fetch(API_ENDPOINT, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + apiKey
-            },
+            headers: buildProxyHeaders(),
             body: JSON.stringify({
                 model: MODEL,
                 messages: [
@@ -475,7 +458,7 @@ class AIPanel extends React.PureComponent {
         });
     }
 
-    async generateImage(prompt, apiKey) {
+    async generateImage(prompt) {
         try {
             // 构造让AI生成SVG的提示词
             const svgPrompt = `你是一个专业的SVG图形设计师。请根据用户的描述，直接输出一个完整的SVG代码。
@@ -494,10 +477,7 @@ class AIPanel extends React.PureComponent {
 
             const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + apiKey
-                },
+                headers: buildProxyHeaders(),
                 body: JSON.stringify({
                     model: MODEL,
                     messages: [
@@ -750,21 +730,9 @@ ${JSON.stringify(projectData, null, 2)}
 请用中文回答，格式清晰易读。`;
 
         try {
-            const {apiKey} = this.state;
-            if (!apiKey) {
-                this.setState({
-                    loading: false,
-                    error: 'API密钥未配置，请在控制台查看错误信息'
-                });
-                return;
-            }
-
             const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + apiKey
-                },
+                headers: buildProxyHeaders(),
                 body: JSON.stringify({
                     model: MODEL,
                     messages: [
@@ -1367,17 +1335,9 @@ ${JSON.stringify(projectData, null, 2)}
     
     // 调用AI的通用方法
     async callAI (prompt) {
-        const {apiKey} = this.state;
-        if (!apiKey) {
-            throw new Error('API密钥未配置');
-        }
-
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + apiKey
-            },
+            headers: buildProxyHeaders(),
             body: JSON.stringify({
                 model: MODEL,
                 messages: [

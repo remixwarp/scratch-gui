@@ -1,0 +1,21 @@
+# Cloudflare Worker 配置：AI 请求安全代理
+# 部署步骤：
+#   1. 安装 wrangler：npm i -g wrangler
+#   2. 登录：wrangler login
+#   3. 设置 API 密钥（加密存储，不会出现在代码里）：
+#        wrangler secret put API_KEY
+#      粘贴密钥：sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB
+#   4. （可选）设置允许的前端来源：
+#        wrangler secret put ALLOWED_ORIGIN
+#      输入你的网站地址，例如 https://your-site.example.com
+#   5. 部署：wrangler deploy
+#   6. 部署成功后访问 Worker 地址，看到 "hello world" 即部署成功
+
+name = "ai-proxy"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+# REQUEST_TOKEN 建议与前端 src/lib/constants/api-keys.js 中的 REQUEST_TOKEN 保持一致。
+# 这里以普通变量形式给出默认值；如需更高安全性，可改用 wrangler secret put REQUEST_TOKEN 设置。
+[vars]
+REQUEST_TOKEN = "scratch-ai-proxy-2026"

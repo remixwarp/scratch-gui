@@ -1,86 +1,55 @@
-const API_KEY_ENCRYPTED = {
-    siliconflow: 'c2stbElYTzBGM0d0NTlwR0treGhzV2VCUGswYmRGNzFoZUY0NTBlWGhVbXpsUjRBVFNI',
-    openai: 'U2FsdGVkX1+example_encrypted_key_for_openai',
-    anthropic: 'U2FsdGVkX1+example_encrypted_key_for_anthropic'
-};
+// ============================================================================
+// AI 请求改为通过 Cloudflare Worker 代理转发，浏览器内不再保存任何 API 密钥。
+// 部署 Worker 后，请把下面的 WORKER_URL 替换为你的 Worker 访问地址。
+// ============================================================================
 
+// Worker 代理地址（已部署）
+const WORKER_URL = 'https://aiapi.rewp.de5.net';
+
+// 浏览器侧携带的请求令牌，Worker 会校验该值；用于挡住非本站请求的简单滥用。
+// 真正的 API 密钥保存在 Worker 的环境变量中，不会出现在前端代码里。
+const REQUEST_TOKEN = 'scratch-ai-proxy-2026';
+
+// 浏览器侧只持有 Worker 的转发地址与模型名，不再持有任何密钥。
 const API_KEY_CONFIG = {
     siliconflow: {
-        endpoint: 'https://api.iamhc.cn/v1/chat/completions',
-        model: 'auto',
-        decryptMethod: 'simple'
+        endpoint: `${WORKER_URL}/chat`,
+        model: 'auto'
     },
     siliconflowImages: {
-        endpoint: 'https://api.iamhc.cn/v1/images/generations',
-        model: 'auto',
-        decryptMethod: 'simple'
-    },
-    openai: {
-        endpoint: 'https://api.openai.com/v1/chat/completions',
-        model: 'gpt-4',
-        decryptMethod: 'simple'
-    },
-    anthropic: {
-        endpoint: 'https://api.anthropic.com/v1/messages',
-        model: 'claude-3-opus',
-        decryptMethod: 'simple'
+        endpoint: `${WORKER_URL}/images`,
+        model: 'auto'
     }
 };
 
-function decryptKey(encryptedKey, method) {
-    if (!encryptedKey) {
-        return null;
-    }
-    
-    if (encryptedKey.includes('example_encrypted_key')) {
-        return null;
-    }
-    
-    switch (method) {
-        case 'simple':
-            try {
-                if (typeof atob !== 'undefined') {
-                    return atob(encryptedKey);
-                } else {
-                    const buffer = Buffer.from(encryptedKey, 'base64');
-                    return buffer.toString('utf8');
-                }
-            } catch (e) {
-                return null;
-            }
-        default:
-            return null;
-    }
-}
-
-function getApiKey(provider) {
-    const config = API_KEY_CONFIG[provider];
-    if (!config) {
-        return null;
-    }
-    
-    const encryptedKey = API_KEY_ENCRYPTED[provider];
-    if (!encryptedKey) {
-        return null;
-    }
-    
-    return decryptKey(encryptedKey, config.decryptMethod);
-}
-
-function getApiConfig(provider) {
+function getApiConfig (provider) {
     return API_KEY_CONFIG[provider] || null;
 }
 
+// 保留导出以兼容旧调用方（如 02agent 插件）。密钥已迁移到 Worker 端，浏览器侧不再持有，
+// 因此始终返回 null。
+function getApiKey () {
+    return null;
+}
+
+function getRequestToken () {
+    return REQUEST_TOKEN;
+}
+
 export {
-    API_KEY_ENCRYPTED,
+    WORKER_URL,
+    REQUEST_TOKEN,
     API_KEY_CONFIG,
+    getApiConfig,
     getApiKey,
-    getApiConfig
+    getRequestToken
 };
 
 export default {
-    API_KEY_ENCRYPTED,
+    WORKER_URL,
+    REQUEST_TOKEN,
     API_KEY_CONFIG,
+    getApiConfig,
     getApiKey,
-    getApiConfig
+    getRequestToken
 };
