@@ -78,6 +78,30 @@ const tutorialData = [
         url: 'https://rw-vep.pages.dev/BV1p6LP6xEhQ.sb3'
     },
     {
+        id: 'BV1ULTY6oETV',
+        bvid: 'BV1ULTY6oETV',
+        category: 2,
+        bt: '【scratch】你真的会用克隆体吗？新手教程！',
+        jj: '这是一期讲述scratch克隆体的教程，新手向教程，大佬勿喷...',
+        fm: require('./images/BV1ULTY6oETV.jpg')
+    },
+    {
+        id: 'BV1brGZ6CE3z',
+        bvid: 'BV1brGZ6CE3z',
+        category: 4,
+        bt: '在turbowarp做通知横幅？13分钟长教程教会你！',
+        jj: '不小心做太长了。',
+        fm: require('./images/BV1brGZ6CE3z.jpg')
+    },
+    {
+        id: 'BV1CVEh66Ew3',
+        bvid: 'BV1CVEh66Ew3',
+        category: 4,
+        bt: 'Scratch实现四舍五入Pro！精准保留指定小数位！',
+        jj: '估计没人看，不会取标题。\n\n这么短就不用作品链接了吧？',
+        fm: require('./images/BV1CVEh66Ew3.jpg')
+    },
+    {
         id: 'BV1bQtQzmEDz',
         bvid: 'BV1bQtQzmEDz',
         category: 2,
