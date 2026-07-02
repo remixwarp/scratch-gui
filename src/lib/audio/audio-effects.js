@@ -22,7 +22,7 @@ const effectTypes = {
     ECHO: 'echo',
     FADEIN: 'fade in',
     FADEOUT: 'fade out',
-    MUTE: 'mute'
+    MUTE: 'mute',
     LOWPASS: 'low pass',
     HIGHPASS: 'high pass',
     REVERB: 'reverb',
