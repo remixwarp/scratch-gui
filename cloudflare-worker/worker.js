@@ -86,19 +86,27 @@ export default {
         }
 
         const keyWorkerUrl = env.KEY_WORKER_URL || DEFAULT_KEY_WORKER_URL;
+        const verifyUrl = `${keyWorkerUrl}/verify`;
         try {
-            const verifyResp = await fetch(`${keyWorkerUrl}/verify`, {
+            const verifyResp = await fetch(verifyUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nonce, signature, totp })
             });
 
             if (!verifyResp.ok) {
-                const err = await verifyResp.json().catch(() => ({}));
-                return jsonError(403, `TOTP verification failed: ${err.error || verifyResp.status}`);
+                const errText = await verifyResp.text();
+                let errMsg = verifyResp.status.toString();
+                try {
+                    const errJson = JSON.parse(errText);
+                    if (errJson.error) errMsg = errJson.error;
+                } catch (e) {
+                    if (errText && errText.length < 200) errMsg = errText;
+                }
+                return jsonError(403, `TOTP verification failed: ${errMsg} (url=${verifyUrl})`);
             }
         } catch (e) {
-            return jsonError(502, `Key worker unavailable: ${e.message}`);
+            return jsonError(502, `Key worker unavailable: ${e.message} (url=${verifyUrl})`);
         }
 
         const apiKey = env.API_KEY;
