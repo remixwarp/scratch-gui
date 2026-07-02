@@ -74,9 +74,9 @@ async function generateTOTP (secret, period = 10, digits = 6) {
     return otp.toString().padStart(digits, '0');
 }
 
-// 从密钥 Worker 获取 challenge（nonce + signature）
+// 从 AI Worker 获取 challenge（nonce + signature）
 async function fetchTOTPChallenge () {
-    const resp = await fetch(`${KEY_WORKER_URL}/challenge`);
+    const resp = await fetch(`${WORKER_URL}/challenge`);
     if (!resp.ok) {
         throw new Error(`Failed to fetch TOTP challenge: ${resp.status}`);
     }

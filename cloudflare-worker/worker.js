@@ -1,24 +1,22 @@
 // ============================================================================
-// Cloudflare Worker：AI 请求安全代理（TOTP 增强版）
+// Cloudflare Worker：AI 请求安全代理（单 Worker 集成版）
 // ----------------------------------------------------------------------------
-// 浏览器不再持有任何 API 密钥。前端先把请求发到本 Worker，Worker 通过以下
-// 多层校验后，再把请求转发到真正的 AI 接口：
-//   1) X-Request-Token 校验（保留作为额外防护）
-//   2) 来源校验（可选）
-//   3) TOTP 验证（核心安全层）：向密钥 Worker 验证 nonce+signature+totp
-//   4) 防重放：同一 nonce 只能使用一次
+// 将 AI 请求转发和 TOTP 验证合并到同一个 Worker 中，避免跨 Worker DNS 问题。
 //
 // 路由：
-//   GET  /         -> 健康检查，返回 "hello world"
-//   POST /chat     -> 转发到 https://api.iamhc.cn/v1/chat/completions
-//   POST /images   -> 转发到 https://api.iamhc.cn/v1/images/generations
-//   OPTIONS *      -> 处理跨域预检
+//   GET  /           -> 健康检查，返回 "hello world"
+//   GET  /challenge  -> 生成随机 nonce 和 HMAC 签名
+//   POST /verify     -> 验证 nonce + signature + totp
+//   POST /chat       -> 转发到 https://api.iamhc.cn/v1/chat/completions
+//   POST /images     -> 转发到 https://api.iamhc.cn/v1/images/generations
+//   OPTIONS *        -> 处理跨域预检
 //
 // 环境变量 / Secret：
 //   API_KEY         -> 真正的 API 密钥（必填）
 //   REQUEST_TOKEN   -> 请求校验令牌（需与前端一致）
+//   MASTER_SECRET   -> TOTP 签名主密钥（必填）
 //   ALLOWED_ORIGIN  -> 允许的前端来源（可选）
-//   KEY_WORKER_URL  -> 密钥 Worker 地址（默认 https://aiapi2.rewp.de5.net）
+//   TOTP_PERIOD     -> TOTP 时间周期，单位秒（默认 10）
 // ============================================================================
 
 const UPSTREAM = {
@@ -27,7 +25,7 @@ const UPSTREAM = {
 };
 
 const DEFAULT_REQUEST_TOKEN = 'scratch-ai-proxy-2026';
-const DEFAULT_KEY_WORKER_URL = 'https://aiapi2.rewp.de5.net';
+const DEFAULT_TOTP_PERIOD = 10;
 
 const usedNonces = new Map();
 const NONCE_TTL_MS = 30000;
@@ -40,13 +38,22 @@ export default {
             return handleCORS();
         }
 
-        if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
+        if (request.method === 'GET' && url.pathname === '/') {
             return new Response('hello world\n', {
                 headers: { 'Content-Type': 'text/plain; charset=utf-8' }
             });
         }
 
         const route = url.pathname.replace(/^\/+/, '');
+
+        if (request.method === 'GET' && route === 'challenge') {
+            return handleChallenge(env);
+        }
+
+        if (request.method === 'POST' && route === 'verify') {
+            return handleVerify(request, env);
+        }
+
         const upstreamUrl = UPSTREAM[route];
         if (!upstreamUrl) {
             return jsonError(404, 'Not Found');
@@ -85,29 +92,12 @@ export default {
             return jsonError(403, 'Forbidden: nonce already used');
         }
 
-        const keyWorkerUrl = env.KEY_WORKER_URL || DEFAULT_KEY_WORKER_URL;
-        const verifyUrl = `${keyWorkerUrl}/verify`;
-        try {
-            const verifyResp = await fetch(verifyUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nonce, signature, totp })
-            });
-
-            if (!verifyResp.ok) {
-                const errText = await verifyResp.text();
-                let errMsg = verifyResp.status.toString();
-                try {
-                    const errJson = JSON.parse(errText);
-                    if (errJson.error) errMsg = errJson.error;
-                } catch (e) {
-                    if (errText && errText.length < 200) errMsg = errText;
-                }
-                return jsonError(403, `TOTP verification failed: ${errMsg} (url=${verifyUrl})`);
-            }
-        } catch (e) {
-            return jsonError(502, `Key worker unavailable: ${e.message} (url=${verifyUrl})`);
+        const verifyResult = await verifyTOTP(nonce, signature, totp, env);
+        if (!verifyResult.ok) {
+            return jsonError(403, `TOTP verification failed: ${verifyResult.error}`);
         }
+
+        markNonceUsed(nonce);
 
         const apiKey = env.API_KEY;
         if (!apiKey) {
@@ -134,14 +124,139 @@ export default {
     }
 };
 
+async function handleChallenge(env) {
+    const masterSecret = env.MASTER_SECRET;
+    if (!masterSecret) {
+        return jsonError(500, 'Server misconfiguration: MASTER_SECRET not set');
+    }
+
+    const period = parseInt(env.TOTP_PERIOD || DEFAULT_TOTP_PERIOD);
+    const nonce = crypto.randomUUID() + crypto.randomUUID();
+    const signature = await hmacSha256(masterSecret, nonce);
+
+    return new Response(JSON.stringify({
+        nonce,
+        signature,
+        period
+    }), {
+        headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders()
+        }
+    });
+}
+
+async function handleVerify(request, env) {
+    const masterSecret = env.MASTER_SECRET;
+    if (!masterSecret) {
+        return jsonError(500, 'Server misconfiguration: MASTER_SECRET not set');
+    }
+
+    let body;
+    try {
+        body = await request.json();
+    } catch (e) {
+        return jsonError(400, 'Bad Request: invalid body');
+    }
+
+    const { nonce, signature, totp } = body;
+
+    if (!nonce || !signature || !totp) {
+        return jsonError(400, 'Missing required parameters: nonce, signature, totp');
+    }
+
+    if (isNonceUsed(nonce)) {
+        return jsonError(403, 'Nonce already used');
+    }
+
+    const verifyResult = await verifyTOTP(nonce, signature, totp, env);
+    if (!verifyResult.ok) {
+        return jsonError(403, verifyResult.error);
+    }
+
+    markNonceUsed(nonce);
+
+    return new Response(JSON.stringify({ ok: true }), {
+        headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders()
+        }
+    });
+}
+
+async function verifyTOTP(nonce, signature, totp, env) {
+    const masterSecret = env.MASTER_SECRET;
+    const period = parseInt(env.TOTP_PERIOD || DEFAULT_TOTP_PERIOD);
+
+    const expectedSignature = await hmacSha256(masterSecret, nonce);
+    if (!constantTimeEqual(signature, expectedSignature)) {
+        return { ok: false, error: 'Invalid signature' };
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const currentCounter = Math.floor(now / period);
+
+    let valid = false;
+    for (let offset = -1; offset <= 1; offset++) {
+        const counter = currentCounter + offset;
+        const expectedTOTP = await computeTOTP(nonce, counter, 6);
+        if (constantTimeEqual(totp, expectedTOTP)) {
+            valid = true;
+            break;
+        }
+    }
+
+    if (!valid) {
+        return { ok: false, error: 'Invalid TOTP' };
+    }
+
+    return { ok: true };
+}
+
+async function hmacSha256(secret, message) {
+    const enc = new TextEncoder();
+    const keyData = enc.encode(secret);
+    const msgData = enc.encode(message);
+    const key = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, msgData);
+    return Array.from(new Uint8Array(sig))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+async function computeTOTP(secret, counter, digits = 6) {
+    const hash = await hmacSha256(secret, String(counter));
+    const offset = parseInt(hash.slice(-1), 16);
+    const binary = parseInt(hash.substr(offset * 2, 8), 16) & 0x7fffffff;
+    const otp = binary % Math.pow(10, digits);
+    return otp.toString().padStart(digits, '0');
+}
+
+function constantTimeEqual(a, b) {
+    if (a.length !== b.length) return false;
+    let result = 0;
+    for (let i = 0; i < a.length; i++) {
+        result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return result === 0;
+}
+
 function isNonceUsed(nonce) {
     const now = Date.now();
     for (const [n, time] of usedNonces) {
         if (now - time > NONCE_TTL_MS) usedNonces.delete(n);
     }
-    if (usedNonces.has(nonce)) return true;
-    usedNonces.set(nonce, now);
-    return false;
+    return usedNonces.has(nonce);
+}
+
+function markNonceUsed(nonce) {
+    usedNonces.set(nonce, Date.now());
 }
 
 function corsHeaders() {
