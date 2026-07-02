@@ -1957,8 +1957,8 @@ ${JSON.stringify(projectData, null, 2)}
         const isAgent = type === 'agent';
         const placeholder = isAgent ? '告诉AI你想做什么？' : '聊聊你的代码...';
         const warningText = isAgent 
-            ? '内容为AI生成,请注意仔细鉴别<br/>Bata测试版：有极大的概率会导致作品崩溃或生成积木错误。<br/>分布式创作目前还未完善，建议进行直接发送。<br/>如果项目较复杂，等待时间可能较长,请耐心等待。<br/>请确保设备能够访问 <a href="https://aiapi.rewp.de5.net" target="_blank" rel="noopener noreferrer">aiapi.rewp.de5.net</a> 才能正常使用AI。' 
-            : '内容为AI生成,请注意仔细鉴别<br/>此功能仅作为AI辅助编程,不能帮你编写代码。<br/>请确保设备能够访问 <a href="https://aiapi.rewp.de5.net" target="_blank" rel="noopener noreferrer">aiapi.rewp.de5.net</a> 才能正常使用AI。';
+            ? '内容为AI生成,请注意仔细鉴别<br/>Bata测试版：有极大的概率会导致作品崩溃或生成积木错误。<br/>分布式创作目前还未完善，建议进行直接发送。<br/>如果项目较复杂，等待时间可能较长,请耐心等待。<br/>请确保设备能够访问 <a href="https://aiapi.rewp.de5.net" target="_blank" rel="noopener noreferrer">aiapi.rewp.de5.net</a> 才能正常使用AI。<br/>和AI有关的功能必须在 <a href="https://remixwarp.pages.dev" target="_blank" rel="noopener noreferrer">remixwarp.pages.dev</a> 使用。' 
+            : '内容为AI生成,请注意仔细鉴别<br/>此功能仅作为AI辅助编程,不能帮你编写代码。<br/>请确保设备能够访问 <a href="https://aiapi.rewp.de5.net" target="_blank" rel="noopener noreferrer">aiapi.rewp.de5.net</a> 才能正常使用AI。<br/>和AI有关的功能必须在 <a href="https://remixwarp.pages.dev" target="_blank" rel="noopener noreferrer">remixwarp.pages.dev</a> 使用。';
         
         return (
             <div className={styles.container}>
