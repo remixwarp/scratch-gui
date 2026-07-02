@@ -13,6 +13,9 @@ const KEY_WORKER_URL = 'https://aiapi2.rewp.de5.net';
 // 真正的 API 密钥保存在 Worker 的环境变量中，不会出现在前端代码里。
 const REQUEST_TOKEN = 'scratch-ai-proxy-2026';
 
+// Cloudflare Turnstile 人机验证站点密钥
+const TURNSTILE_SITE_KEY = '0x4AAAAAACyeS6Www9AVI--y';
+
 // 浏览器侧只持有 Worker 的转发地址与模型名，不再持有任何密钥。
 const API_KEY_CONFIG = {
     siliconflow: {
@@ -87,6 +90,7 @@ export {
     WORKER_URL,
     KEY_WORKER_URL,
     REQUEST_TOKEN,
+    TURNSTILE_SITE_KEY,
     API_KEY_CONFIG,
     getApiConfig,
     getApiKey,
@@ -99,6 +103,7 @@ export default {
     WORKER_URL,
     KEY_WORKER_URL,
     REQUEST_TOKEN,
+    TURNSTILE_SITE_KEY,
     API_KEY_CONFIG,
     getApiConfig,
     getApiKey,

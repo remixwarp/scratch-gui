@@ -23,14 +23,15 @@ const buildProxyHeaders = () => ({
 });
 
 // 获取 TOTP Challenge 并注入到请求体中
-async function buildTOTPBody (baseBody) {
+async function buildTOTPBody (baseBody, turnstileToken) {
     const challenge = await fetchTOTPChallenge();
     const totp = await generateTOTP(challenge.nonce, challenge.period);
     return {
         ...baseBody,
         nonce: challenge.nonce,
         signature: challenge.signature,
-        totp
+        totp,
+        turnstileToken
     };
 }
 
@@ -439,7 +440,7 @@ class AIPanel extends React.PureComponent {
                 {role: 'system', content: systemPrompt},
                 userMessage
             ]
-        }).then(body => fetch(API_ENDPOINT, {
+        }, this.props.turnstileToken).then(body => fetch(API_ENDPOINT, {
             method: 'POST',
             headers: buildProxyHeaders(),
             body: JSON.stringify(body)
@@ -493,7 +494,7 @@ class AIPanel extends React.PureComponent {
                     {role: 'system', content: '你是一个专业的SVG图形设计师，只输出完整的SVG代码，不要任何其他文字解释。'},
                     {role: 'user', content: svgPrompt}
                 ]
-            });
+            }, this.props.turnstileToken);
             const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
                 headers: buildProxyHeaders(),
@@ -749,7 +750,7 @@ ${JSON.stringify(projectData, null, 2)}
                     {role: 'system', content: '你是Scratch项目分析专家，专门分析Scratch项目的结构和功能。'},
                     {role: 'user', content: analysisPrompt}
                 ]
-            });
+            }, this.props.turnstileToken);
             const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
                 headers: buildProxyHeaders(),
@@ -1355,7 +1356,7 @@ ${JSON.stringify(projectData, null, 2)}
                 {role: 'system', content: '你是Scratch专家，只输出代码，不解释。'},
                 {role: 'user', content: prompt}
             ]
-        });
+        }, this.props.turnstileToken);
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
             headers: buildProxyHeaders(),

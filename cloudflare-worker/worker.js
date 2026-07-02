@@ -12,11 +12,12 @@
 //   OPTIONS *        -> 处理跨域预检
 //
 // 环境变量 / Secret：
-//   API_KEY         -> 真正的 API 密钥（必填）
-//   REQUEST_TOKEN   -> 请求校验令牌（需与前端一致）
-//   MASTER_SECRET   -> TOTP 签名主密钥（必填）
-//   ALLOWED_ORIGIN  -> 允许的前端来源（可选）
-//   TOTP_PERIOD     -> TOTP 时间周期，单位秒（默认 10）
+//   API_KEY              -> 真正的 API 密钥（必填）
+//   REQUEST_TOKEN        -> 请求校验令牌（需与前端一致）
+//   MASTER_SECRET        -> TOTP 签名主密钥（必填）
+//   TURNSTILE_SECRET_KEY -> Cloudflare Turnstile 密钥（必填）
+//   ALLOWED_ORIGIN       -> 允许的前端来源（可选）
+//   TOTP_PERIOD          -> TOTP 时间周期，单位秒（默认 10）
 // ============================================================================
 
 const UPSTREAM = {
@@ -83,13 +84,22 @@ export default {
             return jsonError(400, 'Bad Request: invalid body');
         }
 
-        const { nonce, signature, totp, ...upstreamBody } = body;
+        const { nonce, signature, totp, turnstileToken, ...upstreamBody } = body;
         if (!nonce || !signature || !totp) {
             return jsonError(403, 'Forbidden: missing TOTP parameters');
         }
 
+        if (!turnstileToken) {
+            return jsonError(403, 'Forbidden: missing Turnstile token');
+        }
+
         if (isNonceUsed(nonce)) {
             return jsonError(403, 'Forbidden: nonce already used');
+        }
+
+        const turnstileResult = await verifyTurnstile(turnstileToken, env);
+        if (!turnstileResult) {
+            return jsonError(403, 'Forbidden: Turnstile verification failed');
         }
 
         const verifyResult = await verifyTOTP(nonce, signature, totp, env);
@@ -182,6 +192,31 @@ async function handleVerify(request, env) {
             ...corsHeaders()
         }
     });
+}
+
+async function verifyTurnstile(token, env) {
+    const secretKey = env.TURNSTILE_SECRET_KEY;
+    if (!secretKey) {
+        console.warn('Turnstile verification skipped: TURNSTILE_SECRET_KEY not set');
+        return true;
+    }
+
+    try {
+        const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                secret: secretKey,
+                response: token
+            })
+        });
+
+        const data = await resp.json();
+        return data.success === true;
+    } catch (e) {
+        console.error('Turnstile verification error:', e);
+        return false;
+    }
 }
 
 async function verifyTOTP(nonce, signature, totp, env) {
