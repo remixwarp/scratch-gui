@@ -6,6 +6,9 @@
 // Worker 代理地址（已部署）
 const WORKER_URL = 'https://aiapi.rewp.de5.net';
 
+// 密钥 Worker 地址（用于获取 TOTP Challenge）
+const KEY_WORKER_URL = 'https://aiapi2.rewp.de5.net';
+
 // 浏览器侧携带的请求令牌，Worker 会校验该值；用于挡住非本站请求的简单滥用。
 // 真正的 API 密钥保存在 Worker 的环境变量中，不会出现在前端代码里。
 const REQUEST_TOKEN = 'scratch-ai-proxy-2026';

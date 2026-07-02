@@ -1,48 +1,52 @@
 // ============================================================================
-// Cloudflare Worker：AI 请求安全代理
+// Cloudflare Worker：AI 请求安全代理（TOTP 增强版）
 // ----------------------------------------------------------------------------
-// 浏览器不再持有任何 API 密钥。前端把请求发到本 Worker，Worker 校验来源与令牌后，
-// 用保存在环境变量（Secret）里的密钥，把请求转发到真正的 AI 接口，再把结果返回前端。
+// 浏览器不再持有任何 API 密钥。前端先把请求发到本 Worker，Worker 通过以下
+// 多层校验后，再把请求转发到真正的 AI 接口：
+//   1) X-Request-Token 校验（保留作为额外防护）
+//   2) 来源校验（可选）
+//   3) TOTP 验证（核心安全层）：向密钥 Worker 验证 nonce+signature+totp
+//   4) 防重放：同一 nonce 只能使用一次
 //
 // 路由：
-//   GET  /         -> 健康检查，返回 "hello world"（部署后先访问它确认 Worker 正常）
+//   GET  /         -> 健康检查，返回 "hello world"
 //   POST /chat     -> 转发到 https://api.iamhc.cn/v1/chat/completions
 //   POST /images   -> 转发到 https://api.iamhc.cn/v1/images/generations
-//   OPTIONS *      -> 处理浏览器跨域预检请求
+//   OPTIONS *      -> 处理跨域预检
 //
-// 需要配置的环境变量 / Secret：
-//   API_KEY        -> 真正的 API 密钥（必填，用 wrangler secret 设置，加密存储）
-//   REQUEST_TOKEN  -> 请求校验令牌，需与前端 api-keys.js 里的 REQUEST_TOKEN 一致
-//   ALLOWED_ORIGIN -> 允许的前端来源（可选，例如 https://your-site.example.com）
+// 环境变量 / Secret：
+//   API_KEY         -> 真正的 API 密钥（必填）
+//   REQUEST_TOKEN   -> 请求校验令牌（需与前端一致）
+//   ALLOWED_ORIGIN  -> 允许的前端来源（可选）
+//   KEY_WORKER_URL  -> 密钥 Worker 地址（默认 https://aiapi2.rewp.de5.net）
 // ============================================================================
 
-// 真正的上游 AI 接口地址
 const UPSTREAM = {
     chat: 'https://api.iamhc.cn/v1/chat/completions',
     images: 'https://api.iamhc.cn/v1/images/generations'
 };
 
-// 与前端 api-keys.js 中保持一致的默认令牌
 const DEFAULT_REQUEST_TOKEN = 'scratch-ai-proxy-2026';
+const DEFAULT_KEY_WORKER_URL = 'https://aiapi2.rewp.de5.net';
+
+const usedNonces = new Map();
+const NONCE_TTL_MS = 30000;
 
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
 
-        // 统一处理 CORS 预检
         if (request.method === 'OPTIONS') {
             return handleCORS();
         }
 
-        // 健康检查：部署后直接在浏览器打开 Worker 地址，能看到 hello world 即说明部署成功
         if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
             return new Response('hello world\n', {
                 headers: { 'Content-Type': 'text/plain; charset=utf-8' }
             });
         }
 
-        // 只有这两个路径需要代理转发
-        const route = url.pathname.replace(/^\/+/, ''); // 'chat' | 'images'
+        const route = url.pathname.replace(/^\/+/, '');
         const upstreamUrl = UPSTREAM[route];
         if (!upstreamUrl) {
             return jsonError(404, 'Not Found');
@@ -52,15 +56,12 @@ export default {
             return jsonError(405, 'Method Not Allowed');
         }
 
-        // --- 安全校验 ---------------------------------------------------------
-        // 1) 请求令牌：必须与前端一致，挡住随机滥用
         const expectedToken = env.REQUEST_TOKEN || DEFAULT_REQUEST_TOKEN;
         const requestToken = request.headers.get('X-Request-Token');
         if (!requestToken || requestToken !== expectedToken) {
             return jsonError(403, 'Forbidden: invalid token');
         }
 
-        // 2) 来源校验：如果设置了 ALLOWED_ORIGIN，则只允许该来源调用
         if (env.ALLOWED_ORIGIN) {
             const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
             if (!origin.startsWith(env.ALLOWED_ORIGIN)) {
@@ -68,18 +69,41 @@ export default {
             }
         }
 
-        // 3) 读取加密存储的 API 密钥（Secret 在 Workers 后台是加密保存的）
+        let body;
+        try {
+            body = await request.json();
+        } catch (e) {
+            return jsonError(400, 'Bad Request: invalid body');
+        }
+
+        const { nonce, signature, totp, ...upstreamBody } = body;
+        if (!nonce || !signature || !totp) {
+            return jsonError(403, 'Forbidden: missing TOTP parameters');
+        }
+
+        if (isNonceUsed(nonce)) {
+            return jsonError(403, 'Forbidden: nonce already used');
+        }
+
+        const keyWorkerUrl = env.KEY_WORKER_URL || DEFAULT_KEY_WORKER_URL;
+        try {
+            const verifyResp = await fetch(`${keyWorkerUrl}/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nonce, signature, totp })
+            });
+
+            if (!verifyResp.ok) {
+                const err = await verifyResp.json().catch(() => ({}));
+                return jsonError(403, `TOTP verification failed: ${err.error || verifyResp.status}`);
+            }
+        } catch (e) {
+            return jsonError(502, `Key worker unavailable: ${e.message}`);
+        }
+
         const apiKey = env.API_KEY;
         if (!apiKey) {
             return jsonError(500, 'Server misconfiguration: API_KEY not set');
-        }
-
-        // --- 转发到真正的 AI 接口 --------------------------------------------
-        let upstreamBody;
-        try {
-            upstreamBody = await request.text();
-        } catch (e) {
-            return jsonError(400, 'Bad Request: invalid body');
         }
 
         const upstreamResp = await fetch(upstreamUrl, {
@@ -88,10 +112,9 @@ export default {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + apiKey
             },
-            body: upstreamBody
+            body: JSON.stringify(upstreamBody)
         });
 
-        // 把上游响应原样回传给前端，并补上 CORS 头
         const respBody = await upstreamResp.text();
         return new Response(respBody, {
             status: upstreamResp.status,
@@ -102,6 +125,16 @@ export default {
         });
     }
 };
+
+function isNonceUsed(nonce) {
+    const now = Date.now();
+    for (const [n, time] of usedNonces) {
+        if (now - time > NONCE_TTL_MS) usedNonces.delete(n);
+    }
+    if (usedNonces.has(nonce)) return true;
+    usedNonces.set(nonce, now);
+    return false;
+}
 
 function corsHeaders() {
     return {
