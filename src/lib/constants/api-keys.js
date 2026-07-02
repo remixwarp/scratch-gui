@@ -39,20 +39,70 @@ function getRequestToken () {
     return REQUEST_TOKEN;
 }
 
+// TOTP：基于时间的一次性密码（浏览器侧计算）
+// 使用 Web Crypto API 进行 HMAC-SHA256 运算
+async function hmacSha256 (secret, message) {
+    const enc = new TextEncoder();
+    const keyData = enc.encode(secret);
+    const msgData = enc.encode(message);
+    const key = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, msgData);
+    return Array.from(new Uint8Array(sig))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+// 生成 TOTP 令牌
+// secret: 密钥（来自 challenge 的 nonce）
+// period: 时间周期，单位秒（默认10秒）
+// digits: 输出位数（默认6位）
+async function generateTOTP (secret, period = 10, digits = 6) {
+    const counter = Math.floor(Date.now() / 1000 / period);
+    const hash = await hmacSha256(secret, String(counter));
+
+    // 动态截断：取最后一个字节的低4位作为偏移量
+    const offset = parseInt(hash.slice(-1), 16);
+    const binary = parseInt(hash.substr(offset * 2, 8), 16) & 0x7fffffff;
+    const otp = binary % Math.pow(10, digits);
+
+    return otp.toString().padStart(digits, '0');
+}
+
+// 从密钥 Worker 获取 challenge（nonce + signature）
+async function fetchTOTPChallenge () {
+    const resp = await fetch(`${KEY_WORKER_URL}/challenge`);
+    if (!resp.ok) {
+        throw new Error(`Failed to fetch TOTP challenge: ${resp.status}`);
+    }
+    return resp.json();
+}
+
 export {
     WORKER_URL,
+    KEY_WORKER_URL,
     REQUEST_TOKEN,
     API_KEY_CONFIG,
     getApiConfig,
     getApiKey,
-    getRequestToken
+    getRequestToken,
+    generateTOTP,
+    fetchTOTPChallenge
 };
 
 export default {
     WORKER_URL,
+    KEY_WORKER_URL,
     REQUEST_TOKEN,
     API_KEY_CONFIG,
     getApiConfig,
     getApiKey,
-    getRequestToken
+    getRequestToken,
+    generateTOTP,
+    fetchTOTPChallenge
 };
