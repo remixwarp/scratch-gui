@@ -72,9 +72,7 @@ export default {
 
         if (env.ALLOWED_ORIGIN) {
             const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
-            const allowedOrigins = env.ALLOWED_ORIGIN.split(',').map(s => s.trim()).filter(Boolean);
-            const isAllowed = allowedOrigins.some(ao => origin.startsWith(ao));
-            if (!isAllowed) {
+            if (!origin.startsWith(env.ALLOWED_ORIGIN)) {
                 return jsonError(403, 'Forbidden: origin not allowed');
             }
         }
