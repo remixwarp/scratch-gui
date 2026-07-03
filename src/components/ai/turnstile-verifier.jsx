@@ -15,25 +15,25 @@ const titleStyle = {
     fontSize: '20px',
     fontWeight: 'bold',
     marginBottom: '12px',
-    color: '#333'
+    color: 'var(--text-primary)'
 };
 
 const descStyle = {
     fontSize: '14px',
-    color: '#666',
+    color: 'var(--ui-text-primary-transparent)',
     marginBottom: '24px',
     textAlign: 'center'
 };
 
 const verifyingStyle = {
     marginTop: '16px',
-    color: '#4f46e5',
+    color: 'var(--looks-secondary)',
     fontSize: '14px'
 };
 
 const errorStyle = {
     marginTop: '16px',
-    color: '#dc2626',
+    color: 'var(--error-primary)',
     fontSize: '14px'
 };
 
