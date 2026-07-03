@@ -734,7 +734,13 @@ class CollaborationModal extends Component {
         return (
             <div className={styles.captchaOverlay}>
                 <div className={styles.captchaContainer}>
-                    <TurnstileVerifier onSuccess={this.handleCaptchaSuccess} />
+                    <TurnstileVerifier
+                        title="人机验证"
+                        description={
+                            <>请完成下方验证以使用团队协作功能<br />验证有效期为30分钟</>
+                        }
+                        onSuccess={this.handleCaptchaSuccess}
+                    />
                     <div style={{marginTop: '12px', textAlign: 'center'}}>
                         <Button
                             className={styles.secondaryButton}
