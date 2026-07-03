@@ -9,6 +9,14 @@ const WORKER_URL = 'https://aiapi.rewp.de5.net';
 // 密钥 Worker 地址（用于获取 TOTP Challenge）
 const KEY_WORKER_URL = 'https://aiapi2.rewp.de5.net';
 
+// Cloudflare Turnstile 站点密钥（公开密钥，硬编码在前端）
+const TURNSTILE_SITE_KEY = '0x4AAAAAACyeS6Www9AVI--y';
+
+// Session Token 管理（Turnstile 验证通过后由 Worker 签发，有效期30分钟）
+let sessionToken = null;
+function setSessionToken (token) { sessionToken = token; }
+function getSessionToken () { return sessionToken; }
+
 // 浏览器侧携带的请求令牌，Worker 会校验该值；用于挡住非本站请求的简单滥用。
 // 真正的 API 密钥保存在 Worker 的环境变量中，不会出现在前端代码里。
 const REQUEST_TOKEN = 'scratch-ai-proxy-2026';
@@ -76,33 +84,68 @@ async function generateTOTP (secret, period = 10, digits = 6) {
 
 // 从 AI Worker 获取 challenge（nonce + signature）
 async function fetchTOTPChallenge () {
-    const resp = await fetch(`${WORKER_URL}/challenge`);
+    const resp = await fetch(`${WORKER_URL}/challenge`, {
+        headers: {
+            'X-Request-Token': REQUEST_TOKEN,
+            'X-Session-Token': getSessionToken() || ''
+        }
+    });
     if (!resp.ok) {
         throw new Error(`Failed to fetch TOTP challenge: ${resp.status}`);
     }
     return resp.json();
 }
 
+// 用 Turnstile token 换取 Session Token
+async function exchangeTurnstileForSession (turnstileToken) {
+    const resp = await fetch(`${WORKER_URL}/auth`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Request-Token': REQUEST_TOKEN
+        },
+        body: JSON.stringify({ turnstileToken })
+    });
+    if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.error || `验证失败: ${resp.status}`);
+    }
+    const data = await resp.json();
+    if (data.sessionToken) {
+        setSessionToken(data.sessionToken);
+        return data.sessionToken;
+    }
+    throw new Error('未收到 Session Token');
+}
+
 export {
     WORKER_URL,
     KEY_WORKER_URL,
+    TURNSTILE_SITE_KEY,
     REQUEST_TOKEN,
     API_KEY_CONFIG,
     getApiConfig,
     getApiKey,
     getRequestToken,
     generateTOTP,
-    fetchTOTPChallenge
+    fetchTOTPChallenge,
+    exchangeTurnstileForSession,
+    getSessionToken,
+    setSessionToken
 };
 
 export default {
     WORKER_URL,
     KEY_WORKER_URL,
+    TURNSTILE_SITE_KEY,
     REQUEST_TOKEN,
     API_KEY_CONFIG,
     getApiConfig,
     getApiKey,
     getRequestToken,
     generateTOTP,
-    fetchTOTPChallenge
+    fetchTOTPChallenge,
+    exchangeTurnstileForSession,
+    getSessionToken,
+    setSessionToken
 };

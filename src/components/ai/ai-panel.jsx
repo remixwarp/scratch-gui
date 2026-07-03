@@ -6,7 +6,7 @@ import Button from '../button/button.jsx';
 import MarkdownRenderer from '../markdown-renderer/markdown-renderer.jsx';
 import {sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
 import {costumeUpload} from '../../lib/file-uploader.js';
-import {getApiConfig, getRequestToken, generateTOTP, fetchTOTPChallenge} from '../../lib/constants/api-keys.js';
+import {getApiConfig, getRequestToken, generateTOTP, fetchTOTPChallenge, getSessionToken} from '../../lib/constants/api-keys.js';
 
 const API_CONFIG = getApiConfig('siliconflow');
 const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/chat/completions';
@@ -19,7 +19,8 @@ const IMAGE_MODEL = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.model : 'Kwai-Kolors/Kol
 // 构造发往 Worker 代理的请求头：不再携带 Authorization，密钥由 Worker 端注入。
 const buildProxyHeaders = () => ({
     'Content-Type': 'application/json',
-    'X-Request-Token': getRequestToken()
+    'X-Request-Token': getRequestToken(),
+    'X-Session-Token': getSessionToken() || ''
 });
 
 // 获取 TOTP Challenge 并注入到请求体中

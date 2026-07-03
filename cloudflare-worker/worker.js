@@ -1,11 +1,20 @@
 // ============================================================================
-// Cloudflare Worker：AI 请求安全代理（单 Worker 集成版）
+// Cloudflare Worker：AI 请求安全代理（Turnstile + TOTP + Session Token）
 // ----------------------------------------------------------------------------
-// 所有路由在最前面统一做域名白名单校验：
-//   未配置 ALLOWED_ORIGIN 时放行（方便初次部署调试）；
-//   配置后，只有白名单内域名的请求才能通过，其余一律 403。
-//   支持多个域名，用逗号分隔，例如：
-//     https://remixwarp.pages.dev,https://example.com
+// 安全层级：
+//   1. 全局域名白名单（ALLOWED_ORIGIN 环境变量）
+//   2. Turnstile 人机验证 → 签发 Session Token（30分钟有效）
+//   3. Session Token 签名验证（HMAC-SHA256）
+//   4. IP 频率限制（20次/分钟）
+//   5. TOTP 动态口令验证（10秒周期）
+//   6. Nonce 防重放（30秒自动清理）
+//
+// 路由：
+//   GET  /          → 健康检查
+//   POST /auth      → 验证 Turnstile token，签发 Session Token
+//   GET  /challenge → 返回 TOTP challenge（需 Session Token）
+//   POST /chat      → 转发到 AI 接口（需 Session Token + TOTP）
+//   POST /images    → 转发到图片接口（需 Session Token + TOTP）
 // ============================================================================
 
 const UPSTREAM = {
@@ -16,19 +25,29 @@ const UPSTREAM = {
 const DEFAULT_REQUEST_TOKEN = 'scratch-ai-proxy-2026';
 const DEFAULT_TOTP_PERIOD = 10;
 
+// Turnstile 密钥（硬编码，服务端使用）
+const TURNSTILE_SECRET_KEY = '0x4AAAAAACyeS8KFuErSMsZIM2CQAsdSmu8';
+
+// Session Token 有效期：30分钟
+const SESSION_TTL = 1800;
+
+// Nonce 防重放
 const usedNonces = new Map();
 const NONCE_TTL_MS = 30000;
 
+// IP 频率限制
+const ipRequests = new Map();
+const RATE_LIMIT_WINDOW = 60000;  // 1分钟
+const RATE_LIMIT_MAX = 20;        // 每分钟最多20次
+
 export default {
     async fetch(request, env) {
-        // --- 全局域名白名单：所有请求（含 /challenge）都要过这一关 -------------
+        // --- 全局域名白名单 ---
         if (env.ALLOWED_ORIGIN) {
             const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
-            // 允许配置多个域名，逗号分隔
             const allowed = env.ALLOWED_ORIGIN.split(',').map(s => s.trim()).filter(Boolean);
             const ok = allowed.some(base => origin.startsWith(base));
             if (!ok) {
-                // 非白名单域名：直接返回 403，不暴露任何接口
                 return new Response('Forbidden', { status: 403 });
             }
         }
@@ -47,14 +66,33 @@ export default {
 
         const route = url.pathname.replace(/^\/+/, '');
 
+        // /auth：验证 Turnstile，签发 Session Token（唯一不需要 Session Token 的 POST 路由）
+        if (request.method === 'POST' && route === 'auth') {
+            return handleAuth(request, env);
+        }
+
+        // 以下路由都需要 Session Token
+        const sessionToken = request.headers.get('X-Session-Token') || '';
+        if (!sessionToken) {
+            return jsonError(403, 'Forbidden: missing session token');
+        }
+
+        const sessionResult = await verifySessionToken(sessionToken, env);
+        if (!sessionResult.ok) {
+            return jsonError(403, `Forbidden: ${sessionResult.error}`);
+        }
+
+        // /challenge：返回 TOTP challenge
         if (request.method === 'GET' && route === 'challenge') {
             return handleChallenge(env);
         }
 
+        // /verify：验证 TOTP（兼容旧接口）
         if (request.method === 'POST' && route === 'verify') {
             return handleVerify(request, env);
         }
 
+        // /chat 和 /images：转发到上游 AI 接口
         const upstreamUrl = UPSTREAM[route];
         if (!upstreamUrl) {
             return jsonError(404, 'Not Found');
@@ -62,6 +100,12 @@ export default {
 
         if (request.method !== 'POST') {
             return jsonError(405, 'Method Not Allowed');
+        }
+
+        // IP 频率限制
+        const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
+        if (!checkRateLimit(clientIP)) {
+            return jsonError(429, 'Too Many Requests: 请稍后再试');
         }
 
         const expectedToken = env.REQUEST_TOKEN || DEFAULT_REQUEST_TOKEN;
@@ -118,6 +162,107 @@ export default {
     }
 };
 
+// ============================================================================
+// /auth：验证 Turnstile token，签发 Session Token
+// ============================================================================
+async function handleAuth(request, env) {
+    const masterSecret = env.MASTER_SECRET;
+    if (!masterSecret) {
+        return jsonError(500, 'Server misconfiguration: MASTER_SECRET not set');
+    }
+
+    let body;
+    try {
+        body = await request.json();
+    } catch (e) {
+        return jsonError(400, 'Bad Request: invalid body');
+    }
+
+    const { turnstileToken } = body;
+    if (!turnstileToken) {
+        return jsonError(400, 'Missing turnstile token');
+    }
+
+    // 向 Cloudflare 验证 Turnstile token
+    const turnstileOk = await verifyTurnstile(turnstileToken);
+    if (!turnstileOk) {
+        return jsonError(403, 'Turnstile verification failed');
+    }
+
+    // 签发 Session Token
+    const sessionToken = await generateSessionToken(masterSecret);
+
+    return new Response(JSON.stringify({ sessionToken }), {
+        headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders()
+        }
+    });
+}
+
+async function verifyTurnstile(token) {
+    try {
+        const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                secret: TURNSTILE_SECRET_KEY,
+                response: token
+            })
+        });
+        const data = await resp.json();
+        return data.success === true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// ============================================================================
+// Session Token 生成与验证
+// 格式：base64(payload) + "." + hex(HMAC-SHA256(MASTER_SECRET, base64(payload)))
+// payload: { exp: 过期时间戳（秒） }
+// ============================================================================
+async function generateSessionToken(masterSecret) {
+    const now = Math.floor(Date.now() / 1000);
+    const payload = JSON.stringify({ exp: now + SESSION_TTL });
+    const payloadB64 = btoa(payload);
+    const signature = await hmacSha256(masterSecret, payloadB64);
+    return payloadB64 + '.' + signature;
+}
+
+async function verifySessionToken(token, env) {
+    const masterSecret = env.MASTER_SECRET;
+    if (!masterSecret) {
+        return { ok: false, error: 'MASTER_SECRET not set' };
+    }
+
+    const parts = token.split('.');
+    if (parts.length !== 2) {
+        return { ok: false, error: 'Invalid session token format' };
+    }
+    const [payloadB64, signature] = parts;
+
+    const expectedSignature = await hmacSha256(masterSecret, payloadB64);
+    if (!constantTimeEqual(signature, expectedSignature)) {
+        return { ok: false, error: 'Invalid session token signature' };
+    }
+
+    try {
+        const payload = JSON.parse(atob(payloadB64));
+        const now = Math.floor(Date.now() / 1000);
+        if (payload.exp < now) {
+            return { ok: false, error: 'Session token expired' };
+        }
+    } catch (e) {
+        return { ok: false, error: 'Invalid session token payload' };
+    }
+
+    return { ok: true };
+}
+
+// ============================================================================
+// /challenge：生成 TOTP challenge
+// ============================================================================
 async function handleChallenge(env) {
     const masterSecret = env.MASTER_SECRET;
     if (!masterSecret) {
@@ -140,6 +285,9 @@ async function handleChallenge(env) {
     });
 }
 
+// ============================================================================
+// /verify：验证 TOTP（兼容旧接口）
+// ============================================================================
 async function handleVerify(request, env) {
     const masterSecret = env.MASTER_SECRET;
     if (!masterSecret) {
@@ -178,6 +326,9 @@ async function handleVerify(request, env) {
     });
 }
 
+// ============================================================================
+// TOTP 验证
+// ============================================================================
 async function verifyTOTP(nonce, signature, totp, env) {
     const masterSecret = env.MASTER_SECRET;
     const period = parseInt(env.TOTP_PERIOD || DEFAULT_TOTP_PERIOD);
@@ -207,6 +358,28 @@ async function verifyTOTP(nonce, signature, totp, env) {
     return { ok: true };
 }
 
+// ============================================================================
+// IP 频率限制
+// ============================================================================
+function checkRateLimit(ip) {
+    const now = Date.now();
+    for (const [key, entry] of ipRequests) {
+        if (now - entry.startTime > RATE_LIMIT_WINDOW) {
+            ipRequests.delete(key);
+        }
+    }
+    const entry = ipRequests.get(ip);
+    if (!entry) {
+        ipRequests.set(ip, { startTime: now, count: 1 });
+        return true;
+    }
+    entry.count++;
+    return entry.count <= RATE_LIMIT_MAX;
+}
+
+// ============================================================================
+// HMAC-SHA256 / TOTP 计算
+// ============================================================================
 async function hmacSha256(secret, message) {
     const enc = new TextEncoder();
     const keyData = enc.encode(secret);
@@ -232,6 +405,9 @@ async function computeTOTP(secret, counter, digits = 6) {
     return otp.toString().padStart(digits, '0');
 }
 
+// ============================================================================
+// 工具函数
+// ============================================================================
 function constantTimeEqual(a, b) {
     if (a.length !== b.length) return false;
     let result = 0;
@@ -257,7 +433,7 @@ function corsHeaders() {
     return {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Request-Token'
+        'Access-Control-Allow-Headers': 'Content-Type, X-Request-Token, X-Session-Token'
     };
 }
 
