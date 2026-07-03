@@ -116,13 +116,13 @@ class TurnstileVerifier extends React.Component {
     }
 
     render () {
+        const title = this.props.title || '人机验证';
+        const description = this.props.description || '请完成下方验证以使用AI功能<br />验证有效期为30分钟';
+
         return (
             <div style={containerStyle}>
-                <div style={titleStyle}>人机验证</div>
-                <div style={descStyle}>
-                    请完成下方验证以使用AI功能<br />
-                    验证有效期为30分钟
-                </div>
+                <div style={titleStyle}>{title}</div>
+                <div style={descStyle} dangerouslySetInnerHTML={{__html: description}} />
                 {this.state.loading && <div style={descStyle}>正在加载验证组件...</div>}
                 <div ref={this.containerRef} style={{minHeight: '65px'}} />
                 {this.state.verifying && <div style={verifyingStyle}>正在验证...</div>}
@@ -133,7 +133,9 @@ class TurnstileVerifier extends React.Component {
 }
 
 TurnstileVerifier.propTypes = {
-    onSuccess: PropTypes.func.isRequired
+    onSuccess: PropTypes.func.isRequired,
+    title: PropTypes.string,
+    description: PropTypes.string
 };
 
 export default TurnstileVerifier;
