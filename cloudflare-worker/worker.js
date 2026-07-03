@@ -1,23 +1,11 @@
 // ============================================================================
 // Cloudflare Worker：AI 请求安全代理（单 Worker 集成版）
 // ----------------------------------------------------------------------------
-// 将 AI 请求转发和 TOTP 验证合并到同一个 Worker 中，避免跨 Worker DNS 问题。
-//
-// 路由：
-//   GET  /           -> 健康检查，返回 "hello world"
-//   GET  /challenge  -> 生成随机 nonce 和 HMAC 签名
-//   POST /verify     -> 验证 nonce + signature + totp
-//   POST /chat       -> 转发到 https://api.iamhc.cn/v1/chat/completions
-//   POST /images     -> 转发到 https://api.iamhc.cn/v1/images/generations
-//   OPTIONS *        -> 处理跨域预检
-//
-// 环境变量 / Secret：
-//   API_KEY              -> 真正的 API 密钥（必填）
-//   REQUEST_TOKEN        -> 请求校验令牌（需与前端一致）
-//   MASTER_SECRET        -> TOTP 签名主密钥（必填）
-//   TURNSTILE_SECRET_KEY -> Cloudflare Turnstile 密钥（必填）
-//   ALLOWED_ORIGIN       -> 允许的前端来源（可选）
-//   TOTP_PERIOD          -> TOTP 时间周期，单位秒（默认 10）
+// 所有路由在最前面统一做域名白名单校验：
+//   未配置 ALLOWED_ORIGIN 时放行（方便初次部署调试）；
+//   配置后，只有白名单内域名的请求才能通过，其余一律 403。
+//   支持多个域名，用逗号分隔，例如：
+//     https://remixwarp.pages.dev,https://example.com
 // ============================================================================
 
 const UPSTREAM = {
@@ -33,13 +21,25 @@ const NONCE_TTL_MS = 30000;
 
 export default {
     async fetch(request, env) {
+        // --- 全局域名白名单：所有请求（含 /challenge）都要过这一关 -------------
+        if (env.ALLOWED_ORIGIN) {
+            const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
+            // 允许配置多个域名，逗号分隔
+            const allowed = env.ALLOWED_ORIGIN.split(',').map(s => s.trim()).filter(Boolean);
+            const ok = allowed.some(base => origin.startsWith(base));
+            if (!ok) {
+                // 非白名单域名：直接返回 403，不暴露任何接口
+                return new Response('Forbidden', { status: 403 });
+            }
+        }
+
         const url = new URL(request.url);
 
         if (request.method === 'OPTIONS') {
             return handleCORS();
         }
 
-        if (request.method === 'GET' && url.pathname === '/') {
+        if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
             return new Response('hello world\n', {
                 headers: { 'Content-Type': 'text/plain; charset=utf-8' }
             });
@@ -70,13 +70,6 @@ export default {
             return jsonError(403, 'Forbidden: invalid token');
         }
 
-        if (env.ALLOWED_ORIGIN) {
-            const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
-            if (!origin.startsWith(env.ALLOWED_ORIGIN)) {
-                return jsonError(403, 'Forbidden: origin not allowed');
-            }
-        }
-
         let body;
         try {
             body = await request.json();
@@ -84,22 +77,13 @@ export default {
             return jsonError(400, 'Bad Request: invalid body');
         }
 
-        const { nonce, signature, totp, turnstileToken, ...upstreamBody } = body;
+        const { nonce, signature, totp, ...upstreamBody } = body;
         if (!nonce || !signature || !totp) {
             return jsonError(403, 'Forbidden: missing TOTP parameters');
         }
 
-        if (!turnstileToken) {
-            return jsonError(403, 'Forbidden: missing Turnstile token');
-        }
-
         if (isNonceUsed(nonce)) {
             return jsonError(403, 'Forbidden: nonce already used');
-        }
-
-        const turnstileResult = await verifyTurnstile(turnstileToken, env);
-        if (!turnstileResult) {
-            return jsonError(403, 'Forbidden: Turnstile verification failed');
         }
 
         const verifyResult = await verifyTOTP(nonce, signature, totp, env);
@@ -192,31 +176,6 @@ async function handleVerify(request, env) {
             ...corsHeaders()
         }
     });
-}
-
-async function verifyTurnstile(token, env) {
-    const secretKey = env.TURNSTILE_SECRET_KEY;
-    if (!secretKey) {
-        console.warn('Turnstile verification skipped: TURNSTILE_SECRET_KEY not set');
-        return true;
-    }
-
-    try {
-        const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                secret: secretKey,
-                response: token
-            })
-        });
-
-        const data = await resp.json();
-        return data.success === true;
-    } catch (e) {
-        console.error('Turnstile verification error:', e);
-        return false;
-    }
 }
 
 async function verifyTOTP(nonce, signature, totp, env) {
