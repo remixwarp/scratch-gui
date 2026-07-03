@@ -10,7 +10,6 @@ import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import Input from '../forms/input.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import TurnstileVerifier from '../ai/turnstile-verifier.jsx';
-import {WORKER_URL} from '../../lib/constants/api-keys.js';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -33,9 +32,7 @@ class CollaborationModal extends Component {
             showJoinRequest: false,
             activeCaptcha: null,
             captchaVerified: false,
-            captchaError: null,
-            apiAccessible: true,
-            apiChecking: false
+            captchaError: null
         };
 
         this.autoJoinAttempted = new Set();
@@ -71,7 +68,6 @@ class CollaborationModal extends Component {
         this.handleCancelClick = this.handleCancelClick.bind(this);
         this.togglePublicPrivacy = this.togglePublicPrivacy.bind(this);
         this.togglePrivatePrivacy = this.togglePrivatePrivacy.bind(this);
-        this.checkApiAccessibility = this.checkApiAccessibility.bind(this);
     }
 
     componentDidMount () {
@@ -105,10 +101,6 @@ class CollaborationModal extends Component {
                 console.warn('Could not set up collaboration service event listeners:', error);
             }
         }
-
-        // 实时检测 API 验证站是否可访问
-        this.checkApiAccessibility();
-        this._apiCheckInterval = setInterval(this.checkApiAccessibility, 30000);
     }
 
     componentDidUpdate (prevProps, prevState) {
@@ -202,24 +194,6 @@ class CollaborationModal extends Component {
         if (this._autoJoinTimer) {
             clearTimeout(this._autoJoinTimer);
             this._autoJoinTimer = null;
-        }
-        if (this._apiCheckInterval) {
-            clearInterval(this._apiCheckInterval);
-            this._apiCheckInterval = null;
-        }
-    }
-
-    async checkApiAccessibility () {
-        this.setState({apiChecking: true});
-        try {
-            const resp = await fetch(`${WORKER_URL}/`, {
-                method: 'GET',
-                mode: 'cors',
-                cache: 'no-store'
-            });
-            this.setState({apiAccessible: resp.ok, apiChecking: false});
-        } catch (e) {
-            this.setState({apiAccessible: false, apiChecking: false});
         }
     }
 
@@ -644,30 +618,6 @@ class CollaborationModal extends Component {
                     </div>
                 </div>
 
-                {!this.state.apiAccessible && (
-                    <div className={styles.alphaBanner} style={{
-                        background: 'rgba(220, 38, 38, 0.1)',
-                        borderColor: 'rgba(220, 38, 38, 0.3)'
-                    }}>
-                        <div className={styles.bannerIcon} style={{color: '#dc2626'}}>
-                            <AlertTriangle size={20} />
-                        </div>
-                        <div className={styles.bannerContent}>
-                            <strong>验证服务不可用：</strong>
-                            {' '}
-                            请确保设备能够访问{' '}
-                            <a
-                                href={WORKER_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                {WORKER_URL.replace('https://', '')}
-                            </a>
-                            {' '}才能使用团队协作功能
-                        </div>
-                    </div>
-                )}
-
                 <div className={styles.header}>
                     <CollaborationIcon
                         className={styles.headerIcon}
@@ -784,47 +734,7 @@ class CollaborationModal extends Component {
         return (
             <div className={styles.captchaOverlay}>
                 <div className={styles.captchaContainer}>
-                    {this.state.apiAccessible ? (
-                        <TurnstileVerifier onSuccess={this.handleCaptchaSuccess} />
-                    ) : (
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            padding: '60px 20px'
-                        }}>
-                            <div style={{
-                                fontSize: '20px',
-                                fontWeight: 'bold',
-                                marginBottom: '12px',
-                                color: '#dc2626'
-                            }}>
-                                无法连接验证服务
-                            </div>
-                            <div style={{
-                                fontSize: '14px',
-                                color: '#666',
-                                marginBottom: '24px',
-                                textAlign: 'center'
-                            }}>
-                                请确保设备能够访问{' '}
-                                <a
-                                    href={WORKER_URL}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    {WORKER_URL.replace('https://', '')}
-                                </a>
-                                {' '}才能使用团队协作功能
-                            </div>
-                            <Button
-                                className={styles.secondaryButton}
-                                onClick={this.closeCaptchaModal}
-                            >
-                                关闭
-                            </Button>
-                        </div>
-                    )}
+                    <TurnstileVerifier onSuccess={this.handleCaptchaSuccess} />
                     <div style={{marginTop: '12px', textAlign: 'center'}}>
                         <Button
                             className={styles.secondaryButton}
