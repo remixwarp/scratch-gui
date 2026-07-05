@@ -108,6 +108,8 @@ const addons = [
     'block-pins',
     'tw-comment-markdown-editor',
     'background'
+    'novatheai'
+    'santa'
 ];
 
 const newAddons = [
@@ -124,7 +126,7 @@ const newAddons = [
     '02agent',
     'my-blocks-plus',
     'hide-menubar'
-    'qcode'
+    'santa'
 ];
 
 // eslint-disable-next-line import/no-commonjs
