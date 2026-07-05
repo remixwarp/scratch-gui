@@ -187,6 +187,20 @@ class Blocks extends React.Component {
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.onWorkspaceMetricsChange = debounce(this.onWorkspaceMetricsChange, 100);
         this.toolboxUpdateQueue = [];
+
+        this._gravityEggTriggered = false;
+        this._gravityEggActive = false;
+        this._gravityEggAnimating = false;
+        this._gravityEggFallenBlocks = new Set();
+        this._gravityEggAnimationFrames = [];
+        this._gravityEggScrollTimeout = null;
+        this.initGravityEasterEgg = this.initGravityEasterEgg.bind(this);
+        this._handleGravityEggSearch = this._handleGravityEggSearch.bind(this);
+        this._checkGravityEggTrigger = this._checkGravityEggTrigger.bind(this);
+        this._startGravityEgg = this._startGravityEgg.bind(this);
+        this._triggerVisibleBlocksGravity = this._triggerVisibleBlocksGravity.bind(this);
+        this._handleGravityEggScroll = this._handleGravityEggScroll.bind(this);
+        this._cleanupGravityEgg = this._cleanupGravityEgg.bind(this);
     }
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
@@ -441,6 +455,10 @@ class Blocks extends React.Component {
         setTimeout(() => {
             if (!this.unmounted) this.attachPaletteHoverListeners();
         }, 0);
+
+        setTimeout(() => {
+            if (!this.unmounted) this.initGravityEasterEgg();
+        }, 500);
     }
     shouldComponentUpdate (nextProps, nextState) {
         return (
@@ -580,6 +598,8 @@ class Blocks extends React.Component {
         const collaborationService = CollaborationService.getInstance();
         collaborationService.detachFromWorkspace();
 
+        this._cleanupGravityEgg();
+
         AddonHooks.blocklyWorkspace = null;
     }
 
@@ -629,6 +649,180 @@ class Blocks extends React.Component {
         } catch (e) {
             // ignore
         }
+    }
+
+    initGravityEasterEgg () {
+        if (!this.blocks || !this.workspace) return;
+
+        const searchInput = this.blocks.querySelector(
+            '.blocklySearchInput, input.blocklySearchInput, [class*="search"][class*="input"]'
+        );
+        if (!searchInput) {
+            setTimeout(() => this.initGravityEasterEgg(), 1000);
+            return;
+        }
+
+        searchInput.addEventListener('input', this._handleGravityEggSearch);
+        this._gravityEggSearchInput = searchInput;
+    }
+
+    _handleGravityEggSearch (e) {
+        if (this._gravityEggTriggered) return;
+        const value = e.target && e.target.value ? e.target.value : '';
+        this._checkGravityEggTrigger(value);
+    }
+
+    _checkGravityEggTrigger (input) {
+        const target = 'remixwarpisthebestscratchmodinthewholeworldforever';
+        const normalized = input.toLowerCase().replace(/[^a-z]/g, '');
+        if (normalized === target) {
+            this._startGravityEgg();
+        }
+    }
+
+    _startGravityEgg () {
+        if (this._gravityEggTriggered) return;
+        this._gravityEggTriggered = true;
+        this._gravityEggActive = true;
+
+        const flyout = this.workspace.getFlyout();
+        if (flyout && flyout.scrollbar_ && flyout.scrollbar_.scrollVertical_) {
+            flyout.scrollbar_.scrollVertical_.addEventListener(
+                'scroll',
+                this._handleGravityEggScroll
+            );
+        }
+
+        this._triggerVisibleBlocksGravity();
+    }
+
+    _triggerVisibleBlocksGravity () {
+        if (!this._gravityEggActive || !this.workspace) return;
+
+        const flyout = this.workspace.getFlyout();
+        if (!flyout) return;
+
+        const flyoutWorkspace = flyout.getWorkspace();
+        if (!flyoutWorkspace) return;
+
+        const flyoutSvg = this.blocks.querySelector('.blocklyFlyout');
+        if (!flyoutSvg) return;
+
+        const backpackHeader = document.querySelector(
+            '.backpack-header, [class*="backpack"][class*="header"]'
+        );
+        if (backpackHeader) {
+            backpackHeader.click();
+        }
+
+        const blockSvgElements = flyoutSvg.querySelectorAll('.blocklyDraggable');
+        let delay = 0;
+        blockSvgElements.forEach(blockEl => {
+            const blockId = blockEl.getAttribute('data-id') ||
+                blockEl.id ||
+                Math.random().toString(36);
+            if (this._gravityEggFallenBlocks.has(blockId)) return;
+
+            const rect = blockEl.getBoundingClientRect();
+            const flyoutRect = flyoutSvg.getBoundingClientRect();
+            const isVisible = rect.top < flyoutRect.bottom &&
+                rect.bottom > flyoutRect.top;
+            if (!isVisible) return;
+
+            this._gravityEggFallenBlocks.add(blockId);
+            setTimeout(() => {
+                this._animateBlockFall(blockEl, flyoutSvg);
+            }, delay);
+            delay += 30;
+        });
+    }
+
+    _animateBlockFall (blockEl, container) {
+        if (!blockEl || !container) return;
+
+        const rect = blockEl.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        const startY = rect.top - containerRect.top;
+        const startX = rect.left - containerRect.left;
+
+        let currentY = startY;
+        let currentX = startX;
+        let velocityY = 0;
+        let velocityX = (Math.random() - 0.5) * 2;
+        let rotation = 0;
+        const rotationSpeed = (Math.random() - 0.5) * 4;
+        const gravity = 0.5;
+        const friction = 0.99;
+
+        const targetY = containerRect.height + 200;
+
+        blockEl.style.transformOrigin = 'center center';
+
+        const animate = () => {
+            if (!this._gravityEggActive) return;
+
+            velocityY += gravity;
+            velocityX *= friction;
+            currentY += velocityY;
+            currentX += velocityX;
+            rotation += rotationSpeed;
+
+            if (currentY >= targetY) {
+                blockEl.style.opacity = '0';
+                blockEl.style.display = 'none';
+                return;
+            }
+
+            const translateY = currentY - startY;
+            const translateX = currentX - startX;
+
+            blockEl.style.transform =
+                `translate(${translateX}px, ${translateY}px) rotate(${rotation}deg)`;
+
+            this._gravityEggAnimationFrames.push(requestAnimationFrame(animate));
+        };
+
+        this._gravityEggAnimationFrames.push(requestAnimationFrame(animate));
+    }
+
+    _handleGravityEggScroll () {
+        if (!this._gravityEggActive) return;
+        if (this._gravityEggScrollTimeout) {
+            clearTimeout(this._gravityEggScrollTimeout);
+        }
+        this._gravityEggScrollTimeout = setTimeout(() => {
+            this._triggerVisibleBlocksGravity();
+        }, 150);
+    }
+
+    _cleanupGravityEgg () {
+        this._gravityEggActive = false;
+        this._gravityEggTriggered = false;
+
+        if (this._gravityEggSearchInput) {
+            this._gravityEggSearchInput.removeEventListener(
+                'input',
+                this._handleGravityEggSearch
+            );
+            this._gravityEggSearchInput = null;
+        }
+
+        if (this._gravityEggScrollTimeout) {
+            clearTimeout(this._gravityEggScrollTimeout);
+            this._gravityEggScrollTimeout = null;
+        }
+
+        this._gravityEggAnimationFrames.forEach(id => {
+            try {
+                cancelAnimationFrame(id);
+            } catch (e) {
+                // Ignore cleanup errors
+            }
+        });
+        this._gravityEggAnimationFrames = [];
+
+        this._gravityEggFallenBlocks.clear();
     }
 
     handlePaletteHoverEnter () {
