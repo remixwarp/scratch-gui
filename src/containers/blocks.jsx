@@ -205,6 +205,7 @@ class Blocks extends React.Component {
         this._setupBlockTouchListeners = this._setupBlockTouchListeners.bind(this);
         this._addBlockTouchListener = this._addBlockTouchListener.bind(this);
         this._handleBlockTouch = this._handleBlockTouch.bind(this);
+        this._setupFlyoutObserver = this._setupFlyoutObserver.bind(this);
     }
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
@@ -778,45 +779,119 @@ class Blocks extends React.Component {
         }
 
         this._showGravityEngineLabel();
+        this._setupFlyoutObserver();
         this._triggerVisibleBlocksGravity();
+    }
+
+    _setupFlyoutObserver () {
+        const flyoutSvg = this.blocks.querySelector('.blocklyFlyout');
+        if (!flyoutSvg) return;
+
+        const svgGroup = flyoutSvg.querySelector('.blocklyWorkspace');
+        if (!svgGroup) return;
+
+        this._gravityEggFlyoutObserver = new MutationObserver(() => {
+            const hasGravityItem = svgGroup.querySelector('.gravity-engine-item');
+            if (!hasGravityItem) {
+                this._showGravityEngineLabel();
+            }
+        });
+
+        this._gravityEggFlyoutObserver.observe(svgGroup, {
+            childList: true,
+            subtree: true
+        });
     }
 
     _showGravityEngineLabel () {
         if (!this.blocks) return;
 
+        const flyout = this.workspace.getFlyout();
+        if (!flyout) return;
+
+        const flyoutWorkspace = flyout.getWorkspace();
+        if (!flyoutWorkspace) return;
+
         const flyoutSvg = this.blocks.querySelector('.blocklyFlyout');
         if (!flyoutSvg) return;
 
-        const parent = flyoutSvg.parentElement;
-        if (!parent) return;
+        const svgGroup = flyoutSvg.querySelector('.blocklyWorkspace');
+        if (!svgGroup) return;
 
-        const label = document.createElement('div');
-        label.className = 'gravity-engine-label';
-        label.textContent = '重力引擎';
-        label.style.cssText = [
-            'position: absolute',
-            'top: 10px',
-            'left: 50%',
-            'transform: translateX(-50%)',
-            'padding: 8px 20px',
-            'background: linear-gradient(135deg, #ff6b6b, #feca57)',
-            'color: white',
-            'font-weight: bold',
-            'font-size: 16px',
-            'border-radius: 20px',
-            'z-index: 1000',
-            'box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4)',
-            'pointer-events: none',
-            'opacity: 0',
-            'transition: opacity 0.3s ease'
-        ].join(';');
+        const gravityLabel = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'g'
+        );
+        gravityLabel.setAttribute('class', 'gravity-engine-item');
+        gravityLabel.setAttribute('transform', 'translate(20, 10)');
 
-        parent.style.position = 'relative';
-        parent.appendChild(label);
-        this._gravityEngineLabel = label;
+        const rect = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'rect'
+        );
+        rect.setAttribute('x', '0');
+        rect.setAttribute('y', '0');
+        rect.setAttribute('width', '240');
+        rect.setAttribute('height', '40');
+        rect.setAttribute('rx', '20');
+        rect.setAttribute('fill', 'url(#gravityGradient)');
 
-        requestAnimationFrame(() => {
-            label.style.opacity = '1';
+        const defs = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'defs'
+        );
+        const gradient = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'linearGradient'
+        );
+        gradient.setAttribute('id', 'gravityGradient');
+        gradient.setAttribute('x1', '0%');
+        gradient.setAttribute('y1', '0%');
+        gradient.setAttribute('x2', '100%');
+        gradient.setAttribute('y2', '100%');
+        const stop1 = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'stop'
+        );
+        stop1.setAttribute('offset', '0%');
+        stop1.setAttribute('stop-color', '#ff6b6b');
+        const stop2 = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'stop'
+        );
+        stop2.setAttribute('offset', '100%');
+        stop2.setAttribute('stop-color', '#feca57');
+        gradient.appendChild(stop1);
+        gradient.appendChild(stop2);
+        defs.appendChild(gradient);
+
+        const text = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'text'
+        );
+        text.setAttribute('x', '120');
+        text.setAttribute('y', '26');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', 'white');
+        text.setAttribute('font-size', '16');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('font-family', 'sans-serif');
+        text.textContent = '重力引擎';
+
+        flyoutSvg.insertBefore(defs, flyoutSvg.firstChild);
+        gravityLabel.appendChild(rect);
+        gravityLabel.appendChild(text);
+        svgGroup.insertBefore(gravityLabel, svgGroup.firstChild);
+
+        this._gravityEngineLabel = gravityLabel;
+
+        const blocks = flyoutWorkspace.getTopBlocks(false);
+        blocks.forEach(block => {
+            const blockSvg = block.getSvgRoot();
+            if (blockSvg) {
+                const currentTransform = blockSvg.getAttribute('transform') || '';
+                blockSvg.setAttribute('transform', `${currentTransform} translate(0, 50)`);
+            }
         });
     }
 
@@ -961,6 +1036,11 @@ class Blocks extends React.Component {
         if (this._gravityEggBlockObserver) {
             this._gravityEggBlockObserver.disconnect();
             this._gravityEggBlockObserver = null;
+        }
+
+        if (this._gravityEggFlyoutObserver) {
+            this._gravityEggFlyoutObserver.disconnect();
+            this._gravityEggFlyoutObserver = null;
         }
     }
 
