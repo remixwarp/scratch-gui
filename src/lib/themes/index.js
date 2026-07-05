@@ -1,8 +1,10 @@
 import defaultsDeep from 'lodash.defaultsdeep';
 
 import * as guiLight from './gui/light';
+import * as guiGenesisLight from './gui/genesislight';
 import * as guiModenwhite from './gui/modern_white';
 import * as guiDark from './gui/dark';
+import * as guiGenesisDark from './gui/genesisdark';
 import * as guiDeepDark  from './gui/deep_dark';
 import * as guiMidnight from './gui/midnight';
 
@@ -36,14 +38,18 @@ const MENUBAR_ALIGN = {
 const MENUBAR_ALIGN_DEFAULT = 'left';
 
 const GUI_LIGHT = 'light';
+const GUI_GENESIS_LIGHT = 'genesis light';
 const GUI_MODENWHITE = 'modernwhite';
 const GUI_DARK = 'dark';
+const GUI_GENESIS_DARK = 'genesis dark';
 const GUI_DEEPDARK = 'deepdark';
 const GUI_MIDNIGHT = 'midnight';
 const GUI_MAP = {
     [GUI_LIGHT]: guiLight,
+    [GUI_GENESIS_LIGHT]: guiGenesisLight,
     [GUI_MODENWHITE]: guiModenwhite,
     [GUI_DARK]: guiDark,
+    [GUI_GENESIS_DARK]: guiGenesisDark,
     [GUI_DEEPDARK]: guiDeepDark,
     [GUI_MIDNIGHT]: guiMidnight
 };
@@ -191,8 +197,10 @@ export {
     ACCENT_DEFAULT,
 
     GUI_LIGHT,
+    GUI_GENESIS_LIGHT,
     GUI_MODENWHITE,
     GUI_DARK,
+    GUI_GENESIS_DARK,
     GUI_DEEPDARK,
     GUI_MIDNIGHT,
     GUI_MAP,

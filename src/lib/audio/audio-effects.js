@@ -3,6 +3,14 @@ import RobotEffect from './effects/robot-effect.js';
 import VolumeEffect from './effects/volume-effect.js';
 import FadeEffect from './effects/fade-effect.js';
 import MuteEffect from './effects/mute-effect.js';
+import LowPassEffect from './effects/lowpass-effect.js';
+import HighPassEffect from './effects/highpass-effect.js';
+import ReverbEffect from './effects/reverb-effect.js';
+import ReverbV2Effect from './effects/reverbv2-effect.js';
+import BitCrushEffect from './effects/bit-crush-effect.js';
+import MegaphoneEffect from './effects/megaphone-effect.js';
+import TrembleEffect from './effects/tremble-effect.js';
+import DistortionEffect from './effects/distortion-effect.js';
 
 const effectTypes = {
     ROBOT: 'robot',
@@ -14,7 +22,16 @@ const effectTypes = {
     ECHO: 'echo',
     FADEIN: 'fade in',
     FADEOUT: 'fade out',
-    MUTE: 'mute'
+    MUTE: 'mute',
+    LOWPASS: 'low pass',
+    HIGHPASS: 'high pass',
+    REVERB: 'reverb',
+    REVERBV2: 'reverbv2',
+    LOWPITCH: 'lower pitch',
+    HIGHPITCH: 'higher pitch',
+    MEGAPHONE: 'megaphone',
+    TREMBLE: 'tremble',
+    DISTORTION: 'distortion',
 };
 
 class AudioEffects {
@@ -126,6 +143,14 @@ class AudioEffects {
             ({input, output} = new RobotEffect(this.audioContext,
                 this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds));
             break;
+        case effectTypes.LOWPASS:
+            ({input, output} = new LowPassEffect(this.audioContext,
+                this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds));
+            break;
+        case effectTypes.HIGHPASS:
+            ({input, output} = new HighPassEffect(this.audioContext,
+                this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds));
+           break;
         case effectTypes.FADEIN:
             ({input, output} = new FadeEffect(this.audioContext, true,
                 this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds));
@@ -136,6 +161,33 @@ class AudioEffects {
             break;
         case effectTypes.MUTE:
             ({input, output} = new MuteEffect(this.audioContext,
+                this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds));
+            break;
+        case effectTypes.REVERB:
+            ({input, output} = new ReverbEffect(this.audioContext,
+                this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds));
+            break;
+        case effectTypes.REVERBV2:
+            ({input, output} = new Reverbv2Effect(this.audioContext,
+                this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds));
+        case effectTypes.LOWPITCH:
+            this.source.detune.setValueAtTime(-50, this.adjustedTrimStartSeconds);
+                this.source.detune.setValueAtTime(0, this.adjustedTrimEndSeconds);
+            break;
+        case effectTypes.HIGHPITCH:
+            this.source.detune.setValueAtTime(50, this.adjustedTrimStartSeconds);
+                this.source.detune.setValueAtTime(0, this.adjustedTrimEndSeconds);
+            break;
+        case effectTypes.MEGAPHONE:
+            ({input, output} = new MegaphoneEffect(this.audioContext,
+                this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds));
+            break;
+        case effectTypes.TREMBLE:
+            ({input, output} = new TrembleEffect(this.audioContext,
+                this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds));
+            break;
+        case effectTypes.DISTORTION:
+            ({input, output} = new DistortionEffect(this.audioContext,
                 this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds));
             break;
         }

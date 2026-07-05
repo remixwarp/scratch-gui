@@ -9,7 +9,7 @@ import Button from '../button/button.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import Input from '../forms/input.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
-import CaptchaModal from '../captcha-modal/captcha-modal.jsx';
+import TurnstileVerifier from '../ai/turnstile-verifier.jsx';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -732,11 +732,25 @@ class CollaborationModal extends Component {
         if (!this.state.activeCaptcha) return null;
 
         return (
-            <CaptchaModal
-                visible={Boolean(this.state.activeCaptcha)}
-                onVerify={this.handleCaptchaSuccess}
-                onCancel={this.closeCaptchaModal}
-            />
+            <div className={styles.captchaOverlay}>
+                <div className={styles.captchaContainer}>
+                    <TurnstileVerifier
+                        title="人机验证"
+                        description={
+                            <>请完成下方验证以使用团队协作功能<br />验证有效期为30分钟</>
+                        }
+                        onSuccess={this.handleCaptchaSuccess}
+                    />
+                    <div style={{marginTop: '12px', textAlign: 'center'}}>
+                        <Button
+                            className={styles.secondaryButton}
+                            onClick={this.closeCaptchaModal}
+                        >
+                            取消
+                        </Button>
+                    </div>
+                </div>
+            </div>
         );
     }
 

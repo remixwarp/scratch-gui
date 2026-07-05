@@ -3,9 +3,11 @@ import * as accentBlue from './accent/blue';
 import * as accentLightBlue from './accent/light-blue';
 import * as accentRed from './accent/red';
 import * as accentOrange from './accent/orange';
+import * as accentOrangeV2 from './accent/orange(v2)';
 import * as accentYellow from './accent/yellow';
-import * as accentLime from './accent/lime';
 import * as accentGreen from './accent/green';
+import * as accentGreenV2 from './accent/green(v2)';
+import * as accentDarkGreen from './accent/dark-green';
 import * as accentRainbow from './accent/rainbow';
 import * as accentGreenTea from './accent/green-tea';
 import * as accentPaleBlue from './accent/pale-blue';
@@ -14,6 +16,7 @@ import * as accentTrans from './accent/trans';
 import * as accentGay from './accent/gay';
 import * as accentRotur from './accent/rotur';
 import * as accentPink from './accent/pink';
+import * as accentPinkV2 from './accent/pink(v2)';
 import * as accentSunset from './accent/sunset';
 import * as accentOcean from './accent/ocean';
 import * as accentAurora from './accent/aurora';
@@ -49,6 +52,12 @@ const ACCENTS = [
         id: 'tw.accent.orange'
     },
     {
+        name: 'Orange (V2)',
+        accent: accentOrange,
+        description: 'Orange accent color',
+        id: 'tw.accent.orange'
+    },
+    {
         name: 'Yellow',
         accent: accentYellow,
         description: 'Yellow accent color',
@@ -61,10 +70,16 @@ const ACCENTS = [
         id: 'tw.accent.green'
     },
     {
-        name: 'Lime Green',
-        accent: accentLime,
-        description: 'Lime accent color',
-        id: 'tw.accent.lime'
+        name: 'Green (V2)',
+        accent: accentGreenV2,
+        description: 'Green (V2) accent color',
+        id: 'tw.accent.greenv2'
+    },
+    {
+        name: 'Dark Green',
+        accent: accentDarkGreen,
+        description: 'Dark Green accent color',
+        id: 'tw.accent.darkgreen'
     },
     {
         name: 'Green Tea',
@@ -131,6 +146,12 @@ const ACCENTS = [
         accent: accentPink,
         description: 'Pink accent color',
         id: 'tw.accent.pink'
+    },
+    {
+        name: 'Pink (V2)',
+        accent: accentPinkV2,
+        description: 'Pink (V2) accent color',
+        id: 'tw.accent.pinkv2'
     },
     {
         name: 'Sunset',

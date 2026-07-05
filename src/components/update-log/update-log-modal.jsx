@@ -220,7 +220,9 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors, locale 
                                         background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
                                     }}
                                 >
-                                    {locale === 'zh-cn' ? `版本 ${versionInfo.version}` : `Version ${versionInfo.version}`}
+                                    {versionInfo.isExplicitVersion
+                                        ? (locale === 'zh-cn' ? `版本 ${versionInfo.version}` : `Version ${versionInfo.version}`)
+                                        : (locale === 'zh-cn' ? '非固定版本' : 'Unfixed Version')}
                                 </div>
                                 <div className={styles.updateDate}>
                                     {locale === 'zh-cn' ? `更新日期: ${versionInfo.date}` : `Update Date: ${versionInfo.date}`}
@@ -279,6 +281,7 @@ UpdateLogModal.propTypes = {
     versions: PropTypes.arrayOf(PropTypes.shape({
         version: PropTypes.string.isRequired,
         date: PropTypes.string.isRequired,
+        isExplicitVersion: PropTypes.bool,
         changes: PropTypes.arrayOf(PropTypes.shape({
             type: PropTypes.oneOf(['feature', 'improvement', 'bugfix', 'other']).isRequired,
             text: PropTypes.string.isRequired

@@ -6,6 +6,17 @@
 // Worker 代理地址（已部署）
 const WORKER_URL = 'https://aiapi.rewp.de5.net';
 
+// 密钥 Worker 地址（用于获取 TOTP Challenge）
+const KEY_WORKER_URL = 'https://aiapi2.rewp.de5.net';
+
+// Cloudflare Turnstile 站点密钥（公开密钥，硬编码在前端）
+const TURNSTILE_SITE_KEY = '0x4AAAAAACyeS6Www9AVI--y';
+
+// Session Token 管理（Turnstile 验证通过后由 Worker 签发，有效期30分钟）
+let sessionToken = null;
+function setSessionToken (token) { sessionToken = token; }
+function getSessionToken () { return sessionToken; }
+
 // 浏览器侧携带的请求令牌，Worker 会校验该值；用于挡住非本站请求的简单滥用。
 // 真正的 API 密钥保存在 Worker 的环境变量中，不会出现在前端代码里。
 const REQUEST_TOKEN = 'scratch-ai-proxy-2026';
@@ -36,20 +47,105 @@ function getRequestToken () {
     return REQUEST_TOKEN;
 }
 
+// TOTP：基于时间的一次性密码（浏览器侧计算）
+// 使用 Web Crypto API 进行 HMAC-SHA256 运算
+async function hmacSha256 (secret, message) {
+    const enc = new TextEncoder();
+    const keyData = enc.encode(secret);
+    const msgData = enc.encode(message);
+    const key = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, msgData);
+    return Array.from(new Uint8Array(sig))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+// 生成 TOTP 令牌
+// secret: 密钥（来自 challenge 的 nonce）
+// period: 时间周期，单位秒（默认10秒）
+// digits: 输出位数（默认6位）
+async function generateTOTP (secret, period = 10, digits = 6) {
+    const counter = Math.floor(Date.now() / 1000 / period);
+    const hash = await hmacSha256(secret, String(counter));
+
+    // 动态截断：取最后一个字节的低4位作为偏移量
+    const offset = parseInt(hash.slice(-1), 16);
+    const binary = parseInt(hash.substr(offset * 2, 8), 16) & 0x7fffffff;
+    const otp = binary % Math.pow(10, digits);
+
+    return otp.toString().padStart(digits, '0');
+}
+
+// 从 AI Worker 获取 challenge（nonce + signature）
+async function fetchTOTPChallenge () {
+    const resp = await fetch(`${WORKER_URL}/challenge`, {
+        headers: {
+            'X-Request-Token': REQUEST_TOKEN,
+            'X-Session-Token': getSessionToken() || ''
+        }
+    });
+    if (!resp.ok) {
+        throw new Error(`Failed to fetch TOTP challenge: ${resp.status}`);
+    }
+    return resp.json();
+}
+
+// 用 Turnstile token 换取 Session Token
+async function exchangeTurnstileForSession (turnstileToken) {
+    const resp = await fetch(`${WORKER_URL}/auth`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Request-Token': REQUEST_TOKEN
+        },
+        body: JSON.stringify({ turnstileToken })
+    });
+    if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.error || `验证失败: ${resp.status}`);
+    }
+    const data = await resp.json();
+    if (data.sessionToken) {
+        setSessionToken(data.sessionToken);
+        return data.sessionToken;
+    }
+    throw new Error('未收到 Session Token');
+}
+
 export {
     WORKER_URL,
+    KEY_WORKER_URL,
+    TURNSTILE_SITE_KEY,
     REQUEST_TOKEN,
     API_KEY_CONFIG,
     getApiConfig,
     getApiKey,
-    getRequestToken
+    getRequestToken,
+    generateTOTP,
+    fetchTOTPChallenge,
+    exchangeTurnstileForSession,
+    getSessionToken,
+    setSessionToken
 };
 
 export default {
     WORKER_URL,
+    KEY_WORKER_URL,
+    TURNSTILE_SITE_KEY,
     REQUEST_TOKEN,
     API_KEY_CONFIG,
     getApiConfig,
     getApiKey,
-    getRequestToken
+    getRequestToken,
+    generateTOTP,
+    fetchTOTPChallenge,
+    exchangeTurnstileForSession,
+    getSessionToken,
+    setSessionToken
 };

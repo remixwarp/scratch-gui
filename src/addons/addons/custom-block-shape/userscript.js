@@ -101,7 +101,7 @@ export default async function ({ addon, console }) {
         4 * GRID_UNIT * multiplier +
         ",0 " +
         " h " +
-        4 * GRID_UNIT +
+        4 * GRID_UNIT * multiplier +
         " l " +
         4 * GRID_UNIT * multiplier +
         "," +
@@ -111,7 +111,7 @@ export default async function ({ addon, console }) {
         "," +
         4 * GRID_UNIT * multiplier +
         " h " +
-        -4 * GRID_UNIT +
+        -4 * GRID_UNIT * multiplier +
         " l " +
         -4 * GRID_UNIT * multiplier +
         "," +

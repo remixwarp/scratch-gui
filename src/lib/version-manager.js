@@ -399,6 +399,7 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
         return {
             version: incrementVersion(lastVersion),
             changes: [{ type: 'other', text: '常规更新' }],
+            isExplicitVersion: false,
             rawMessage: commitMessage
         };
     }
@@ -406,6 +407,7 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
     // 匹配 __版本号__ 格式，支持更广泛的版本号格式
     const versionMatch = commitMessage.match(/__([\d.]+(?:-[\w.]+)?(?:\+[\w.]+)?)__/);
     let version = versionMatch ? versionMatch[1] : null;
+    const isExplicitVersion = !!versionMatch;
     
     // 如果没有检测到版本号，自动递增版本号
     if (!version) {
@@ -424,6 +426,7 @@ export const parseCommitMessage = (commitMessage, lastVersion = '1.0.0') => {
     return {
         version,
         changes,
+        isExplicitVersion,
         rawMessage: commitMessage
     };
 };
@@ -631,6 +634,7 @@ export const findMatchingVersion = (lastSeenVersion, commits) => {
             version: version,
             date: formatDateTime(commitDate),
             changes: parsedInfo.changes,
+            isExplicitVersion: parsedInfo.isExplicitVersion,
             commitSha: commit.sha,
             commitUrl: commit.html_url,
             author: commit.commit.author.name,
@@ -803,6 +807,7 @@ export const generateDefaultUpdateInfo = (locale = 'zh-cn') => {
                 { type: 'improvement', text: isChinese ? '性能优化和稳定性改进' : 'Performance optimization and stability improvements' },
                 { type: 'other', text: isChinese ? '常规维护和更新' : 'Routine maintenance and updates' }
             ],
+            isExplicitVersion: false,
             commitSha: null,
             author: 'System'
         }],

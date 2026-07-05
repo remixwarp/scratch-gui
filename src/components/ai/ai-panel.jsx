@@ -6,7 +6,7 @@ import Button from '../button/button.jsx';
 import MarkdownRenderer from '../markdown-renderer/markdown-renderer.jsx';
 import {sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
 import {costumeUpload} from '../../lib/file-uploader.js';
-import {getApiConfig, getRequestToken} from '../../lib/constants/api-keys.js';
+import {getApiConfig, getRequestToken, generateTOTP, fetchTOTPChallenge, getSessionToken} from '../../lib/constants/api-keys.js';
 
 const API_CONFIG = getApiConfig('siliconflow');
 const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/chat/completions';
@@ -19,8 +19,21 @@ const IMAGE_MODEL = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.model : 'Kwai-Kolors/Kol
 // 构造发往 Worker 代理的请求头：不再携带 Authorization，密钥由 Worker 端注入。
 const buildProxyHeaders = () => ({
     'Content-Type': 'application/json',
-    'X-Request-Token': getRequestToken()
+    'X-Request-Token': getRequestToken(),
+    'X-Session-Token': getSessionToken() || ''
 });
+
+// 获取 TOTP Challenge 并注入到请求体中
+async function buildTOTPBody (baseBody) {
+    const challenge = await fetchTOTPChallenge();
+    const totp = await generateTOTP(challenge.nonce, challenge.period);
+    return {
+        ...baseBody,
+        nonce: challenge.nonce,
+        signature: challenge.signature,
+        totp
+    };
+}
 
 class AIPanel extends React.PureComponent {
     constructor (props) {
@@ -421,17 +434,17 @@ class AIPanel extends React.PureComponent {
             return;
         }
 
-        fetch(API_ENDPOINT, {
+        buildTOTPBody({
+            model: MODEL,
+            messages: [
+                {role: 'system', content: systemPrompt},
+                userMessage
+            ]
+        }).then(body => fetch(API_ENDPOINT, {
             method: 'POST',
             headers: buildProxyHeaders(),
-            body: JSON.stringify({
-                model: MODEL,
-                messages: [
-                    {role: 'system', content: systemPrompt},
-                    userMessage
-                ]
-            })
-        })
+            body: JSON.stringify(body)
+        }))
         .then(response => response.json())
         .then(data => {
             // Try to extract assistant reply from common response shapes
@@ -475,16 +488,17 @@ class AIPanel extends React.PureComponent {
 
 现在开始输出SVG代码：`;
 
+            const totpBody = await buildTOTPBody({
+                model: MODEL,
+                messages: [
+                    {role: 'system', content: '你是一个专业的SVG图形设计师，只输出完整的SVG代码，不要任何其他文字解释。'},
+                    {role: 'user', content: svgPrompt}
+                ]
+            });
             const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
                 headers: buildProxyHeaders(),
-                body: JSON.stringify({
-                    model: MODEL,
-                    messages: [
-                        {role: 'system', content: '你是一个专业的SVG图形设计师，只输出完整的SVG代码，不要任何其他文字解释。'},
-                        {role: 'user', content: svgPrompt}
-                    ]
-                })
+                body: JSON.stringify(totpBody)
             });
 
             const data = await response.json();
@@ -730,16 +744,17 @@ ${JSON.stringify(projectData, null, 2)}
 请用中文回答，格式清晰易读。`;
 
         try {
+            const totpBody = await buildTOTPBody({
+                model: MODEL,
+                messages: [
+                    {role: 'system', content: '你是Scratch项目分析专家，专门分析Scratch项目的结构和功能。'},
+                    {role: 'user', content: analysisPrompt}
+                ]
+            });
             const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
                 headers: buildProxyHeaders(),
-                body: JSON.stringify({
-                    model: MODEL,
-                    messages: [
-                        {role: 'system', content: '你是Scratch项目分析专家，专门分析Scratch项目的结构和功能。'},
-                        {role: 'user', content: analysisPrompt}
-                    ]
-                })
+                body: JSON.stringify(totpBody)
             });
             
             const data = await response.json();
@@ -1335,16 +1350,17 @@ ${JSON.stringify(projectData, null, 2)}
     
     // 调用AI的通用方法
     async callAI (prompt) {
+        const totpBody = await buildTOTPBody({
+            model: MODEL,
+            messages: [
+                {role: 'system', content: '你是Scratch专家，只输出代码，不解释。'},
+                {role: 'user', content: prompt}
+            ]
+        });
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
             headers: buildProxyHeaders(),
-            body: JSON.stringify({
-                model: MODEL,
-                messages: [
-                    {role: 'system', content: '你是Scratch专家，只输出代码，不解释。'},
-                    {role: 'user', content: prompt}
-                ]
-            })
+            body: JSON.stringify(totpBody)
         });
         
         const data = await response.json();
@@ -1942,8 +1958,8 @@ ${JSON.stringify(projectData, null, 2)}
         const isAgent = type === 'agent';
         const placeholder = isAgent ? '告诉AI你想做什么？' : '聊聊你的代码...';
         const warningText = isAgent 
-            ? '内容为AI生成,请注意仔细鉴别<br/>Bata测试版：有极大的概率会导致作品崩溃或生成积木错误。<br/>分布式创作目前还未完善，建议进行直接发送。<br/>如果项目较复杂，等待时间可能较长,请耐心等待。' 
-            : '内容为AI生成,请注意仔细鉴别<br/>此功能仅作为AI辅助编程,不能帮你编写代码。';
+            ? '内容为AI生成,请注意仔细鉴别<br/>Bata测试版：有极大的概率会导致作品崩溃或生成积木错误。<br/>分布式创作目前还未完善，建议进行直接发送。<br/>如果项目较复杂，等待时间可能较长,请耐心等待。<br/>请确保设备能够访问 <a href="https://aiapi.rewp.de5.net" target="_blank" rel="noopener noreferrer">aiapi.rewp.de5.net</a> 才能正常使用AI。<br/>和AI有关的功能必须在 <a href="https://remixwarp.pages.dev" target="_blank" rel="noopener noreferrer">remixwarp.pages.dev</a> 使用。' 
+            : '内容为AI生成,请注意仔细鉴别<br/>此功能仅作为AI辅助编程,不能帮你编写代码。<br/>请确保设备能够访问 <a href="https://aiapi.rewp.de5.net" target="_blank" rel="noopener noreferrer">aiapi.rewp.de5.net</a> 才能正常使用AI。<br/>和AI有关的功能必须在 <a href="https://remixwarp.pages.dev" target="_blank" rel="noopener noreferrer">remixwarp.pages.dev</a> 使用。';
         
         return (
             <div className={styles.container}>
