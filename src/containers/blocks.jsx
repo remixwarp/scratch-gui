@@ -201,6 +201,10 @@ class Blocks extends React.Component {
         this._triggerVisibleBlocksGravity = this._triggerVisibleBlocksGravity.bind(this);
         this._handleGravityEggScroll = this._handleGravityEggScroll.bind(this);
         this._cleanupGravityEgg = this._cleanupGravityEgg.bind(this);
+        this._setupSearchInputListener = this._setupSearchInputListener.bind(this);
+        this._setupBlockTouchListeners = this._setupBlockTouchListeners.bind(this);
+        this._addBlockTouchListener = this._addBlockTouchListener.bind(this);
+        this._handleBlockTouch = this._handleBlockTouch.bind(this);
     }
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
@@ -654,16 +658,96 @@ class Blocks extends React.Component {
     initGravityEasterEgg () {
         if (!this.blocks || !this.workspace) return;
 
+        this._setupSearchInputListener();
+        this._setupBlockTouchListeners();
+    }
+
+    _setupSearchInputListener () {
         const searchInput = this.blocks.querySelector(
-            '.blocklySearchInput, input.blocklySearchInput, [class*="search"][class*="input"]'
+            '.blocklySearchInput, input[type="text"], input[placeholder*="search"], ' +
+            'input[placeholder*="搜索"], [class*="search"], [class*="filter"]'
         );
-        if (!searchInput) {
-            setTimeout(() => this.initGravityEasterEgg(), 1000);
+
+        if (searchInput) {
+            searchInput.addEventListener('input', this._handleGravityEggSearch);
+            this._gravityEggSearchInput = searchInput;
             return;
         }
 
-        searchInput.addEventListener('input', this._handleGravityEggSearch);
-        this._gravityEggSearchInput = searchInput;
+        this._gravityEggObserver = new MutationObserver(mutations => {
+            for (const mutation of mutations) {
+                if (mutation.addedNodes.length > 0) {
+                    const newSearchInput = this.blocks.querySelector(
+                        '.blocklySearchInput, input[type="text"], input[placeholder*="search"], ' +
+                        'input[placeholder*="搜索"], [class*="search"], [class*="filter"]'
+                    );
+                    if (newSearchInput && !this._gravityEggSearchInput) {
+                        newSearchInput.addEventListener('input', this._handleGravityEggSearch);
+                        this._gravityEggSearchInput = newSearchInput;
+                        this._gravityEggObserver.disconnect();
+                        break;
+                    }
+                }
+            }
+        });
+
+        this._gravityEggObserver.observe(this.blocks, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    _setupBlockTouchListeners () {
+        this._gravityEggBlockObserver = new MutationObserver(mutations => {
+            for (const mutation of mutations) {
+                if (mutation.addedNodes.length > 0) {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                            const draggables = node.querySelectorAll('.blocklyDraggable');
+                            draggables.forEach(el => {
+                                this._addBlockTouchListener(el);
+                            });
+                            if (node.classList && node.classList.contains('blocklyDraggable')) {
+                                this._addBlockTouchListener(node);
+                            }
+                        }
+                    });
+                }
+            }
+        });
+
+        const flyout = this.workspace.getFlyout();
+        if (flyout) {
+            const flyoutWorkspace = flyout.getWorkspace();
+            if (flyoutWorkspace) {
+                const svg = flyoutWorkspace.getCanvas();
+                if (svg) {
+                    this._gravityEggBlockObserver.observe(svg, {
+                        childList: true,
+                        subtree: true
+                    });
+
+                    const existingDraggables = svg.querySelectorAll('.blocklyDraggable');
+                    existingDraggables.forEach(el => this._addBlockTouchListener(el));
+                }
+            }
+        }
+    }
+
+    _addBlockTouchListener (el) {
+        if (!el || el._gravityEggListenerAdded) return;
+        el._gravityEggListenerAdded = true;
+        el.addEventListener('touchstart', this._handleBlockTouch, {passive: true});
+        el.addEventListener('mousedown', this._handleBlockTouch);
+    }
+
+    _handleBlockTouch (e) {
+        if (!this._gravityEggActive) return;
+        const blockEl = e.currentTarget;
+        const flyoutSvg = this.blocks.querySelector('.blocklyFlyout');
+        if (flyoutSvg) {
+            this._animateBlockFall(blockEl, flyoutSvg);
+        }
     }
 
     _handleGravityEggSearch (e) {
@@ -867,6 +951,16 @@ class Blocks extends React.Component {
         if (this._gravityEngineLabel && this._gravityEngineLabel.parentNode) {
             this._gravityEngineLabel.parentNode.removeChild(this._gravityEngineLabel);
             this._gravityEngineLabel = null;
+        }
+
+        if (this._gravityEggObserver) {
+            this._gravityEggObserver.disconnect();
+            this._gravityEggObserver = null;
+        }
+
+        if (this._gravityEggBlockObserver) {
+            this._gravityEggBlockObserver.disconnect();
+            this._gravityEggBlockObserver = null;
         }
     }
 
