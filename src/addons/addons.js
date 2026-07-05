@@ -124,6 +124,7 @@ const newAddons = [
     '02agent',
     'my-blocks-plus',
     'hide-menubar'
+    'qcode'
 ];
 
 // eslint-disable-next-line import/no-commonjs
