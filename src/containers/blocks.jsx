@@ -822,7 +822,10 @@ class Blocks extends React.Component {
         const flyoutSvg = this.blocks.querySelector('.blocklyFlyout');
         if (!flyoutSvg) return;
 
-        const svgGroup = flyoutSvg.querySelector('.blocklyWorkspace');
+        let svgGroup = flyoutSvg.querySelector('.blocklyWorkspace');
+        if (!svgGroup) {
+            svgGroup = flyoutSvg.querySelector('svg');
+        }
         if (!svgGroup) return;
 
         const gravityLabel = document.createElementNS(
@@ -893,12 +896,23 @@ class Blocks extends React.Component {
         this._gravityEngineLabel = gravityLabel;
 
         const blocks = flyoutWorkspace.getTopBlocks(false);
-        blocks.forEach(block => {
-            const blockSvg = block.getSvgRoot();
-            if (blockSvg) {
-                const currentTransform = blockSvg.getAttribute('transform') || '';
-                blockSvg.setAttribute('transform', `${currentTransform} translate(0, 50)`);
-            }
+        if (blocks.length > 0) {
+            blocks.forEach(block => {
+                const blockSvg = block.getSvgRoot();
+                if (blockSvg) {
+                    const currentTransform = blockSvg.getAttribute('transform') || '';
+                    blockSvg.setAttribute('transform', `${currentTransform} translate(0, 50)`);
+                }
+            });
+        } else {
+            gravityLabel.setAttribute('transform', 'translate(40, 100)');
+        }
+
+        gravityLabel.addEventListener('click', () => {
+            this._triggerVisibleBlocksGravity();
+        });
+        gravityLabel.addEventListener('touchstart', () => {
+            this._triggerVisibleBlocksGravity();
         });
     }
 
@@ -914,6 +928,22 @@ class Blocks extends React.Component {
         const flyoutSvg = this.blocks.querySelector('.blocklyFlyout');
         if (!flyoutSvg) return;
 
+        const blockSvgElements = flyoutSvg.querySelectorAll('.blocklyDraggable');
+        if (blockSvgElements.length === 0) {
+            const searchInput = this.blocks.querySelector(
+                '.blocklySearchInput, input[type="text"], input[placeholder*="search"], ' +
+                'input[placeholder*="搜索"], [class*="search"], [class*="filter"]'
+            );
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+            }
+            setTimeout(() => {
+                this._triggerVisibleBlocksGravity();
+            }, 300);
+            return;
+        }
+
         const backpackHeader = document.querySelector(
             '.backpack-header, [class*="backpack"][class*="header"]'
         );
@@ -921,7 +951,6 @@ class Blocks extends React.Component {
             backpackHeader.click();
         }
 
-        const blockSvgElements = flyoutSvg.querySelectorAll('.blocklyDraggable');
         let delay = 0;
         blockSvgElements.forEach(blockEl => {
             const blockId = blockEl.getAttribute('data-id') ||
