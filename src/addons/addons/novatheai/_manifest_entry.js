@@ -4,7 +4,7 @@ const manifest = {
     "name": 'Bilup Nova',
     "description": 'An AI assistant by Bilup, based on Gandi IDE AI assistant addon.',
     "tags": [
-    "recommended"
+    "recommended",
     "new"
     ],
     credits: [
