@@ -1,7 +1,7 @@
 export default {
   name: "Bilup Nova",
   type: "component",
-  description: "An AI assistant for Bilup, based on Gandi IDE AI assistant addon.",
+  description: "An AI assistant by Bilup, based on Gandi IDE AI assistant addon.",
   credits: [
     {
       name: "白猫@CCW",
