@@ -49,14 +49,7 @@ type AgentProps = PluginContext & {
   msg: (key: string, params?: Record<string, string | number>) => string;
 };
 
-const Agent: React.FC<AgentProps> = ({ 
-  vm,
-  workspace,
-  editorThemeMode = "light",
-  windowWidth = 800,
-  windowHeight = 600,
-  msg
-}) => {
+const Agent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "light", windowWidth = 800, windowHeight = 600, msg }) => {
   console.log(`[Bilup Nova] Rendering\n vm:`, vm)
   const [isAgentMenuOpen, setIsAgentMenuOpen] = React.useState(false);
   const [isComposerExpanded, setIsComposerExpanded] = React.useState(false);
