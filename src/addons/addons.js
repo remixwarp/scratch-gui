@@ -61,7 +61,6 @@ const addons = [
     'editor-extra-keys',
     'hide-delete-button',
     'no-script-bumping',
-    'novatheai'
     'disable-stage-drag-select',
     'move-to-top-bottom',
     'move-to-top-layer',
@@ -104,16 +103,16 @@ const addons = [
     'batch-color-replace',
     'simple-project-analyzer',
     'todo-list',
-    'todo'
+    'todo',
     'block-pins',
     'tw-comment-markdown-editor',
-    'background'
-    'novatheai'
+    'background',
+    'novatheai',
     'santa'
 ];
 
 const newAddons = [
-    'novatheai'
+    'novatheai',
     'expanded-backpack',
     'autosave',
     'no-category-text',
@@ -125,7 +124,7 @@ const newAddons = [
     'astras-copilot',
     '02agent',
     'my-blocks-plus',
-    'hide-menubar'
+    'hide-menubar',
     'santa'
 ];
 
