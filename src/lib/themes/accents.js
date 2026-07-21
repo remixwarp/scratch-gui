@@ -3,7 +3,6 @@ import * as accentBlue from './accent/blue';
 import * as accentLightBlue from './accent/light-blue';
 import * as accentRed from './accent/red';
 import * as accentOrange from './accent/orange';
-import * as accentOrangeV2 from './accent/orange(v2)';
 import * as accentYellow from './accent/yellow';
 import * as accentGreen from './accent/green';
 import * as accentGreenV2 from './accent/green(v2)';
@@ -47,12 +46,6 @@ const ACCENTS = [
     },
     {
         name: 'Orange',
-        accent: accentOrange,
-        description: 'Orange accent color',
-        id: 'tw.accent.orange'
-    },
-    {
-        name: 'Orange (V2)',
         accent: accentOrange,
         description: 'Orange accent color',
         id: 'tw.accent.orange'
