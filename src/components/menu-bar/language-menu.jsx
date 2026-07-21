@@ -2,6 +2,7 @@ import classNames from 'classnames';
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
+import ReactDOM from 'react-dom';
 import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 import locales from '@remixwarp/scratch-l10n';
@@ -431,8 +432,13 @@ class LanguageMenu extends React.PureComponent {
                     }
                 </Submenu>
 
-                {this.state.showHelpModal && (
-                    <div className={styles.helpModalOverlay} onClick={this.closeHelpModal}>
+                {this.state.showHelpModal && typeof document !== 'undefined' && ReactDOM.createPortal(
+                    <div
+                        className={styles.helpModalOverlay}
+                        onClick={this.closeHelpModal}
+                        onMouseDown={e => e.stopPropagation()}
+                        onMouseUp={e => e.stopPropagation()}
+                    >
                         <div className={styles.helpModal} onClick={e => e.stopPropagation()}>
                             <div className={styles.helpModalHeader}>
                                 <div className={styles.helpModalTitle}>
@@ -513,7 +519,8 @@ class LanguageMenu extends React.PureComponent {
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )}
             </MenuItem>
         );

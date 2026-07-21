@@ -23,6 +23,7 @@ import {connect} from 'react-redux';
 import storage from '../lib/persistence/storage';
 import VM from 'scratch-vm';
 import {updateCallbacks} from '../lib/shortcuts/event-router.js';
+import {unlockAchievement} from '../lib/achievements.js';
 
 const dragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE];
 const DroppableBackpack = DropAreaHOC(dragTypes)(BackpackComponent);
@@ -135,6 +136,7 @@ class Backpack extends React.Component {
         window.removeEventListener('pointermove', this.handleResizePointerMove);
         window.removeEventListener('pointerup', this.handleResizePointerUp);
         window.removeEventListener('pointercancel', this.handleResizePointerUp);
+        if (this.backpackOpenTimer) clearTimeout(this.backpackOpenTimer);
     }
 
     setDropAreaRef (el) {
@@ -168,11 +170,20 @@ class Backpack extends React.Component {
     }
     handleToggle () {
         const newState = !this.state.expanded;
+        if (this.backpackOpenTimer) {
+            clearTimeout(this.backpackOpenTimer);
+            this.backpackOpenTimer = null;
+        }
         this.setState({expanded: newState, contents: []}, () => {
             // Emit resize on window to get blocks to resize
             window.dispatchEvent(new Event('resize'));
         });
         if (newState) {
+            this.backpackOpenTimer = setTimeout(() => {
+                if (this.state.expanded) {
+                    unlockAchievement('backpack-dust');
+                }
+            }, 5001);
             this.getContents();
         }
     }

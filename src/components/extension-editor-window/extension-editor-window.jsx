@@ -1,4 +1,5 @@
-import React, {useEffect, useRef, useState} from 'react';
+import PropTypes from 'prop-types';
+import {useEffect, useRef, useState} from 'react';
 import WindowManager from '../../addons/window-system/window-manager';
 
 const ExtensionEditorWindow = ({visible, onClose}) => {
@@ -39,15 +40,16 @@ const ExtensionEditorWindow = ({visible, onClose}) => {
                 height: 100%;
                 display: flex;
                 flex-direction: column;
-                background: white;
+                background: var(--ui-modal-background, #ffffff);
+                color: var(--ui-modal-foreground, var(--text-primary, #1f2937));
             `;
 
             // Create tab bar
             const tabBar = document.createElement('div');
             tabBar.style.cssText = `
                 display: flex;
-                border-bottom: 1px solid #ddd;
-                background: #f5f5f5;
+                border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12));
+                background: var(--ui-secondary, #f5f5f5);
                 padding: 0;
                 margin: 0;
             `;
@@ -61,20 +63,25 @@ const ExtensionEditorWindow = ({visible, onClose}) => {
                     flex: 1;
                     padding: 12px;
                     border: none;
-                    background: ${selectedEditor === id ? 'white' : '#f5f5f5'};
-                    border-bottom: ${selectedEditor === id ? '3px solid #0066cc' : '1px solid #ddd'};
+                    background: ${selectedEditor === id ?
+        'var(--ui-modal-background, #ffffff)' :
+        'var(--ui-secondary, #f5f5f5)'};
+                    border-bottom: ${selectedEditor === id ?
+        '3px solid var(--looks-secondary, #0066cc)' :
+        '1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12))'};
+                    color: var(--ui-modal-foreground, var(--text-primary, #1f2937));
                     cursor: pointer;
                     font-size: 14px;
                     transition: background-color 0.2s;
                 `;
                 tab.onmouseover = () => {
                     if (selectedEditor !== id) {
-                        tab.style.background = '#e8e8e8';
+                        tab.style.background = 'var(--looks-transparent, rgba(0, 102, 204, 0.12))';
                     }
                 };
                 tab.onmouseout = () => {
                     if (selectedEditor !== id) {
-                        tab.style.background = '#f5f5f5';
+                        tab.style.background = 'var(--ui-secondary, #f5f5f5)';
                     }
                 };
                 tab.onclick = () => {
@@ -120,7 +127,7 @@ const ExtensionEditorWindow = ({visible, onClose}) => {
                 width: 100%;
                 height: 100%;
                 border: none;
-                background: white;
+                background: var(--ui-modal-background, #ffffff);
             `;
 
             contentArea.appendChild(iframe);
@@ -164,17 +171,32 @@ const ExtensionEditorWindow = ({visible, onClose}) => {
         // Update tab styles
         if (tab1Ref.current && tab2Ref.current) {
             const updateTabStyles = () => {
-                tab1Ref.current.style.background = selectedEditor === 'scratch-extension' ? 'white' : '#f5f5f5';
-                tab1Ref.current.style.borderBottom = selectedEditor === 'scratch-extension' ? '3px solid #0066cc' : '1px solid #ddd';
+                tab1Ref.current.style.background = selectedEditor === 'scratch-extension' ?
+                    'var(--ui-modal-background, #ffffff)' :
+                    'var(--ui-secondary, #f5f5f5)';
+                tab1Ref.current.style.borderBottom = selectedEditor === 'scratch-extension' ?
+                    '3px solid var(--looks-secondary, #0066cc)' :
+                    '1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12))';
+                tab1Ref.current.style.color = 'var(--ui-modal-foreground, var(--text-primary, #1f2937))';
 
-                tab2Ref.current.style.background = selectedEditor === 'cbeg' ? 'white' : '#f5f5f5';
-                tab2Ref.current.style.borderBottom = selectedEditor === 'cbeg' ? '3px solid #0066cc' : '1px solid #ddd';
+                tab2Ref.current.style.background = selectedEditor === 'cbeg' ?
+                    'var(--ui-modal-background, #ffffff)' :
+                    'var(--ui-secondary, #f5f5f5)';
+                tab2Ref.current.style.borderBottom = selectedEditor === 'cbeg' ?
+                    '3px solid var(--looks-secondary, #0066cc)' :
+                    '1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12))';
+                tab2Ref.current.style.color = 'var(--ui-modal-foreground, var(--text-primary, #1f2937))';
             };
             updateTabStyles();
         }
     }, [selectedEditor]);
 
     return null;
+};
+
+ExtensionEditorWindow.propTypes = {
+    onClose: PropTypes.func,
+    visible: PropTypes.bool
 };
 
 export default ExtensionEditorWindow;

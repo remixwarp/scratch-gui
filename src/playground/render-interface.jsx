@@ -44,6 +44,10 @@ import { loadServiceWorker } from './load-service-worker';
 import runAddons from '../addons/entry';
 import { APP_NAME, FEEDBACK_URL, GITHUB_URL } from '../lib/constants/brand.js';
 import { AESettings } from '../lib/settings.js';
+import {
+    STAGE_DISPLAY_SCALE_METADATA,
+    STAGE_DISPLAY_SIZES
+} from '../lib/constants/layout-constants.js';
 
 import styles from './interface.css';
 
@@ -324,6 +328,12 @@ class Interface extends React.Component {
         } = this.props;
         const isHomepage = isPlayerOnly && !isFullScreen;
         const isEditor = !isPlayerOnly;
+        // The player renders the "full" stage at 85% scale. Keep the
+        // surrounding information column at that rendered width so it
+        // remains aligned with the stage instead of appearing offset.
+        const playerStageWidth = Math.round(
+            props.customStageSize.width * STAGE_DISPLAY_SCALE_METADATA[STAGE_DISPLAY_SIZES.full].scale
+        ) + 2;
         return (
             <div
                 className={classNames(styles.container, {
@@ -348,7 +358,7 @@ class Interface extends React.Component {
                     className={styles.center}
                     style={isPlayerOnly ? ({
                         // + 2 accounts for 1px border on each side of the stage
-                        width: `${Math.max(480, props.customStageSize.width) + 2}px`
+                        width: `${playerStageWidth}px`
                     }) : null}
                 >
                     <GUI

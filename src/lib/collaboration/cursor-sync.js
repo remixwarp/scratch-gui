@@ -1,4 +1,8 @@
 import cursorIcon from '../assets/icon--cursor.svg';
+import {
+    recordCollaborationChatInput,
+    recordCollaborationChatOverflow
+} from '../achievements.js';
 
 const setupCursorLayer = service => {
     if (!service.workspace) return;
@@ -41,11 +45,31 @@ const setupCursorLayer = service => {
     chatInput.addEventListener('mousedown', e => e.stopPropagation());
 
     chatInput.addEventListener('input', e => {
+        if (service._chatOpenedWithSlash && e.target.value.length > 0) {
+            recordCollaborationChatInput();
+        }
         if (e.target.value.length > 500) {
             e.target.value = e.target.value.substring(0, 500);
         }
         service.sendMessage('cursor-chat', {text: e.target.value});
+    });
 
+    const exceedsChatLimit = insertedText => {
+        const selectionLength = chatInput.selectionEnd - chatInput.selectionStart;
+        return chatInput.value.length - selectionLength + insertedText.length > 500;
+    };
+
+    chatInput.addEventListener('beforeinput', e => {
+        if (typeof e.data === 'string' && exceedsChatLimit(e.data)) {
+            recordCollaborationChatOverflow();
+        }
+    });
+
+    chatInput.addEventListener('paste', e => {
+        const pastedText = e.clipboardData ? e.clipboardData.getData('text') : '';
+        if (exceedsChatLimit(pastedText)) {
+            recordCollaborationChatOverflow();
+        }
     });
 
     chatInput.addEventListener('keydown', e => {
@@ -59,6 +83,7 @@ const setupCursorLayer = service => {
         chatInput.style.display = 'none';
         chatInput.value = '';
         service.isChatting = false;
+        service._chatOpenedWithSlash = false;
         service.sendMessage('cursor-chat', {text: null});
     });
 
@@ -129,6 +154,7 @@ const bindCursorEvents = service => {
                 service.localChatInput.style.top = `${y}px`;
                 service.localChatInput.style.display = 'block';
                 service.localChatInput.focus();
+                service._chatOpenedWithSlash = true;
             }
         }
     };

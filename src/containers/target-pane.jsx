@@ -25,6 +25,18 @@ import downloadBlob from '../lib/utils/download-blob';
 import log from '../lib/utils/log';
 import {placeInViewport} from '../lib/backpack/code-payload.js';
 import CollaborationService from '../lib/collaboration-service.js';
+import {unlockAchievement} from '../lib/achievements.js';
+
+const DEFAULT_SPRITE_ASSET_ID = 'bcf454acf82e4504149f7ffe07081dbc';
+
+const isDefaultSprite = target => {
+    const sprite = target && target.sprite;
+    return target && (
+        target.getName() === 'Sprite1' ||
+        target.getName() === '角色1' ||
+        (sprite && sprite.costumes.some(costume => costume.assetId === DEFAULT_SPRITE_ASSET_ID))
+    );
+};
 
 class TargetPane extends React.Component {
     constructor (props) {
@@ -37,6 +49,7 @@ class TargetPane extends React.Component {
             'handleChangeSpriteName',
             'handleChangeSpriteSize',
             'handleChangeSpriteVisibility',
+            'checkExactOrigin',
             'handleChangeSpriteX',
             'handleChangeSpriteY',
             'handleDeleteSprite',
@@ -51,6 +64,8 @@ class TargetPane extends React.Component {
             'handleSpriteUpload',
             'setFileInput'
         ]);
+        this.editorLoadedAt = Date.now();
+        this.spriteRenameCount = 0;
     }
     componentDidMount () {
         this.props.vm.addListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
@@ -65,6 +80,13 @@ class TargetPane extends React.Component {
         this.props.vm.postSpriteInfo({rotationStyle});
     }
     handleChangeSpriteName (name) {
+        const target = this.props.vm.runtime.getTargetById(this.props.editingTarget);
+        if (target && target.getName() !== name) {
+            this.spriteRenameCount++;
+            if (this.spriteRenameCount >= 5) {
+                unlockAchievement('naming-obsession');
+            }
+        }
         this.props.vm.renameSprite(this.props.editingTarget, name);
     }
     handleChangeSpriteSize (size) {
@@ -73,13 +95,25 @@ class TargetPane extends React.Component {
     handleChangeSpriteVisibility (visible) {
         this.props.vm.postSpriteInfo({visible});
     }
+    checkExactOrigin () {
+        const target = this.props.vm.runtime.getTargetById(this.props.editingTarget);
+        if (target && target.x === 0 && target.y === 0) {
+            unlockAchievement('exact-origin');
+        }
+    }
     handleChangeSpriteX (x) {
         this.props.vm.postSpriteInfo({x});
+        this.checkExactOrigin();
     }
     handleChangeSpriteY (y) {
         this.props.vm.postSpriteInfo({y});
+        this.checkExactOrigin();
     }
     handleDeleteSprite (id) {
+        const target = this.props.vm.runtime.getTargetById(id);
+        if (Date.now() - this.editorLoadedAt <= 3000 && isDefaultSprite(target)) {
+            unlockAchievement('instant-default-delete');
+        }
         const restoreSprite = this.props.vm.deleteSprite(id);
         const restoreFun = () => restoreSprite().then(this.handleActivateBlocksTab);
 

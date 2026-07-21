@@ -50,6 +50,7 @@ import {findTopBlock} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
 import RestorePointAPI from '../lib/api/restore-points';
 import CollaborationService from '../lib/collaboration-service.js';
+import {unlockAchievement} from '../lib/achievements.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
@@ -142,7 +143,12 @@ class Blocks extends React.Component {
             'onWorkspaceMetricsChange',
             'setBlocks',
             'setLocale',
-            'handleEnableProcedureReturns'
+            'handleEnableProcedureReturns',
+            'handleAchievementWorkspaceEvent',
+            'handleProjectRunStart',
+            'handleProjectRunStop',
+            'handleDocumentCopy',
+            'handleDocumentPaste'
         ]);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
@@ -187,6 +193,15 @@ class Blocks extends React.Component {
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.onWorkspaceMetricsChange = debounce(this.onWorkspaceMetricsChange, 100);
         this.toolboxUpdateQueue = [];
+        this.achievementState = {
+            hasAddedBlock: false,
+            dragCounts: new Map(),
+            isProjectRunning: false,
+            pastePairs: 0,
+            recentCopyAt: 0,
+            undoTimes: [],
+            commentCreatedAt: new Map()
+        };
 
     }
     componentDidMount () {
@@ -427,6 +442,30 @@ class Blocks extends React.Component {
 
         // Hat block comment reminder: listen for workspace changes
         this.workspace.addChangeListener(this._onWorkspaceChangeForReminder);
+        this.workspace.addChangeListener(this.handleAchievementWorkspaceEvent);
+        this.props.vm.addListener('PROJECT_RUN_START', this.handleProjectRunStart);
+        this.props.vm.addListener('PROJECT_RUN_STOP', this.handleProjectRunStop);
+        document.addEventListener('copy', this.handleDocumentCopy);
+        document.addEventListener('paste', this.handleDocumentPaste);
+        this.noBlockAddedTimer = setTimeout(() => {
+            if (!this.achievementState.hasAddedBlock) {
+                unlockAchievement('buddhist-developer');
+            }
+        }, 10 * 60 * 1000);
+
+        if (typeof this.props.vm.postUndo === 'function') {
+            this.originalPostUndo = this.props.vm.postUndo;
+            this.props.vm.postUndo = (...args) => {
+                const now = Date.now();
+                this.achievementState.undoTimes = this.achievementState.undoTimes
+                    .filter(time => now - time <= 3000);
+                this.achievementState.undoTimes.push(now);
+                if (this.achievementState.undoTimes.length >= 3) {
+                    unlockAchievement('use-draft');
+                }
+                return this.originalPostUndo.apply(this.props.vm, args);
+            };
+        }
 
         // Run initial check
         if (this.hatBlockCommentReminderEnabled) {
@@ -562,6 +601,17 @@ class Blocks extends React.Component {
         window.removeEventListener('hatreminder:closed', this._handleHatReminderClosed);
         if (this.workspace && this._onWorkspaceChangeForReminder) {
             this.workspace.removeChangeListener(this._onWorkspaceChangeForReminder);
+        }
+        if (this.workspace) {
+            this.workspace.removeChangeListener(this.handleAchievementWorkspaceEvent);
+        }
+        this.props.vm.removeListener('PROJECT_RUN_START', this.handleProjectRunStart);
+        this.props.vm.removeListener('PROJECT_RUN_STOP', this.handleProjectRunStop);
+        document.removeEventListener('copy', this.handleDocumentCopy);
+        document.removeEventListener('paste', this.handleDocumentPaste);
+        if (this.noBlockAddedTimer) clearTimeout(this.noBlockAddedTimer);
+        if (this.originalPostUndo && this.props.vm.postUndo) {
+            this.props.vm.postUndo = this.originalPostUndo;
         }
         if (this._checkHatBlockReminders && this._checkHatBlockReminders.cancel) {
             this._checkHatBlockReminders.cancel();
@@ -1253,6 +1303,62 @@ class Blocks extends React.Component {
                 scrollY: this.workspace.scrollY,
                 scale: this.workspace.scale
             });
+        }
+    }
+    handleProjectRunStart () {
+        this.achievementState.isProjectRunning = true;
+        this.achievementState.dragCounts.clear();
+    }
+    handleProjectRunStop () {
+        this.achievementState.isProjectRunning = false;
+    }
+    handleAchievementWorkspaceEvent (event) {
+        if (!event) return;
+        const type = String(event.type || '').toUpperCase();
+        const isCommentEvent = type.includes('COMMENT');
+        const commentId = event.commentId ||
+            (event.comment && event.comment.id) ||
+            event.id;
+        if (isCommentEvent && type.includes('CREATE') && commentId) {
+            this.achievementState.commentCreatedAt.set(commentId, Date.now());
+        }
+        if (isCommentEvent && type.includes('DELETE') && commentId) {
+            const createdAt = this.achievementState.commentCreatedAt.get(commentId);
+            this.achievementState.commentCreatedAt.delete(commentId);
+            if (createdAt && Date.now() - createdAt <= 3000) {
+                unlockAchievement('hesitate');
+            }
+        }
+        if (type === 'CREATE') {
+            this.achievementState.hasAddedBlock = true;
+        }
+        if (type === 'DELETE') {
+            const oldXml = event.oldXml;
+            const deletedBlocks = oldXml && typeof oldXml.getElementsByTagName === 'function' ?
+                oldXml.getElementsByTagName('block').length : 0;
+            if (deletedBlocks > 20) {
+                unlockAchievement('now-good');
+            }
+        }
+        if (type === 'MOVE' && !this.achievementState.isProjectRunning && event.blockId) {
+            const count = (this.achievementState.dragCounts.get(event.blockId) || 0) + 1;
+            this.achievementState.dragCounts.set(event.blockId, count);
+            if (count >= 50) {
+                unlockAchievement('drag-master');
+            }
+        }
+    }
+    handleDocumentCopy () {
+        if (this.workspace && typeof this.workspace.getSelected === 'function' && this.workspace.getSelected()) {
+            this.achievementState.recentCopyAt = Date.now();
+        }
+    }
+    handleDocumentPaste () {
+        if (Date.now() - this.achievementState.recentCopyAt > 3000) return;
+        this.achievementState.recentCopyAt = 0;
+        this.achievementState.pastePairs += 1;
+        if (this.achievementState.pastePairs >= 20) {
+            unlockAchievement('copy-paste');
         }
     }
     onScriptGlowOn (data) {

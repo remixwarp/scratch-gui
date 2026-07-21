@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {TURNSTILE_SITE_KEY, exchangeTurnstileForSession} from '../../lib/constants/api-keys.js';
+import {unlockAchievement} from '../../lib/achievements.js';
 
 const containerStyle = {
     display: 'flex',
@@ -47,7 +48,9 @@ class TurnstileVerifier extends React.Component {
         };
         this.widgetId = null;
         this.containerRef = React.createRef();
+        this.consecutiveFailures = 0;
         this.handleTurnstileCallback = this.handleTurnstileCallback.bind(this);
+        this.recordFailure = this.recordFailure.bind(this);
     }
 
     componentDidMount () {
@@ -89,6 +92,7 @@ class TurnstileVerifier extends React.Component {
             sitekey: TURNSTILE_SITE_KEY,
             callback: this.handleTurnstileCallback,
             'error-callback': () => {
+                this.recordFailure();
                 this.setState({error: '验证失败，请重试'});
             },
             'expired-callback': () => {
@@ -100,14 +104,23 @@ class TurnstileVerifier extends React.Component {
         });
     }
 
+    recordFailure () {
+        this.consecutiveFailures += 1;
+        if (this.consecutiveFailures >= 3) {
+            unlockAchievement('captcha-human');
+        }
+    }
+
     async handleTurnstileCallback (token) {
         if (this.state.verifying) return;
         this.setState({verifying: true, error: null});
         try {
             await exchangeTurnstileForSession(token);
+            this.consecutiveFailures = 0;
             this.setState({verifying: false});
             this.props.onSuccess();
         } catch (err) {
+            this.recordFailure();
             this.setState({verifying: false, error: '验证失败：' + err.message});
             if (this.widgetId !== null && window.turnstile) {
                 window.turnstile.reset(this.widgetId);

@@ -1,4 +1,5 @@
 import BlockItem from '../../lib/find-bar/BlockItem';
+import {unlockAchievement} from '../../lib/achievements.js';
 
 import Dropdown from './Dropdown';
 
@@ -83,6 +84,7 @@ export default class FindBarController {
         this._lastWorkspaceVersion = null;
         this._debounceTimer = null;
         this._workspaceChangeListener = null;
+        this._invalidSearchTimer = null;
     }
 
     get workspace () {
@@ -210,6 +212,10 @@ export default class FindBarController {
         if (this._debounceTimer) {
             clearTimeout(this._debounceTimer);
             this._debounceTimer = null;
+        }
+        if (this._invalidSearchTimer) {
+            clearTimeout(this._invalidSearchTimer);
+            this._invalidSearchTimer = null;
         }
         if (this.findBarOuter) {
             this.findBarOuter.remove();
@@ -383,6 +389,7 @@ export default class FindBarController {
 
         const listLI = this.dropdown.items;
 
+        let matches = 0;
         for (const li of listLI) {
             const procCode = li.data.procCode;
             const opcode = li.data.opcode;
@@ -390,6 +397,7 @@ export default class FindBarController {
             const match = this.findMatch({displayName, procCode, opcode, searchNeedle: searchVal, regex});
 
             if (match) {
+                matches++;
                 li.style.display = 'block';
 
                 this.clearChildren(li);
@@ -411,6 +419,19 @@ export default class FindBarController {
             } else {
                 li.style.display = 'none';
             }
+        }
+
+        if (this._invalidSearchTimer) {
+            clearTimeout(this._invalidSearchTimer);
+            this._invalidSearchTimer = null;
+        }
+        if (originalVal && matches === 0) {
+            this._invalidSearchTimer = setTimeout(() => {
+                if (this.findInput && this.findInput.value === originalVal) {
+                    unlockAchievement('invalid-search');
+                }
+                this._invalidSearchTimer = null;
+            }, 5000);
         }
     }
 

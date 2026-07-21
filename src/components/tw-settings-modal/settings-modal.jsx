@@ -6,6 +6,7 @@ import bindAll from 'lodash.bindall';
 import Box from '../box/box.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
+import {isAchievementsEnabled, setAchievementsEnabled} from '../../lib/achievements.js';
 import Input from '../forms/input.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import DocumentationLink from '../tw-documentation-link/documentation-link.jsx';
@@ -364,6 +365,14 @@ const EnableVSCodeLayout = props => (
                 {...messages.enablevscodelayouthelp}
             />
         }
+    />
+);
+
+const EnableAchievements = props => (
+    <BooleanSetting
+        {...props}
+        label="启用成就"
+        help="启用后，可在工具菜单中打开成就窗口。"
     />
 );
 
@@ -1082,6 +1091,13 @@ const pageConfigurations = {
                         props: props => ({
                             value: AEsettings.get('EnableVSCodeLayout') || false,
                             onChange: (e) => { AEsettings.set("EnableVSCodeLayout", e.target.checked); notifySettingsChange(); location.reload(); }
+                        })
+                    },
+                    {
+                        component: EnableAchievements,
+                        props: () => ({
+                            value: isAchievementsEnabled(),
+                            onChange: e => setAchievementsEnabled(e.target.checked)
                         })
                     },
                     {

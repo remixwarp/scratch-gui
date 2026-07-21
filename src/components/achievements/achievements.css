@@ -1,0 +1,245 @@
+@import "../../css/colors.css";
+@import "../../css/units.css";
+
+.root {
+    bottom: 1rem;
+    position: fixed;
+    right: 1rem;
+    z-index: 10000;
+}
+
+.menu-root {
+    align-self: center;
+    position: relative;
+}
+
+.trigger {
+    background: $menu-bar-background;
+    border: 0;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px $shadow;
+    color: $menu-bar-foreground;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    height: 2.5rem;
+    padding: 0;
+    width: 2.5rem;
+}
+
+.menu-root .trigger {
+    background: transparent;
+    box-shadow: none;
+    height: $menu-bar-height;
+    width: $menu-bar-height;
+}
+
+.menu-root .trigger:hover {
+    background: $ui-black-transparent;
+}
+
+.notice {
+    align-items: center;
+    background: $ui-modal-background;
+    border: 1px solid $ui-black-transparent;
+    border-radius: .5rem;
+    box-shadow: 0 4px 14px $shadow;
+    color: $ui-modal-foreground;
+    cursor: pointer;
+    display: flex;
+    margin-bottom: .7rem;
+    max-width: 18rem;
+    padding: .75rem 1rem;
+    text-align: left;
+}
+
+.menu-root .notice {
+    bottom: 1rem;
+    position: fixed;
+    right: 1rem;
+}
+
+.noticeIcon {
+    font-size: 1.6rem;
+    margin-right: .7rem;
+}
+
+.notice strong,
+.notice small {
+    display: block;
+}
+
+.notice small {
+    color: $text-primary-transparent;
+    margin-top: .2rem;
+}
+
+.backdrop {
+    align-items: center;
+    background: $ui-modal-overlay;
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    position: fixed;
+    z-index: 10001;
+}
+
+.panel {
+    background: $ui-modal-background;
+    border-radius: .75rem;
+    box-shadow: 0 12px 32px $shadow;
+    color: $ui-modal-foreground;
+    max-height: min(38rem, 85vh);
+    overflow: auto;
+    padding: 1.25rem;
+    position: fixed;
+    top: 10vh;
+    left: calc(50vw - 16rem);
+    width: min(32rem, calc(100vw - 2rem));
+    z-index: 10001;
+}
+
+.panel header {
+    align-items: flex-start;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.window-header {
+    cursor: move;
+    user-select: none;
+}
+
+.choice-panel {
+    background: $ui-modal-background;
+    border-radius: .75rem;
+    box-shadow: 0 12px 32px $shadow;
+    color: $ui-modal-foreground;
+    padding: 1.5rem;
+    width: min(34rem, calc(100vw - 2rem));
+}
+
+.choice-panel h2,
+.choice-panel p {
+    margin-top: 0;
+}
+
+.choice-actions {
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: repeat(2, 1fr);
+    margin-top: 1.25rem;
+}
+
+.choice-actions button {
+    background: $badge-background;
+    border: 1px solid $badge-border;
+    border-radius: .5rem;
+    color: $text-primary;
+    cursor: pointer;
+    padding: 1rem;
+    text-align: left;
+}
+
+.choice-actions button:hover {
+    filter: brightness(.95);
+}
+
+.choice-actions strong,
+.choice-actions small {
+    display: block;
+}
+
+.choice-actions small {
+    margin-top: .3rem;
+}
+
+.panel h2,
+.panel h3,
+.panel p {
+    margin: 0;
+}
+
+.panel header p {
+    color: $text-primary-transparent;
+    margin-top: .25rem;
+}
+
+.panel header button {
+    background: transparent;
+    border: 0;
+    color: $ui-modal-foreground;
+    cursor: pointer;
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin: 0 0 1rem;
+}
+
+.categories button {
+    background: $ui-secondary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 999px;
+    color: $text-primary;
+    cursor: pointer;
+    font-size: .75rem;
+    padding: .35rem .6rem;
+}
+
+.categories button:hover,
+.categories .category-selected {
+    background: $looks-secondary;
+    border-color: $looks-secondary;
+    color: white;
+}
+
+.categories span {
+    font-variant-numeric: tabular-nums;
+    margin-left: .2rem;
+    opacity: .8;
+}
+
+.list {
+    display: grid;
+    gap: .65rem;
+}
+
+.unlocked,
+.locked {
+    align-items: center;
+    border: 1px solid $ui-black-transparent;
+    border-radius: .5rem;
+    display: flex;
+    gap: .8rem;
+    padding: .75rem;
+}
+
+.unlocked {
+    background: $badge-background;
+    border-color: $badge-border;
+}
+
+.locked {
+    color: $text-primary-transparent;
+}
+
+.icon {
+    font-size: 1.5rem;
+}
+
+.unlocked small,
+.locked small {
+    color: $text-primary-transparent;
+}
+
+.unlocked p,
+.locked p {
+    font-size: .85rem;
+    margin-top: .2rem;
+}

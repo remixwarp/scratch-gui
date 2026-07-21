@@ -4,6 +4,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import VM from 'scratch-vm';
+import {recordFramerateChange} from '../lib/achievements.js';
 
 const messages = defineMessages({
     newFramerate: {
@@ -31,11 +32,13 @@ class FramerateChanger extends React.Component {
             const fps = +newFPS;
             if (isFinite(fps) && fps > 0) {
                 this.props.vm.setFramerate(fps);
+                recordFramerateChange(fps, true);
             }
         } else if (this.props.framerate === 60) {
             this.props.vm.setFramerate(30);
         } else {
             this.props.vm.setFramerate(60);
+            recordFramerateChange(60, false);
         }
     }
     render () {

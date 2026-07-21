@@ -5,6 +5,8 @@
   "cat-blocks/@settings-name-watch": "跟随鼠标",
   "cat-blocks-extended/@description": "获取2026年愚人节RemixWarp编辑器并未上线的愚人节功能",
   "cat-blocks-extended/@name": "猫积木拓展",
+  "bookmark/@description": "在项目中添加书签，快速跳转到代码的不同位置。",
+  "bookmark/@name": "书签",
   "editor-devtools/@description": "为编辑器添加了新的菜单选项：复制/粘贴积木，更好的积木整理，以及更多功能！",
   "editor-devtools/@name": "开发者工具",
   "editor-devtools/@settings-name-enableCleanUpPlus": "增强“整理积木”",

@@ -7,6 +7,7 @@ import MarkdownRenderer from '../markdown-renderer/markdown-renderer.jsx';
 import {sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
 import {costumeUpload} from '../../lib/file-uploader.js';
 import {getApiConfig, getRequestToken, generateTOTP, fetchTOTPChallenge, getSessionToken} from '../../lib/constants/api-keys.js';
+import {recordAIConversation} from '../../lib/achievements.js';
 
 const API_CONFIG = getApiConfig('siliconflow');
 const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/chat/completions';
@@ -88,7 +89,9 @@ class AIPanel extends React.PureComponent {
         const {input} = this.state;
         const {type} = this.props;
         if (!input) return;
-        
+
+        recordAIConversation(input);
+
         const isAgent = type === 'agent';
         const isCostumeTab = this.state.activeTab === 'costume';
         const isControlTab = this.state.activeTab === 'control';

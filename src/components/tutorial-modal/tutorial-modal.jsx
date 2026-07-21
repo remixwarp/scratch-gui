@@ -6,6 +6,7 @@ import { openVideoModal } from '../../reducers/modals.js';
 import { Upload, Video, Globe, User, ArrowLeft, Trash2 } from 'lucide-react';
 import favoriteInactiveIcon from '../library-item/favorite-inactive.svg';
 import favoriteActiveIcon from '../library-item/favorite-active.svg';
+import {unlockAchievement} from '../../lib/achievements.js';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
@@ -500,11 +501,15 @@ const TutorialModal = props => {
     }, []);
 
     const toggleFavorite = (tutorialId) => {
+        const isFavorite = favorites.includes(tutorialId);
         const updated = favorites.includes(tutorialId) 
             ? favorites.filter(id => id !== tutorialId)
             : [...favorites, tutorialId];
         setFavorites(updated);
         localStorage.setItem('remixwarp_favorites', JSON.stringify(updated));
+        if (!isFavorite) {
+            unlockAchievement('tutorial-favorite');
+        }
     };
 
     useEffect(() => {

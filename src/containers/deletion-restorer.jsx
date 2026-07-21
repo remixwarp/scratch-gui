@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setRestore} from '../reducers/restore-deletion';
+import {unlockAchievement} from '../lib/achievements.js';
 
 /**
  * DeletionRestorer component passes a restoreDeletion function to its child.
@@ -28,6 +29,9 @@ class DeletionRestorer extends React.Component {
     restoreDeletion () {
         if (typeof this.props.restore === 'function') {
             this.props.restore();
+            if (this.props.deletedItem === 'Sprite') {
+                unlockAchievement('restored-sprite');
+            }
             this.props.dispatchUpdateRestore({restoreFun: null, deletedItem: ''});
         }
     }

@@ -7,6 +7,7 @@ import {injectIntl} from 'react-intl';
 import CollaborationModal from '../components/collaboration-modal/collaboration-modal.jsx';
 import CollaborationService from '../lib/collaboration-service.js';
 import NotificationSystem from '../lib/notification-manager.js';
+import {unlockAchievement} from '../lib/achievements.js';
 
 import {
     closeCollaborationModal,
@@ -147,6 +148,7 @@ class CollaborationContainer extends Component {
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(roomId, username, false);
+            unlockAchievement('collaboration-room');
 
             // Don't set connected immediately - wait for connected-to-host event
             this.props.onSetRoomId(roomId);
@@ -176,6 +178,7 @@ class CollaborationContainer extends Component {
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(roomId, username, true, privacy);
+            unlockAchievement('collaboration-room');
 
             // Set connected and update room info after successful connection
             this.props.onSetConnected(true);

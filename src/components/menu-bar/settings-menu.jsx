@@ -57,6 +57,16 @@ const SettingsMenu = ({
                 place={isRtl ? 'left' : 'right'}
             >
                 <MenuSection>
+                    {canChangeTheme && (
+                        <React.Fragment>
+                            <TWBlocksThemeMenu onOpenCustomSettings={onOpenCustomSettings} />
+                            <TWMenuBarAlignMenu />
+                            <TWAccentThemeMenu />
+                        </React.Fragment>
+                    )}
+                </MenuSection>
+                {canChangeTheme && <div className={styles.menuSeparator} />}
+                <MenuSection>
                     {canChangeLanguage && <LanguageMenu onRequestCloseSettings={onRequestClose} />}
                     {canChangeTheme && (
                         <React.Fragment>
@@ -69,14 +79,6 @@ const SettingsMenu = ({
                         </React.Fragment>
                     )}
                 </MenuSection>
-                <div className={styles.menuSeparator} />
-                {canChangeTheme && (
-                    <MenuSection>
-                        <TWBlocksThemeMenu onOpenCustomSettings={onOpenCustomSettings} />
-                        <TWMenuBarAlignMenu />
-                        <TWAccentThemeMenu />
-                    </MenuSection>
-                )}
             </MenuBarMenu>
         </MenuLabel>
     );

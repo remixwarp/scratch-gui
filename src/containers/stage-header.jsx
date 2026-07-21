@@ -6,6 +6,7 @@ import {STAGE_DISPLAY_SCALE_METADATA, STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} fro
 import {setStageSize} from '../reducers/stage-size';
 import {setFullScreen} from '../reducers/mode';
 import {openSettingsModal} from '../reducers/modals';
+import {unlockAchievement} from '../lib/achievements.js';
 
 import {connect} from 'react-redux';
 
@@ -18,13 +19,20 @@ class StageHeader extends React.Component {
         bindAll(this, [
             'handleKeyPress'
         ]);
+        this.fullScreenTransitions = 0;
         this.checkInvalidStageSizeMode();
     }
     componentDidMount () {
         document.addEventListener('keydown', this.handleKeyPress);
     }
-    componentDidUpdate () {
+    componentDidUpdate (prevProps) {
         this.checkInvalidStageSizeMode();
+        if (prevProps.isFullScreen !== this.props.isFullScreen) {
+            this.fullScreenTransitions += 1;
+            if (this.fullScreenTransitions > 5) {
+                unlockAchievement('fullscreen-maniac');
+            }
+        }
     }
     componentWillUnmount () {
         document.removeEventListener('keydown', this.handleKeyPress);

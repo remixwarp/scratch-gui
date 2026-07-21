@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import CrashMessageComponent from '../components/crash-message/crash-message.jsx';
 import log from '../lib/utils/log.js';
+import {unlockAchievement} from '../lib/achievements.js';
 
 class ErrorBoundary extends React.Component {
     constructor (props) {
@@ -52,8 +53,9 @@ class ErrorBoundary extends React.Component {
     }
 
     handleViewRestorePoints () {
+        unlockAchievement('error-restore');
         // 在新标签页打开独立的还原点管理器页面
-        window.open('https://remixwarp.pages.dev/restore-manager.html', '_blank');
+        window.open('https://remixwarp.pages.dev/restore-manager', '_blank');
     }
 
     formatErrorMessage () {

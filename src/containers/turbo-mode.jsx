@@ -2,6 +2,7 @@ import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
+import {unlockAchievement} from '../lib/achievements.js';
 
 /**
  * Turbo Mode component passes toggleTurboMode function to its child.
@@ -27,6 +28,9 @@ class TurboMode extends React.Component {
         ]);
     }
     toggleTurboMode () {
+        if (!this.props.turboMode) {
+            unlockAchievement('turbo-time');
+        }
         this.props.vm.setTurboMode(!this.props.turboMode);
     }
     render () {

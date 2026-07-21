@@ -5,6 +5,7 @@ import VM from 'scratch-vm';
 import {connect} from 'react-redux';
 
 import ControlsComponent from '../components/controls/controls.jsx';
+import {recordActualFramerate, unlockAchievement} from '../lib/achievements.js';
 
 class Controls extends React.Component {
     constructor (props) {
@@ -17,6 +18,7 @@ class Controls extends React.Component {
         this.lastFpsTime = performance.now();
         this.currentFps = 60;
         this.maxFps = 60;
+        this.stopClickCount = 0;
     }
 
     componentDidMount () {
@@ -44,6 +46,7 @@ class Controls extends React.Component {
             const targetFps = this.props.vm.runtime.frameLoop.framerate;
             this.maxFps = targetFps === 0 ? 60 : targetFps;
             this.currentFps = Math.min(this.renderTimes.length, this.maxFps);
+            recordActualFramerate(this.currentFps, this.maxFps);
         }
         return ret;
     }
@@ -62,6 +65,7 @@ class Controls extends React.Component {
                 }
             }
         } else {
+            this.stopClickCount = 0;
             if (!this.props.isStarted) {
                 this.props.vm.start();
             }
@@ -71,6 +75,14 @@ class Controls extends React.Component {
 
     handleStopAllClick (e) {
         e.preventDefault();
+        if (this.props.projectRunning) {
+            this.stopClickCount++;
+            if (this.stopClickCount >= 10) {
+                unlockAchievement('stop-spammer');
+            }
+        } else {
+            this.stopClickCount = 0;
+        }
         this.props.vm.stopAll();
     }
 

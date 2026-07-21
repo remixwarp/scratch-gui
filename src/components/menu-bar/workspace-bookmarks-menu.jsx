@@ -12,6 +12,10 @@ import {
 } from 'lucide-react';
 
 import ChevronDown from './ChevronDown.jsx';
+import {
+    localizeWorkspaceBookmarkCategory,
+    normalizeWorkspaceBookmarkCategory
+} from '../../lib/mw/workspace-bookmarks.js';
 
 const ICON_SIZE = 16;
 const CARET_SIZE = 12;
@@ -20,7 +24,7 @@ import {MenuItem, MenuSection} from '../menu/menu.jsx';
 
 const messages = defineMessages({
     bookmarkDefaultCategory: {
-        id: 'tw.menuBar.bookmarkDefaultCategory',
+        id: 'tw.workspaceBookmarks.defaultCategory',
         defaultMessage: 'General',
         description: 'Default category name for workspace bookmarks'
     }
@@ -89,7 +93,7 @@ const WorkspaceBookmarksMenu = props => {
         if (!enableCategories) return null;
         const byCategory = new Map();
         for (const bookmark of filtered) {
-            const category = bookmark.category || intl.formatMessage(messages.bookmarkDefaultCategory);
+            const category = normalizeWorkspaceBookmarkCategory(bookmark.category);
             if (!byCategory.has(category)) byCategory.set(category, []);
             byCategory.get(category).push(bookmark);
         }
@@ -218,7 +222,12 @@ const WorkspaceBookmarksMenu = props => {
                     onClick={makeToggleCategoryHandler(category)}
                 >
                     <div className={styles.categoryHeaderContent}>
-                        <span className={styles.categoryName}>{category}</span>
+                        <span className={styles.categoryName}>
+                            {localizeWorkspaceBookmarkCategory(
+                                category,
+                                intl.formatMessage(messages.bookmarkDefaultCategory)
+                            )}
+                        </span>
                         <span
                             className={classNames(styles.categoryToggle, {
                                 [styles.categoryToggleCollapsed]: isCollapsed

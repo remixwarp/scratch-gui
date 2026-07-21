@@ -25,6 +25,7 @@ import {
 import {openProjectThemePrompt} from '../../reducers/mw-project-theme';
 import {setCustomStageSize} from '../../reducers/custom-stage-size';
 import {openUnknownPlatformModal} from '../../reducers/modals';
+import {recordStageSize} from '../achievements.js';
 import implementGuiAPI from '../api/extension-gui';
 import {BLOCKS_TAB_INDEX} from '../../reducers/editor-tab';
 
@@ -380,7 +381,10 @@ const vmListenerHOC = function (WrappedComponent) {
             dispatch(openUnknownPlatformModal());
         },
         onRuntimeOptionsChanged: options => dispatch(setRuntimeOptionsState(options)),
-        onStageSizeChanged: (width, height) => dispatch(setCustomStageSize(width, height)),
+        onStageSizeChanged: (width, height) => {
+            recordStageSize(width, height);
+            dispatch(setCustomStageSize(width, height));
+        },
         onCompileError: errors => dispatch(addCompileError(errors)),
         onClearCompileErrors: () => dispatch(clearCompileErrors()),
         onOpenProjectThemePrompt: (mistwarpTheme, promptKey) => dispatch(

@@ -1,6 +1,21 @@
 export const WORKSPACE_BOOKMARKS_COMMENT_PREFIX = 'WORKSPACE_BOOKMARKS:';
 export const WORKSPACE_BOOKMARKS_DEFAULT_CATEGORY = 'General';
 export const WORKSPACE_BOOKMARKS_VERSION = '2.0';
+const DEFAULT_CATEGORY_ALIASES = new Set(['General', '通用', '常规']);
+
+export const normalizeWorkspaceBookmarkCategory = category => {
+    if (typeof category !== 'string') return WORKSPACE_BOOKMARKS_DEFAULT_CATEGORY;
+    const trimmed = category.trim();
+    return DEFAULT_CATEGORY_ALIASES.has(trimmed) ?
+        WORKSPACE_BOOKMARKS_DEFAULT_CATEGORY :
+        trimmed || WORKSPACE_BOOKMARKS_DEFAULT_CATEGORY;
+};
+
+export const localizeWorkspaceBookmarkCategory = (category, defaultCategoryLabel) => (
+    normalizeWorkspaceBookmarkCategory(category) === WORKSPACE_BOOKMARKS_DEFAULT_CATEGORY ?
+        defaultCategoryLabel :
+        category
+);
 
 export const getDefaultWorkspaceBookmarksPayload = () => ({
     bookmarks: [],
@@ -11,11 +26,21 @@ export const getDefaultWorkspaceBookmarksPayload = () => ({
 export const normalizeWorkspaceBookmarksPayload = payload => {
     const normalized = payload && typeof payload === 'object' ? payload : {};
 
-    const bookmarks = Array.isArray(normalized.bookmarks) ? normalized.bookmarks : [];
-    const categories = Array.isArray(normalized.categories) ?
+    const bookmarks = Array.isArray(normalized.bookmarks) ?
+        normalized.bookmarks
+            .filter(bookmark => bookmark && typeof bookmark === 'object')
+            .map(bookmark => ({
+                ...bookmark,
+                category: normalizeWorkspaceBookmarkCategory(bookmark.category)
+            })) :
+        [];
+    const rawCategories = Array.isArray(normalized.categories) ?
         normalized.categories :
         [WORKSPACE_BOOKMARKS_DEFAULT_CATEGORY];
-    const collapsedCategories = Array.isArray(normalized.collapsedCategories) ? normalized.collapsedCategories : [];
+    const categories = Array.from(new Set(rawCategories.map(normalizeWorkspaceBookmarkCategory)));
+    const collapsedCategories = Array.isArray(normalized.collapsedCategories) ?
+        normalized.collapsedCategories.map(normalizeWorkspaceBookmarkCategory) :
+        [];
 
     return {
         bookmarks,
