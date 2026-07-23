@@ -13,6 +13,11 @@ import * as accentPaleBlue from './accent/pale-blue';
 import * as accentEggplantPurple from './accent/eggplant-purple';
 import * as accentTrans from './accent/trans';
 import * as accentGay from './accent/gay';
+import * as accentBi from './accent/bi';
+import * as accentPan from './accent/pan';
+import * as accentLesbian from './accent/lesbian';
+import * as accentNonbinary from './accent/nonbinary';
+import * as accentAce from './accent/ace';
 import * as accentRotur from './accent/rotur';
 import * as accentPink from './accent/pink';
 import * as accentPinkV2 from './accent/pink(v2)';
@@ -36,6 +41,9 @@ import * as accentMagenta from './accent/magenta';
 import * as accentTY from './accent/ty';
 import * as accentOubi from './accent/oubi';
 import * as accentOmniBlue from './accent/omnimax-blue';
+import * as accentVaporwave from './accent/vaporwave';
+import * as accentMatrix from './accent/matrix';
+import * as accentHoney from './accent/honey';
 
 const ACCENTS = [
     {
@@ -127,6 +135,36 @@ const ACCENTS = [
         accent: accentGay,
         description: 'Gay accent color',
         id: 'tw.accent.gay'
+    },
+    {
+        name: 'Bi',
+        accent: accentBi,
+        description: 'Bi pride flag accent',
+        id: 'mw.accent.bi'
+    },
+    {
+        name: 'Pan',
+        accent: accentPan,
+        description: 'Pan pride flag accent',
+        id: 'mw.accent.pan'
+    },
+    {
+        name: 'Lesbian',
+        accent: accentLesbian,
+        description: 'Lesbian pride flag accent',
+        id: 'mw.accent.lesbian'
+    },
+    {
+        name: 'Nonbinary',
+        accent: accentNonbinary,
+        description: 'Nonbinary pride flag accent',
+        id: 'mw.accent.nonbinary'
+    },
+    {
+        name: 'Asexual',
+        accent: accentAce,
+        description: 'Asexual pride flag accent',
+        id: 'mw.accent.asexual'
     },
     {
         name: 'Rotur',
@@ -265,6 +303,24 @@ const ACCENTS = [
         accent: accentOmniBlue,
         description: 'OmniMAX Blue gradient',
         id: 'tw.accent.omniblue'
+    },
+    {
+        name: 'Vaporwave',
+        accent: accentVaporwave,
+        description: 'Retro vaporwave gradient',
+        id: 'mw.accent.vaporwave'
+    },
+    {
+        name: 'Matrix',
+        accent: accentMatrix,
+        description: 'Digital rain green on black',
+        id: 'mw.accent.matrix'
+    },
+    {
+        name: 'Honey',
+        accent: accentHoney,
+        description: 'Warm golden honey gradient',
+        id: 'mw.accent.honey'
     }
 ];
 
