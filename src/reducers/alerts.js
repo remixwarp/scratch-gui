@@ -198,6 +198,9 @@ const showExtensionAlert = function (data) {
  * @param {string} alertId - the ID of the alert
  */
 const showAlertWithTimeout = function (dispatch, alertId) {
+    if (!dispatch || typeof dispatch !== 'function') {
+        return;
+    }
     const alertData = alertsData.find(thisAlertData => thisAlertData.alertId === alertId);
     if (alertData) {
         dispatch(showStandardAlert(alertId));

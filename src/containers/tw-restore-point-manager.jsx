@@ -419,7 +419,11 @@ class TWRestorePointManager extends React.Component {
         const filename = restorePoint ? restorePoint.filename : null;
         RestorePointAPI.copyCloudRestorePointLink(id, filename)
             .then(() => {
-                this.props.onCloudLinkCopied();
+                try {
+                    this.props.onCloudLinkCopied();
+                } catch (e) {
+                    log.error('Failed to show link copied alert', e);
+                }
             })
             .catch(error => {
                 log.error('Copy cloud link error', error);
