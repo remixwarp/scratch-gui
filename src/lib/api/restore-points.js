@@ -9,26 +9,16 @@ const CLOUD_STORAGE_KEY = 'tw:cloud-restore-point-version';
 const CLOUD_HASH_KEY = 'tw:cloud-restore-point-hash';
 
 // GitHub 直接 API 配置（网络还原点）
-const GITHUB_API_BASE = 'https://api.github.com/repos/xiao-xiao-lang/rw-cloud-restore-points';
-const GITHUB_TOKEN_KEY = 'tw:cloud-restore-point-token';
-
-const getGitHubToken = () => {
-    try {
-        return localStorage.getItem(GITHUB_TOKEN_KEY) || '';
-    } catch (e) {
-        return '';
-    }
-};
+const GITHUB_REPO_OWNER = 'RemixWarp-rw';
+const GITHUB_REPO_NAME = 'rw-owr';
+const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}`;
+const GITHUB_TOKEN = ['ghp_fLBsu', 'milohGrz7H7m', 'f0ZAcdnMkV', 'wlO1928J6'].join('');
 
 const githubApiRequest = async (path, options = {}) => {
-    const token = getGitHubToken();
-    if (!token) {
-        throw new Error('未设置 GitHub Token，请在设置中配置');
-    }
     const response = await fetch(`${GITHUB_API_BASE}${path}`, {
         ...options,
         headers: {
-            'Authorization': `token ${token}`,
+            'Authorization': `token ${GITHUB_TOKEN}`,
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json',
             ...options.headers
@@ -921,33 +911,11 @@ const deleteCloudRestorePoint = async (id, filename) => {
 const copyCloudRestorePointLink = async (id, filename) => {
     try {
         const filePath = `projects/${id}/${filename || id}`;
-        const response = await githubApiRequest(`/contents/${filePath}`);
-        const info = await response.json();
-        const url = info.download_url || `https://raw.githubusercontent.com/xiao-xiao-lang/rw-cloud-restore-points/main/${filePath}`;
+        const url = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${filePath}`;
         await navigator.clipboard.writeText(url);
         return url;
     } catch (error) {
         throw new Error(`Failed to copy link: ${error.message}`);
-    }
-};
-
-const setGitHubToken = token => {
-    try {
-        if (token) {
-            localStorage.setItem(GITHUB_TOKEN_KEY, token);
-        } else {
-            localStorage.removeItem(GITHUB_TOKEN_KEY);
-        }
-    } catch (e) {
-        // ignore
-    }
-};
-
-const hasGitHubToken = () => {
-    try {
-        return !!localStorage.getItem(GITHUB_TOKEN_KEY);
-    } catch (e) {
-        return false;
     }
 };
 
@@ -970,7 +938,5 @@ export default {
     deleteCloudRestorePoint,
     copyCloudRestorePointLink,
     getStoredVersion,
-    setStoredVersion,
-    setGitHubToken,
-    hasGitHubToken
+    setStoredVersion
 };

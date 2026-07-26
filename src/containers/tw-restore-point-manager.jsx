@@ -63,9 +63,7 @@ class TWRestorePointManager extends React.Component {
             'handlePushToCloud',
             'handleDeleteCloudRestorePoint',
             'handleCopyCloudLink',
-            'handleTabChange',
-            'handleTokenInputChange',
-            'handleSaveToken'
+            'handleTabChange'
         ]);
         this.state = {
             loading: true,
@@ -80,9 +78,7 @@ class TWRestorePointManager extends React.Component {
             activeTab: 'local',
             storedVersion: null,
             storedHash: null,
-            pushingToCloud: false,
-            hasToken: RestorePointAPI.hasGitHubToken(),
-            tokenInput: ''
+            pushingToCloud: false
         };
         this.timeout = null;
     }
@@ -330,26 +326,9 @@ class TWRestorePointManager extends React.Component {
             cloudError: null
         });
         if (tab === 'cloud') {
-            if (RestorePointAPI.hasGitHubToken()) {
-                this.refreshCloudRestorePoints();
-            }
+            this.refreshCloudRestorePoints();
         } else {
             this.refreshState();
-        }
-    }
-
-    handleTokenInputChange (e) {
-        this.setState({tokenInput: e.target.value});
-    }
-
-    handleSaveToken () {
-        RestorePointAPI.setGitHubToken(this.state.tokenInput);
-        this.setState({
-            hasToken: RestorePointAPI.hasGitHubToken(),
-            tokenInput: ''
-        });
-        if (RestorePointAPI.hasGitHubToken()) {
-            this.refreshCloudRestorePoints();
         }
     }
 
@@ -437,7 +416,7 @@ class TWRestorePointManager extends React.Component {
         const filename = restorePoint ? restorePoint.filename : null;
         RestorePointAPI.copyCloudRestorePointLink(id, filename)
             .then(() => {
-                showAlertWithTimeout(this.props.dispatch, 'twCloudLinkCopied');
+                this.props.onCloudLinkCopied();
             })
             .catch(error => {
                 log.error('Copy cloud link error', error);
@@ -475,10 +454,6 @@ class TWRestorePointManager extends React.Component {
                     onCopyCloudLink={this.handleCopyCloudLink}
                     storedVersion={this.state.storedVersion}
                     storedHash={this.state.storedHash}
-                    hasToken={this.state.hasToken}
-                    tokenInput={this.state.tokenInput}
-                    onTokenInputChange={this.handleTokenInputChange}
-                    onSaveToken={this.handleSaveToken}
                 />
             );
         }
@@ -534,7 +509,8 @@ const mapDispatchToProps = dispatch => ({
         dispatch(closeLoadingProject());
         dispatch(setFileHandle(null));
     },
-    onCloseModal: () => dispatch(closeRestorePointModal())
+    onCloseModal: () => dispatch(closeRestorePointModal()),
+    onCloudLinkCopied: () => showAlertWithTimeout(dispatch, 'twCloudLinkCopied')
 });
 
 export default injectIntl(connect(

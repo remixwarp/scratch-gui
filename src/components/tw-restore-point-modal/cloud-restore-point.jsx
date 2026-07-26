@@ -2,30 +2,43 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {FormattedDate, FormattedTime, FormattedRelative} from 'react-intl';
 import styles from './restore-point-modal.css';
-import {Trash, Link} from 'lucide-react';
+import {Trash, Link, ExternalLink} from 'lucide-react';
 
 const relativeTimeSupported = () => typeof Intl !== 'undefined' && typeof Intl.RelativeTimeFormat !== 'undefined';
 
 const CloudRestorePoint = props => {
     const createdDate = new Date(props.created * 1000);
-    
+
     const handleClickDelete = e => {
         e.stopPropagation();
-        props.onClickDelete(props.id);
+        props.onClickDelete(props.id, props.filename);
     };
-    
+
     const handleClickCopyLink = e => {
         e.stopPropagation();
-        props.onClickCopyLink(props.id);
+        props.onClickCopyLink(props.id, props.filename);
     };
-    
+
+    const handleClickGitHub = e => {
+        e.stopPropagation();
+        if (props.downloadUrl) {
+            window.open(props.downloadUrl, '_blank', 'noopener,noreferrer');
+        }
+    };
+
     return (
         <div className={styles.cloudRestorePoint}>
             <div className={styles.cloudRestorePointInfo}>
-                <div className={styles.cloudRestorePointTitle}>
+                <a
+                    href={props.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.cloudRestorePointTitle}
+                    title={props.downloadUrl}
+                >
                     {props.title}
-                </div>
-                
+                </a>
+
                 <div>
                     {relativeTimeSupported() && (
                         <span>
@@ -38,15 +51,23 @@ const CloudRestorePoint = props => {
                     <FormattedTime value={createdDate} />
                     {relativeTimeSupported() && ')'}
                 </div>
-                
-                {props.version && (
+
+                {props.hash && (
                     <div className={styles.cloudRestorePointVersion}>
-                        Version: {props.version}
+                        Hash: {props.hash.substring(0, 7)}
                     </div>
                 )}
             </div>
-            
+
             <div className={styles.cloudRestorePointButtons}>
+                <button
+                    className={styles.cloudRestorePointButton}
+                    onClick={handleClickGitHub}
+                    title="Open in GitHub"
+                >
+                    <ExternalLink size={16} />
+                </button>
+
                 <button
                     className={styles.cloudRestorePointButton}
                     onClick={handleClickCopyLink}
@@ -54,7 +75,7 @@ const CloudRestorePoint = props => {
                 >
                     <Link size={16} />
                 </button>
-                
+
                 <button
                     className={styles.cloudRestorePointButton}
                     onClick={handleClickDelete}
@@ -71,7 +92,9 @@ CloudRestorePoint.propTypes = {
     id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
     created: PropTypes.number.isRequired,
-    version: PropTypes.string,
+    filename: PropTypes.string,
+    hash: PropTypes.string,
+    downloadUrl: PropTypes.string,
     onClickDelete: PropTypes.func.isRequired,
     onClickCopyLink: PropTypes.func.isRequired
 };
