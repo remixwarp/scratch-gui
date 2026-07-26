@@ -834,8 +834,7 @@ const getCloudRestorePoints = async () => {
                                 size: file.size,
                                 hash: file.sha,
                                 created: commitDate || Date.now() / 1000,
-                                // 对 download_url 中的非 ASCII 字符进行编码，保证链接可直接被 fetch
-                                downloadUrl: file.download_url ? encodeURI(file.download_url) : null
+                                downloadUrl: file.download_url || null
                             });
                         }
                     }
