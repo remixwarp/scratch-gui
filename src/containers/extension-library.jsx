@@ -418,7 +418,7 @@ const fetchLibrary = async () => {
     );
 
     yesshapeExtensions = await fetchWithFallback(
-        'ow',
+        'yesshape',
         'https://openwarp-extensions.pages.dev/generated-metadata/extensions-v0.json',
         'https://rw-extensions.pages.dev/yesshape/extensions-index.json',
         data => data.extensions.map(extension => ({
@@ -429,7 +429,7 @@ const fetchLibrary = async () => {
             extensionId: extension.id,
             extensionURL: `https://openwarp-extensions.pages.dev/${extension.slug}.js`,
             iconURL: `https://openwarp-extensions.pages.dev/${extension.image || 'images/unknown.svg'}`,
-            tags: ['ow'],
+            tags: ['yesshape'],
             credits: [
                 ...(extension.by || []),
                 ...(extension.original || [])
@@ -459,7 +459,7 @@ const fetchLibrary = async () => {
     );
 
     astraExtensions = await fetchWithFallback(
-        'ae',
+        'astra',
         'https://editors.astras.top/extensions/generated-metadata/extensions-v0.json',
         'https://rw-extensions.pages.dev/astraeditor/extensions-index.json',
         data => data.extensions.map(extension => ({
@@ -470,7 +470,7 @@ const fetchLibrary = async () => {
             extensionId: extension.id,
             extensionURL: `https://editors.astras.top/extensions/${extension.slug}.js`,
             iconURL: `https://editors.astras.top/extensions/${extension.image || 'images/unknown.svg'}`,
-            tags: ['ae'],
+            tags: ['astra'],
             credits: [
                 ...(extension.by || []),
                 ...(extension.original || [])

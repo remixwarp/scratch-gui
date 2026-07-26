@@ -397,7 +397,9 @@ class TWRestorePointManager extends React.Component {
     }
 
     handleDeleteCloudRestorePoint (id) {
-        RestorePointAPI.deleteCloudRestorePoint(id)
+        const restorePoint = this.state.cloudRestorePoints.find(rp => rp.id === id);
+        const filename = restorePoint ? restorePoint.filename : null;
+        RestorePointAPI.deleteCloudRestorePoint(id, filename)
             .then(() => {
                 this.refreshCloudRestorePoints();
             })
@@ -410,7 +412,9 @@ class TWRestorePointManager extends React.Component {
     }
 
     handleCopyCloudLink (id) {
-        RestorePointAPI.copyCloudRestorePointLink(id)
+        const restorePoint = this.state.cloudRestorePoints.find(rp => rp.id === id);
+        const filename = restorePoint ? restorePoint.filename : null;
+        RestorePointAPI.copyCloudRestorePointLink(id, filename)
             .then(() => {
                 showAlertWithTimeout(this.props.dispatch, 'twCloudLinkCopied');
             })

@@ -763,7 +763,7 @@ const setStoredVersion = (version, hash) => {
 
 const getCloudRestorePoints = async () => {
     try {
-        const response = await fetch(`${PROXY_BASE_URL}/api/restore-points`, {
+        const response = await fetch(`${PROXY_BASE_URL}/projects`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -775,7 +775,19 @@ const getCloudRestorePoints = async () => {
         }
         
         const data = await response.json();
-        return data.restorePoints || [];
+        // 代理返回的是文件列表，统一转换为 restorePoints 格式
+        const restorePoints = Array.isArray(data) ? data : (data.projects || data.restorePoints || []);
+        return restorePoints.map(item => ({
+            id: item.id || item.name || item.sha,
+            title: item.title || item.name || item.filename || 'Untitled',
+            created: item.created ? new Date(item.created).getTime() / 1000 : 
+                     (item.commitDate ? new Date(item.commitDate).getTime() / 1000 : 
+                     Date.now() / 1000),
+            version: item.version || null,
+            hash: item.hash || item.sha || null,
+            filename: item.filename || item.name || item.id,
+            downloadUrl: item.downloadUrl || `${PROXY_BASE_URL}/projects/${item.id || item.name}/${item.filename || item.name}`
+        }));
     } catch (error) {
         throw new Error(`Failed to fetch cloud restore points: ${error.message}`);
     }
@@ -800,9 +812,8 @@ const pushToCloud = async (vm, title) => {
         
         const formData = new FormData();
         formData.append('file', blob, `${title}.sb3`);
-        formData.append('title', title);
         
-        const response = await fetch(`${PROXY_BASE_URL}/api/restore-points`, {
+        const response = await fetch(`${PROXY_BASE_URL}/upload`, {
             method: 'POST',
             body: formData
         });
@@ -812,17 +823,24 @@ const pushToCloud = async (vm, title) => {
         }
         
         const result = await response.json();
-        setStoredVersion(result.version, result.hash);
+        // 从上传响应中提取版本和哈希信息
+        const version = result.version || null;
+        const hash = result.hash || result.sha || (result.file ? result.file.sha : null) || null;
+        setStoredVersion(version, hash);
         
-        return result;
+        return {
+            ...result,
+            version,
+            hash
+        };
     } catch (error) {
         throw new Error(`Failed to push to cloud: ${error.message}`);
     }
 };
 
-const deleteCloudRestorePoint = async (id) => {
+const deleteCloudRestorePoint = async (id, filename) => {
     try {
-        const response = await fetch(`${PROXY_BASE_URL}/api/restore-points/${id}`, {
+        const response = await fetch(`${PROXY_BASE_URL}/projects/${id}/${filename || id}`, {
             method: 'DELETE'
         });
         
@@ -836,22 +854,12 @@ const deleteCloudRestorePoint = async (id) => {
     }
 };
 
-const copyCloudRestorePointLink = async (id) => {
+const copyCloudRestorePointLink = async (id, filename) => {
     try {
-        const response = await fetch(`${PROXY_BASE_URL}/api/restore-points/${id}/link`, {
-            method: 'GET'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const result = await response.json();
-        if (result.url) {
-            await navigator.clipboard.writeText(result.url);
-            return result.url;
-        }
-        throw new Error('No URL returned');
+        // 直接构建下载链接
+        const url = `${PROXY_BASE_URL}/projects/${id}/${filename || id}`;
+        await navigator.clipboard.writeText(url);
+        return url;
     } catch (error) {
         throw new Error(`Failed to copy link: ${error.message}`);
     }
