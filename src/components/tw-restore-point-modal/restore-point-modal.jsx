@@ -333,6 +333,7 @@ const RestorePointModal = props => (
                                     key={restorePoint.id}
                                     onClickDelete={props.onDeleteCloudRestorePoint}
                                     onClickCopyLink={props.onCopyCloudLink}
+                                    onClickOpenInEditor={props.onOpenInEditor}
                                     {...restorePoint}
                                 />
                             ))}
@@ -368,6 +369,7 @@ RestorePointModal.propTypes = {
     pushingToCloud: PropTypes.bool.isRequired,
     onDeleteCloudRestorePoint: PropTypes.func.isRequired,
     onCopyCloudLink: PropTypes.func.isRequired,
+    onOpenInEditor: PropTypes.func.isRequired,
     storedVersion: PropTypes.string,
     storedHash: PropTypes.string
 };

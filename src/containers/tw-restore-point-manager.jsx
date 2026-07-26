@@ -63,6 +63,7 @@ class TWRestorePointManager extends React.Component {
             'handlePushToCloud',
             'handleDeleteCloudRestorePoint',
             'handleCopyCloudLink',
+            'handleOpenInEditor',
             'handleTabChange'
         ]);
         this.state = {
@@ -332,32 +333,33 @@ class TWRestorePointManager extends React.Component {
         }
     }
 
-    refreshCloudRestorePoints () {
+    refreshCloudRestorePoints (showPushInfo = false, pushHash = null) {
         this.setState({
             cloudLoading: true,
             cloudError: null
         });
-        
+
         const {version, hash} = RestorePointAPI.getStoredVersion();
-        
+
         RestorePointAPI.getCloudRestorePoints()
             .then(restorePoints => {
                 let filteredPoints = restorePoints;
                 if (version) {
                     filteredPoints = restorePoints.filter(rp => rp.version > version);
                 }
-                
+
                 filteredPoints.forEach(rp => {
                     if (!rp.version && hash) {
                         rp.version = hash;
                     }
                 });
-                
+
                 this.setState({
                     cloudLoading: false,
                     cloudRestorePoints: filteredPoints,
-                    storedVersion: version,
-                    storedHash: hash
+                    // 仅在推送后显示推送信息，初始连接/加载列表时不显示
+                    storedVersion: showPushInfo ? version : null,
+                    storedHash: showPushInfo ? (pushHash || hash) : null
                 });
             })
             .catch(error => {
@@ -373,17 +375,18 @@ class TWRestorePointManager extends React.Component {
         if (this.state.pushingToCloud) {
             return;
         }
-        
+
         this.setState({
             pushingToCloud: true
         });
-        
+
         RestorePointAPI.pushToCloud(this.props.vm, this.props.projectTitle)
             .then(result => {
                 this.setState({
                     pushingToCloud: false
                 });
-                this.refreshCloudRestorePoints();
+                // 推送后显示推送信息（传入推送返回的最新 hash）
+                this.refreshCloudRestorePoints(true, result ? result.hash : null);
                 this.props.onFinishCreatingRestorePoint();
             })
             .catch(error => {
@@ -426,6 +429,16 @@ class TWRestorePointManager extends React.Component {
             });
     }
 
+    handleOpenInEditor (id) {
+        const restorePoint = this.state.cloudRestorePoints.find(rp => rp.id === id);
+        if (!restorePoint || !restorePoint.downloadUrl) {
+            return;
+        }
+        // 通过修改 URL 参数的方式，让编辑器自动加载该 sb3 文件
+        const editorUrl = `https://remixwarp.pages.dev/editor.html?project_url=${encodeURIComponent(restorePoint.downloadUrl)}`;
+        window.open(editorUrl, '_blank', 'noopener,noreferrer');
+    }
+
     render () {
         if (this.props.isModalVisible) {
             return (
@@ -452,6 +465,7 @@ class TWRestorePointManager extends React.Component {
                     pushingToCloud={this.state.pushingToCloud}
                     onDeleteCloudRestorePoint={this.handleDeleteCloudRestorePoint}
                     onCopyCloudLink={this.handleCopyCloudLink}
+                    onOpenInEditor={this.handleOpenInEditor}
                     storedVersion={this.state.storedVersion}
                     storedHash={this.state.storedHash}
                 />

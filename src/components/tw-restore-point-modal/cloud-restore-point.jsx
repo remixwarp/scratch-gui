@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {FormattedDate, FormattedTime, FormattedRelative} from 'react-intl';
 import styles from './restore-point-modal.css';
-import {Trash, Link, ExternalLink} from 'lucide-react';
+import {Trash, Link, ExternalLink, Edit} from 'lucide-react';
 
 const relativeTimeSupported = () => typeof Intl !== 'undefined' && typeof Intl.RelativeTimeFormat !== 'undefined';
 
@@ -24,6 +24,11 @@ const CloudRestorePoint = props => {
         if (props.downloadUrl) {
             window.open(props.downloadUrl, '_blank', 'noopener,noreferrer');
         }
+    };
+
+    const handleClickOpenInEditor = e => {
+        e.stopPropagation();
+        props.onClickOpenInEditor(props.id);
     };
 
     return (
@@ -62,6 +67,15 @@ const CloudRestorePoint = props => {
             <div className={styles.cloudRestorePointButtons}>
                 <button
                     className={styles.cloudRestorePointButton}
+                    onClick={handleClickOpenInEditor}
+                    title="Open in editor"
+                    disabled={!props.downloadUrl}
+                >
+                    <Edit size={16} />
+                </button>
+
+                <button
+                    className={styles.cloudRestorePointButton}
                     onClick={handleClickGitHub}
                     title="Open in GitHub"
                 >
@@ -96,7 +110,8 @@ CloudRestorePoint.propTypes = {
     hash: PropTypes.string,
     downloadUrl: PropTypes.string,
     onClickDelete: PropTypes.func.isRequired,
-    onClickCopyLink: PropTypes.func.isRequired
+    onClickCopyLink: PropTypes.func.isRequired,
+    onClickOpenInEditor: PropTypes.func.isRequired
 };
 
 export default CloudRestorePoint;

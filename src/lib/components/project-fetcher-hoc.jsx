@@ -118,6 +118,12 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 ) {
                     projectUrl = `https://${projectUrl}`;
                 }
+                // 对 URL 中的非 ASCII 字符（如中文文件名）进行编码，避免 fetch 卡住
+                try {
+                    projectUrl = encodeURI(projectUrl);
+                } catch (e) {
+                    // ignore encoding errors
+                }
                 assetPromise = fetch(projectUrl)
                     .then(r => {
                         if (!r.ok) {
