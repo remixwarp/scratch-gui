@@ -13,6 +13,7 @@ const TagButtonComponent = ({
     className,
     tag, // eslint-disable-line no-unused-vars
     intlLabel,
+    loadStatus,
     ...props
 }) => (
     <Button
@@ -28,8 +29,17 @@ const TagButtonComponent = ({
         )}
         {...props}
     >
-        {typeof intlLabel === 'string' ? intlLabel : (
-            <FormattedMessage {...intlLabel} />
+        <span className={styles.tagButtonContent}>
+            {typeof intlLabel === 'string' ? intlLabel : (
+                <FormattedMessage {...intlLabel} />
+            )}
+        </span>
+        {loadStatus && (
+            <span className={classNames(styles.statusDot, {
+                [styles.online]: loadStatus === 'online',
+                [styles.local]: loadStatus === 'local',
+                [styles.error]: loadStatus === 'error'
+            })} />
         )}
     </Button>
 );
@@ -45,7 +55,8 @@ TagButtonComponent.propTypes = {
         }),
         PropTypes.string
     ]).isRequired,
-    tag: PropTypes.string.isRequired
+    tag: PropTypes.string.isRequired,
+    loadStatus: PropTypes.oneOf(['online', 'local', 'error'])
 };
 
 TagButtonComponent.defaultProps = {
