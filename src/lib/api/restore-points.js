@@ -1,8 +1,12 @@
 import {base64ToArrayBuffer} from '../utils/base64';
 import JSZip from '@turbowarp/jszip';
+import {PROXY_BASE_URL} from '../proxy-config';
 
 const TYPE_AUTOMATIC = 0;
 const TYPE_MANUAL = 1;
+
+const CLOUD_STORAGE_KEY = 'tw:cloud-restore-point-version';
+const CLOUD_HASH_KEY = 'tw:cloud-restore-point-hash';
 
 /**
  * @typedef {0|1} MetadataType
@@ -734,6 +738,127 @@ const setInterval = interval => {
     }
 };
 
+const getStoredVersion = () => {
+    try {
+        const version = localStorage.getItem(CLOUD_STORAGE_KEY);
+        const hash = localStorage.getItem(CLOUD_HASH_KEY);
+        return {version, hash};
+    } catch (e) {
+        return {version: null, hash: null};
+    }
+};
+
+const setStoredVersion = (version, hash) => {
+    try {
+        if (version) {
+            localStorage.setItem(CLOUD_STORAGE_KEY, version);
+        }
+        if (hash) {
+            localStorage.setItem(CLOUD_HASH_KEY, hash);
+        }
+    } catch (e) {
+        // ignore
+    }
+};
+
+const getCloudRestorePoints = async () => {
+    try {
+        const response = await fetch(`${PROXY_BASE_URL}/api/restore-points`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.restorePoints || [];
+    } catch (error) {
+        throw new Error(`Failed to fetch cloud restore points: ${error.message}`);
+    }
+};
+
+const pushToCloud = async (vm, title) => {
+    try {
+        const projectFiles = vm.saveProjectSb3DontZip();
+        const jsonData = projectFiles['project.json'];
+        const projectAssetIDs = Object.keys(projectFiles).filter(i => i !== 'project.json');
+        
+        const zip = new JSZip();
+        zip.file('project.json', jsonData);
+        for (const assetId of projectAssetIDs) {
+            zip.file(assetId, projectFiles[assetId]);
+        }
+        
+        const blob = await zip.generateAsync({
+            type: 'blob',
+            compression: 'DEFLATE'
+        });
+        
+        const formData = new FormData();
+        formData.append('file', blob, `${title}.sb3`);
+        formData.append('title', title);
+        
+        const response = await fetch(`${PROXY_BASE_URL}/api/restore-points`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        if (result.version) {
+            setStoredVersion(result.version, result.hash);
+        }
+        
+        return result;
+    } catch (error) {
+        throw new Error(`Failed to push to cloud: ${error.message}`);
+    }
+};
+
+const deleteCloudRestorePoint = async (id) => {
+    try {
+        const response = await fetch(`${PROXY_BASE_URL}/api/restore-points/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        throw new Error(`Failed to delete cloud restore point: ${error.message}`);
+    }
+};
+
+const copyCloudRestorePointLink = async (id) => {
+    try {
+        const response = await fetch(`${PROXY_BASE_URL}/api/restore-points/${id}/link`, {
+            method: 'GET'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        if (result.url) {
+            await navigator.clipboard.writeText(result.url);
+            return result.url;
+        }
+        throw new Error('No URL returned');
+    } catch (error) {
+        throw new Error(`Failed to copy link: ${error.message}`);
+    }
+};
+
 export default {
     TYPE_AUTOMATIC,
     TYPE_MANUAL,
@@ -747,5 +872,11 @@ export default {
     loadRestorePoint,
     deleteLegacyRestorePoint,
     readInterval,
-    setInterval
+    setInterval,
+    getCloudRestorePoints,
+    pushToCloud,
+    deleteCloudRestorePoint,
+    copyCloudRestorePointLink,
+    getStoredVersion,
+    setStoredVersion
 };

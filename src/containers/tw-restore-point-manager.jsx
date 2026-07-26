@@ -58,7 +58,12 @@ class TWRestorePointManager extends React.Component {
             'handleChangeInterval',
             'handleClickExport',
             'handleClickLoad',
-            'isExportingRestorePoint'
+            'isExportingRestorePoint',
+            'refreshCloudRestorePoints',
+            'handlePushToCloud',
+            'handleDeleteCloudRestorePoint',
+            'handleCopyCloudLink',
+            'handleTabChange'
         ]);
         this.state = {
             loading: true,
@@ -66,7 +71,14 @@ class TWRestorePointManager extends React.Component {
             restorePoints: [],
             error: null,
             interval: RestorePointAPI.readInterval(),
-            exportingRestorePoints: []
+            exportingRestorePoints: [],
+            cloudRestorePoints: [],
+            cloudLoading: false,
+            cloudError: null,
+            activeTab: 'local',
+            storedVersion: null,
+            storedHash: null,
+            pushingToCloud: false
         };
         this.timeout = null;
     }
@@ -307,6 +319,109 @@ class TWRestorePointManager extends React.Component {
         });
     }
 
+    handleTabChange (tab) {
+        this.setState({
+            activeTab: tab,
+            error: null,
+            cloudError: null
+        });
+        if (tab === 'cloud') {
+            this.refreshCloudRestorePoints();
+        } else {
+            this.refreshState();
+        }
+    }
+
+    refreshCloudRestorePoints () {
+        this.setState({
+            cloudLoading: true,
+            cloudError: null
+        });
+        
+        const {version, hash} = RestorePointAPI.getStoredVersion();
+        
+        RestorePointAPI.getCloudRestorePoints()
+            .then(restorePoints => {
+                let filteredPoints = restorePoints;
+                if (version) {
+                    filteredPoints = restorePoints.filter(rp => rp.version > version);
+                }
+                
+                filteredPoints.forEach(rp => {
+                    if (!rp.version && hash) {
+                        rp.version = hash;
+                    }
+                });
+                
+                this.setState({
+                    cloudLoading: false,
+                    cloudRestorePoints: filteredPoints,
+                    storedVersion: version,
+                    storedHash: hash
+                });
+            })
+            .catch(error => {
+                log.error('Cloud restore point error', error);
+                this.setState({
+                    cloudLoading: false,
+                    cloudError: `${error}`
+                });
+            });
+    }
+
+    handlePushToCloud () {
+        if (this.state.pushingToCloud) {
+            return;
+        }
+        
+        this.setState({
+            pushingToCloud: true
+        });
+        
+        RestorePointAPI.pushToCloud(this.props.vm, this.props.projectTitle)
+            .then(result => {
+                this.setState({
+                    pushingToCloud: false
+                });
+                this.refreshCloudRestorePoints();
+                this.props.onFinishCreatingRestorePoint();
+            })
+            .catch(error => {
+                log.error('Push to cloud error', error);
+                this.setState({
+                    pushingToCloud: false,
+                    cloudError: `${error}`
+                });
+                this.props.onErrorCreatingRestorePoint();
+            });
+    }
+
+    handleDeleteCloudRestorePoint (id) {
+        RestorePointAPI.deleteCloudRestorePoint(id)
+            .then(() => {
+                this.refreshCloudRestorePoints();
+            })
+            .catch(error => {
+                log.error('Delete cloud restore point error', error);
+                this.setState({
+                    cloudError: `${error}`
+                });
+            });
+    }
+
+    handleCopyCloudLink (id) {
+        RestorePointAPI.copyCloudRestorePointLink(id)
+            .then(() => {
+                showAlertWithTimeout(this.props.dispatch, 'twCloudLinkCopied');
+            })
+            .catch(error => {
+                log.error('Copy cloud link error', error);
+                this.setState({
+                    cloudError: `${error}`
+                });
+            });
+    }
+
     render () {
         if (this.props.isModalVisible) {
             return (
@@ -324,6 +439,17 @@ class TWRestorePointManager extends React.Component {
                     totalSize={this.state.totalSize}
                     restorePoints={this.state.restorePoints}
                     error={this.state.error}
+                    activeTab={this.state.activeTab}
+                    onTabChange={this.handleTabChange}
+                    cloudRestorePoints={this.state.cloudRestorePoints}
+                    cloudLoading={this.state.cloudLoading}
+                    cloudError={this.state.cloudError}
+                    onPushToCloud={this.handlePushToCloud}
+                    pushingToCloud={this.state.pushingToCloud}
+                    onDeleteCloudRestorePoint={this.handleDeleteCloudRestorePoint}
+                    onCopyCloudLink={this.handleCopyCloudLink}
+                    storedVersion={this.state.storedVersion}
+                    storedHash={this.state.storedHash}
                 />
             );
         }

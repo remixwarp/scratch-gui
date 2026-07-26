@@ -234,6 +234,21 @@ const alerts = [
         maxDisplaySecs: 5
     },
     {
+        alertId: 'twCloudLinkCopied',
+        alertType: AlertTypes.INLINE,
+        clearList: ['twCloudLinkCopied'],
+        content: (
+            <FormattedMessage
+                defaultMessage="Link copied to clipboard"
+                description="Message indicating that cloud restore point download link was copied"
+                id="tw.alerts.cloudLinkCopied"
+            />
+        ),
+        iconURL: successImage,
+        level: AlertLevels.SUCCESS,
+        maxDisplaySecs: 3
+    },
+    {
         alertId: 'cloudInfo',
         alertType: AlertTypes.STANDARD,
         clearList: ['cloudInfo'],

@@ -1,0 +1,1 @@
+export const PROXY_BASE_URL = 'https://api-owr.rewp.de5.net';
