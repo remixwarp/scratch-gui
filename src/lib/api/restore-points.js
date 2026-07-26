@@ -812,9 +812,7 @@ const pushToCloud = async (vm, title) => {
         }
         
         const result = await response.json();
-        if (result.version) {
-            setStoredVersion(result.version, result.hash);
-        }
+        setStoredVersion(result.version, result.hash);
         
         return result;
     } catch (error) {

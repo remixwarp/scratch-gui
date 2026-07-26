@@ -300,53 +300,6 @@ const fetchLibrary = async () => {
     }
 
     try {
-        const astraRes = await fetch('https://rw-extensions.pages.dev/astraeditor/extensions-index.json');
-        if (!astraRes.ok) {
-            console.warn(`AstraEditor extensions: HTTP status ${astraRes.status}`);
-        } else {
-            const astraData = await astraRes.json();
-            astraExtensions = astraData.extensions.map(extension => ({
-                name: extension.name,
-                nameTranslations: extension.nameTranslations || {},
-                description: extension.description,
-                descriptionTranslations: extension.descriptionTranslations || {},
-                extensionId: extension.extensionId,
-                extensionURL: extension.extensionURL,
-                iconURL: extension.iconURL || emptyBanner,
-                tags: extension.tags || ['astra'],
-                credits: (extension.credits || []).map(credit => {
-                    if (typeof credit === 'object' && credit.name) {
-                        const link = credit.link || credit.url;
-                        if (link) {
-                            return (
-                                <a
-                                    href={link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    key={credit.name}
-                                >
-                                    {credit.name}
-                                </a>
-                            );
-                        }
-                        return credit.name;
-                    }
-                    return credit;
-                }),
-                docsURI: extension.docsURI || null,
-                samples: extension.samples ? extension.samples.map(sample => ({
-                    href: `https://remixwarp.pages.dev/editor.html?project_url=https://remixwarp.pages.dev${sample.href}`,
-                    text: sample.text
-                })) : null,
-                incompatibleWithScratch: extension.incompatibleWithScratch || true,
-                featured: extension.featured || true
-            }));
-        }
-    } catch (error) {
-        console.warn('Failed to load AstraEditor extensions:', error);
-    }
-
-    try {
         const engineRes = await fetch('https://rw-extensions.pages.dev/02engine/02engine-extensions/extensions.json');
         if (!engineRes.ok) {
             console.warn(`02Engine extensions: HTTP status ${engineRes.status}`);
@@ -390,53 +343,6 @@ const fetchLibrary = async () => {
         }
     } catch (error) {
         console.warn('Failed to load 02Engine extensions:', error);
-    }
-
-    try {
-        const yesshapeRes = await fetch('https://rw-extensions.pages.dev/yesshape/extensions-index.json');
-        if (!yesshapeRes.ok) {
-            console.warn(`Yesshape extensions: HTTP status ${yesshapeRes.status}`);
-        } else {
-            const yesshapeData = await yesshapeRes.json();
-            yesshapeExtensions = yesshapeData.extensions.map(extension => ({
-                name: extension.name,
-                nameTranslations: extension.nameTranslations || {},
-                description: extension.description,
-                descriptionTranslations: extension.descriptionTranslations || {},
-                extensionId: extension.extensionId,
-                extensionURL: extension.extensionURL,
-                iconURL: extension.iconURL,
-                tags: extension.tags || ['yesshape'],
-                credits: (extension.credits || []).map(credit => {
-                    if (typeof credit === 'object' && credit.name) {
-                        const link = credit.link || credit.url;
-                        if (link) {
-                            return (
-                                <a
-                                    href={link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    key={credit.name}
-                                >
-                                    {credit.name}
-                                </a>
-                            );
-                        }
-                        return credit.name;
-                    }
-                    return credit;
-                }),
-                docsURI: extension.docsURI || null,
-                samples: extension.samples ? extension.samples.map(sample => ({
-                    href: `https://remixwarp.pages.dev/editor.html?project_url=${sample.href.startsWith('http') ? sample.href : 'https://remixwarp.pages.dev' + sample.href}`,
-                    text: sample.text
-                })) : null,
-                incompatibleWithScratch: extension.incompatibleWithScratch || true,
-                featured: extension.featured || true
-            }));
-        }
-    } catch (error) {
-        console.warn('Failed to load Yesshape extensions:', error);
     }
 
     const loadStatus = {};
