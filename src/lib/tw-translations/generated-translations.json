@@ -315,6 +315,7 @@
     "tw.restorePoints.title": "还原点",
     "tw.restorePoints.localTab": "本地还原点",
     "tw.restorePoints.cloudTab": "网络还原点",
+    "tw.restorePoints.cloudLoading": "加载中...",
     "tw.restorePoints.pushToCloud": "推送至云端",
     "tw.restorePoints.pushingToCloud": "推送中...",
     "tw.restorePoints.cloudEmpty": "未找到网络还原点。",

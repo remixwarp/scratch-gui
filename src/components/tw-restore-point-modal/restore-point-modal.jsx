@@ -315,7 +315,7 @@ const RestorePointModal = props => (
                             <FormattedMessage
                                 defaultMessage="Loading..."
                                 description="Loading message in cloud restore point manager"
-                                id="tw.restorePoints.loading"
+                                id="tw.restorePoints.cloudLoading"
                             />
                         </div>
                     ) : props.cloudRestorePoints.length === 0 ? (
