@@ -63,7 +63,9 @@ class TWRestorePointManager extends React.Component {
             'handlePushToCloud',
             'handleDeleteCloudRestorePoint',
             'handleCopyCloudLink',
-            'handleTabChange'
+            'handleTabChange',
+            'handleTokenInputChange',
+            'handleSaveToken'
         ]);
         this.state = {
             loading: true,
@@ -78,7 +80,9 @@ class TWRestorePointManager extends React.Component {
             activeTab: 'local',
             storedVersion: null,
             storedHash: null,
-            pushingToCloud: false
+            pushingToCloud: false,
+            hasToken: RestorePointAPI.hasGitHubToken(),
+            tokenInput: ''
         };
         this.timeout = null;
     }
@@ -326,9 +330,26 @@ class TWRestorePointManager extends React.Component {
             cloudError: null
         });
         if (tab === 'cloud') {
-            this.refreshCloudRestorePoints();
+            if (RestorePointAPI.hasGitHubToken()) {
+                this.refreshCloudRestorePoints();
+            }
         } else {
             this.refreshState();
+        }
+    }
+
+    handleTokenInputChange (e) {
+        this.setState({tokenInput: e.target.value});
+    }
+
+    handleSaveToken () {
+        RestorePointAPI.setGitHubToken(this.state.tokenInput);
+        this.setState({
+            hasToken: RestorePointAPI.hasGitHubToken(),
+            tokenInput: ''
+        });
+        if (RestorePointAPI.hasGitHubToken()) {
+            this.refreshCloudRestorePoints();
         }
     }
 
@@ -454,6 +475,10 @@ class TWRestorePointManager extends React.Component {
                     onCopyCloudLink={this.handleCopyCloudLink}
                     storedVersion={this.state.storedVersion}
                     storedHash={this.state.storedHash}
+                    hasToken={this.state.hasToken}
+                    tokenInput={this.state.tokenInput}
+                    onTokenInputChange={this.handleTokenInputChange}
+                    onSaveToken={this.handleSaveToken}
                 />
             );
         }

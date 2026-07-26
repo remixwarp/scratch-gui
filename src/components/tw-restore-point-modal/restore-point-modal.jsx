@@ -270,11 +270,39 @@ const RestorePointModal = props => (
 
             {props.activeTab === 'cloud' && (
                 <React.Fragment>
+                    {!props.hasToken && (
+                        <div className={styles.tokenSection}>
+                            <p>
+                                <FormattedMessage
+                                    defaultMessage="Please enter your GitHub Token to use cloud restore points:"
+                                    id="tw.restorePoints.tokenPrompt"
+                                />
+                            </p>
+                            <div className={styles.tokenInputRow}>
+                                <input
+                                    type="password"
+                                    className={styles.tokenInput}
+                                    placeholder="ghp_..."
+                                    value={props.tokenInput}
+                                    onChange={props.onTokenInputChange}
+                                />
+                                <button
+                                    onClick={props.onSaveToken}
+                                    className={classNames(styles.button, styles.saveTokenButton)}
+                                >
+                                    <FormattedMessage
+                                        defaultMessage="Save"
+                                        id="tw.restorePoints.saveToken"
+                                    />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     <div className={styles.cloudHeader}>
                         <button
                             onClick={props.onPushToCloud}
                             className={classNames(styles.button, styles.pushButton)}
-                            disabled={props.pushingToCloud}
+                            disabled={props.pushingToCloud || !props.hasToken}
                         >
                             {props.pushingToCloud ? (
                                 <FormattedMessage {...messages.pushingToCloud} />
@@ -282,14 +310,14 @@ const RestorePointModal = props => (
                                 <FormattedMessage {...messages.pushToCloud} />
                             )}
                         </button>
-                        {props.storedVersion && (
+                        {props.storedHash && (
                             <div className={styles.storedVersionInfo}>
                                 <FormattedMessage
-                                    defaultMessage="Filtering: version > {version}"
-                                    description="Shows the current version filter"
-                                    id="tw.restorePoints.versionFilter"
+                                    defaultMessage="Filtering: hash > {hash}"
+                                    description="Shows the current hash filter"
+                                    id="tw.restorePoints.hashFilter"
                                     values={{
-                                        version: props.storedVersion
+                                        hash: props.storedHash ? props.storedHash.substring(0, 7) : ''
                                     }}
                                 />
                             </div>
@@ -369,7 +397,11 @@ RestorePointModal.propTypes = {
     onDeleteCloudRestorePoint: PropTypes.func.isRequired,
     onCopyCloudLink: PropTypes.func.isRequired,
     storedVersion: PropTypes.string,
-    storedHash: PropTypes.string
+    storedHash: PropTypes.string,
+    hasToken: PropTypes.bool,
+    tokenInput: PropTypes.string,
+    onTokenInputChange: PropTypes.func,
+    onSaveToken: PropTypes.func
 };
 
 export default injectIntl(RestorePointModal);

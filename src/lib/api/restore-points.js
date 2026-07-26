@@ -8,6 +8,49 @@ const TYPE_MANUAL = 1;
 const CLOUD_STORAGE_KEY = 'tw:cloud-restore-point-version';
 const CLOUD_HASH_KEY = 'tw:cloud-restore-point-hash';
 
+// GitHub 直接 API 配置（网络还原点）
+const GITHUB_API_BASE = 'https://api.github.com/repos/xiao-xiao-lang/rw-cloud-restore-points';
+const GITHUB_TOKEN_KEY = 'tw:cloud-restore-point-token';
+
+const getGitHubToken = () => {
+    try {
+        return localStorage.getItem(GITHUB_TOKEN_KEY) || '';
+    } catch (e) {
+        return '';
+    }
+};
+
+const githubApiRequest = async (path, options = {}) => {
+    const token = getGitHubToken();
+    if (!token) {
+        throw new Error('未设置 GitHub Token，请在设置中配置');
+    }
+    const response = await fetch(`${GITHUB_API_BASE}${path}`, {
+        ...options,
+        headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`GitHub API ${response.status}: ${errorBody}`);
+    }
+    return response;
+};
+
+const arrayBufferToBase64 = buffer => {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+};
+
 /**
  * @typedef {0|1} MetadataType
  */
@@ -763,31 +806,41 @@ const setStoredVersion = (version, hash) => {
 
 const getCloudRestorePoints = async () => {
     try {
-        const response = await fetch(`${PROXY_BASE_URL}/projects`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+        const response = await githubApiRequest('/contents/projects');
+        const folders = await response.json();
+
+        if (!Array.isArray(folders)) {
+            return [];
         }
-        
-        const data = await response.json();
-        // 代理返回的是文件列表，统一转换为 restorePoints 格式
-        const restorePoints = Array.isArray(data) ? data : (data.projects || data.restorePoints || []);
-        return restorePoints.map(item => ({
-            id: item.id || item.name || item.sha,
-            title: item.title || item.name || item.filename || 'Untitled',
-            created: item.created ? new Date(item.created).getTime() / 1000 : 
-                     (item.commitDate ? new Date(item.commitDate).getTime() / 1000 : 
-                     Date.now() / 1000),
-            version: item.version || null,
-            hash: item.hash || item.sha || null,
-            filename: item.filename || item.name || item.id,
-            downloadUrl: item.downloadUrl || `${PROXY_BASE_URL}/projects/${item.id || item.name}/${item.filename || item.name}`
-        }));
+
+        const restorePoints = [];
+        for (const folder of folders) {
+            if (folder.type === 'dir') {
+                try {
+                    const fileResponse = await githubApiRequest(`/contents/${folder.path}`);
+                    const files = await fileResponse.json();
+
+                    if (Array.isArray(files)) {
+                        const sb3Files = files.filter(f => f.name.endsWith('.sb3'));
+                        for (const file of sb3Files) {
+                            restorePoints.push({
+                                id: folder.name,
+                                filename: file.name,
+                                title: file.name.replace(/\.sb3$/, ''),
+                                size: file.size,
+                                hash: file.sha,
+                                created: file.last_modified ? new Date(file.last_modified).getTime() / 1000 : Date.now() / 1000,
+                                downloadUrl: file.download_url
+                            });
+                        }
+                    }
+                } catch (e) {
+                    // skip folder errors
+                }
+            }
+        }
+
+        return restorePoints;
     } catch (error) {
         throw new Error(`Failed to fetch cloud restore points: ${error.message}`);
     }
@@ -798,40 +851,42 @@ const pushToCloud = async (vm, title) => {
         const projectFiles = vm.saveProjectSb3DontZip();
         const jsonData = projectFiles['project.json'];
         const projectAssetIDs = Object.keys(projectFiles).filter(i => i !== 'project.json');
-        
+
         const zip = new JSZip();
         zip.file('project.json', jsonData);
         for (const assetId of projectAssetIDs) {
             zip.file(assetId, projectFiles[assetId]);
         }
-        
-        const blob = await zip.generateAsync({
-            type: 'blob',
+
+        const arrayBuffer = await zip.generateAsync({
+            type: 'arraybuffer',
             compression: 'DEFLATE'
         });
-        
-        const formData = new FormData();
-        formData.append('file', blob, `${title}.sb3`);
-        
-        const response = await fetch(`${PROXY_BASE_URL}/upload`, {
-            method: 'POST',
-            body: formData
+
+        const fileId = Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+        const filename = `${title}.sb3`;
+        const filePath = `projects/${fileId}/${filename}`;
+        const base64Content = arrayBufferToBase64(arrayBuffer);
+
+        const response = await githubApiRequest(`/contents/${filePath}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                message: `Upload restore point: ${title}`,
+                content: base64Content
+            })
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
+
         const result = await response.json();
-        // 从上传响应中提取版本和哈希信息
-        const version = result.version || null;
-        const hash = result.hash || result.sha || (result.file ? result.file.sha : null) || null;
-        setStoredVersion(version, hash);
-        
+        const hash = result.commit ? result.commit.sha : null;
+        setStoredVersion(null, hash);
+
         return {
-            ...result,
-            version,
-            hash
+            success: true,
+            id: fileId,
+            filename,
+            title,
+            hash,
+            downloadUrl: result.content ? result.content.download_url : null
         };
     } catch (error) {
         throw new Error(`Failed to push to cloud: ${error.message}`);
@@ -840,15 +895,24 @@ const pushToCloud = async (vm, title) => {
 
 const deleteCloudRestorePoint = async (id, filename) => {
     try {
-        const response = await fetch(`${PROXY_BASE_URL}/projects/${id}/${filename || id}`, {
-            method: 'DELETE'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+        const filePath = `projects/${id}/${filename || id}`;
+        // 先获取文件 sha
+        const infoResponse = await githubApiRequest(`/contents/${filePath}`);
+        const info = await infoResponse.json();
+
+        if (!info.sha) {
+            throw new Error('File not found');
         }
-        
-        return await response.json();
+
+        await githubApiRequest(`/contents/${filePath}`, {
+            method: 'DELETE',
+            body: JSON.stringify({
+                message: `Delete restore point: ${filename}`,
+                sha: info.sha
+            })
+        });
+
+        return {success: true, id, filename};
     } catch (error) {
         throw new Error(`Failed to delete cloud restore point: ${error.message}`);
     }
@@ -856,12 +920,34 @@ const deleteCloudRestorePoint = async (id, filename) => {
 
 const copyCloudRestorePointLink = async (id, filename) => {
     try {
-        // 直接构建下载链接
-        const url = `${PROXY_BASE_URL}/projects/${id}/${filename || id}`;
+        const filePath = `projects/${id}/${filename || id}`;
+        const response = await githubApiRequest(`/contents/${filePath}`);
+        const info = await response.json();
+        const url = info.download_url || `https://raw.githubusercontent.com/xiao-xiao-lang/rw-cloud-restore-points/main/${filePath}`;
         await navigator.clipboard.writeText(url);
         return url;
     } catch (error) {
         throw new Error(`Failed to copy link: ${error.message}`);
+    }
+};
+
+const setGitHubToken = token => {
+    try {
+        if (token) {
+            localStorage.setItem(GITHUB_TOKEN_KEY, token);
+        } else {
+            localStorage.removeItem(GITHUB_TOKEN_KEY);
+        }
+    } catch (e) {
+        // ignore
+    }
+};
+
+const hasGitHubToken = () => {
+    try {
+        return !!localStorage.getItem(GITHUB_TOKEN_KEY);
+    } catch (e) {
+        return false;
     }
 };
 
@@ -884,5 +970,7 @@ export default {
     deleteCloudRestorePoint,
     copyCloudRestorePointLink,
     getStoredVersion,
-    setStoredVersion
+    setStoredVersion,
+    setGitHubToken,
+    hasGitHubToken
 };
