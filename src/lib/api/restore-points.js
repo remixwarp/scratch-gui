@@ -925,8 +925,7 @@ const deleteCloudRestorePoint = async (id, filename) => {
 const copyCloudRestorePointLink = async (id, filename) => {
     try {
         const filePath = `projects/${id}/${filename || id}`;
-        // 使用 encodeURI 处理文件名中的非 ASCII 字符（如中文），保证链接可被直接 fetch
-        const url = encodeURI(`https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${filePath}`);
+        const url = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${filePath}`;
         await navigator.clipboard.writeText(url);
         return url;
     } catch (error) {
