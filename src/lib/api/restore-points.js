@@ -827,7 +827,7 @@ const getCloudRestorePoints = async () => {
                                 // ignore commit fetch errors
                             }
 
-                            const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${file.path}`;
+                            const rawUrl = `https://gh-proxy.org/https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${file.path}`;
                             restorePoints.push({
                                 id: folder.name,
                                 filename: file.name,
