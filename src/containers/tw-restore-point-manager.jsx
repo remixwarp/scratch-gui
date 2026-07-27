@@ -435,12 +435,10 @@ class TWRestorePointManager extends React.Component {
 
     handleOpenInEditor (id) {
         const restorePoint = this.state.cloudRestorePoints.find(rp => rp.id === id);
-        if (!restorePoint || !restorePoint.filename) {
+        if (!restorePoint || !restorePoint.downloadUrl) {
             return;
         }
-        const filePath = `projects/${restorePoint.id}/${restorePoint.filename}`;
-        const rawUrl = `https://raw.githubusercontent.com/RemixWarp-rw/rw-owr/main/${filePath}`;
-        const editorUrl = `https://remixwarp.pages.dev/editor.html?project_url=${encodeURIComponent(rawUrl)}`;
+        const editorUrl = `https://remixwarp.pages.dev/editor.html?project_url=${encodeURIComponent(restorePoint.downloadUrl)}`;
         window.open(editorUrl, '_blank', 'noopener,noreferrer');
     }
 

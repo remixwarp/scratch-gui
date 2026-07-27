@@ -827,6 +827,7 @@ const getCloudRestorePoints = async () => {
                                 // ignore commit fetch errors
                             }
 
+                            const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${file.path}`;
                             restorePoints.push({
                                 id: folder.name,
                                 filename: file.name,
@@ -834,7 +835,7 @@ const getCloudRestorePoints = async () => {
                                 size: file.size,
                                 hash: file.sha,
                                 created: commitDate || Date.now() / 1000,
-                                downloadUrl: file.download_url || null
+                                downloadUrl: rawUrl
                             });
                         }
                     }
@@ -884,13 +885,14 @@ const pushToCloud = async (vm, title) => {
         const hash = result.commit ? result.commit.sha : null;
         setStoredVersion(null, hash);
 
+        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${filePath}`;
         return {
             success: true,
             id: fileId,
             filename,
             title,
             hash,
-            downloadUrl: result.content ? result.content.download_url : null
+            downloadUrl: rawUrl
         };
     } catch (error) {
         throw new Error(`Failed to push to cloud: ${error.message}`);
