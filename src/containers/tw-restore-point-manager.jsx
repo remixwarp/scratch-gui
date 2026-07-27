@@ -438,8 +438,10 @@ class TWRestorePointManager extends React.Component {
         if (!restorePoint || !restorePoint.downloadUrl) {
             return;
         }
+        // 通过 gh-proxy 加速代理加载，仅用于通过URL载入编辑器
+        const proxiedUrl = `https://gh-proxy.org/${restorePoint.downloadUrl}`;
         const searchParams = new URLSearchParams(location.search);
-        searchParams.set('project_url', restorePoint.downloadUrl);
+        searchParams.set('project_url', proxiedUrl);
         const newSearch = searchParams.toString();
         location.href = `${location.pathname}?${newSearch}${location.hash}`;
     }
