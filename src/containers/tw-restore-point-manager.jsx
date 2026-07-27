@@ -438,8 +438,10 @@ class TWRestorePointManager extends React.Component {
         if (!restorePoint || !restorePoint.downloadUrl) {
             return;
         }
-        const editorUrl = `https://remixwarp.pages.dev/editor.html?project_url=${encodeURIComponent(restorePoint.downloadUrl)}`;
-        window.open(editorUrl, '_blank', 'noopener,noreferrer');
+        const searchParams = new URLSearchParams(location.search);
+        searchParams.set('project_url', restorePoint.downloadUrl);
+        const newSearch = searchParams.toString();
+        location.href = `${location.pathname}?${newSearch}${location.hash}`;
     }
 
     render () {
