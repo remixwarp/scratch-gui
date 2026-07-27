@@ -162,6 +162,25 @@
     border-color: $data-primary;
 }
 
+.cloudWarning {
+    background: rgba(255, 107, 107, 0.15);
+    color: #ff6b6b;
+    padding: 12px 16px;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    border-left: 4px solid #ff6b6b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.cloudWarning p {
+    margin: 0 0 6px 0;
+}
+
+.cloudWarning p:last-child {
+    margin-bottom: 0;
+}
+
 .cloudHeader {
     display: flex;
     justify-content: space-between;

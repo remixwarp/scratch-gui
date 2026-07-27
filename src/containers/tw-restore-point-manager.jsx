@@ -354,6 +354,9 @@ class TWRestorePointManager extends React.Component {
                     }
                 });
 
+                // 按时间从新到旧排序
+                filteredPoints.sort((a, b) => (b.created || 0) - (a.created || 0));
+
                 this.setState({
                     cloudLoading: false,
                     cloudRestorePoints: filteredPoints,
@@ -438,10 +441,8 @@ class TWRestorePointManager extends React.Component {
         if (!restorePoint || !restorePoint.downloadUrl) {
             return;
         }
-        // 通过 gh-proxy 加速代理加载，仅用于通过URL载入编辑器
-        const proxiedUrl = `https://gh-proxy.org/${restorePoint.downloadUrl}`;
         const searchParams = new URLSearchParams(location.search);
-        searchParams.set('project_url', proxiedUrl);
+        searchParams.set('project_url', restorePoint.downloadUrl);
         const newSearch = searchParams.toString();
         location.href = `${location.pathname}?${newSearch}${location.hash}`;
     }

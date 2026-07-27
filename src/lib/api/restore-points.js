@@ -12,6 +12,9 @@ const CLOUD_HASH_KEY = 'tw:cloud-restore-point-hash';
 const GITHUB_REPO_OWNER = 'RemixWarp-rw';
 const GITHUB_REPO_NAME = 'rw-owr';
 const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}`;
+const GH_PROXY_PREFIX = 'https://gh-proxy.org/';
+const getProxiedRawUrl = filePath =>
+    `${GH_PROXY_PREFIX}https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${filePath}`;
 const GITHUB_TOKEN = ['ghp_fLBsu', 'milohGrz7H7m', 'f0ZAcdnMkV', 'wlO1928J6'].join('');
 
 const githubApiRequest = async (path, options = {}) => {
@@ -827,7 +830,7 @@ const getCloudRestorePoints = async () => {
                                 // ignore commit fetch errors
                             }
 
-                            const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${file.path}`;
+                            const rawUrl = getProxiedRawUrl(file.path);
                             restorePoints.push({
                                 id: folder.name,
                                 filename: file.name,
@@ -885,7 +888,7 @@ const pushToCloud = async (vm, title) => {
         const hash = result.commit ? result.commit.sha : null;
         setStoredVersion(null, hash);
 
-        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${filePath}`;
+        const rawUrl = getProxiedRawUrl(filePath);
         return {
             success: true,
             id: fileId,
@@ -927,7 +930,7 @@ const deleteCloudRestorePoint = async (id, filename) => {
 const copyCloudRestorePointLink = async (id, filename) => {
     try {
         const filePath = `projects/${id}/${filename || id}`;
-        const url = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${filePath}`;
+        const url = getProxiedRawUrl(filePath);
         await navigator.clipboard.writeText(url);
         return url;
     } catch (error) {
