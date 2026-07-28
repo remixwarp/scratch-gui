@@ -799,54 +799,60 @@ const setStoredVersion = (version, hash) => {
 
 const getCloudRestorePoints = async () => {
     try {
-        const response = await githubApiRequest('/contents/projects');
-        const folders = await response.json();
+        // 使用 Tree API 一次性获取完整目录树（仅 1 次请求）
+        const treeResponse = await githubApiRequest('/git/trees/main?recursive=1');
+        const treeData = await treeResponse.json();
 
-        if (!Array.isArray(folders)) {
+        if (!treeData.tree || !Array.isArray(treeData.tree)) {
             return [];
         }
 
         const restorePoints = [];
-        for (const folder of folders) {
-            if (folder.type === 'dir') {
-                try {
-                    const fileResponse = await githubApiRequest(`/contents/${folder.path}`);
-                    const files = await fileResponse.json();
+        const projectIds = new Set();
 
-                    if (Array.isArray(files)) {
-                        const sb3Files = files.filter(f => f.name.endsWith('.sb3'));
-                        for (const file of sb3Files) {
-                            // 通过 commits API 获取真实的推送时间
-                            let commitDate = null;
-                            try {
-                                const commitResponse = await githubApiRequest(
-                                    `/commits?path=${encodeURIComponent(folder.path)}&per_page=1`
-                                );
-                                const commits = await commitResponse.json();
-                                if (Array.isArray(commits) && commits.length > 0) {
-                                    commitDate = new Date(commits[0].commit.committer.date).getTime() / 1000;
-                                }
-                            } catch (e) {
-                                // ignore commit fetch errors
-                            }
-
-                            const rawUrl = getProxiedRawUrl(file.path);
-                            restorePoints.push({
-                                id: folder.name,
-                                filename: file.name,
-                                title: file.name.replace(/\.sb3$/, ''),
-                                size: file.size,
-                                hash: file.sha,
-                                created: commitDate || Date.now() / 1000,
-                                downloadUrl: rawUrl
-                            });
-                        }
-                    }
-                } catch (e) {
-                    // skip folder errors
+        for (const item of treeData.tree) {
+            if (item.type === 'blob' && item.path.startsWith('projects/') && item.path.endsWith('.sb3')) {
+                const pathParts = item.path.split('/');
+                if (pathParts.length >= 3) {
+                    const id = pathParts[1];
+                    const filename = pathParts.slice(2).join('/');
+                    projectIds.add(id);
+                    restorePoints.push({
+                        id,
+                        filename,
+                        title: filename.replace(/\.sb3$/, ''),
+                        size: item.size || 0,
+                        hash: item.sha,
+                        created: null,
+                        downloadUrl: getProxiedRawUrl(item.path)
+                    });
                 }
             }
         }
+
+        // 并行获取每个项目的推送时间
+        const commitDateMap = {};
+        const commitPromises = Array.from(projectIds).map(async projectId => {
+            try {
+                const commitResponse = await githubApiRequest(
+                    `/commits?path=projects/${projectId}&per_page=1`
+                );
+                const commits = await commitResponse.json();
+                if (Array.isArray(commits) && commits.length > 0) {
+                    commitDateMap[projectId] = new Date(commits[0].commit.committer.date).getTime() / 1000;
+                }
+            } catch (e) {
+                // ignore
+            }
+        });
+        await Promise.all(commitPromises);
+
+        for (const rp of restorePoints) {
+            rp.created = commitDateMap[rp.id] || Date.now() / 1000;
+        }
+
+        // 按时间从新到旧排序
+        restorePoints.sort((a, b) => (b.created || 0) - (a.created || 0));
 
         return restorePoints;
     } catch (error) {
@@ -885,7 +891,10 @@ const pushToCloud = async (vm, title) => {
         });
 
         const result = await response.json();
-        const hash = result.commit ? result.commit.sha : null;
+        const commitSha = result.commit ? result.commit.sha : null;
+        const blobSha = result.content ? result.content.sha : null;
+        // 使用 blob SHA（文件内容哈希），与列表中 file.sha 保持一致
+        const hash = blobSha || commitSha;
         setStoredVersion(null, hash);
 
         const rawUrl = getProxiedRawUrl(filePath);
