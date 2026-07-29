@@ -22,6 +22,34 @@ const MenuContext = createContext({
 
 let menuItemCounter = 0;
 
+// Recursively clone children so that MenuItem elements receive _menuIndex and
+// _expandedIndex even when they are wrapped in MenuSection or React.Fragment.
+const renderChildrenWithIndices = (children, expandedIndex, indexCounter) => (
+    React.Children.map(children, child => {
+        if (!React.isValidElement(child)) return child;
+
+        if (child.type === MenuItem) {
+            const currentIndex = indexCounter.value++;
+            return React.cloneElement(child, {
+                _menuIndex: currentIndex,
+                _expandedIndex: expandedIndex
+            });
+        }
+
+        // Recurse into MenuSection / Fragment wrappers
+        if (child.type === MenuSection || child.type === React.Fragment) {
+            const newChildren = renderChildrenWithIndices(
+                child.props.children,
+                expandedIndex,
+                indexCounter
+            );
+            return React.cloneElement(child, {children: newChildren});
+        }
+
+        return child;
+    })
+);
+
 const MenuComponent = ({
     className = '',
     children,
@@ -36,16 +64,19 @@ const MenuComponent = ({
         const target = e.target;
         const menuItem = target.closest(`.${styles.menuItem}`);
         if (!menuItem) return;
-        
+
         const menuItems = Array.from(menuItem.parentElement.children);
         const clickedIndex = menuItems.indexOf(menuItem);
-        
+
         if (clickedIndex === expandedIndex) {
             setExpandedIndex(null);
         } else {
             setExpandedIndex(clickedIndex);
         }
     };
+
+    const indexCounter = {value: 0};
+    const renderedChildren = renderChildrenWithIndices(children, expandedIndex, indexCounter);
 
     return (
         <MenuContext.Provider value={{ expandedIndex, setExpandedIndex, menuKey: menuKeyRef.current }}>
@@ -62,15 +93,7 @@ const MenuComponent = ({
                 ref={componentRef}
                 onClick={mobileMode ? handleMenuClick : undefined}
             >
-                {React.Children.map(children, (child, index) => {
-                    if (React.isValidElement(child) && child.type === MenuItem) {
-                        return React.cloneElement(child, {
-                            _menuIndex: index,
-                            _expandedIndex: expandedIndex
-                        });
-                    }
-                    return child;
-                })}
+                {renderedChildren}
             </ul>
         </MenuContext.Provider>
     );
@@ -119,12 +142,32 @@ const MenuItem = ({
     _expandedIndex
 }) => {
     const mobileMode = isMobileMode();
-    
-    const isExpanded = mobileMode && _menuIndex !== undefined 
-        ? _expandedIndex === _menuIndex 
+    const {setExpandedIndex} = useContext(MenuContext);
+
+    // Check whether this item has a submenu (expandable) child
+    const hasSubmenu = React.Children.toArray(children).some(
+        child => React.isValidElement(child) && child.type === Submenu
+    );
+
+    const isExpanded = mobileMode && _menuIndex !== undefined
+        ? _expandedIndex === _menuIndex
         : initialExpanded;
 
     const handleClick = (e) => {
+        if (mobileMode && _menuIndex !== undefined) {
+            if (hasSubmenu) {
+                // Toggle submenu expansion via context
+                setExpandedIndex(_expandedIndex === _menuIndex ? null : _menuIndex);
+            } else {
+                // Close any open submenu in this menu
+                setExpandedIndex(null);
+            }
+            if (onClick) {
+                onClick(e);
+            }
+            e.stopPropagation();
+            return;
+        }
         e.stopPropagation();
         if (onClick) {
             onClick(e);

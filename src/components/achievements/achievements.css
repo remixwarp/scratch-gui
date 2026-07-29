@@ -84,31 +84,32 @@
     z-index: 10001;
 }
 
-.panel {
-    background: $ui-modal-background;
-    border-radius: .75rem;
-    box-shadow: 0 12px 32px $shadow;
-    color: $ui-modal-foreground;
-    max-height: min(38rem, 85vh);
-    overflow: auto;
+/* Free window content layout */
+.window-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
     padding: 1.25rem;
-    position: fixed;
-    top: 10vh;
-    left: calc(50vw - 16rem);
-    width: min(32rem, calc(100vw - 2rem));
-    z-index: 10001;
+    box-sizing: border-box;
 }
 
-.panel header {
+.window-header {
     align-items: flex-start;
     display: flex;
     justify-content: space-between;
     margin-bottom: 1rem;
+    flex-shrink: 0;
 }
 
-.window-header {
-    cursor: move;
-    user-select: none;
+.window-header h2,
+.window-header p {
+    margin: 0;
+}
+
+.window-header p {
+    color: $text-primary-transparent;
+    margin-top: .25rem;
 }
 
 .choice-panel {
@@ -155,31 +156,12 @@
     margin-top: .3rem;
 }
 
-.panel h2,
-.panel h3,
-.panel p {
-    margin: 0;
-}
-
-.panel header p {
-    color: $text-primary-transparent;
-    margin-top: .25rem;
-}
-
-.panel header button {
-    background: transparent;
-    border: 0;
-    color: $ui-modal-foreground;
-    cursor: pointer;
-    font-size: 1.8rem;
-    line-height: 1;
-}
-
 .categories {
     display: flex;
     flex-wrap: wrap;
     gap: .45rem;
     margin: 0 0 1rem;
+    flex-shrink: 0;
 }
 
 .categories button {
@@ -205,9 +187,47 @@
     opacity: .8;
 }
 
+/* Mobile mode: horizontal scrollable categories with drag */
+.categories-draggable {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    cursor: grab;
+    user-select: none;
+    padding-bottom: .25rem;
+}
+
+.categories-draggable:active {
+    cursor: grabbing;
+}
+
+.categories-draggable::-webkit-scrollbar {
+    height: 4px;
+}
+
+.categories-draggable::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.categories-draggable::-webkit-scrollbar-thumb {
+    background: $ui-black-transparent;
+    border-radius: 2px;
+}
+
+.categories-draggable button {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
 .list {
     display: grid;
     gap: .65rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    padding-right: .25rem;
 }
 
 .unlocked,

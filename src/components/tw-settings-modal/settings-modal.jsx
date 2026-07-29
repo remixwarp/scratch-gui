@@ -1071,6 +1071,13 @@ const pageConfigurations = {
                             value: AEsettings.get('enableAutoUpdateCheck') || false,
                             onChange: (e) => { AEsettings.set("enableAutoUpdateCheck", e.target.checked); notifySettingsChange(); location.reload(); }
                         })
+                    },
+                    {
+                        component: EnableAchievements,
+                        props: () => ({
+                            value: isAchievementsEnabled(),
+                            onChange: e => setAchievementsEnabled(e.target.checked)
+                        })
                     }
                 ]
             }
@@ -1124,13 +1131,6 @@ const pageConfigurations = {
                         props: props => ({
                             value: AEsettings.get('EnableVSCodeLayout') || false,
                             onChange: (e) => { AEsettings.set("EnableVSCodeLayout", e.target.checked); notifySettingsChange(); location.reload(); }
-                        })
-                    },
-                    {
-                        component: EnableAchievements,
-                        props: () => ({
-                            value: isAchievementsEnabled(),
-                            onChange: e => setAchievementsEnabled(e.target.checked)
                         })
                     },
                     {

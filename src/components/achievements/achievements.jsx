@@ -1,6 +1,7 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import classNames from 'classnames';
-import Draggable from 'react-draggable';
+import Modal from '../../containers/windowed-modal.jsx';
+import {AESettings} from '../../lib/settings.js';
 import {
     ACHIEVEMENTS,
     getAchievementExperience,
@@ -18,6 +19,15 @@ const ACHIEVEMENT_CATEGORIES = [
     ...Array.from(new Set(ACHIEVEMENTS.map(achievement => achievement.type)))
 ];
 
+const isMobileMode = () => {
+    try {
+        const settings = new AESettings();
+        return settings.get('EnableMobileTouchDrag') === true;
+    } catch (e) {
+        return false;
+    }
+};
+
 const Achievements = () => {
     const [unlockedIds, setUnlockedIds] = useState(() => getUnlockedAchievementIds());
     const [notice, setNotice] = useState(null);
@@ -25,6 +35,9 @@ const Achievements = () => {
     const [experience, setExperience] = useState(() => getAchievementExperience());
     const [enabled, setEnabled] = useState(() => isAchievementsEnabled());
     const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
+
+    const categoriesNavRef = useRef(null);
+    const dragStateRef = useRef({isDragging: false, startX: 0, scrollLeft: 0, moved: false});
 
     useEffect(() => {
         const handleUnlock = event => {
@@ -71,11 +84,43 @@ const Achievements = () => {
         ACHIEVEMENTS :
         ACHIEVEMENTS.filter(achievement => achievement.type === selectedCategory);
     const chooseCategory = event => {
+        if (dragStateRef.current.moved) {
+            dragStateRef.current.moved = false;
+            return;
+        }
         const button = event.target.closest('button[data-achievement-category]');
         if (button) {
             setSelectedCategory(button.dataset.achievementCategory);
         }
     };
+
+    // Mobile drag-to-scroll for category tabs
+    const getClientX = e => (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+    const handleCategoriesPointerDown = e => {
+        const nav = categoriesNavRef.current;
+        if (!nav) return;
+        dragStateRef.current = {
+            isDragging: true,
+            startX: getClientX(e),
+            scrollLeft: nav.scrollLeft,
+            moved: false
+        };
+    };
+    const handleCategoriesPointerMove = e => {
+        if (!dragStateRef.current.isDragging) return;
+        const nav = categoriesNavRef.current;
+        if (!nav) return;
+        const delta = getClientX(e) - dragStateRef.current.startX;
+        if (Math.abs(delta) > 4) {
+            dragStateRef.current.moved = true;
+        }
+        nav.scrollLeft = dragStateRef.current.scrollLeft - delta;
+    };
+    const handleCategoriesPointerUp = () => {
+        dragStateRef.current.isDragging = false;
+    };
+
+    const mobileMode = isMobileMode();
 
     return (
         <div className={styles.root}>
@@ -91,7 +136,7 @@ const Achievements = () => {
                             </button>
                             <button onClick={() => chooseExperience('tw-veteran')} type="button">
                                 <strong>TW 老手</strong>
-                                <small>可在高级设置中开启成就</small>
+                                <small>可在实验性设置中开启成就</small>
                             </button>
                         </div>
                     </section>
@@ -111,28 +156,41 @@ const Achievements = () => {
                 </button>
             )}
             {isOpen && (
-                <Draggable handle={`.${styles.windowHeader}`}>
-                    <section
-                        aria-label="成就"
-                        className={styles.panel}
-                    >
+                <Modal
+                    id="achievementsModal"
+                    contentLabel="成就"
+                    visible={isOpen}
+                    onRequestClose={() => setIsOpen(false)}
+                    width={560}
+                    height={620}
+                    minWidth={400}
+                    minHeight={400}
+                    resizable
+                    maximizable
+                >
+                    <div className={styles.windowContent}>
                         <header className={styles.windowHeader}>
                             <div>
                                 <h2>成就</h2>
                                 <p>{unlockedIds.length} / {ACHIEVEMENTS.length} 已解锁</p>
                             </div>
-                            <button
-                                aria-label="关闭成就"
-                                onClick={() => setIsOpen(false)}
-                                type="button"
-                            >
-                                ×
-                            </button>
                         </header>
                         <nav
                             aria-label="成就分类"
-                            className={styles.categories}
+                            className={classNames(styles.categories, {
+                                [styles.categoriesDraggable]: mobileMode
+                            })}
                             onClick={chooseCategory}
+                            ref={categoriesNavRef}
+                            {...(mobileMode ? {
+                                onMouseDown: handleCategoriesPointerDown,
+                                onMouseMove: handleCategoriesPointerMove,
+                                onMouseUp: handleCategoriesPointerUp,
+                                onMouseLeave: handleCategoriesPointerUp,
+                                onTouchStart: handleCategoriesPointerDown,
+                                onTouchMove: handleCategoriesPointerMove,
+                                onTouchEnd: handleCategoriesPointerUp
+                            } : {})}
                         >
                             {ACHIEVEMENT_CATEGORIES.map(category => {
                                 const isSelected = selectedCategory === category;
@@ -175,8 +233,8 @@ const Achievements = () => {
                                 );
                             })}
                         </div>
-                    </section>
-                </Draggable>
+                    </div>
+                </Modal>
             )}
         </div>
     );
