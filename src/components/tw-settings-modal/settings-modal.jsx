@@ -153,6 +153,16 @@ const messages = defineMessages({
         defaultMessage: '警告：部分高级设置可能需要刷新页面才能生效。如果设置未生效，请尝试刷新页面。',
         description: 'Warning about advanced settings',
         id: 'tw.settingsModal.aeWarning'
+    },
+    enableautoupdatecheck: {
+        defaultMessage: '启用版本更新检查（需要刷新）',
+        description: 'EnableAutoUpdateCheck label',
+        id: 'tw.settingsModal.enableautoupdatecheck'
+    },
+    enableautoupdatecheckhelp: {
+        defaultMessage: '打开后，每次进入编辑器时会自动检查版本更新并显示更新日志。',
+        description: 'EnableAutoUpdateCheck help',
+        id: 'tw.settingsModal.enableautoupdatecheckhelp'
     }
 });
 
@@ -403,6 +413,22 @@ const EnableMobileTouchDrag = props => (
         help={
             <FormattedMessage
                 {...messages.enablemobiletouchdraghelp}
+            />
+        }
+    />
+);
+
+const EnableAutoUpdateCheck = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                {...messages.enableautoupdatecheck}
+            />
+        }
+        help={
+            <FormattedMessage
+                {...messages.enableautoupdatecheckhelp}
             />
         }
     />
@@ -1037,6 +1063,13 @@ const pageConfigurations = {
                         props: props => ({
                             value: AEsettings.get('EnableMobileTouchDrag') || false,
                             onChange: (e) => { AEsettings.set("EnableMobileTouchDrag", e.target.checked); notifySettingsChange(); location.reload(); }
+                        })
+                    },
+                    {
+                        component: EnableAutoUpdateCheck,
+                        props: props => ({
+                            value: AEsettings.get('enableAutoUpdateCheck') || false,
+                            onChange: (e) => { AEsettings.set("enableAutoUpdateCheck", e.target.checked); notifySettingsChange(); location.reload(); }
                         })
                     }
                 ]

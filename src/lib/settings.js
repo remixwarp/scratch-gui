@@ -9,7 +9,8 @@ export class AESettings {
                         EnableExtensionPreview: false,
                         EnableVSCodeLayout: false,
                         EnableMobileLayout: false,
-                        EnableMobileTouchDrag: false
+                        EnableMobileTouchDrag: false,
+                        enableAutoUpdateCheck: false
                 };
                 this.init();
         }

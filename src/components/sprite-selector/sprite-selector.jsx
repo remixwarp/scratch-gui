@@ -14,6 +14,7 @@ import styles from './sprite-selector.css';
 import spriteIcon from '../action-menu/icon--sprite.svg';
 
 import {Upload, Paintbrush, Sparkles, Search} from 'lucide-react';
+import {AESettings} from '../../lib/settings.js';
 
 const messages = defineMessages({
     addSpriteFromLibrary: {
@@ -73,9 +74,57 @@ const SpriteSelectorComponent = function (props) {
         selectedSprite = {};
         spriteInfoDisabled = true;
     }
+    const isMobileLayout = AESettings.get('EnableMobileLayout') || false;
+    const spriteListEl = (
+        <SpriteList
+            editingTarget={editingTarget}
+            hoveredTarget={hoveredTarget}
+            items={Object.keys(sprites).map(id => sprites[id])}
+            raised={raised}
+            selectedId={selectedId}
+            onDeleteSprite={onDeleteSprite}
+            onDrop={onDrop}
+            onDuplicateSprite={onDuplicateSprite}
+            onExportSprite={onExportSprite}
+            onSelectSprite={onSelectSprite}
+        />
+    );
+    const actionMenuEl = (
+        <ActionMenu
+            className={styles.addButton}
+            img={spriteIcon}
+            moreButtons={[
+                {
+                    title: intl.formatMessage(messages.addSpriteFromFile),
+                    img: Upload,
+                    onClick: onFileUploadClick,
+                    fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .jfif, .webp, .sprite2, .sprite3, .gif',
+                    fileChange: onSpriteUpload,
+                    fileInput: spriteFileInput,
+                    fileMultiple: true
+                }, {
+                    title: intl.formatMessage(messages.addSpriteFromSurprise),
+                    img: Sparkles,
+                    onClick: onSurpriseSpriteClick // TODO need real function for this
+                }, {
+                    title: intl.formatMessage(messages.addSpriteFromPaint),
+                    img: Paintbrush,
+                    onClick: onPaintSpriteClick // TODO need real function for this
+                }, {
+                    title: intl.formatMessage(messages.addSpriteFromLibrary),
+                    img: Search,
+                    onClick: onNewSpriteClick
+                }
+            ]}
+            title={intl.formatMessage(messages.addSpriteFromLibrary)}
+            tooltipPlace={isRtl(intl.locale) ? 'right' : 'left'}
+            onClick={onNewSpriteClick}
+        />
+    );
     return (
         <Box
             className={styles.spriteSelector}
+            style={isMobileLayout ? {position: 'static'} : {}}
             {...componentProps}
         >
 
@@ -98,48 +147,20 @@ const SpriteSelectorComponent = function (props) {
                 onChangeY={onChangeSpriteY}
             />
 
-            <SpriteList
-                editingTarget={editingTarget}
-                hoveredTarget={hoveredTarget}
-                items={Object.keys(sprites).map(id => sprites[id])}
-                raised={raised}
-                selectedId={selectedId}
-                onDeleteSprite={onDeleteSprite}
-                onDrop={onDrop}
-                onDuplicateSprite={onDuplicateSprite}
-                onExportSprite={onExportSprite}
-                onSelectSprite={onSelectSprite}
-            />
-            <ActionMenu
-                className={styles.addButton}
-                img={spriteIcon}
-                moreButtons={[
-                    {
-                        title: intl.formatMessage(messages.addSpriteFromFile),
-                        img: Upload,
-                        onClick: onFileUploadClick,
-                        fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .jfif, .webp, .sprite2, .sprite3, .gif',
-                        fileChange: onSpriteUpload,
-                        fileInput: spriteFileInput,
-                        fileMultiple: true
-                    }, {
-                        title: intl.formatMessage(messages.addSpriteFromSurprise),
-                        img: Sparkles,
-                        onClick: onSurpriseSpriteClick // TODO need real function for this
-                    }, {
-                        title: intl.formatMessage(messages.addSpriteFromPaint),
-                        img: Paintbrush,
-                        onClick: onPaintSpriteClick // TODO need real function for this
-                    }, {
-                        title: intl.formatMessage(messages.addSpriteFromLibrary),
-                        img: Search,
-                        onClick: onNewSpriteClick
-                    }
-                ]}
-                title={intl.formatMessage(messages.addSpriteFromLibrary)}
-                tooltipPlace={isRtl(intl.locale) ? 'right' : 'left'}
-                onClick={onNewSpriteClick}
-            />
+            {/* 移动端布局：按钮在前，角色列表紧跟其后 */}
+            {isMobileLayout ? (
+                <>
+                    <div className={styles.mobileActionMenu}>
+                        {actionMenuEl}
+                    </div>
+                    {spriteListEl}
+                </>
+            ) : (
+                <>
+                    {spriteListEl}
+                    {actionMenuEl}
+                </>
+            )}
         </Box>
     );
 };

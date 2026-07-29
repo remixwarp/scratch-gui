@@ -13,6 +13,7 @@ import {
     translateChanges
 } from '../lib/version-manager.js';
 import { ACCENT_MAP } from '../lib/themes/accents';
+import {AESettings} from '../lib/settings.js';
 
 const UpdateLogModalContainer = ({ intl, theme, locale }) => {
     const [visible, setVisible] = useState(false);
@@ -80,6 +81,14 @@ const UpdateLogModalContainer = ({ intl, theme, locale }) => {
                 console.log('上次查看版本:', getLastSeenVersion());
                 console.log('当前存储版本:', getCurrentVersion());
                 console.log('不再显示:', localStorage.getItem('remixwarp_dont_show_updates'));
+
+                // 只有实验性功能开关打开时才执行更新检查
+                const autoUpdateEnabled = AESettings.get('enableAutoUpdateCheck');
+                if (!autoUpdateEnabled) {
+                    console.log('更新检查：实验性功能未开启，跳过');
+                    setIsLoading(false);
+                    return;
+                }
                 
                 // 使用新的 checkForUpdate 函数获取更新信息
                 const info = await checkForUpdate(locale);
