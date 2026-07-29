@@ -60,6 +60,7 @@ const TWThemeManagerHOC = function (WrappedComponent) {
             } = this.props;
             return (
                 <WrappedComponent
+                    key={reduxTheme ? reduxTheme.id : 'default'}
                     {...props}
                 />
             );
