@@ -36,6 +36,8 @@ const TWThemeManagerHOC = function (WrappedComponent) {
             if (themeChanged) {
                 applyGuiColors(currentTheme);
                 persistTheme(currentTheme);
+                // 强制刷新整个编辑器界面，确保所有组件都应用新主题
+                this.forceUpdate();
             }
         }
         componentWillUnmount () {
