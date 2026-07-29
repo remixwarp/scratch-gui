@@ -36,6 +36,8 @@ const TWThemeManagerHOC = function (WrappedComponent) {
             if (themeChanged) {
                 applyGuiColors(currentTheme);
                 persistTheme(currentTheme);
+                // 完全刷新整个编辑器界面，重新加载当前链接
+                location.reload();
             }
         }
         componentWillUnmount () {
@@ -58,7 +60,6 @@ const TWThemeManagerHOC = function (WrappedComponent) {
             } = this.props;
             return (
                 <WrappedComponent
-                    key={reduxTheme ? reduxTheme.id : 'default'}
                     {...props}
                 />
             );
