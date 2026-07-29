@@ -2,14 +2,12 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, { useState, createContext, useContext, useRef } from 'react';
 
+import {AESettings} from '../../lib/settings.js';
 import styles from './menu.css';
 
 export const isMobileMode = () => {
     try {
-        const stored = localStorage.getItem('AESettings');
-        if (!stored) return false;
-        const settings = JSON.parse(stored);
-        return settings.EnableMobileTouchDrag === true;
+        return AESettings.get('EnableMobileTouchDrag') === true;
     } catch (e) {
         return false;
     }

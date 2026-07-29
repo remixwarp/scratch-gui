@@ -21,8 +21,7 @@ const ACHIEVEMENT_CATEGORIES = [
 
 const isMobileMode = () => {
     try {
-        const settings = new AESettings();
-        return settings.get('EnableMobileTouchDrag') === true;
+        return AESettings.get('EnableMobileTouchDrag') === true;
     } catch (e) {
         return false;
     }
