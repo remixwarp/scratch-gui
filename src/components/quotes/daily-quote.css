@@ -1,6 +1,6 @@
 .container {
     display: inline-flex;
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
     padding: 4px 8px;
     padding-left: 0;
@@ -13,10 +13,12 @@
     z-index: 9999;
     left: 10px;
     top: 60px;
+    max-width: 95vw;
+    box-sizing: border-box;
 }
 .dragHandle {
     width: 6px;
-    height: 100%;
+    height: auto;
     min-height: 24px;
     background: #888;
     border-radius: 3px 0 0 3px;
@@ -31,21 +33,116 @@
 .dragHandle:hover {
     background: #999;
 }
+
+.mainContent {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.quoteRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
 .text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 420px;
+    flex: 1;
 }
-.settings {
+
+.buttonRow {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.settings, .manualNext, .filterToggle {
     background: transparent;
     border: none;
     cursor: pointer;
     padding: 2px 6px;
     font-size: 14px;
     pointer-events: auto;
-}
-.settings:hover {
-    background: rgba(0,0,0,0.1);
     border-radius: 4px;
+    color: #1a1a1a;
+}
+
+.settings:hover, .manualNext:hover, .filterToggle:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.manualNext {
+    font-size: 12px;
+}
+
+.filterToggle {
+    font-size: 10px;
+}
+
+.sourceLabel {
+    font-size: 11px;
+    color: #666;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 420px;
+    line-height: 1.2;
+}
+
+.filterPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.filterTitle {
+    font-size: 11px;
+    color: #555;
+    font-weight: 600;
+}
+
+.filterButtons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 520px;
+}
+
+.filterBtn, .filterBtnActive {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    color: #333;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.filterBtn:hover {
+    background: #e0e0e0;
+    border-color: #aaa;
+}
+
+.filterBtnActive {
+    background: var(--looks-secondary, #4c97ff);
+    border-color: var(--looks-secondary, #4c97ff);
+    color: #fff;
+}
+
+.filterBtnActive:hover {
+    filter: brightness(1.05);
 }

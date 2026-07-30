@@ -11,6 +11,28 @@ const LOCAL_KEY_POSITION = 'dailyQuotePosition';
 
 const defaultInterval = 5; // seconds
 const defaultMode = 'sequential'; // 'sequential' or 'random'
+const defaultLibrary = 'local'; // 'local' or 'hitokoto'
+
+// Hitokoto sentence categories (from https://developer.hitokoto.cn/sentence/)
+const HITOKOTO_CATEGORIES = [
+    {key: 'a', label: '动画'},
+    {key: 'b', label: '漫画'},
+    {key: 'c', label: '游戏'},
+    {key: 'd', label: '文学'},
+    {key: 'e', label: '原创'},
+    {key: 'f', label: '来自网络'},
+    {key: 'g', label: '其他'},
+    {key: 'h', label: '影视'},
+    {key: 'i', label: '诗词'},
+    {key: 'k', label: '哲学'},
+    {key: 'l', label: '抖机灵'},
+];
+
+const HITOKOTO_LABEL_MAP = Object.fromEntries(
+    HITOKOTO_CATEGORIES.map(c => [c.key, c.label])
+);
+
+const HITOKOTO_API_BASE = 'https://v1.hitokoto.cn/';
 
 const defaultQuotes = [
     "长风破浪会有时，直挂云帆济沧海。",
@@ -133,6 +155,7 @@ const loadSettings = () => {
     let interval = defaultInterval;
     let quotes = defaultQuotes;
     let mode = defaultMode;
+    let library = defaultLibrary;
 
     // Try addon settings first
     try {
@@ -148,6 +171,15 @@ const loadSettings = () => {
         const addonMode = SettingsStore.getAddonSetting('daily-quote', 'display_mode');
         if (addonMode && (addonMode === 'sequential' || addonMode === 'random')) {
             mode = addonMode;
+        }
+    } catch (e) {
+        // ignore
+    }
+
+    try {
+        const addonLibrary = SettingsStore.getAddonSetting('daily-quote', 'quote_library');
+        if (addonLibrary && (addonLibrary === 'local' || addonLibrary === 'hitokoto')) {
+            library = addonLibrary;
         }
     } catch (e) {
         // ignore
@@ -188,7 +220,26 @@ const loadSettings = () => {
         mode = storedMode;
     }
 
-    return { interval, quotes, mode };
+    return { interval, quotes, mode, library };
+};
+
+// Fetch hitokoto from API, with optional category filters (array of keys)
+const fetchHitokoto = async (categories) => {
+    try {
+        const params = new URLSearchParams();
+        params.append('encode', 'json');
+        if (categories && categories.length > 0) {
+            categories.forEach(c => params.append('c', c));
+        }
+        const url = `${HITOKOTO_API_BASE}?${params.toString()}`;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        return data;
+    } catch (e) {
+        console.warn('daily-quote hitokoto fetch error:', e);
+        return null;
+    }
 };
 
 const DailyQuote = ({alertsList}) => {
@@ -198,12 +249,18 @@ const DailyQuote = ({alertsList}) => {
     const [index, setIndex] = useState(0);
     const [intervalSec, setIntervalSec] = useState(settings.interval);
     const [displayMode, setDisplayMode] = useState(settings.mode);
+    const [quoteLibrary, setQuoteLibrary] = useState(settings.library);
     const [currentQuote, setCurrentQuote] = useState(settings.quotes[0] || '');
     const timerRef = useRef(null);
-    const usedIndexesRef = useRef([]);
     const dragRef = useRef(null);
     const isDragging = useRef(false);
     const dragOffset = useRef({x: 0, y: 0});
+
+    // Hitokoto specific state
+    const [hitokotoCategories, setHitokotoCategories] = useState([]); // selected category keys, empty = all
+    const [hitokotoInfo, setHitokotoInfo] = useState(null); // {from, from_who, type, uuid, ...}
+    const [showFilterPanel, setShowFilterPanel] = useState(false);
+    const hitokotoLoadingRef = useRef(false);
 
     const loadPosition = () => {
         try {
@@ -294,13 +351,59 @@ const DailyQuote = ({alertsList}) => {
         a.alertId === 'saving' || a.alertId === 'twSaveToDiskSuccess' || a.alertId === 'saveSuccess'
     ));
 
-    // Get next quote based on display mode
-    const getNextQuote = useCallback(() => {
-        if (lines.length === 0) return '';
+    // Switch category selection (toggle)
+    const toggleCategory = useCallback((catKey) => {
+        setHitokotoCategories(prev => {
+            if (prev.includes(catKey)) {
+                return prev.filter(c => c !== catKey);
+            } else {
+                return [...prev, catKey];
+            }
+        });
+    }, []);
+
+    // Select all categories
+    const selectAllCategories = useCallback(() => {
+        setHitokotoCategories([]);
+    }, []);
+
+    // Fetch a new hitokoto
+    const fetchNewHitokoto = useCallback(async () => {
+        if (hitokotoLoadingRef.current) return;
+        hitokotoLoadingRef.current = true;
+        try {
+            const data = await fetchHitokoto(hitokotoCategories);
+            if (data && data.hitokoto) {
+                setCurrentQuote(data.hitokoto);
+                setHitokotoInfo({
+                    from: data.from || '',
+                    from_who: data.from_who || '',
+                    type: data.type || '',
+                    uuid: data.uuid || ''
+                });
+            } else {
+                setCurrentQuote('网络开小差了，稍后再试～');
+                setHitokotoInfo(null);
+            }
+        } finally {
+            hitokotoLoadingRef.current = false;
+        }
+    }, [hitokotoCategories]);
+
+    // Get next quote based on display mode and library
+    const getNextQuote = useCallback(async () => {
+        if (quoteLibrary === 'hitokoto') {
+            await fetchNewHitokoto();
+            return;
+        }
+        if (lines.length === 0) return;
         
         if (displayMode === 'random') {
             // Random mode: pick a random index different from current
-            if (lines.length === 1) return lines[0];
+            if (lines.length === 1) {
+                setCurrentQuote(lines[0]);
+                return;
+            }
             
             let newIndex;
             do {
@@ -308,27 +411,49 @@ const DailyQuote = ({alertsList}) => {
             } while (newIndex === index && lines.length > 1);
             
             setIndex(newIndex);
-            return lines[newIndex];
+            setCurrentQuote(lines[newIndex]);
+            setHitokotoInfo(null);
         } else {
             // Sequential mode: next index in order
             const nextIndex = (index + 1) % lines.length;
             setIndex(nextIndex);
-            return lines[nextIndex];
+            setCurrentQuote(lines[nextIndex]);
+            setHitokotoInfo(null);
         }
-    }, [lines, index, displayMode]);
+    }, [lines, index, displayMode, quoteLibrary, fetchNewHitokoto]);
 
+    // Timer effect - triggers next quote on interval
     useEffect(() => {
         if (timerRef.current) {
             clearInterval(timerRef.current);
             timerRef.current = null;
         }
         timerRef.current = setInterval(() => {
-            setCurrentQuote(getNextQuote());
+            getNextQuote();
         }, Math.max(1000, intervalSec * 1000));
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [lines.length, intervalSec, getNextQuote]);
+    }, [lines.length, intervalSec, displayMode, quoteLibrary, hitokotoCategories, getNextQuote]);
+
+    // Initial load for hitokoto
+    useEffect(() => {
+        if (quoteLibrary === 'hitokoto') {
+            fetchNewHitokoto();
+        } else {
+            // Reset to local library first quote
+            setCurrentQuote(lines[0] || '');
+            setHitokotoInfo(null);
+            setIndex(0);
+        }
+    }, [quoteLibrary]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // When hitokoto categories change, fetch a new quote
+    useEffect(() => {
+        if (quoteLibrary === 'hitokoto') {
+            fetchNewHitokoto();
+        }
+    }, [hitokotoCategories, quoteLibrary, fetchNewHitokoto]);
 
     // Listen for settings changes
     useEffect(() => {
@@ -337,8 +462,12 @@ const DailyQuote = ({alertsList}) => {
             setIntervalSec(newSettings.interval);
             setLines(newSettings.quotes);
             setDisplayMode(newSettings.mode);
-            setIndex(0);
-            setCurrentQuote(newSettings.quotes[0] || '');
+            setQuoteLibrary(newSettings.library);
+            if (newSettings.library !== 'hitokoto') {
+                setIndex(0);
+                setCurrentQuote(newSettings.quotes[0] || '');
+                setHitokotoInfo(null);
+            }
         };
 
         // Listen for SettingsStore changes
@@ -376,6 +505,22 @@ const DailyQuote = ({alertsList}) => {
         }
     };
 
+    // Build source display string for hitokoto
+    const sourceLabel = (() => {
+        if (quoteLibrary !== 'hitokoto' || !hitokotoInfo) return '';
+        const parts = [];
+        if (hitokotoInfo.type && HITOKOTO_LABEL_MAP[hitokotoInfo.type]) {
+            parts.push(`[${HITOKOTO_LABEL_MAP[hitokotoInfo.type]}]`);
+        }
+        if (hitokotoInfo.from) {
+            parts.push(`《${hitokotoInfo.from}》`);
+        }
+        if (hitokotoInfo.from_who) {
+            parts.push(`——${hitokotoInfo.from_who}`);
+        }
+        return parts.join(' ');
+    })();
+
     if (hasSaveAlert) return null;
     if (!enabled) return null;
 
@@ -390,15 +535,68 @@ const DailyQuote = ({alertsList}) => {
                 ref={dragRef}
                 className={styles.dragHandle}
             />
-            <span className={styles.text}>{currentQuote}</span>
-            <button
-                className={styles.settings}
-                onClick={openSettings}
-                aria-label="设置"
-                title="打开插件设置"
-            >
-                ⚙
-            </button>
+            <div className={styles.mainContent}>
+                <div className={styles.quoteRow}>
+                    <span className={styles.text}>{currentQuote}</span>
+                    <div className={styles.buttonRow}>
+                        {quoteLibrary === 'hitokoto' && (
+                            <button
+                                className={styles.filterToggle}
+                                onClick={() => setShowFilterPanel(v => !v)}
+                                aria-label="筛选"
+                                title="筛选分类"
+                            >
+                                {showFilterPanel ? '▲' : '▼'}
+                            </button>
+                        )}
+                        <button
+                            className={styles.manualNext}
+                            onClick={getNextQuote}
+                            aria-label="下一句"
+                            title="立即切换下一句"
+                        >
+                            ⏭
+                        </button>
+                        <button
+                            className={styles.settings}
+                            onClick={openSettings}
+                            aria-label="设置"
+                            title="打开插件设置"
+                        >
+                            ⚙
+                        </button>
+                    </div>
+                </div>
+                {sourceLabel && (
+                    <div className={styles.sourceLabel} title="出处">
+                        {sourceLabel}
+                    </div>
+                )}
+                {quoteLibrary === 'hitokoto' && showFilterPanel && (
+                    <div className={styles.filterPanel}>
+                        <div className={styles.filterTitle}>分类筛选：</div>
+                        <div className={styles.filterButtons}>
+                            <button
+                                className={hitokotoCategories.length === 0 ? styles.filterBtnActive : styles.filterBtn}
+                                onClick={selectAllCategories}
+                                title="选择全部（无筛选）"
+                            >
+                                全部
+                            </button>
+                            {HITOKOTO_CATEGORIES.map(cat => (
+                                <button
+                                    key={cat.key}
+                                    className={hitokotoCategories.includes(cat.key) ? styles.filterBtnActive : styles.filterBtn}
+                                    onClick={() => toggleCategory(cat.key)}
+                                    title={`分类：${cat.label}`}
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

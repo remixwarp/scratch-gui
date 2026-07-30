@@ -48,6 +48,23 @@ const manifest = {
       ]
     },
     {
+      "dynamic": true,
+      "name": "句库",
+      "id": "quote_library",
+      "type": "select",
+      "default": "local",
+      "potentialValues": [
+        {
+          "id": "local",
+          "name": "默认句库"
+        },
+        {
+          "id": "hitokoto",
+          "name": "一言 Hitokoto"
+        }
+      ]
+    },
+    {
       "dynamic": false,
       "name": "自定义内容（每行一句）",
       "id": "custom_quotes",
