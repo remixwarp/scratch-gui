@@ -165,7 +165,7 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
-    Zap, Gauge, BookOpen, Code, Trophy
+    Zap, Gauge, BookOpen, Code, Trophy, ListTodo
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -3634,6 +3634,21 @@ class MenuBar extends React.Component {
                                         >
                                             <Trophy />
                                             成就
+                                        </MenuItem>
+                                    )}
+                                    {SettingsStore.getAddonEnabled('todo-list') && (
+                                        <MenuItem
+                                            onClick={() => {
+                                                window.dispatchEvent(new Event('rw-todo-open'));
+                                                this.props.onRequestCloseTools();
+                                            }}
+                                        >
+                                            <ListTodo />
+                                            <FormattedMessage
+                                                defaultMessage="Todo"
+                                                description="Menu bar item to open todo list"
+                                                id="gui.menuBar.todo"
+                                            />
                                         </MenuItem>
                                     )}
                                     <MenuItem

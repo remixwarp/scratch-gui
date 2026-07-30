@@ -834,32 +834,8 @@ export default async function ({ addon, msg, console }) {
         createWindow.show();
     };
 
-    const createButton = async () => {
-        const findBar = document.querySelector('.sa-find-bar');
-        if (!findBar) {
-            setTimeout(createButton, 500);
-            return;
-        }
-
-        const existingBtn = document.querySelector('.sa-todo-button');
-        if (existingBtn) {
-            existingBtn.remove();
-        }
-
-        const btn = document.createElement('button');
-        btn.className = 'sa-find-toggle sa-todo-button';
-        btn.textContent = '待办';
-        btn.title = '打开待办列表';
-        btn.style.cssText = 'min-width: 28px; height: 28px; padding: 4px 6px;';
-
-        addon.tab.displayNoneWhileDisabled(btn);
-
-        btn.addEventListener('click', () => {
-            showTodoWindow();
-        });
-
-        findBar.appendChild(btn);
-    };
-
-    await createButton();
+    // 监听来自菜单栏的事件，用于从工具菜单打开待办
+    window.addEventListener('rw-todo-open', () => {
+        showTodoWindow();
+    });
 }
