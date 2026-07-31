@@ -128,7 +128,11 @@ const groupAddons = () => {
 
 const getAllTags = () => {
     const tags = new Set();
-    for (const manifest of Object.values(supportedAddons)) {
+    for (const [id, manifest] of Object.entries(supportedAddons)) {
+        if (!Array.isArray(manifest.tags)) {
+            console.error('[addon-settings] manifest missing tags array:', id, manifest);
+            continue;
+        }
         for (const tag of manifest.tags) {
             tags.add(tag);
         }
