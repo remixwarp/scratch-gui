@@ -418,13 +418,14 @@ const fetchJinrishici = async categoryPath => {
     }
 };
 
-const DailyQuoteInner = ({alertsList, quoteLibrary}) => {
+const DailyQuote = ({alertsList}) => {
     const settings = loadSettings();
 
     const [lines, setLines] = useState(settings.quotes);
     const [index, setIndex] = useState(0);
     const [intervalSec, setIntervalSec] = useState(settings.interval);
     const [displayMode, setDisplayMode] = useState(settings.mode);
+    const [quoteLibrary, setQuoteLibrary] = useState(settings.library);
     const [currentQuote, setCurrentQuote] = useState(settings.quotes[0] || '');
     // 统一存放各句库返回的元信息，供出处展示使用
     const [meta, setMeta] = useState(null);
@@ -748,10 +749,15 @@ const DailyQuoteInner = ({alertsList, quoteLibrary}) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [quoteLibrary, hitokotoCategories, jinrishiciCategory]);
 
-    // 监听设置变化（句库切换由外层 wrapper 通过 key 重置处理，这里只同步其他设置）
+    // 监听设置变化：切换句库时直接刷新整个页面，其他设置实时同步
     useEffect(() => {
         const handleSettingsChange = () => {
             const newSettings = loadSettings();
+            // 句库发生变化 → 直接刷新整个页面（与切换主题类似的完全重载效果）
+            if (newSettings.library !== quoteLibrary) {
+                window.location.reload();
+                return;
+            }
             setIntervalSec(newSettings.interval);
             setLines(newSettings.quotes);
             setDisplayMode(newSettings.mode);
@@ -763,14 +769,22 @@ const DailyQuoteInner = ({alertsList, quoteLibrary}) => {
             }
         };
 
+        const handleAddonChanged = e => {
+            if (e.detail && e.detail.addonId === 'daily-quote') {
+                handleSettingsChange();
+            }
+        };
+
         SettingsStore.addEventListener('setting-changed', handleSettingChanged);
+        SettingsStore.addEventListener('addon-changed', handleAddonChanged);
         window.addEventListener('storage', handleSettingsChange);
 
         return () => {
             SettingsStore.removeEventListener('setting-changed', handleSettingChanged);
+            SettingsStore.removeEventListener('addon-changed', handleAddonChanged);
             window.removeEventListener('storage', handleSettingsChange);
         };
-    }, []);
+    }, [quoteLibrary]);
 
     const [enabled] = useState(() => {
         try {
@@ -914,42 +928,6 @@ const DailyQuoteInner = ({alertsList, quoteLibrary}) => {
                 )}
             </div>
         </div>
-    );
-};
-
-DailyQuoteInner.propTypes = {
-    alertsList: PropTypes.arrayOf(PropTypes.object),
-    quoteLibrary: PropTypes.string
-};
-
-// 外层 wrapper：监听句库切换，通过 key 变化触发整个内部组件卸载重建（与主题切换的 key 重置机制一致）
-const DailyQuote = ({alertsList}) => {
-    const [library, setLibrary] = useState(() => loadSettings().library);
-
-    useEffect(() => {
-        const syncLibrary = () => {
-            const next = loadSettings().library;
-            setLibrary(prev => (prev !== next ? next : prev));
-        };
-        const handleSettingChanged = e => {
-            if (e.detail && e.detail.addonId === 'daily-quote') {
-                syncLibrary();
-            }
-        };
-        SettingsStore.addEventListener('setting-changed', handleSettingChanged);
-        window.addEventListener('storage', syncLibrary);
-        return () => {
-            SettingsStore.removeEventListener('setting-changed', handleSettingChanged);
-            window.removeEventListener('storage', syncLibrary);
-        };
-    }, []);
-
-    return (
-        <DailyQuoteInner
-            key={library}
-            quoteLibrary={library}
-            alertsList={alertsList}
-        />
     );
 };
 

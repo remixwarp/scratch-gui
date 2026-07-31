@@ -6,19 +6,19 @@ const manifest = {
   "credits": [
     {
       "name": "笑小朗",
-      "url": ""
+      "link": ""
     },
     {
-      "name": "一言 Hitokoto",
-      "url": "https://developer.hitokoto.cn/"
+      "name": "https://developer.hitokoto.cn/",
+      "link": "https://developer.hitokoto.cn/"
     },
     {
-      "name": "古动笔记",
-      "url": "https://card.gudong.site/"
+      "name": "https://card.gudong.site/",
+      "link": "https://card.gudong.site/"
     },
     {
-      "name": "今日诗词",
-      "url": "https://www.jinrishici.com/"
+      "name": "https://www.jinrishici.com/",
+      "link": "https://www.jinrishici.com/"
     }
   ],
   "userscripts": [
