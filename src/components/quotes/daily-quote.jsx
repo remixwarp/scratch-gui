@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef, useCallback} from 'react';
+import React, {useEffect, useState, useRef, useCallback, useMemo} from 'react';
 import PropTypes from 'prop-types';
 
 import styles from './daily-quote.css';
@@ -460,34 +460,18 @@ const DailyQuoteInner = ({alertsList, quoteLibrary}) => {
     const [position, setPosition] = useState(loadPosition);
 
     // 是否启用移动端模式（开启后支持触摸拖动）
-    const [isMobileLayout, setIsMobileLayout] = useState(() => {
+    // 切换移动端模式会触发 location.reload()，因此挂载时读取一次即可
+    const isMobileLayout = useMemo(() => {
         try {
             return AESettings.get('EnableMobileLayout') || false;
         } catch (e) {
             return false;
         }
-    });
-
-    // 监听移动端模式设置变化
-    useEffect(() => {
-        const checkMobile = () => {
-            try {
-                setIsMobileLayout(AESettings.get('EnableMobileLayout') || false);
-            } catch (e) {
-                // ignore
-            }
-        };
-        window.addEventListener('storage', checkMobile);
-        // AESettings 变更通过 localStorage 写入，storage 事件可捕获跨标签变化
-        // 同标签内设置变更由 settings 面板触发，定期检查
-        const interval = setInterval(checkMobile, 1000);
-        return () => {
-            window.removeEventListener('storage', checkMobile);
-            clearInterval(interval);
-        };
     }, []);
 
-    // 判断点击目标是否可拖动（按钮、输入框等交互元素不触发拖动）
+    const containerRef = useRef(null);
+
+    // 判断点击/触摸目标是否可拖动（按钮、链接、输入框等交互元素不触发拖动）
     const isDraggableTarget = (target) => {
         if (!target) return true;
         // 排除按钮、链接、输入框及其子元素
@@ -553,55 +537,64 @@ const DailyQuoteInner = ({alertsList, quoteLibrary}) => {
         }
     }, [position]);
 
-    // 触摸拖动支持（移动端模式启用后生效）
-    const handleTouchStart = useCallback((e) => {
-        if (!isMobileLayout) return;
-        if (e.touches.length !== 1) return;
-        const touch = e.touches[0];
-        if (!isDraggableTarget(e.target)) return;
-        isDragging.current = true;
-        dragOffset.current = {
-            x: touch.clientX - position.left,
-            y: touch.clientY - position.top
+    // 触摸拖动（移动端模式启用后生效）——使用原生事件确保可靠性
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el || !isMobileLayout) return;
+
+        const onTouchStart = (e) => {
+            if (e.touches.length !== 1) return;
+            if (!isDraggableTarget(e.target)) return;
+            const touch = e.touches[0];
+            isDragging.current = true;
+            dragOffset.current = {
+                x: touch.clientX - position.left,
+                y: touch.clientY - position.top
+            };
         };
-    }, [position, isMobileLayout]);
 
-    const handleTouchMove = useCallback((e) => {
-        if (!isDragging.current || !isMobileLayout) return;
-        if (e.touches.length !== 1) return;
-        const touch = e.touches[0];
-        let newLeft = touch.clientX - dragOffset.current.x;
-        let newTop = touch.clientY - dragOffset.current.y;
+        const onTouchMove = (e) => {
+            if (!isDragging.current) return;
+            if (e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            let newLeft = touch.clientX - dragOffset.current.x;
+            let newTop = touch.clientY - dragOffset.current.y;
+            const minTop = 60;
+            newLeft = Math.max(0, newLeft);
+            newTop = Math.max(minTop, newTop);
+            newTop = Math.min(window.innerHeight - 40, newTop);
+            setPosition({left: newLeft, top: newTop});
+            e.preventDefault();
+        };
 
-        const minTop = 60;
-        newLeft = Math.max(0, newLeft);
-        newTop = Math.max(minTop, newTop);
-        newTop = Math.min(window.innerHeight - 40, newTop);
-        setPosition({left: newLeft, top: newTop});
-        e.preventDefault();
-    }, [isMobileLayout]);
+        const onTouchEnd = () => {
+            if (isDragging.current) {
+                isDragging.current = false;
+                window.localStorage.setItem(LOCAL_KEY_POSITION, JSON.stringify(position));
+            }
+        };
 
-    const handleTouchEnd = useCallback(() => {
-        if (isDragging.current) {
-            isDragging.current = false;
-            window.localStorage.setItem(LOCAL_KEY_POSITION, JSON.stringify(position));
-        }
-    }, [position]);
+        el.addEventListener('touchstart', onTouchStart, {passive: true});
+        el.addEventListener('touchmove', onTouchMove, {passive: false});
+        el.addEventListener('touchend', onTouchEnd);
+        el.addEventListener('touchcancel', onTouchEnd);
+
+        return () => {
+            el.removeEventListener('touchstart', onTouchStart);
+            el.removeEventListener('touchmove', onTouchMove);
+            el.removeEventListener('touchend', onTouchEnd);
+            el.removeEventListener('touchcancel', onTouchEnd);
+        };
+    }, [isMobileLayout, position]);
 
     useEffect(() => {
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
-        if (isMobileLayout) {
-            window.addEventListener('touchmove', handleTouchMove, {passive: false});
-            window.addEventListener('touchend', handleTouchEnd);
-        }
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
-            window.removeEventListener('touchmove', handleTouchMove);
-            window.removeEventListener('touchend', handleTouchEnd);
         };
-    }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd, isMobileLayout]);
+    }, [handleMouseMove, handleMouseUp]);
 
     const hasSaveAlert = alertsList && alertsList.some(a => (
         a.alertId === 'saving' || a.alertId === 'twSaveToDiskSuccess' || a.alertId === 'saveSuccess'
@@ -828,10 +821,10 @@ const DailyQuoteInner = ({alertsList, quoteLibrary}) => {
 
     return (
         <div
+            ref={containerRef}
             className={styles.container}
             style={{left: position.left, top: position.top}}
             onMouseDown={handleMouseDown}
-            onTouchStart={isMobileLayout ? handleTouchStart : undefined}
             title="日常一句"
         >
             <div className={styles.mainContent}>
