@@ -460,11 +460,12 @@ const DailyQuote = ({alertsList}) => {
 
     const [position, setPosition] = useState(loadPosition);
 
-    // 是否启用移动端模式（开启后支持触摸拖动）
-    // 切换移动端模式会触发 location.reload()，因此挂载时读取一次即可
-    const isMobileLayout = useMemo(() => {
+    // 触摸拖动开关：与自由窗口一致，读取 EnableMobileTouchDrag（移动端模式开启时与 EnableMobileLayout 同时为 true）
+    // 两个设置任一开启即允许触摸拖动（双常开），切换设置会 location.reload()，挂载时读取一次即可
+    const touchEnabled = useMemo(() => {
         try {
-            return AESettings.get('EnableMobileLayout') || false;
+            return AESettings.get('EnableMobileTouchDrag') === true ||
+                AESettings.get('EnableMobileLayout') === true;
         } catch (e) {
             return false;
         }
@@ -538,11 +539,12 @@ const DailyQuote = ({alertsList}) => {
         }
     }, [position]);
 
-    // 触摸拖动（移动端模式启用后生效）——使用原生事件确保可靠性
+    // 触摸拖动（参考自由窗口 AddonWindow 的实现：原生事件 + {passive:false}）
     useEffect(() => {
         const el = containerRef.current;
-        if (!el || !isMobileLayout) return;
+        if (!el || !touchEnabled) return;
 
+        // touchstart：与自由窗口一致使用 {passive:false}，以便 preventDefault 阻止滚动/默认手势
         const onTouchStart = (e) => {
             if (e.touches.length !== 1) return;
             if (!isDraggableTarget(e.target)) return;
@@ -552,8 +554,11 @@ const DailyQuote = ({alertsList}) => {
                 x: touch.clientX - position.left,
                 y: touch.clientY - position.top
             };
+            // 阻止默认手势，避免被浏览器当作滚动/点击
+            e.preventDefault();
         };
 
+        // touchmove 注册在 document 上（与自由窗口一致），确保手指移出元素也能继续拖动
         const onTouchMove = (e) => {
             if (!isDragging.current) return;
             if (e.touches.length !== 1) return;
@@ -575,18 +580,18 @@ const DailyQuote = ({alertsList}) => {
             }
         };
 
-        el.addEventListener('touchstart', onTouchStart, {passive: true});
-        el.addEventListener('touchmove', onTouchMove, {passive: false});
-        el.addEventListener('touchend', onTouchEnd);
-        el.addEventListener('touchcancel', onTouchEnd);
+        el.addEventListener('touchstart', onTouchStart, {passive: false});
+        document.addEventListener('touchmove', onTouchMove, {passive: false});
+        document.addEventListener('touchend', onTouchEnd);
+        document.addEventListener('touchcancel', onTouchEnd);
 
         return () => {
             el.removeEventListener('touchstart', onTouchStart);
-            el.removeEventListener('touchmove', onTouchMove);
-            el.removeEventListener('touchend', onTouchEnd);
-            el.removeEventListener('touchcancel', onTouchEnd);
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+            document.removeEventListener('touchcancel', onTouchEnd);
         };
-    }, [isMobileLayout, position]);
+    }, [touchEnabled, position]);
 
     useEffect(() => {
         window.addEventListener('mousemove', handleMouseMove);
