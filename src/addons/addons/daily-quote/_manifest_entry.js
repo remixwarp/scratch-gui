@@ -7,6 +7,18 @@ const manifest = {
     {
       "name": "笑小朗",
       "url": ""
+    },
+    {
+      "name": "一言 Hitokoto",
+      "url": "https://developer.hitokoto.cn/"
+    },
+    {
+      "name": "古动笔记",
+      "url": "https://card.gudong.site/"
+    },
+    {
+      "name": "今日诗词",
+      "url": "https://www.jinrishici.com/"
     }
   ],
   "userscripts": [
