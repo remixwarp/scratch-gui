@@ -107,6 +107,26 @@
     border-top: 1px solid rgba(0,0,0,0.1);
 }
 
+.filterScroll {
+    max-height: 220px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+}
+
+.filterGroup {
+    margin-bottom: 6px;
+}
+
+.filterGroupTitle {
+    font-size: 10px;
+    color: #888;
+    font-weight: 600;
+    margin: 2px 0 3px 0;
+    border-bottom: 1px dashed rgba(0,0,0,0.08);
+    padding-bottom: 2px;
+}
+
 .filterTitle {
     font-size: 11px;
     color: #555;

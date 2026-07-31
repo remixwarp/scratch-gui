@@ -61,6 +61,14 @@ const manifest = {
         {
           "id": "hitokoto",
           "name": "一言 Hitokoto"
+        },
+        {
+          "id": "gudong",
+          "name": "古动笔记"
+        },
+        {
+          "id": "jinrishici",
+          "name": "今日诗词"
         }
       ]
     },

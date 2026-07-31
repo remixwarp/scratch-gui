@@ -11,7 +11,7 @@ const LOCAL_KEY_POSITION = 'dailyQuotePosition';
 
 const defaultInterval = 5; // seconds
 const defaultMode = 'sequential'; // 'sequential' or 'random'
-const defaultLibrary = 'local'; // 'local' or 'hitokoto'
+const defaultLibrary = 'local'; // 'local' | 'hitokoto' | 'gudong' | 'jinrishici'
 
 // Hitokoto sentence categories (from https://developer.hitokoto.cn/sentence/)
 const HITOKOTO_CATEGORIES = [
@@ -25,7 +25,7 @@ const HITOKOTO_CATEGORIES = [
     {key: 'h', label: '影视'},
     {key: 'i', label: '诗词'},
     {key: 'k', label: '哲学'},
-    {key: 'l', label: '抖机灵'},
+    {key: 'l', label: '抖机灵'}
 ];
 
 const HITOKOTO_LABEL_MAP = Object.fromEntries(
@@ -33,6 +33,158 @@ const HITOKOTO_LABEL_MAP = Object.fromEntries(
 );
 
 const HITOKOTO_API_BASE = 'https://v1.hitokoto.cn/';
+
+// 古动笔记 API (from https://card.gudong.site/#/developer)
+// 接口：GET https://card.gudong.site/api/random-note
+// 完全公开、支持 CORS，无鉴权，无筛选参数（返回随机笔记）
+const GUDONG_API_URL = 'https://card.gudong.site/api/random-note';
+
+// 今日诗词 API (from https://v1.jinrishici.com/)
+// 在链接最后加 .json 获取 JSON 输出。分类按路径区分，单选。
+const JINRISHICI_API_BASE = 'https://v1.jinrishici.com/';
+
+// 今日诗词分类（按主分类分组，每组含“全部”入口及子分类）
+const JINRISHICI_GROUPS = [
+    {
+        group: '全部',
+        items: [{path: 'all', label: '全部'}]
+    },
+    {
+        group: '抒情',
+        items: [
+            {path: 'shuqing', label: '抒情（全部）'},
+            {path: 'shuqing/aiqing', label: '爱情'},
+            {path: 'shuqing/youqing', label: '友情'},
+            {path: 'shuqing/libie', label: '离别'},
+            {path: 'shuqing/sinian', label: '思念'},
+            {path: 'shuqing/sixiang', label: '思乡'},
+            {path: 'shuqing/shanggan', label: '伤感'},
+            {path: 'shuqing/gudu', label: '孤独'},
+            {path: 'shuqing/guiyuan', label: '闺怨'},
+            {path: 'shuqing/daowang', label: '悼亡'},
+            {path: 'shuqing/huaigu', label: '怀古'},
+            {path: 'shuqing/aiguo', label: '爱国'},
+            {path: 'shuqing/ganen', label: '感恩'}
+        ]
+    },
+    {
+        group: '四季',
+        items: [
+            {path: 'siji', label: '四季（全部）'},
+            {path: 'siji/chuntian', label: '春天'},
+            {path: 'siji/xiatian', label: '夏天'},
+            {path: 'siji/qiutian', label: '秋天'},
+            {path: 'siji/dongtian', label: '冬天'}
+        ]
+    },
+    {
+        group: '山水',
+        items: [
+            {path: 'shanshui', label: '山水（全部）'},
+            {path: 'shanshui/lushan', label: '庐山'},
+            {path: 'shanshui/taishan', label: '泰山'},
+            {path: 'shanshui/jianghe', label: '江河'},
+            {path: 'shanshui/changjiang', label: '长江'},
+            {path: 'shanshui/huanghe', label: '黄河'},
+            {path: 'shanshui/xihu', label: '西湖'},
+            {path: 'shanshui/pubu', label: '瀑布'}
+        ]
+    },
+    {
+        group: '天气',
+        items: [
+            {path: 'tianqi', label: '天气（全部）'},
+            {path: 'tianqi/xiefeng', label: '写风'},
+            {path: 'tianqi/xieyun', label: '写云'},
+            {path: 'tianqi/xieyu', label: '写雨'},
+            {path: 'tianqi/xiexue', label: '写雪'},
+            {path: 'tianqi/caihong', label: '彩虹'},
+            {path: 'tianqi/taiyang', label: '太阳'},
+            {path: 'tianqi/yueliang', label: '月亮'},
+            {path: 'tianqi/xingxing', label: '星星'}
+        ]
+    },
+    {
+        group: '人物',
+        items: [
+            {path: 'renwu', label: '人物（全部）'},
+            {path: 'renwu/nvzi', label: '女子'},
+            {path: 'renwu/fuqin', label: '父亲'},
+            {path: 'renwu/muqin', label: '母亲'},
+            {path: 'renwu/laoshi', label: '老师'},
+            {path: 'renwu/ertong', label: '儿童'}
+        ]
+    },
+    {
+        group: '人生',
+        items: [
+            {path: 'rensheng', label: '人生（全部）'},
+            {path: 'rensheng/lizhi', label: '励志'},
+            {path: 'rensheng/zheli', label: '哲理'},
+            {path: 'rensheng/qingchun', label: '青春'},
+            {path: 'rensheng/shiguang', label: '时光'},
+            {path: 'rensheng/mengxiang', label: '梦想'},
+            {path: 'rensheng/dushu', label: '读书'},
+            {path: 'rensheng/zhanzheng', label: '战争'}
+        ]
+    },
+    {
+        group: '生活',
+        items: [
+            {path: 'shenghuo', label: '生活（全部）'},
+            {path: 'shenghuo/xiangcun', label: '乡村'},
+            {path: 'shenghuo/tianyuan', label: '田园'},
+            {path: 'shenghuo/biansai', label: '边塞'},
+            {path: 'shenghuo/xieqiao', label: '写桥'}
+        ]
+    },
+    {
+        group: '节日',
+        items: [
+            {path: 'jieri', label: '节日（全部）'},
+            {path: 'jieri/chunjie', label: '春节'},
+            {path: 'jieri/yuanxiaojie', label: '元宵节'},
+            {path: 'jieri/hanshijie', label: '寒食节'},
+            {path: 'jieri/qingmingjie', label: '清明节'},
+            {path: 'jieri/duanwujie', label: '端午节'},
+            {path: 'jieri/qixijie', label: '七夕节'},
+            {path: 'jieri/zhongqiujie', label: '中秋节'},
+            {path: 'jieri/chongyangjie', label: '重阳节'}
+        ]
+    },
+    {
+        group: '动物',
+        items: [
+            {path: 'dongwu', label: '动物（全部）'},
+            {path: 'dongwu/xieniao', label: '写鸟'},
+            {path: 'dongwu/xiema', label: '写马'},
+            {path: 'dongwu/xiemao', label: '写猫'}
+        ]
+    },
+    {
+        group: '植物',
+        items: [
+            {path: 'zhiwu', label: '植物（全部）'},
+            {path: 'zhiwu/meihua', label: '梅花'},
+            {path: 'zhiwu/lihua', label: '梨花'},
+            {path: 'zhiwu/taohua', label: '桃花'},
+            {path: 'zhiwu/hehua', label: '荷花'},
+            {path: 'zhiwu/juhua', label: '菊花'},
+            {path: 'zhiwu/liushu', label: '柳树'},
+            {path: 'zhiwu/yezi', label: '叶子'},
+            {path: 'zhiwu/zhuzi', label: '竹子'}
+        ]
+    },
+    {
+        group: '食物',
+        items: [
+            {path: 'shiwu', label: '食物（全部）'},
+            {path: 'shiwu/xiejiu', label: '写酒'},
+            {path: 'shiwu/xiecha', label: '写茶'},
+            {path: 'shiwu/lizhi', label: '荔枝'}
+        ]
+    }
+];
 
 const defaultQuotes = [
     "长风破浪会有时，直挂云帆济沧海。",
@@ -150,6 +302,8 @@ const defaultQuotes = [
     "愿你以渺小启程，以伟大结尾。"
 ];
 
+const LIBRARY_IDS = ['local', 'hitokoto', 'gudong', 'jinrishici'];
+
 // Load settings from storage
 const loadSettings = () => {
     let interval = defaultInterval;
@@ -157,7 +311,6 @@ const loadSettings = () => {
     let mode = defaultMode;
     let library = defaultLibrary;
 
-    // Try addon settings first
     try {
         const addonInterval = SettingsStore.getAddonSetting('daily-quote', 'interval');
         if (typeof addonInterval === 'number' && addonInterval > 0) {
@@ -178,7 +331,7 @@ const loadSettings = () => {
 
     try {
         const addonLibrary = SettingsStore.getAddonSetting('daily-quote', 'quote_library');
-        if (addonLibrary && (addonLibrary === 'local' || addonLibrary === 'hitokoto')) {
+        if (addonLibrary && LIBRARY_IDS.includes(addonLibrary)) {
             library = addonLibrary;
         }
     } catch (e) {
@@ -197,7 +350,6 @@ const loadSettings = () => {
         // ignore
     }
 
-    // Fallback to localStorage for backward compatibility
     const storedInterval = parseInt(window.localStorage.getItem(LOCAL_KEY_INTERVAL), 10);
     if (Number.isFinite(storedInterval) && storedInterval > 0) {
         interval = storedInterval;
@@ -223,21 +375,44 @@ const loadSettings = () => {
     return { interval, quotes, mode, library };
 };
 
-// Fetch hitokoto from API, with optional category filters (array of keys)
-const fetchHitokoto = async (categories) => {
+// 一言 Hitokoto：支持多分类筛选（c 参数可重复）
+const fetchHitokoto = async categories => {
     try {
         const params = new URLSearchParams();
         params.append('encode', 'json');
         if (categories && categories.length > 0) {
             categories.forEach(c => params.append('c', c));
         }
-        const url = `${HITOKOTO_API_BASE}?${params.toString()}`;
-        const resp = await fetch(url);
+        const resp = await fetch(`${HITOKOTO_API_BASE}?${params.toString()}`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        return data;
+        return await resp.json();
     } catch (e) {
         console.warn('daily-quote hitokoto fetch error:', e);
+        return null;
+    }
+};
+
+// 古动笔记：无筛选参数，返回随机笔记
+const fetchGudong = async () => {
+    try {
+        const resp = await fetch(GUDONG_API_URL);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return await resp.json();
+    } catch (e) {
+        console.warn('daily-quote gudong fetch error:', e);
+        return null;
+    }
+};
+
+// 今日诗词：分类按路径区分（单选），追加 .json 获取 JSON
+const fetchJinrishici = async categoryPath => {
+    try {
+        const path = categoryPath || 'all';
+        const resp = await fetch(`${JINRISHICI_API_BASE}${path}.json`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return await resp.json();
+    } catch (e) {
+        console.warn('daily-quote jinrishici fetch error:', e);
         return null;
     }
 };
@@ -251,16 +426,19 @@ const DailyQuote = ({alertsList}) => {
     const [displayMode, setDisplayMode] = useState(settings.mode);
     const [quoteLibrary, setQuoteLibrary] = useState(settings.library);
     const [currentQuote, setCurrentQuote] = useState(settings.quotes[0] || '');
+    // 统一存放各句库返回的元信息，供出处展示使用
+    const [meta, setMeta] = useState(null);
     const timerRef = useRef(null);
     const dragRef = useRef(null);
     const isDragging = useRef(false);
     const dragOffset = useRef({x: 0, y: 0});
 
-    // Hitokoto specific state
-    const [hitokotoCategories, setHitokotoCategories] = useState([]); // selected category keys, empty = all
-    const [hitokotoInfo, setHitokotoInfo] = useState(null); // {from, from_who, type, uuid, ...}
+    // 一言分类（多选，空数组 = 全部）
+    const [hitokotoCategories, setHitokotoCategories] = useState([]);
+    // 今日诗词分类（单选路径，默认 all）
+    const [jinrishiciCategory, setJinrishiciCategory] = useState('all');
     const [showFilterPanel, setShowFilterPanel] = useState(false);
-    const hitokotoLoadingRef = useRef(false);
+    const loadingRef = useRef(false);
 
     const loadPosition = () => {
         try {
@@ -310,7 +488,7 @@ const DailyQuote = ({alertsList}) => {
             const minTop = 60;
             const checkPoints = [
                 {x: newLeft + 50, y: newTop + 15},
-                {x: newLeft + 50, y: newTop + 30},
+                {x: newLeft + 50, y: newTop + 30}
             ];
 
             let allValid = true;
@@ -346,83 +524,128 @@ const DailyQuote = ({alertsList}) => {
         };
     }, [handleMouseMove, handleMouseUp]);
 
-    // determine whether a saving/saved alert is present
     const hasSaveAlert = alertsList && alertsList.some(a => (
         a.alertId === 'saving' || a.alertId === 'twSaveToDiskSuccess' || a.alertId === 'saveSuccess'
     ));
 
-    // Switch category selection (toggle)
-    const toggleCategory = useCallback((catKey) => {
-        setHitokotoCategories(prev => {
-            if (prev.includes(catKey)) {
-                return prev.filter(c => c !== catKey);
-            } else {
-                return [...prev, catKey];
-            }
-        });
+    // 一言分类多选切换
+    const toggleHitokotoCategory = useCallback(catKey => {
+        setHitokotoCategories(prev => prev.includes(catKey) ?
+            prev.filter(c => c !== catKey) :
+            [...prev, catKey]);
     }, []);
 
-    // Select all categories
-    const selectAllCategories = useCallback(() => {
-        setHitokotoCategories([]);
-    }, []);
+    const clearHitokotoCategories = useCallback(() => setHitokotoCategories([]), []);
 
-    // Fetch a new hitokoto
+    // 今日诗词分类单选
+    const selectJinrishiciCategory = useCallback(path => setJinrishiciCategory(path), []);
+
+    // 拉取一言
     const fetchNewHitokoto = useCallback(async () => {
-        if (hitokotoLoadingRef.current) return;
-        hitokotoLoadingRef.current = true;
+        if (loadingRef.current) return;
+        loadingRef.current = true;
         try {
             const data = await fetchHitokoto(hitokotoCategories);
             if (data && data.hitokoto) {
                 setCurrentQuote(data.hitokoto);
-                setHitokotoInfo({
+                setMeta({
+                    type: data.type || '',
                     from: data.from || '',
                     from_who: data.from_who || '',
-                    type: data.type || '',
                     uuid: data.uuid || ''
                 });
             } else {
                 setCurrentQuote('网络开小差了，稍后再试～');
-                setHitokotoInfo(null);
+                setMeta(null);
             }
         } finally {
-            hitokotoLoadingRef.current = false;
+            loadingRef.current = false;
         }
     }, [hitokotoCategories]);
 
-    // Get next quote based on display mode and library
+    // 拉取古动笔记
+    const fetchNewGudong = useCallback(async () => {
+        if (loadingRef.current) return;
+        loadingRef.current = true;
+        try {
+            const data = await fetchGudong();
+            if (data && data.content) {
+                setCurrentQuote(data.content);
+                setMeta({
+                    source: data.source || '',
+                    author: data.author || '',
+                    collectionName: data.collectionName || '',
+                    tags: Array.isArray(data.tags) ? data.tags : []
+                });
+            } else {
+                setCurrentQuote('网络开小差了，稍后再试～');
+                setMeta(null);
+            }
+        } finally {
+            loadingRef.current = false;
+        }
+    }, []);
+
+    // 拉取今日诗词
+    const fetchNewJinrishici = useCallback(async () => {
+        if (loadingRef.current) return;
+        loadingRef.current = true;
+        try {
+            const data = await fetchJinrishici(jinrishiciCategory);
+            if (data && data.content) {
+                setCurrentQuote(data.content);
+                setMeta({
+                    origin: data.origin || '',
+                    author: data.author || '',
+                    category: data.category || ''
+                });
+            } else {
+                setCurrentQuote('网络开小差了，稍后再试～');
+                setMeta(null);
+            }
+        } finally {
+            loadingRef.current = false;
+        }
+    }, [jinrishiciCategory]);
+
+    // 统一获取下一句
     const getNextQuote = useCallback(async () => {
         if (quoteLibrary === 'hitokoto') {
             await fetchNewHitokoto();
             return;
         }
+        if (quoteLibrary === 'gudong') {
+            await fetchNewGudong();
+            return;
+        }
+        if (quoteLibrary === 'jinrishici') {
+            await fetchNewJinrishici();
+            return;
+        }
+        // local
         if (lines.length === 0) return;
-        
         if (displayMode === 'random') {
-            // Random mode: pick a random index different from current
             if (lines.length === 1) {
                 setCurrentQuote(lines[0]);
+                setMeta(null);
                 return;
             }
-            
             let newIndex;
             do {
                 newIndex = Math.floor(Math.random() * lines.length);
             } while (newIndex === index && lines.length > 1);
-            
             setIndex(newIndex);
             setCurrentQuote(lines[newIndex]);
-            setHitokotoInfo(null);
+            setMeta(null);
         } else {
-            // Sequential mode: next index in order
             const nextIndex = (index + 1) % lines.length;
             setIndex(nextIndex);
             setCurrentQuote(lines[nextIndex]);
-            setHitokotoInfo(null);
+            setMeta(null);
         }
-    }, [lines, index, displayMode, quoteLibrary, fetchNewHitokoto]);
+    }, [lines, index, displayMode, quoteLibrary, fetchNewHitokoto, fetchNewGudong, fetchNewJinrishici]);
 
-    // Timer effect - triggers next quote on interval
+    // 定时切换
     useEffect(() => {
         if (timerRef.current) {
             clearInterval(timerRef.current);
@@ -434,28 +657,26 @@ const DailyQuote = ({alertsList}) => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [lines.length, intervalSec, displayMode, quoteLibrary, hitokotoCategories, getNextQuote]);
+    }, [lines.length, intervalSec, displayMode, quoteLibrary, hitokotoCategories, jinrishiciCategory, getNextQuote]);
 
-    // Initial load for hitokoto
+    // 句库切换 / 分类变化时立即拉取一次
     useEffect(() => {
         if (quoteLibrary === 'hitokoto') {
             fetchNewHitokoto();
+        } else if (quoteLibrary === 'gudong') {
+            fetchNewGudong();
+        } else if (quoteLibrary === 'jinrishici') {
+            fetchNewJinrishici();
         } else {
-            // Reset to local library first quote
+            // local：回到本地第一句
             setCurrentQuote(lines[0] || '');
-            setHitokotoInfo(null);
+            setMeta(null);
             setIndex(0);
         }
-    }, [quoteLibrary]); // eslint-disable-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [quoteLibrary, hitokotoCategories, jinrishiciCategory]);
 
-    // When hitokoto categories change, fetch a new quote
-    useEffect(() => {
-        if (quoteLibrary === 'hitokoto') {
-            fetchNewHitokoto();
-        }
-    }, [hitokotoCategories, quoteLibrary, fetchNewHitokoto]);
-
-    // Listen for settings changes
+    // 监听设置变化
     useEffect(() => {
         const handleSettingsChange = () => {
             const newSettings = loadSettings();
@@ -463,14 +684,13 @@ const DailyQuote = ({alertsList}) => {
             setLines(newSettings.quotes);
             setDisplayMode(newSettings.mode);
             setQuoteLibrary(newSettings.library);
-            if (newSettings.library !== 'hitokoto') {
+            if (newSettings.library === 'local') {
                 setIndex(0);
                 setCurrentQuote(newSettings.quotes[0] || '');
-                setHitokotoInfo(null);
+                setMeta(null);
             }
         };
 
-        // Listen for SettingsStore changes
         const handleSettingChanged = e => {
             if (e.detail && e.detail.addonId === 'daily-quote') {
                 handleSettingsChange();
@@ -478,8 +698,6 @@ const DailyQuote = ({alertsList}) => {
         };
 
         SettingsStore.addEventListener('setting-changed', handleSettingChanged);
-        
-        // Listen for storage changes (from other tabs/windows)
         window.addEventListener('storage', handleSettingsChange);
 
         return () => {
@@ -488,7 +706,7 @@ const DailyQuote = ({alertsList}) => {
         };
     }, []);
 
-    const [enabled, setEnabled] = useState(() => {
+    const [enabled] = useState(() => {
         try {
             return SettingsStore.getAddonEnabled('daily-quote');
         } catch (e) {
@@ -497,7 +715,6 @@ const DailyQuote = ({alertsList}) => {
     });
 
     const openSettings = () => {
-        // Try to use the window manager if available, otherwise open in new tab
         if (window.handleClickAddonSettings) {
             window.handleClickAddonSettings('daily-quote');
         } else {
@@ -505,24 +722,36 @@ const DailyQuote = ({alertsList}) => {
         }
     };
 
-    // Build source display string for hitokoto
+    // 出处展示
     const sourceLabel = (() => {
-        if (quoteLibrary !== 'hitokoto' || !hitokotoInfo) return '';
-        const parts = [];
-        if (hitokotoInfo.type && HITOKOTO_LABEL_MAP[hitokotoInfo.type]) {
-            parts.push(`[${HITOKOTO_LABEL_MAP[hitokotoInfo.type]}]`);
+        if (!meta) return '';
+        if (quoteLibrary === 'hitokoto') {
+            const parts = [];
+            if (meta.type && HITOKOTO_LABEL_MAP[meta.type]) parts.push(`[${HITOKOTO_LABEL_MAP[meta.type]}]`);
+            if (meta.from) parts.push(`《${meta.from}》`);
+            if (meta.from_who) parts.push(`——${meta.from_who}`);
+            return parts.join(' ');
         }
-        if (hitokotoInfo.from) {
-            parts.push(`《${hitokotoInfo.from}》`);
+        if (quoteLibrary === 'jinrishici') {
+            const parts = [];
+            if (meta.origin) parts.push(`《${meta.origin}》`);
+            if (meta.author) parts.push(`——${meta.author}`);
+            return parts.join(' ');
         }
-        if (hitokotoInfo.from_who) {
-            parts.push(`——${hitokotoInfo.from_who}`);
+        if (quoteLibrary === 'gudong') {
+            const parts = [];
+            if (meta.source) parts.push(`《${meta.source}》`);
+            if (meta.author) parts.push(`——${meta.author}`);
+            if (meta.collectionName) parts.push(`· ${meta.collectionName}`);
+            return parts.join(' ');
         }
-        return parts.join(' ');
+        return '';
     })();
 
     if (hasSaveAlert) return null;
     if (!enabled) return null;
+
+    const showFilterButton = quoteLibrary === 'hitokoto' || quoteLibrary === 'jinrishici';
 
     return (
         <div
@@ -539,7 +768,7 @@ const DailyQuote = ({alertsList}) => {
                 <div className={styles.quoteRow}>
                     <span className={styles.text}>{currentQuote}</span>
                     <div className={styles.buttonRow}>
-                        {quoteLibrary === 'hitokoto' && (
+                        {showFilterButton && (
                             <button
                                 className={styles.filterToggle}
                                 onClick={() => setShowFilterPanel(v => !v)}
@@ -574,11 +803,11 @@ const DailyQuote = ({alertsList}) => {
                 )}
                 {quoteLibrary === 'hitokoto' && showFilterPanel && (
                     <div className={styles.filterPanel}>
-                        <div className={styles.filterTitle}>分类筛选：</div>
+                        <div className={styles.filterTitle}>分类筛选（可多选）：</div>
                         <div className={styles.filterButtons}>
                             <button
                                 className={hitokotoCategories.length === 0 ? styles.filterBtnActive : styles.filterBtn}
-                                onClick={selectAllCategories}
+                                onClick={clearHitokotoCategories}
                                 title="选择全部（无筛选）"
                             >
                                 全部
@@ -587,11 +816,35 @@ const DailyQuote = ({alertsList}) => {
                                 <button
                                     key={cat.key}
                                     className={hitokotoCategories.includes(cat.key) ? styles.filterBtnActive : styles.filterBtn}
-                                    onClick={() => toggleCategory(cat.key)}
+                                    onClick={() => toggleHitokotoCategory(cat.key)}
                                     title={`分类：${cat.label}`}
                                 >
                                     {cat.label}
                                 </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {quoteLibrary === 'jinrishici' && showFilterPanel && (
+                    <div className={styles.filterPanel}>
+                        <div className={styles.filterTitle}>分类筛选（单选）：</div>
+                        <div className={styles.filterScroll}>
+                            {JINRISHICI_GROUPS.map(group => (
+                                <div key={group.group} className={styles.filterGroup}>
+                                    <div className={styles.filterGroupTitle}>{group.group}</div>
+                                    <div className={styles.filterButtons}>
+                                        {group.items.map(item => (
+                                            <button
+                                                key={item.path}
+                                                className={jinrishiciCategory === item.path ? styles.filterBtnActive : styles.filterBtn}
+                                                onClick={() => selectJinrishiciCategory(item.path)}
+                                                title={`${group.group} - ${item.label}`}
+                                            >
+                                                {item.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     </div>
