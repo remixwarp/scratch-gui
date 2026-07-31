@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import styles from './daily-quote.css';
 import SettingsStore from '../../addons/settings-store-singleton';
+import {AESettings} from '../../lib/settings.js';
 
 const LOCAL_KEY_INTERVAL = 'dailyQuoteInterval';
 const LOCAL_KEY_QUOTES = 'dailyQuoteCustomQuotes';
@@ -429,7 +430,6 @@ const DailyQuote = ({alertsList}) => {
     // 统一存放各句库返回的元信息，供出处展示使用
     const [meta, setMeta] = useState(null);
     const timerRef = useRef(null);
-    const dragRef = useRef(null);
     const isDragging = useRef(false);
     const dragOffset = useRef({x: 0, y: 0});
 
@@ -460,15 +460,54 @@ const DailyQuote = ({alertsList}) => {
 
     const [position, setPosition] = useState(loadPosition);
 
-    const handleMouseDown = useCallback((e) => {
-        if (e.target === dragRef.current) {
-            isDragging.current = true;
-            dragOffset.current = {
-                x: e.clientX - position.left,
-                y: e.clientY - position.top
-            };
-            e.preventDefault();
+    // 是否启用移动端模式（开启后支持触摸拖动）
+    const [isMobileLayout, setIsMobileLayout] = useState(() => {
+        try {
+            return AESettings.get('EnableMobileLayout') || false;
+        } catch (e) {
+            return false;
         }
+    });
+
+    // 监听移动端模式设置变化
+    useEffect(() => {
+        const checkMobile = () => {
+            try {
+                setIsMobileLayout(AESettings.get('EnableMobileLayout') || false);
+            } catch (e) {
+                // ignore
+            }
+        };
+        window.addEventListener('storage', checkMobile);
+        // AESettings 变更通过 localStorage 写入，storage 事件可捕获跨标签变化
+        // 同标签内设置变更由 settings 面板触发，定期检查
+        const interval = setInterval(checkMobile, 1000);
+        return () => {
+            window.removeEventListener('storage', checkMobile);
+            clearInterval(interval);
+        };
+    }, []);
+
+    // 判断点击目标是否可拖动（按钮、输入框等交互元素不触发拖动）
+    const isDraggableTarget = (target) => {
+        if (!target) return true;
+        // 排除按钮、链接、输入框及其子元素
+        if (target.closest && target.closest('button, a, input, textarea, select, [data-not-draggable]')) {
+            return false;
+        }
+        return true;
+    };
+
+    const handleMouseDown = useCallback((e) => {
+        // 仅左键触发
+        if (e.button !== 0) return;
+        if (!isDraggableTarget(e.target)) return;
+        isDragging.current = true;
+        dragOffset.current = {
+            x: e.clientX - position.left,
+            y: e.clientY - position.top
+        };
+        e.preventDefault();
     }, [position]);
 
     const handleMouseMove = useCallback((e) => {
@@ -515,14 +554,55 @@ const DailyQuote = ({alertsList}) => {
         }
     }, [position]);
 
+    // 触摸拖动支持（移动端模式启用后生效）
+    const handleTouchStart = useCallback((e) => {
+        if (!isMobileLayout) return;
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        if (!isDraggableTarget(e.target)) return;
+        isDragging.current = true;
+        dragOffset.current = {
+            x: touch.clientX - position.left,
+            y: touch.clientY - position.top
+        };
+    }, [position, isMobileLayout]);
+
+    const handleTouchMove = useCallback((e) => {
+        if (!isDragging.current || !isMobileLayout) return;
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        let newLeft = touch.clientX - dragOffset.current.x;
+        let newTop = touch.clientY - dragOffset.current.y;
+
+        const minTop = 60;
+        newLeft = Math.max(0, newLeft);
+        newTop = Math.max(minTop, newTop);
+        newTop = Math.min(window.innerHeight - 40, newTop);
+        setPosition({left: newLeft, top: newTop});
+        e.preventDefault();
+    }, [isMobileLayout]);
+
+    const handleTouchEnd = useCallback(() => {
+        if (isDragging.current) {
+            isDragging.current = false;
+            window.localStorage.setItem(LOCAL_KEY_POSITION, JSON.stringify(position));
+        }
+    }, [position]);
+
     useEffect(() => {
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
+        if (isMobileLayout) {
+            window.addEventListener('touchmove', handleTouchMove, {passive: false});
+            window.addEventListener('touchend', handleTouchEnd);
+        }
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('touchend', handleTouchEnd);
         };
-    }, [handleMouseMove, handleMouseUp]);
+    }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd, isMobileLayout]);
 
     const hasSaveAlert = alertsList && alertsList.some(a => (
         a.alertId === 'saving' || a.alertId === 'twSaveToDiskSuccess' || a.alertId === 'saveSuccess'
@@ -758,12 +838,9 @@ const DailyQuote = ({alertsList}) => {
             className={styles.container}
             style={{left: position.left, top: position.top}}
             onMouseDown={handleMouseDown}
+            onTouchStart={isMobileLayout ? handleTouchStart : undefined}
             title="日常一句"
         >
-            <div
-                ref={dragRef}
-                className={styles.dragHandle}
-            />
             <div className={styles.mainContent}>
                 <div className={styles.quoteRow}>
                     <span className={styles.text}>{currentQuote}</span>

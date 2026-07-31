@@ -2,11 +2,10 @@
     display: inline-flex;
     align-items: stretch;
     gap: 8px;
-    padding: 4px 8px;
-    padding-left: 0;
+    padding: 6px 10px;
     color: #1a1a1a;
     background: rgba(255,255,255,0.9);
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 13px;
     pointer-events: auto;
     position: fixed;
@@ -15,23 +14,12 @@
     top: 60px;
     max-width: 95vw;
     box-sizing: border-box;
-}
-.dragHandle {
-    width: 6px;
-    height: auto;
-    min-height: 24px;
-    background: #888;
-    border-radius: 3px 0 0 3px;
     cursor: grab;
-    flex-shrink: 0;
     user-select: none;
+    touch-action: none; /* 允许触摸拖动时不触发页面滚动 */
 }
-.dragHandle:active {
+.container:active {
     cursor: grabbing;
-    background: #666;
-}
-.dragHandle:hover {
-    background: #999;
 }
 
 .mainContent {
@@ -40,6 +28,12 @@
     gap: 4px;
     min-width: 0;
     flex: 1;
+}
+
+/* 按钮区域恢复默认指针，避免显示拖动光标 */
+.mainContent button,
+.mainContent a {
+    cursor: pointer;
 }
 
 .quoteRow {
