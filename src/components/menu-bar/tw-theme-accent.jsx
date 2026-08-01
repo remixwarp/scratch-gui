@@ -8,6 +8,7 @@ import {Check} from 'lucide-react';
 import ChevronDown from './ChevronDown.jsx';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {ACCENT_MAP, Theme} from '../../lib/themes/index.js';
+import {CustomTheme} from '../../lib/themes/custom-themes.js';
 import {openAccentMenu, accentMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
@@ -17,6 +18,16 @@ import {openCustomTheme} from '../../reducers/modals.js';
 
 import {closeEditMenu} from '../../reducers/menus.js';
 
+import pixelThemeCircle from '../../lib/themes/pixel-presets/minecraft_circle_pixel_theme.json';
+import pixelThemeRight from '../../lib/themes/pixel-presets/minecraft_right_pixel_theme.json';
+import pixelThemeLeft from '../../lib/themes/pixel-presets/minecraft_left_pixel_theme.json';
+
+const PIXEL_PRESETS = [
+    {id: 'pixel-minecraft-circle', name: pixelThemeCircle.themes[0].name, data: pixelThemeCircle},
+    {id: 'pixel-minecraft-right', name: pixelThemeRight.themes[0].name, data: pixelThemeRight},
+    {id: 'pixel-minecraft-left', name: pixelThemeLeft.themes[0].name, data: pixelThemeLeft}
+];
+
 // Keep the original accent messages for FormattedMessage component
 const ACCENT_MESSAGES = {};
 for (const key in ACCENT_MAP) {
@@ -24,6 +35,14 @@ for (const key in ACCENT_MAP) {
         id: ACCENT_MAP[key].id,
         defaultMessage: ACCENT_MAP[key].defaultMessage,
         description: ACCENT_MAP[key].description
+    };
+}
+// Add pixel preset messages
+for (const preset of PIXEL_PRESETS) {
+    ACCENT_MESSAGES[preset.id] = {
+        id: `tw.accent.${preset.id}`,
+        defaultMessage: preset.name,
+        description: 'Pixel preset theme'
     };
 }
 
@@ -40,7 +59,19 @@ const icons = {
 const ColorIcon = props => {
     const accentId = props.id || 'pale blue';
     const accent = ACCENT_MAP[accentId] && ACCENT_MAP[accentId].accent;
-    
+
+    if (accentId && accentId.startsWith('pixel-')) {
+        return (
+            <div
+                className={styles.accentIconOuter}
+                style={{
+                    backgroundColor: '#3c8527',
+                    backgroundImage: 'none'
+                }}
+            />
+        );
+    }
+
     if (icons[accentId]) {
         return (
             <img
@@ -111,6 +142,7 @@ const AccentThemeMenu = ({
     isOpen,
     isRtl,
     onChangeTheme,
+    onApplyPixelTheme,
     onOpen,
     onClickCustomThemeModal,
     theme
@@ -142,6 +174,14 @@ const AccentThemeMenu = ({
                     onClick={() => onChangeTheme(theme.set('accent', item))}
                 />
             ))}
+            {PIXEL_PRESETS.map(preset => (
+                <AccentMenuItem
+                    key={preset.id}
+                    id={preset.id}
+                    isSelected={false}
+                    onClick={() => onApplyPixelTheme(preset.data)}
+                />
+            ))}
             <MenuItem onClick={onClickCustomThemeModal}>
                 <div className={styles.option}>
                     <ColorIcon id="custom" />
@@ -160,6 +200,7 @@ AccentThemeMenu.propTypes = {
     isOpen: PropTypes.bool,
     isRtl: PropTypes.bool,
     onChangeTheme: PropTypes.func,
+    onApplyPixelTheme: PropTypes.func,
     onClickCustomThemeModal: PropTypes.func,
     onOpen: PropTypes.func,
     theme: PropTypes.instanceOf(Theme)
@@ -176,6 +217,13 @@ const mapDispatchToProps = dispatch => ({
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
         applyTheme(theme);
+    },
+    onApplyPixelTheme: data => {
+        const themeData = data.themes[0];
+        const customTheme = CustomTheme.import(themeData);
+        dispatch(setTheme(customTheme));
+        dispatch(closeSettingsMenu());
+        applyTheme(customTheme);
     },
     onOpen: () => dispatch(openAccentMenu()),
     onClickCustomThemeModal: () => {
