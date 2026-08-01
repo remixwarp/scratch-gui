@@ -194,9 +194,11 @@ const AccentThemeMenu = ({
                     />
                 </div>
             </MenuItem>
-            <div className={styles.pixelPresetDisclaimer}>
-                非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，也不与MOJANG或MICROSOFT关联。
-            </div>
+            <MenuItem className={styles.pixelPresetDisclaimerItem}>
+                <div className={styles.pixelPresetDisclaimer}>
+                    非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，也不与MOJANG或MICROSOFT关联。
+                </div>
+            </MenuItem>
         </Submenu>
     </MenuItem>
 );
