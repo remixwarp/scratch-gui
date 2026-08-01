@@ -147,7 +147,14 @@ const AccentThemeMenu = ({
     onOpen,
     onClickCustomThemeModal,
     theme
-}) => (
+}) => {
+    const isZh =
+        intl &&
+        intl.locale &&
+        (intl.locale.startsWith('zh') ||
+            intl.locale.startsWith('cmn') ||
+            intl.locale.startsWith('yue'));
+    return (
     <MenuItem expanded={isOpen}>
         <div
             className={styles.option}
@@ -196,52 +203,25 @@ const AccentThemeMenu = ({
             </MenuItem>
             <MenuItem className={styles.pixelPresetDisclaimerItem}>
                 <div className={styles.pixelPresetDisclaimer}>
-                    <FormattedMessage
-                        id="tw.accent.minecraftDisclaimer"
-                        defaultMessage={
-                            'Not an official MINECRAFT product. Not approved by or ' +
-                            'associated with MOJANG or MICROSOFT.'
-                        }
-                        description="Disclaimer for Minecraft pixel preset themes"
-                        values={{
-                            zh: (
-                                <>
-                                    非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，
-                                    <br />
-                                    也不与MOJANG或MICROSOFT关联。
-                                </>
-                            )
-                        }}
-                    >
-                        {(_, {locale}) => {
-                            const isZh =
-                                locale &&
-                                (locale.startsWith('zh') ||
-                                    locale.startsWith('cmn') ||
-                                    locale.startsWith('yue'));
-                            if (isZh) {
-                                return (
-                                    <>
-                                        非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，
-                                        <br />
-                                        也不与MOJANG或MICROSOFT关联。
-                                    </>
-                                );
-                            }
-                            return (
-                                <>
-                                    Not an official MINECRAFT product. Not approved by or
-                                    <br />
-                                    associated with MOJANG or MICROSOFT.
-                                </>
-                            );
-                        }}
-                    </FormattedMessage>
+                    {isZh ? (
+                        <>
+                            非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，
+                            <br />
+                            也不与MOJANG或MICROSOFT关联。
+                        </>
+                    ) : (
+                        <>
+                            Not an official MINECRAFT product. Not approved by or
+                            <br />
+                            associated with MOJANG or MICROSOFT.
+                        </>
+                    )}
                 </div>
             </MenuItem>
         </Submenu>
     </MenuItem>
-);
+    );
+};
 
 AccentThemeMenu.propTypes = {
     intl: intlShape.isRequired,
