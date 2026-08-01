@@ -21,19 +21,14 @@ const PixelEditorApp = injectIntl(props => {
                 const parsed = JSON.parse(storedData);
                 if (parsed.theme && parsed.source === 'bilme') {
                     const theme = parsed.theme;
-                    if (theme.accent && theme.accent.pixelData) {
-                        let pixelData = theme.accent.pixelData;
-                        
-                        // 如果是压缩格式，进行解压
-                        if (PixelUtils.isCompressed(pixelData)) {
-                            pixelData = PixelUtils.decompressPixelData(pixelData);
-                        }
-                        
+                    if (theme.accent && theme.accent.pixelData && Array.isArray(theme.accent.pixelData)) {
                         return {
                             name: theme.name || '',
                             description: theme.description || '',
-                            pixelData: pixelData,
-                            primaryColor: theme.accent.guiColors?.['motion-primary'] || '#ff6b6b'
+                            pixelData: theme.accent.pixelData,
+                            primaryColor: theme.accent.primaryColor ||
+                                theme.accent.guiColors?.['motion-primary'] ||
+                                '#ff6b6b'
                         };
                     }
                 }
@@ -748,19 +743,13 @@ const PixelEditorApp = injectIntl(props => {
                 <button
                     className={styles.footerBtn}
                     onClick={() => {
-                        // 导出主题功能
                         if (!name.trim()) {
                             showAlert('请输入主题名称');
                             return;
                         }
-                        
-                        // 生成像素艺术accent
+
                         const pixelAccent = PixelUtils.createPixelAccent(pixelData, primaryColor, {pixelSize: 2});
-                        
-                        // 将像素数据转换为简单的字符串格式：每行用分号分隔，颜色用逗号分隔
-                        const pixelString = pixelData.map(row => row.join(',')).join(';');
-                        
-                        // 创建主题对象，伪装成渐变主题格式以绕过 BILME 大小限制
+
                         const themeData = {
                             uuid: `custom-theme-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                             createdAt: new Date().toISOString(),
@@ -768,20 +757,11 @@ const PixelEditorApp = injectIntl(props => {
                             description,
                             author: 'User',
                             accent: {
-                                // 伪装成渐变主题格式，把像素数据放在 colors 字段中
-                                colors: [
-                                    {
-                                        color: `PIXEL:${pixelString}`,  // 标记为像素主题
-                                        position: 0
-                                    },
-                                    {
-                                        color: primaryColor,  // 保存主色调
-                                        position: 100
-                                    }
-                                ],
-                                direction: '90',
+                                pixelData: pixelData,
                                 pixelSize: 2,
-                                guiColors: pixelAccent.guiColors
+                                primaryColor: primaryColor,
+                                guiColors: pixelAccent.guiColors,
+                                blockColors: pixelAccent.blockColors
                             },
                             gui: 'light',
                             blocks: 'three',
@@ -789,16 +769,14 @@ const PixelEditorApp = injectIntl(props => {
                             wallpaper: null,
                             fonts: null
                         };
-                        
-                        // 包装成与exportAllThemes相同的格式
+
                         const exportData = {
                             version: '2.0',
                             platform: 'Bilup',
                             timestamp: Date.now(),
                             themes: [themeData]
                         };
-                        
-                        // 使用一行压缩格式导出
+
                         const dataStr = JSON.stringify(exportData);
                         const dataBlob = new Blob([dataStr], {type: 'application/json'});
                         const url = URL.createObjectURL(dataBlob);
