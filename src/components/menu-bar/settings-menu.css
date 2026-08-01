@@ -383,13 +383,16 @@
 
 .pixel-preset-disclaimer {
     margin: 0.75rem 0.75rem 0.5rem 0.75rem;
-    padding: 0.5rem 0.25rem 0 0.25rem;
+    padding: 0.5rem 0.25rem 0.125rem 0.25rem;
     font-size: 0.65rem;
-    line-height: 1.4;
+    line-height: 1.45;
     text-align: center;
     color: hsla(0, 0%, 40%, 1);
     border-top: 1px solid hsla(0, 0%, 0%, 0.15);
     pointer-events: none;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 /* Fonts menu styles */

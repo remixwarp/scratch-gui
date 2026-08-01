@@ -196,7 +196,47 @@ const AccentThemeMenu = ({
             </MenuItem>
             <MenuItem className={styles.pixelPresetDisclaimerItem}>
                 <div className={styles.pixelPresetDisclaimer}>
-                    非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，也不与MOJANG或MICROSOFT关联。
+                    <FormattedMessage
+                        id="tw.accent.minecraftDisclaimer"
+                        defaultMessage={
+                            'Not an official MINECRAFT product. Not approved by or ' +
+                            'associated with MOJANG or MICROSOFT.'
+                        }
+                        description="Disclaimer for Minecraft pixel preset themes"
+                        values={{
+                            zh: (
+                                <>
+                                    非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，
+                                    <br />
+                                    也不与MOJANG或MICROSOFT关联。
+                                </>
+                            )
+                        }}
+                    >
+                        {(_, {locale}) => {
+                            const isZh =
+                                locale &&
+                                (locale.startsWith('zh') ||
+                                    locale.startsWith('cmn') ||
+                                    locale.startsWith('yue'));
+                            if (isZh) {
+                                return (
+                                    <>
+                                        非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，
+                                        <br />
+                                        也不与MOJANG或MICROSOFT关联。
+                                    </>
+                                );
+                            }
+                            return (
+                                <>
+                                    Not an official MINECRAFT product. Not approved by or
+                                    <br />
+                                    associated with MOJANG or MICROSOFT.
+                                </>
+                            );
+                        }}
+                    </FormattedMessage>
                 </div>
             </MenuItem>
         </Submenu>
