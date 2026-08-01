@@ -9,6 +9,32 @@ import WindowManager from '../../addons/window-system/window-manager';
 import showAlert from '../../addons/window-system/alert';
 import styles from './settings-menu.css';
 
+const ColorHexInput = ({value, onChange}) => {
+    const [text, setText] = React.useState(value);
+    React.useEffect(() => {
+        setText(value);
+    }, [value]);
+    const handleChange = e => {
+        let v = e.target.value;
+        if (!v.startsWith('#')) v = '#' + v;
+        setText(v);
+        if (/^#[0-9a-fA-F]{6}$/.test(v) || /^#[0-9a-fA-F]{3}$/.test(v)) {
+            onChange(v.toLowerCase());
+        }
+    };
+    return (
+        <input
+            type="text"
+            className={styles.colorHexInput}
+            value={text}
+            onChange={handleChange}
+            onBlur={() => setText(value)}
+            maxLength={7}
+            spellCheck={false}
+        />
+    );
+};
+
 const PixelEditorApp = injectIntl(props => {
     const {intl} = props;
     
@@ -663,7 +689,7 @@ const PixelEditorApp = injectIntl(props => {
                                         className={styles.colorPreview}
                                         style={{background: currentColor}}
                                     />
-                                    <span className={styles.colorHex}>{currentColor}</span>
+                                    <ColorHexInput value={currentColor} onChange={setCurrentColor} />
                                 </div>
                             </div>
                         </div>
@@ -687,7 +713,7 @@ const PixelEditorApp = injectIntl(props => {
                                         className={styles.colorPreview}
                                         style={{background: primaryColor}}
                                     />
-                                    <span className={styles.colorHex}>{primaryColor}</span>
+                                    <ColorHexInput value={primaryColor} onChange={setPrimaryColor} />
                                 </div>
                             </div>
                         </div>
@@ -711,7 +737,7 @@ const PixelEditorApp = injectIntl(props => {
                                         className={styles.colorPreview}
                                         style={{background: backgroundColor}}
                                     />
-                                    <span className={styles.colorHex}>{backgroundColor}</span>
+                                    <ColorHexInput value={backgroundColor} onChange={setBackgroundColor} />
                                 </div>
                             </div>
                         </div>

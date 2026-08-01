@@ -1449,6 +1449,26 @@
     text-transform: uppercase;
 }
 
+.colorHexInput {
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: $text-primary;
+    text-transform: uppercase;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    padding: 4px 8px;
+    background: $ui-primary;
+    width: 90px;
+    outline: none;
+    transition: border-color 0.15s ease;
+    box-sizing: border-box;
+}
+
+.colorHexInput:focus {
+    border-color: $looks-secondary;
+}
+
 /* Footer */
 .gradientCreatorFooter {
     display: flex;
