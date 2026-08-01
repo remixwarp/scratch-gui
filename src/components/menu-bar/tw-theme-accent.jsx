@@ -23,9 +23,9 @@ import pixelThemeRight from '../../lib/themes/pixel-presets/minecraft_right_pixe
 import pixelThemeLeft from '../../lib/themes/pixel-presets/minecraft_left_pixel_theme.json';
 
 const PIXEL_PRESETS = [
-    {id: 'pixel-minecraft-circle', name: 'MC_○', data: pixelThemeCircle},
-    {id: 'pixel-minecraft-right', name: 'MC_→', data: pixelThemeRight},
-    {id: 'pixel-minecraft-left', name: 'MC_←', data: pixelThemeLeft}
+    {id: 'pixel-minecraft-circle', name: 'Minecraft_○', data: pixelThemeCircle},
+    {id: 'pixel-minecraft-right', name: 'Minecraft_→', data: pixelThemeRight},
+    {id: 'pixel-minecraft-left', name: 'Minecraft_←', data: pixelThemeLeft}
 ];
 
 // Keep the original accent messages for FormattedMessage component
@@ -194,6 +194,9 @@ const AccentThemeMenu = ({
                     />
                 </div>
             </MenuItem>
+            <div className={styles.pixelPresetDisclaimer}>
+                非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，也不与MOJANG或MICROSOFT关联。
+            </div>
         </Submenu>
     </MenuItem>
 );

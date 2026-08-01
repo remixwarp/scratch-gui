@@ -366,6 +366,16 @@
     }
 }
 
+.pixel-preset-disclaimer {
+    margin: 0.75rem 0.75rem 0.5rem 0.75rem;
+    padding: 0.5rem;
+    font-size: 0.65rem;
+    line-height: 1.4;
+    text-align: center;
+    color: hsla(0, 0%, 40%, 1);
+    border-top: 1px solid hsla(0, 0%, 0%, 0.15);
+}
+
 /* Fonts menu styles */
 .fonts-submenu {
     min-width: 320px;
