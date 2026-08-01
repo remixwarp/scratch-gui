@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage, defineMessages} from 'react-intl';
+import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 
 import {Check} from 'lucide-react';
@@ -139,6 +139,7 @@ AccentMenuItem.propTypes = {
 };
 
 const AccentThemeMenu = ({
+    intl,
     isOpen,
     isRtl,
     onChangeTheme,
@@ -146,7 +147,9 @@ const AccentThemeMenu = ({
     onOpen,
     onClickCustomThemeModal,
     theme
-}) => (
+}) => {
+    const isZh = intl.locale && (intl.locale.startsWith('zh') || intl.locale.startsWith('cmn') || intl.locale.startsWith('yue'));
+    return (
     <MenuItem expanded={isOpen}>
         <div
             className={styles.option}
@@ -174,14 +177,18 @@ const AccentThemeMenu = ({
                     onClick={() => onChangeTheme(theme.set('accent', item))}
                 />
             ))}
-            {PIXEL_PRESETS.map(preset => (
-                <AccentMenuItem
-                    key={preset.id}
-                    id={preset.id}
-                    isSelected={false}
-                    onClick={() => onApplyPixelTheme(preset.data)}
-                />
-            ))}
+            {PIXEL_PRESETS.map(preset => {
+                const displayName = isZh ? preset.name.replace(/MINECRAFT/g, 'MC') : preset.name;
+                return (
+                    <MenuItem key={preset.id} onClick={() => onApplyPixelTheme(preset.data)}>
+                        <div className={styles.option}>
+                            <Check className={classNames(styles.check, {[styles.selected]: false})} />
+                            <ColorIcon id={preset.id} />
+                            <span>{displayName}</span>
+                        </div>
+                    </MenuItem>
+                );
+            })}
             <MenuItem onClick={onClickCustomThemeModal}>
                 <div className={styles.option}>
                     <ColorIcon id="custom" />
@@ -194,9 +201,11 @@ const AccentThemeMenu = ({
             </MenuItem>
         </Submenu>
     </MenuItem>
-);
+    );
+};
 
 AccentThemeMenu.propTypes = {
+    intl: intlShape.isRequired,
     isOpen: PropTypes.bool,
     isRtl: PropTypes.bool,
     onChangeTheme: PropTypes.func,
@@ -232,7 +241,7 @@ const mapDispatchToProps = dispatch => ({
     },
 });
 
-export default connect(
+export default injectIntl(connect(
     mapStateToProps,
     mapDispatchToProps
-)(AccentThemeMenu);
+)(AccentThemeMenu));
