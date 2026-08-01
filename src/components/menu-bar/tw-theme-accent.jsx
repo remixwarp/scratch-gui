@@ -23,9 +23,9 @@ import pixelThemeRight from '../../lib/themes/pixel-presets/minecraft_right_pixe
 import pixelThemeLeft from '../../lib/themes/pixel-presets/minecraft_left_pixel_theme.json';
 
 const PIXEL_PRESETS = [
-    {id: 'pixel-minecraft-circle', name: pixelThemeCircle.themes[0].name, data: pixelThemeCircle},
-    {id: 'pixel-minecraft-right', name: pixelThemeRight.themes[0].name, data: pixelThemeRight},
-    {id: 'pixel-minecraft-left', name: pixelThemeLeft.themes[0].name, data: pixelThemeLeft}
+    {id: 'pixel-minecraft-circle', name: 'MC_○', data: pixelThemeCircle},
+    {id: 'pixel-minecraft-right', name: 'MC_→', data: pixelThemeRight},
+    {id: 'pixel-minecraft-left', name: 'MC_←', data: pixelThemeLeft}
 ];
 
 // Keep the original accent messages for FormattedMessage component
@@ -147,9 +147,7 @@ const AccentThemeMenu = ({
     onOpen,
     onClickCustomThemeModal,
     theme
-}) => {
-    const isZh = intl.locale && (intl.locale.startsWith('zh') || intl.locale.startsWith('cmn') || intl.locale.startsWith('yue'));
-    return (
+}) => (
     <MenuItem expanded={isOpen}>
         <div
             className={styles.option}
@@ -177,18 +175,15 @@ const AccentThemeMenu = ({
                     onClick={() => onChangeTheme(theme.set('accent', item))}
                 />
             ))}
-            {PIXEL_PRESETS.map(preset => {
-                const displayName = isZh ? preset.name.replace(/MINECRAFT/g, 'MC') : preset.name;
-                return (
-                    <MenuItem key={preset.id} onClick={() => onApplyPixelTheme(preset.data)}>
-                        <div className={styles.option}>
-                            <Check className={classNames(styles.check, {[styles.selected]: false})} />
-                            <ColorIcon id={preset.id} />
-                            <span>{displayName}</span>
-                        </div>
-                    </MenuItem>
-                );
-            })}
+            {PIXEL_PRESETS.map(preset => (
+                <MenuItem key={preset.id} onClick={() => onApplyPixelTheme(preset.data)}>
+                    <div className={styles.option}>
+                        <Check className={classNames(styles.check, {[styles.selected]: false})} />
+                        <ColorIcon id={preset.id} />
+                        <span>{preset.name}</span>
+                    </div>
+                </MenuItem>
+            ))}
             <MenuItem onClick={onClickCustomThemeModal}>
                 <div className={styles.option}>
                     <ColorIcon id="custom" />
@@ -201,8 +196,7 @@ const AccentThemeMenu = ({
             </MenuItem>
         </Submenu>
     </MenuItem>
-    );
-};
+);
 
 AccentThemeMenu.propTypes = {
     intl: intlShape.isRequired,
