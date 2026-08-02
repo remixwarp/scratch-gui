@@ -15,7 +15,7 @@ import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/constants/brand.js';
 import {AESettings} from '../../lib/settings.js';
 
-import {STYLE_GROUPS, getStyleSetting, setStyleSetting} from '../../lib/mw-style-settings';
+import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
@@ -1295,47 +1295,119 @@ const notifySettingsChange = () => {
     window.dispatchEvent(new CustomEvent('ae-settings-changed'));
 };
 
-const createStyleSelect = (groupId, label, help, type, options) => {
-    const Component = ({intl}) => {
-        const [value, setValueState] = React.useState(null);
-        React.useEffect(() => {
-            setValueState(getStyleSetting(groupId));
-        }, [groupId]);
-        const handleChange = (e) => {
-            setStyleSetting(groupId, e.target.value);
-            setValueState(e.target.value);
-        };
-        return (
-            <Setting
-                primary={
-                    <div className={styles.label}>
-                        <span className={styles.settingText}>{label}</span>
-                        <select
-                            className={styles.select}
-                            value={value || ''}
-                            onChange={handleChange}
-                        >
-                            {(options || STYLE_GROUPS.find(g => g.id === groupId).options).map(opt => (
-                                <option key={opt.value} value={opt.value}>
-                                    {opt.label || opt.value}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                }
-                help={help}
-            />
-        );
-    };
-    Component.propTypes = {
-        intl: intlShape
-    };
-    return Component;
+const STYLE_OPTIONS = {
+    'tab-style': [
+        {value: 'mistwarp', labelId: 'mw.settingsModal.tabStyle.mistwarp', label: 'MistWarp'},
+        {value: 'turbowarp', labelId: 'mw.settingsModal.tabStyle.turbowarp', label: 'TurboWarp'},
+        {value: 'scratchbox', labelId: 'mw.settingsModal.tabStyle.scratchbox', label: 'ScratchBox'}
+    ],
+    'tab-looks': [
+        {value: 'default', labelId: 'mw.settingsModal.tabLooks.default', label: '默认'},
+        {value: 'icon-only', labelId: 'mw.settingsModal.tabLooks.iconOnly', label: '仅图标'},
+        {value: 'text-only', labelId: 'mw.settingsModal.tabLooks.textOnly', label: '仅文字'}
+    ],
+    'window-style': [
+        {value: 'mistwarp', labelId: 'mw.settingsModal.windowStyle.mistwarp', label: 'MistWarp'},
+        {value: 'macos', labelId: 'mw.settingsModal.windowStyle.macos', label: 'macOS'},
+        {value: 'windows10', labelId: 'mw.settingsModal.windowStyle.windows10', label: 'Windows 10'}
+    ]
 };
 
-const TabStyleSelect = createStyleSelect('tab-style', '标签页样式', '选择代码标签页的外观样式。');
-const TabLooksSelect = createStyleSelect('tab-looks', '标签页外观', '选择标签页的显示模式。');
-const WindowStyleSelect = createStyleSelect('window-style', '窗口样式', '选择自由窗口的外观样式。');
+const getOptionCss = (groupId, value) => {
+    const group = STYLE_GROUPS.find(g => g.id === groupId);
+    if (!group) return null;
+    const option = group.options.find(o => o.value === value);
+    return option ? option.css : null;
+};
+
+const StyleOption = ({groupId, option, selected, onSelect, intl}) => (
+    <button
+        type="button"
+        className={classNames(styles.styleOption, {[styles.styleOptionSelected]: selected})}
+        onClick={() => onSelect(option.value)}
+    >
+        <div className={styles.stylePreview}>
+            <StylePreview
+                type={groupId === 'window-style' ? 'window' : 'tabs'}
+                variant={option.value}
+                css={getOptionCss(groupId, option.value)}
+                intl={intl}
+            />
+        </div>
+        <span className={styles.styleOptionLabel}>
+            {option.label}
+        </span>
+    </button>
+);
+StyleOption.propTypes = {
+    groupId: PropTypes.string.isRequired,
+    option: PropTypes.shape({
+        value: PropTypes.string,
+        label: PropTypes.string,
+        labelId: PropTypes.string
+    }).isRequired,
+    selected: PropTypes.bool,
+    onSelect: PropTypes.func.isRequired,
+    intl: intlShape
+};
+
+const StyleSelect = ({groupId, label, value, onChange, intl}) => (
+    <div className={styles.setting}>
+        <div className={styles.label}>{label}</div>
+        <div className={styles.stylePicker}>
+            {STYLE_OPTIONS[groupId].map(option => (
+                <StyleOption
+                    key={option.value}
+                    groupId={groupId}
+                    option={option}
+                    selected={value === option.value}
+                    onSelect={onChange}
+                    intl={intl}
+                />
+            ))}
+        </div>
+    </div>
+);
+StyleSelect.propTypes = {
+    groupId: PropTypes.string.isRequired,
+    label: PropTypes.node,
+    value: PropTypes.string,
+    onChange: PropTypes.func.isRequired,
+    intl: intlShape
+};
+
+const TabStyleSelect = props => (
+    <StyleSelect
+        groupId="tab-style"
+        label="标签页样式"
+        value={props.value}
+        onChange={props.onChange}
+        intl={props.intl}
+    />
+);
+TabStyleSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func, intl: intlShape};
+
+const TabLooksSelect = props => (
+    <StyleSelect
+        groupId="tab-looks"
+        label="标签页外观"
+        value={props.value}
+        onChange={props.onChange}
+        intl={props.intl}
+    />
+);
+TabLooksSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func, intl: intlShape};
+
+const WindowStyleSelect = props => (
+    <StyleSelect
+        groupId="window-style"
+        label="窗口样式"
+        value={props.value}
+        onChange={props.onChange}
+        intl={props.intl}
+    />
+);
+WindowStyleSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func, intl: intlShape};
 
 const pageConfigurations = {
     general: {
@@ -1670,15 +1742,27 @@ const pageConfigurations = {
                 settings: [
                     {
                         component: TabStyleSelect,
-                        props: props => ({intl: props.intl})
+                        props: props => ({
+                            value: props.tabStyle,
+                            onChange: props.onTabStyleChange,
+                            intl: props.intl
+                        })
                     },
                     {
                         component: TabLooksSelect,
-                        props: props => ({intl: props.intl})
+                        props: props => ({
+                            value: props.tabLooks,
+                            onChange: props.onTabLooksChange,
+                            intl: props.intl
+                        })
                     },
                     {
                         component: WindowStyleSelect,
-                        props: props => ({intl: props.intl})
+                        props: props => ({
+                            value: props.windowStyle,
+                            onChange: props.onWindowStyleChange,
+                            intl: props.intl
+                        })
                     }
                 ]
             }
@@ -2294,7 +2378,13 @@ SettingsModalComponent.propTypes = {
     hideDeleteButton: PropTypes.bool,
     onHideDeleteButtonChange: PropTypes.func,
     hideBackpack: PropTypes.bool,
-    onHideBackpackChange: PropTypes.func
+    onHideBackpackChange: PropTypes.func,
+    tabStyle: PropTypes.string,
+    onTabStyleChange: PropTypes.func,
+    tabLooks: PropTypes.string,
+    onTabLooksChange: PropTypes.func,
+    windowStyle: PropTypes.string,
+    onWindowStyleChange: PropTypes.func,
 };
 
 export default injectIntl(SettingsModalComponent);

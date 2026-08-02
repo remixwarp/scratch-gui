@@ -7,6 +7,7 @@ import {closeSettingsModal} from '../reducers/modals';
 import SettingsModalComponent from '../components/tw-settings-modal/settings-modal.jsx';
 import {defaultStageSize} from '../reducers/custom-stage-size';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
+import {getStyleSetting, setStyleSetting} from '../lib/mw-style-settings';
 
 const messages = defineMessages({
     newFramerate: {
@@ -37,7 +38,10 @@ class UsernameModal extends React.Component {
             hatBlockCommentReminder: localStorage.getItem('mw:hat-block-comment-reminder') !== 'false',
             hatReminderCheckInterval: parseInt(localStorage.getItem('mw:hat-reminder-check-interval'), 10) || 500,
             hatReminderBlockThreshold: parseInt(localStorage.getItem('mw:hat-reminder-block-threshold'), 10) || 10,
-            hatReminderCommentText: localStorage.getItem('mw:hat-reminder-comment-text') || '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）'
+            hatReminderCommentText: localStorage.getItem('mw:hat-reminder-comment-text') || '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）',
+            tabStyle: getStyleSetting('tab-style'),
+            tabLooks: getStyleSetting('tab-looks'),
+            windowStyle: getStyleSetting('window-style')
         };
 
         bindAll(this, [
@@ -67,8 +71,26 @@ class UsernameModal extends React.Component {
             'handleHatReminderCheckIntervalChange',
             'handleHatReminderBlockThresholdChange',
             'handleHatReminderCommentTextChange',
-            'handleHatReminderReset'
+            'handleHatReminderReset',
+            'handleTabStyleChange',
+            'handleTabLooksChange',
+            'handleWindowStyleChange'
         ]);
+    }
+
+    handleTabStyleChange (value) {
+        this.setState({tabStyle: value});
+        setStyleSetting('tab-style', value);
+    }
+
+    handleTabLooksChange (value) {
+        this.setState({tabLooks: value});
+        setStyleSetting('tab-looks', value);
+    }
+
+    handleWindowStyleChange (value) {
+        this.setState({windowStyle: value});
+        setStyleSetting('window-style', value);
     }
 
     handleFramerateChange (e) {
@@ -359,6 +381,12 @@ class UsernameModal extends React.Component {
                 storeThemeInProject={this.state.storeThemeInProject}
                 superRefactor={this.state.superRefactor}
                 multiWorkspaces={this.state.multiWorkspaces}
+                tabStyle={this.state.tabStyle}
+                onTabStyleChange={this.handleTabStyleChange}
+                tabLooks={this.state.tabLooks}
+                onTabLooksChange={this.handleTabLooksChange}
+                windowStyle={this.state.windowStyle}
+                onWindowStyleChange={this.handleWindowStyleChange}
                 theme={this.props.theme}
                 {...props}
             />

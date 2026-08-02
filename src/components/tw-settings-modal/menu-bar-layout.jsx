@@ -88,7 +88,7 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
         return (
             <div
                 key={id}
-                className={styles.menuBarRow}
+                className={styles['menu-bar-row']}
                 draggable={draggable}
                 onDragStart={draggable ? this.handleDragStart(zoneId, id) : null}
                 onDragEnd={draggable ? this.handleDragEnd : null}
@@ -97,11 +97,11 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
             >
                 {draggable && (
                     <GripVertical
-                        className={styles.menuBarGrip}
+                        className={styles['menu-bar-grip']}
                         size={16}
                     />
                 )}
-                <span className={styles.menuBarRowLabel}>{label}</span>
+                <span className={styles['menu-bar-row-label']}>{label}</span>
                 <FancyCheckbox
                     className={styles.checkbox}
                     checked={visible}
@@ -130,7 +130,7 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
     render () {
         return (
             <div className={styles.setting}>
-                <div className={styles.menuBarHint}>
+                <div className={styles['menu-bar-hint']}>
                     {'拖动以重新排序每组中的项目。取消勾选以隐藏。'}
                 </div>
                 {[
@@ -140,7 +140,7 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
                     if (this.sectionRowCount(section) === 0) return null;
                     return (
                         <div key={section.labelText}>
-                            <div className={styles.menuBarZoneLabel}>
+                            <div className={styles['menu-bar-zone-label']}>
                                 {section.labelText}
                             </div>
                             {section.zones.map(zoneId => this.renderZone(zoneId))}
