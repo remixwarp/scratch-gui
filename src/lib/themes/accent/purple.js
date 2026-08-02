@@ -7,7 +7,14 @@ const guiColors = {
     'looks-tertiary': 'hsla(260, 60%, 50%, 1)',
     'looks-transparent': 'hsla(260, 60%, 60%, 0.35)',
     'looks-light-transparent': 'hsla(260, 60%, 60%, 0.15)',
-    'looks-secondary-dark': 'hsla(260, 42%, 51%, 1)'
+    'looks-secondary-dark': 'hsla(260, 42%, 51%, 1)',
+
+    'extensions-primary': 'hsla(260, 60%, 60%, 1)',
+    'extensions-tertiary': 'hsla(260, 60%, 50%, 1)',
+    'extensions-transparent': 'hsla(260, 60%, 60%, 0.35)',
+    'extensions-light': 'hsla(260, 42%, 51%, 1)',
+
+    'drop-highlight': 'hsla(260, 100%, 70%, 1)'
 };
 
 const blockColors = {};
