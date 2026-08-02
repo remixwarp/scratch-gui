@@ -366,6 +366,35 @@
     }
 }
 
+.pixel-preset-disclaimer-item {
+    grid-column: 1 / -1;
+    padding: 0;
+    min-height: auto;
+}
+
+.pixel-preset-disclaimer-item:hover,
+.pixel-preset-disclaimer-item.menu-item:hover {
+    background-color: transparent;
+}
+
+.pixel-preset-disclaimer-item.menu-item {
+    position: static;
+}
+
+.pixel-preset-disclaimer {
+    margin: 0.75rem 0.75rem 0.5rem 0.75rem;
+    padding: 0.5rem 0.25rem 0.125rem 0.25rem;
+    font-size: 0.65rem;
+    line-height: 1.45;
+    text-align: center;
+    color: hsla(0, 0%, 40%, 1);
+    border-top: 1px solid hsla(0, 0%, 0%, 0.15);
+    pointer-events: none;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
 /* Fonts menu styles */
 .fonts-submenu {
     min-width: 320px;
