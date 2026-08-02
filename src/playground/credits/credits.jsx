@@ -226,6 +226,17 @@ const Credits = () => {
                 </p>
             </section>
             <section>
+                <p>
+                    {language === 'en'
+                        ? <>
+                            Some pixel theme assets were created using <a href="https://3dt.easecation.net/" target="_blank" rel="noopener noreferrer">https://3dt.easecation.net/</a>. Thanks to <a href="https://b23.tv/54KIpI0" target="_blank" rel="noopener noreferrer">EaseCation</a> for the tool.
+                        </>
+                        : <>
+                            部分像素主题素材使用<a href="https://3dt.easecation.net/" target="_blank" rel="noopener noreferrer">https://3dt.easecation.net/</a>进行制作。感谢<a href="https://b23.tv/54KIpI0" target="_blank" rel="noopener noreferrer">【EaseCation的个人空间-哔哩哔哩】</a>的工具
+                        </>}
+                </p>
+            </section>
+            <section>
                 <h2>{language === 'en' ? `Support ${APP_NAME}` : `支持 ${APP_NAME}`}</h2>
                 <p>
                     {language === 'en' 
