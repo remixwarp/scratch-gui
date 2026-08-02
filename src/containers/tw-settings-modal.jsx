@@ -8,6 +8,8 @@ import SettingsModalComponent from '../components/tw-settings-modal/settings-mod
 import {defaultStageSize} from '../reducers/custom-stage-size';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
 import {getStyleSetting, setStyleSetting} from '../lib/mw-style-settings';
+import {getAppearanceSetting, setAppearanceSetting} from '../lib/mw-appearance-settings';
+import {getHideOperatorArrows, setHideOperatorArrows} from '../lib/mw-operator-arrows';
 
 const messages = defineMessages({
     newFramerate: {
@@ -41,7 +43,12 @@ class UsernameModal extends React.Component {
             hatReminderCommentText: localStorage.getItem('mw:hat-reminder-comment-text') || '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）',
             tabStyle: getStyleSetting('tab-style'),
             tabLooks: getStyleSetting('tab-looks'),
-            windowStyle: getStyleSetting('window-style')
+            windowStyle: getStyleSetting('window-style'),
+            squareStageCorners: getAppearanceSetting('square-stage-corners'),
+            hideExtensionButton: getAppearanceSetting('hide-extension-button'),
+            hideOperatorArrows: getHideOperatorArrows(),
+            hideDeleteButton: getAppearanceSetting('hide-delete-button'),
+            hideBackpack: getAppearanceSetting('hide-backpack')
         };
 
         bindAll(this, [
@@ -74,7 +81,12 @@ class UsernameModal extends React.Component {
             'handleHatReminderReset',
             'handleTabStyleChange',
             'handleTabLooksChange',
-            'handleWindowStyleChange'
+            'handleWindowStyleChange',
+            'handleSquareStageCornersChange',
+            'handleHideExtensionButtonChange',
+            'handleHideOperatorArrowsChange',
+            'handleHideDeleteButtonChange',
+            'handleHideBackpackChange'
         ]);
     }
 
@@ -91,6 +103,36 @@ class UsernameModal extends React.Component {
     handleWindowStyleChange (value) {
         this.setState({windowStyle: value});
         setStyleSetting('window-style', value);
+    }
+
+    handleSquareStageCornersChange (e) {
+        const value = e.target.checked;
+        this.setState({squareStageCorners: value});
+        setAppearanceSetting('square-stage-corners', value);
+    }
+
+    handleHideExtensionButtonChange (e) {
+        const value = e.target.checked;
+        this.setState({hideExtensionButton: value});
+        setAppearanceSetting('hide-extension-button', value);
+    }
+
+    handleHideOperatorArrowsChange (e) {
+        const value = e.target.checked;
+        this.setState({hideOperatorArrows: value});
+        setHideOperatorArrows(value);
+    }
+
+    handleHideDeleteButtonChange (e) {
+        const value = e.target.checked;
+        this.setState({hideDeleteButton: value});
+        setAppearanceSetting('hide-delete-button', value);
+    }
+
+    handleHideBackpackChange (e) {
+        const value = e.target.checked;
+        this.setState({hideBackpack: value});
+        setAppearanceSetting('hide-backpack', value);
     }
 
     handleFramerateChange (e) {
@@ -387,6 +429,16 @@ class UsernameModal extends React.Component {
                 onTabLooksChange={this.handleTabLooksChange}
                 windowStyle={this.state.windowStyle}
                 onWindowStyleChange={this.handleWindowStyleChange}
+                squareStageCorners={this.state.squareStageCorners}
+                onSquareStageCornersChange={this.handleSquareStageCornersChange}
+                hideExtensionButton={this.state.hideExtensionButton}
+                onHideExtensionButtonChange={this.handleHideExtensionButtonChange}
+                hideOperatorArrows={this.state.hideOperatorArrows}
+                onHideOperatorArrowsChange={this.handleHideOperatorArrowsChange}
+                hideDeleteButton={this.state.hideDeleteButton}
+                onHideDeleteButtonChange={this.handleHideDeleteButtonChange}
+                hideBackpack={this.state.hideBackpack}
+                onHideBackpackChange={this.handleHideBackpackChange}
                 theme={this.props.theme}
                 {...props}
             />
