@@ -342,3 +342,30 @@
     border-color: $looks-secondary;
     box-shadow: 0 0 0 2px $looks-transparent;
 }
+
+.menuBarRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    cursor: grab;
+}
+.menuBarGrip {
+    color: rgba(0, 0, 0, 0.4);
+}
+.menuBarRowLabel {
+    flex: 1;
+}
+.menuBarHint {
+    padding: 0.5rem 0;
+    font-size: 0.8125rem;
+    color: rgba(0, 0, 0, 0.5);
+}
+.menuBarZoneLabel {
+    padding: 0.75rem 0 0.25rem;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.5);
+}

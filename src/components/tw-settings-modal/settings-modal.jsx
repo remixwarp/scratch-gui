@@ -15,6 +15,18 @@ import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/constants/brand.js';
 import {AESettings} from '../../lib/settings.js';
 
+import {STYLE_GROUPS, getStyleSetting, setStyleSetting} from '../../lib/mw-style-settings';
+import StylePreview from './style-preview.jsx';
+import MenuBarLayoutSetting from './menu-bar-layout.jsx';
+import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
+    setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
+import {DEFINITIONS as VARIABLE_MANAGER_SETTINGS, getSetting as getVariableManagerSetting,
+    setSetting as setVariableManagerSetting} from '../../lib/variable-manager/settings.js';
+import {
+    getAuthorName, getAuthorEmail, setAuthorName, setAuthorEmail,
+    getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
+} from '../../lib/git/config.js';
+
 import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, Bug, GitBranch, Variable} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
@@ -98,6 +110,110 @@ const messages = defineMessages({
         defaultMessage: '变量管理器',
         description: 'Settings modal section',
         id: 'tw.settingsModal.variableManager'
+    },
+    // Editor page settings
+    squareStageCorners: {
+        defaultMessage: '方形舞台角',
+        id: 'tw.settingsModal.squareStageCorners'
+    },
+    squareStageCornersHelp: {
+        defaultMessage: '将舞台的四角变为直角而不是圆角。',
+        id: 'tw.settingsModal.squareStageCornersHelp'
+    },
+    hideExtensionButton: {
+        defaultMessage: '隐藏扩展按钮',
+        id: 'tw.settingsModal.hideExtensionButton'
+    },
+    hideExtensionButtonHelp: {
+        defaultMessage: '隐藏积木面板底部的扩展按钮。',
+        id: 'tw.settingsModal.hideExtensionButtonHelp'
+    },
+    hideOperatorArrows: {
+        defaultMessage: '隐藏运算符箭头',
+        id: 'tw.settingsModal.hideOperatorArrows'
+    },
+    hideOperatorArrowsHelp: {
+        defaultMessage: '在数字、字符串和逻辑类积木中隐藏运算符下拉箭头。',
+        id: 'tw.settingsModal.hideOperatorArrowsHelp'
+    },
+    hideDeleteButton: {
+        defaultMessage: '隐藏删除按钮',
+        id: 'tw.settingsModal.hideDeleteButton'
+    },
+    hideDeleteButtonHelp: {
+        defaultMessage: '隐藏选中积木时出现的删除按钮。',
+        id: 'tw.settingsModal.hideDeleteButtonHelp'
+    },
+    hideBackpack: {
+        defaultMessage: '隐藏背包',
+        id: 'tw.settingsModal.hideBackpack'
+    },
+    hideBackpackHelp: {
+        defaultMessage: '隐藏积木面板底部的背包按钮。',
+        id: 'tw.settingsModal.hideBackpackHelp'
+    },
+    // Debugger settings labels (use existing i18n IDs)
+    showPauseButton_label: {
+        defaultMessage: '显示暂停按钮',
+        id: 'mw.debugger.stagePauseButton'
+    },
+    showPauseButton_help: {
+        defaultMessage: '在舞台上显示暂停按钮。',
+        id: 'mw.debugger.stagePauseButtonHelp'
+    },
+    showStepButton_label: {
+        defaultMessage: '显示单步执行按钮',
+        id: 'mw.debugger.stageStepButton'
+    },
+    showStepButton_help: {
+        defaultMessage: '在舞台上显示单步执行按钮。',
+        id: 'mw.debugger.stageStepButtonHelp'
+    },
+    // Version control messages
+    vcAuthorName: {
+        defaultMessage: '作者名称',
+        id: 'mw.settings.vc.authorName'
+    },
+    vcAuthorNameHelp: {
+        defaultMessage: '作为提交作者，并在推送到私有仓库时用作用户名。',
+        id: 'mw.settings.vc.authorNameHelp'
+    },
+    vcAuthorEmail: {
+        defaultMessage: '作者邮箱',
+        id: 'mw.settings.vc.authorEmail'
+    },
+    vcAuthorEmailHelp: {
+        defaultMessage: '记录在您每次提交时的邮箱地址。',
+        id: 'mw.settings.vc.authorEmailHelp'
+    },
+    vcDefaultBranch: {
+        defaultMessage: '默认分支名称',
+        id: 'mw.settings.vc.defaultBranch'
+    },
+    vcDefaultBranchHelp: {
+        defaultMessage: '初始化新仓库时创建的分支。',
+        id: 'mw.settings.vc.defaultBranchHelp'
+    },
+    vcAutoCommit: {
+        defaultMessage: '保存项目时自动提交',
+        id: 'mw.settings.vc.autoCommit'
+    },
+    vcAutoCommitHelp: {
+        defaultMessage: '每次保存项目时创建一次提交，让您的历史记录保持最新。',
+        id: 'mw.settings.vc.autoCommitHelp'
+    },
+    // Menu bar hints
+    menuBarHint: {
+        defaultMessage: '拖动以重新排序每组中的项目。取消勾选以隐藏。',
+        id: 'mw.settingsModal.menuBarHint'
+    },
+    leftMenus: {
+        defaultMessage: '左侧菜单',
+        id: 'mw.settingsModal.leftMenus'
+    },
+    topRightButtons: {
+        defaultMessage: '右上角按钮',
+        id: 'mw.settingsModal.topRightButtons'
     },
     hatBlockCommentReminder: {
         defaultMessage: '帽子积木注释提醒',
@@ -367,6 +483,103 @@ BooleanSetting.propTypes = {
     onChange: PropTypes.func.isRequired,
     value: PropTypes.bool.isRequired,
     label: PropTypes.node.isRequired
+};
+
+const SquareStageCorners = props => (
+    <BooleanSetting
+        {...props}
+        label={<FormattedMessage {...messages.squareStageCorners} />}
+        help={<FormattedMessage {...messages.squareStageCornersHelp} />}
+    />
+);
+
+const HideExtensionButton = props => (
+    <BooleanSetting
+        {...props}
+        label={<FormattedMessage {...messages.hideExtensionButton} />}
+        help={<FormattedMessage {...messages.hideExtensionButtonHelp} />}
+    />
+);
+
+const HideOperatorArrows = props => (
+    <BooleanSetting
+        {...props}
+        label={<FormattedMessage {...messages.hideOperatorArrows} />}
+        help={<FormattedMessage {...messages.hideOperatorArrowsHelp} />}
+    />
+);
+
+const HideDeleteButton = props => (
+    <BooleanSetting
+        {...props}
+        label={<FormattedMessage {...messages.hideDeleteButton} />}
+        help={<FormattedMessage {...messages.hideDeleteButtonHelp} />}
+    />
+);
+
+const HideBackpack = props => (
+    <BooleanSetting
+        {...props}
+        label={<FormattedMessage {...messages.hideBackpack} />}
+        help={<FormattedMessage {...messages.hideBackpackHelp} />}
+    />
+);
+
+const DebuggerBooleanSetting = ({settingId, label, help, intl}) => {
+    const [value, setValue] = React.useState(getDebuggerSetting(settingId));
+    React.useEffect(() => {
+        setValue(getDebuggerSetting(settingId));
+    }, [settingId]);
+    const handleChange = (e) => {
+        setDebuggerSetting(settingId, e.target.checked);
+        setValue(e.target.checked);
+    };
+    return (
+        <Setting
+            active={value}
+            primary={
+                <label className={styles.label}>
+                    <FancyCheckbox
+                        className={styles.checkbox}
+                        checked={value}
+                        onChange={handleChange}
+                    />
+                    {intl.formatMessage({id: label, defaultMessage: label})}
+                </label>
+            }
+            help={help ? intl.formatMessage({id: help, defaultMessage: help}) : undefined}
+        />
+    );
+};
+DebuggerBooleanSetting.propTypes = {
+    settingId: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    help: PropTypes.string,
+    intl: intlShape
+};
+
+const SimpleBooleanSetting = ({value, onChange, label, help, intl}) => (
+    <Setting
+        active={value}
+        primary={
+            <label className={styles.label}>
+                <FancyCheckbox
+                    className={styles.checkbox}
+                    checked={value}
+                    onChange={onChange}
+                />
+                {label}
+            </label>
+        }
+        help={help}
+    />
+);
+SimpleBooleanSetting.propTypes = {
+    value: PropTypes.bool,
+    onChange: PropTypes.func.isRequired,
+    label: PropTypes.node,
+    help: PropTypes.node,
+    intl: intlShape
 };
 
 const AutoDisplayREADME = props => (
@@ -1029,6 +1242,49 @@ const notifySettingsChange = () => {
     window.dispatchEvent(new CustomEvent('ae-settings-changed'));
 };
 
+const createStyleSelect = (groupId, label, help) => {
+    const Component = ({intl}) => {
+        const [value, setValueState] = React.useState(null);
+        React.useEffect(() => {
+            setValueState(getStyleSetting(groupId));
+        }, [groupId]);
+        const handleChange = (e) => {
+            setStyleSetting(groupId, e.target.value);
+            setValueState(e.target.value);
+        };
+        const group = STYLE_GROUPS.find(g => g.id === groupId);
+        return (
+            <Setting
+                primary={
+                    <div className={styles.label}>
+                        <span className={styles.settingText}>{label}</span>
+                        <select
+                            className={styles.select}
+                            value={value || ''}
+                            onChange={handleChange}
+                        >
+                            {group.options.map(opt => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.value}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                }
+                help={help}
+            />
+        );
+    };
+    Component.propTypes = {
+        intl: intlShape
+    };
+    return Component;
+};
+
+const TabStyleSelect = createStyleSelect('tab-style', '标签页样式', '选择代码标签页的外观样式。');
+const TabLooksSelect = createStyleSelect('tab-looks', '标签页外观', '选择标签页的显示模式。');
+const WindowStyleSelect = createStyleSelect('window-style', '窗口样式', '选择自由窗口的外观样式。');
+
 const pageConfigurations = {
     general: {
         sections: [
@@ -1284,15 +1540,74 @@ const pageConfigurations = {
         sections: [
             {
                 headerMessage: 'headerStage',
-                settings: []
+                settings: [
+                    {
+                        component: DebuggerBooleanSetting,
+                        props: () => ({
+                            settingId: 'stage_pause_button',
+                            label: 'mw.debugger.stagePauseButton',
+                            help: 'mw.debugger.stagePauseButtonHelp'
+                        })
+                    },
+                    {
+                        component: DebuggerBooleanSetting,
+                        props: () => ({
+                            settingId: 'stage_step_button',
+                            label: 'mw.debugger.stageStepButton',
+                            help: 'mw.debugger.stageStepButtonHelp'
+                        })
+                    },
+                    {
+                        component: SquareStageCorners,
+                        props: props => ({
+                            value: props.squareStageCorners,
+                            onChange: props.onSquareStageCornersChange,
+                            intl: props.intl
+                        })
+                    }
+                ]
             },
             {
                 headerMessage: 'headerBlockPalette',
-                settings: []
+                settings: [
+                    {
+                        component: HideExtensionButton,
+                        props: props => ({
+                            value: props.hideExtensionButton,
+                            onChange: props.onHideExtensionButtonChange,
+                            intl: props.intl
+                        })
+                    },
+                    {
+                        component: HideOperatorArrows,
+                        props: props => ({
+                            value: props.hideOperatorArrows,
+                            onChange: props.onHideOperatorArrowsChange,
+                            intl: props.intl
+                        })
+                    }
+                ]
             },
             {
                 headerMessage: 'headerInterface',
-                settings: []
+                settings: [
+                    {
+                        component: HideDeleteButton,
+                        props: props => ({
+                            value: props.hideDeleteButton,
+                            onChange: props.onHideDeleteButtonChange,
+                            intl: props.intl
+                        })
+                    },
+                    {
+                        component: HideBackpack,
+                        props: props => ({
+                            value: props.hideBackpack,
+                            onChange: props.onHideBackpackChange,
+                            intl: props.intl
+                        })
+                    }
+                ]
             }
         ]
     },
@@ -1300,7 +1615,20 @@ const pageConfigurations = {
         sections: [
             {
                 headerMessage: 'headerStyles',
-                settings: []
+                settings: [
+                    {
+                        component: TabStyleSelect,
+                        props: props => ({intl: props.intl})
+                    },
+                    {
+                        component: TabLooksSelect,
+                        props: props => ({intl: props.intl})
+                    },
+                    {
+                        component: WindowStyleSelect,
+                        props: props => ({intl: props.intl})
+                    }
+                ]
             }
         ]
     },
@@ -1308,7 +1636,12 @@ const pageConfigurations = {
         sections: [
             {
                 headerMessage: 'headerMenuBar',
-                settings: []
+                settings: [
+                    {
+                        component: MenuBarLayoutSetting,
+                        props: () => ({})
+                    }
+                ]
             }
         ]
     },
@@ -1399,18 +1732,238 @@ const MenuBarPage = props => (<PageRenderer
     config={pageConfigurations.menuBar}
     {...props}
 />);
-const DebuggerPage = props => (<PageRenderer
-    config={pageConfigurations.debugger}
-    {...props}
-/>);
-const VersionControlPage = props => (<PageRenderer
-    config={pageConfigurations.versionControl}
-    {...props}
-/>);
-const VariableManagerPage = props => (<PageRenderer
-    config={pageConfigurations.variableManager}
-    {...props}
-/>);
+
+const STAGE_CONTROL_SETTINGS = ['stage_pause_button', 'stage_step_button'];
+
+const UnwrappedDebuggerPage = ({intl}) => (
+    <Box className={styles.body}>
+        <Header>{intl.formatMessage(messages.headerDebugger)}</Header>
+        {DEBUGGER_SETTINGS.filter(setting => !STAGE_CONTROL_SETTINGS.includes(setting.id)).map(setting => (
+            <DebuggerBooleanSetting
+                key={setting.id}
+                settingId={setting.id}
+                label={setting.label}
+                help={setting.help}
+                intl={intl}
+            />
+        ))}
+    </Box>
+);
+UnwrappedDebuggerPage.propTypes = {
+    intl: intlShape.isRequired
+};
+const DebuggerPage = injectIntl(UnwrappedDebuggerPage);
+
+const TextSetting = ({label, help, value, onSubmit, placeholder, intl}) => (
+    <div className={styles.setting}>
+        <div className={styles.textSettingLabel}>{label}</div>
+        <BufferedInput
+            className={styles.textInput}
+            type="text"
+            value={value}
+            placeholder={placeholder}
+            onSubmit={onSubmit}
+        />
+        {help && <p className={styles.detail}>{help}</p>}
+    </div>
+);
+TextSetting.propTypes = {
+    label: PropTypes.node,
+    help: PropTypes.node,
+    value: PropTypes.string,
+    onSubmit: PropTypes.func.isRequired,
+    placeholder: PropTypes.string,
+    intl: intlShape
+};
+
+class UnwrappedVersionControlPage extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, [
+            'handleNameChange',
+            'handleEmailChange',
+            'handleBranchChange',
+            'handleAutoCommitChange'
+        ]);
+        this.state = {
+            authorName: getAuthorName(),
+            authorEmail: getAuthorEmail(),
+            defaultBranch: getDefaultBranch(),
+            autoCommit: getAutoCommit()
+        };
+    }
+    handleNameChange (value) {
+        setAuthorName(value);
+        this.setState({authorName: getAuthorName()});
+    }
+    handleEmailChange (value) {
+        setAuthorEmail(value);
+        this.setState({authorEmail: getAuthorEmail()});
+    }
+    handleBranchChange (value) {
+        setDefaultBranch(value);
+        this.setState({defaultBranch: getDefaultBranch()});
+    }
+    handleAutoCommitChange (e) {
+        const value = e.target.checked;
+        setAutoCommit(value);
+        this.setState({autoCommit: value});
+    }
+    render () {
+        const {intl} = this.props;
+        return (
+            <Box className={styles.body}>
+                <Header>{intl.formatMessage(messages.headerVersionControl)}</Header>
+                <TextSetting
+                    label={<FormattedMessage {...messages.vcAuthorName} />}
+                    help={<FormattedMessage {...messages.vcAuthorNameHelp} />}
+                    value={this.state.authorName}
+                    onSubmit={this.handleNameChange}
+                    placeholder="User"
+                    intl={intl}
+                />
+                <TextSetting
+                    label={<FormattedMessage {...messages.vcAuthorEmail} />}
+                    help={<FormattedMessage {...messages.vcAuthorEmailHelp} />}
+                    value={this.state.authorEmail}
+                    onSubmit={this.handleEmailChange}
+                    placeholder="user@example.com"
+                    intl={intl}
+                />
+                <TextSetting
+                    label={<FormattedMessage {...messages.vcDefaultBranch} />}
+                    help={<FormattedMessage {...messages.vcDefaultBranchHelp} />}
+                    value={this.state.defaultBranch}
+                    onSubmit={this.handleBranchChange}
+                    placeholder="main"
+                    intl={intl}
+                />
+                <BooleanSetting
+                    value={this.state.autoCommit}
+                    onChange={this.handleAutoCommitChange}
+                    label={<FormattedMessage {...messages.vcAutoCommit} />}
+                    help={<FormattedMessage {...messages.vcAutoCommitHelp} />}
+                />
+            </Box>
+        );
+    }
+}
+UnwrappedVersionControlPage.propTypes = {
+    intl: intlShape.isRequired
+};
+const VersionControlPage = injectIntl(UnwrappedVersionControlPage);
+
+class VmSetting extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, ['handleBooleanChange', 'handleSelectChange', 'handleNumberChange']);
+        this.state = {value: getVariableManagerSetting(props.definition.id)};
+    }
+    commit (value) {
+        setVariableManagerSetting(this.props.definition.id, value);
+        this.setState({value: getVariableManagerSetting(this.props.definition.id)});
+    }
+    handleBooleanChange (e) {
+        this.commit(e.target.checked);
+    }
+    handleSelectChange (e) {
+        this.commit(e.target.value);
+    }
+    handleNumberChange (value) {
+        this.commit(value);
+    }
+    render () {
+        const {definition, intl} = this.props;
+        const {value} = this.state;
+        const translatedLabel = intl.formatMessage({id: definition.label, defaultMessage: definition.label});
+        const translatedHelp = definition.help ? intl.formatMessage({id: definition.help, defaultMessage: definition.help}) : undefined;
+        if (definition.type === 'boolean') {
+            return (
+                <BooleanSetting
+                    value={value}
+                    onChange={this.handleBooleanChange}
+                    label={translatedLabel}
+                    help={translatedHelp}
+                />
+            );
+        }
+        if (definition.type === 'select') {
+            return (
+                <Setting
+                    help={translatedHelp}
+                    primary={
+                        <div className={styles.label}>
+                            <span className={styles.settingText}>{translatedLabel}</span>
+                            <select
+                                className={styles.select}
+                                value={value}
+                                onChange={this.handleSelectChange}
+                            >
+                                {definition.options.map(option => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {intl.formatMessage({id: option.label, defaultMessage: option.label})}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    }
+                />
+            );
+        }
+        return (
+            <Setting
+                help={translatedHelp}
+                primary={
+                    <div className={styles.label}>
+                        <span className={styles.settingText}>{translatedLabel}</span>
+                        <BufferedInput
+                            className={styles.numberInput}
+                            type="number"
+                            value={value}
+                            min={definition.min}
+                            max={definition.max}
+                            step={definition.step}
+                            onSubmit={this.handleNumberChange}
+                        />
+                    </div>
+                }
+            />
+        );
+    }
+}
+VmSetting.propTypes = {
+    definition: PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        type: PropTypes.string.isRequired,
+        label: PropTypes.string,
+        help: PropTypes.string,
+        min: PropTypes.number,
+        max: PropTypes.number,
+        step: PropTypes.number,
+        options: PropTypes.array
+    }).isRequired,
+    intl: intlShape.isRequired
+};
+
+const UnwrappedVariableManagerPage = ({intl}) => (
+    <Box className={styles.body}>
+        <Header>{intl.formatMessage(messages.headerVariableManager)}</Header>
+        {VARIABLE_MANAGER_SETTINGS.map(definition => (
+            <VmSetting
+                key={definition.id}
+                definition={definition}
+                intl={intl}
+            />
+        ))}
+    </Box>
+);
+UnwrappedVariableManagerPage.propTypes = {
+    intl: intlShape.isRequired
+};
+const VariableManagerPage = injectIntl(UnwrappedVariableManagerPage);
 
 const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
@@ -1654,7 +2207,17 @@ SettingsModalComponent.propTypes = {
     onHatReminderCommentTextChange: PropTypes.func,
     onHatReminderReset: PropTypes.func,
     cloudVariableServer: PropTypes.string,
-    onCloudVariableServerChange: PropTypes.func
+    onCloudVariableServerChange: PropTypes.func,
+    squareStageCorners: PropTypes.bool,
+    onSquareStageCornersChange: PropTypes.func,
+    hideExtensionButton: PropTypes.bool,
+    onHideExtensionButtonChange: PropTypes.func,
+    hideOperatorArrows: PropTypes.bool,
+    onHideOperatorArrowsChange: PropTypes.func,
+    hideDeleteButton: PropTypes.bool,
+    onHideDeleteButtonChange: PropTypes.func,
+    hideBackpack: PropTypes.bool,
+    onHideBackpackChange: PropTypes.func
 };
 
 export default injectIntl(SettingsModalComponent);
