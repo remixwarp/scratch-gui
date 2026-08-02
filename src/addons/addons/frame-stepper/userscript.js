@@ -1,5 +1,14 @@
 import { isPaused, setPaused, onPauseChanged, setup } from "../debugger/module.js";
 
+const SETTING_KEY = "mw:debugger:stage_step_button";
+
+const getSetting = () => {
+  const stored = localStorage.getItem(SETTING_KEY);
+  if (stored === "true") return true;
+  if (stored === "false") return false;
+  return true; // default
+};
+
 export default async function ({ addon, console, msg }) {
   setup(addon);
   
@@ -47,7 +56,7 @@ export default async function ({ addon, console, msg }) {
 
   // Function to step exactly one frame
   function stepOneFrame() {
-    if (!isPaused()) return;
+    if (!isPaused() || !getSetting()) return;
     
     try {
       const vm = addon.tab.traps.vm;
@@ -74,11 +83,12 @@ export default async function ({ addon, console, msg }) {
     }
   }
 
-  // Function to update button visibility based on pause state
+  // Function to update button visibility based on pause state + setting
   function updateStepButtonVisibility() {
     if (!stepButton) return;
     
-    const shouldShow = isPaused();
+    const settingEnabled = getSetting();
+    const shouldShow = settingEnabled && isPaused();
     stepButton.style.display = shouldShow ? 'flex' : 'none';
   }
 
@@ -114,6 +124,14 @@ export default async function ({ addon, console, msg }) {
     }
   }
 
+  // Listen to storage changes
+  window.addEventListener("storage", (e) => {
+    if (e.key === SETTING_KEY) updateStepButtonVisibility();
+  });
+
+  // Also poll periodically for same-tab localStorage changes
+  setInterval(updateStepButtonVisibility, 500);
+
   // Wait for stage controls and insert button
   while (true) {
     await addon.tab.waitForElement("[class^='green-flag']", {
@@ -121,5 +139,6 @@ export default async function ({ addon, console, msg }) {
       reduxEvents: ["scratch-gui/mode/SET_PLAYER", "fontsLoaded/SET_FONTS_LOADED", "scratch-gui/locales/SELECT_LOCALE"],
     });
     insertStepButton();
+    updateStepButtonVisibility();
   }
 }
