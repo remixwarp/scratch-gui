@@ -127,6 +127,10 @@ const translators = [
         userID: '148440803',
         username: 'RyaninCn11',
         uid:"1413670374"
+    },
+    {
+        userID: '238758459',
+        username: 'romanarsenyk11-cloud'
     }
 ].map(fromHardcoded);
 
