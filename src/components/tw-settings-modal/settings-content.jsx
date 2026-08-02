@@ -468,6 +468,40 @@ CustomStageSize.propTypes = {
     onStageHeightChange: PropTypes.func
 };
 
+const CloudVariableServer = props => (
+    <Setting
+        primary={
+            <div className={classNames(styles.label, styles['cloud-variable-server'])}>
+                <FormattedMessage
+                    defaultMessage="Cloud Variable Server"
+                    description="Cloud Variable Server setting"
+                    id="tw.settingsModal.cloudVariableServer"
+                />
+                <BufferedInput
+                    value={props.cloudVariableServer}
+                    onSubmit={props.onCloudVariableServerChange}
+                    className={styles['cloud-variable-server-input']}
+                    type="text"
+                    placeholder="ws://localhost:8000"
+                />
+            </div>
+        }
+        help={
+            <FormattedMessage
+                // eslint-disable-next-line max-len
+                defaultMessage="Changes the server used for cloud variables. The URL must start with ws:// or wss://."
+                description="Cloud Variable Server setting help"
+                id="tw.settingsModal.cloudVariableServerHelp"
+            />
+        }
+    />
+);
+
+CloudVariableServer.propTypes = {
+    cloudVariableServer: PropTypes.string,
+    onCloudVariableServerChange: PropTypes.func
+};
+
 const StoreProjectOptions = ({onStoreProjectOptions}) => (
     <div className={styles.setting}>
         <div>
@@ -554,6 +588,17 @@ const SettingsContent = props => (
         />
         <Header>
             <FormattedMessage
+                defaultMessage="Cloud Service"
+                description="Settings modal section"
+                id="tw.settingsModal.cloud"
+            />
+        </Header>
+        <CloudVariableServer
+            cloudVariableServer={props.cloudVariableServer}
+            onCloudVariableServerChange={props.onCloudVariableServerChange}
+        />
+        <Header>
+            <FormattedMessage
                 defaultMessage="Danger Zone"
                 description="Settings modal section"
                 id="tw.settingsModal.dangerZone"
@@ -618,7 +663,9 @@ SettingsContent.propTypes = {
     onStageWidthChange: PropTypes.func,
     stageHeight: PropTypes.number,
     onStageHeightChange: PropTypes.func,
-    onStoreProjectOptions: PropTypes.func
+    onStoreProjectOptions: PropTypes.func,
+    cloudVariableServer: PropTypes.string,
+    onCloudVariableServerChange: PropTypes.func
 };
 
 export default injectIntl(SettingsContent);

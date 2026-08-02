@@ -255,6 +255,19 @@ AboutButton.propTypes = {
     onClick: PropTypes.func.isRequired
 };
 
+const SettingsButton = props => (
+    <Button
+        className={classNames(styles.menuBarItem, styles.hoverable)}
+        iconClassName={styles.aboutIcon}
+        iconElem={Settings}
+        onClick={props.onClick}
+    />
+);
+
+SettingsButton.propTypes = {
+    onClick: PropTypes.func.isRequired
+};
+
 // Unlike <MenuItem href="">, this uses an actual <a>
 const MenuItemLink = props => (
     <a
@@ -3979,6 +3992,9 @@ class MenuBar extends React.Component {
                     <TWSaveStatus
                         showSaveFilePicker={this.props.showSaveFilePicker}
                     />
+                    {this.props.onClickSettingsModal && (
+                        <SettingsButton onClick={this.props.onClickSettingsModal} />
+                    )}
                     {aboutButton}
                 </div>
             </Box>
