@@ -18,6 +18,12 @@ const guiColors = {
     'drop-highlight': 'hsla(92, 91%, 59%, 1)'
 };
 
+const blockColors = {
+    checkboxActiveBackground: 'hsla(92, 91%, 53%, 1)',
+    checkboxActiveBorder: 'hsla(92, 80%, 43%, 1)'
+};
+
 export {
-    guiColors as default
+    guiColors,
+    blockColors
 };
