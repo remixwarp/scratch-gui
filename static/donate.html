@@ -63,6 +63,64 @@
             .content-en.active, .content-zh.active {
                 display: block;
             }
+
+            /* Donate method collapsible boxes */
+            .donate-method {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                margin: 12px 0;
+                overflow: hidden;
+                background-color: rgba(0, 0, 0, 0.02);
+            }
+            .donate-method-summary {
+                cursor: pointer;
+                padding: 14px 16px;
+                font-size: 1rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                user-select: none;
+                list-style: none;
+            }
+            .donate-method-summary::-webkit-details-marker {
+                display: none;
+            }
+            .donate-method-summary::after {
+                content: "▾";
+                font-size: 0.85rem;
+                transition: transform 0.2s ease;
+                margin-left: 8px;
+                opacity: 0.7;
+            }
+            .donate-method[open] .donate-method-summary::after {
+                transform: rotate(180deg);
+            }
+            .donate-method-content {
+                padding: 8px 16px 18px 16px;
+                text-align: center;
+            }
+            .donate-method-content p {
+                text-align: left;
+                margin: 8px 0;
+                line-height: 1.6;
+            }
+            .donate-link-button {
+                display: inline-block;
+                margin: 12px auto 4px auto;
+                padding: 10px 22px;
+                background-color: #9468e8;
+                color: white !important;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: 600;
+                border: none;
+                cursor: pointer;
+                transition: background-color 0.2s ease, opacity 0.2s ease;
+            }
+            .donate-link-button:hover {
+                background-color: #7d52d6;
+            }
             @media (prefers-color-scheme: dark) {
                 body { background: #111; color: #eee; }
                 a { color: #4af; }
@@ -70,6 +128,10 @@
                 .language-selector button {
                     border-color: #555;
                     color: #eee;
+                }
+                .donate-method {
+                    border-color: #444;
+                    background-color: rgba(255, 255, 255, 0.03);
                 }
             }
         </style>
@@ -101,9 +163,9 @@
                     <li>Improve server performance</li>
                     <li>Develop new features</li>
                 </ul>
-                
+
                 <h2>How to Donate</h2>
-                <p>Scan the QR code below to donate via WeChat Pay:</p>
+                <p>Please choose a donation method below. Click to expand and view the details.</p>
                 <p>Please note your name and contact information when making a donation (try not to use a phone number).</p>
             </div>
 
@@ -116,16 +178,41 @@
                     <li>提升服务器性能</li>
                     <li>开发新功能</li>
                 </ul>
-                
+
                 <h2>如何捐款</h2>
-                <p>扫描下方二维码，通过微信支付捐款：</p>
+                <p>请在下方选择一种捐款方式。点击即可展开查看详情。</p>
                 <p>捐款时请备注您的姓名，联系方式（尽量不要用电话号码）。</p>
             </div>
 
-            <div class="qr-container">
-                <img id="qr-code" class="qr-code" src="码.png" alt="WeChat Pay QR Code">
-                <img id="qr-code-backup" class="qr-code" src="码.png" alt="WeChat Pay QR Code Backup" style="display: none;">
-            </div>
+            <details class="donate-method" id="method-wechat">
+                <summary class="donate-method-summary">
+                    <span class="content-en active">WeChat Donate</span>
+                    <span class="content-zh">微信捐款</span>
+                </summary>
+                <div class="donate-method-content">
+                    <div class="qr-container">
+                        <img id="qr-code" class="qr-code" src="码.png" alt="WeChat Pay QR Code">
+                        <img id="qr-code-backup" class="qr-code" src="码.png" alt="WeChat Pay QR Code Backup" style="display: none;">
+                    </div>
+                    <p class="content-en active">Scan the QR code above with WeChat to make a donation. Please include your name and contact info in the payment note.</p>
+                    <p class="content-zh">请使用微信扫描上方二维码进行捐款。付款时请备注您的姓名和联系方式。</p>
+                </div>
+            </details>
+
+            <details class="donate-method" id="method-afdian">
+                <summary class="donate-method-summary">
+                    <span class="content-en active">Afdian</span>
+                    <span class="content-zh">爱发电</span>
+                </summary>
+                <div class="donate-method-content">
+                    <p class="content-en active">Afdian is a Chinese membership-based sponsorship platform. By becoming a member on our Afdian page, you can support us on a monthly basis and unlock member-only perks.</p>
+                    <p class="content-zh">爱发电是一个基于会员制的赞助平台。在我们的爱发电主页成为会员，即可按月持续支持我们，并解锁会员专属权益。</p>
+                    <a class="donate-link-button" href="https://afdian.com/a/xiaoxiaolang" target="_blank" rel="noopener noreferrer">
+                        <span class="content-en active">Go to Afdian</span>
+                        <span class="content-zh">前往爱发电</span>
+                    </a>
+                </div>
+            </details>
 
             <div class="content-en active">
                 <h2>Thank You!</h2>
