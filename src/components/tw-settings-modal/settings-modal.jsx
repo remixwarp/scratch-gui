@@ -485,45 +485,94 @@ BooleanSetting.propTypes = {
     label: PropTypes.node.isRequired
 };
 
-const SquareStageCorners = props => (
+const SquareStageCorners = ({value, onChange}) => (
     <BooleanSetting
-        {...props}
-        label={<FormattedMessage {...messages.squareStageCorners} />}
-        help={<FormattedMessage {...messages.squareStageCornersHelp} />}
+        value={value}
+        onChange={onChange}
+        label="方形舞台角"
+        help="将舞台的四角变为直角而不是圆角。"
     />
 );
+SquareStageCorners.propTypes = {
+    value: PropTypes.bool.isRequired,
+    onChange: PropTypes.func.isRequired
+};
 
-const HideExtensionButton = props => (
+const HideExtensionButton = ({value, onChange}) => (
     <BooleanSetting
-        {...props}
-        label={<FormattedMessage {...messages.hideExtensionButton} />}
-        help={<FormattedMessage {...messages.hideExtensionButtonHelp} />}
+        value={value}
+        onChange={onChange}
+        label="隐藏扩展按钮"
+        help="隐藏积木面板底部的扩展按钮。"
     />
 );
+HideExtensionButton.propTypes = {
+    value: PropTypes.bool.isRequired,
+    onChange: PropTypes.func.isRequired
+};
 
-const HideOperatorArrows = props => (
+const HideOperatorArrows = ({value, onChange}) => (
     <BooleanSetting
-        {...props}
-        label={<FormattedMessage {...messages.hideOperatorArrows} />}
-        help={<FormattedMessage {...messages.hideOperatorArrowsHelp} />}
+        value={value}
+        onChange={onChange}
+        label="隐藏运算符箭头"
+        help="在数字、字符串和逻辑类积木中隐藏运算符下拉箭头。"
     />
 );
+HideOperatorArrows.propTypes = {
+    value: PropTypes.bool.isRequired,
+    onChange: PropTypes.func.isRequired
+};
 
-const HideDeleteButton = props => (
+const HideDeleteButton = ({value, onChange}) => (
     <BooleanSetting
-        {...props}
-        label={<FormattedMessage {...messages.hideDeleteButton} />}
-        help={<FormattedMessage {...messages.hideDeleteButtonHelp} />}
+        value={value}
+        onChange={onChange}
+        label="隐藏删除按钮"
+        help="隐藏选中积木时出现的删除按钮。"
     />
 );
+HideDeleteButton.propTypes = {
+    value: PropTypes.bool.isRequired,
+    onChange: PropTypes.func.isRequired
+};
 
-const HideBackpack = props => (
+const HideBackpack = ({value, onChange}) => (
     <BooleanSetting
-        {...props}
-        label={<FormattedMessage {...messages.hideBackpack} />}
-        help={<FormattedMessage {...messages.hideBackpackHelp} />}
+        value={value}
+        onChange={onChange}
+        label="隐藏背包"
+        help="隐藏积木面板底部的背包按钮。"
     />
 );
+HideBackpack.propTypes = {
+    value: PropTypes.bool.isRequired,
+    onChange: PropTypes.func.isRequired
+};
+
+const DEBUGGER_LABEL_MAP = {
+    stage_pause_button: {defaultMessage: '显示暂停按钮', id: 'mw.debugger.stagePauseButton'},
+    stage_step_button: {defaultMessage: '显示单步执行按钮', id: 'mw.debugger.stageStepButton'},
+    thread_glow: {defaultMessage: '线程光晕', id: 'mw.debugger.threadGlow'},
+    log_clear_greenflag: {defaultMessage: '记录清除绿旗', id: 'mw.debugger.logClearGreenflag'},
+    log_greenflag: {defaultMessage: '记录绿旗', id: 'mw.debugger.logGreenflag'},
+    log_clone_create: {defaultMessage: '记录克隆创建', id: 'mw.debugger.logCloneCreate'},
+    log_failed_clone_creation: {defaultMessage: '记录克隆创建失败', id: 'mw.debugger.logFailedCloneCreation'},
+    log_broadcasts: {defaultMessage: '记录广播', id: 'mw.debugger.logBroadcasts'},
+    fancy_graphs: {defaultMessage: '精美图表', id: 'mw.debugger.fancyGraphs'}
+};
+
+const DEBUGGER_HELP_MAP = {
+    stage_pause_button: {defaultMessage: '在舞台上显示暂停按钮。', id: 'mw.debugger.stagePauseButtonHelp'},
+    stage_step_button: {defaultMessage: '在舞台上显示单步执行按钮。', id: 'mw.debugger.stageStepButtonHelp'},
+    thread_glow: {defaultMessage: '让当前正在执行的脚本块发光，方便调试。', id: 'mw.debugger.threadGlowHelp'},
+    log_clear_greenflag: {defaultMessage: '当绿旗被清除时记录到日志。', id: 'mw.debugger.logClearGreenflagHelp'},
+    log_greenflag: {defaultMessage: '当绿旗被点击时记录到日志。', id: 'mw.debugger.logGreenflagHelp'},
+    log_clone_create: {defaultMessage: '当克隆被创建时记录到日志。', id: 'mw.debugger.logCloneCreateHelp'},
+    log_failed_clone_creation: {defaultMessage: '当克隆创建失败时记录到日志。', id: 'mw.debugger.logFailedCloneCreationHelp'},
+    log_broadcasts: {defaultMessage: '当广播被发送时记录到日志。', id: 'mw.debugger.logBroadcastsHelp'},
+    fancy_graphs: {defaultMessage: '显示更精美的调试图表。', id: 'mw.debugger.fancyGraphsHelp'}
+};
 
 const DebuggerBooleanSetting = ({settingId, label, help, intl}) => {
     const [value, setValue] = React.useState(getDebuggerSetting(settingId));
@@ -534,6 +583,10 @@ const DebuggerBooleanSetting = ({settingId, label, help, intl}) => {
         setDebuggerSetting(settingId, e.target.checked);
         setValue(e.target.checked);
     };
+
+    const labelMsg = DEBUGGER_LABEL_MAP[settingId] || {defaultMessage: label, id: label};
+    const helpMsg = DEBUGGER_HELP_MAP[settingId] || (help ? {defaultMessage: help, id: help} : null);
+
     return (
         <Setting
             active={value}
@@ -544,10 +597,10 @@ const DebuggerBooleanSetting = ({settingId, label, help, intl}) => {
                         checked={value}
                         onChange={handleChange}
                     />
-                    {intl.formatMessage({id: label, defaultMessage: label})}
+                    {intl.formatMessage(labelMsg)}
                 </label>
             }
-            help={help ? intl.formatMessage({id: help, defaultMessage: help}) : undefined}
+            help={helpMsg ? intl.formatMessage(helpMsg) : undefined}
         />
     );
 };
@@ -1242,7 +1295,7 @@ const notifySettingsChange = () => {
     window.dispatchEvent(new CustomEvent('ae-settings-changed'));
 };
 
-const createStyleSelect = (groupId, label, help) => {
+const createStyleSelect = (groupId, label, help, type, options) => {
     const Component = ({intl}) => {
         const [value, setValueState] = React.useState(null);
         React.useEffect(() => {
@@ -1252,7 +1305,6 @@ const createStyleSelect = (groupId, label, help) => {
             setStyleSetting(groupId, e.target.value);
             setValueState(e.target.value);
         };
-        const group = STYLE_GROUPS.find(g => g.id === groupId);
         return (
             <Setting
                 primary={
@@ -1263,9 +1315,9 @@ const createStyleSelect = (groupId, label, help) => {
                             value={value || ''}
                             onChange={handleChange}
                         >
-                            {group.options.map(opt => (
+                            {(options || STYLE_GROUPS.find(g => g.id === groupId).options).map(opt => (
                                 <option key={opt.value} value={opt.value}>
-                                    {opt.value}
+                                    {opt.label || opt.value}
                                 </option>
                             ))}
                         </select>
@@ -1545,16 +1597,16 @@ const pageConfigurations = {
                         component: DebuggerBooleanSetting,
                         props: () => ({
                             settingId: 'stage_pause_button',
-                            label: 'mw.debugger.stagePauseButton',
-                            help: 'mw.debugger.stagePauseButtonHelp'
+                            label: '显示暂停按钮',
+                            help: '在舞台上显示暂停按钮。'
                         })
                     },
                     {
                         component: DebuggerBooleanSetting,
                         props: () => ({
                             settingId: 'stage_step_button',
-                            label: 'mw.debugger.stageStepButton',
-                            help: 'mw.debugger.stageStepButtonHelp'
+                            label: '显示单步执行按钮',
+                            help: '在舞台上显示单步执行按钮。'
                         })
                     },
                     {
@@ -1875,8 +1927,16 @@ class VmSetting extends React.Component {
     render () {
         const {definition, intl} = this.props;
         const {value} = this.state;
-        const translatedLabel = intl.formatMessage({id: definition.label, defaultMessage: definition.label});
-        const translatedHelp = definition.help ? intl.formatMessage({id: definition.help, defaultMessage: definition.help}) : undefined;
+        const labelMsg = typeof definition.label === 'string' ?
+            {id: definition.label, defaultMessage: definition.label} :
+            definition.label;
+        const helpMsg = definition.help ?
+            (typeof definition.help === 'string' ?
+                {id: definition.help, defaultMessage: definition.help} :
+                definition.help) :
+            null;
+        const translatedLabel = intl.formatMessage(labelMsg);
+        const translatedHelp = helpMsg ? intl.formatMessage(helpMsg) : undefined;
         if (definition.type === 'boolean') {
             return (
                 <BooleanSetting
@@ -1899,14 +1959,19 @@ class VmSetting extends React.Component {
                                 value={value}
                                 onChange={this.handleSelectChange}
                             >
-                                {definition.options.map(option => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {intl.formatMessage({id: option.label, defaultMessage: option.label})}
-                                    </option>
-                                ))}
+                                {definition.options.map(option => {
+                                    const optionLabel = typeof option.label === 'string' ?
+                                        intl.formatMessage({id: option.label, defaultMessage: option.label}) :
+                                        intl.formatMessage(option.label);
+                                    return (
+                                        <option
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {optionLabel}
+                                        </option>
+                                    );
+                                })}
                             </select>
                         </div>
                     }
@@ -1938,8 +2003,20 @@ VmSetting.propTypes = {
     definition: PropTypes.shape({
         id: PropTypes.string.isRequired,
         type: PropTypes.string.isRequired,
-        label: PropTypes.string,
-        help: PropTypes.string,
+        label: PropTypes.oneOfType([
+            PropTypes.string,
+            PropTypes.shape({
+                id: PropTypes.string,
+                defaultMessage: PropTypes.string
+            })
+        ]),
+        help: PropTypes.oneOfType([
+            PropTypes.string,
+            PropTypes.shape({
+                id: PropTypes.string,
+                defaultMessage: PropTypes.string
+            })
+        ]),
         min: PropTypes.number,
         max: PropTypes.number,
         step: PropTypes.number,

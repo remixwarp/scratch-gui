@@ -1,7 +1,5 @@
 import React from 'react';
 import bindAll from 'lodash.bindall';
-import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
-import PropTypes from 'prop-types';
 import {GripVertical} from 'lucide-react';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import styles from './settings-modal.css';
@@ -16,19 +14,19 @@ import {
 } from '../../lib/mw-menu-bar-layout';
 
 const LABELS = {
-    'file': 'mw.menuBar.file',
-    'view': 'mw.menuBar.view',
-    'bookmarks': 'mw.menuBar.bookmarks',
-    'edit': 'mw.menuBar.edit',
-    'tools': 'mw.menuBar.tools',
-    'mode': 'mw.menuBar.mode',
-    'block-count': 'mw.menuBar.blockCount',
-    'save-status': 'mw.menuBar.saveStatus',
-    'addons': 'mw.menuBar.addons',
-    'settings': 'mw.menuBar.settings',
-    'about': 'mw.menuBar.about',
-    'project-title': 'mw.menuBar.projectTitle',
-    'community': 'mw.menuBar.community'
+    'file': '文件',
+    'view': '查看',
+    'bookmarks': '书签',
+    'edit': '编辑',
+    'tools': '工具',
+    'mode': '模式',
+    'block-count': '积木数量',
+    'save-status': '保存状态',
+    'addons': '扩展',
+    'settings': '设置',
+    'about': '关于',
+    'project-title': '项目标题',
+    'community': '社区'
 };
 
 const isVisibleItem = id => !id.startsWith('__');
@@ -85,10 +83,8 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
         };
     }
     renderRow (zoneId, id, draggable) {
-        const {intl} = this.props;
         const visible = !this.state.hidden.includes(id);
-        const labelId = LABELS[id];
-        const label = labelId ? intl.formatMessage({id: labelId, defaultMessage: labelId}) : id;
+        const label = LABELS[id] || id;
         return (
             <div
                 key={id}
@@ -132,24 +128,20 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
         ), 0);
     }
     render () {
-        const {intl} = this.props;
         return (
             <div className={styles.setting}>
                 <div className={styles.menuBarHint}>
-                    <FormattedMessage
-                        defaultMessage="Drag to reorder items within each group. Uncheck to hide."
-                        id="mw.settingsModal.menuBarHint"
-                    />
+                    {'拖动以重新排序每组中的项目。取消勾选以隐藏。'}
                 </div>
                 {[
-                    {labelId: 'mw.settingsModal.leftMenus', zones: ['left']},
-                    {labelId: 'mw.settingsModal.topRightButtons', zones: ['right']}
+                    {labelText: '左侧菜单', zones: ['left']},
+                    {labelText: '右上角按钮', zones: ['right']}
                 ].map(section => {
                     if (this.sectionRowCount(section) === 0) return null;
                     return (
-                        <div key={section.labelId}>
+                        <div key={section.labelText}>
                             <div className={styles.menuBarZoneLabel}>
-                                {intl.formatMessage({id: section.labelId, defaultMessage: section.labelId})}
+                                {section.labelText}
                             </div>
                             {section.zones.map(zoneId => this.renderZone(zoneId))}
                         </div>
@@ -160,10 +152,4 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
     }
 }
 
-UnwrappedMenuBarLayoutSetting.propTypes = {
-    intl: intlShape.isRequired
-};
-
-const MenuBarLayoutSetting = injectIntl(UnwrappedMenuBarLayoutSetting);
-
-export default MenuBarLayoutSetting;
+export default UnwrappedMenuBarLayoutSetting;

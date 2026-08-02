@@ -10,27 +10,27 @@ const STYLE_GROUPS = [
         id: 'tab-style',
         defaultValue: 'mistwarp',
         options: [
-            {value: 'mistwarp', css: null},
-            {value: 'turbowarp', css: String(turbowarpCss)},
-            {value: 'scratchbox', css: String(scratchboxCss)}
+            {value: 'mistwarp', label: 'MistWarp', css: null},
+            {value: 'turbowarp', label: 'TurboWarp', css: String(turbowarpCss)},
+            {value: 'scratchbox', label: 'Scratchbox', css: String(scratchboxCss)}
         ]
     },
     {
         id: 'tab-looks',
         defaultValue: 'default',
         options: [
-            {value: 'default', css: null},
-            {value: 'icon-only', css: String(iconOnlyCss)},
-            {value: 'text-only', css: String(textOnlyCss)}
+            {value: 'default', label: '默认', css: null},
+            {value: 'icon-only', label: '仅图标', css: String(iconOnlyCss)},
+            {value: 'text-only', label: '仅文字', css: String(textOnlyCss)}
         ]
     },
     {
         id: 'window-style',
         defaultValue: 'mistwarp',
         options: [
-            {value: 'mistwarp', css: null},
-            {value: 'macos', css: String(macosCss)},
-            {value: 'windows10', css: String(windows10Css)}
+            {value: 'mistwarp', label: 'MistWarp', css: null},
+            {value: 'macos', label: 'macOS', css: String(macosCss)},
+            {value: 'windows10', label: 'Windows 10', css: String(windows10Css)}
         ]
     }
 ];
