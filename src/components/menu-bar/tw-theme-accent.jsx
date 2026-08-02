@@ -1,14 +1,13 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
+import {FormattedMessage, defineMessages} from 'react-intl';
 import {connect} from 'react-redux';
 
 import {Check} from 'lucide-react';
 import ChevronDown from './ChevronDown.jsx';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {ACCENT_MAP, Theme} from '../../lib/themes/index.js';
-import {CustomTheme} from '../../lib/themes/custom-themes.js';
 import {openAccentMenu, accentMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
@@ -18,16 +17,6 @@ import {openCustomTheme} from '../../reducers/modals.js';
 
 import {closeEditMenu} from '../../reducers/menus.js';
 
-import pixelThemeCircle from '../../lib/themes/pixel-presets/minecraft_circle_pixel_theme.json';
-import pixelThemeRight from '../../lib/themes/pixel-presets/minecraft_right_pixel_theme.json';
-import pixelThemeLeft from '../../lib/themes/pixel-presets/minecraft_left_pixel_theme.json';
-
-const PIXEL_PRESETS = [
-    {id: 'pixel-minecraft-circle', name: 'Minecraft_○', data: pixelThemeCircle},
-    {id: 'pixel-minecraft-right', name: 'Minecraft_→', data: pixelThemeRight},
-    {id: 'pixel-minecraft-left', name: 'Minecraft_←', data: pixelThemeLeft}
-];
-
 // Keep the original accent messages for FormattedMessage component
 const ACCENT_MESSAGES = {};
 for (const key in ACCENT_MAP) {
@@ -35,14 +24,6 @@ for (const key in ACCENT_MAP) {
         id: ACCENT_MAP[key].id,
         defaultMessage: ACCENT_MAP[key].defaultMessage,
         description: ACCENT_MAP[key].description
-    };
-}
-// Add pixel preset messages
-for (const preset of PIXEL_PRESETS) {
-    ACCENT_MESSAGES[preset.id] = {
-        id: `tw.accent.${preset.id}`,
-        defaultMessage: preset.name,
-        description: 'Pixel preset theme'
     };
 }
 
@@ -59,18 +40,6 @@ const icons = {
 const ColorIcon = props => {
     const accentId = props.id || 'pale blue';
     const accent = ACCENT_MAP[accentId] && ACCENT_MAP[accentId].accent;
-
-    if (accentId && accentId.startsWith('pixel-')) {
-        return (
-            <div
-                className={styles.accentIconOuter}
-                style={{
-                    backgroundColor: '#3c8527',
-                    backgroundImage: 'none'
-                }}
-            />
-        );
-    }
 
     if (icons[accentId]) {
         return (
@@ -139,22 +108,13 @@ AccentMenuItem.propTypes = {
 };
 
 const AccentThemeMenu = ({
-    intl,
     isOpen,
     isRtl,
     onChangeTheme,
-    onApplyPixelTheme,
     onOpen,
     onClickCustomThemeModal,
     theme
-}) => {
-    const isZh =
-        intl &&
-        intl.locale &&
-        (intl.locale.startsWith('zh') ||
-            intl.locale.startsWith('cmn') ||
-            intl.locale.startsWith('yue'));
-    return (
+}) => (
     <MenuItem expanded={isOpen}>
         <div
             className={styles.option}
@@ -182,15 +142,6 @@ const AccentThemeMenu = ({
                     onClick={() => onChangeTheme(theme.set('accent', item))}
                 />
             ))}
-            {PIXEL_PRESETS.map(preset => (
-                <MenuItem key={preset.id} onClick={() => onApplyPixelTheme(preset.data)}>
-                    <div className={styles.option}>
-                        <Check className={classNames(styles.check, {[styles.selected]: false})} />
-                        <ColorIcon id={preset.id} />
-                        <span>{preset.name}</span>
-                    </div>
-                </MenuItem>
-            ))}
             <MenuItem onClick={onClickCustomThemeModal}>
                 <div className={styles.option}>
                     <ColorIcon id="custom" />
@@ -201,34 +152,14 @@ const AccentThemeMenu = ({
                     />
                 </div>
             </MenuItem>
-            <MenuItem className={styles.pixelPresetDisclaimerItem}>
-                <div className={styles.pixelPresetDisclaimer}>
-                    {isZh ? (
-                        <>
-                            非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，
-                            <br />
-                            也不与MOJANG或MICROSOFT关联。
-                        </>
-                    ) : (
-                        <>
-                            Not an official MINECRAFT product. Not approved by or
-                            <br />
-                            associated with MOJANG or MICROSOFT.
-                        </>
-                    )}
-                </div>
-            </MenuItem>
         </Submenu>
     </MenuItem>
-    );
-};
+);
 
 AccentThemeMenu.propTypes = {
-    intl: intlShape.isRequired,
     isOpen: PropTypes.bool,
     isRtl: PropTypes.bool,
     onChangeTheme: PropTypes.func,
-    onApplyPixelTheme: PropTypes.func,
     onClickCustomThemeModal: PropTypes.func,
     onOpen: PropTypes.func,
     theme: PropTypes.instanceOf(Theme)
@@ -246,13 +177,6 @@ const mapDispatchToProps = dispatch => ({
         dispatch(closeSettingsMenu());
         applyTheme(theme);
     },
-    onApplyPixelTheme: data => {
-        const themeData = data.themes[0];
-        const customTheme = CustomTheme.import(themeData);
-        dispatch(setTheme(customTheme));
-        dispatch(closeSettingsMenu());
-        applyTheme(customTheme);
-    },
     onOpen: () => dispatch(openAccentMenu()),
     onClickCustomThemeModal: () => {
         dispatch(closeEditMenu());
@@ -260,7 +184,7 @@ const mapDispatchToProps = dispatch => ({
     },
 });
 
-export default injectIntl(connect(
+export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(AccentThemeMenu));
+)(AccentThemeMenu);
