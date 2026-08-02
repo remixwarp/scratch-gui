@@ -276,6 +276,7 @@ const connectToRoom = async (service, roomId, username, isHost = false, privacy 
         }
 
         const peerId = service.generatePeerId(roomId, isHost);
+        console.log('[Collab] Creating Peer with config:', JSON.stringify(service.peerConfig, null, 2));
         service.peer = new Peer(peerId, service.peerConfig);
         return new Promise((resolve, reject) => {
             service.username = username || `User${Math.floor(Math.random() * 1000)}`;
@@ -300,6 +301,7 @@ const connectToRoom = async (service, roomId, username, isHost = false, privacy 
             });
 
             service.peer.on('error', error => {
+                console.error('[Collab] Peer error:', error.type, error.message, error);
                 if (service.isDisconnecting || (service._isShuttingDown && service._isShuttingDown())) {
                     console.warn('[Connection] Ignoring peer error during shutdown:', error);
                     return;
@@ -420,36 +422,38 @@ const handleUserJoin = (service, payload, conn) => {
         return;
     }
     if (payload.id === service.peer.id) return;
-    service.pendingJoinRequests.set(payload.id, {
-        id: payload.id,
-        username: payload.username,
-        connection: conn
-    });
-    service.emit('join-request-received', {
-        requesterId: payload.id,
-        requesterUsername: payload.username
-    });
+    
+    const isJoinRequest = payload.sender === payload.id;
+    const isHostBroadcast = conn && conn.peer === service.hostId && payload.sender === service.hostId;
     if (service.isHost) {
-        if (service.roomPrivacy === 'private') return;
-        if (service.roomPrivacy === 'public') approveJoinRequest(service, payload.id, payload.username, conn);
-    }
-    service.users.set(payload.id, payload);
-    service.emit('user-joined', payload);
-    if (service.isHost) {
-        const currentUsers = Array.from(service.users.values());
-        service.sendMessage('users-list', {users: currentUsers}, conn ? conn : payload.id);
-        service.connections.forEach(connection => {
-            if (connection !== conn && connection.open) {
-                service.sendMessage('user-join', payload, connection.peer);
-            }
-        });
-        service.emit('users-updated', {users: currentUsers});
+        if (isJoinRequest) {
+            service.pendingJoinRequests.set(payload.id, {
+                id: payload.id,
+                username: payload.username,
+                connection: conn
+            });
+            service.emit('join-request-received', {
+                requesterId: payload.id,
+                requesterUsername: payload.username
+            });
+            if (service.roomPrivacy === 'private') return;
+            if (service.roomPrivacy === 'public') approveJoinRequest(service, payload.id, payload.username, conn);
+        }
+    } else if (isHostBroadcast) {
+        service.users.set(payload.id, payload);
+        service.emit('user-joined', payload);
+    } else if (isJoinRequest) {
+        // ignore
     }
 };
 
 const handleJoinDenied = (service, data) => {
+    service.joinRequestDenied = true;
     service.emit('approval-resolved');
     service.emit('join-denied', data.reason || 'Join request was denied');
+    setTimeout(() => {
+        service.disconnect();
+    }, 100);
 };
 
 const handleJoinCancelled = (service, data, connection) => {

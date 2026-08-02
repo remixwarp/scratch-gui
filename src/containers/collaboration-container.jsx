@@ -2,12 +2,19 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {compose} from 'redux';
-import {injectIntl} from 'react-intl';
+import {defineMessages, injectIntl} from 'react-intl';
 
 import CollaborationModal from '../components/collaboration-modal/collaboration-modal.jsx';
-import CollaborationService from '../lib/collaboration-service.js';
+import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
-import {unlockAchievement} from '../lib/achievements.js';
+
+const messages = defineMessages({
+    chatPlaceholder: {
+        defaultMessage: 'Say something... (max 500 chars)',
+        description: 'Placeholder text for collaboration chat input',
+        id: 'tw.collaboration.chatPlaceholder'
+    }
+});
 
 import {
     closeCollaborationModal,
@@ -17,7 +24,9 @@ import {
     setCollaborationRoomId,
     setCollaborationRoomPrivacy,
     setCollaborationLoading,
-    setCollaborationHostLoadingProgress
+    setCollaborationHostLoadingProgress,
+    setSpriteEditor,
+    removeSpriteEditor
 } from '../reducers/collaboration';
 
 import {
@@ -61,12 +70,15 @@ class CollaborationContainer extends Component {
         this.handleProjectSyncDownloadStart = this.handleProjectSyncDownloadStart.bind(this);
         this.handleProjectSyncDownloadProgress = this.handleProjectSyncDownloadProgress.bind(this);
         this.handleProjectSyncDownloadComplete = this.handleProjectSyncDownloadComplete.bind(this);
+        this.handleProjectSyncApplyStart = this.handleProjectSyncApplyStart.bind(this);
+        this.handleProjectSyncApplyComplete = this.handleProjectSyncApplyComplete.bind(this);
         this.handleProjectSyncDownloadError = this.handleProjectSyncDownloadError.bind(this);
         this.handleHostLoadingStart = this.handleHostLoadingStart.bind(this);
         this.handleHostLoadingProgress = this.handleHostLoadingProgress.bind(this);
         this.handleHostLoadingComplete = this.handleHostLoadingComplete.bind(this);
-        this.handleAwaitingApproval = this.handleAwaitingApproval.bind(this);
-        this.handleApprovalResolved = this.handleApprovalResolved.bind(this);
+        this.handleProjectSyncWait = this.handleProjectSyncWait.bind(this);
+        this.handleSessionReady = this.handleSessionReady.bind(this);
+        this.handlePresenceEditingChanged = this.handlePresenceEditingChanged.bind(this);
     }
 
     componentDidMount () {
@@ -74,6 +86,14 @@ class CollaborationContainer extends Component {
         if (this.props.vm) {
             this.collaborationService.init(this.props.vm);
         }
+
+        // Set up translations for collaboration service
+        this.collaborationService.translations = {
+            chatPlaceholder: this.props.intl.formatMessage(messages.chatPlaceholder)
+        };
+
+        // Set up custom shortcuts for collaboration service
+        this.collaborationService.customShortcuts = this.props.customShortcuts;
 
         // Set up event listeners
         this.collaborationService.on('user-joined', this.handleUserJoined);
@@ -93,17 +113,27 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('project-sync-download-start', this.handleProjectSyncDownloadStart);
         this.collaborationService.on('project-sync-download-progress', this.handleProjectSyncDownloadProgress);
         this.collaborationService.on('project-sync-download-complete', this.handleProjectSyncDownloadComplete);
+        this.collaborationService.on('project-sync-apply-start', this.handleProjectSyncApplyStart);
+        this.collaborationService.on('project-sync-apply-complete', this.handleProjectSyncApplyComplete);
         this.collaborationService.on('project-sync-download-error', this.handleProjectSyncDownloadError);
         this.collaborationService.on('host-loading-start', this.handleHostLoadingStart);
         this.collaborationService.on('host-loading-progress', this.handleHostLoadingProgress);
         this.collaborationService.on('host-loading-complete', this.handleHostLoadingComplete);
         this.collaborationService.on('project-sync-wait', this.handleProjectSyncWait);
         this.collaborationService.on('session-ready', this.handleSessionReady);
-        this.collaborationService.on('awaiting-approval', this.handleAwaitingApproval);
-        this.collaborationService.on('approval-resolved', this.handleApprovalResolved);
+        this.collaborationService.on('presence-editing-changed', this.handlePresenceEditingChanged);
 
         this.projectSyncProgress = 0;
         this.projectSyncLoadingBar = null;
+    }
+
+    componentDidUpdate (prevProps) {
+        // Sync custom shortcuts to collaboration service when they change
+        if (prevProps.customShortcuts !== this.props.customShortcuts) {
+            console.log('Shortcuts updated in Redux:', this.props.customShortcuts);
+            this.collaborationService.customShortcuts = this.props.customShortcuts;
+            console.log('CollaborationService customShortcuts updated:', this.collaborationService.customShortcuts);
+        }
     }
 
     componentWillUnmount () {
@@ -122,14 +152,15 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('project-sync-download-start', this.handleProjectSyncDownloadStart);
         this.collaborationService.off('project-sync-download-progress', this.handleProjectSyncDownloadProgress);
         this.collaborationService.off('project-sync-download-complete', this.handleProjectSyncDownloadComplete);
+        this.collaborationService.off('project-sync-apply-start', this.handleProjectSyncApplyStart);
+        this.collaborationService.off('project-sync-apply-complete', this.handleProjectSyncApplyComplete);
         this.collaborationService.off('project-sync-download-error', this.handleProjectSyncDownloadError);
         this.collaborationService.off('host-loading-start', this.handleHostLoadingStart);
         this.collaborationService.off('host-loading-progress', this.handleHostLoadingProgress);
         this.collaborationService.off('host-loading-complete', this.handleHostLoadingComplete);
         this.collaborationService.off('project-sync-wait', this.handleProjectSyncWait);
         this.collaborationService.off('session-ready', this.handleSessionReady);
-        this.collaborationService.off('awaiting-approval', this.handleAwaitingApproval);
-        this.collaborationService.off('approval-resolved', this.handleApprovalResolved);
+        this.collaborationService.off('presence-editing-changed', this.handlePresenceEditingChanged);
 
         // Clear waiting overlay if it exists
         this.clearWaitingOverlay();
@@ -148,7 +179,6 @@ class CollaborationContainer extends Component {
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(roomId, username, false);
-            unlockAchievement('collaboration-room');
 
             // Don't set connected immediately - wait for connected-to-host event
             this.props.onSetRoomId(roomId);
@@ -178,9 +208,8 @@ class CollaborationContainer extends Component {
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(roomId, username, true, privacy);
-            unlockAchievement('collaboration-room');
 
-            // Set connected and update room info after successful connection
+            // For hosts, set connected immediately since they're always connected
             this.props.onSetConnected(true);
             this.props.onSetRoomId(roomId);
             this.props.onSetRoomPrivacy(privacy);
@@ -277,33 +306,33 @@ class CollaborationContainer extends Component {
             const {intl} = this.props;
 
             switch (code) {
-                case 'CONNECTION_TIMEOUT':
-                    errorMessage = intl.formatMessage({
-                        id: 'tw.collaboration.error.connectionTimeout',
-                        defaultMessage: 'Connection to room "{roomId}" timed out. Host may not be available.',
-                        description: 'Error message when connection to room times out'
-                    }, {roomId});
-                    break;
-                case 'HOST_UNAVAILABLE':
-                    errorMessage = intl.formatMessage({
-                        id: 'tw.collaboration.error.hostUnavailable',
-                        defaultMessage: 'Could not connect to host. Room "{roomId}" may not exist or host may be offline.',
-                        description: 'Error message when host is unavailable'
-                    }, {roomId});
-                    break;
-                case 'ICE_CONNECTION_FAILED':
-                    errorMessage = intl.formatMessage({
-                        id: 'tw.collaboration.error.iceConnectionFailed',
-                        defaultMessage: 'ICE connection failed after {attempts} attempts. This may be a network issue.',
-                        description: 'Error message when ICE connection fails'
-                    }, {attempts});
-                    break;
-                default:
-                    errorMessage = intl.formatMessage({
-                        id: 'tw.collaboration.error.unknown',
-                        defaultMessage: 'Connection failed: {error}',
-                        description: 'Generic connection error message'
-                    }, {error: JSON.stringify(data.error)});
+            case 'CONNECTION_TIMEOUT':
+                errorMessage = intl.formatMessage({
+                    id: 'tw.collaboration.error.connectionTimeout',
+                    defaultMessage: 'Connection to room "{roomId}" timed out. Host may not be available.',
+                    description: 'Error message when connection to room times out'
+                }, {roomId});
+                break;
+            case 'HOST_UNAVAILABLE':
+                errorMessage = intl.formatMessage({
+                    id: 'tw.collaboration.error.hostUnavailable',
+                    defaultMessage: 'Could not connect to host. Room "{roomId}" may not exist or host may be offline.',
+                    description: 'Error message when host is unavailable'
+                }, {roomId});
+                break;
+            case 'ICE_CONNECTION_FAILED':
+                errorMessage = intl.formatMessage({
+                    id: 'tw.collaboration.error.iceConnectionFailed',
+                    defaultMessage: 'ICE connection failed after {attempts} attempts. This may be a network issue.',
+                    description: 'Error message when ICE connection fails'
+                }, {attempts});
+                break;
+            default:
+                errorMessage = intl.formatMessage({
+                    id: 'tw.collaboration.error.unknown',
+                    defaultMessage: 'Connection failed: {error}',
+                    description: 'Generic connection error message'
+                }, {error: JSON.stringify(data.error)});
             }
         }
 
@@ -480,14 +509,13 @@ class CollaborationContainer extends Component {
 
     handleJoinDenied (data) {
         console.log('Join request denied:', data);
-        this.props.onSetError(
-            data ||
-            this.props.intl.formatMessage({
-                id: 'gui.collaboration.joinDenied',
-                defaultMessage: 'Your join request was denied',
-                description: 'Error message when join request is denied'
-            })
-        );
+        const deniedMessage = this.props.intl.formatMessage({
+            id: 'gui.collaboration.joinDenied',
+            defaultMessage: 'The host denied your join request',
+            description: 'Notification when join request is denied'
+        });
+        this.props.onSetError(deniedMessage);
+        NotificationSystem.warning(deniedMessage, 5000);
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
     }
@@ -521,27 +549,37 @@ class CollaborationContainer extends Component {
     }
 
     getCurrentUserId () {
-        return this.collaborationService.peer ? this.collaborationService.peer.id : null;
+        return this.collaborationService.getCurrentUserId();
     }
 
     handleProjectSyncDownloadStart () {
-        // We use the standard Scratch loading screen now (triggered via VM PROJECT_LOADING event)
-        // So we don't need a bespoke download overlay.
-        // potentially show a 'Waiting' overlay if we need to wait for host/others after load?
         this.projectSyncProgress = 0;
+        this.props.onSetCollabLoading(true, 'Downloading project from host…');
+        this.props.onSetHostLoadingProgress(0);
     }
 
     handleProjectSyncDownloadProgress (data) {
-        // Standard loader typically doesn't show detailed progress bar,
-        // but we assume standard 'Loading...' is what user wants.
-        // We update internal state just in case we want to debug.
-        if (data.progress) {
+        if (data && typeof data.progress === 'number') {
             this.projectSyncProgress = data.progress;
+            this.props.onSetCollabLoading(true, 'Downloading project from host…');
+            this.props.onSetHostLoadingProgress(data.progress);
         }
     }
 
     handleProjectSyncDownloadComplete () {
         this.projectSyncProgress = null;
+        this.props.onSetCollabLoading(true, 'Loading project…');
+        this.props.onSetHostLoadingProgress(0);
+    }
+
+    handleProjectSyncApplyStart () {
+        this.props.onSetCollabLoading(true, 'Loading project…');
+        this.props.onSetHostLoadingProgress(0);
+    }
+
+    handleProjectSyncApplyComplete () {
+        this.props.onSetCollabLoading(false);
+        this.props.onSetHostLoadingProgress(0);
     }
 
     handleProjectSyncDownloadError () {
@@ -641,12 +679,13 @@ class CollaborationContainer extends Component {
         this.clearWaitingOverlay();
     }
 
-    handleAwaitingApproval () {
-        console.log('[COLLAB CONTAINER] Awaiting approval from host');
-    }
-
-    handleApprovalResolved () {
-        console.log('[COLLAB CONTAINER] Approval resolved');
+    handlePresenceEditingChanged ({userId, username, targetId, previousTargetId}) {
+        if (previousTargetId) {
+            this.props.onRemoveSpriteEditor(previousTargetId, userId);
+        }
+        if (targetId) {
+            this.props.onSetSpriteEditor(targetId, userId, username, Date.now());
+        }
     }
 
     render () {
@@ -660,6 +699,7 @@ class CollaborationContainer extends Component {
                 roomPrivacy={this.props.roomPrivacy}
                 connectedUsers={this.props.connectedUsers}
                 connectionError={this.props.connectionError}
+                customShortcuts={this.props.customShortcuts}
                 onRequestClose={this.props.onRequestClose}
                 onJoinRoom={this.handleJoinRoom}
                 onCreateRoom={this.handleCreateRoom}
@@ -695,6 +735,8 @@ CollaborationContainer.propTypes = {
     onSetUsername: PropTypes.func.isRequired,
     onSetCollabLoading: PropTypes.func.isRequired,
     onSetHostLoadingProgress: PropTypes.func.isRequired,
+    onSetSpriteEditor: PropTypes.func.isRequired,
+    onRemoveSpriteEditor: PropTypes.func.isRequired,
     onOpenChangeUsername: PropTypes.func.isRequired
 };
 
@@ -706,7 +748,8 @@ const mapStateToProps = state => ({
     connectedUsers: state.scratchGui.collaboration.connectedUsers,
     connectionError: state.scratchGui.collaboration.connectionError,
     currentUsername: state.scratchGui.tw.username,
-    vm: state.scratchGui.vm
+    vm: state.scratchGui.vm,
+    customShortcuts: state.scratchGui.shortcuts.customShortcuts
 });
 
 const mapDispatchToProps = dispatch => ({
@@ -719,6 +762,9 @@ const mapDispatchToProps = dispatch => ({
     onSetUsername: username => dispatch(setUsername(username)),
     onSetCollabLoading: (isLoading, message) => dispatch(setCollaborationLoading(isLoading, message)),
     onSetHostLoadingProgress: progress => dispatch(setCollaborationHostLoadingProgress(progress)),
+    onSetSpriteEditor: (spriteId, userId, username, timestamp) =>
+        dispatch(setSpriteEditor(spriteId, userId, username, timestamp)),
+    onRemoveSpriteEditor: (spriteId, userId) => dispatch(removeSpriteEditor(spriteId, userId)),
     onOpenChangeUsername: () => dispatch(openUsernameModal())
 });
 

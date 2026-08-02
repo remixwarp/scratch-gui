@@ -8,14 +8,14 @@ import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import Input from '../forms/input.jsx';
-import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
-import TurnstileVerifier from '../ai/turnstile-verifier.jsx';
 
 const BufferedInput = BufferedInputHOC(Input);
 
-import {Handshake as CollaborationIcon, User, Crown, UserMinus, Copy, AlertTriangle, PenLine} from 'lucide-react';
+import {Handshake as CollaborationIcon, User, Crown, UserMinus, Copy, AlertTriangle, PenLine, Settings, X} from 'lucide-react';
 
 import showAlert from '../../addons/window-system/alert';
+import NotificationSystem from '../../lib/notification-manager.js';
+import CollaborationService from '../../lib/collaboration/index.js';
 
 import styles from './collaboration-modal.css';
 
@@ -30,14 +30,18 @@ class CollaborationModal extends Component {
             error: null,
             pendingRequests: [],
             showJoinRequest: false,
-            activeCaptcha: null,
-            captchaVerified: false,
-            captchaError: null
+            showSettings: false,
+            peerConfig: {
+                host: 'collab.bilup.org',
+                port: 443,
+                key: 'bilup',
+                path: '/',
+                secure: true
+            }
         };
 
         this.autoJoinAttempted = new Set();
         this.autoJoinInProgress = false;
-        this.autoJoinCaptchaPending = false;
         this._autoJoinTimer = null;
         this._lastAutoJoinAttempt = new Map();
         this._autoJoinFailures = new Map();
@@ -45,10 +49,6 @@ class CollaborationModal extends Component {
         this.handleRoomIdChange = this.handleRoomIdChange.bind(this);
         this.handleJoinRoom = this.handleJoinRoom.bind(this);
         this.handleCreateRoom = this.handleCreateRoom.bind(this);
-        this.openCaptchaModal = this.openCaptchaModal.bind(this);
-        this.closeCaptchaModal = this.closeCaptchaModal.bind(this);
-        this.handleCaptchaSuccess = this.handleCaptchaSuccess.bind(this);
-        this.handleCaptchaFail = this.handleCaptchaFail.bind(this);
         this.handleLeaveRoom = this.handleLeaveRoom.bind(this);
         this.handleKickUser = this.handleKickUser.bind(this);
         this.handleCopyRoomUrl = this.handleCopyRoomUrl.bind(this);
@@ -68,6 +68,14 @@ class CollaborationModal extends Component {
         this.handleCancelClick = this.handleCancelClick.bind(this);
         this.togglePublicPrivacy = this.togglePublicPrivacy.bind(this);
         this.togglePrivatePrivacy = this.togglePrivatePrivacy.bind(this);
+        this.handleShowSettings = this.handleShowSettings.bind(this);
+        this.handleCloseSettings = this.handleCloseSettings.bind(this);
+        this.handleHostChange = this.handleHostChange.bind(this);
+        this.handlePortChange = this.handlePortChange.bind(this);
+        this.handleKeyChange = this.handleKeyChange.bind(this);
+        this.handlePathChange = this.handlePathChange.bind(this);
+        this.handleSecureChange = this.handleSecureChange.bind(this);
+        this.handleSaveConfig = this.handleSaveConfig.bind(this);
     }
 
     componentDidMount () {
@@ -77,25 +85,27 @@ class CollaborationModal extends Component {
             currentUsername: this.props.currentUsername
         });
 
-        if (this.props.roomId && !this.props.isConnected && !this.autoJoinCaptchaPending) {
-            console.log('[COLLAB MODAL] URL join detected; opening captcha before auto join:', this.props.roomId);
-            this.autoJoinCaptchaPending = true;
-            this.setState({
-                activeCaptcha: 'auto',
-                captchaVerified: false,
-                captchaError: null
-            });
+        if (this.props.roomId && !this.props.isConnected && !this._autoJoinTimer && !this.autoJoinInProgress) {
+            console.log('[COLLAB MODAL] Auto-joining room from URL:', this.props.roomId);
+
+            const roomIdKey = `${this.props.roomId}-${this.props.currentUsername}`;
+            this.autoJoinAttempted.add(roomIdKey);
+            this.autoJoinInProgress = true;
+            this._autoJoinTimer = setTimeout(() => {
+                this._autoJoinTimer = null;
+                this.autoJoinInProgress = false;
+                this.attemptAutoJoin(this.props.roomId, this.props.currentUsername);
+            }, 100);
         }
 
-        if (typeof window !== 'undefined' && window.CollaborationService) {
+        if (CollaborationService) {
             try {
-                const service = window.CollaborationService.getInstance();
+                const service = CollaborationService.getInstance();
                 if (service) {
                     service.on('join-request-received', this.handleJoinRequestEvent);
                     service.on('awaiting-approval', this.handleAwaitingApproval);
                     service.on('approval-resolved', this.handleApprovalResolved);
                     service.on('join-denied', this.handleJoinDenied);
-                    service.on('connected-to-host', this.handleConnectedToHost);
                 }
             } catch (error) {
                 console.warn('Could not set up collaboration service event listeners:', error);
@@ -103,8 +113,7 @@ class CollaborationModal extends Component {
         }
     }
 
-    componentDidUpdate (prevProps, prevState) {
-
+    componentDidUpdate (prevProps) {
         if (prevProps.isConnected !== this.props.isConnected) {
             const newConnectionStep = this.props.isConnected ? 'connected' : 'join';
             this.setState({
@@ -142,20 +151,57 @@ class CollaborationModal extends Component {
             });
         }
 
-        if (prevProps.roomId !== this.props.roomId && this.props.roomId && !this.props.isConnected && !this.autoJoinCaptchaPending) {
-            console.log('[COLLAB MODAL] Room ID prop changed via URL; opening captcha before auto join:', this.props.roomId);
-            this.autoJoinCaptchaPending = true;
+        if (prevProps.roomId !== this.props.roomId && this.props.roomId && !this.props.isConnected) {
+            console.log('Room ID prop changed, updating local state:', this.props.roomId);
             this.setState({
-                roomId: this.props.roomId,
-                activeCaptcha: 'auto',
-                captchaVerified: false,
-                captchaError: null
+                roomId: this.props.roomId
             });
+
+            const roomIdKey = `${this.props.roomId}-${this.props.currentUsername}`;
+            const now = Date.now();
+            const lastAttempt = this._lastAutoJoinAttempt.get(roomIdKey) || 0;
+            const timeSinceLastAttempt = now - lastAttempt;
+            const cooldownPeriod = 30000;
+            const failureCount = this._autoJoinFailures.get(roomIdKey) || 0;
+            const hasNoPreviousRoomId = prevProps.roomId === null || prevProps.roomId === undefined;
+            const hasCurrentUsername = this.props.currentUsername != null;
+            const shouldAttemptAutoJoin =
+                hasNoPreviousRoomId &&
+                this.props.roomId &&
+                hasCurrentUsername &&
+                !this._autoJoinTimer &&
+                !this.autoJoinInProgress &&
+                timeSinceLastAttempt > cooldownPeriod &&
+                failureCount < 5;
+
+            if (shouldAttemptAutoJoin) {
+                console.log('Auto-joining room after prop update:', this.props.roomId);
+                this.autoJoinAttempted.add(roomIdKey);
+                this._lastAutoJoinAttempt.set(roomIdKey, now);
+                this.autoJoinInProgress = true;
+                this._autoJoinTimer = setTimeout(() => {
+                    this._autoJoinTimer = null;
+                    this.autoJoinInProgress = false;
+                    this.attemptAutoJoin(this.props.roomId, this.props.currentUsername);
+                }, 100);
+            } else if (failureCount >= 5) {
+                console.log(
+                    `[COLLAB MODAL] Too many consecutive failures (${failureCount}), skipping auto-join`
+                );
+                this.setState({
+                    error: 'Unable to connect to the room. Please try again later.',
+                    connectionStep: 'join'
+                });
+            } else if (timeSinceLastAttempt <= cooldownPeriod) {
+                const elapsedSeconds = Math.round(timeSinceLastAttempt / 1000);
+                const cooldownSeconds = cooldownPeriod / 1000;
+                console.log(`[COLLAB MODAL] Auto-join cooldown in effect (${elapsedSeconds}s / ${cooldownSeconds}s)`);
+            }
         }
 
-        if (this.props.visible && typeof window !== 'undefined' && window.CollaborationService) {
+        if (this.props.visible && CollaborationService) {
             try {
-                const service = window.CollaborationService.getInstance();
+                const service = CollaborationService.getInstance();
                 if (service && service.getPendingJoinRequests) {
                     const pendingRequests = service.getPendingJoinRequests();
                     const hasChanged =
@@ -172,15 +218,14 @@ class CollaborationModal extends Component {
     }
 
     componentWillUnmount () {
-        if (typeof window !== 'undefined' && window.CollaborationService) {
+        if (CollaborationService) {
             try {
-                const service = window.CollaborationService.getInstance();
+                const service = CollaborationService.getInstance();
                 if (service) {
                     service.off('join-request-received', this.handleJoinRequestEvent);
                     service.off('awaiting-approval', this.handleAwaitingApproval);
                     service.off('approval-resolved', this.handleApprovalResolved);
                     service.off('join-denied', this.handleJoinDenied);
-                    service.off('connected-to-host', this.handleConnectedToHost);
                 }
             } catch (error) {
                 console.warn('Could not clean up collaboration service event listeners:', error);
@@ -218,6 +263,121 @@ class CollaborationModal extends Component {
         this.handleChangeCurrentRoomPrivacy('private');
     }
 
+    handleShowSettings () {
+        if (typeof window !== 'undefined' && window.CollaborationService) {
+            try {
+                const service = window.CollaborationService.getInstance();
+                if (service && service.getPeerConfig) {
+                    const config = service.getPeerConfig();
+                    this.setState({
+                        showSettings: true,
+                        peerConfig: config
+                    });
+                    return;
+                }
+            } catch (error) {
+                console.warn('Could not get peer config:', error);
+            }
+        }
+        this.setState({showSettings: true});
+    }
+
+    handleCloseSettings () {
+        this.setState({showSettings: false});
+    }
+
+    handleHostChange (host) {
+        this.setState(prevState => ({
+            peerConfig: {
+                ...prevState.peerConfig,
+                host
+            }
+        }));
+    }
+
+    handlePortChange (port) {
+        const portNum = parseInt(port, 10);
+        this.setState(prevState => ({
+            peerConfig: {
+                ...prevState.peerConfig,
+                port: isNaN(portNum) ? port : portNum
+            }
+        }));
+    }
+
+    handleKeyChange (key) {
+        this.setState(prevState => ({
+            peerConfig: {
+                ...prevState.peerConfig,
+                key: key === '' ? undefined : key
+            }
+        }));
+    }
+
+    handlePathChange (path) {
+        this.setState(prevState => ({
+            peerConfig: {
+                ...prevState.peerConfig,
+                path
+            }
+        }));
+    }
+
+    handleSecureChange (secure) {
+        this.setState(prevState => ({
+            peerConfig: {
+                ...prevState.peerConfig,
+                secure
+            }
+        }));
+    }
+
+    handleSaveConfig () {
+        if (typeof window !== 'undefined' && window.CollaborationService) {
+            try {
+                const service = window.CollaborationService.getInstance();
+                if (service && service.updatePeerConfig) {
+                    service.updatePeerConfig(this.state.peerConfig);
+                    
+                    // Update URL collab parameter
+                    const {host, port, key, path, secure} = this.state.peerConfig;
+                    const peerConfig = {
+                        host,
+                        port,
+                        key: key === undefined ? '' : key,
+                        path,
+                        secure
+                    };
+                    const collabConfig = {peer: peerConfig};
+                    const encoded = encodeURIComponent(JSON.stringify(collabConfig));
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('collab', encoded);
+                    window.history.replaceState(null, null, url.toString());
+                    
+                    if (service.isConnected) {
+                        service.disconnect();
+                    }
+                    
+                    showAlert(this.props.intl, this.props.intl.formatMessage({
+                        defaultMessage: 'Configuration saved successfully!',
+                        description: 'Alert message when configuration is saved',
+                        id: 'gui.collaboration.configSaved'
+                    }));
+                    this.setState({showSettings: false});
+                    return;
+                }
+            } catch (error) {
+                console.error('Failed to save configuration:', error);
+                showAlert(this.props.intl, this.props.intl.formatMessage({
+                    defaultMessage: 'Failed to save configuration',
+                    description: 'Alert message when configuration save fails',
+                    id: 'gui.collaboration.configSaveFailed'
+                }));
+            }
+        }
+        this.setState({showSettings: false});
+    }
+
     handleRoomIdChange (roomId) {
         this.setState({roomId});
     }
@@ -228,101 +388,49 @@ class CollaborationModal extends Component {
             return;
         }
 
-        this.openCaptchaModal('join');
+        this.setState({
+            isConnecting: true,
+            connectionStep: 'connecting',
+            error: null
+        });
+
+        try {
+            await this.props.onJoinRoom(this.state.roomId.trim(), this.props.currentUsername);
+        } catch (error) {
+            this.setState({
+                error: error.message || 'Failed to join room',
+                isConnecting: false,
+                connectionStep: 'join'
+            });
+        }
     }
 
     async handleCreateRoom () {
-        this.openCaptchaModal('create');
-    }
-
-    openCaptchaModal (type) {
-        this.setState({
-            activeCaptcha: type,
-            captchaVerified: false,
-            captchaError: null
-        });
-    }
-
-    closeCaptchaModal () {
-        this.setState({
-            activeCaptcha: null,
-            captchaVerified: false,
-            captchaError: null
-        });
-    }
-
-    handleCaptchaSuccess () {
-        const actionType = this.state.activeCaptcha;
-        if (actionType === 'join') {
-            this.performJoinRoom();
-        } else if (actionType === 'create') {
-            this.performCreateRoom();
-        } else if (actionType === 'auto') {
-            this.performAutoJoin();
-        }
-    }
-
-    handleCaptchaFail () {
-        this.setState({
-            captchaError: 'Verification failed. Please try again.'
-        });
-    }
-
-    async performJoinRoom () {
-        const roomId = this.state.roomId.trim();
-        const username = this.props.currentUsername;
-
-        this.closeCaptchaModal();
-        this.setState({
-            isConnecting: true,
-            connectionStep: 'connecting',
-            error: null,
-            captchaVerified: false
-        });
-
-        try {
-            await this.props.onJoinRoom(roomId, username);
-            // 桌面应用不更新浏览器历史记录
-            this.setState({ roomId });
-        } catch (error) {
-            console.error('Failed to join room:', error);
-            this.setState({
-                error: `Failed to join room: ${error.message || 'Unknown error'}`,
-                isConnecting: false,
-                connectionStep: 'join'
-            });
-        }
-    }
-
-    async performCreateRoom () {
         const roomCode = this.generateRoomCode();
-        const username = this.props.currentUsername;
 
-        this.closeCaptchaModal();
         this.setState({
             isConnecting: true,
             connectionStep: 'connecting',
-            error: null,
-            captchaVerified: false
+            error: null
         });
 
         try {
-            await this.props.onCreateRoom(roomCode, username, 'public');
-            // 桌面应用不更新浏览器历史记录
-            this.setState({ roomId: roomCode });
+            await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'public');
+
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('room', roomCode);
+            currentUrl.searchParams.delete('username');
+            window.history.replaceState(null, null, currentUrl.toString());
+
+            this.setState({roomId: roomCode});
+
         } catch (error) {
-            console.error('Failed to create room:', error);
             this.setState({
-                error: `Failed to create room: ${error.message || 'Unknown error'}`,
+                error: error.message || 'Failed to create room',
                 isConnecting: false,
                 connectionStep: 'join'
             });
         }
-    }
-
-    performAutoJoin () {
-        this.closeCaptchaModal();
-        this.attemptAutoJoin(this.props.roomId, this.props.currentUsername);
     }
 
     handleLeaveRoom () {
@@ -339,12 +447,22 @@ class CollaborationModal extends Component {
     }
 
     handleCopyRoomUrl () {
-        const roomUrl = `https://remixwarp.pages.dev/editor.html?room=${this.props.roomId}`;
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('room', this.props.roomId);
+        currentUrl.searchParams.delete('username');
+        const roomUrl = currentUrl.toString();
 
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(roomUrl).then(() => {
                 console.log('Room URL copied to clipboard');
-                showAlert('Room URL copied to clipboard!');
+                NotificationSystem.info(
+                    this.props.intl.formatMessage({
+                        id: 'gui.collaboration.urlCopied',
+                        defaultMessage: '已复制到剪贴板',
+                        description: 'Notification when room URL is copied to clipboard'
+                    }),
+                    3000
+                );
             })
                 .catch(err => {
                     console.error('Failed to copy room URL:', err);
@@ -369,7 +487,14 @@ class CollaborationModal extends Component {
             const successful = document.execCommand('copy');
             if (successful) {
                 console.log('Room URL copied to clipboard (fallback)');
-                showAlert('Room URL copied to clipboard!');
+                NotificationSystem.info(
+                    this.props.intl.formatMessage({
+                        id: 'gui.collaboration.urlCopied',
+                        defaultMessage: '已复制到剪贴板',
+                        description: 'Notification when room URL is copied to clipboard'
+                    }),
+                    3000
+                );
             } else {
                 console.warn('Fallback copy failed');
                 this.showUrlPrompt(text);
@@ -384,8 +509,13 @@ class CollaborationModal extends Component {
 
     showUrlPrompt (text) {
         console.log('Room URL:', text);
-        showAlert(
-            'Could not copy room URL to clipboard. The URL has been logged to the console for manual copying.'
+        NotificationSystem.error(
+            this.props.intl.formatMessage({
+                id: 'gui.collaboration.copyFailed',
+                defaultMessage: '无法复制到剪贴板，请手动复制链接',
+                description: 'Notification when room URL copy fails'
+            }),
+            5000
         );
     }
 
@@ -448,8 +578,10 @@ class CollaborationModal extends Component {
 
             try {
                 console.log(`Auto-creating room "${roomCode}" since it doesn't exist`);
-                await this.props.onCreateRoom(roomCode, username, 'public');
+                await this.props.onCreateRoom(roomCode, username);
                 console.log(`Successfully created room "${roomCode}"`);
+
+                this._autoJoinFailures.delete(roomIdKey);
             } catch (createError) {
                 console.error(`Failed to create room "${roomCode}":`, createError.message);
 
@@ -471,8 +603,6 @@ class CollaborationModal extends Component {
             }
         }
     }
-
-
 
 
     async handleApproveRequest (requesterId, requesterUsername) {
@@ -504,9 +634,9 @@ class CollaborationModal extends Component {
             this.props.onCancelJoinRequest();
         }
 
-        if (typeof window !== 'undefined' && window.CollaborationService) {
+        if (CollaborationService) {
             try {
-                const service = window.CollaborationService.getInstance();
+                const service = CollaborationService.getInstance();
                 if (service) {
                     service.disconnect();
                 }
@@ -556,19 +686,6 @@ class CollaborationModal extends Component {
         });
     }
 
-    handleConnectedToHost () {
-        console.log('[COLLAB MODAL] Connected to host', {
-            isConnected: this.props.isConnected,
-            connectionStep: this.state.connectionStep
-        });
-
-        this.setState({
-            connectionStep: 'connected',
-            isConnecting: false,
-            error: null
-        });
-    }
-
     async handleChangeCurrentRoomPrivacy (newPrivacy) {
         try {
             await this.props.onChangeRoomPrivacy(newPrivacy);
@@ -580,9 +697,9 @@ class CollaborationModal extends Component {
 
     handleJoinRequestEvent (data) {
         console.log('[COLLAB MODAL] Join request event received:', data);
-        if (typeof window !== 'undefined' && window.CollaborationService) {
+        if (CollaborationService) {
             try {
-                const service = window.CollaborationService.getInstance();
+                const service = CollaborationService.getInstance();
                 if (service && service.getPendingJoinRequests) {
                     const pendingRequests = service.getPendingJoinRequests();
                     console.log('[COLLAB MODAL] Updated pending requests:', pendingRequests);
@@ -594,29 +711,35 @@ class CollaborationModal extends Component {
         }
     }
 
+    renderAlphaBanner () {
+        return (
+            <div className={styles.alphaBanner}>
+                <div className={styles.bannerIcon}>
+                    <AlertTriangle size={16} />
+                </div>
+                <div className={styles.bannerContent}>
+                    <strong>
+                        <FormattedMessage
+                            defaultMessage="Alpha Warning:"
+                            description="Alpha warning label"
+                            id="gui.collaboration.alphaWarningLabel"
+                        />
+                    </strong>
+                    {' '}
+                    <FormattedMessage
+                        defaultMessage="This feature is in early development. Your projects may get corrupted or broken. Use at your own risk."
+                        description="Alpha warning message"
+                        id="gui.collaboration.alphaWarningMessage"
+                    />
+                </div>
+            </div>
+        );
+    }
+
     renderJoinStep () {
         return (
             <Box className={styles.content}>
-                <div className={styles.alphaBanner}>
-                    <div className={styles.bannerIcon}>
-                        <AlertTriangle size={20} />
-                    </div>
-                    <div className={styles.bannerContent}>
-                        <strong>
-                            <FormattedMessage
-                                defaultMessage="Alpha Warning:"
-                                description="Alpha warning label"
-                                id="gui.collaboration.alphaWarningLabel"
-                            />
-                        </strong>
-                        {' '}
-                        <FormattedMessage
-                            defaultMessage="This feature is in early development. Your projects may get corrupted or broken. Use at your own risk."
-                            description="Alpha warning message"
-                            id="gui.collaboration.alphaWarningMessage"
-                        />
-                    </div>
-                </div>
+                {this.renderAlphaBanner()}
 
                 <div className={styles.header}>
                     <CollaborationIcon
@@ -630,6 +753,17 @@ class CollaborationModal extends Component {
                             id="gui.collaboration.title"
                         />
                     </div>
+                    <button
+                        className={styles.settingsButton}
+                        onClick={this.handleShowSettings}
+                        title={this.props.intl.formatMessage({
+                            defaultMessage: 'Connection settings',
+                            description: 'Tooltip for settings button',
+                            id: 'gui.collaboration.settingsButtonTitle'
+                        })}
+                    >
+                        <Settings size={20} />
+                    </button>
                 </div>
 
                 <div className={styles.description}>
@@ -692,6 +826,18 @@ class CollaborationModal extends Component {
                                 {this.state.error}
                             </div>
                         )}
+                        <div className={styles.privacyNotice}>
+                            <div className={styles.privacyNoticeIcon}>
+                                <AlertTriangle size={14} />
+                            </div>
+                            <div>
+                                <FormattedMessage
+                                    defaultMessage="The host can see your IP address. Other members cannot."
+                                    description="Privacy notice shown before joining a collaboration room"
+                                    id="gui.collaboration.joinPrivacyNotice"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className={styles.sectionDivider} />
@@ -722,61 +868,28 @@ class CollaborationModal extends Component {
                                 id="gui.collaboration.createRoom"
                             />
                         </Button>
+                        <div className={styles.privacyNotice}>
+                            <div className={styles.privacyNoticeIcon}>
+                                <AlertTriangle size={14} />
+                            </div>
+                            <div>
+                                <FormattedMessage
+                                    defaultMessage="People who join can see your IP address, and you theirs."
+                                    description="Privacy notice shown before hosting a collaboration room"
+                                    id="gui.collaboration.hostPrivacyNotice"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </Box>
         );
     }
 
-    renderCaptchaModal () {
-        if (!this.state.activeCaptcha) return null;
-
-        return (
-            <div className={styles.captchaOverlay}>
-                <div className={styles.captchaContainer}>
-                    <TurnstileVerifier
-                        title="人机验证"
-                        description={
-                            <>请完成下方验证以使用团队协作功能<br />验证有效期为30分钟</>
-                        }
-                        onSuccess={this.handleCaptchaSuccess}
-                    />
-                    <div style={{marginTop: '12px', textAlign: 'center'}}>
-                        <Button
-                            className={styles.secondaryButton}
-                            onClick={this.closeCaptchaModal}
-                        >
-                            取消
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     renderConnectingStep () {
         return (
             <Box className={styles.content}>
-                <div className={styles.alphaBanner}>
-                    <div className={styles.bannerIcon}>
-                        <AlertTriangle size={20} />
-                    </div>
-                    <div className={styles.bannerContent}>
-                        <strong>
-                            <FormattedMessage
-                                defaultMessage="Alpha Warning:"
-                                description="Alpha warning label"
-                                id="gui.collaboration.alphaWarningLabel"
-                            />
-                        </strong>
-                        {' '}
-                        <FormattedMessage
-                            defaultMessage="This feature is in early development. Your projects may get corrupted or broken. Use at your own risk."
-                            description="Alpha warning message"
-                            id="gui.collaboration.alphaWarningMessage"
-                        />
-                    </div>
-                </div>
+                {this.renderAlphaBanner()}
                 <div className={styles.connecting}>
                     <div className={styles.spinner} />
                     <FormattedMessage
@@ -808,26 +921,7 @@ class CollaborationModal extends Component {
 
         return (
             <Box className={styles.content}>
-                <div className={styles.alphaBanner}>
-                    <div className={styles.bannerIcon}>
-                        <AlertTriangle size={20} />
-                    </div>
-                    <div className={styles.bannerContent}>
-                        <strong>
-                            <FormattedMessage
-                                defaultMessage="Alpha Warning:"
-                                description="Alpha warning label"
-                                id="gui.collaboration.alphaWarningLabel"
-                            />
-                        </strong>
-                        {' '}
-                        <FormattedMessage
-                            defaultMessage="This feature is in early development. Your projects may get corrupted or broken. Use at your own risk."
-                            description="Alpha warning message"
-                            id="gui.collaboration.alphaWarningMessage"
-                        />
-                    </div>
-                </div>
+                {this.renderAlphaBanner()}
 
                 <div className={styles.header}>
                     <CollaborationIcon
@@ -917,11 +1011,20 @@ class CollaborationModal extends Component {
                             ))}
                         </div>
                     </div>
+                    <h4>
+                        <FormattedMessage
+                            defaultMessage="Press {shortcut} to chat while collaborating"
+                            description="Chat hint"
+                            id="gui.collaboration.chatHint"
+                            values={{
+                                shortcut: this.props.customShortcuts?.collaborationChat || '/'
+                            }}
+                        />
+                    </h4>
                 </div>
 
                 {isHost && this.state.pendingRequests.length > 0 && (
                     <>
-                        <div className={styles.sectionDivider} />
                         <div className={styles.requestsSection}>
                             <h3 className={styles.sectionTitle}>
                                 <FormattedMessage
@@ -975,87 +1078,67 @@ class CollaborationModal extends Component {
                 )}
 
                 {isHost && (
-                    <>
-                        <div className={styles.sectionDivider} />
-                        <div className={styles.privacySection}>
-                            <h3 className={styles.sectionTitle}>
-                                <FormattedMessage
-                                    defaultMessage="Room Privacy"
-                                    description="Room privacy section title"
-                                    id="gui.collaboration.roomPrivacySettings"
-                                />
-                            </h3>
+                    <div className={styles.privacySection}>
+                        <h3 className={styles.sectionTitle}>
+                            <FormattedMessage
+                                defaultMessage="Room Privacy"
+                                description="Room privacy section title"
+                                id="gui.collaboration.roomPrivacySettings"
+                            />
+                        </h3>
 
-                            {this.props.roomPrivacy === 'public' ? (
-                                <div className={styles.privacyCard}>
-                                    <div className={styles.privacyCardTitle}>
-                                        <FormattedMessage
-                                            defaultMessage="Public Room"
-                                            description="Public room card title"
-                                            id="gui.collaboration.publicRoom"
-                                        />
-                                    </div>
-                                    <div className={styles.privacyCardDesc}>
-                                        <FormattedMessage
-                                            defaultMessage="Anyone can join this room without approval"
-                                            description="Public room explanation"
-                                            id="gui.collaboration.publicRoomDesc"
-                                        />
-                                    </div>
-                                </div>
-                            ) : null}
-
-                            {this.props.roomPrivacy === 'private' ? (
-                                <div className={classNames(styles.privacyCard, styles.private)}>
-                                    <div className={styles.privacyCardTitle}>
-                                        <FormattedMessage
-                                            defaultMessage="Private Room"
-                                            description="Private room card title"
-                                            id="gui.collaboration.privateRoom"
-                                        />
-                                    </div>
-                                    <div className={styles.privacyCardDesc}>
-                                        <FormattedMessage
-                                            defaultMessage="Users must request approval to join this room"
-                                            description="Private room explanation"
-                                            id="gui.collaboration.privateRoomDesc"
-                                        />
-                                    </div>
-                                </div>
-                            ) : null}
-
-                            <div className={styles.privacySelector}>
-                                <label className={styles.radioLabel}>
-                                    <FancyCheckbox
-                                        className={styles.checkbox}
-                                        checked={this.props.roomPrivacy === 'public'}
-                                        onChange={this.togglePublicPrivacy}
+                        <div
+                            className={styles.privacySelector}
+                            role="radiogroup"
+                        >
+                            <button
+                                className={classNames(styles.privacyOption, {
+                                    [styles.privacyOptionActive]: this.props.roomPrivacy === 'public'
+                                })}
+                                role="radio"
+                                aria-checked={this.props.roomPrivacy === 'public'}
+                                onClick={this.togglePublicPrivacy}
+                            >
+                                <div className={styles.privacyCardTitle}>
+                                    <FormattedMessage
+                                        defaultMessage="Public Room"
+                                        description="Public room card title"
+                                        id="gui.collaboration.publicRoom"
                                     />
-                                    <span className={styles.radioText}>
-                                        <FormattedMessage
-                                            defaultMessage="Make Public"
-                                            description="Make public room option"
-                                            id="gui.collaboration.makePublic"
-                                        />
-                                    </span>
-                                </label>
-                                <label className={styles.radioLabel}>
-                                    <FancyCheckbox
-                                        className={styles.checkbox}
-                                        checked={this.props.roomPrivacy === 'private'}
-                                        onChange={this.togglePrivatePrivacy}
+                                </div>
+                                <div className={styles.privacyCardDesc}>
+                                    <FormattedMessage
+                                        defaultMessage="Anyone can join this room without approval"
+                                        description="Public room explanation"
+                                        id="gui.collaboration.publicRoomDesc"
                                     />
-                                    <span className={styles.radioText}>
-                                        <FormattedMessage
-                                            defaultMessage="Make Private"
-                                            description="Make private room option"
-                                            id="gui.collaboration.makePrivate"
-                                        />
-                                    </span>
-                                </label>
-                            </div>
+                                </div>
+                            </button>
+                            <button
+                                className={classNames(styles.privacyOption, {
+                                    [styles.privacyOptionActive]: this.props.roomPrivacy === 'private'
+                                })}
+                                role="radio"
+                                aria-checked={this.props.roomPrivacy === 'private'}
+                                onClick={this.togglePrivatePrivacy}
+                            >
+                                <div className={styles.privacyCardTitle}>
+                                    <FormattedMessage
+                                        defaultMessage="Private Room"
+                                        description="Private room card title"
+                                        id="gui.collaboration.privateRoom"
+                                    />
+                                </div>
+                                <div className={styles.privacyCardDesc}>
+                                    <FormattedMessage
+                                        defaultMessage="Users must request approval to join this room"
+                                        description="Private room explanation"
+                                        id="gui.collaboration.privateRoomDesc"
+                                    />
+                                </div>
+                            </button>
                         </div>
-                    </>
+                    </div>
                 )}
 
                 <div className={styles.connectedActions}>
@@ -1092,26 +1175,7 @@ class CollaborationModal extends Component {
     renderPendingApprovalStep () {
         return (
             <Box className={styles.content}>
-                <div className={styles.alphaBanner}>
-                    <div className={styles.bannerIcon}>
-                        <AlertTriangle size={20} />
-                    </div>
-                    <div className={styles.bannerContent}>
-                        <strong>
-                            <FormattedMessage
-                                defaultMessage="Alpha Warning:"
-                                description="Alpha warning label"
-                                id="gui.collaboration.alphaWarningLabel"
-                            />
-                        </strong>
-                        {' '}
-                        <FormattedMessage
-                            defaultMessage="This feature is in early development. Your projects may get corrupted or broken. Use at your own risk."
-                            description="Alpha warning message"
-                            id="gui.collaboration.alphaWarningMessage"
-                        />
-                    </div>
-                </div>
+                {this.renderAlphaBanner()}
                 <div className={styles.header}>
                     <CollaborationIcon
                         className={styles.headerIcon}
@@ -1156,23 +1220,208 @@ class CollaborationModal extends Component {
         );
     }
 
+    renderSettingsStep () {
+        return (
+            <Box className={styles.content}>
+                <div className={styles.alphaBanner}>
+                    <div className={styles.bannerIcon}>
+                        <AlertTriangle size={20} />
+                    </div>
+                    <div className={styles.bannerContent}>
+                        <strong>
+                            <FormattedMessage
+                                defaultMessage="Alpha Warning:"
+                                description="Alpha warning label"
+                                id="gui.collaboration.alphaWarningLabel"
+                            />
+                        </strong>
+                        {' '}
+                        <FormattedMessage
+                            defaultMessage="This feature is in early development. Your projects may get corrupted or broken. Use at your own risk."
+                            description="Alpha warning message"
+                            id="gui.collaboration.alphaWarningMessage"
+                        />
+                    </div>
+                </div>
+
+                <div className={styles.header}>
+                    <Settings
+                        className={styles.headerIcon}
+                        draggable={false}
+                    />
+                    <div className={styles.headerText}>
+                        <FormattedMessage
+                            defaultMessage="Connection Settings"
+                            description="Title for settings modal"
+                            id="gui.collaboration.settingsTitle"
+                        />
+                    </div>
+                    <button
+                        className={styles.closeButton}
+                        onClick={this.handleCloseSettings}
+                        title={this.props.intl.formatMessage({
+                            defaultMessage: 'Close settings',
+                            description: 'Tooltip for close button',
+                            id: 'gui.collaboration.closeSettingsTitle'
+                        })}
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className={styles.settingsSection}>
+                    <h3 className={styles.sectionTitle}>
+                        <FormattedMessage
+                            defaultMessage="PeerJS Server Configuration"
+                            description="Settings section title"
+                            id="gui.collaboration.peerServerConfig"
+                        />
+                    </h3>
+
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label}>
+                            <FormattedMessage
+                                defaultMessage="Host"
+                                description="Label for peer server host input"
+                                id="gui.collaboration.peerHost"
+                            />
+                        </label>
+                        <BufferedInput
+                            className={styles.input}
+                            placeholder={this.props.intl.formatMessage({
+                                defaultMessage: 'Enter host address...',
+                                description: 'Placeholder for host input',
+                                id: 'gui.collaboration.peerHostPlaceholder'
+                            })}
+                            value={this.state.peerConfig.host}
+                            onSubmit={this.handleHostChange}
+                        />
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label}>
+                            <FormattedMessage
+                                defaultMessage="Port"
+                                description="Label for peer server port input"
+                                id="gui.collaboration.peerPort"
+                            />
+                        </label>
+                        <BufferedInput
+                            className={styles.input}
+                            placeholder={this.props.intl.formatMessage({
+                                defaultMessage: 'Enter port number...',
+                                description: 'Placeholder for port input',
+                                id: 'gui.collaboration.peerPortPlaceholder'
+                            })}
+                            value={this.state.peerConfig.port}
+                            onSubmit={this.handlePortChange}
+                        />
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label}>
+                            <FormattedMessage
+                                defaultMessage="Key"
+                                description="Label for peer server key input"
+                                id="gui.collaboration.peerKey"
+                            />
+                        </label>
+                        <BufferedInput
+                            className={styles.input}
+                            placeholder={this.props.intl.formatMessage({
+                                defaultMessage: 'Enter API key...',
+                                description: 'Placeholder for key input',
+                                id: 'gui.collaboration.peerKeyPlaceholder'
+                            })}
+                            value={this.state.peerConfig.key}
+                            onSubmit={this.handleKeyChange}
+                        />
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label}>
+                            <FormattedMessage
+                                defaultMessage="Path"
+                                description="Label for peer server path input"
+                                id="gui.collaboration.peerPath"
+                            />
+                        </label>
+                        <BufferedInput
+                            className={styles.input}
+                            placeholder={this.props.intl.formatMessage({
+                                defaultMessage: 'Enter path...',
+                                description: 'Placeholder for path input',
+                                id: 'gui.collaboration.peerPathPlaceholder'
+                            })}
+                            value={this.state.peerConfig.path}
+                            onSubmit={this.handlePathChange}
+                        />
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                        <label className={styles.checkboxLabel}>
+                            <input
+                                type="checkbox"
+                                checked={this.state.peerConfig.secure}
+                                onChange={e => this.handleSecureChange(e.target.checked)}
+                                className={styles.checkbox}
+                            />
+                            <FormattedMessage
+                                defaultMessage="Secure (HTTPS/WSS)"
+                                description="Label for secure connection checkbox"
+                                id="gui.collaboration.peerSecure"
+                            />
+                        </label>
+                    </div>
+                </div>
+
+                <div className={styles.settingsActions}>
+                    <Button
+                        className={styles.secondaryButton}
+                        onClick={this.handleCloseSettings}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Cancel"
+                            description="Cancel settings button"
+                            id="gui.collaboration.cancelSettings"
+                        />
+                    </Button>
+                    <Button
+                        className={styles.primaryButton}
+                        onClick={this.handleSaveConfig}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Save Settings"
+                            description="Save settings button"
+                            id="gui.collaboration.saveSettings"
+                        />
+                    </Button>
+                </div>
+            </Box>
+        );
+    }
+
     render () {
         let content;
-        switch (this.state.connectionStep) {
-        case 'join':
-            content = this.renderJoinStep();
-            break;
-        case 'connecting':
-            content = this.renderConnectingStep();
-            break;
-        case 'connected':
-            content = this.renderConnectedStep();
-            break;
-        case 'pending-approval':
-            content = this.renderPendingApprovalStep();
-            break;
-        default:
-            content = this.renderJoinStep();
+        if (this.state.showSettings) {
+            content = this.renderSettingsStep();
+        } else {
+            switch (this.state.connectionStep) {
+            case 'join':
+                content = this.renderJoinStep();
+                break;
+            case 'connecting':
+                content = this.renderConnectingStep();
+                break;
+            case 'connected':
+                content = this.renderConnectedStep();
+                break;
+            case 'pending-approval':
+                content = this.renderPendingApprovalStep();
+                break;
+            default:
+                content = this.renderJoinStep();
+            }
         }
 
         return (
@@ -1192,7 +1441,6 @@ class CollaborationModal extends Component {
             >
                 <Box className={styles.body}>
                     {content}
-                    {this.renderCaptchaModal()}
                 </Box>
             </Modal>
         );

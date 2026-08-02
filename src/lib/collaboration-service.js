@@ -62,7 +62,7 @@ import {
     bindViewportSyncListeners as bindViewportSyncListenersExternal,
     unbindViewportSyncListeners as unbindViewportSyncListenersExternal
 } from './collaboration/cursor-sync.js';
-import {APPNAME} from './constants/brand.js';
+import {APP_NAME as APPNAME} from './constants/brand.js';
 
 let collaborationServiceInstance = null;
 
@@ -91,6 +91,7 @@ class CollaborationService {
         this.roomPrivacy = 'public';
         this.pendingJoinRequests = new Map();
         this.isDisconnecting = false;
+        this.joinRequestDenied = false;
         this.connectionTimeout = null;
         this.seenEventIds = new Set();
         this.seenEventTimestamps = new Map();
@@ -109,6 +110,8 @@ class CollaborationService {
         this._lastHostSyncRequestHandledAt = 0;
         this._hostSyncRequestCooldownMs = 1000;
         this._state = 'IDLE';
+        this.translations = {};
+        this.customShortcuts = null;
         this._cleanupInterval = setInterval(() => {
             if (this.seenEventIds.size > 100) {
                 const now = Date.now();
@@ -129,6 +132,7 @@ class CollaborationService {
 
         this.peerConfig = {
             host: 'collab.bilup.org',
+            port: 443,
             key: 'bilup',
             path: '/',
             secure: true,
@@ -183,16 +187,7 @@ class CollaborationService {
             'host-loading-start': this.handleHostLoadingStart.bind(this),
             'host-loading-progress': this.handleHostLoadingProgress.bind(this),
             'host-loading-complete': this.handleHostLoadingComplete.bind(this),
-            'sprite-info-changed': this.handleSpriteInfoChanged.bind(this),
-            'shared-backpack-create': this.handleSharedBackpackCreate.bind(this),
-            'shared-backpack-update': this.handleSharedBackpackUpdate.bind(this),
-            'shared-backpack-delete': this.handleSharedBackpackDelete.bind(this),
-            'shared-backpack-item-add': this.handleSharedBackpackItemAdd.bind(this),
-            'shared-backpack-item-remove': this.handleSharedBackpackItemRemove.bind(this),
-            'shared-backpack-item-update': this.handleSharedBackpackItemUpdate.bind(this),
-            'shared-backpack-member-add': this.handleSharedBackpackMemberAdd.bind(this),
-            'shared-backpack-member-remove': this.handleSharedBackpackMemberRemove.bind(this),
-            'shared-backpack-member-update': this.handleSharedBackpackMemberUpdate.bind(this)
+            'sprite-info-changed': this.handleSpriteInfoChanged.bind(this)
         };
     }
 
@@ -243,6 +238,18 @@ class CollaborationService {
 
     shouldSuppressEvents () {
         return this.isSyncOperation || this.isApplyingRemoteChange || this.isLoadingProject || this.isSwitchingTarget;
+    }
+
+    beginApplyingRemoteChange () {
+        this._applyingRemoteChangeCount++;
+        this.isApplyingRemoteChange = true;
+    }
+
+    endApplyingRemoteChange () {
+        this._applyingRemoteChangeCount = Math.max(0, this._applyingRemoteChangeCount - 1);
+        if (this._applyingRemoteChangeCount === 0) {
+            this.isApplyingRemoteChange = false;
+        }
     }
 
     init (vm) {
@@ -412,7 +419,7 @@ class CollaborationService {
         if (payload.sender === this.peer.id) return;
 
         const extensionManager = this.vm.extensionManager;
-        this.isApplyingRemoteChange = true;
+        this.beginApplyingRemoteChange();
 
         const loadExtension = async () => {
             try {
@@ -439,7 +446,7 @@ class CollaborationService {
                 // ignore
             } finally {
                 setTimeout(() => {
-                    this.isApplyingRemoteChange = false;
+                    this.endApplyingRemoteChange();
                 }, 100);
             }
         };
@@ -677,21 +684,24 @@ class CollaborationService {
         if (!this.vm || !this.vm.runtime) return;
         if (payload.sender === this.peer.id) return;
 
-        this.isApplyingRemoteChange = true;
+        this.beginApplyingRemoteChange();
 
-        const updates = payload.updates || [];
-        updates.forEach(update => {
-            const targetId = this.isHost ? update.targetId : (this.targetMapping[update.targetId] || update.targetId);
-            const target = this.vm.runtime.getTargetById(targetId);
-            if (target) {
-                if ('x' in update && 'y' in update) target.setXY(update.x, update.y);
-                if ('direction' in update) target.setDirection(update.direction);
-                if ('size' in update) target.setSize(update.size);
-                if ('visible' in update) target.setVisible(update.visible);
-            }
-        });
-
-        this.isApplyingRemoteChange = false;
+        try {
+            const updates = payload.updates || [];
+            updates.forEach(update => {
+                const mappedId = this.targetMapping[update.targetId] || update.targetId;
+                const targetId = this.isHost ? update.targetId : mappedId;
+                const target = this.vm.runtime.getTargetById(targetId);
+                if (target) {
+                    if ('x' in update && 'y' in update) target.setXY(update.x, update.y);
+                    if ('direction' in update) target.setDirection(update.direction);
+                    if ('size' in update) target.setSize(update.size);
+                    if ('visible' in update) target.setVisible(update.visible);
+                }
+            });
+        } finally {
+            this.endApplyingRemoteChange();
+        }
 
         if (this.isHost) {
             this.connections.forEach(connection => {
@@ -1036,6 +1046,7 @@ class CollaborationService {
         this.roomPrivacy = 'public';
         this.hostId = null;
         this.wasKicked = false;
+        this.joinRequestDenied = false;
         this.currentConnectionFailureHandler = null;
         this.targetMapping = {};
         this.isSyncOperation = false;
@@ -1287,14 +1298,14 @@ class CollaborationService {
         const targetName = payload.targetName;
         if (!targetName) return;
 
-        const target = this.vm.runtime.targets.find(t => t.sprite.name === targetName && !t.isStage && t.isOriginal !== false);
+        const target = this.vm.runtime.targets.find(t => t.sprite.name === targetName && !t.isStage && t.isOriginal);
         if (!target) {
             console.warn('[Collab] Target not found for name:', targetName);
             return;
         }
         if (target.isStage) return;
 
-        this.isApplyingRemoteChange = true;
+        this.beginApplyingRemoteChange();
 
         const changedProps = payload.changedProps || {};
         
@@ -1310,185 +1321,13 @@ class CollaborationService {
         if ('visible' in changedProps) target.setVisible(changedProps.visible);
         if ('rotationStyle' in changedProps) target.setRotationStyle(changedProps.rotationStyle);
 
-        this.isApplyingRemoteChange = false;
+        this.endApplyingRemoteChange();
 
         if (this.isHost && payload.sender !== this.peer.id) {
             this.connections.forEach(connection => {
                 if (connection !== conn && connection.open) {
                     connection.send({
                         type: 'sprite-info-changed',
-                        payload,
-                        sender: payload.sender,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
-    }
-
-    // 共享书包事件处理方法
-    handleSharedBackpackCreate (payload, conn) {
-        if (payload.sender === this.peer.id) return;
-        
-        this.emit('shared-backpack-created', payload);
-        
-        if (this.isHost && payload.sender !== this.peer.id) {
-            this.connections.forEach(connection => {
-                if (connection !== conn && connection.open) {
-                    connection.send({
-                        type: 'shared-backpack-create',
-                        payload,
-                        sender: payload.sender,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
-    }
-
-    handleSharedBackpackUpdate (payload, conn) {
-        if (payload.sender === this.peer.id) return;
-        
-        this.emit('shared-backpack-updated', payload);
-        
-        if (this.isHost && payload.sender !== this.peer.id) {
-            this.connections.forEach(connection => {
-                if (connection !== conn && connection.open) {
-                    connection.send({
-                        type: 'shared-backpack-update',
-                        payload,
-                        sender: payload.sender,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
-    }
-
-    handleSharedBackpackDelete (payload, conn) {
-        if (payload.sender === this.peer.id) return;
-        
-        this.emit('shared-backpack-deleted', payload);
-        
-        if (this.isHost && payload.sender !== this.peer.id) {
-            this.connections.forEach(connection => {
-                if (connection !== conn && connection.open) {
-                    connection.send({
-                        type: 'shared-backpack-delete',
-                        payload,
-                        sender: payload.sender,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
-    }
-
-    handleSharedBackpackItemAdd (payload, conn) {
-        if (payload.sender === this.peer.id) return;
-        
-        this.emit('shared-backpack-item-added', payload);
-        
-        if (this.isHost && payload.sender !== this.peer.id) {
-            this.connections.forEach(connection => {
-                if (connection !== conn && connection.open) {
-                    connection.send({
-                        type: 'shared-backpack-item-add',
-                        payload,
-                        sender: payload.sender,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
-    }
-
-    handleSharedBackpackItemRemove (payload, conn) {
-        if (payload.sender === this.peer.id) return;
-        
-        this.emit('shared-backpack-item-removed', payload);
-        
-        if (this.isHost && payload.sender !== this.peer.id) {
-            this.connections.forEach(connection => {
-                if (connection !== conn && connection.open) {
-                    connection.send({
-                        type: 'shared-backpack-item-remove',
-                        payload,
-                        sender: payload.sender,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
-    }
-
-    handleSharedBackpackItemUpdate (payload, conn) {
-        if (payload.sender === this.peer.id) return;
-        
-        this.emit('shared-backpack-item-updated', payload);
-        
-        if (this.isHost && payload.sender !== this.peer.id) {
-            this.connections.forEach(connection => {
-                if (connection !== conn && connection.open) {
-                    connection.send({
-                        type: 'shared-backpack-item-update',
-                        payload,
-                        sender: payload.sender,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
-    }
-
-    handleSharedBackpackMemberAdd (payload, conn) {
-        if (payload.sender === this.peer.id) return;
-        
-        this.emit('shared-backpack-member-added', payload);
-        
-        if (this.isHost && payload.sender !== this.peer.id) {
-            this.connections.forEach(connection => {
-                if (connection !== conn && connection.open) {
-                    connection.send({
-                        type: 'shared-backpack-member-add',
-                        payload,
-                        sender: payload.sender,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
-    }
-
-    handleSharedBackpackMemberRemove (payload, conn) {
-        if (payload.sender === this.peer.id) return;
-        
-        this.emit('shared-backpack-member-removed', payload);
-        
-        if (this.isHost && payload.sender !== this.peer.id) {
-            this.connections.forEach(connection => {
-                if (connection !== conn && connection.open) {
-                    connection.send({
-                        type: 'shared-backpack-member-remove',
-                        payload,
-                        sender: payload.sender,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
-    }
-
-    handleSharedBackpackMemberUpdate (payload, conn) {
-        if (payload.sender === this.peer.id) return;
-        
-        this.emit('shared-backpack-member-updated', payload);
-        
-        if (this.isHost && payload.sender !== this.peer.id) {
-            this.connections.forEach(connection => {
-                if (connection !== conn && connection.open) {
-                    connection.send({
-                        type: 'shared-backpack-member-update',
                         payload,
                         sender: payload.sender,
                         timestamp: Date.now()
@@ -1535,6 +1374,39 @@ class CollaborationService {
 
     changeRoomPrivacy (newPrivacy) {
         return changeRoomPrivacyExternal(this, newPrivacy);
+    }
+
+    updatePeerConfig (config) {
+        if ('host' in config) {
+            this.peerConfig.host = config.host;
+        }
+        if ('port' in config) {
+            this.peerConfig.port = config.port;
+        }
+        if ('key' in config) {
+            if (config.key === '' || typeof config.key === 'undefined') {
+                delete this.peerConfig.key;
+            } else {
+                this.peerConfig.key = config.key;
+            }
+        }
+        if ('path' in config) {
+            this.peerConfig.path = config.path;
+        }
+        if ('secure' in config) {
+            this.peerConfig.secure = config.secure;
+        }
+    }
+
+    getPeerConfig () {
+        const keyIsUndefined = typeof this.peerConfig.key === 'undefined';
+        return {
+            host: this.peerConfig.host,
+            port: this.peerConfig.port,
+            key: keyIsUndefined ? '' : this.peerConfig.key,
+            path: this.peerConfig.path,
+            secure: this.peerConfig.secure
+        };
     }
 }
 
