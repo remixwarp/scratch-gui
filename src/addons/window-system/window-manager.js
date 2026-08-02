@@ -374,32 +374,7 @@ class AddonWindow {
             e.preventDefault();
         });
 
-        this.addTouchDragFunctionality();
-    }
-
-    addTouchDragFunctionality () {
-        const checkMobileTouchDragEnabled = () => {
-            try {
-                const stored = localStorage.getItem('AESettings');
-                if (!stored) return false;
-                const settings = JSON.parse(stored);
-                return settings.EnableMobileTouchDrag === true;
-            } catch (e) {
-                return false;
-            }
-        };
-
-        if (!checkMobileTouchDragEnabled()) {
-            const checkInterval = setInterval(() => {
-                if (checkMobileTouchDragEnabled()) {
-                    clearInterval(checkInterval);
-                    this.setupTouchDrag();
-                }
-            }, 1000);
-            this._touchDragCheckInterval = checkInterval;
-        } else {
-            this.setupTouchDrag();
-        }
+        this.setupTouchDrag();
     }
 
     setupTouchDrag () {
@@ -1104,10 +1079,6 @@ class AddonWindow {
     
     destroy (callOnClose = true) {
         this.hide();
-        if (this._touchDragCheckInterval) {
-            clearInterval(this._touchDragCheckInterval);
-            this._touchDragCheckInterval = null;
-        }
         if (callOnClose) {
             this.onClose();
         }
