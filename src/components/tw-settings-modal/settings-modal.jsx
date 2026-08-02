@@ -15,7 +15,7 @@ import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/constants/brand.js';
 import {AESettings} from '../../lib/settings.js';
 
-import {Settings, Zap, Code, RotateCcw} from 'lucide-react';
+import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, Bug, GitBranch, Variable} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -53,6 +53,51 @@ const messages = defineMessages({
     headerExperimental: {
         defaultMessage: '实验性',
         id: 'mw.settings.experimental'
+    },
+    headerEditor: {
+        defaultMessage: '编辑器',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.editor'
+    },
+    headerStage: {
+        defaultMessage: '舞台',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.stage'
+    },
+    headerBlockPalette: {
+        defaultMessage: '积木面板',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.blockPalette'
+    },
+    headerInterface: {
+        defaultMessage: '界面',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.interface'
+    },
+    headerStyles: {
+        defaultMessage: '样式',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.styles'
+    },
+    headerMenuBar: {
+        defaultMessage: '菜单栏',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.menuBar'
+    },
+    headerDebugger: {
+        defaultMessage: '调试器',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.debugger'
+    },
+    headerVersionControl: {
+        defaultMessage: '版本控制',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.versionControl'
+    },
+    headerVariableManager: {
+        defaultMessage: '变量管理器',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.variableManager'
     },
     hatBlockCommentReminder: {
         defaultMessage: '帽子积木注释提醒',
@@ -210,6 +255,27 @@ SidebarItem.propTypes = {
     icon: PropTypes.elementType,
     onClick: PropTypes.func.isRequired,
     isSelected: PropTypes.bool
+};
+
+const SidebarGroupHeader = ({id, label, collapsed, onClick}) => (
+    <button
+        type="button"
+        className={styles.sidebarGroupHeader}
+        onClick={() => onClick(id)}
+        aria-expanded={!collapsed}
+    >
+        <ChevronDown
+            className={classNames(styles.sidebarGroupChevron, {[styles.collapsed]: collapsed})}
+        />
+        <span>{label}</span>
+    </button>
+);
+
+SidebarGroupHeader.propTypes = {
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    collapsed: PropTypes.bool,
+    onClick: PropTypes.func.isRequired
 };
 
 class UnwrappedSetting extends React.Component {
@@ -1213,6 +1279,62 @@ const pageConfigurations = {
                 ]
             }
         ]
+    },
+    editor: {
+        sections: [
+            {
+                headerMessage: 'headerStage',
+                settings: []
+            },
+            {
+                headerMessage: 'headerBlockPalette',
+                settings: []
+            },
+            {
+                headerMessage: 'headerInterface',
+                settings: []
+            }
+        ]
+    },
+    styles: {
+        sections: [
+            {
+                headerMessage: 'headerStyles',
+                settings: []
+            }
+        ]
+    },
+    menuBar: {
+        sections: [
+            {
+                headerMessage: 'headerMenuBar',
+                settings: []
+            }
+        ]
+    },
+    debugger: {
+        sections: [
+            {
+                headerMessage: 'headerDebugger',
+                settings: []
+            }
+        ]
+    },
+    versionControl: {
+        sections: [
+            {
+                headerMessage: 'headerVersionControl',
+                settings: []
+            }
+        ]
+    },
+    variableManager: {
+        sections: [
+            {
+                headerMessage: 'headerVariableManager',
+                settings: []
+            }
+        ]
     }
 };
 
@@ -1265,10 +1387,47 @@ const AEPAGE = props => (<PageRenderer
     {...props}
 />);
 
+const EditorPage = props => (<PageRenderer
+    config={pageConfigurations.editor}
+    {...props}
+/>);
+const StylesPage = props => (<PageRenderer
+    config={pageConfigurations.styles}
+    {...props}
+/>);
+const MenuBarPage = props => (<PageRenderer
+    config={pageConfigurations.menuBar}
+    {...props}
+/>);
+const DebuggerPage = props => (<PageRenderer
+    config={pageConfigurations.debugger}
+    {...props}
+/>);
+const VersionControlPage = props => (<PageRenderer
+    config={pageConfigurations.versionControl}
+    {...props}
+/>);
+const VariableManagerPage = props => (<PageRenderer
+    config={pageConfigurations.variableManager}
+    {...props}
+/>);
+
 const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
     case 'general':
         return <GeneralPage {...handlers} />;
+    case 'editor':
+        return <EditorPage {...handlers} />;
+    case 'styles':
+        return <StylesPage {...handlers} />;
+    case 'menuBar':
+        return <MenuBarPage {...handlers} />;
+    case 'debugger':
+        return <DebuggerPage {...handlers} />;
+    case 'versionControl':
+        return <VersionControlPage {...handlers} />;
+    case 'variableManager':
+        return <VariableManagerPage {...handlers} />;
     case 'experimental':
         return <ExperimentalPage {...handlers} />;
     case 'ae':
@@ -1286,15 +1445,25 @@ SettingsRouter.propTypes = {
 class SettingsModalComponent extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, ['handleNavigate', 'handleStoreProjectOptions']);
+        bindAll(this, ['handleNavigate', 'handleStoreProjectOptions', 'handleToggleGroup']);
 
         this.state = {
-            currentView: 'general'
+            currentView: 'general',
+            collapsedGroups: {}
         };
     }
 
     handleNavigate (category) {
         this.setState({currentView: category});
+    }
+
+    handleToggleGroup (groupId) {
+        this.setState(prevState => ({
+            collapsedGroups: {
+                ...prevState.collapsedGroups,
+                [groupId]: !prevState.collapsedGroups[groupId]
+            }
+        }));
     }
 
     handleStoreProjectOptions () {
@@ -1305,21 +1474,81 @@ class SettingsModalComponent extends React.Component {
         const {intl} = this.props;
         const {currentView} = this.state;
 
-        const categories = [
+        const sidebarGroups = [
             {
                 id: 'general',
-                label: intl.formatMessage({id: 'mw.settings.general', defaultMessage: 'General'}),
-                icon: Settings
+                label: intl.formatMessage({id: 'mw.settings.groupGeneral', defaultMessage: '常规'}),
+                items: [
+                    {
+                        id: 'general',
+                        label: intl.formatMessage({id: 'mw.settings.general', defaultMessage: '常规'}),
+                        icon: Settings
+                    }
+                ]
             },
             {
-                id: 'experimental',
-                label: intl.formatMessage({id: 'mw.settings.experimental', defaultMessage: 'Experimental'}),
-                icon: Zap
+                id: 'appearance',
+                label: intl.formatMessage({id: 'mw.settings.groupAppearance', defaultMessage: '外观'}),
+                items: [
+                    {
+                        id: 'editor',
+                        label: intl.formatMessage({id: 'mw.settings.editor', defaultMessage: '编辑器'}),
+                        icon: Blocks
+                    },
+                    {
+                        id: 'styles',
+                        label: intl.formatMessage({id: 'mw.settings.styles', defaultMessage: '样式'}),
+                        icon: Palette
+                    },
+                    {
+                        id: 'menuBar',
+                        label: intl.formatMessage({id: 'mw.settings.menuBar', defaultMessage: '菜单栏'}),
+                        icon: PanelTop
+                    }
+                ]
             },
             {
-                id: 'ae',
-                label: intl.formatMessage({id: 'tw.settingsModal.ae', defaultMessage: 'AE Settings'}),
-                icon: Code
+                id: 'tools',
+                label: intl.formatMessage({id: 'mw.settings.groupTools', defaultMessage: '工具'}),
+                items: [
+                    {
+                        id: 'versionControl',
+                        label: intl.formatMessage({
+                            id: 'mw.settings.versionControl',
+                            defaultMessage: '版本控制'
+                        }),
+                        icon: GitBranch
+                    },
+                    {
+                        id: 'variableManager',
+                        label: intl.formatMessage({
+                            id: 'mw.settings.variableManager',
+                            defaultMessage: '变量管理器'
+                        }),
+                        icon: Variable
+                    },
+                    {
+                        id: 'debugger',
+                        label: intl.formatMessage({id: 'mw.settings.debugger', defaultMessage: '调试器'}),
+                        icon: Bug
+                    }
+                ]
+            },
+            {
+                id: 'advanced',
+                label: intl.formatMessage({id: 'mw.settings.groupAdvanced', defaultMessage: '高级'}),
+                items: [
+                    {
+                        id: 'experimental',
+                        label: intl.formatMessage({id: 'mw.settings.experimental', defaultMessage: '实验性'}),
+                        icon: Zap
+                    },
+                    {
+                        id: 'ae',
+                        label: intl.formatMessage({id: 'tw.settingsModal.ae', defaultMessage: 'AE 设置'}),
+                        icon: Code
+                    }
+                ]
             }
         ];
 
@@ -1333,16 +1562,32 @@ class SettingsModalComponent extends React.Component {
                 <Box className={styles.sidebarLayout}>
                     <div className={styles.sidebar}>
                         <div className={styles.sidebarItems}>
-                            {categories.map(cat => (
-                                <SidebarItem
-                                    key={cat.id}
-                                    id={cat.id}
-                                    label={cat.label}
-                                    icon={cat.icon}
-                                    onClick={this.handleNavigate}
-                                    isSelected={currentView === cat.id}
-                                />
-                            ))}
+                            {sidebarGroups.map(group => {
+                                const collapsed = !!this.state.collapsedGroups[group.id];
+                                return (
+                                    <div
+                                        key={group.id}
+                                        className={styles.sidebarGroup}
+                                    >
+                                        <SidebarGroupHeader
+                                            id={group.id}
+                                            label={group.label}
+                                            collapsed={collapsed}
+                                            onClick={this.handleToggleGroup}
+                                        />
+                                        {!collapsed && group.items.map(cat => (
+                                            <SidebarItem
+                                                key={cat.id}
+                                                id={cat.id}
+                                                label={cat.label}
+                                                icon={cat.icon}
+                                                onClick={this.handleNavigate}
+                                                isSelected={currentView === cat.id}
+                                            />
+                                        ))}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                     <div className={styles.contentArea}>
