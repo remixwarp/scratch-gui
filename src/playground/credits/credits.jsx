@@ -132,7 +132,7 @@ const Credits = () => {
     };
 
     return (
-        <main className={styles.main}>
+        <main key={language} className={styles.main}>
             <header className={styles.headerContainer}>
                 <h1 className={styles.headerText}>
                     {language === 'en' ? `${APP_NAME} Credits` : `${APP_NAME} 鸣谢`}
