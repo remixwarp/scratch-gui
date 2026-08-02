@@ -18,6 +18,7 @@ export default async ({addon, console, msg}) => {
     let recorder;
     let timeout;
     let optionsWindow = null;
+    let optionsWindowPromise = null;
 
     // Access window manager through dynamic import
     let WindowManager = null;
@@ -56,193 +57,204 @@ export default async ({addon, console, msg}) => {
                     'fontsLoaded/SET_FONTS_LOADED',
                     'scratch-gui/locales/SELECT_LOCALE']
             });
-        const getOptions = async () => new Promise(async resolve => {
-            // Initialize window manager
-            const WM = await initWindowManager();
+        const getOptions = async () => {
+            // If window is already open, focus it and return the pending promise
+            if (optionsWindow && optionsWindowPromise) {
+                optionsWindow.show();
+                return optionsWindowPromise;
+            }
+            return (optionsWindowPromise = new Promise(async resolve => {
+                // Initialize window manager
+                const WM = await initWindowManager();
 
-            // Create a window using the window manager
-            optionsWindow = WM.createWindow({
-                id: 'media-recorder-options',
-                title: msg('option-title'),
-                width: 420,
-                height: 480,
-                minWidth: 340,
-                minHeight: 360,
-                resizable: true,
-                maximizable: true,
-                className: 'media-recorder-options-window',
-                onClose: () => {
+                // Create a window using the window manager
+                optionsWindow = WM.createWindow({
+                    id: 'media-recorder-options',
+                    title: msg('option-title'),
+                    width: 420,
+                    height: 480,
+                    minWidth: 340,
+                    minHeight: 360,
+                    resizable: true,
+                    maximizable: true,
+                    className: 'media-recorder-options-window',
+                    onClose: () => {
+                        resolve(null);
+                        optionsWindow = null;
+                        optionsWindowPromise = null;
+                    }
+                });
+
+                // Create content container
+                const content = document.createElement('div');
+                content.className = 'media-recorder-content';
+
+                // Description
+                const description = Object.assign(document.createElement('p'), {
+                    textContent: msg('record-description', {
+                        extension: `.${fileExtension}`
+                    }),
+                    className: 'media-recorder-description'
+                });
+                content.appendChild(description);
+
+                // Form container
+                const form = document.createElement('div');
+                form.className = 'media-recorder-form';
+
+                // Seconds input
+                const secondsGroup = document.createElement('div');
+                secondsGroup.className = 'media-recorder-input-group';
+                const secondsLabel = Object.assign(document.createElement('label'), {
+                    textContent: msg('record-duration'),
+                    className: 'media-recorder-label'
+                });
+                const secondsInput = Object.assign(document.createElement('input'), {
+                    type: 'number',
+                    min: 1,
+                    max: 600,
+                    value: 30,
+                    className: 'media-recorder-input'
+                });
+                secondsGroup.appendChild(secondsLabel);
+                secondsGroup.appendChild(secondsInput);
+                form.appendChild(secondsGroup);
+
+                // Delay input
+                const delayGroup = document.createElement('div');
+                delayGroup.className = 'media-recorder-input-group';
+                const delayLabel = Object.assign(document.createElement('label'), {
+                    textContent: msg('start-delay'),
+                    className: 'media-recorder-label'
+                });
+                const delayInput = Object.assign(document.createElement('input'), {
+                    type: 'number',
+                    min: 0,
+                    max: 600,
+                    value: 0,
+                    className: 'media-recorder-input'
+                });
+                delayGroup.appendChild(delayLabel);
+                delayGroup.appendChild(delayInput);
+                form.appendChild(delayGroup);
+
+                // Audio checkbox
+                const audioGroup = document.createElement('label');
+                audioGroup.className = 'media-recorder-checkbox-group';
+                const audioInput = Object.assign(document.createElement('input'), {
+                    type: 'checkbox',
+                    checked: true,
+                    className: 'media-recorder-checkbox'
+                });
+                const audioText = document.createTextNode(msg('record-audio'));
+                audioGroup.appendChild(audioInput);
+                audioGroup.appendChild(audioText);
+                audioGroup.title = msg('record-audio-description');
+                form.appendChild(audioGroup);
+
+                // Mic checkbox
+                const micGroup = document.createElement('label');
+                micGroup.className = 'media-recorder-checkbox-group';
+                const micInput = Object.assign(document.createElement('input'), {
+                    type: 'checkbox',
+                    checked: false,
+                    className: 'media-recorder-checkbox'
+                });
+                const micText = document.createTextNode(msg('record-mic'));
+                micGroup.appendChild(micInput);
+                micGroup.appendChild(micText);
+                form.appendChild(micGroup);
+
+                // Green flag checkbox
+                const flagGroup = document.createElement('label');
+                flagGroup.className = 'media-recorder-checkbox-group';
+                const flagInput = Object.assign(document.createElement('input'), {
+                    type: 'checkbox',
+                    checked: true,
+                    className: 'media-recorder-checkbox'
+                });
+                const flagText = document.createTextNode(msg('record-after-flag'));
+                flagGroup.appendChild(flagInput);
+                flagGroup.appendChild(flagText);
+                form.appendChild(flagGroup);
+
+                // Stop sign checkbox
+                const stopGroup = document.createElement('label');
+                stopGroup.className = 'media-recorder-checkbox-group';
+                const stopInput = Object.assign(document.createElement('input'), {
+                    type: 'checkbox',
+                    checked: true,
+                    className: 'media-recorder-checkbox'
+                });
+                const stopText = document.createTextNode(msg('record-until-stop'));
+                stopGroup.appendChild(stopInput);
+                stopGroup.appendChild(stopText);
+            
+                // Handle dependency between flag and stop checkboxes
+                flagInput.addEventListener('change', () => {
+                    const disabled = !flagInput.checked;
+                    stopInput.disabled = disabled;
+                    if (disabled) {
+                        stopGroup.title = msg('record-until-stop-disabled', {
+                            afterFlagOption: msg('record-after-flag')
+                        });
+                        stopGroup.classList.add('disabled');
+                    } else {
+                        stopGroup.title = '';
+                        stopGroup.classList.remove('disabled');
+                    }
+                });
+            
+                form.appendChild(stopGroup);
+
+                // Button container
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'media-recorder-buttons';
+
+                // Cancel button
+                const cancelButton = Object.assign(document.createElement('button'), {
+                    textContent: msg('cancel'),
+                    className: 'media-recorder-button media-recorder-button-cancel'
+                });
+                cancelButton.addEventListener('click', () => {
+                    optionsWindow.close();
                     resolve(null);
                     optionsWindow = null;
-                }
-            });
+                    optionsWindowPromise = null;
+                });
 
-            // Create content container
-            const content = document.createElement('div');
-            content.className = 'media-recorder-content';
-
-            // Description
-            const description = Object.assign(document.createElement('p'), {
-                textContent: msg('record-description', {
-                    extension: `.${fileExtension}`
-                }),
-                className: 'media-recorder-description'
-            });
-            content.appendChild(description);
-
-            // Form container
-            const form = document.createElement('div');
-            form.className = 'media-recorder-form';
-
-            // Seconds input
-            const secondsGroup = document.createElement('div');
-            secondsGroup.className = 'media-recorder-input-group';
-            const secondsLabel = Object.assign(document.createElement('label'), {
-                textContent: msg('record-duration'),
-                className: 'media-recorder-label'
-            });
-            const secondsInput = Object.assign(document.createElement('input'), {
-                type: 'number',
-                min: 1,
-                max: 600,
-                value: 30,
-                className: 'media-recorder-input'
-            });
-            secondsGroup.appendChild(secondsLabel);
-            secondsGroup.appendChild(secondsInput);
-            form.appendChild(secondsGroup);
-
-            // Delay input
-            const delayGroup = document.createElement('div');
-            delayGroup.className = 'media-recorder-input-group';
-            const delayLabel = Object.assign(document.createElement('label'), {
-                textContent: msg('start-delay'),
-                className: 'media-recorder-label'
-            });
-            const delayInput = Object.assign(document.createElement('input'), {
-                type: 'number',
-                min: 0,
-                max: 600,
-                value: 0,
-                className: 'media-recorder-input'
-            });
-            delayGroup.appendChild(delayLabel);
-            delayGroup.appendChild(delayInput);
-            form.appendChild(delayGroup);
-
-            // Audio checkbox
-            const audioGroup = document.createElement('label');
-            audioGroup.className = 'media-recorder-checkbox-group';
-            const audioInput = Object.assign(document.createElement('input'), {
-                type: 'checkbox',
-                checked: true,
-                className: 'media-recorder-checkbox'
-            });
-            const audioText = document.createTextNode(msg('record-audio'));
-            audioGroup.appendChild(audioInput);
-            audioGroup.appendChild(audioText);
-            audioGroup.title = msg('record-audio-description');
-            form.appendChild(audioGroup);
-
-            // Mic checkbox
-            const micGroup = document.createElement('label');
-            micGroup.className = 'media-recorder-checkbox-group';
-            const micInput = Object.assign(document.createElement('input'), {
-                type: 'checkbox',
-                checked: false,
-                className: 'media-recorder-checkbox'
-            });
-            const micText = document.createTextNode(msg('record-mic'));
-            micGroup.appendChild(micInput);
-            micGroup.appendChild(micText);
-            form.appendChild(micGroup);
-
-            // Green flag checkbox
-            const flagGroup = document.createElement('label');
-            flagGroup.className = 'media-recorder-checkbox-group';
-            const flagInput = Object.assign(document.createElement('input'), {
-                type: 'checkbox',
-                checked: true,
-                className: 'media-recorder-checkbox'
-            });
-            const flagText = document.createTextNode(msg('record-after-flag'));
-            flagGroup.appendChild(flagInput);
-            flagGroup.appendChild(flagText);
-            form.appendChild(flagGroup);
-
-            // Stop sign checkbox
-            const stopGroup = document.createElement('label');
-            stopGroup.className = 'media-recorder-checkbox-group';
-            const stopInput = Object.assign(document.createElement('input'), {
-                type: 'checkbox',
-                checked: true,
-                className: 'media-recorder-checkbox'
-            });
-            const stopText = document.createTextNode(msg('record-until-stop'));
-            stopGroup.appendChild(stopInput);
-            stopGroup.appendChild(stopText);
-        
-            // Handle dependency between flag and stop checkboxes
-            flagInput.addEventListener('change', () => {
-                const disabled = !flagInput.checked;
-                stopInput.disabled = disabled;
-                if (disabled) {
-                    stopGroup.title = msg('record-until-stop-disabled', {
-                        afterFlagOption: msg('record-after-flag')
-                    });
-                    stopGroup.classList.add('disabled');
-                } else {
-                    stopGroup.title = '';
-                    stopGroup.classList.remove('disabled');
-                }
-            });
-        
-            form.appendChild(stopGroup);
-
-            // Button container
-            const buttonContainer = document.createElement('div');
-            buttonContainer.className = 'media-recorder-buttons';
-
-            // Cancel button
-            const cancelButton = Object.assign(document.createElement('button'), {
-                textContent: msg('cancel'),
-                className: 'media-recorder-button media-recorder-button-cancel'
-            });
-            cancelButton.addEventListener('click', () => {
-                optionsWindow.close();
-                resolve(null);
-                optionsWindow = null;
-            });
-
-            // Start button
-            const startButton = Object.assign(document.createElement('button'), {
-                textContent: msg('start'),
-                className: 'media-recorder-button media-recorder-button-start'
-            });
-            startButton.addEventListener('click', () => {
-                const options = {
-                    secs: Number(secondsInput.value),
-                    delay: Number(delayInput.value),
-                    audioEnabled: audioInput.checked,
-                    micEnabled: micInput.checked,
-                    waitUntilFlag: flagInput.checked,
-                    useStopSign: !stopInput.disabled && stopInput.checked
-                };
+                // Start button
+                const startButton = Object.assign(document.createElement('button'), {
+                    textContent: msg('start'),
+                    className: 'media-recorder-button media-recorder-button-start'
+                });
+                startButton.addEventListener('click', () => {
+                    const options = {
+                        secs: Number(secondsInput.value),
+                        delay: Number(delayInput.value),
+                        audioEnabled: audioInput.checked,
+                        micEnabled: micInput.checked,
+                        waitUntilFlag: flagInput.checked,
+                        useStopSign: !stopInput.disabled && stopInput.checked
+                    };
           
-                // Don't close window immediately, keep it open for status
-                resolve(options);
-            });
+                    // Don't close window immediately, keep it open for status
+                    // Clear the pending promise reference so next click can create a new one
+                    optionsWindowPromise = null;
+                    resolve(options);
+                });
 
-            buttonContainer.appendChild(cancelButton);
-            buttonContainer.appendChild(startButton);
+                buttonContainer.appendChild(cancelButton);
+                buttonContainer.appendChild(startButton);
 
-            content.appendChild(form);
-            content.appendChild(buttonContainer);
+                content.appendChild(form);
+                content.appendChild(buttonContainer);
 
-            // Set the content and show the window
-            optionsWindow.setContent(content);
-            optionsWindow.show();
-        });
+                // Set the content and show the window
+                optionsWindow.setContent(content);
+                optionsWindow.show();
+            }));
+        };
 
         // Function to show recording status in the options window
         const showRecordingStatus = opts => {
@@ -342,6 +354,7 @@ export default async ({addon, console, msg}) => {
             if (optionsWindow) {
                 optionsWindow.close();
                 optionsWindow = null;
+                optionsWindowPromise = null;
             }
         };
         const stopRecording = force => {
