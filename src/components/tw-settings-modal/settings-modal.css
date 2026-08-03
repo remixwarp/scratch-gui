@@ -432,3 +432,35 @@
     background: rgb(233, 233, 53);
     color: $text-primary-default;
 }
+
+.custom-sprite-secondary {
+    padding: 0.5rem 0 0.25rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.custom-sprite-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+.custom-sprite-name-label {
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+.custom-sprite-name-input {
+    flex: 1;
+    min-width: 120px;
+}
+.custom-sprite-status {
+    font-size: 0.8125rem;
+    opacity: 0.8;
+}
+.custom-sprite-hint {
+    padding: 0.4rem 0.75rem;
+    border-radius: 4px;
+    background: rgba(79, 195, 247, 0.15);
+    border-left: 3px solid #4fc3f7;
+    font-size: 0.8125rem;
+}

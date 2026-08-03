@@ -14,6 +14,15 @@ import styles from './settings-modal.css';
 import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/constants/brand.js';
 import {AESettings} from '../../lib/settings.js';
+import {
+    getCustomDefaultSprite,
+    setCustomDefaultSprite,
+    clearCustomDefaultSprite,
+    arrayBufferToBase64,
+    computeRotationCenter
+} from '../../lib/custom-default-sprite.js';
+import storage from '../../lib/persistence/storage.js';
+import {costumeUpload} from '../../lib/file-uploader.js';
 
 import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
@@ -27,7 +36,7 @@ import {
     getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
 } from '../../lib/git/config.js';
 
-import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, Bug, GitBranch, Variable} from 'lucide-react';
+import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, Bug, GitBranch, Variable, Upload} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -329,6 +338,46 @@ const messages = defineMessages({
         defaultMessage: '打开后，每次进入编辑器时会自动检查版本更新并显示更新日志。',
         description: 'EnableAutoUpdateCheck help',
         id: 'tw.settingsModal.enableautoupdatecheckhelp'
+    },
+    customdefaultsprite: {
+        defaultMessage: '自定义默认角色（需刷新）',
+        description: 'Custom default sprite label',
+        id: 'tw.settingsModal.customdefaultsprite'
+    },
+    customdefaultspritehelp: {
+        defaultMessage: '开启后可上传一张图片作为编辑器的默认角色，替代内置的轻盈狐。支持 SVG、PNG、JPG、BMP、WEBP、GIF 等造型可用的格式。上传后刷新编辑器即可生效。',
+        description: 'Custom default sprite help',
+        id: 'tw.settingsModal.customdefaultspritehelp'
+    },
+    customdefaultspriteupload: {
+        defaultMessage: '上传角色图片',
+        description: 'Custom default sprite upload button',
+        id: 'tw.settingsModal.customdefaultspriteupload'
+    },
+    customdefaultspritename: {
+        defaultMessage: '角色名称',
+        description: 'Custom default sprite name input label',
+        id: 'tw.settingsModal.customdefaultspritename'
+    },
+    customdefaultspritehint: {
+        defaultMessage: '已上传自定义默认角色，请刷新编辑器页面以生效。',
+        description: 'Custom default sprite refresh hint',
+        id: 'tw.settingsModal.customdefaultspritehint'
+    },
+    customdefaultspriteuploaded: {
+        defaultMessage: '已上传：{name}（{format}）',
+        description: 'Custom default sprite uploaded status',
+        id: 'tw.settingsModal.customdefaultspriteuploaded'
+    },
+    customdefaultspriteerror: {
+        defaultMessage: '上传失败：{error}',
+        description: 'Custom default sprite upload error',
+        id: 'tw.settingsModal.customdefaultspriteerror'
+    },
+    customdefaultspritenameplaceholder: {
+        defaultMessage: '输入角色名称',
+        description: 'Custom default sprite name placeholder',
+        id: 'tw.settingsModal.customdefaultspritenameplaceholder'
     }
 });
 
@@ -770,6 +819,215 @@ const EnableAutoUpdateCheck = props => (
         }
     />
 );
+
+// 自定义默认角色：开关 + 上传按钮 + 命名输入框 + 刷新提示
+class CustomDefaultSprite extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, [
+            'handleToggle',
+            'handleNameChange',
+            'handleUploadClick',
+            'handleFileChange',
+            'setFileInput'
+        ]);
+        const config = getCustomDefaultSprite();
+        this.state = {
+            enabled: config ? !!config.enabled : false,
+            hasImage: !!config,
+            spriteName: config ? (config.spriteName || '') : '',
+            uploadedInfo: config ? {name: config.spriteName, format: config.dataFormat} : null,
+            error: null,
+            uploading: false
+        };
+    }
+    handleToggle (e) {
+        const checked = e.target.checked;
+        const config = getCustomDefaultSprite();
+        if (config) {
+            setCustomDefaultSprite({...config, enabled: checked});
+        }
+        this.setState({enabled: checked});
+        notifySettingsChange();
+    }
+    handleNameChange (value) {
+        this.setState({spriteName: value});
+        const config = getCustomDefaultSprite();
+        if (config) {
+            setCustomDefaultSprite({...config, spriteName: value});
+        }
+    }
+    handleUploadClick () {
+        if (this.fileInput) {
+            this.fileInput.click();
+        }
+    }
+    setFileInput (ref) {
+        this.fileInput = ref;
+    }
+    handleFileChange (e) {
+        const fileInput = e.target;
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        fileInput.value = null;
+        this.setState({uploading: true, error: null});
+        const reader = new FileReader();
+        reader.onload = () => {
+            const arrayBuffer = reader.result;
+            const fileType = file.type;
+            // 使用 costumeUpload 处理所有造型格式（svg/png/jpg/bmp/webp/gif）
+            const fakeVm = {
+                runtime: {
+                    storage: storage,
+                    stageWidth: 480,
+                    stageHeight: 360
+                }
+            };
+            costumeUpload(
+                arrayBuffer,
+                fileType,
+                fakeVm,
+                vmCostumes => {
+                    const costume = vmCostumes && vmCostumes[0];
+                    if (!costume || !costume.asset) {
+                        this.setState({uploading: false, error: '未获取到造型数据'});
+                        return;
+                    }
+                    const asset = costume.asset;
+                    const dataFormat = costume.dataFormat;
+                    const assetId = asset.assetId;
+                    const bytes = asset.data;
+                    if (!bytes) {
+                        this.setState({uploading: false, error: '造型数据为空'});
+                        return;
+                    }
+                    // 计算旋转中心
+                    computeRotationCenter(bytes, dataFormat).then(({rotationCenterX, rotationCenterY}) => {
+                        try {
+                            const dataBase64 = arrayBufferToBase64(bytes);
+                            const spriteName = (this.state.spriteName || file.name.replace(/\.[^.]+$/, '')).trim();
+                            setCustomDefaultSprite({
+                                enabled: true,
+                                spriteName: spriteName,
+                                assetId: assetId,
+                                dataFormat: dataFormat,
+                                dataBase64: dataBase64,
+                                rotationCenterX: rotationCenterX,
+                                rotationCenterY: rotationCenterY
+                            });
+                            this.setState({
+                                uploading: false,
+                                enabled: true,
+                                hasImage: true,
+                                uploadedInfo: {name: spriteName, format: dataFormat},
+                                error: null
+                            });
+                            notifySettingsChange();
+                        } catch (err) {
+                            this.setState({uploading: false, error: String(err)});
+                        }
+                    }).catch(err => {
+                        this.setState({uploading: false, error: String(err)});
+                    });
+                },
+                err => {
+                    this.setState({uploading: false, error: String(err)});
+                }
+            );
+        };
+        reader.onerror = () => {
+            this.setState({uploading: false, error: '读取文件失败'});
+        };
+        reader.readAsArrayBuffer(file);
+    }
+    render () {
+        const {enabled, hasImage, spriteName, uploadedInfo, error, uploading} = this.state;
+        return (
+            <Setting
+                active={enabled}
+                primary={
+                    <label className={styles.label}>
+                        <FancyCheckbox
+                            className={styles.checkbox}
+                            checked={enabled}
+                            onChange={this.handleToggle}
+                        />
+                        <FormattedMessage {...messages.customdefaultsprite} />
+                    </label>
+                }
+                help={
+                    <FormattedMessage {...messages.customdefaultspritehelp} />
+                }
+                secondary={
+                    <div className={styles.customSpriteSecondary}>
+                        {enabled && (
+                            <React.Fragment>
+                                <div className={styles.customSpriteRow}>
+                                    <span className={styles.customSpriteNameLabel}>
+                                        <FormattedMessage {...messages.customdefaultspritename} />
+                                    </span>
+                                    <BufferedInput
+                                        className={styles.customSpriteNameInput}
+                                        value={spriteName}
+                                        placeholder={this.props.intl.formatMessage(
+                                            messages.customdefaultspritenameplaceholder
+                                        )}
+                                        onSubmit={this.handleNameChange}
+                                    />
+                                </div>
+                                <div className={styles.customSpriteRow}>
+                                    <button
+                                        className={styles.button}
+                                        onClick={this.handleUploadClick}
+                                        disabled={uploading}
+                                        type="button"
+                                    >
+                                        <Upload size={14} />
+                                        {uploading ? '...' : <FormattedMessage {...messages.customdefaultspriteupload} />}
+                                    </button>
+                                    <input
+                                        ref={this.setFileInput}
+                                        type="file"
+                                        accept=".svg, .png, .bmp, .jpg, .jpeg, .jfif, .webp, .gif, image/svg+xml, image/png, image/jpeg, image/bmp, image/webp, image/gif"
+                                        onChange={this.handleFileChange}
+                                        style={{display: 'none'}}
+                                    />
+                                </div>
+                                {uploadedInfo && (
+                                    <div className={styles.customSpriteStatus}>
+                                        <FormattedMessage
+                                            {...messages.customdefaultspriteuploaded}
+                                            values={{
+                                                name: uploadedInfo.name,
+                                                format: uploadedInfo.format
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                                {hasImage && (
+                                    <div className={styles.customSpriteHint}>
+                                        <FormattedMessage {...messages.customdefaultspritehint} />
+                                    </div>
+                                )}
+                                {error && (
+                                    <div className={styles.warning}>
+                                        <FormattedMessage
+                                            {...messages.customdefaultspriteerror}
+                                            values={{error: error}}
+                                        />
+                                    </div>
+                                )}
+                            </React.Fragment>
+                        )}
+                    </div>
+                }
+            />
+        );
+    }
+}
+CustomDefaultSprite.propTypes = {
+    intl: intlShape
+};
 
 const AEBooleanSetting = BooleanSetting;
 
@@ -1575,6 +1833,10 @@ const pageConfigurations = {
                             value: isAchievementsEnabled(),
                             onChange: e => setAchievementsEnabled(e.target.checked)
                         })
+                    },
+                    {
+                        component: CustomDefaultSprite,
+                        props: () => ({})
                     }
                 ]
             }

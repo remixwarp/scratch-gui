@@ -37,7 +37,7 @@ import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
 import TWNews from './tw-news.jsx';
 import CollaborationContainer from '../../containers/collaboration-container.jsx';
-import {isAchievementsEnabled} from '../../lib/achievements.js';
+import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 
