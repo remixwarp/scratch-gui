@@ -727,118 +727,29 @@ export default async function ({addon, msg}) {
         }
     });
 
-    // ========== Middle-click / shortcut handling ==========
-
-    // Intercept at the earliest possible point to suppress the browser's
-    // default middle-click behavior (auto-scroll / paste on Linux).
-    // We attach to the capture phase of window events so we always fire
-    // before any other handlers (including Blockly's).
-    const suppressMiddleClick = (e) => {
-        if (e.button === 1 && addon.tab.editorMode === 'editor') {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    };
-    window.addEventListener('pointerdown', suppressMiddleClick, {capture: true, passive: false});
-    window.addEventListener('mousedown', suppressMiddleClick, {capture: true, passive: false});
-    window.addEventListener('auxclick', suppressMiddleClick, {capture: true, passive: false});
-    window.addEventListener('click', suppressMiddleClick, {capture: true, passive: false});
-
-    // Also intercept the Blockly workspace SVG directly to prevent any
-    // middle-click behavior that might bypass the window listeners.
-    const interceptWorkspaceMouseDown = () => {
-        const workspace = Blockly.getMainWorkspace();
-        if (!workspace) return;
-        const svgRoot = workspace.getSvgRoot();
-        if (!svgRoot || svgRoot.dataset.middleClickIntercepted) return;
-        svgRoot.dataset.middleClickIntercepted = 'true';
-        svgRoot.addEventListener('mousedown', (e) => {
-            if (e.button === 1 && addon.tab.editorMode === 'editor') {
-                e.preventDefault();
-                e.stopPropagation();
-                mousePosition = {x: e.clientX, y: e.clientY};
-                openPopup();
-            }
-        }, {capture: true, passive: false});
-    };
-    // Wait for the workspace to be available
-    if (Blockly.getMainWorkspace()) {
-        interceptWorkspaceMouseDown();
-    } else {
-        const observer = new MutationObserver(() => {
-            if (Blockly.getMainWorkspace()) {
-                interceptWorkspaceMouseDown();
-                observer.disconnect();
-            }
-        });
-        observer.observe(document.body, {childList: true, subtree: true});
-    }
-
-    // Primary: open popup on middle-click or Shift+left-click via Blockly's
-    // gesture system.  This is the most reliable path because it fires AFTER
-    // Blockly has correctly identified the click target (workspace vs block).
-    const _doWorkspaceClick_ = Blockly.Gesture.prototype.doWorkspaceClick_;
-    Blockly.Gesture.prototype.doWorkspaceClick_ = function () {
-        const e = this.mostRecentEvent_;
-        if (!e) return _doWorkspaceClick_.call(this);
-        mousePosition = {x: e.clientX, y: e.clientY};
-
-        const isMiddle = e.button === 1;
-        const isShiftLeft = e.shiftKey && e.button === 0;
-        if ((isMiddle || isShiftLeft) && addon.tab.editorMode === 'editor') {
-            e.preventDefault();
-            e.stopPropagation();
-            openPopup();
-            return;
-        }
-        _doWorkspaceClick_.call(this);
-    };
-
-    // The popup should delete blocks dragged ontop of it
-    const _isDeleteArea = Blockly.WorkspaceSvg.prototype.isDeleteArea;
-    Blockly.WorkspaceSvg.prototype.isDeleteArea = function (/** @type {MouseEvent} */ e) {
-        if (popupPosition) {
-            if (
-                e.clientX > popupPosition.x &&
-        e.clientX < popupPosition.x + previewWidth &&
-        e.clientY > popupPosition.y &&
-        e.clientY < popupPosition.y + previewHeight
-            ) {
-                return Blockly.DELETE_AREA_TOOLBOX;
-            }
-        }
-        return _isDeleteArea.call(this, e);
-    };
-
     // ========== Workspace context menu: "插入积木" ==========
-    // We patch Blockly.ContextMenu.show to inject our "Insert Blocks" item
-    // at the top of the workspace context menu. This approach works regardless
-    // of whether the Scratch Addons API has already patched it, because we
-    // wrap whatever version is currently installed.
-
-    const _originalContextMenuShow = Blockly.ContextMenu.show;
-    Blockly.ContextMenu.show = function (event, items, rtl) {
-        // Check if this is a workspace context menu (not block or flyout)
-        const workspace = Blockly.getMainWorkspace();
-        const gesture = workspace ? workspace.currentGesture_ : null;
-        const isWorkspaceMenu =
-            gesture &&
-            !gesture.targetBlock_ &&
-            !gesture.flyout_ &&
-            !gesture.startBubble_;
-
-        if (isWorkspaceMenu && !addon.self.disabled && addon.tab.editorMode === 'editor') {
-            items.unshift({
-                text: addon.msg('insert-blocks'),
-                enabled: true,
-                separator: true,
-                callback: () => {
-                    mousePosition = {x: event.clientX, y: event.clientY};
-                    openPopup();
-                }
-            });
+    // Patch Blockly.WorkspaceSvg.prototype.showContextMenu_ to inject
+    // our "Insert Blocks" item into the workspace right-click menu.
+    const _originalShowContextMenu = Blockly.WorkspaceSvg.prototype.showContextMenu_;
+    Blockly.WorkspaceSvg.prototype.showContextMenu_ = function (e) {
+        if (!addon.self.disabled && addon.tab.editorMode === 'editor') {
+            const originalShow = Blockly.ContextMenu.show;
+            Blockly.ContextMenu.show = function (event, items, rtl) {
+                const insertItem = {
+                    text: addon.msg('insert-blocks'),
+                    enabled: true,
+                    separator: true,
+                    callback: () => {
+                        mousePosition = {x: event.clientX, y: event.clientY};
+                        Blockly.ContextMenu.show = originalShow;
+                        openPopup();
+                    }
+                };
+                items.unshift(insertItem);
+                Blockly.ContextMenu.show = originalShow;
+                originalShow.call(this, event, items, rtl);
+            };
         }
-
-        return _originalContextMenuShow.call(this, event, items, rtl);
+        return _originalShowContextMenu.call(this, e);
     };
 }
