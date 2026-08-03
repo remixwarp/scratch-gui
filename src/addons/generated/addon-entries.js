@@ -110,4 +110,5 @@ export default {
   "tw-comment-markdown-editor": () => import(/* webpackChunkName: "addon-entry-tw-comment-markdown-editor" */ "../addons/tw-comment-markdown-editor/_runtime_entry.js"),
   "background": () => import(/* webpackChunkName: "addon-entry-background" */ "../addons/background/_runtime_entry.js"),
   "santa": () => import(/* webpackChunkName: "addon-entry-santa" */ "../addons/santa/_runtime_entry.js"),
+  "project-size-display": () => import(/* webpackChunkName: "addon-entry-project-size-display" */ "../addons/project-size-display/_runtime_entry.js"),
 };

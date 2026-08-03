@@ -108,7 +108,8 @@ const addons = [
     'tw-comment-markdown-editor',
     'background',
     'novatheai',
-    'santa'
+    'santa',
+    'project-size-display'
 ];
 
 const newAddons = [
@@ -125,7 +126,8 @@ const newAddons = [
     '02agent',
     'my-blocks-plus',
     'hide-menubar',
-    'santa'
+    'santa',
+    'project-size-display'
 ];
 
 // eslint-disable-next-line import/no-commonjs

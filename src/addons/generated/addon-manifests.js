@@ -109,6 +109,7 @@ import _block_pins from "../addons/block-pins/_manifest_entry.js";
 import _tw_comment_markdown_editor from "../addons/tw-comment-markdown-editor/_manifest_entry.js";
 import _background from "../addons/background/_manifest_entry.js";
 import _santa from "../addons/background/_manifest_entry.js";
+import _project_size_display from "../addons/project-size-display/_manifest_entry.js";
 export default {
   "calculator": _calculator,
   "cat-blocks": _cat_blocks,
@@ -219,5 +220,6 @@ export default {
   "block-pins": _block_pins,
   "tw-comment-markdown-editor": _tw_comment_markdown_editor,
   "background": _background,
-  "santa": _santa
+  "santa": _santa,
+  "project-size-display": _project_size_display
 };
