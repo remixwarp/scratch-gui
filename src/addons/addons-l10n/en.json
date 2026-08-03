@@ -350,5 +350,8 @@
     "comment-vscode-sync/not-connected": "Not connected to 02Engine Toolbox Server",
     "comment-vscode-sync/send-failed": "Failed to send, please check connection",
     "simple-project-analyzer/computational-thinking-score": "Computational Thinking Score",
-    "simple-project-analyzer/relative-intensity": "Relative Intensity"
+    "simple-project-analyzer/relative-intensity": "Relative Intensity",
+    "project-size-display/blocks-count": "Blocks",
+    "project-size-display/project-size": "Size",
+    "project-size-display/error": "Error"
 }

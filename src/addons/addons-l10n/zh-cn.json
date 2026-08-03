@@ -633,5 +633,8 @@
     "block-pins/some_pins_could_not_load": "一些置顶的积木未能加载!",
     "block-pins/pinned": "置顶",
     "bl.menu.warptheme": "WarpTheme 主题商店",
-    "bl.warptheme.title": "WarpTheme 主题商店"
+    "bl.warptheme.title": "WarpTheme 主题商店",
+    "project-size-display/blocks-count": "积木数",
+    "project-size-display/project-size": "大小",
+    "project-size-display/error": "错误"
 }
