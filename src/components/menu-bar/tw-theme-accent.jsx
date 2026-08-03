@@ -197,9 +197,9 @@ const AccentThemeMenu = ({
                 <div className={styles.pixelPresetDisclaimer}>
                     {isZh ? (
                         <>
-                            非MINECRAFT官方产品。未经MOJANG或MICROSOFT批准，
+                            非MINECRAFT官方产品。未经Mojang AB或Microsoft批准，
                             <br />
-                            也不与MOJANG或MICROSOFT关联。
+                            也不与Mojang AB或Microsoft关联。
                         </>
                     ) : (
                         <>
