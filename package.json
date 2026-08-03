@@ -184,9 +184,6 @@
       "editor-msgs(\\.js)?$": "<rootDir>/test/__mocks__/editor-msgs-mock.js"
     }
   },
-  "transformIgnorePatterns": [
-      "/node_modules/(?!(scratch-audio|fractch|pify|isomorphic-git|rotur-sdk|@vernier/godirect|@chenglou/pretext)/)"
-  ],
   "overrides": {
     "webpack@4.47.0": {
       "terser-webpack-plugin": "^4.2.3"
