@@ -15,10 +15,28 @@ export default async function ({ addon, console, msg }) {
 
     function getProjectSize() {
         try {
-            const projectJSON = vm.toJSON();
-            const jsonString = typeof projectJSON === 'string' ? projectJSON : JSON.stringify(projectJSON);
-            const textEncoder = new TextEncoder();
-            return textEncoder.encode(jsonString).length;
+            let totalSize = 0;
+            const targets = vm.runtime.targets || [];
+            targets.forEach(target => {
+                const sprite = target.sprite || target;
+                
+                if (sprite.costumes && Array.isArray(sprite.costumes)) {
+                    sprite.costumes.forEach(costume => {
+                        if (costume.asset && costume.asset.data && costume.asset.data.byteLength) {
+                            totalSize += costume.asset.data.byteLength;
+                        }
+                    });
+                }
+                
+                if (sprite.sounds && Array.isArray(sprite.sounds)) {
+                    sprite.sounds.forEach(sound => {
+                        if (sound.asset && sound.asset.data && sound.asset.data.byteLength) {
+                            totalSize += sound.asset.data.byteLength;
+                        }
+                    });
+                }
+            });
+            return totalSize;
         } catch (e) {
             console.warn('[Project Size Display] Failed to calculate project size:', e);
             return 0;
