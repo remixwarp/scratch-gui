@@ -726,29 +726,4 @@ export default async function ({addon, msg}) {
             e.stopPropagation();
         }
     });
-
-    // ========== Workspace context menu: "插入积木" ==========
-    // Patch Blockly.WorkspaceSvg.prototype.showContextMenu_ to inject
-    // our "Insert Blocks" item into the workspace right-click menu.
-    const _originalShowContextMenu = Blockly.WorkspaceSvg.prototype.showContextMenu_;
-    Blockly.WorkspaceSvg.prototype.showContextMenu_ = function (e) {
-        if (!addon.self.disabled && addon.tab.editorMode === 'editor') {
-            const originalShow = Blockly.ContextMenu.show;
-            Blockly.ContextMenu.show = function (event, items, rtl) {
-                const insertItem = {
-                    text: msg('insert-blocks'),
-                    enabled: true,
-                    separator: true,
-                    callback: () => {
-                        mousePosition = {x: event.clientX, y: event.clientY};
-                        openPopup();
-                    }
-                };
-                items.unshift(insertItem);
-                Blockly.ContextMenu.show = originalShow;
-                originalShow.call(this, event, items, rtl);
-            };
-        }
-        return _originalShowContextMenu.call(this, e);
-    };
 }
