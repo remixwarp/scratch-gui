@@ -481,5 +481,8 @@
   "project-size-display/@name": "Project Size Display",
   "project-size-display/@description": "Displays project size, block count, and selected sprite/stage size at the bottom of the sprite selector.",
   "project-size-display/@settings-name-blocks-count": "Blocks",
-  "project-size-display/@settings-name-project-size": "Size"
+  "project-size-display/@settings-name-project-size": "Size",
+  "project-size-display/blocks-count": "Blocks",
+  "project-size-display/project-size": "Size",
+  "project-size-display/error": "Error"
 }

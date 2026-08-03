@@ -503,5 +503,8 @@
   "project-size-display/@name": "项目大小显示",
   "project-size-display/@description": "在角色栏底部显示作品大小、代码数量和选中角色/舞台的大小。",
   "project-size-display/@settings-name-blocks-count": "积木数",
-  "project-size-display/@settings-name-project-size": "大小"
+  "project-size-display/@settings-name-project-size": "大小",
+  "project-size-display/blocks-count": "积木数",
+  "project-size-display/project-size": "大小",
+  "project-size-display/error": "错误"
 }
