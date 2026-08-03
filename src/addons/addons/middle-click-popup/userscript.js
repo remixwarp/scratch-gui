@@ -736,12 +736,11 @@ export default async function ({addon, msg}) {
             const originalShow = Blockly.ContextMenu.show;
             Blockly.ContextMenu.show = function (event, items, rtl) {
                 const insertItem = {
-                    text: addon.msg('insert-blocks'),
+                    text: msg('insert-blocks'),
                     enabled: true,
                     separator: true,
                     callback: () => {
                         mousePosition = {x: event.clientX, y: event.clientY};
-                        Blockly.ContextMenu.show = originalShow;
                         openPopup();
                     }
                 };
