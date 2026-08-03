@@ -64,6 +64,8 @@ import TWFullScreenResizerHOC from '../lib/components/tw-fullscreen-resizer-hoc.
 import TWThemeManagerHOC from './tw-theme-manager-hoc.jsx';
 import {initialize as initializeShortcuts} from
     '../lib/shortcuts/event-router.js';
+import startFractchLiveReload from '../lib/fractch-live';
+import smartSave from '../lib/mw/smart-save.js';
 
 const {RequestMetadata, setMetadata, unsetMetadata} = storage.scratchFetch;
 
@@ -102,6 +104,11 @@ class GUI extends React.Component {
             },
             this.props.vm,
             {
+                saveSmart: () => smartSave({
+                    vm: this.props.vm,
+                    title: this.props.projectTitle,
+                    onSaved: this.props.onProjectUnchanged
+                }),
                 loadFromComputer: this.props.onStartSelectingFileUpload,
                 openPackager: this.props.onClickPackager,
                 toggleStageSize: () => {
