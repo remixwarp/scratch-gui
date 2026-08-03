@@ -60,6 +60,7 @@
     "cross-fetch": "^4.1.0",
     "css-loader": "^1.0.0",
     "dapjs": "2.3.0",
+    "fractch": "0.7.8",
     "es6-object-assign": "1.1.0",
     "get-float-time-domain-data": "0.1.0",
     "get-user-media-promise": "1.1.4",
@@ -183,6 +184,9 @@
       "editor-msgs(\\.js)?$": "<rootDir>/test/__mocks__/editor-msgs-mock.js"
     }
   },
+  "transformIgnorePatterns": [
+      "/node_modules/(?!(scratch-audio|fractch|pify|isomorphic-git|rotur-sdk|@vernier/godirect|@chenglou/pretext)/)"
+  ],
   "overrides": {
     "webpack@4.47.0": {
       "terser-webpack-plugin": "^4.2.3"
