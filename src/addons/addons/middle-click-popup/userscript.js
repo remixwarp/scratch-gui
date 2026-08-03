@@ -727,35 +727,65 @@ export default async function ({addon, msg}) {
         }
     });
 
-    // Stop the default browser behavior for middle-click (autoscroll / refresh).
-    // Without this, the browser will intercept the middle-click and the page will
-    // scroll / reload instead of opening the popup.
-    document.addEventListener('auxclick', e => {
-        if (e.button === 1 && addon.tab.editorMode === 'editor') {
-            e.preventDefault();
-            openPopup();
-        }
-    }, {capture: true});
+    // ========== Middle-click / shortcut handling ==========
 
-    // Also block the legacy `mousedown` + `button === 1` behavior to avoid the
-    // page-wide autoscroll cursor appearing before `auxclick` fires.
-    document.addEventListener('mousedown', e => {
+    // Intercept at the earliest possible point to suppress the browser's
+    // default middle-click behavior (auto-scroll / paste on Linux).
+    // We attach to the capture phase of window events so we always fire
+    // before any other handlers (including Blockly's).
+    const suppressMiddleClick = (e) => {
         if (e.button === 1 && addon.tab.editorMode === 'editor') {
             e.preventDefault();
             e.stopPropagation();
         }
-    }, {capture: true});
+    };
+    window.addEventListener('pointerdown', suppressMiddleClick, {capture: true, passive: false});
+    window.addEventListener('mousedown', suppressMiddleClick, {capture: true, passive: false});
+    window.addEventListener('auxclick', suppressMiddleClick, {capture: true, passive: false});
+    window.addEventListener('click', suppressMiddleClick, {capture: true, passive: false});
 
-    // Open on middle-click OR shift + left-click on the workspace.
+    // Also intercept the Blockly workspace SVG directly to prevent any
+    // middle-click behavior that might bypass the window listeners.
+    const interceptWorkspaceMouseDown = () => {
+        const workspace = Blockly.getMainWorkspace();
+        if (!workspace) return;
+        const svgRoot = workspace.getSvgRoot();
+        if (!svgRoot || svgRoot.dataset.middleClickIntercepted) return;
+        svgRoot.dataset.middleClickIntercepted = 'true';
+        svgRoot.addEventListener('mousedown', (e) => {
+            if (e.button === 1 && addon.tab.editorMode === 'editor') {
+                e.preventDefault();
+                e.stopPropagation();
+                mousePosition = {x: e.clientX, y: e.clientY};
+                openPopup();
+            }
+        }, {capture: true, passive: false});
+    };
+    // Wait for the workspace to be available
+    if (Blockly.getMainWorkspace()) {
+        interceptWorkspaceMouseDown();
+    } else {
+        const observer = new MutationObserver(() => {
+            if (Blockly.getMainWorkspace()) {
+                interceptWorkspaceMouseDown();
+                observer.disconnect();
+            }
+        });
+        observer.observe(document.body, {childList: true, subtree: true});
+    }
+
+    // Primary: open popup on middle-click or Shift+left-click via Blockly's
+    // gesture system.  This is the most reliable path because it fires AFTER
+    // Blockly has correctly identified the click target (workspace vs block).
     const _doWorkspaceClick_ = Blockly.Gesture.prototype.doWorkspaceClick_;
     Blockly.Gesture.prototype.doWorkspaceClick_ = function () {
         const e = this.mostRecentEvent_;
         if (!e) return _doWorkspaceClick_.call(this);
         mousePosition = {x: e.clientX, y: e.clientY};
 
-        const isMiddleClick = e.button === 1;
-        const isShiftLeftClick = e.shiftKey && e.button === 0;
-        if ((isMiddleClick || isShiftLeftClick) && addon.tab.editorMode === 'editor') {
+        const isMiddle = e.button === 1;
+        const isShiftLeft = e.shiftKey && e.button === 0;
+        if ((isMiddle || isShiftLeft) && addon.tab.editorMode === 'editor') {
             e.preventDefault();
             e.stopPropagation();
             openPopup();
@@ -780,22 +810,35 @@ export default async function ({addon, msg}) {
         return _isDeleteArea.call(this, e);
     };
 
-    // Register an "Insert blocks" entry in the workspace context menu (right-click
-    // on the empty code area / long-press on mobile). This lets users who don't
-    // have a mouse (or who prefer menus) open the popup without middle-clicking.
-    if (addon.tab.createBlockContextMenu) {
-        addon.tab.createBlockContextMenu(
-            (items, block) => {
-                // Only insert on the workspace context menu, not on block menus.
-                if (block) return items;
-                items.unshift({
-                    enabled: true,
-                    text: addon.msg('insert-blocks'),
-                    callback: () => openPopup()
-                });
-                return items;
-            },
-            {workspace: true}
-        );
-    }
+    // ========== Workspace context menu: "插入积木" ==========
+    // We patch Blockly.ContextMenu.show to inject our "Insert Blocks" item
+    // at the top of the workspace context menu. This approach works regardless
+    // of whether the Scratch Addons API has already patched it, because we
+    // wrap whatever version is currently installed.
+
+    const _originalContextMenuShow = Blockly.ContextMenu.show;
+    Blockly.ContextMenu.show = function (event, items, rtl) {
+        // Check if this is a workspace context menu (not block or flyout)
+        const workspace = Blockly.getMainWorkspace();
+        const gesture = workspace ? workspace.currentGesture_ : null;
+        const isWorkspaceMenu =
+            gesture &&
+            !gesture.targetBlock_ &&
+            !gesture.flyout_ &&
+            !gesture.startBubble_;
+
+        if (isWorkspaceMenu && !addon.self.disabled && addon.tab.editorMode === 'editor') {
+            items.unshift({
+                text: addon.msg('insert-blocks'),
+                enabled: true,
+                separator: true,
+                callback: () => {
+                    mousePosition = {x: event.clientX, y: event.clientY};
+                    openPopup();
+                }
+            });
+        }
+
+        return _originalContextMenuShow.call(this, event, items, rtl);
+    };
 }
