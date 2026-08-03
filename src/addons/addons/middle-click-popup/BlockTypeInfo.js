@@ -434,26 +434,14 @@ export class BlockTypeInfo {
             } else if (!field.argType_) {
                 const text = field.getText();
                 if (text.trim().length !== 0) {
-                    // Try to localize the text using the locale function
-                    // First check if it's a block type that has a localization key
-                    const blockId = workspaceForm.id;
-                    const localizationKey = `block-switching/${blockId}`;
-                    const localizedText = locale(localizationKey);
-                    
-                    // Debugging: check if localization is working
-                    if (blockId && text) {
-                        // Only log for specific blocks to avoid too much logging
-                        if (blockId.includes('control_if') || blockId.includes('operator_add')) {
-                            console.log(`BlockTypeInfo: Block ID: ${blockId}, Original text: "${text}", Localization key: "${localizationKey}", Localized text: "${localizedText}"`);
-                        }
-                    }
-                    
-                    if (localizedText && localizedText !== localizationKey) {
-                        parts.push(localizedText);
-                    } else {
-                        // If no localization found, use the original text
-                        parts.push(text);
-                    }
+                    // Use the localized text directly from Blockly's workspace form.
+                    // Scratch's flyout blocks are already rendered using the user's
+                    // current locale, so `getText()` returns the localized label
+                    // (e.g. "如果 … 那么" for zh-CN, "if ... then" for en).
+                    // We deliberately do NOT look up `block-switching/<id>` keys
+                    // because that mapping only covers a small subset of blocks
+                    // and makes unrelated blocks fall back to raw IDs.
+                    parts.push(text);
                 }
             } else if (field.argType_[0] === 'colour') {
                 addInput(new BlockInputColour(inputIdx, fieldIdx));

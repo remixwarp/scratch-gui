@@ -36,6 +36,7 @@
     "find-bar/var-global": "变量 {name}",
     "find-bar/var-local": "变量 {name}",
     "middle-click-popup/start-typing": "请输入……",
+    "middle-click-popup/insert-blocks": "插入积木",
     "editor-searchable-dropdowns/createBroadcast": "创建消息“{name}”",
     "editor-searchable-dropdowns/createGlobalList": "为所有角色创建列表 {name}",
     "editor-searchable-dropdowns/createGlobalVariable": "为所有角色创建变量 {name}",

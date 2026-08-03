@@ -77,6 +77,7 @@
     "find-bar/var-global": "VAR {name}",
     "find-bar/var-local": "var {name}",
     "middle-click-popup/start-typing": "Start Typing...",
+    "middle-click-popup/insert-blocks": "Insert Blocks",
     "editor-searchable-dropdowns/createBroadcast": "Create message \"{name}\"",
     "editor-searchable-dropdowns/createGlobalList": "Create list \"{name}\" for all sprites",
     "editor-searchable-dropdowns/createGlobalVariable": "Create variable \"{name}\" for all sprites",

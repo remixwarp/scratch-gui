@@ -727,11 +727,40 @@ export default async function ({addon, msg}) {
         }
     });
 
-    // Open on mouse wheel button
+    // Stop the default browser behavior for middle-click (autoscroll / refresh).
+    // Without this, the browser will intercept the middle-click and the page will
+    // scroll / reload instead of opening the popup.
+    document.addEventListener('auxclick', e => {
+        if (e.button === 1 && addon.tab.editorMode === 'editor') {
+            e.preventDefault();
+            openPopup();
+        }
+    }, {capture: true});
+
+    // Also block the legacy `mousedown` + `button === 1` behavior to avoid the
+    // page-wide autoscroll cursor appearing before `auxclick` fires.
+    document.addEventListener('mousedown', e => {
+        if (e.button === 1 && addon.tab.editorMode === 'editor') {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, {capture: true});
+
+    // Open on middle-click OR shift + left-click on the workspace.
     const _doWorkspaceClick_ = Blockly.Gesture.prototype.doWorkspaceClick_;
     Blockly.Gesture.prototype.doWorkspaceClick_ = function () {
-        if (this.mostRecentEvent_.button === 1 || this.mostRecentEvent_.shiftKey) openPopup();
-        mousePosition = {x: this.mostRecentEvent_.clientX, y: this.mostRecentEvent_.clientY};
+        const e = this.mostRecentEvent_;
+        if (!e) return _doWorkspaceClick_.call(this);
+        mousePosition = {x: e.clientX, y: e.clientY};
+
+        const isMiddleClick = e.button === 1;
+        const isShiftLeftClick = e.shiftKey && e.button === 0;
+        if ((isMiddleClick || isShiftLeftClick) && addon.tab.editorMode === 'editor') {
+            e.preventDefault();
+            e.stopPropagation();
+            openPopup();
+            return;
+        }
         _doWorkspaceClick_.call(this);
     };
 
@@ -750,4 +779,23 @@ export default async function ({addon, msg}) {
         }
         return _isDeleteArea.call(this, e);
     };
+
+    // Register an "Insert blocks" entry in the workspace context menu (right-click
+    // on the empty code area / long-press on mobile). This lets users who don't
+    // have a mouse (or who prefer menus) open the popup without middle-clicking.
+    if (addon.tab.createBlockContextMenu) {
+        addon.tab.createBlockContextMenu(
+            (items, block) => {
+                // Only insert on the workspace context menu, not on block menus.
+                if (block) return items;
+                items.unshift({
+                    enabled: true,
+                    text: addon.msg('insert-blocks'),
+                    callback: () => openPopup()
+                });
+                return items;
+            },
+            {workspace: true}
+        );
+    }
 }
