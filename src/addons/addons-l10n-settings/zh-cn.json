@@ -499,5 +499,9 @@
   "tw-comment-markdown-editor/@name": "注释 Markdown 编辑器",
   "tw-comment-markdown-editor/@description": "为注释框添加 Markdown 编辑和预览功能，支持标题、粗体、代码等语法，使用 Ctrl+M 快速切换编辑和预览模式。",
   "bookmark/@name": "书签",
-  "bookmark/@description": "为项目添加书签，快速导航到代码的不同部分，保存工作区位置以便稍后返回。"
+  "bookmark/@description": "为项目添加书签，快速导航到代码的不同部分，保存工作区位置以便稍后返回。",
+  "project-size-display/@name": "项目大小显示",
+  "project-size-display/@description": "在角色栏底部显示作品大小、代码数量和选中角色/舞台的大小。",
+  "project-size-display/@settings-name-blocks-count": "积木数",
+  "project-size-display/@settings-name-project-size": "大小"
 }

@@ -1,0 +1,41 @@
+.sa-project-size-display {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 6px 10px;
+    padding-right: 70px;
+    background: var(--ui-secondary, #f8f9fa);
+    border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.1));
+    font-size: 11px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    user-select: none;
+    box-sizing: border-box;
+    height: 32px;
+    z-index: 5;
+}
+
+.sa-project-size-blocks,
+.sa-project-size-project {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary, #575e75);
+}
+
+.sa-project-size-blocks {
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.sa-project-size-project {
+    color: var(--text-primary, #575e75);
+    flex-shrink: 1;
+    text-align: right;
+}
