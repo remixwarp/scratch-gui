@@ -4,7 +4,7 @@
 #   2. 登录：wrangler login
 #   3. 设置 API 密钥（加密存储，不会出现在代码里）：
 #        wrangler secret put API_KEY
-#      粘贴密钥：sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB
+#      粘贴你的 SiliconFlow/模型提供商 API Key
 #   4. （可选）设置允许的前端来源：
 #        wrangler secret put ALLOWED_ORIGIN
 #      输入你的网站地址，例如 https://your-site.example.com

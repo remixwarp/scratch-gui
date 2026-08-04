@@ -6,7 +6,7 @@ import Button from '../button/button.jsx';
 import MarkdownRenderer from '../markdown-renderer/markdown-renderer.jsx';
 import {sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
 import {costumeUpload} from '../../lib/file-uploader.js';
-import {getApiConfig, getRequestToken, generateTOTP, fetchTOTPChallenge, getSessionToken} from '../../lib/constants/api-keys.js';
+import {getApiConfig, getApiKey} from '../../lib/constants/api-keys.js';
 import {recordAIConversation} from '../../lib/achievements.js';
 
 const API_CONFIG = getApiConfig('siliconflow');
@@ -17,24 +17,17 @@ const IMAGE_API_CONFIG = getApiConfig('siliconflowImages');
 const IMAGE_API_ENDPOINT = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/images/generations';
 const IMAGE_MODEL = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.model : 'Kwai-Kolors/Kolors';
 
-// 构造发往 Worker 代理的请求头：不再携带 Authorization，密钥由 Worker 端注入。
-const buildProxyHeaders = () => ({
-    'Content-Type': 'application/json',
-    'X-Request-Token': getRequestToken(),
-    'X-Session-Token': getSessionToken() || ''
-});
-
-// 获取 TOTP Challenge 并注入到请求体中
-async function buildTOTPBody (baseBody) {
-    const challenge = await fetchTOTPChallenge();
-    const totp = await generateTOTP(challenge.nonce, challenge.period);
-    return {
-        ...baseBody,
-        nonce: challenge.nonce,
-        signature: challenge.signature,
-        totp
+// 直接带 Authorization 头发往上流；API 密钥由环境变量构建时注入。
+const buildRequestHeaders = () => {
+    const apiKey = getApiKey();
+    const headers = {
+        'Content-Type': 'application/json'
     };
-}
+    if (apiKey) {
+        headers['Authorization'] = 'Bearer ' + apiKey;
+    }
+    return headers;
+};
 
 class AIPanel extends React.PureComponent {
     constructor (props) {
@@ -437,17 +430,17 @@ class AIPanel extends React.PureComponent {
             return;
         }
 
-        buildTOTPBody({
-            model: MODEL,
-            messages: [
-                {role: 'system', content: systemPrompt},
-                userMessage
-            ]
-        }).then(body => fetch(API_ENDPOINT, {
+        fetch(API_ENDPOINT, {
             method: 'POST',
-            headers: buildProxyHeaders(),
-            body: JSON.stringify(body)
-        }))
+            headers: buildRequestHeaders(),
+            body: JSON.stringify({
+                model: MODEL,
+                messages: [
+                    {role: 'system', content: systemPrompt},
+                    userMessage
+                ]
+            })
+        })
         .then(response => response.json())
         .then(data => {
             // Try to extract assistant reply from common response shapes
@@ -491,16 +484,16 @@ class AIPanel extends React.PureComponent {
 
 现在开始输出SVG代码：`;
 
-            const totpBody = await buildTOTPBody({
+            const totpBody = {
                 model: MODEL,
                 messages: [
                     {role: 'system', content: '你是一个专业的SVG图形设计师，只输出完整的SVG代码，不要任何其他文字解释。'},
                     {role: 'user', content: svgPrompt}
                 ]
-            });
+            };
             const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
-                headers: buildProxyHeaders(),
+                headers: buildRequestHeaders(),
                 body: JSON.stringify(totpBody)
             });
 
@@ -747,16 +740,16 @@ ${JSON.stringify(projectData, null, 2)}
 请用中文回答，格式清晰易读。`;
 
         try {
-            const totpBody = await buildTOTPBody({
+            const totpBody = {
                 model: MODEL,
                 messages: [
                     {role: 'system', content: '你是Scratch项目分析专家，专门分析Scratch项目的结构和功能。'},
                     {role: 'user', content: analysisPrompt}
                 ]
-            });
+            };
             const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
-                headers: buildProxyHeaders(),
+                headers: buildRequestHeaders(),
                 body: JSON.stringify(totpBody)
             });
             
@@ -1353,16 +1346,16 @@ ${JSON.stringify(projectData, null, 2)}
     
     // 调用AI的通用方法
     async callAI (prompt) {
-        const totpBody = await buildTOTPBody({
+        const totpBody = {
             model: MODEL,
             messages: [
                 {role: 'system', content: '你是Scratch专家，只输出代码，不解释。'},
                 {role: 'user', content: prompt}
             ]
-        });
+        };
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
-            headers: buildProxyHeaders(),
+            headers: buildRequestHeaders(),
             body: JSON.stringify(totpBody)
         });
         

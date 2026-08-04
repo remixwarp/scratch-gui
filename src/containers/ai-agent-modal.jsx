@@ -6,22 +6,14 @@ import bindAll from 'lodash.bindall';
 import {closeAIAgentModal, MODAL_AI_AGENT} from '../reducers/modals';
 import Modal from './windowed-modal.jsx';
 import AIPanel from '../components/ai/ai-panel.jsx';
-import TurnstileVerifier from '../components/ai/turnstile-verifier.jsx';
-import {getSessionToken} from '../lib/constants/api-keys.js';
 
 class AIAgentModalContainer extends React.Component {
     constructor (props) {
         super(props);
-        this.state = {
-            verified: !!getSessionToken()
-        };
-        bindAll(this, ['handleClose', 'handleVerified']);
+        bindAll(this, ['handleClose']);
     }
     handleClose () {
         this.props.onClose();
-    }
-    handleVerified () {
-        this.setState({verified: true});
     }
     render () {
         const {visible, isRtl, vm} = this.props;
@@ -35,16 +27,12 @@ class AIAgentModalContainer extends React.Component {
                 onRequestClose={this.handleClose}
                 showHeader={false}
             >
-                {this.state.verified ? (
-                    <AIPanel
-                        onRequestClose={this.handleClose}
-                        showHeader={true}
-                        type="agent"
-                        vm={vm}
-                    />
-                ) : (
-                    <TurnstileVerifier onSuccess={this.handleVerified} />
-                )}
+                <AIPanel
+                    onRequestClose={this.handleClose}
+                    showHeader={true}
+                    type="agent"
+                    vm={vm}
+                />
             </Modal>
         );
     }

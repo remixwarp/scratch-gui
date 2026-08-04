@@ -1,20 +1,15 @@
 // ============================================================================
-// Cloudflare Worker：AI 请求安全代理（Vaptcha + TOTP + Session Token）
+// Cloudflare Worker：AI 请求透明代理
 // ----------------------------------------------------------------------------
-// 安全层级：
-//   1. 全局域名白名单（ALLOWED_ORIGIN 环境变量，可选）
-//   2. Vaptcha 人机验证 → 签发 Session Token（30分钟有效）
-//   3. Session Token 签名验证（HMAC-SHA256）
-//   4. IP 频率限制（20次/分钟）
-//   5. TOTP 动态口令验证（10秒周期）
-//   6. Nonce 防重放（30秒自动清理）
+// 这是一个极简的转发 Worker：去掉所有人机验证、会话、TOTP、限流等安全检查，
+// 直接将 /chat 与 /images 的 POST 请求转发给上游 SiliconFlow，并注入
+// Authorization: Bearer <API_KEY>。
 //
 // 路由：
-//   GET  /          → 健康检查
-//   POST /auth      → 验证 Vaptcha token，签发 Session Token
-//   GET  /challenge → 返回 TOTP challenge（需 Session Token）
-//   POST /chat      → 转发到 AI 接口（需 Session Token + TOTP）
-//   POST /images    → 转发到图片接口（需 Session Token + TOTP）
+//   GET  /health               → 健康检查
+//   POST /chat                 → 转发到 SiliconFlow chat
+//   POST /images               → 转发到 SiliconFlow images
+//   POST /proxy?upstream=...   → 转发到任意上游 URL（http/https 仅限）
 // ============================================================================
 
 const UPSTREAM = {
@@ -22,28 +17,8 @@ const UPSTREAM = {
     images: 'https://api.siliconflow.cn/v1/images/generations'
 };
 
-const DEFAULT_REQUEST_TOKEN = 'scratch-ai-proxy-2026';
-const DEFAULT_TOTP_PERIOD = 10;
-
-// Session Token 有效期：30分钟
-const SESSION_TTL = 1800;
-
-// Nonce 防重放
-const usedNonces = new Map();
-const NONCE_TTL_MS = 30000;
-
-// Vaptcha token 防重放
-const usedVaptchaTokens = new Map();
-const VAPTCHA_TOKEN_TTL_MS = 120000; // 2 分钟
-
-// IP 频率限制
-const ipRequests = new Map();
-const RATE_LIMIT_WINDOW = 60000; // 1分钟
-const RATE_LIMIT_MAX = 20;       // 每分钟最多20次
-
 export default {
     async fetch (request, env) {
-        // --- 全局域名白名单 ---
         if (env.ALLOWED_ORIGIN) {
             const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
             const allowed = env.ALLOWED_ORIGIN.split(',').map(s => s.trim()).filter(Boolean);
@@ -56,10 +31,15 @@ export default {
         const url = new URL(request.url);
 
         if (request.method === 'OPTIONS') {
-            return handleCORS();
+            return new Response(null, {
+                status: 204,
+                headers: corsHeaders()
+            });
         }
 
-        if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '' || url.pathname === '/health' || url.pathname === '/api/health')) {
+        if (request.method === 'GET' &&
+            (url.pathname === '/' || url.pathname === '' ||
+             url.pathname === '/health' || url.pathname === '/api/health')) {
             return new Response(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }), {
                 headers: { 'Content-Type': 'application/json', ...corsHeaders() }
             });
@@ -67,34 +47,23 @@ export default {
 
         const route = url.pathname.replace(/^\/+/, '');
 
-        // /auth：验证 Vaptcha，签发 Session Token（唯一不需要 Session Token 的 POST 路由）
-        if (request.method === 'POST' && route === 'auth') {
-            return handleAuth(request, env);
+        let upstreamUrl = null;
+        if (route === 'chat' || route === 'api/chat') upstreamUrl = UPSTREAM.chat;
+        else if (route === 'images' || route === 'api/images') upstreamUrl = UPSTREAM.images;
+        else if (route === 'proxy' || route === 'api/proxy') {
+            const param = url.searchParams.get('upstream');
+            if (!param) {
+                return jsonError(400, 'Missing upstream');
+            }
+            try {
+                const parsed = new URL(param);
+                if (!/^https?:$/.test(parsed.protocol)) throw new Error('bad proto');
+                upstreamUrl = parsed.toString();
+            } catch (_) {
+                return jsonError(400, 'Invalid upstream URL');
+            }
         }
 
-        // 以下路由都需要 Session Token
-        const sessionToken = request.headers.get('X-Session-Token') || '';
-        if (!sessionToken) {
-            return jsonError(403, 'Forbidden: missing session token');
-        }
-
-        const sessionResult = await verifySessionToken(sessionToken, env);
-        if (!sessionResult.ok) {
-            return jsonError(403, `Forbidden: ${sessionResult.error}`);
-        }
-
-        // /challenge：返回 TOTP challenge
-        if (request.method === 'GET' && route === 'challenge') {
-            return handleChallenge(env);
-        }
-
-        // /verify：验证 TOTP（兼容旧接口）
-        if (request.method === 'POST' && route === 'verify') {
-            return handleVerify(request, env);
-        }
-
-        // /chat 和 /images：转发到上游 AI 接口
-        const upstreamUrl = UPSTREAM[route];
         if (!upstreamUrl) {
             return jsonError(404, 'Not Found');
         }
@@ -103,53 +72,17 @@ export default {
             return jsonError(405, 'Method Not Allowed');
         }
 
-        // IP 频率限制
-        const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-        if (!checkRateLimit(clientIP)) {
-            return jsonError(429, 'Too Many Requests: 请稍后再试');
-        }
+        const body = await request.text();
 
-        const expectedToken = env.REQUEST_TOKEN || DEFAULT_REQUEST_TOKEN;
-        const requestToken = request.headers.get('X-Request-Token');
-        if (!requestToken || requestToken !== expectedToken) {
-            return jsonError(403, 'Forbidden: invalid token');
-        }
-
-        let body;
-        try {
-            body = await request.json();
-        } catch (e) {
-            return jsonError(400, 'Bad Request: invalid body');
-        }
-
-        const { nonce, signature, totp, ...upstreamBody } = body;
-        if (!nonce || !signature || !totp) {
-            return jsonError(403, 'Forbidden: missing TOTP parameters');
-        }
-
-        if (isNonceUsed(nonce)) {
-            return jsonError(403, 'Forbidden: nonce already used');
-        }
-
-        const verifyResult = await verifyTOTP(nonce, signature, totp, env);
-        if (!verifyResult.ok) {
-            return jsonError(403, `TOTP verification failed: ${verifyResult.error}`);
-        }
-
-        markNonceUsed(nonce);
-
-        const apiKey = env.API_KEY;
-        if (!apiKey) {
-            return jsonError(500, 'Server misconfiguration: API_KEY not set');
-        }
+        const apiKey = env.API_KEY || '';
+        const headers = new Headers();
+        headers.set('Content-Type', 'application/json');
+        if (apiKey) headers.set('Authorization', 'Bearer ' + apiKey);
 
         const upstreamResp = await fetch(upstreamUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + apiKey
-            },
-            body: JSON.stringify(upstreamBody)
+            headers,
+            body
         });
 
         const respBody = await upstreamResp.text();
@@ -163,322 +96,12 @@ export default {
     }
 };
 
-// ============================================================================
-// /auth：验证 Vaptcha token，签发 Session Token
-// ============================================================================
-async function handleAuth (request, env) {
-    const masterSecret = env.MASTER_SECRET;
-    if (!masterSecret) {
-        return jsonError(500, 'Server misconfiguration: MASTER_SECRET not set');
-    }
-
-    const vkey = env.VAPTCHA_VKEY;
-    if (!vkey) {
-        return jsonError(500, 'Server misconfiguration: VAPTCHA_VKEY not set');
-    }
-
-    let body;
-    try {
-        body = await request.json();
-    } catch (e) {
-        return jsonError(400, 'Bad Request: invalid body');
-    }
-
-    const { vaptchaToken, vaptchaKnock, vaptchaDfu } = body || {};
-    if (!vaptchaToken) {
-        return jsonError(400, 'Missing vaptchaToken');
-    }
-
-    const clientIP = request.headers.get('CF-Connecting-IP') ||
-        request.headers.get('X-Forwarded-For') ||
-        request.headers.get('X-Real-IP') ||
-        '';
-
-    const verifyResult = await verifyVaptchaToken({
-        token: vaptchaToken,
-        knock: vaptchaKnock || '',
-        dfu: vaptchaDfu || '',
-        ip: clientIP,
-        vkey
-    });
-
-    if (!verifyResult.ok) {
-        return jsonError(403, `Vaptcha verification failed: ${verifyResult.reason}`);
-    }
-
-    // 签发 Session Token
-    const sessionToken = await generateSessionToken(masterSecret);
-
-    return new Response(JSON.stringify({ sessionToken }), {
-        headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders()
-        }
-    });
-}
-
-// ============================================================================
-// Vaptcha token 本地签名校验（不调用外部接口）
-// token 格式: timestamp.token_id.signature
-// signature = hex(HMAC-SHA256(timestamp + "." + ip + "." + dfu + "." + knock, vkey))
-// ============================================================================
-async function verifyVaptchaToken ({ token, knock, dfu, ip, vkey, ttlSeconds = 30 }) {
-    if (!token || !vkey) return { ok: false, reason: 'missing token or vkey' };
-    const parts = token.split('.');
-    if (parts.length !== 3) return { ok: false, reason: 'malformed token' };
-
-    const [timestampStr, tokenId, signature] = parts;
-    const timestamp = Number(timestampStr);
-    if (!timestamp || !tokenId || !signature) return { ok: false, reason: 'malformed token' };
-
-    const now = Math.floor(Date.now() / 1000);
-    if (Math.abs(now - timestamp) > ttlSeconds) {
-        return { ok: false, reason: 'token expired' };
-    }
-
-    const data = `${timestamp}.${ip}.${dfu || ''}.${knock || ''}`;
-    const expected = await hmacSha256(vkey, data);
-    if (signature.length !== expected.length) return { ok: false, reason: 'signature mismatch' };
-    if (!constantTimeEqual(signature, expected)) {
-        return { ok: false, reason: 'signature mismatch' };
-    }
-
-    // Replay protection: token_id 只能使用一次
-    const nowMs = Date.now();
-    for (const [k, t] of usedVaptchaTokens.entries()) {
-        if (nowMs - t > VAPTCHA_TOKEN_TTL_MS) usedVaptchaTokens.delete(k);
-    }
-    if (usedVaptchaTokens.has(token)) {
-        return { ok: false, reason: 'replay token' };
-    }
-    usedVaptchaTokens.set(token, nowMs);
-
-    return { ok: true };
-}
-
-// ============================================================================
-// Session Token 生成与验证
-// 格式：base64(payload) + "." + hex(HMAC-SHA256(MASTER_SECRET, base64(payload)))
-// payload: { exp: 过期时间戳（秒） }
-// ============================================================================
-async function generateSessionToken (masterSecret) {
-    const now = Math.floor(Date.now() / 1000);
-    const payload = JSON.stringify({ exp: now + SESSION_TTL });
-    const payloadB64 = btoa(payload);
-    const signature = await hmacSha256(masterSecret, payloadB64);
-    return payloadB64 + '.' + signature;
-}
-
-async function verifySessionToken (token, env) {
-    const masterSecret = env.MASTER_SECRET;
-    if (!masterSecret) {
-        return { ok: false, error: 'MASTER_SECRET not set' };
-    }
-
-    const parts = token.split('.');
-    if (parts.length !== 2) {
-        return { ok: false, error: 'Invalid session token format' };
-    }
-    const [payloadB64, signature] = parts;
-
-    const expectedSignature = await hmacSha256(masterSecret, payloadB64);
-    if (!constantTimeEqual(signature, expectedSignature)) {
-        return { ok: false, error: 'Invalid session token signature' };
-    }
-
-    try {
-        const payload = JSON.parse(atob(payloadB64));
-        const now = Math.floor(Date.now() / 1000);
-        if (payload.exp < now) {
-            return { ok: false, error: 'Session token expired' };
-        }
-    } catch (e) {
-        return { ok: false, error: 'Invalid session token payload' };
-    }
-
-    return { ok: true };
-}
-
-// ============================================================================
-// /challenge：生成 TOTP challenge
-// ============================================================================
-async function handleChallenge (env) {
-    const masterSecret = env.MASTER_SECRET;
-    if (!masterSecret) {
-        return jsonError(500, 'Server misconfiguration: MASTER_SECRET not set');
-    }
-
-    const period = parseInt(env.TOTP_PERIOD || DEFAULT_TOTP_PERIOD);
-    const nonce = crypto.randomUUID() + crypto.randomUUID();
-    const signature = await hmacSha256(masterSecret, nonce);
-
-    return new Response(JSON.stringify({
-        nonce,
-        signature,
-        period,
-        serverTime: Math.floor(Date.now() / 1000)
-    }), {
-        headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders()
-        }
-    });
-}
-
-// ============================================================================
-// /verify：验证 TOTP（兼容旧接口）
-// ============================================================================
-async function handleVerify (request, env) {
-    const masterSecret = env.MASTER_SECRET;
-    if (!masterSecret) {
-        return jsonError(500, 'Server misconfiguration: MASTER_SECRET not set');
-    }
-
-    let body;
-    try {
-        body = await request.json();
-    } catch (e) {
-        return jsonError(400, 'Bad Request: invalid body');
-    }
-
-    const { nonce, signature, totp } = body;
-
-    if (!nonce || !signature || !totp) {
-        return jsonError(400, 'Missing required parameters: nonce, signature, totp');
-    }
-
-    if (isNonceUsed(nonce)) {
-        return jsonError(403, 'Nonce already used');
-    }
-
-    const verifyResult = await verifyTOTP(nonce, signature, totp, env);
-    if (!verifyResult.ok) {
-        return jsonError(403, verifyResult.error);
-    }
-
-    markNonceUsed(nonce);
-
-    return new Response(JSON.stringify({ ok: true }), {
-        headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders()
-        }
-    });
-}
-
-// ============================================================================
-// TOTP 验证
-// ============================================================================
-async function verifyTOTP (nonce, signature, totp, env) {
-    const masterSecret = env.MASTER_SECRET;
-    const period = parseInt(env.TOTP_PERIOD || DEFAULT_TOTP_PERIOD);
-
-    const expectedSignature = await hmacSha256(masterSecret, nonce);
-    if (!constantTimeEqual(signature, expectedSignature)) {
-        return { ok: false, error: 'Invalid signature' };
-    }
-
-    const now = Math.floor(Date.now() / 1000);
-    const currentCounter = Math.floor(now / period);
-
-    let valid = false;
-    for (let offset = -1; offset <= 1; offset++) {
-        const counter = currentCounter + offset;
-        const expectedTOTP = await computeTOTP(nonce, counter, 6);
-        if (constantTimeEqual(totp, expectedTOTP)) {
-            valid = true;
-            break;
-        }
-    }
-
-    if (!valid) {
-        return { ok: false, error: 'Invalid TOTP' };
-    }
-
-    return { ok: true };
-}
-
-// ============================================================================
-// IP 频率限制
-// ============================================================================
-function checkRateLimit (ip) {
-    const now = Date.now();
-    for (const [key, entry] of ipRequests) {
-        if (now - entry.startTime > RATE_LIMIT_WINDOW) {
-            ipRequests.delete(key);
-        }
-    }
-    const entry = ipRequests.get(ip);
-    if (!entry) {
-        ipRequests.set(ip, { startTime: now, count: 1 });
-        return true;
-    }
-    entry.count++;
-    return entry.count <= RATE_LIMIT_MAX;
-}
-
-// ============================================================================
-// HMAC-SHA256 / TOTP 计算
-// ============================================================================
-async function hmacSha256 (secret, message) {
-    const enc = new TextEncoder();
-    const keyData = enc.encode(secret);
-    const msgData = enc.encode(message);
-    const key = await crypto.subtle.importKey(
-        'raw',
-        keyData,
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign']
-    );
-    const sig = await crypto.subtle.sign('HMAC', key, msgData);
-    return Array.from(new Uint8Array(sig))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-}
-
-async function computeTOTP (secret, counter, digits = 6) {
-    const hash = await hmacSha256(secret, String(counter));
-    const offset = parseInt(hash.slice(-1), 16);
-    const binary = parseInt(hash.substr(offset * 2, 8), 16) & 0x7fffffff;
-    const otp = binary % Math.pow(10, digits);
-    return otp.toString().padStart(digits, '0');
-}
-
-// ============================================================================
-// 工具函数
-// ============================================================================
-function constantTimeEqual (a, b) {
-    if (a.length !== b.length) return false;
-    let result = 0;
-    for (let i = 0; i < a.length; i++) {
-        result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-    }
-    return result === 0;
-}
-
-function isNonceUsed (nonce) {
-    const now = Date.now();
-    for (const [n, time] of usedNonces) {
-        if (now - time > NONCE_TTL_MS) usedNonces.delete(n);
-    }
-    return usedNonces.has(nonce);
-}
-
-function markNonceUsed (nonce) {
-    usedNonces.set(nonce, Date.now());
-}
-
 function corsHeaders () {
     return {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Request-Token, X-Session-Token'
+        'Access-Control-Allow-Headers': 'Content-Type, X-Request-Token, X-Session-Token, Authorization'
     };
-}
-
-function handleCORS () {
-    return new Response(null, { status: 204, headers: corsHeaders() });
 }
 
 function jsonError (status, message) {

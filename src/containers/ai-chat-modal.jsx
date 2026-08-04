@@ -6,22 +6,14 @@ import bindAll from 'lodash.bindall';
 import {closeAIChatModal, MODAL_AI_CHAT} from '../reducers/modals';
 import Modal from './windowed-modal.jsx';
 import AIPanel from '../components/ai/ai-panel.jsx';
-import TurnstileVerifier from '../components/ai/turnstile-verifier.jsx';
-import {getSessionToken} from '../lib/constants/api-keys.js';
 
 class AIChatModalContainer extends React.Component {
     constructor (props) {
         super(props);
-        this.state = {
-            verified: !!getSessionToken()
-        };
-        bindAll(this, ['handleClose', 'handleVerified']);
+        bindAll(this, ['handleClose']);
     }
     handleClose () {
         this.props.onClose();
-    }
-    handleVerified () {
-        this.setState({verified: true});
     }
     render () {
         const {visible, isRtl} = this.props;
@@ -35,15 +27,11 @@ class AIChatModalContainer extends React.Component {
                 onRequestClose={this.handleClose}
                 showHeader={true}
             >
-                {this.state.verified ? (
-                    <AIPanel
-                        onRequestClose={this.handleClose}
-                        showHeader={false}
-                        type="chat"
-                    />
-                ) : (
-                    <TurnstileVerifier onSuccess={this.handleVerified} />
-                )}
+                <AIPanel
+                    onRequestClose={this.handleClose}
+                    showHeader={false}
+                    type="chat"
+                />
             </Modal>
         );
     }
