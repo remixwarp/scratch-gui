@@ -47,15 +47,14 @@ class VaptchaVerifier extends React.Component {
             verifying: false
         };
         this.vaptchaObj = null;
-        this.containerRef = React.createRef();
         this.consecutiveFailures = 0;
-        this.handleVaptchaCallback = this.handleVaptchaCallback.bind(this);
-        this.recordFailure = this.recordFailure.bind(this);
+        this.initRetries = 0;
+        this.maxInitRetries = 5;
         this.handleVerifyClick = this.handleVerifyClick.bind(this);
     }
 
     componentDidMount () {
-        this.loadVaptchaScript();
+        this.initVaptcha();
     }
 
     componentWillUnmount () {
@@ -64,41 +63,101 @@ class VaptchaVerifier extends React.Component {
         }
     }
 
-    loadVaptchaScript () {
-        if (window.vaptcha) {
+    initVaptcha () {
+        if (typeof window.vaptcha === 'function') {
             this.initializeVaptcha();
             return;
         }
+
+        if (this.initRetries >= this.maxInitRetries) {
+            this.setState({loading: false, error: '验证组件加载失败，请刷新页面重试'});
+            return;
+        }
+
+        // If script already exists in DOM but window.vaptcha isn't ready yet,
+        // poll for it. Otherwise inject the script.
+        const existingScript = document.querySelector('script[src="https://cdn4.vaptcha.com/src/v4.js"]');
+        if (existingScript) {
+            this.pollForVaptcha();
+            return;
+        }
+
         const script = document.createElement('script');
         script.src = 'https://cdn4.vaptcha.com/src/v4.js';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-            this.initializeVaptcha();
-        };
+        script.onload = () => this.pollForVaptcha();
         script.onerror = () => {
-            this.setState({loading: false, error: '无法加载验证组件，请检查网络连接'});
+            this.initRetries++;
+            if (this.initRetries < this.maxInitRetries) {
+                setTimeout(() => this.initVaptcha(), 500);
+            } else {
+                this.setState({loading: false, error: '无法加载验证组件，请检查网络连接'});
+            }
         };
         this.scriptTag = script;
         document.head.appendChild(script);
     }
 
-    initializeVaptcha () {
-        if (!window.vaptcha || !this.containerRef.current) {
-            this.setState({loading: false, error: '验证组件加载失败'});
+    pollForVaptcha () {
+        if (typeof window.vaptcha === 'function') {
+            this.initializeVaptcha();
             return;
         }
+        this.initRetries++;
+        if (this.initRetries < this.maxInitRetries * 4) {
+            setTimeout(() => this.pollForVaptcha(), 200);
+        } else {
+            this.setState({loading: false, error: '验证组件初始化超时，请刷新页面重试'});
+        }
+    }
+
+    initializeVaptcha () {
         this.setState({loading: false, error: null});
+
+        // Try up to 3 times with delay for SDK initialization
+        this.tryInit(0);
+    }
+
+    tryInit (attempt) {
+        if (attempt >= 3) {
+            this.setState({loading: false, error: '验证组件初始化失败，请刷新页面重试'});
+            return;
+        }
+
+        const container = document.getElementById('vaptcha-container');
+        if (!container) {
+            setTimeout(() => this.tryInit(attempt + 1), 100);
+            return;
+        }
+
+        // Clear any previous DOM state so re-init won't conflict
+        if (typeof container.replaceChildren === 'function') {
+            container.replaceChildren();
+        } else {
+            container.innerHTML = '';
+        }
 
         window.vaptcha({
             vid: VAPTCHA_VID,
-            container: '#vaptcha-container',
-            lang: 'zh-CN'
+            container: '#vaptcha-container'
         }).then((vaptchaObj) => {
+            if (!vaptchaObj || typeof vaptchaObj.validate !== 'function') {
+                console.warn('Vaptcha obj missing validate method, retrying...');
+                setTimeout(() => this.tryInit(attempt + 1), 300);
+                return;
+            }
             this.vaptchaObj = vaptchaObj;
         }).catch((err) => {
+            const msg = (err && (err.message || err.msg)) || '未知错误';
             console.error('Vaptcha init error:', err);
-            this.setState({loading: false, error: '验证组件初始化失败'});
+            // Terminal errors (wrong vid / domain mismatch / unit disabled) — do not retry
+            if (/验证单元|不匹配|invalid|forbid|not match|unit/i.test(msg)) {
+                this.setState({
+                    loading: false,
+                    error: '验证单元不可用：' + msg + '（请在 Vaptcha 控制台检查该 VID 的域名绑定）'
+                });
+                return;
+            }
+            setTimeout(() => this.tryInit(attempt + 1), 500);
         });
     }
 
@@ -110,7 +169,7 @@ class VaptchaVerifier extends React.Component {
     }
 
     async handleVerifyClick () {
-        if (!this.vaptchaObj) {
+        if (!this.vaptchaObj || typeof this.vaptchaObj.validate !== 'function') {
             this.setState({error: '验证组件未就绪，请刷新页面重试'});
             return;
         }
@@ -135,15 +194,10 @@ class VaptchaVerifier extends React.Component {
         } catch (err) {
             this.recordFailure();
             this.setState({verifying: false, error: '验证失败：' + (err.message || '请重试')});
-            if (this.vaptchaObj) {
+            if (this.vaptchaObj && typeof this.vaptchaObj.reset === 'function') {
                 this.vaptchaObj.reset();
             }
         }
-    }
-
-    handleVaptchaCallback () {
-        // This is called when the user clicks the validate button
-        this.handleVerifyClick();
     }
 
     render () {
@@ -158,7 +212,6 @@ class VaptchaVerifier extends React.Component {
                 {this.state.loading && <div style={descStyle}>正在加载验证组件...</div>}
                 <div
                     id="vaptcha-container"
-                    ref={this.containerRef}
                     style={{minHeight: '65px', width: '240px'}}
                 />
                 {!this.state.loading && (

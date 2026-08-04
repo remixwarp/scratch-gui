@@ -6,6 +6,10 @@
 // Worker 代理地址（已部署）
 const WORKER_URL = 'https://aiapi.rewp.de5.net';
 
+// 真实的 AI 上游 URL（只放在前端，Worker 通过 ?upstream= 接受转发目标）
+const SILICONFLOW_CHAT = 'https://api.siliconflow.cn/v1/chat/completions';
+const SILICONFLOW_IMAGES = 'https://api.siliconflow.cn/v1/images/generations';
+
 // 密钥 Worker 地址（用于获取 TOTP Challenge）
 const KEY_WORKER_URL = 'https://aiapi2.rewp.de5.net';
 
@@ -22,13 +26,14 @@ function getSessionToken () { return sessionToken; }
 const REQUEST_TOKEN = 'scratch-ai-proxy-2026';
 
 // 浏览器侧只持有 Worker 的转发地址与模型名，不再持有任何密钥。
+// endpoint 通过 WORKER_URL + ?upstream=<真实上游> 的方式绕过浏览器 CORS。
 const API_KEY_CONFIG = {
     siliconflow: {
-        endpoint: `${WORKER_URL}/chat`,
+        endpoint: `${WORKER_URL}/chat?upstream=${encodeURIComponent(SILICONFLOW_CHAT)}`,
         model: 'auto'
     },
     siliconflowImages: {
-        endpoint: `${WORKER_URL}/images`,
+        endpoint: `${WORKER_URL}/images?upstream=${encodeURIComponent(SILICONFLOW_IMAGES)}`,
         model: 'auto'
     }
 };
