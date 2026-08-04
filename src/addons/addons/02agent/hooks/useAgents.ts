@@ -29,11 +29,59 @@ const DEFAULT_AGENTS: Agent[] = [
         modelId: "auto",
       },
     ],
+    immutable: true,
+    builtin: true,
   },
 ];
 
+// 系统内置 Agent 的 ID 列表（不可编辑、不可删除）
+export const BUILTIN_AGENT_IDS = new Set<string>(
+  DEFAULT_AGENTS.filter((a) => a.immutable || a.builtin).map((a) => a.id),
+);
+
+/**
+ * 确保 immutable Agent 不会被用户编辑过的存储值覆盖。
+ * 每次加载存储后，将 immutable Agent 的 id 与 DEFAULT_AGENTS 中相同 id 的对象重置回默认值，
+ * 避免用户通过手动改 localStorage 暴露密钥。
+ */
+function enforceImmutableDefaults (stored: Agent[]): Agent[] {
+  const builtinIndex = new Map(DEFAULT_AGENTS.filter(a => a.immutable).map(a => [a.id, a]));
+  const seenBuiltin = new Set<string>();
+  const next: Agent[] = [];
+  for (const agent of stored) {
+    if (builtinIndex.has(agent.id)) {
+      seenBuiltin.add(agent.id);
+      next.push({ ...builtinIndex.get(agent.id)! });
+    } else {
+      next.push(agent);
+    }
+  }
+  // 确保所有内置 Agent 始终出现在列表最前面
+  for (const id of builtinIndex.keys()) {
+    if (!seenBuiltin.has(id)) {
+      next.unshift({ ...builtinIndex.get(id)! });
+    }
+  }
+  return next;
+}
+
 export function useAgents() {
-  const [agents, setAgents] = useStorageInfo<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
+  // 从存储读取，读取后强制覆盖 immutable Agent，避免用户篡改
+  const [storedAgents, setStoredAgents] = useStorageInfo<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
+  const agents = enforceImmutableDefaults(storedAgents);
+  useEffect(() => {
+    if (JSON.stringify(storedAgents) !== JSON.stringify(agents)) {
+      setStoredAgents(agents);
+    }
+  }, [storedAgents, agents, setStoredAgents]);
+
+  const setAgents: typeof setStoredAgents = (next) => {
+    const coerced = typeof next === "function"
+      ? enforceImmutableDefaults((next as any)(storedAgents))
+      : enforceImmutableDefaults(next as Agent[]);
+    return setStoredAgents(coerced);
+  };
+
   const [currentModelId, setCurrentModelId] = useStorageInfo<string>("AI_ASSISTANT_CURRENT_AGENT_ID", "default-free-model-1");
   const [showSettings, setShowSettings] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
@@ -84,14 +132,22 @@ export function useAgents() {
   }, [flattenedModels, currentModelId]);
 
   useEffect(() => {
-    // 强制使用新配置覆盖旧配置
-    if (JSON.stringify(agents) !== JSON.stringify(DEFAULT_AGENTS)) {
-      setAgents(DEFAULT_AGENTS);
-      setCurrentModelId(DEFAULT_AGENTS[0].models[0].id);
+    // 当 immutable Agent 不存在于列表中时，强制把它放回。
+    const rebuilt = enforceImmutableDefaults(agents);
+    if (JSON.stringify(rebuilt) !== JSON.stringify(agents)) {
+      setStoredAgents(rebuilt);
+      if (!rebuilt.some(a => a.models.some(m => m.id === currentModelId))) {
+        setCurrentModelId(rebuilt[0]?.models[0]?.id || "default-free-model-1");
+      }
     }
-  }, [agents, setAgents, setCurrentModelId]);
+  }, [agents, setStoredAgents, currentModelId, setCurrentModelId]);
 
   const handleSaveAgent = (newAgent: Agent) => {
+    // 拒绝覆盖 immutable Agent
+    if (BUILTIN_AGENT_IDS.has(newAgent.id)) {
+      window.alert("系统内置 AI 不可编辑");
+      return;
+    }
     const nextAgents = editingAgent
       ? agents.map((agent) => (agent.id === editingAgent.id ? newAgent : agent))
       : [...agents, newAgent];
@@ -106,7 +162,12 @@ export function useAgents() {
   };
 
   const handleDeleteAgent = (id: string) => {
-    if (agents.length <= 1) {
+    if (BUILTIN_AGENT_IDS.has(id)) {
+      window.alert("系统内置 AI 不可删除");
+      return;
+    }
+    const mutableAgents = agents.filter(a => !BUILTIN_AGENT_IDS.has(a.id));
+    if (mutableAgents.length <= 1) {
       return;
     }
 
@@ -128,6 +189,10 @@ export function useAgents() {
   const handleExportAgent = (agentId: string) => {
     const agent = agents.find((item) => item.id === agentId);
     if (!agent) return;
+    if (BUILTIN_AGENT_IDS.has(agentId)) {
+      window.alert("系统内置 AI 不允许导出（避免密钥外泄）");
+      return;
+    }
 
     // Migrate on export just in case
     const exportAgent = { ...agent };
