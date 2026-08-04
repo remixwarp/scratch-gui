@@ -9,10 +9,10 @@ const WORKER_URL = 'https://aiapi.rewp.de5.net';
 // 密钥 Worker 地址（用于获取 TOTP Challenge）
 const KEY_WORKER_URL = 'https://aiapi2.rewp.de5.net';
 
-// Cloudflare Turnstile 站点密钥（公开密钥，硬编码在前端）
-const TURNSTILE_SITE_KEY = '0x4AAAAAACyeS6Www9AVI--y';
+// Vaptcha VID（公开密钥，硬编码在前端）
+const VAPTCHA_VID = 'id_2a50720d34da61d';
 
-// Session Token 管理（Turnstile 验证通过后由 Worker 签发，有效期30分钟）
+// Session Token 管理（Vaptcha 验证通过后由 Worker 签发，有效期30分钟）
 let sessionToken = null;
 function setSessionToken (token) { sessionToken = token; }
 function getSessionToken () { return sessionToken; }
@@ -96,15 +96,15 @@ async function fetchTOTPChallenge () {
     return resp.json();
 }
 
-// 用 Turnstile token 换取 Session Token
-async function exchangeTurnstileForSession (turnstileToken) {
+// 用 Vaptcha token/knock/dfu 换取 Session Token
+async function exchangeVaptchaForSession (token, knock = '', dfu = '') {
     const resp = await fetch(`${WORKER_URL}/auth`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-Request-Token': REQUEST_TOKEN
         },
-        body: JSON.stringify({ turnstileToken })
+        body: JSON.stringify({ vaptchaToken: token, vaptchaKnock: knock, vaptchaDfu: dfu })
     });
     if (!resp.ok) {
         const data = await resp.json().catch(() => ({}));
@@ -121,7 +121,7 @@ async function exchangeTurnstileForSession (turnstileToken) {
 export {
     WORKER_URL,
     KEY_WORKER_URL,
-    TURNSTILE_SITE_KEY,
+    VAPTCHA_VID,
     REQUEST_TOKEN,
     API_KEY_CONFIG,
     getApiConfig,
@@ -129,7 +129,7 @@ export {
     getRequestToken,
     generateTOTP,
     fetchTOTPChallenge,
-    exchangeTurnstileForSession,
+    exchangeVaptchaForSession,
     getSessionToken,
     setSessionToken
 };
@@ -137,7 +137,7 @@ export {
 export default {
     WORKER_URL,
     KEY_WORKER_URL,
-    TURNSTILE_SITE_KEY,
+    VAPTCHA_VID,
     REQUEST_TOKEN,
     API_KEY_CONFIG,
     getApiConfig,
@@ -145,7 +145,7 @@ export default {
     getRequestToken,
     generateTOTP,
     fetchTOTPChallenge,
-    exchangeTurnstileForSession,
+    exchangeVaptchaForSession,
     getSessionToken,
     setSessionToken
 };
