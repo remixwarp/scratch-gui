@@ -83,7 +83,8 @@ const base = {
                 /node_modules[\\/]domelementtype/,
                 /node_modules[\\/]domutils/,
                 /node_modules[\\/]react-markdown/,
-                /node_modules[\\/]isomorphic-git/
+                /node_modules[\\/]isomorphic-git/,
+                /node_modules[\\/]fractch/
             ],
             options: {
                 cacheDirectory: true,
