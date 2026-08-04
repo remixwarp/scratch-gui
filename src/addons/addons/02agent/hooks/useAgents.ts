@@ -13,14 +13,19 @@ interface ExportedAgentFile {
 const DEFAULT_AGENTS: Agent[] = [
   {
     id: "default-free-chat",
-    name: "免费AI",
+    name: "AI助手",
     provider: "custom",
-    baseUrl: "https://api.iamhc.cn/v1/chat/completions",
-    apiKey: "sk-lIXO0F3Gt59pGKkxhsWeBPk0bdF71heF450eXhUmzlR4ATSH",
+    baseUrl: "https://api.hcnsec.cn/v1/chat/completions",
+    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
     models: [
       {
         id: "default-free-model-1",
-        name: "Qwen3-6B (推荐)",
+        name: "DeepSeek-V4-Flash (推荐)",
+        modelId: "DeepSeek-V4-Flash",
+      },
+      {
+        id: "default-free-model-2",
+        name: "通用路由 auto",
         modelId: "auto",
       },
     ],
