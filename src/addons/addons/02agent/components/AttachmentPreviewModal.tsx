@@ -1,5 +1,5 @@
 import * as React from "react";
-import styles from "../styles.css";
+import styles from "../styles.less";
 import { Attachment } from "../types";
 
 interface AttachmentPreviewModalProps {

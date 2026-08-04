@@ -1,5 +1,5 @@
 import * as React from "react";
-import settings from "../ui/Settings.module.css";
+import settings from "../ui/Settings.module.less";
 import { Agent, AgentModel } from "../types";
 import { PROVIDER_DEFAULT_URLS } from "../constants";
 
@@ -27,11 +27,10 @@ const PROVIDER_LABELS: Record<Agent["provider"], string> = {
   anthropic: "Anthropic",
   google: "Google",
   azure: "Azure",
+  siliconflow: "SiliconFlow",
   custom: "自定义 OpenAI",
   custom_anthropic: "自定义 Anthropic",
 };
-
-const SYSTEM_AGENT_IDS = ["default-deepseek"];
 
 const createDefaultModel = (): AgentModel => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -45,10 +44,74 @@ const getDefaultModelForProvider = (provider: Agent["provider"]) => {
   if (provider === "anthropic" || provider === "custom_anthropic") {
     return { name: "Claude 3.5 Sonnet", modelId: "claude-3-5-sonnet-latest" };
   }
-  if (provider === "siliconflow") {
-    return { name: "DeepSeek-R1-0528-Qwen3-8B", modelId: "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B" };
-  }
   return { name: "GPT-4o", modelId: "gpt-4o" };
+};
+
+interface FetchedModel {
+  id: string;
+  name: string;
+}
+
+const normalizeModelsUrl = (baseUrl: string) => {
+  const normalized = baseUrl.trim().replace(/\/$/, "");
+  if (!normalized) return "";
+  if (normalized.endsWith("/models")) return normalized;
+  if (normalized.endsWith("/chat/completions")) return normalized.slice(0, -"/chat/completions".length) + "/models";
+  return `${normalized}/models`;
+};
+
+const getModelDisplayName = (model: Record<string, unknown>) => {
+  const value = model.display_name || model.displayName || model.name || model.id;
+  return typeof value === "string" ? value : "";
+};
+
+const parseModelResponse = (payload: unknown): FetchedModel[] => {
+  const candidate = payload as Record<string, unknown>;
+  const rawModels = Array.isArray(candidate?.data)
+    ? candidate.data
+    : Array.isArray(candidate?.models)
+      ? candidate.models
+      : Array.isArray(payload)
+        ? payload
+        : [];
+
+  return rawModels
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const model = item as Record<string, unknown>;
+      const idValue = model.id || model.name;
+      if (typeof idValue !== "string" || !idValue.trim()) return null;
+      return {
+        id: idValue,
+        name: getModelDisplayName(model) || idValue,
+      };
+    })
+    .filter((item): item is FetchedModel => Boolean(item));
+};
+
+const fetchProviderModels = async (provider: Agent["provider"], baseUrl: string, apiKey: string, signal?: AbortSignal) => {
+  const url = normalizeModelsUrl(baseUrl || PROVIDER_DEFAULT_URLS[provider] || "");
+  if (!url) throw new Error("请先填写 Base URL");
+  if (!apiKey.trim()) throw new Error("请先填写 API Key");
+
+  const headers: Record<string, string> = {};
+  if (provider === "anthropic" || provider === "custom_anthropic") {
+    headers["x-api-key"] = apiKey.trim();
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  } else {
+    headers.Authorization = `Bearer ${apiKey.trim()}`;
+  }
+
+  const response = await fetch(url, { headers, signal });
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    throw new Error(`获取模型列表失败:${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`);
+  }
+
+  const models = parseModelResponse(await response.json());
+  if (models.length === 0) throw new Error("接口没有返回可用模型");
+  return models;
 };
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -68,6 +131,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [activeSection, setActiveSection] = React.useState<SettingsSection>("agents");
   const [formData, setFormData] = React.useState<Partial<Agent>>({ provider: "openai" });
   const [models, setModels] = React.useState<AgentModel[]>([createDefaultModel()]);
+  const [fetchedModels, setFetchedModels] = React.useState<FetchedModel[]>([]);
+  const [selectedFetchedModelId, setSelectedFetchedModelId] = React.useState("");
+  const [isFetchingModels, setIsFetchingModels] = React.useState(false);
+  const [modelFetchMessage, setModelFetchMessage] = React.useState("");
 
   React.useEffect(() => {
     if (editingAgent) {
@@ -95,6 +162,56 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setModels([createDefaultModel()]);
   }, [editingAgent]);
 
+  const handleFetchModels = React.useCallback(
+    async (options?: { silent?: boolean; signal?: AbortSignal }) => {
+      const provider = formData.provider || "openai";
+      const baseUrl = formData.baseUrl?.trim() || PROVIDER_DEFAULT_URLS[provider] || "";
+      const apiKey = formData.apiKey || "";
+
+      if (!apiKey.trim()) {
+        if (!options?.silent) setModelFetchMessage("填写 API Key 后会自动获取模型列表，也可以继续手动输入模型 ID。");
+        return;
+      }
+
+      setIsFetchingModels(true);
+      if (!options?.silent) setModelFetchMessage("正在获取模型列表...");
+
+      try {
+        const nextModels = await fetchProviderModels(provider, baseUrl, apiKey, options?.signal);
+        setFetchedModels(nextModels);
+        setSelectedFetchedModelId((previous) => previous || nextModels[0]?.id || "");
+        setModelFetchMessage(`已获取 ${nextModels.length} 个模型，可从下拉选择或继续自定义输入。`);
+      } catch (error) {
+        if (options?.signal?.aborted) return;
+        setFetchedModels([]);
+        setSelectedFetchedModelId("");
+        setModelFetchMessage(error instanceof Error ? error.message : "获取模型列表失败");
+      } finally {
+        if (!options?.signal?.aborted) setIsFetchingModels(false);
+      }
+    },
+    [formData.apiKey, formData.baseUrl, formData.provider],
+  );
+
+  React.useEffect(() => {
+    setFetchedModels([]);
+    setSelectedFetchedModelId("");
+    setModelFetchMessage("");
+  }, [formData.provider, formData.baseUrl]);
+
+  React.useEffect(() => {
+    if (!formData.apiKey?.trim()) return;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      void handleFetchModels({ silent: true, signal: controller.signal });
+    }, 600);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [formData.apiKey, formData.baseUrl, formData.provider, handleFetchModels]);
+
   const handleProviderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const provider = event.target.value as Agent["provider"];
     const defaults = getDefaultModelForProvider(provider);
@@ -116,6 +233,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const addModel = () => {
     setModels((previous) => [...previous, createDefaultModel()]);
+  };
+
+  const addFetchedModel = () => {
+    const selected = fetchedModels.find((model) => model.id === selectedFetchedModelId);
+    if (!selected) return;
+
+    setModels((previous) => {
+      if (previous.some((model) => model.modelId === selected.id)) return previous;
+      return [
+        ...previous,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          name: selected.name || selected.id,
+          modelId: selected.id,
+        },
+      ];
+    });
   };
 
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
@@ -169,7 +303,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <aside className={settings.settingsNav}>
           <div className={settings.settingsTitle}>
             <h3>设置</h3>
-            <p>02Agent 配置中心</p>
+            <p>Bilup Nova 配置中心</p>
           </div>
           <nav className={settings.navList} aria-label="设置分类">
             {[
@@ -224,6 +358,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                   </div>
                   <form className={settings.cardBody} onSubmit={handleSave}>
+                    {editingAgent?.immutable ? (
+                      <div className={settings.hint} style={{ padding: "12px 0", borderBottom: "1px solid var(--ai-border)", marginBottom: 16 }}>
+                        此为系统内置 Agent，API Key、Base URL 等敏感配置已锁定，不可修改。
+                      </div>
+                    ) : null}
                     <div className={settings.formGrid}>
                       <label className={settings.field}>
                         <span className={settings.label}>名称</span>
@@ -231,8 +370,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           className={settings.input}
                           value={formData.name || ""}
                           onChange={(event) => setFormData({ ...formData, name: event.target.value })}
-                          placeholder="例如：我的 OpenAI"
+                          placeholder="例如:我的 OpenAI"
                           required
+                          disabled={!!editingAgent?.immutable}
                         />
                       </label>
                       <label className={settings.field}>
@@ -241,45 +381,91 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           className={settings.select}
                           value={formData.provider || "openai"}
                           onChange={handleProviderChange}
+                          disabled={!!editingAgent?.immutable}
                         >
                           <option value="openai">OpenAI</option>
                           <option value="zhipu">智谱清言</option>
                           <option value="anthropic">Anthropic</option>
                           <option value="deepseek">DeepSeek</option>
+                          <option value="siliconflow">SiliconFlow</option>
                           <option value="custom">自定义 OpenAI 兼容接口</option>
                           <option value="custom_anthropic">自定义 Anthropic 兼容接口</option>
-                          <option value="siliconflow">硅基流动（AI Chat 同款）</option>
                         </select>
                       </label>
-                      <label className={`${settings.field} ${settings.fieldFull}`}>
-                        <span className={settings.label}>Base URL</span>
-                        <input
-                          className={settings.input}
-                          value={formData.baseUrl || ""}
-                          onChange={(event) => setFormData({ ...formData, baseUrl: event.target.value })}
-                          placeholder="留空使用供应商默认地址"
-                        />
-                      </label>
-                      <label className={`${settings.field} ${settings.fieldFull}`}>
-                        <span className={settings.label}>API Key</span>
-                        <input
-                          className={settings.input}
-                          type="password"
-                          value={formData.apiKey || ""}
-                          onChange={(event) => setFormData({ ...formData, apiKey: event.target.value })}
-                          placeholder="sk-..."
-                        />
-                      </label>
+                      {editingAgent?.immutable ? null : (
+                        <>
+                          <label className={`${settings.field} ${settings.fieldFull}`}>
+                            <span className={settings.label}>Base URL</span>
+                            <input
+                              className={settings.input}
+                              value={formData.baseUrl || ""}
+                              onChange={(event) => setFormData({ ...formData, baseUrl: event.target.value })}
+                              placeholder="留空使用供应商默认地址"
+                            />
+                          </label>
+                          <label className={`${settings.field} ${settings.fieldFull}`}>
+                            <span className={settings.label}>API Key</span>
+                            <input
+                              className={settings.input}
+                              type="password"
+                              value={formData.apiKey || ""}
+                              onChange={(event) => setFormData({ ...formData, apiKey: event.target.value })}
+                              placeholder="sk-..."
+                            />
+                          </label>
+                        </>
+                      )}
                     </div>
 
                     <div className={settings.cardHeader}>
                       <div>
                         <h5>模型列表</h5>
-                        <p>显示名称用于界面展示，模型 ID 会直接传给对应供应商。</p>
+                        <p>配置 API Key 后会自动通过 API 获取模型列表；<br/>也可以继续手动输入自定义模型 ID。</p>
                       </div>
                       <button type="button" className={settings.button} onClick={addModel}>
                         添加模型
                       </button>
+                    </div>
+                    <div className={settings.modelFetchPanel}>
+                      <div className={settings.modelFetchControls}>
+                        <select
+                          className={settings.select}
+                          value={selectedFetchedModelId}
+                          onChange={(event) => setSelectedFetchedModelId(event.target.value)}
+                          disabled={fetchedModels.length === 0}
+                        >
+                          {fetchedModels.length === 0 ? <option value="">暂无可选模型</option> : null}
+                          {fetchedModels.map((model) => (
+                            <option key={model.id} value={model.id}>
+                              {model.name === model.id ? model.id : `${model.name} (${model.id})`}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className={settings.button}
+                          onClick={() => void handleFetchModels()}
+                          disabled={isFetchingModels}
+                        >
+                          {isFetchingModels ? "获取中..." : "刷新模型"}
+                        </button>
+                        <button
+                          type="button"
+                          className={settings.button}
+                          onClick={addFetchedModel}
+                          disabled={!selectedFetchedModelId}
+                        >
+                          添加选中模型
+                        </button>
+                      </div>
+                      <div className={settings.hint}>
+                        {modelFetchMessage || "模型 ID 输入框支持从已获取列表选择，也支持直接输入自定义模型。"}
+                      </div>
+                      <datalist id="nova-fetched-models">
+                        {fetchedModels.map((model) => (
+                          <option key={model.id} value={model.id} label={model.name} />
+                        ))}
+                      </datalist>
                     </div>
                     <div className={settings.modelsTable}>
                       {models.map((model) => (
@@ -290,13 +476,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             onChange={(event) => updateModel(model.id, "name", event.target.value)}
                             placeholder="显示名称"
                             required
+                            disabled={!!editingAgent?.immutable}
                           />
                           <input
                             className={settings.input}
+                            list="nova-fetched-models"
                             value={model.modelId}
                             onChange={(event) => updateModel(model.id, "modelId", event.target.value)}
                             placeholder="模型 ID"
                             required
+                            disabled={!!editingAgent?.immutable}
                           />
                           <input
                             className={settings.input}
@@ -312,12 +501,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                               )
                             }
                             placeholder="Max Tokens"
+                            disabled={!!editingAgent?.immutable}
                           />
                           <button
                             type="button"
                             className={settings.dangerButton}
                             onClick={() => removeModel(model.id)}
-                            disabled={models.length <= 1}
+                            disabled={models.length <= 1 || !!editingAgent?.immutable}
                           >
                             删除
                           </button>
@@ -326,16 +516,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
 
                     <div className={`${settings.toolbar} ${settings.formActions}`}>
-                      <div className={settings.hint}>配置只保存在本地插件存储中。</div>
+                      <div className={settings.hint}>
+                        {editingAgent?.immutable ? "系统内置配置，无法更改。" : "配置只保存在本地插件存储中。"}
+                      </div>
                       <div className={settings.actions}>
                         {editingAgent ? (
                           <button type="button" className={settings.button} onClick={() => onEditAgent(null)}>
-                            取消编辑
+                            {editingAgent.immutable ? "关闭" : "取消编辑"}
                           </button>
                         ) : null}
-                        <button type="submit" className={settings.primaryButton}>
-                          {editingAgent ? "保存修改" : "添加 Agent"}
-                        </button>
+                        {editingAgent?.immutable ? null : (
+                          <button type="submit" className={settings.primaryButton}>
+                            {editingAgent ? "保存修改" : "添加 Agent"}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </form>
@@ -350,40 +544,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   <div className={`${settings.cardBody} ${settings.agentList}`}>
                     {agents.map((agent) => (
-                      <article key={agent.id} className={settings.agentItem}>
+                      <article
+                        key={agent.id}
+                        className={`${settings.agentItem} ${agent.builtin ? settings.agentItemBuiltin : ""}`}
+                      >
                         <div className={settings.agentItemHeader}>
                           <div>
-                            <div className={settings.agentName}>{agent.name || (agent as any).displayName}</div>
+                            <div className={settings.agentName}>
+                              {agent.builtin ? <span className={settings.badge}>系统</span> : null}
+                              {agent.name || (agent as any).displayName}
+                            </div>
                             <div className={settings.agentProvider}>
                               {PROVIDER_LABELS[agent.provider] || agent.provider}
                             </div>
                           </div>
                           <div className={settings.actions}>
-                             <button type="button" className={settings.button} onClick={() => {
-                               if (SYSTEM_AGENT_IDS.includes(agent.id)) {
-                                 window.alert("系统AI，不可编辑");
-                                 return;
-                               }
-                               onEditAgent(agent);
-                             }}>
-                               编辑
-                             </button>
-                            <button type="button" className={settings.button} onClick={() => onExportAgent(agent.id)}>
-                              导出
+                            <button type="button" className={settings.button} onClick={() => onEditAgent(agent)}>
+                              {agent.immutable ? "查看" : "编辑"}
                             </button>
-                            <button
-                              type="button"
-                              className={settings.dangerButton}
-                              onClick={() => {
-                                if (SYSTEM_AGENT_IDS.includes(agent.id)) {
-                                  window.alert("系统AI，不可删除");
-                                  return;
-                                }
-                                onDeleteAgent(agent.id);
-                              }}
-                            >
-                              删除
-                            </button>
+                            {agent.immutable ? null : (
+                              <>
+                                <button type="button" className={settings.button} onClick={() => onExportAgent(agent.id)}>
+                                  导出
+                                </button>
+                                <button
+                                  type="button"
+                                  className={settings.dangerButton}
+                                  onClick={() => onDeleteAgent(agent.id)}
+                                >
+                                  删除
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                         <div className={settings.modelList}>
@@ -429,14 +621,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     >
                       <strong>浅色</strong>
                       <span>适合明亮环境，保留同一套布局密度。</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`${settings.themeChoice} ${themeMode === "auto" ? settings.themeChoiceActive : ""}`}
-                      onClick={() => onThemeModeChange("auto")}
-                    >
-                      <strong>跟随编辑器</strong>
-                      <span>自动跟随 Scratch 编辑器的主题。</span>
                     </button>
                   </div>
                 </div>

@@ -12,17 +12,8 @@ export interface Agent {
   apiKey: string;
   name: string;
   models: AgentModel[];
-  /**
-   * 不可编辑的系统 Agent。
-   * - 不显示「编辑」「删除」按钮
-   * - 名称 / Base URL / API Key / 供应商字段在表单中隐藏或禁用
-   * - 模型的显示名称与模型ID只读（仅 maxTokens 可编辑）
-   * - 导入、保存等钩子也会拒绝修改 immutable Agent
-   */
+  /** 是否为不可编辑的内置AI */
   immutable?: boolean;
-  /**
-   * 在设置中是否显示为系统 AI（可展示一个小的系统徽章）
-   */
   builtin?: boolean;
 }
 
@@ -83,6 +74,11 @@ export interface ChatMessage {
   tool_call_id?: string;
   name?: string;
   attachments?: Attachment[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
 }
 
 export interface SessionSnapshot {

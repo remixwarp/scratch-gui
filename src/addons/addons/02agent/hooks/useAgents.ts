@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import useStorageInfo from "../shims/hooks/useStorageInfo";
 import { Agent, AgentModel, FlattenedAgent } from "../types";
 import { PROVIDER_DEFAULT_URLS } from "../constants";
-import { getApiKey, getApiConfig } from "../../../../lib/constants/api-keys";
 
 interface ExportedAgentFile {
   version: 1;
@@ -12,20 +11,20 @@ interface ExportedAgentFile {
 
 const DEFAULT_AGENTS: Agent[] = [
   {
-    id: "default-free-chat",
-    name: "AI助手",
-    provider: "custom",
+    id: "default-hcnsec-chat",
+    name: "Bilup Nova",
+    provider: "siliconflow",
     baseUrl: "https://api.hcnsec.cn/v1/chat/completions",
     apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
     models: [
       {
-        id: "default-free-model-1",
-        name: "DeepSeek-V4-Flash (推荐)",
+        id: "default-hcnsec-model-1",
+        name: "DeepSeek-V4-Flash（推荐）",
         modelId: "DeepSeek-V4-Flash",
       },
       {
-        id: "default-free-model-2",
-        name: "通用路由 auto",
+        id: "default-hcnsec-model-2",
+        name: "Auto 路由",
         modelId: "auto",
       },
     ],
@@ -34,55 +33,39 @@ const DEFAULT_AGENTS: Agent[] = [
   },
 ];
 
-// 系统内置 Agent 的 ID 列表（不可编辑、不可删除）
-export const BUILTIN_AGENT_IDS = new Set<string>(
-  DEFAULT_AGENTS.filter((a) => a.immutable || a.builtin).map((a) => a.id),
-);
-
-/**
- * 确保 immutable Agent 不会被用户编辑过的存储值覆盖。
- * 每次加载存储后，将 immutable Agent 的 id 与 DEFAULT_AGENTS 中相同 id 的对象重置回默认值，
- * 避免用户通过手动改 localStorage 暴露密钥。
- */
-function enforceImmutableDefaults (stored: Agent[]): Agent[] {
-  const builtinIndex = new Map(DEFAULT_AGENTS.filter(a => a.immutable).map(a => [a.id, a]));
+/** 强制把 immutable 内置 Agent 恢复为默认值，避免用户通过 devtools 篡改 */
+const enforceImmutableDefaults = (list: Agent[]): Agent[] => {
+  const defaultsMap = new Map(DEFAULT_AGENTS.filter((a) => a.immutable).map((a) => [a.id, a]));
   const seenBuiltin = new Set<string>();
   const next: Agent[] = [];
-  for (const agent of stored) {
-    if (builtinIndex.has(agent.id)) {
+  for (const agent of list) {
+    if (defaultsMap.has(agent.id)) {
+      next.push({ ...defaultsMap.get(agent.id)! });
       seenBuiltin.add(agent.id);
-      next.push({ ...builtinIndex.get(agent.id)! });
     } else {
       next.push(agent);
     }
   }
-  // 确保所有内置 Agent 始终出现在列表最前面
-  for (const id of builtinIndex.keys()) {
-    if (!seenBuiltin.has(id)) {
-      next.unshift({ ...builtinIndex.get(id)! });
+  // 确保所有默认内置 Agent 都存在
+  for (const def of DEFAULT_AGENTS) {
+    if (def.immutable && !seenBuiltin.has(def.id)) {
+      next.unshift({ ...def });
     }
   }
   return next;
-}
+};
 
 export function useAgents() {
-  // 从存储读取，读取后强制覆盖 immutable Agent，避免用户篡改
-  const [storedAgents, setStoredAgents] = useStorageInfo<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
-  const agents = enforceImmutableDefaults(storedAgents);
-  useEffect(() => {
-    if (JSON.stringify(storedAgents) !== JSON.stringify(agents)) {
-      setStoredAgents(agents);
+  const [rawAgents, setRawAgents] = useStorageInfo<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
+  const agents = enforceImmutableDefaults(rawAgents);
+  const setAgents = (next: Agent[] | ((prev: Agent[]) => Agent[])) => {
+    if (typeof next === "function") {
+      setRawAgents((prev) => enforceImmutableDefaults(next(enforceImmutableDefaults(prev))));
+    } else {
+      setRawAgents(enforceImmutableDefaults(next));
     }
-  }, [storedAgents, agents, setStoredAgents]);
-
-  const setAgents: typeof setStoredAgents = (next) => {
-    const coerced = typeof next === "function"
-      ? enforceImmutableDefaults((next as any)(storedAgents))
-      : enforceImmutableDefaults(next as Agent[]);
-    return setStoredAgents(coerced);
   };
-
-  const [currentModelId, setCurrentModelId] = useStorageInfo<string>("AI_ASSISTANT_CURRENT_AGENT_ID", "default-free-model-1");
+  const [currentModelId, setCurrentModelId] = useStorageInfo<string>("AI_ASSISTANT_CURRENT_AGENT_ID", "default-hcnsec-model-1");
   const [showSettings, setShowSettings] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 
@@ -98,28 +81,12 @@ export function useAgents() {
         },
       ];
 
-      // 如果 API Key 为空，尝试从项目配置中获取
-      let effectiveApiKey = agent.apiKey;
-      if (!effectiveApiKey || effectiveApiKey.trim() === "") {
-        // 尝试从项目中已有的 API 配置获取密钥
-        const siliconflowKey = getApiKey('siliconflow');
-        if (siliconflowKey) {
-          effectiveApiKey = siliconflowKey;
-        } else {
-          // 尝试使用其他 provider 的密钥
-          const openaiKey = getApiKey('openai');
-          if (openaiKey) {
-            effectiveApiKey = openaiKey;
-          }
-        }
-      }
-
       return models.map((model) => ({
         id: model.id,
         agentId: agent.id,
         provider: agent.provider,
         baseUrl: agent.baseUrl,
-        apiKey: effectiveApiKey,
+        apiKey: agent.apiKey,
         modelName: model.modelId,
         displayName: model.name,
         maxTokens: model.maxTokens,
@@ -132,22 +99,18 @@ export function useAgents() {
   }, [flattenedModels, currentModelId]);
 
   useEffect(() => {
-    // 当 immutable Agent 不存在于列表中时，强制把它放回。
-    const rebuilt = enforceImmutableDefaults(agents);
-    if (JSON.stringify(rebuilt) !== JSON.stringify(agents)) {
-      setStoredAgents(rebuilt);
-      if (!rebuilt.some(a => a.models.some(m => m.id === currentModelId))) {
-        setCurrentModelId(rebuilt[0]?.models[0]?.id || "default-free-model-1");
-      }
-    }
-  }, [agents, setStoredAgents, currentModelId, setCurrentModelId]);
-
-  const handleSaveAgent = (newAgent: Agent) => {
-    // 拒绝覆盖 immutable Agent
-    if (BUILTIN_AGENT_IDS.has(newAgent.id)) {
-      window.alert("系统内置 AI 不可编辑");
+    if (!agents.length) {
+      setAgents(DEFAULT_AGENTS);
+      setCurrentModelId(DEFAULT_AGENTS[0].models[0].id);
       return;
     }
+
+    if (!flattenedModels.some((model) => model.id === currentModelId)) {
+      setCurrentModelId(flattenedModels[0]?.id || "");
+    }
+  }, [agents, currentModelId, setAgents, setCurrentModelId, flattenedModels]);
+
+  const handleSaveAgent = (newAgent: Agent) => {
     const nextAgents = editingAgent
       ? agents.map((agent) => (agent.id === editingAgent.id ? newAgent : agent))
       : [...agents, newAgent];
@@ -162,12 +125,7 @@ export function useAgents() {
   };
 
   const handleDeleteAgent = (id: string) => {
-    if (BUILTIN_AGENT_IDS.has(id)) {
-      window.alert("系统内置 AI 不可删除");
-      return;
-    }
-    const mutableAgents = agents.filter(a => !BUILTIN_AGENT_IDS.has(a.id));
-    if (mutableAgents.length <= 1) {
+    if (agents.length <= 1) {
       return;
     }
 
@@ -189,10 +147,6 @@ export function useAgents() {
   const handleExportAgent = (agentId: string) => {
     const agent = agents.find((item) => item.id === agentId);
     if (!agent) return;
-    if (BUILTIN_AGENT_IDS.has(agentId)) {
-      window.alert("系统内置 AI 不允许导出（避免密钥外泄）");
-      return;
-    }
 
     // Migrate on export just in case
     const exportAgent = { ...agent };
@@ -233,7 +187,7 @@ export function useAgents() {
     >;
 
     if (!importedAgent || typeof importedAgent.provider !== "string" || typeof importedAgent.baseUrl !== "string" || typeof importedAgent.apiKey !== "string") {
-      throw new Error("导入失败：文件内容不是有效的 Agent 配置");
+      throw new Error("导入失败:文件内容不是有效的 Agent 配置");
     }
 
     // Handle legacy import

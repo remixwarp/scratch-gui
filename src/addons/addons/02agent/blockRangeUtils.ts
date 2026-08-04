@@ -145,7 +145,7 @@ export const createRangeAttachment = (
     height: rect.height,
   });
   if (!vm?.editingTarget?.blocks?._blocks) {
-    return { reason: "02Agent 未找到当前角色的积木数据，请确认已切到代码标签页。" };
+    return { reason: "Bilup Nova 未找到当前角色的积木数据，请确认已切到代码标签页。" };
   }
 
   const selectedBlocks = getSelectedBlocksFromRect(workspace, rect);

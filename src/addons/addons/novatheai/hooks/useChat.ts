@@ -544,6 +544,7 @@ export function useChat({
                 content: responseMessage.content || message.content,
                 reasoning: responseMessage.reasoning || message.reasoning,
                 ...(responseToolCalls?.length ? { tool_calls: responseToolCalls } : { tool_calls: undefined }),
+                ...(responseMessage.usage ? { usage: responseMessage.usage } : {}),
                 reasoningStartedAt: message.reasoningStartedAt,
                 reasoningEndedAt:
                   message.reasoningStartedAt && (responseMessage.reasoning || message.reasoning)

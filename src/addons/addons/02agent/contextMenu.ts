@@ -4,7 +4,7 @@ export const registerContextMenu = (vm: any) => {
   const menuItemId = window.Blockly.ContextMenu.addDynamicMenuItem(
     (items: any[], target: any) => {
       items.push({
-        id: "02agent-add-context",
+        id: "nova-add-context",
         text: "加入对话",
         enabled: true,
         callback: () => {
@@ -12,9 +12,9 @@ export const registerContextMenu = (vm: any) => {
 
           const targetId = target.id;
           const allBlocks = vm.editingTarget.blocks._blocks;
-          console.log("[02Agent Jump][contextMenu] raw target", target);
-          console.log("[02Agent Jump][contextMenu] target.id used as blockId", targetId);
-          console.log("[02Agent Jump][contextMenu] vm.editingTarget.id", vm.editingTarget.id);
+          console.log("[Bilup Nova Jump][contextMenu] raw target", target);
+          console.log("[Bilup Nova Jump][contextMenu] target.id used as blockId", targetId);
+          console.log("[Bilup Nova Jump][contextMenu] vm.editingTarget.id", vm.editingTarget.id);
           if (!allBlocks) return;
 
           const blocksArray = Object.values(allBlocks).map((b: any) => ({
@@ -24,13 +24,13 @@ export const registerContextMenu = (vm: any) => {
 
           const ucfText = scratchToUCF(blocksArray);
           if (ucfText) {
-            console.log("[02Agent Jump][contextMenu] dispatching attachment", {
+            console.log("[Bilup Nova Jump][contextMenu] dispatching attachment", {
               targetId: vm.editingTarget.id,
               blockId: targetId,
               ucfPreview: ucfText.slice(0, 150),
             });
             window.dispatchEvent(
-              new CustomEvent("02agent-add-context", {
+              new CustomEvent("nova-add-context", {
                 detail: {
                   content: ucfText,
                   targetId: vm.editingTarget.id,

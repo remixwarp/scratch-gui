@@ -188,6 +188,7 @@ class OpenAICompatibleAdapter implements ProviderAdapter {
 
     let reading = true;
     let finished = false;
+    let usage: Record<string, unknown> | undefined;
     while (reading) {
       const { done, value } = await reader.read();
       if (done) {
@@ -218,6 +219,10 @@ class OpenAICompatibleAdapter implements ProviderAdapter {
 
         if (parsed.error) {
           throw new Error(parsed.error.message || JSON.stringify(parsed.error));
+        }
+
+        if (parsed.usage) {
+          usage = parsed.usage;
         }
 
         const choice = parsed.choices?.[0];
@@ -293,9 +298,11 @@ class OpenAICompatibleAdapter implements ProviderAdapter {
             content,
             reasoning,
             ...(validToolCalls.length ? { tool_calls: validToolCalls } : {}),
+            ...(usage ? { usage } : {}),
           },
         },
       ],
+      ...(usage ? { usage } : {}),
     };
   }
 }
@@ -470,6 +477,7 @@ class AnthropicAdapter implements ProviderAdapter {
     const toolInputJsonByContentIndex = new Map<number, string>();
     let reading = true;
     let finished = false;
+    let usage: Record<string, unknown> | undefined;
 
     while (reading) {
       const { done, value } = await reader.read();
@@ -502,6 +510,9 @@ class AnthropicAdapter implements ProviderAdapter {
 
         if (parsed.type === "message_stop") {
           finished = true;
+          if (parsed.usage) {
+            usage = parsed.usage;
+          }
           continue;
         }
 
@@ -667,9 +678,11 @@ class AnthropicAdapter implements ProviderAdapter {
             reasoning,
             ...(validToolCalls.length ? { tool_calls: validToolCalls } : {}),
             anthropic_content_blocks: anthropicContentBlocks.filter(Boolean),
+            ...(usage ? { usage } : {}),
           },
         },
       ],
+      ...(usage ? { usage } : {}),
     };
   }
 }

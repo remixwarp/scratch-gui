@@ -716,6 +716,28 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                       )}
                     </div>
                   </div>
+                  {item.sourceMessage.usage && !isGenerating && (
+                    <div className={chat.messageUsage}>
+                      {item.sourceMessage.usage.prompt_tokens !== undefined && (
+                        <span className={chat.usageItem}>
+                          {msg("prompt-tokens-label")}
+                          <span className={chat.usageCount}>{item.sourceMessage.usage.prompt_tokens}</span>
+                        </span>
+                      )}
+                      {item.sourceMessage.usage.completion_tokens !== undefined && (
+                        <span className={chat.usageItem}>
+                          {msg("completion-tokens-label")}
+                          <span className={chat.usageCount}>{item.sourceMessage.usage.completion_tokens}</span>
+                        </span>
+                      )}
+                      {item.sourceMessage.usage.total_tokens !== undefined && (
+                        <span className={chat.usageItem}>
+                          {msg("total-tokens-label")}
+                          <span className={chat.usageCount}>{item.sourceMessage.usage.total_tokens}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className={chat.messageActionRail}>
                   <button

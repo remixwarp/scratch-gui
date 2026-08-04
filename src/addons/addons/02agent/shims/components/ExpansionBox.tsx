@@ -18,6 +18,7 @@ interface ExpansionBoxProps {
   children: React.ReactNode;
   containerInfo: ExpansionRect;
   onClose?: () => void;
+  onMinimize?: () => void;
   onSizeChange?: (rect: ExpansionRect) => void;
 }
 
@@ -46,6 +47,7 @@ const ExpansionBox = ({
   children,
   containerInfo,
   onClose,
+  onMinimize,
   onSizeChange
 }: ExpansionBoxProps) => {
   const isDark = themeMode === "dark";
@@ -112,8 +114,8 @@ const ExpansionBox = ({
 
   return (
     <Draggable
-      handle=".tw-02agent-drag-handle"
-      cancel="input, textarea, button, select, option, [contenteditable=true], .tw-02agent-resize-handle"
+      handle=".tw-nova-drag-handle"
+      cancel="input, textarea, button, select, option, [contenteditable=true], .tw-nova-resize-handle"
       position={position}
       onStop={(_, data) => {
         const next = { x: Math.max(data.x, 0), y: Math.max(data.y, 0) };
@@ -141,7 +143,7 @@ const ExpansionBox = ({
         }}
       >
         <div
-          className="tw-02agent-drag-handle"
+          className="tw-nova-drag-handle"
           data-expansion-id={id}
           style={{
             height: 28,
@@ -155,6 +157,16 @@ const ExpansionBox = ({
             userSelect: "none"
           }}
         >
+          {onMinimize ? (
+            <button
+              type="button"
+              onClick={onMinimize}
+              title="最小化到后台"
+              style={{ position: "absolute", right: 34, background: "transparent", border: 0, color: "inherit" }}
+            >
+              −
+            </button>
+          ) : null}
           {onClose ? (
             <button
               type="button"
@@ -169,7 +181,7 @@ const ExpansionBox = ({
         </div>
         {children}
         <div
-          className="tw-02agent-resize-handle"
+          className="tw-nova-resize-handle"
           aria-hidden="true"
           onMouseDown={startResize}
           onTouchStart={startResize}

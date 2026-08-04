@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { FlattenedAgent, Attachment, ChatMessage } from "../types";
+import { FlattenedAgent, Attachment, ChatMessage, SessionSnapshot } from "../types";
 import { AITools } from "../tools";
 import { scratchToolSchemas } from "../toolSchemas";
 import { getProviderAdapter, isProviderImplemented } from "../providerAdapters";
+import { callAITool } from "../toolRuntime";
 
 interface UseChatOptions {
   messages: ChatMessage[];
@@ -20,6 +21,14 @@ interface UseChatOptions {
   ) => void;
   enableReasoning: boolean;
   vm: any;
+  getUnconfiguredMessage: () => string;
+  undoAiChanges: (count?: number) => {
+    success: boolean;
+    error?: string;
+    snapshot?: SessionSnapshot;
+    removedCount?: number;
+    messageBeforeAiId?: string;
+  } | null;
 }
 
 const createMessageId = () => `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -173,7 +182,7 @@ const buildRequestMessages = (
     return toProviderMessage(message, content, options);
   });
 
-const SYSTEM_PROMPT = `You are 02Agent, an AI coding assistant inside 02engine (Scratch environment), based on the Gandi IDE AI assistant addon.
+export const SYSTEM_PROMPT = `You are Bilup Nova, an AI coding assistant inside Bilup (Scratch environment), based on the Gandi IDE AI assistant addon.
 
 Language:
 - Use the same language as the user's latest message. If unclear, use zh-CN.
@@ -184,7 +193,10 @@ Tools:
 - getScratchGuide: concise task-oriented DSL patterns; prefer this over reading long docs.
 - searchBlocks: search block docs and return exact JS DSL examples, fields, inputs, menus, and notes.
 - getBlockHelp: exact help for one opcode or dotted DSL call.
+- searchExtensions: search built-in and known remote extensions before using extension blocks that are not loaded.
+- installExtension: install one built-in or known trusted extension and return its loaded blocks.
 - readFile: read /stage.js, /sprites/*.js, /sprites/*/costumes/*.svg, or docs.
+- readVariable/readListSlice/searchList/getDataSummary: inspect variables and large lists by name/id and bounded slices.
 - searchFiles: search code and raw Scratch DSL/block docs.
 - applyPatch: edit writable virtual JS files with a Codex-style patch; successful patches immediately sync to Scratch blocks.
 - createSpriteWithSvg: create a new Scratch sprite with one SVG costume. It refuses existing sprite names; use addCostumeWithSvg for another costume on an existing sprite.
@@ -201,7 +213,9 @@ Tools:
 
 Workflow:
 1) Start with getProjectOverview, then readFile only for the stage/sprite files you will edit.
+1a) If getProjectOverview returns mode "indexed", do not ask for full list/variable contents. Use readVariable, readListSlice, searchList, or getDataSummary for specific data slices by name/id.
 2) Use getScratchGuide for common patterns, searchBlocks for candidate blocks, and getBlockHelp before using unfamiliar opcodes/menus.
+2a) If a needed extension block is not loaded, call searchExtensions, then installExtension for the specific built-in or trusted known extension. Do not install unrelated extensions. Do not install arbitrary direct URLs unless the user explicitly asked for that exact trusted URL.
 3) For rendering, algorithms, or repeated logic, call getScratchGuide with topic "procedures", "custom-args", or "rendering" and prefer custom blocks over broadcast-only designs.
 4) For non-trivial programs, patch one small script at a time, then call getDiagnostics before continuing.
 5) Edit scripts and costumes by applyPatch. Costume files are SVG paths under /sprites/<name>/costumes/*.svg; each sprite's costumes are grouped in that folder. Bitmap costumes are exposed as SVG with embedded data images. Do not wrap SVG in Markdown fences; if editing a stage backdrop, keep a complete <svg> document.
@@ -252,7 +266,7 @@ Virtual JS DSL:
 - For pen rendering, prefer: event/broadcast receives "render" -> calls one warp custom block -> custom block clears and draws the full frame. Pass highlights/scale/offsets through $args and read them with argument.reporter_*.
 - control.if only has SUBSTACK. Use control.if_else when you need SUBSTACK2 / else.
 - Arithmetic operators use NUM1/NUM2. Comparison operators use OPERAND1/OPERAND2.
-- If searchFiles cannot find an extension block such as pen.*, avoid relying on that extension unless an existing project already uses it.
+- If searchBlocks/searchFiles cannot find an extension block such as pen.*, use searchExtensions and installExtension for the needed built-in or trusted known extension, then call searchBlocks/getBlockHelp again before editing scripts.
 
 Canonical patterns:
 - Hat/event with body:
@@ -302,32 +316,6 @@ event.whenflagclicked({ $xy: { x: 80, y: 80 } }, () => {
   event.broadcast({ BROADCAST_INPUT: "msg1" });
 });`;
 
-const REQUIRED_TOOL_ARGUMENTS: Record<string, string[]> = {
-  readFile: ["path"],
-  searchFiles: ["query"],
-  searchBlocks: ["query"],
-  getBlockHelp: ["opcode"],
-  applyPatch: ["patch"],
-  createSpriteWithSvg: ["svg"],
-  addCostumeWithSvg: ["svg"],
-  batchAddCostumesWithSvg: ["costumes"],
-  reorderCostume: ["newIndex"],
-};
-
-const isMissingToolArgument = (value: unknown) =>
-  value === undefined || value === null || (typeof value === "string" && value.trim() === "");
-
-const validateToolArguments = (functionName: string, args: Record<string, unknown>) => {
-  const requiredArguments = REQUIRED_TOOL_ARGUMENTS[functionName] || [];
-  const missingArguments = requiredArguments.filter((argumentName) => isMissingToolArgument(args[argumentName]));
-
-  if (missingArguments.length > 0) {
-    throw new Error(
-      `Tool ${functionName} requires argument(s): ${missingArguments.join(", ")}. Received: ${JSON.stringify(args)}`,
-    );
-  }
-};
-
 export function useChat({
   messages,
   currentAgent,
@@ -335,6 +323,8 @@ export function useChat({
   appendSessionSnapshot,
   enableReasoning,
   vm,
+  getUnconfiguredMessage,
+  undoAiChanges,
 }: UseChatOptions) {
   const [inputText, setInputText] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -342,55 +332,8 @@ export function useChat({
   const aiToolsRef = useRef<AITools | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const callTool = async (functionName: string, args: Record<string, any>) => {
-    const aiTools = aiToolsRef.current as Record<string, any> | null;
-    if (!aiTools || typeof aiTools[functionName] !== "function") {
-      throw new Error(`Tool ${functionName} not found`);
-    }
-
-    switch (functionName) {
-      case "readFile":
-        return aiTools[functionName](args.path, args.startLine, args.endLine);
-      case "searchFiles":
-        return aiTools[functionName](args);
-      case "searchBlocks":
-        return aiTools[functionName](args);
-      case "getBlockHelp":
-        return aiTools[functionName](args.opcode);
-      case "getScratchGuide":
-        return aiTools[functionName](args.topic);
-      case "getProjectOverview":
-        return aiTools[functionName]();
-      case "applyPatch":
-        return aiTools[functionName](args.patch);
-      case "getDiagnostics":
-        return aiTools[functionName](args.path);
-      case "listFiles":
-        return aiTools[functionName]();
-      case "createSpriteWithSvg":
-        return aiTools[functionName](args);
-      case "updateSpriteProperties":
-        return aiTools[functionName](args);
-      case "listCostumes":
-        return aiTools[functionName](args);
-      case "addCostumeWithSvg":
-        return aiTools[functionName](args);
-      case "batchAddCostumesWithSvg":
-        return aiTools[functionName](args);
-      case "deleteCostume":
-        return aiTools[functionName](args);
-      case "batchDeleteCostumes":
-        return aiTools[functionName](args);
-      case "reorderCostume":
-        return aiTools[functionName](args);
-      case "setCostumeOrder":
-        return aiTools[functionName](args);
-      case "deleteSprite":
-        return aiTools[functionName](args);
-      default:
-        return aiTools[functionName]();
-    }
-  };
+  const callTool = async (functionName: string, args: Record<string, any>) =>
+    callAITool(aiToolsRef.current as Record<string, any> | null, functionName, args);
 
   useEffect(() => {
     if (!aiToolsRef.current && vm) {
@@ -407,26 +350,65 @@ export function useChat({
     if (!inputText.trim() && attachments.length === 0) return;
 
     if (!currentAgent) {
+      const newMessage: ChatMessage = {
+        id: createMessageId(),
+        role: "user",
+        content: inputText,
+        attachments,
+      };
       updateSessionMessages([
         ...messages,
+        newMessage,
         {
           id: createMessageId(),
           role: "assistant",
           content: "Error: 当前没有可用的 AI Agent，请先在设置中添加或恢复一个 Agent。",
         },
       ]);
+      setInputText("");
+      setAttachments([]);
+      return;
+    }
+
+    if (currentAgent.modelName === "dont-use-me") {
+      const newMessage: ChatMessage = {
+        id: createMessageId(),
+        role: "user",
+        content: inputText,
+        attachments,
+      };
+      updateSessionMessages([
+        ...messages,
+        newMessage,
+        {
+          id: createMessageId(),
+          role: "assistant",
+          content: getUnconfiguredMessage(),
+        },
+      ]);
+      setInputText("");
+      setAttachments([]);
       return;
     }
 
     if (!isProviderImplemented(currentAgent.provider)) {
+      const newMessage: ChatMessage = {
+        id: createMessageId(),
+        role: "user",
+        content: inputText,
+        attachments,
+      };
       updateSessionMessages([
         ...messages,
+        newMessage,
         {
           id: createMessageId(),
           role: "assistant",
           content: `Error: 当前 Provider '${currentAgent.provider}' 暂未接入。请改用 OpenAI、智谱、DeepSeek 或 Custom(OpenAI-compatible)。`,
         },
       ]);
+      setInputText("");
+      setAttachments([]);
       return;
     }
 
@@ -509,8 +491,8 @@ export function useChat({
               provider: currentAgent.provider,
             }),
           ],
-          tools: currentAgent.modelName?.includes("R1") ? undefined : scratchToolSchemas,
-          toolChoice: currentAgent.modelName?.includes("R1") ? undefined : "auto",
+          tools: scratchToolSchemas,
+          toolChoice: "auto",
           enableReasoning,
           signal: abortControllerRef.current.signal,
           onReasoningDelta: (delta) => {
@@ -562,6 +544,7 @@ export function useChat({
                 content: responseMessage.content || message.content,
                 reasoning: responseMessage.reasoning || message.reasoning,
                 ...(responseToolCalls?.length ? { tool_calls: responseToolCalls } : { tool_calls: undefined }),
+                ...(responseMessage.usage ? { usage: responseMessage.usage } : {}),
                 reasoningStartedAt: message.reasoningStartedAt,
                 reasoningEndedAt:
                   message.reasoningStartedAt && (responseMessage.reasoning || message.reasoning)
@@ -601,9 +584,34 @@ export function useChat({
                 throw new Error(`Invalid tool arguments: ${parseError.message}`);
               }
 
-              validateToolArguments(functionName, args);
-              const result = await callTool(functionName, args);
-              toolResult = typeof result === "object" ? JSON.stringify(result) : String(result);
+              let result: any;
+              if (functionName === "undoAiChanges") {
+                const count = typeof args.count === "number" ? args.count : 1;
+                const undoResult = undoAiChanges(count);
+                if (undoResult && undoResult.success && undoResult.snapshot) {
+                  if (typeof vm?.loadProject === "function") {
+                    try {
+                      await vm.loadProject(JSON.parse(undoResult.snapshot.projectJson));
+                    } catch (restoreError: any) {
+                      result = { success: false, error: `Failed to restore project: ${restoreError.message}` };
+                    }
+                  }
+                  result = {
+                    success: true,
+                    message: `Successfully undid ${undoResult.removedCount} message(s). Project restored.`,
+                    removedCount: undoResult.removedCount,
+                  };
+                } else {
+                  result = { success: false, error: undoResult?.error || "Failed to undo AI changes" };
+                }
+              } else {
+                result = await callTool(functionName, args);
+              }
+              try {
+                toolResult = typeof result === "object" ? JSON.stringify(result) : String(result);
+              } catch (stringifyError: any) {
+                toolResult = `Error: Tool result could not be serialized: ${stringifyError.message}`;
+              }
             } catch (err: any) {
               toolResult = `Error: ${err.message}`;
             }

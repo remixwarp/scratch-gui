@@ -1,11 +1,12 @@
 import * as React from "react";
-import toolStyles from "../ui/ToolCalls.module.css";
+import toolStyles from "../ui/ToolCalls.module.less";
 import { ChatMessage, ToolCall } from "../types";
 
 interface ToolCallViewerProps {
   toolCalls: ToolCall[];
   toolResults?: ChatMessage[];
   isGenerating?: boolean;
+  msg: (key: string, params?: Record<string, string | number>) => string;
 }
 
 type ToolCallStatus = "running" | "success" | "error";
@@ -80,10 +81,10 @@ const getToolCallStatus = (result?: ChatMessage): ToolCallStatus => {
 
 const asArray = (value: any) => (Array.isArray(value) ? value : []);
 
-const getToolSummary = (name: string, args: any, result: any, status: ToolCallStatus) => {
-  if (status === "running") return "正在执行";
+const getToolSummary = (name: string, args: any, result: any, status: ToolCallStatus, msg: (key: string, params?: Record<string, string | number>) => string) => {
+  if (status === "running") return msg("tool-running");
   if (status === "error") {
-    return result?.error || result?.message || "执行失败";
+    return result?.error || result?.message || msg("tool-fail");
   }
 
   switch (name) {
@@ -91,31 +92,31 @@ const getToolSummary = (name: string, args: any, result: any, status: ToolCallSt
       const files = asArray(result?.changedFiles);
       const operationCount = Number(result?.scriptOperationCount || 0);
       if (files.length > 0) {
-        return `已同步 ${files.length} 个文件，${operationCount} 个脚本操作`;
+        return msg("tool-sync-success", { fileCount: files.length, operationCount });
       }
-      return "补丁已应用";
+      return msg("tool-patch-applied");
     }
     case "getDiagnostics":
-      return result?.valid ? "诊断通过" : "发现诊断问题";
+      return result?.valid ? msg("tool-diagnostics-pass") : msg("tool-diagnostics-fail");
     case "readFile":
-      return `${result?.path || args?.path || "文件"} · ${result?.startLine || 1}-${result?.endLine || result?.totalLines || "?"} 行`;
+      return msg("tool-file-read", { path: result?.path || args?.path || msg("label-file"), startLine: result?.startLine || 1, endLine: result?.endLine || result?.totalLines || "?" });
     case "searchFiles":
     case "searchBlocks":
-      return `找到 ${result?.matchCount ?? asArray(result?.matches).length ?? 0} 条结果`;
+      return msg("tool-search-results", { count: result?.matchCount ?? asArray(result?.matches).length ?? 0 });
     case "getBlockHelp":
-      return result?.success ? `${result?.dslCall || args?.opcode || "积木"} 用法已读取` : "积木帮助读取失败";
+      return result?.success ? msg("tool-block-help-success", { block: result?.dslCall || args?.opcode || msg("tool-get-block-help") }) : msg("tool-block-help-fail");
     case "getScratchGuide":
-      return `${result?.title || result?.topic || args?.topic || "指南"} 已读取`;
+      return msg("tool-guide-read", { title: result?.title || result?.topic || args?.topic || msg("tool-get-scratch-guide") });
     case "getProjectOverview":
-      return `项目概览 · ${asArray(result?.files).length} 个文件`;
+      return msg("tool-project-overview", { count: asArray(result?.files).length });
     case "listFiles":
-      return `列出 ${Array.isArray(result) ? result.length : asArray(result?.files).length} 个文件`;
+      return msg("tool-list-files-result", { count: Array.isArray(result) ? result.length : asArray(result?.files).length });
     default:
-      return "执行完成";
+      return msg("tool-complete");
   }
 };
 
-const buildEntries = (toolCalls: ToolCall[], toolResults: ChatMessage[]): ToolEntry[] =>
+const buildEntries = (toolCalls: ToolCall[], toolResults: ChatMessage[], msg: (key: string, params?: Record<string, string | number>) => string): ToolEntry[] =>
   toolCalls.map((toolCall) => {
     const resultMessage = toolResults.find((item) => item.tool_call_id === toolCall.id);
     const args = safeParseJson(toolCall.function.arguments) ?? {};
@@ -131,26 +132,48 @@ const buildEntries = (toolCalls: ToolCall[], toolResults: ChatMessage[]): ToolEn
       rawResult: resultMessage?.content || "",
       formattedResult: tryFormatJson(resultMessage?.content || ""),
       status,
-      summary: getToolSummary(toolCall.function.name, args, result, status),
+      summary: getToolSummary(toolCall.function.name, args, result, status, msg),
     };
   });
 
-const STATUS_LABELS: Record<ToolCallStatus, string> = {
-  running: "执行中",
-  success: "完成",
-  error: "失败",
+const getStatusLabel = (status: ToolCallStatus, msg: (key: string) => string) => {
+  switch (status) {
+    case "running": return msg("tool-running-status");
+    case "success": return msg("tool-success");
+    case "error": return msg("tool-error");
+  }
 };
 
-const TOOL_LABELS: Record<string, string> = {
-  applyPatch: "修改文件",
-  getDiagnostics: "运行诊断",
-  readFile: "读取文件",
-  searchFiles: "搜索文件",
-  searchBlocks: "搜索积木",
-  getBlockHelp: "查看积木",
-  getScratchGuide: "读取指南",
-  getProjectOverview: "项目概览",
-  listFiles: "列出文件",
+const getToolLabel = (name: string, msg: (key: string) => string) => {
+  switch (name) {
+    case "applyPatch": return msg("tool-apply-patch");
+    case "getDiagnostics": return msg("tool-get-diagnostics");
+    case "readFile": return msg("tool-read-file");
+    case "readVariable": return msg("tool-read-variable");
+    case "readListSlice": return msg("tool-read-list-slice");
+    case "searchList": return msg("tool-search-list");
+    case "getDataSummary": return msg("tool-get-data-summary");
+    case "searchFiles": return msg("tool-search-files");
+    case "searchBlocks": return msg("tool-search-blocks");
+    case "getBlockHelp": return msg("tool-get-block-help");
+    case "getScratchGuide": return msg("tool-get-scratch-guide");
+    case "getProjectOverview": return msg("tool-get-project-overview");
+    case "listFiles": return msg("tool-list-files");
+    case "searchExtensions": return msg("tool-search-extensions");
+    case "installExtension": return msg("tool-install-extension");
+    case "createSpriteWithSvg": return msg("tool-create-sprite-with-svg");
+    case "updateSpriteProperties": return msg("tool-update-sprite-properties");
+    case "listCostumes": return msg("tool-list-costumes");
+    case "addCostumeWithSvg": return msg("tool-add-costume-with-svg");
+    case "batchAddCostumesWithSvg": return msg("tool-batch-add-costumes-with-svg");
+    case "deleteCostume": return msg("tool-delete-costume");
+    case "batchDeleteCostumes": return msg("tool-batch-delete-costumes");
+    case "reorderCostume": return msg("tool-reorder-costume");
+    case "setCostumeOrder": return msg("tool-set-costume-order");
+    case "deleteSprite": return msg("tool-delete-sprite");
+    case "undoAiChanges": return msg("tool-undo-ai-changes");
+    default: return name;
+  }
 };
 
 const parsePatchDiff = (patch: string): DiffFile[] => {
@@ -265,11 +288,15 @@ const countDiagnostics = (entries: ToolEntry[]) =>
 
 const ToolIcon = ({ status }: { status: ToolCallStatus }) => (
   <span className={`${toolStyles.toolCallGlyph} ${toolStyles[`toolCallGlyph${status}`]}`}>
-    {status === "running" ? "" : status === "success" ? "✓" : "!"}
+    {status === "running" ? "" : status === "success" ? (
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+    ) : (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert-icon lucide-triangle-alert"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    )}
   </span>
 );
 
-const renderDiff = (entry: ToolEntry) => {
+const renderDiff = (entry: ToolEntry, msg: (key: string) => string) => {
   const diffFiles = parsePatchDiff(entry.args?.patch || "");
   if (diffFiles.length === 0) return null;
 
@@ -295,7 +322,7 @@ const renderDiff = (entry: ToolEntry) => {
                 <code>{line.text || " "}</code>
               </div>
             ))}
-            {file.truncated ? <div className={toolStyles.diffTruncated}>已截断较长 diff</div> : null}
+            {file.truncated ? <div className={toolStyles.diffTruncated}>{msg("diff-truncated")}</div> : null}
           </div>
         </details>
       ))}
@@ -303,21 +330,21 @@ const renderDiff = (entry: ToolEntry) => {
   );
 };
 
-const renderResultPreview = (entry: ToolEntry) => {
+const renderResultPreview = (entry: ToolEntry, msg: (key: string, params?: Record<string, string | number>) => string) => {
   if (entry.status === "running") {
-    return <div className={toolStyles.toolCallMuted}>工具仍在运行...</div>;
+    return <div className={toolStyles.toolCallMuted}>{msg("tool-still-running")}</div>;
   }
 
   if (entry.status === "error") {
-    return <div className={toolStyles.toolErrorBox}>{entry.result?.error || entry.rawResult || "工具调用失败"}</div>;
+    return <div className={toolStyles.toolErrorBox}>{entry.result?.error || entry.rawResult || msg("tool-call-fail")}</div>;
   }
 
   if (entry.name === "applyPatch") {
     return (
       <div className={toolStyles.toolResultGrid}>
-        <span>文件</span>
+        <span>{msg("label-file")}</span>
         <strong>{asArray(entry.result?.changedFiles).length || parsePatchDiff(entry.args?.patch || "").length}</strong>
-        <span>脚本操作</span>
+        <span>{msg("label-script-operations")}</span>
         <strong>{entry.result?.scriptOperationCount ?? 0}</strong>
       </div>
     );
@@ -327,11 +354,11 @@ const renderResultPreview = (entry: ToolEntry) => {
     const diagnostics = countDiagnostics([entry]);
     return (
       <div className={toolStyles.toolResultGrid}>
-        <span>状态</span>
-        <strong>{entry.result?.valid ? "通过" : "需修复"}</strong>
-        <span>错误</span>
+        <span>{msg("label-status")}</span>
+        <strong>{entry.result?.valid ? msg("label-pass") : msg("label-need-fix")}</strong>
+        <span>{msg("label-errors")}</span>
         <strong>{diagnostics.errors}</strong>
-        <span>警告</span>
+        <span>{msg("label-warnings")}</span>
         <strong>{diagnostics.warnings}</strong>
       </div>
     );
@@ -340,26 +367,27 @@ const renderResultPreview = (entry: ToolEntry) => {
   if (entry.name === "readFile") {
     return (
       <div className={toolStyles.toolResultGrid}>
-        <span>路径</span>
+        <span>{msg("label-path")}</span>
         <strong>{entry.result?.path || entry.args?.path}</strong>
-        <span>行数</span>
+        <span>{msg("label-lines")}</span>
         <strong>{entry.result?.totalLines ?? "?"}</strong>
       </div>
     );
   }
 
-  return <pre className={toolStyles.toolCompactJson}>{entry.formattedResult || "无返回内容"}</pre>;
+  return <pre className={toolStyles.toolCompactJson}>{entry.formattedResult || msg("no-content")}</pre>;
 };
 
 export const ToolCallViewer: React.FC<ToolCallViewerProps> = ({
   toolCalls,
   toolResults = [],
   isGenerating = false,
+  msg,
 }) => {
   const [expanded, setExpanded] = React.useState(true);
   const [expandedDetails, setExpandedDetails] = React.useState<Record<string, boolean>>({});
 
-  const entries = React.useMemo(() => buildEntries(toolCalls, toolResults), [toolCalls, toolResults]);
+  const entries = React.useMemo(() => buildEntries(toolCalls, toolResults, msg), [toolCalls, toolResults, msg]);
   const runningCount = entries.filter((entry) => entry.status === "running").length;
   const successCount = entries.filter((entry) => entry.status === "success").length;
   const errorCount = entries.filter((entry) => entry.status === "error").length;
@@ -385,17 +413,22 @@ export const ToolCallViewer: React.FC<ToolCallViewerProps> = ({
     setExpandedDetails((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const getToolStatusText = () => {
+    if (hasRunning) return msg("tool-running");
+    if (errorCount > 0) return msg("tool-call-fail");
+    return msg("tool-complete");
+  };
+
   return (
     <div className={`${toolStyles.toolCallSummary} ${hasRunning ? toolStyles.toolCallSummaryRunning : ""}`}>
       <button type="button" className={toolStyles.toolCallSummaryHeader} onClick={() => setExpanded((prev) => !prev)}>
         <span className={`${toolStyles.toolCallPulse} ${hasRunning ? toolStyles.toolCallPulseActive : ""}`} />
-        <span className={toolStyles.toolCallSummaryTitle}>
-          {hasRunning ? "正在执行工具" : errorCount > 0 ? "工具调用完成，有失败项" : "工具调用完成"}
-        </span>
+        <span className={toolStyles.toolCallSummaryTitle}>{getToolStatusText()}</span>
         <span className={toolStyles.toolCallSummaryMeta}>
-          {entries.length} 个工具 · {successCount} 成功{errorCount ? ` · ${errorCount} 失败` : ""}
+          {msg("tool-calls-count", { count: entries.length })} · {successCount} {msg("tool-success")}
+          {errorCount ? ` · ${errorCount} ${msg("tool-error")}` : ""}
         </span>
-        <span className={toolStyles.toolCallChevron}>{expanded ? "⌃" : "⌄"}</span>
+        <span className={toolStyles.toolCallChevron}>{expanded ? <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up-icon lucide-chevron-up"><path d="m18 15-6-6-6 6"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>}</span>
       </button>
 
       {expanded ? (
@@ -405,7 +438,7 @@ export const ToolCallViewer: React.FC<ToolCallViewerProps> = ({
               {changedFiles.length > 0 ? (
                 <div className={toolStyles.changedFilesPanel}>
                   <div className={toolStyles.changedFilesHeader}>
-                    <strong>{changedFiles.length} 个文件已更改</strong>
+                    <strong>{msg("files-changed", { count: changedFiles.length })}</strong>
                     <span>
                       +{changedFiles.reduce((sum, file) => sum + file.added, 0)} -
                       {changedFiles.reduce((sum, file) => sum + file.deleted, 0)}
@@ -427,10 +460,10 @@ export const ToolCallViewer: React.FC<ToolCallViewerProps> = ({
               {diagnostics.errors > 0 || diagnostics.warnings > 0 ? (
                 <div className={toolStyles.diagnosticPills}>
                   <span className={diagnostics.errors > 0 ? toolStyles.diagnosticPillError : toolStyles.diagnosticPillOk}>
-                    {diagnostics.errors} 个错误
+                    {diagnostics.errors} {msg("label-errors")}
                   </span>
                   <span className={diagnostics.warnings > 0 ? toolStyles.diagnosticPillWarn : toolStyles.diagnosticPillOk}>
-                    {diagnostics.warnings} 个警告
+                    {diagnostics.warnings} {msg("label-warnings")}
                   </span>
                 </div>
               ) : null}
@@ -447,18 +480,18 @@ export const ToolCallViewer: React.FC<ToolCallViewerProps> = ({
               >
                 <button type="button" className={toolStyles.toolCallItemHeader} onClick={() => toggleDetail(entry.id)}>
                   <ToolIcon status={entry.status} />
-                  <span className={toolStyles.toolCallName}>{TOOL_LABELS[entry.name] || entry.name}</span>
+                  <span className={toolStyles.toolCallName}>{getToolLabel(entry.name, msg)}</span>
                   <span className={toolStyles.toolCallSummaryLine}>{entry.summary}</span>
                   <span className={`${toolStyles.toolCallStatus} ${toolStyles[`toolCallStatus${entry.status}`]}`}>
-                    {STATUS_LABELS[entry.status]}
+                    {getStatusLabel(entry.status, msg)}
                   </span>
                 </button>
                 {expandedDetails[entry.id] ? (
                   <div className={toolStyles.toolCallDetail}>
-                    {renderDiff(entry)}
+                    {renderDiff(entry, msg)}
                     <div className={toolStyles.toolCallSection}>
-                      <div className={toolStyles.toolCallSectionTitle}>结果</div>
-                      {renderResultPreview(entry)}
+                      <div className={toolStyles.toolCallSectionTitle}>{msg("label-status")}</div>
+                      {renderResultPreview(entry, msg)}
                     </div>
                     <details className={toolStyles.rawToolDetails}>
                       <summary>原始参数 / 返回</summary>
@@ -468,8 +501,8 @@ export const ToolCallViewer: React.FC<ToolCallViewerProps> = ({
                           <pre>{entry.formattedArguments || "{}"}</pre>
                         </div>
                         <div className={toolStyles.toolCallSection}>
-                          <div className={toolStyles.toolCallSectionTitle}>返回</div>
-                          <pre>{entry.formattedResult || stringifyCompact(entry.rawResult) || "无返回内容"}</pre>
+                          <div className={toolStyles.toolCallSectionTitle}>{msg("label-status")}</div>
+                          <pre>{entry.formattedResult || stringifyCompact(entry.rawResult) || msg("no-content")}</pre>
                         </div>
                       </div>
                     </details>

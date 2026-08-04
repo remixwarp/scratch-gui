@@ -1,5 +1,5 @@
 import * as React from "react";
-import composer from "../ui/Composer.module.css";
+import composer from "../ui/Composer.module.less";
 import { parseLocalAttachment } from "../attachments";
 import { Attachment } from "../types";
 import { AttachmentPreviewModal } from "./AttachmentPreviewModal";
@@ -7,7 +7,6 @@ import { getAttachmentDisplayName } from "../attachmentUtils";
 import SendIcon from "../assets/icon-send.svg";
 import StopIcon from "../assets/icon-stop.svg";
 import ChevronRightIcon from "../assets/icon-chevron-right.svg";
-import ComposeExpandIcon from "../assets/icon-compose-expand.svg";
 
 interface InputAreaProps {
   inputText: string;
@@ -26,6 +25,7 @@ interface InputAreaProps {
   isExpanded: boolean;
   onToggleExpanded: () => void;
   vm: PluginContext["vm"];
+  msg: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export const InputArea: React.FC<InputAreaProps> = ({
@@ -45,6 +45,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
   isExpanded,
   onToggleExpanded,
   vm,
+  msg,
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [previewAttachment, setPreviewAttachment] = React.useState<Attachment | null>(null);
@@ -59,14 +60,14 @@ export const InputArea: React.FC<InputAreaProps> = ({
         try {
           return await parseLocalAttachment(file);
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : "未知错误";
+          const message = error instanceof Error ? error.message : msg("unknown-error");
           return {
             id: `${Date.now()}-${file.name}`,
             name: file.name,
             kind: "text-file" as const,
             mimeType: file.type || "application/octet-stream",
-            content: `导入失败：${message}`,
-            preview: `导入失败：${message}`,
+            content: msg("import-fail", { message }),
+            preview: msg("import-fail", { message }),
             meta: {
               source: "local-file",
             },
@@ -87,10 +88,10 @@ export const InputArea: React.FC<InputAreaProps> = ({
             <div key={attachment.id} className={composer.attachmentItem}>
               <span className={composer.attachmentKind}>
                 {attachment.kind === "workspace-ucf-range"
-                  ? "片段"
+                  ? msg("attachment-workspace-range")
                   : attachment.kind === "workspace-ucf"
-                    ? "积木"
-                    : "文件"}
+                    ? msg("attachment-workspace")
+                    : msg("attachment-file")}
               </span>
               <button
                 className={composer.inlineTextButton}
@@ -111,13 +112,13 @@ export const InputArea: React.FC<InputAreaProps> = ({
                   className={composer.attachmentExpandButton}
                   onClick={() => setExpandedId((prev) => (prev === attachment.id ? null : attachment.id))}
                 >
-                  {expandedId === attachment.id ? "收起" : "展开"}
+                  {expandedId === attachment.id ? msg("attachment-collapse") : msg("attachment-expand")}
                 </button>
               ) : null}
               <button
                 className={composer.attachmentRemoveButton}
                 onClick={() => setAttachments((prev) => prev.filter((item) => item.id !== attachment.id))}
-                title="移除附件"
+                title={msg("attachment-remove")}
               >
                 x
               </button>
@@ -132,7 +133,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
         <div className={composer.composerTextareaWrap}>
           <textarea
             className={`${composer.composerTextarea} ${isExpanded ? composer.composerTextareaExpanded : ""}`}
-            placeholder="输入消息、修改需求或粘贴上下文..."
+            placeholder={msg("input-placeholder")}
             value={inputText}
             onChange={(event) => setInputText(event.target.value)}
             onKeyDown={(event) => {
@@ -154,10 +155,19 @@ export const InputArea: React.FC<InputAreaProps> = ({
             type="button"
             className={composer.composerExpandButton}
             onClick={onToggleExpanded}
-            title={isExpanded ? "退出全屏输入" : "展开输入框"}
-            aria-label={isExpanded ? "退出全屏输入" : "展开输入框"}
+            title={isExpanded ? msg("exit-fullscreen") : msg("expand-input")}
+            aria-label={isExpanded ? msg("exit-fullscreen") : msg("expand-input")}
           >
-            <img src={ComposeExpandIcon} aria-hidden="true" alt="" />
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M5 2.25H2.75V4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 2.25h2.25V4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 11.75H2.75V9.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 11.75h2.25V9.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 2.25 2.25 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              <path d="M9 2.25 11.75 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              <path d="M5 11.75 2.25 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              <path d="M9 11.75 11.75 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
           </button>
         </div>
         <div className={composer.inputBottomRow}>
@@ -167,42 +177,36 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 type="button"
                 className={`${composer.toolButton} ${enableReasoning ? composer.toolButtonActive : ""}`}
                 onClick={onToggleReasoning}
-                title="开启或关闭思考"
+                title={msg("toggle-reasoning")}
               >
-                思考
+                {msg("reasoning")}
               </button>
               <button
                 type="button"
                 className={composer.toolButton}
                 onClick={isSelectingBlocks ? onCancelBlockSelection : onStartBlockSelection}
-                title="选择积木片段"
+                title={msg("select-blocks-tooltip")}
               >
-                {isSelectingBlocks ? "取消框选" : "选择积木"}
+                {isSelectingBlocks ? msg("cancel-selection") : msg("select-blocks")}
               </button>
               <button
                 type="button"
                 className={composer.toolButton}
                 onClick={() => fileInputRef.current?.click()}
-                title="导入本地附件"
+                title={msg("add-file-tooltip")}
               >
-                添加文件
+                {msg("add-file")}
               </button>
             </div>
           </div>
           <div className={composer.inputComposerActions}>
-            <div className={composer.inputHint}>
-              <span>{isExpanded ? "Ctrl+Enter 发送，Enter 换行" : "Enter 发送，Shift + Enter 换行"}</span>
-              <span className={composer.inputHintChevron}>
-                <img src={ChevronRightIcon} aria-hidden="true" alt="" />
-              </span>
-            </div>
             {isGenerating ? (
               <button
                 type="button"
                 onClick={onStopGenerating}
                 className={`${composer.primaryButton} ${isExpanded ? composer.expandedComposerSendButton : composer.iconButton} ${composer.stopButton}`}
-                title="停止生成"
-                aria-label="停止生成"
+                title={msg("stop-generating")}
+                aria-label={msg("stop-generating")}
               >
                 <img src={StopIcon} aria-hidden="true" alt="" />
               </button>
@@ -211,8 +215,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 type="button"
                 onClick={onSend}
                 className={`${composer.primaryButton} ${isExpanded ? composer.expandedComposerSendButton : composer.iconButton}`}
-                title="发送"
-                aria-label="发送"
+                title={msg("send")}
+                aria-label={msg("send")}
               >
                 <img src={SendIcon} aria-hidden="true" alt="" />
               </button>

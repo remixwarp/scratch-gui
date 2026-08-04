@@ -62,7 +62,7 @@ export const useBlockRangeSelection = ({
       svgNodeRef.current = nextSvgNode;
     }
     if (!activeWorkspace || !svgNodeRef.current) {
-      onSelectionError("02Agent 正在等待积木区初始化，请切到代码标签页后再试。");
+      onSelectionError("Bilup Nova 正在等待积木区初始化，请切到代码标签页后再试。");
       return;
     }
     setIsSelecting(true);
@@ -169,7 +169,7 @@ export const useBlockRangeSelection = ({
         clearRect();
         startPointRef.current = null;
         moveCountRef.current = 0;
-        onSelectionError("02Agent 未找到当前积木工作区，请切到代码标签页后再试。");
+        onSelectionError("Bilup Nova 未找到当前积木工作区，请切到代码标签页后再试。");
         return;
       }
 

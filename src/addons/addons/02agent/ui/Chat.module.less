@@ -543,6 +543,39 @@
   color: var(--ai-danger);
 }
 
+.messageUsage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-radius: var(--ai-radius-pill);
+  background: color-mix(in srgb, var(--ai-bg-surface) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ai-border-subtle) 60%, transparent);
+  color: var(--ai-text-muted);
+  font-size: 10.5px;
+  font-family: var(--ai-font-mono);
+}
+
+.usageItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.usageItem:not(:last-child)::after {
+  content: "";
+  width: 1px;
+  height: 10px;
+  margin-left: 6px;
+  background: var(--ai-border-subtle);
+}
+
+.usageCount {
+  font-weight: 650;
+  color: var(--ai-text-secondary);
+}
+
 @keyframes messageEnter {
   from {
     opacity: 0;

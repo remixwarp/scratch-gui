@@ -214,14 +214,24 @@
 }
 
 .toolCallItemHeader {
+  position: relative;
   min-height: 38px;
   padding: 8px 10px;
+  background: var(--ai-bg-surface);
   transition:
-    background var(--ai-transition),
-    transform var(--ai-transition-fast);
+    background var(--ai-transition);
 }
 
-.toolCallItemHeader:hover {
+.toolCallItemHeader::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ai-bg-surface);
+  transition: transform var(--ai-transition-fast);
+  z-index: -1;
+}
+
+.toolCallItemHeader:hover::before {
   transform: translateX(2px);
 }
 

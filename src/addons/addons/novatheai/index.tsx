@@ -49,7 +49,7 @@ type AgentProps = PluginContext & {
   msg: (key: string, params?: Record<string, string | number>) => string;
 };
 
-const NovatheAgent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "light", windowWidth = 800, windowHeight = 600, msg }) => {
+const Agent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "light", windowWidth = 800, windowHeight = 600, msg }) => {
   console.log(`[Bilup Nova] Rendering\n vm:`, vm)
   const [isAgentMenuOpen, setIsAgentMenuOpen] = React.useState(false);
   const [isComposerExpanded, setIsComposerExpanded] = React.useState(false);
@@ -238,15 +238,17 @@ const NovatheAgent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "
       }`}
     >
       {/* Left Panel */}
-      {!useDrawerHistory && isLeftPanelOpen && (
-        <HistoryPanel
-          sessions={sessions}
-          currentSessionId={currentSessionId}
-          onNewChat={handleNewChat}
-          onSelectSession={handleSelectSession}
-          onDeleteSession={handleDeleteSession}
-          msg={msg}
-        />
+      {!useDrawerHistory && (
+        <div className={`${shell.leftPanel} ${isLeftPanelOpen ? "" : shell.leftPanelCollapsed}`}>
+          <HistoryPanel
+            sessions={sessions}
+            currentSessionId={currentSessionId}
+            onNewChat={handleNewChat}
+            onSelectSession={handleSelectSession}
+            onDeleteSession={handleDeleteSession}
+            msg={msg}
+          />
+        </div>
       )}
 
       {/* Right Panel */}
@@ -404,4 +406,4 @@ const NovatheAgent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "
 
 Agent.displayName = "Nova";
 
-export default NovatheAgent;
+export default Agent;

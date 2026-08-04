@@ -1,7 +1,7 @@
 import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import chat from "../ui/Chat.module.css";
+import chat from "../ui/Chat.module.less";
 import { Attachment, ChatMessage, ToolCall } from "../types";
 import { ToolCallViewer } from "./ToolCallViewer";
 import { MessageAttachments } from "./MessageAttachments";
@@ -9,13 +9,17 @@ import ChevronRightIcon from "../assets/icon-chevron-right.svg";
 import CopyIcon from "../assets/icon-copy.svg";
 import UndoIcon from "../assets/icon-undo.svg";
 
+type ThemeMode = "dark" | "light";
+
 interface ChatAreaProps {
   messages: ChatMessage[];
   isGenerating: boolean;
   vm: PluginContext["vm"];
+  themeMode: ThemeMode;
   onOpenWorkspaceAttachment: (attachment: Attachment) => void;
   onRestoreToUserMessage: (messageId: string, message: ChatMessage) => void;
   hasSnapshot: (messageId: string) => boolean;
+  msg: (key: string, params?: Record<string, string | number>) => string;
 }
 
 type AssistantSegment =
@@ -174,12 +178,12 @@ const ReasoningChevron = ({ expanded }: { expanded: boolean }) => (
   </span>
 );
 
-const formatReasoningDuration = (startedAt?: number, endedAt?: number) => {
+const formatReasoningDuration = (startedAt?: number, endedAt?: number, msg?: (key: string) => string) => {
   if (!startedAt || !endedAt || endedAt < startedAt) {
-    return "已思考";
+    return msg ? msg("thinking") : "已思考";
   }
 
-  return `已思考 ${((endedAt - startedAt) / 1000).toFixed(2)}s`;
+  return msg("thinking-duration", { duration: ((endedAt - startedAt) / 1000).toFixed(2) });
 };
 
 const collectAssistantBubbles = (messages: ChatMessage[], isGenerating: boolean) => {
@@ -390,7 +394,7 @@ const collectLatestChangeSummary = (messages: ChatMessage[], isGenerating: boole
   };
 };
 
-const summarizeAssistantMessageForCopy = (item: AssistantBubble) =>
+const summarizeAssistantMessageForCopy = (item: AssistantBubble, msg: (key: string, params?: Record<string, string | number>) => string) =>
   item.segments
     .map((segment) => {
       if (segment.type === "text") {
@@ -398,7 +402,7 @@ const summarizeAssistantMessageForCopy = (item: AssistantBubble) =>
       }
 
       if (segment.type === "tools") {
-        return `${segment.toolCalls.length}次工具调用`;
+        return msg("tool-calls-count", { count: segment.toolCalls.length });
       }
 
       return "";
@@ -410,9 +414,11 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   messages,
   isGenerating,
   vm,
+  themeMode,
   onOpenWorkspaceAttachment,
   onRestoreToUserMessage,
   hasSnapshot,
+  msg,
 }) => {
   const displayItems = React.useMemo(() => collectAssistantBubbles(messages, isGenerating), [messages, isGenerating]);
   const latestChangeSummary = React.useMemo(
@@ -584,14 +590,19 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   }, []);
 
   return (
-    <div className={chat.chatArea} ref={scrollRef} onScroll={handleScroll} onWheel={handleWheel}>
+    <div
+      className={chat.chatArea}
+      ref={scrollRef}
+      onScroll={handleScroll}
+      onWheel={handleWheel}
+    >
       <div className={chat.conversationRail} ref={railRef}>
         {displayItems.length === 0 ? (
           <div className={chat.emptyState}>
-            <span className={chat.emptyStateBadge}>02Agent</span>
-            <h4 className={chat.emptyStateTitle}>把问题、需求或代码片段直接发进来</h4>
+            <span className={chat.emptyStateBadge}>{msg("sidebar-brand-title")}</span>
+            <h4 className={chat.emptyStateTitle} dangerouslySetInnerHTML={{ __html: msg("empty-state-title") }} />
             <p className={chat.emptyStateText}>
-              可以让它解释积木逻辑、整理上下文、分析附件，或者直接帮助你修改当前工作区内容。
+              {msg("empty-state-text")}
             </p>
           </div>
         ) : (
@@ -600,6 +611,28 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             if ("role" in item) {
               return (
                 <div key={item.id || index} className={`${chat.messageRow} ${chat.userMessage}`}>
+                  <div className={`${chat.messageActionRail} ${chat.messageActionRailHorizontal}`}>
+                    <button
+                      type="button"
+                      className={chat.messageActionButton}
+                      title={msg("copy-message")}
+                      aria-label={msg("copy-message")}
+                      onClick={() => void handleCopy(item.content)}
+                    >
+                      <img src={CopyIcon} aria-hidden="true" alt="" />
+                    </button>
+                    {hasSnapshot(item.id) ? (
+                      <button
+                        type="button"
+                        className={chat.messageActionButton}
+                        title={msg("restore-here")}
+                        aria-label={msg("restore-here")}
+                        onClick={() => onRestoreToUserMessage(item.id, item)}
+                      >
+                        <img src={UndoIcon} aria-hidden="true" alt="" />
+                      </button>
+                    ) : null}
+                  </div>
                   <div className={chat.messageTurnBody}>
                     <div className={`${chat.messageBubble} ${chat.messageBubbleUser}`}>
                       <pre className={chat.messageText}>{item.content}</pre>
@@ -611,28 +644,6 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                         />
                       ) : null}
                     </div>
-                  </div>
-                  <div className={`${chat.messageActionRail} ${chat.messageActionRailHorizontal}`}>
-                    <button
-                      type="button"
-                      className={chat.messageActionButton}
-                      title="复制消息"
-                      aria-label="复制消息"
-                      onClick={() => void handleCopy(item.content)}
-                    >
-                      <img src={CopyIcon} aria-hidden="true" alt="" />
-                    </button>
-                    {hasSnapshot(item.id) ? (
-                      <button
-                        type="button"
-                        className={chat.messageActionButton}
-                        title="撤回到这里"
-                        aria-label="撤回到这里"
-                        onClick={() => onRestoreToUserMessage(item.id, item)}
-                      >
-                        <img src={UndoIcon} aria-hidden="true" alt="" />
-                      </button>
-                    ) : null}
                   </div>
                 </div>
               );
@@ -680,8 +691,8 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                             >
                               <span className={chat.reasoningInlineLabel}>
                                 {segment.isComplete
-                                  ? formatReasoningDuration(segment.startedAt, segment.endedAt)
-                                  : "思考中..."}
+                                  ? formatReasoningDuration(segment.startedAt, segment.endedAt, msg)
+                                  : msg("thinking-placeholder")}
                               </span>
                               <span className={chat.reasoningInlineArrow}>
                                 <ReasoningChevron expanded={!reasoningPanels[segment.id]?.collapsed} />
@@ -689,7 +700,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                             </button>
                             {!reasoningPanels[segment.id]?.collapsed ? (
                               <div className={chat.reasoningInlineBody}>
-                                <pre className={chat.reasoningText}>{segment.content || "模型正在整理思路..."}</pre>
+                                <pre className={chat.reasoningText}>{segment.content || msg("thinking-ongoing")}</pre>
                               </div>
                             ) : null}
                           </div>
@@ -699,19 +710,42 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                             toolCalls={segment.toolCalls}
                             toolResults={segment.toolResults}
                             isGenerating={isGenerating}
+                            msg={msg}
                           />
                         ),
                       )}
                     </div>
                   </div>
+                  {item.sourceMessage.usage && !isGenerating && (
+                    <div className={chat.messageUsage}>
+                      {item.sourceMessage.usage.prompt_tokens !== undefined && (
+                        <span className={chat.usageItem}>
+                          {msg("prompt-tokens-label")}
+                          <span className={chat.usageCount}>{item.sourceMessage.usage.prompt_tokens}</span>
+                        </span>
+                      )}
+                      {item.sourceMessage.usage.completion_tokens !== undefined && (
+                        <span className={chat.usageItem}>
+                          {msg("completion-tokens-label")}
+                          <span className={chat.usageCount}>{item.sourceMessage.usage.completion_tokens}</span>
+                        </span>
+                      )}
+                      {item.sourceMessage.usage.total_tokens !== undefined && (
+                        <span className={chat.usageItem}>
+                          {msg("total-tokens-label")}
+                          <span className={chat.usageCount}>{item.sourceMessage.usage.total_tokens}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className={chat.messageActionRail}>
                   <button
                     type="button"
                     className={chat.messageActionButton}
-                    title="复制消息"
-                    aria-label="复制消息"
-                    onClick={() => void handleCopy(summarizeAssistantMessageForCopy(item))}
+                    title={msg("copy-message")}
+                    aria-label={msg("copy-message")}
+                    onClick={() => void handleCopy(summarizeAssistantMessageForCopy(item, msg))}
                   >
                     <img src={CopyIcon} aria-hidden="true" alt="" />
                   </button>
@@ -723,7 +757,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         {latestChangeSummary ? (
           <div className={chat.finalChangeSummary}>
             <div className={chat.finalChangeSummaryHeader}>
-              <strong>{latestChangeSummary.files.length} 个文件已更改</strong>
+              <strong>{msg("files-changed", { count: latestChangeSummary.files.length })}</strong>
               <span>
                 <b className={chat.diffAdded}>+{latestChangeSummary.added}</b>{" "}
                 <b className={chat.diffDeleted}>-{latestChangeSummary.deleted}</b>
@@ -736,7 +770,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                   <span>
                     <b className={chat.diffAdded}>+{file.added}</b>{" "}
                     <b className={chat.diffDeleted}>-{file.deleted}</b>
-                    {file.operations ? <em>{file.operations} 个脚本操作</em> : null}
+                    {file.operations ? <em>{msg("script-operations", { count: file.operations })}</em> : null}
                   </span>
                 </div>
               ))}
@@ -746,7 +780,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         <div ref={bottomRef} className={chat.bottomAnchor} aria-hidden="true" />
       </div>
       {!isStickyToBottom ? (
-        <button className={chat.scrollToBottomButton} onClick={() => scrollToBottom()} title="回到底部">
+        <button className={chat.scrollToBottomButton} onClick={() => scrollToBottom()} title={msg("scroll-to-bottom")}>
           ↓
         </button>
       ) : null}

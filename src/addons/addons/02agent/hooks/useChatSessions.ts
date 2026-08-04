@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback, type MouseEvent } from "react";
 import { Attachment, ChatMessage, ChatSession, SessionSnapshot } from "../types";
 import { useStoredState } from "./useStoredState";
+import { MUTATING_TOOLS } from "../toolRuntime";
 
 const getSessionTitle = (messages: ChatMessage[]) => {
   const firstUserMessage = messages.find((message) => message.role === "user");
@@ -193,5 +194,76 @@ export function useChatSessions(shouldAutoCollapseHistory: boolean) {
     appendSessionSnapshot,
     hasSnapshot,
     rollbackToMessage,
+    undoAiChanges: (count: number = 1) => {
+      const sessionId = currentSessionIdRef.current;
+      const session = sessions.find((item) => item.id === sessionId);
+      if (!session || !sessionId) {
+        return null;
+      }
+
+      const snapshots = snapshotsRef.current[sessionId] || [];
+      const messages = session.messages;
+
+      const aiMessageIndices: number[] = [];
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const msg = messages[i];
+        if (msg.role === "assistant" && msg.tool_calls && msg.tool_calls.length > 0) {
+          const hasMutatingTool = msg.tool_calls.some(
+            (tc) => tc.function?.name && MUTATING_TOOLS.has(tc.function.name),
+          );
+          if (hasMutatingTool) {
+            aiMessageIndices.push(i);
+            if (aiMessageIndices.length >= count) {
+              break;
+            }
+          }
+        }
+      }
+
+      if (aiMessageIndices.length === 0) {
+        return { success: false, error: "No AI changes found to undo" };
+      }
+
+      const oldestAiIndex = Math.min(...aiMessageIndices);
+      const messageBeforeAi = oldestAiIndex - 1;
+
+      if (messageBeforeAi < 0) {
+        return { success: false, error: "Cannot undo: no snapshot available before AI changes" };
+      }
+
+      const targetMessage = messages[messageBeforeAi];
+      const targetSnapshot = snapshots.find((s) => s.messageId === targetMessage.id);
+
+      if (!targetSnapshot) {
+        return { success: false, error: "No snapshot found for the message before AI changes" };
+      }
+
+      const keptMessages = messages.slice(0, messageBeforeAi + 1);
+      const removedMessages = messages.slice(messageBeforeAi + 1);
+
+      snapshotsRef.current[sessionId] = snapshots.filter((entry) =>
+        keptMessages.some((message) => message.id === entry.messageId),
+      );
+
+      setSessions((previousSessions) =>
+        previousSessions.map((item) =>
+          item.id === session.id
+            ? {
+                ...item,
+                title: getSessionTitle(keptMessages),
+                messages: keptMessages,
+                updatedAt: Date.now(),
+              }
+            : item,
+        ),
+      );
+
+      return {
+        success: true,
+        snapshot: targetSnapshot,
+        removedCount: removedMessages.length,
+        messageBeforeAiId: targetMessage.id,
+      };
+    },
   };
 }

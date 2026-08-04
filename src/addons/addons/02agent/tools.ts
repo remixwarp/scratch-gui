@@ -10,8 +10,19 @@ import {
 } from "./workspaceRangeTools";
 import { setGetBlockInfoTool, setRuntime } from "./converter";
 import scratchBlocksCatalog from "./scratch_blocks.json";
+import { resolveKnownExtension, searchKnownExtensions, type ExtensionRegistryItem } from "./extensionRegistry";
 
-// This file contains tools for 02Agent to interact with Scratch.
+// This file contains tools for Nova to interact with Scratch.
+
+declare const require: any;
+
+const ScratchVmSprite = (() => {
+  try {
+    return require("scratch-vm/src/sprites/sprite");
+  } catch (_error) {
+    return null;
+  }
+})();
 
 const NativeScratchBlockCatalog: Record<string, { block: any; menus: Record<string, any> }> = (() => {
   const result: Record<string, { block: any; menus: Record<string, any> }> = {};
@@ -68,6 +79,31 @@ interface ParsedPatchUpdate {
 const SCRIPT_MARKER_RE = /^\/\/\s*@script\s+([^\s]+)(?:\s+.*)?$/;
 const DOC_SCRATCH_AGENT_PATH = "/docs/scratch-agent.md";
 const DOC_BLOCK_CATALOG_PATH = "/docs/block-catalog.md";
+const DEFAULT_READ_FILE_MAX_LINES = 240;
+const PREVIEW_STRING_MAX_CHARS = 240;
+const LIST_PREVIEW_ITEM_COUNT = 10;
+const SMALL_PROJECT_MAX_TOTAL_LIST_ITEMS = 5000;
+const SMALL_PROJECT_MAX_LIST_LENGTH = 1000;
+const LARGE_PROJECT_MAX_TOTAL_LIST_ITEMS = 100000;
+const LARGE_PROJECT_MAX_LIST_LENGTH = 50000;
+const SMALL_PROJECT_MAX_VIRTUAL_FILE_CHARS = 1024 * 1024;
+const DATA_SLICE_MAX_COUNT = 1000;
+const DATA_SEARCH_MAX_VISITED = 100000;
+
+const previewValue = (value: any, maxChars = PREVIEW_STRING_MAX_CHARS): any => {
+  if (typeof value === "string") {
+    return value.length > maxChars ? `${value.slice(0, maxChars)}... [truncated ${value.length - maxChars} chars]` : value;
+  }
+  if (typeof value === "number" || typeof value === "boolean" || value === null || value === undefined) {
+    return value;
+  }
+  try {
+    const text = JSON.stringify(value);
+    return text.length > maxChars ? `${text.slice(0, maxChars)}... [truncated ${text.length - maxChars} chars]` : value;
+  } catch {
+    return String(value);
+  }
+};
 const COMMON_OPCODE_ALIASES: Record<string, string> = {
   argument_reporter: "argument_reporter_string_number",
   argument_reporter_string_number: "argument_reporter_string_number",
@@ -282,7 +318,7 @@ const normalizeVirtualCodeForCompare = (value: string) =>
 
 const getLineCount = (content: string) => (content ? content.split("\n").length : 1);
 
-const buildScratchAgentDoc = () => `# 02Agent Virtual Files
+const buildScratchAgentDoc = () => `# Bilup Nova Virtual Files
 
 You edit Scratch by patching virtual JavaScript files.
 
@@ -571,148 +607,148 @@ const applyTextHunks = (content: string, hunks: string[][]) => {
 
 export class AITools {
   static AllBlockInfo: Record<string, string> = {
-    control_repeat: "重复执行 [TIMES] 次（TIMES：number）",
-    control_repeat_until: "重复执行直到 [CONDITION]（CONDITION：Boolean）",
-    control_while: "当 [CONDITION] 重复执行（CONDITION：Boolean）",
-    control_for_each: "对 [VARIABLE] 遍历 [VALUE]（VARIABLE：string, VALUE：string）",
+    control_repeat: "重复执行 [TIMES] 次(TIMES:number)",
+    control_repeat_until: "重复执行直到 [CONDITION](CONDITION:Boolean)",
+    control_while: "当 [CONDITION] 重复执行(CONDITION:Boolean)",
+    control_for_each: "对 [VARIABLE] 遍历 [VALUE](VARIABLE:string, VALUE:string)",
     control_forever: "重复执行",
-    control_wait: "等待 [DURATION] 秒（DURATION：number）",
-    control_wait_until: "等待直到 [CONDITION]（CONDITION：Boolean）",
-    control_if: "如果 [CONDITION] 那么（CONDITION：Boolean）",
-    control_if_else: "如果 [CONDITION] 那么 否则（CONDITION：Boolean）",
-    control_stop: "停止 [STOP_OPTION]（STOP_OPTION：string）",
+    control_wait: "等待 [DURATION] 秒(DURATION:number)",
+    control_wait_until: "等待直到 [CONDITION](CONDITION:Boolean)",
+    control_if: "如果 [CONDITION] 那么(CONDITION:Boolean)",
+    control_if_else: "如果 [CONDITION] 那么 否则(CONDITION:Boolean)",
+    control_stop: "停止 [STOP_OPTION](STOP_OPTION:string)",
     control_start_as_clone: "当作为克隆体启动时",
-    control_create_clone_of: "克隆 [CLONE_OPTION]（CLONE_OPTION：string）",
+    control_create_clone_of: "克隆 [CLONE_OPTION](CLONE_OPTION:string)",
     control_delete_this_clone: "删除此克隆体",
     control_get_counter: "计数器",
     control_incr_counter: "计数器加 1",
     control_clear_counter: "计数器归零",
     control_all_at_once: "一口气执行",
     event_whenflagclicked: "当绿旗被点击",
-    event_whenkeypressed: "当按下 [KEY_OPTION] 键（KEY_OPTION：string）",
-    event_whenbroadcastreceived: "当接收到广播 [BROADCAST_OPTION]（BROADCAST_OPTION：broadcast）",
-    event_whentouchingobject: "当碰到 [TOUCHINGOBJECTMENU]（TOUCHINGOBJECTMENU：string）",
-    event_broadcast: "广播 [BROADCAST_INPUT]（BROADCAST_INPUT：string）",
-    event_broadcastandwait: "广播 [BROADCAST_INPUT] 并等待（BROADCAST_INPUT：string）",
-    event_whengreaterthan: "当 [WHENGREATERTHANMENU] > [VALUE]（WHENGREATERTHANMENU：string, VALUE：number）",
-    looks_say: "说 [MESSAGE]（MESSAGE：string）",
-    looks_sayforsecs: "说 [MESSAGE] [SECS] 秒（MESSAGE：string, SECS：number）",
-    looks_think: "思考 [MESSAGE]（MESSAGE：string）",
-    looks_thinkforsecs: "思考 [MESSAGE] [SECS] 秒（MESSAGE：string, SECS：number）",
+    event_whenkeypressed: "当按下 [KEY_OPTION] 键(KEY_OPTION:string)",
+    event_whenbroadcastreceived: "当接收到广播 [BROADCAST_OPTION](BROADCAST_OPTION:broadcast)",
+    event_whentouchingobject: "当碰到 [TOUCHINGOBJECTMENU](TOUCHINGOBJECTMENU:string)",
+    event_broadcast: "广播 [BROADCAST_INPUT](BROADCAST_INPUT:string)",
+    event_broadcastandwait: "广播 [BROADCAST_INPUT] 并等待(BROADCAST_INPUT:string)",
+    event_whengreaterthan: "当 [WHENGREATERTHANMENU] > [VALUE](WHENGREATERTHANMENU:string, VALUE:number)",
+    looks_say: "说 [MESSAGE](MESSAGE:string)",
+    looks_sayforsecs: "说 [MESSAGE] [SECS] 秒(MESSAGE:string, SECS:number)",
+    looks_think: "思考 [MESSAGE](MESSAGE:string)",
+    looks_thinkforsecs: "思考 [MESSAGE] [SECS] 秒(MESSAGE:string, SECS:number)",
     looks_show: "显示",
     looks_hide: "隐藏",
     looks_hideallsprites: "隐藏所有角色",
-    looks_switchcostumeto: "换成造型 [COSTUME]（COSTUME：string）",
-    looks_switchbackdropto: "换成背景 [BACKDROP]（BACKDROP：string）",
-    looks_switchbackdroptoandwait: "换成背景 [BACKDROP] 并等待（BACKDROP：string）",
+    looks_switchcostumeto: "换成造型 [COSTUME](COSTUME:string)",
+    looks_switchbackdropto: "换成背景 [BACKDROP](BACKDROP:string)",
+    looks_switchbackdroptoandwait: "换成背景 [BACKDROP] 并等待(BACKDROP:string)",
     looks_nextcostume: "下一个造型",
     looks_nextbackdrop: "下一个背景",
-    looks_changeeffectby: "将 [EFFECT] 特效增加 [CHANGE]（EFFECT：string, CHANGE：number）",
-    looks_seteffectto: "将 [EFFECT] 特效设为 [VALUE]（EFFECT：string, VALUE：number）",
+    looks_changeeffectby: "将 [EFFECT] 特效增加 [CHANGE](EFFECT:string, CHANGE:number)",
+    looks_seteffectto: "将 [EFFECT] 特效设为 [VALUE](EFFECT:string, VALUE:number)",
     looks_cleargraphiceffects: "清除图形特效",
-    looks_changesizeby: "将大小增加 [CHANGE]（CHANGE：number）",
-    looks_setsizeto: "将大小设为 [SIZE]（SIZE：number）",
-    looks_changestretchby: "将伸缩增加 [CHANGE]（CHANGE：number）",
-    looks_setstretchto: "将伸缩设为 [STRETCH]（STRETCH：number）",
-    looks_gotofrontback: "移到最 [FRONT_BACK]（FRONT_BACK：string）",
-    looks_goforwardbackwardlayers: "向 [FORWARD_BACKWARD] 移动 [NUM] 层（FORWARD_BACKWARD：string, NUM：number）",
+    looks_changesizeby: "将大小增加 [CHANGE](CHANGE:number)",
+    looks_setsizeto: "将大小设为 [SIZE](SIZE:number)",
+    looks_changestretchby: "将伸缩增加 [CHANGE](CHANGE:number)",
+    looks_setstretchto: "将伸缩设为 [STRETCH](STRETCH:number)",
+    looks_gotofrontback: "移到最 [FRONT_BACK](FRONT_BACK:string)",
+    looks_goforwardbackwardlayers: "向 [FORWARD_BACKWARD] 移动 [NUM] 层(FORWARD_BACKWARD:string, NUM:number)",
     looks_size: "大小",
-    looks_costumenumbername: "造型 [NUMBER_NAME]（NUMBER_NAME：string）",
-    looks_backdropnumbername: "背景 [NUMBER_NAME]（NUMBER_NAME：string）",
-    motion_movesteps: "移动 [STEPS] 步（STEPS：number）",
-    motion_movegrids: "移动 [STEPS] 格（STEPS：number）",
-    motion_gotoxy: "移到 x:[X] y:[Y]（X：number, Y：number）",
-    motion_goto: "移到 [TO]（TO：string）",
-    motion_turnright: "右转 [DEGREES] 度（DEGREES：number）",
-    motion_turnleft: "左转 [DEGREES] 度（DEGREES：number）",
-    motion_pointindirection: "面向 [DIRECTION] 度（DIRECTION：number）",
-    motion_pointtowards: "面向 [TOWARDS]（TOWARDS：string）",
-    motion_glidesecstoxy: "在 [SECS] 秒内滑行到 x:[X] y:[Y]（SECS：number, X：number, Y：number）",
-    motion_glideto: "在 [SECS] 秒内滑行到 [TO]（SECS：number, TO：string）",
+    looks_costumenumbername: "造型 [NUMBER_NAME](NUMBER_NAME:string)",
+    looks_backdropnumbername: "背景 [NUMBER_NAME](NUMBER_NAME:string)",
+    motion_movesteps: "移动 [STEPS] 步(STEPS:number)",
+    motion_movegrids: "移动 [STEPS] 格(STEPS:number)",
+    motion_gotoxy: "移到 x:[X] y:[Y](X:number, Y:number)",
+    motion_goto: "移到 [TO](TO:string)",
+    motion_turnright: "右转 [DEGREES] 度(DEGREES:number)",
+    motion_turnleft: "左转 [DEGREES] 度(DEGREES:number)",
+    motion_pointindirection: "面向 [DIRECTION] 度(DIRECTION:number)",
+    motion_pointtowards: "面向 [TOWARDS](TOWARDS:string)",
+    motion_glidesecstoxy: "在 [SECS] 秒内滑行到 x:[X] y:[Y](SECS:number, X:number, Y:number)",
+    motion_glideto: "在 [SECS] 秒内滑行到 [TO](SECS:number, TO:string)",
     motion_ifonedgebounce: "碰到边缘就反弹",
-    motion_setrotationstyle: "将旋转方式设为 [STYLE]（STYLE：string）",
-    motion_changexby: "将 x 增加 [DX]（DX：number）",
-    motion_setx: "将 x 设为 [X]（X：number）",
-    motion_changeyby: "将 y 增加 [DY]（DY：number）",
-    motion_sety: "将 y 设为 [Y]（Y：number）",
+    motion_setrotationstyle: "将旋转方式设为 [STYLE](STYLE:string)",
+    motion_changexby: "将 x 增加 [DX](DX:number)",
+    motion_setx: "将 x 设为 [X](X:number)",
+    motion_changeyby: "将 y 增加 [DY](DY:number)",
+    motion_sety: "将 y 设为 [Y](Y:number)",
     motion_xposition: "x 坐标",
     motion_yposition: "y 坐标",
     motion_direction: "方向",
-    motion_scroll_right: "向右滚动 [DISTANCE]（DISTANCE：number）",
-    motion_scroll_up: "向上滚动 [DISTANCE]（DISTANCE：number）",
-    motion_align_scene: "对齐场景 [ALIGNMENT]（ALIGNMENT：string）",
+    motion_scroll_right: "向右滚动 [DISTANCE](DISTANCE:number)",
+    motion_scroll_up: "向上滚动 [DISTANCE](DISTANCE:number)",
+    motion_align_scene: "对齐场景 [ALIGNMENT](ALIGNMENT:string)",
     motion_xscroll: "场景 x 滚动",
     motion_yscroll: "场景 y 滚动",
-    operator_add: "[NUM1] + [NUM2]（NUM1：number, NUM2：number）",
-    operator_subtract: "[NUM1] - [NUM2]（NUM1：number, NUM2：number）",
-    operator_multiply: "[NUM1] * [NUM2]（NUM1：number, NUM2：number）",
-    operator_divide: "[NUM1] / [NUM2]（NUM1：number, NUM2：number）",
-    operator_lt: "[OPERAND1] < [OPERAND2]（OPERAND1：null, OPERAND2：null）",
-    operator_equals: "[OPERAND1] = [OPERAND2]（OPERAND1：null, OPERAND2：null）",
-    operator_gt: "[OPERAND1] > [OPERAND2]（OPERAND1：null, OPERAND2：null）",
-    operator_and: "[OPERAND1] 且 [OPERAND2]（OPERAND1：Boolean, OPERAND2：Boolean）",
-    operator_or: "[OPERAND1] 或 [OPERAND2]（OPERAND1：Boolean, OPERAND2：Boolean）",
-    operator_not: "不成立 [OPERAND]（OPERAND：Boolean）",
-    operator_random: "在 [FROM] 到 [TO] 之间取随机数（FROM：number, TO：number）",
-    operator_join: "连接 [STRING1] 和 [STRING2]（STRING1：string, STRING2：string）",
-    operator_letter_of: "[STRING] 的第 [LETTER] 个字符（STRING：string, LETTER：number）",
-    operator_length: "[STRING] 的长度（STRING：string）",
-    operator_contains: "[STRING1] 包含 [STRING2]？（STRING1：string, STRING2：string）",
-    operator_mod: "[NUM1] 除以 [NUM2] 的余数（NUM1：number, NUM2：number）",
-    operator_round: "四舍五入 [NUM]（NUM：number）",
-    operator_mathop: "[OPERATOR] [NUM]（OPERATOR：string, NUM：number）",
-    sound_play: "播放声音 [SOUND_MENU]（SOUND_MENU：string）",
-    sound_playuntildone: "播放声音 [SOUND_MENU] 等待播放完成（SOUND_MENU：string）",
+    operator_add: "[NUM1] + [NUM2](NUM1:number, NUM2:number)",
+    operator_subtract: "[NUM1] - [NUM2](NUM1:number, NUM2:number)",
+    operator_multiply: "[NUM1] * [NUM2](NUM1:number, NUM2:number)",
+    operator_divide: "[NUM1] / [NUM2](NUM1:number, NUM2:number)",
+    operator_lt: "[OPERAND1] < [OPERAND2](OPERAND1:null, OPERAND2:null)",
+    operator_equals: "[OPERAND1] = [OPERAND2](OPERAND1:null, OPERAND2:null)",
+    operator_gt: "[OPERAND1] > [OPERAND2](OPERAND1:null, OPERAND2:null)",
+    operator_and: "[OPERAND1] 且 [OPERAND2](OPERAND1:Boolean, OPERAND2:Boolean)",
+    operator_or: "[OPERAND1] 或 [OPERAND2](OPERAND1:Boolean, OPERAND2:Boolean)",
+    operator_not: "不成立 [OPERAND](OPERAND:Boolean)",
+    operator_random: "在 [FROM] 到 [TO] 之间取随机数(FROM:number, TO:number)",
+    operator_join: "连接 [STRING1] 和 [STRING2](STRING1:string, STRING2:string)",
+    operator_letter_of: "[STRING] 的第 [LETTER] 个字符(STRING:string, LETTER:number)",
+    operator_length: "[STRING] 的长度(STRING:string)",
+    operator_contains: "[STRING1] 包含 [STRING2]?(STRING1:string, STRING2:string)",
+    operator_mod: "[NUM1] 除以 [NUM2] 的余数(NUM1:number, NUM2:number)",
+    operator_round: "四舍五入 [NUM](NUM:number)",
+    operator_mathop: "[OPERATOR] [NUM](OPERATOR:string, NUM:number)",
+    sound_play: "播放声音 [SOUND_MENU](SOUND_MENU:string)",
+    sound_playuntildone: "播放声音 [SOUND_MENU] 等待播放完成(SOUND_MENU:string)",
     sound_stopallsounds: "停止所有声音",
-    sound_seteffectto: "将 [EFFECT] 音效设为 [VALUE]（EFFECT：string, VALUE：number）",
-    sound_changeeffectby: "将 [EFFECT] 音效增加 [VALUE]（EFFECT：string, VALUE：number）",
+    sound_seteffectto: "将 [EFFECT] 音效设为 [VALUE](EFFECT:string, VALUE:number)",
+    sound_changeeffectby: "将 [EFFECT] 音效增加 [VALUE](EFFECT:string, VALUE:number)",
     sound_cleareffects: "清除音效",
-    sound_sounds_menu: "声音 [SOUND_MENU]（SOUND_MENU：string）",
-    sound_beats_menu: "节拍 [BEATS]（BEATS：number）",
-    sound_effects_menu: "音效 [EFFECT]（EFFECT：string）",
-    sound_setvolumeto: "将音量设为 [VOLUME]（VOLUME：number）",
-    sound_changevolumeby: "将音量增加 [VOLUME]（VOLUME：number）",
+    sound_sounds_menu: "声音 [SOUND_MENU](SOUND_MENU:string)",
+    sound_beats_menu: "节拍 [BEATS](BEATS:number)",
+    sound_effects_menu: "音效 [EFFECT](EFFECT:string)",
+    sound_setvolumeto: "将音量设为 [VOLUME](VOLUME:number)",
+    sound_changevolumeby: "将音量增加 [VOLUME](VOLUME:number)",
     sound_volume: "音量",
-    sensing_touchingobject: "碰到 [TOUCHINGOBJECTMENU]？（TOUCHINGOBJECTMENU：string）",
-    sensing_touchingcolor: "碰到颜色 [COLOR]？（COLOR：string）",
-    sensing_coloristouchingcolor: "颜色 [COLOR] 碰到 [COLOR2]？（COLOR：string, COLOR2：string）",
-    sensing_distanceto: "到 [DISTANCETOMENU] 的距离（DISTANCETOMENU：string）",
+    sensing_touchingobject: "碰到 [TOUCHINGOBJECTMENU]?(TOUCHINGOBJECTMENU:string)",
+    sensing_touchingcolor: "碰到颜色 [COLOR]?(COLOR:string)",
+    sensing_coloristouchingcolor: "颜色 [COLOR] 碰到 [COLOR2]?(COLOR:string, COLOR2:string)",
+    sensing_distanceto: "到 [DISTANCETOMENU] 的距离(DISTANCETOMENU:string)",
     sensing_timer: "计时器",
     sensing_resettimer: "计时器归零",
-    sensing_of: "[OBJECT] 的 [PROPERTY]（OBJECT：string, PROPERTY：string）",
+    sensing_of: "[OBJECT] 的 [PROPERTY](OBJECT:string, PROPERTY:string)",
     sensing_mousex: "鼠标 x",
     sensing_mousey: "鼠标 y",
-    sensing_setdragmode: "将拖动方式设为 [DRAG_MODE]（DRAG_MODE：string）",
-    sensing_mousedown: "鼠标按下？",
-    sensing_keypressed: "按下 [KEY_OPTION] 键？（KEY_OPTION：string）",
-    sensing_current: "当前 [CURRENTMENU]（CURRENTMENU：string）",
+    sensing_setdragmode: "将拖动方式设为 [DRAG_MODE](DRAG_MODE:string)",
+    sensing_mousedown: "鼠标按下?",
+    sensing_keypressed: "按下 [KEY_OPTION] 键?(KEY_OPTION:string)",
+    sensing_current: "当前 [CURRENTMENU](CURRENTMENU:string)",
     sensing_dayssince2000: "距 2000 年的天数",
     sensing_loudness: "响度",
-    sensing_loud: "响吗？",
-    sensing_askandwait: "询问 [QUESTION] 并等待（QUESTION：string）",
+    sensing_loud: "响吗?",
+    sensing_askandwait: "询问 [QUESTION] 并等待(QUESTION:string)",
     sensing_answer: "回答",
     sensing_username: "用户名",
     sensing_userid: "用户 id",
-    data_variable: "变量 [VARIABLE]（VARIABLE：variable）",
-    data_setvariableto: "将 [VARIABLE] 设为 [VALUE]（VARIABLE：variable, VALUE：string）",
-    data_changevariableby: "将 [VARIABLE] 增加 [VALUE]（VARIABLE：variable, VALUE：number）",
-    data_hidevariable: "隐藏变量 [VARIABLE]（VARIABLE：variable）",
-    data_showvariable: "显示变量 [VARIABLE]（VARIABLE：variable）",
-    data_listcontents: "列表 [LIST]（LIST：list）",
-    data_addtolist: "将 [ITEM] 加入列表 [LIST]（ITEM：string, LIST：list）",
-    data_deleteoflist: "删除列表 [LIST] 的第 [INDEX] 项（LIST：list, INDEX：string）",
-    data_deletealloflist: "删除列表 [LIST] 的全部项目（LIST：list）",
-    data_insertatlist: "在列表 [LIST] 的第 [INDEX] 项前插入 [ITEM]（LIST：list, INDEX：string, ITEM：string）",
-    data_replaceitemoflist: "将列表 [LIST] 的第 [INDEX] 项替换为 [ITEM]（LIST：list, INDEX：string, ITEM：string）",
-    data_itemoflist: "列表 [LIST] 的第 [INDEX] 项（LIST：list, INDEX：string）",
-    data_itemnumoflist: "[ITEM] 在列表 [LIST] 中的编号（ITEM：string, LIST：list）",
-    data_lengthoflist: "列表 [LIST] 的长度（LIST：list）",
-    data_listcontainsitem: "列表 [LIST] 包含 [ITEM]？（LIST：list, ITEM：string）",
-    data_hidelist: "隐藏列表 [LIST]（LIST：list）",
-    data_showlist: "显示列表 [LIST]（LIST：list）",
+    data_variable: "变量 [VARIABLE](VARIABLE:variable)",
+    data_setvariableto: "将 [VARIABLE] 设为 [VALUE](VARIABLE:variable, VALUE:string)",
+    data_changevariableby: "将 [VARIABLE] 增加 [VALUE](VARIABLE:variable, VALUE:number)",
+    data_hidevariable: "隐藏变量 [VARIABLE](VARIABLE:variable)",
+    data_showvariable: "显示变量 [VARIABLE](VARIABLE:variable)",
+    data_listcontents: "列表 [LIST](LIST:list)",
+    data_addtolist: "将 [ITEM] 加入列表 [LIST](ITEM:string, LIST:list)",
+    data_deleteoflist: "删除列表 [LIST] 的第 [INDEX] 项(LIST:list, INDEX:string)",
+    data_deletealloflist: "删除列表 [LIST] 的全部项目(LIST:list)",
+    data_insertatlist: "在列表 [LIST] 的第 [INDEX] 项前插入 [ITEM](LIST:list, INDEX:string, ITEM:string)",
+    data_replaceitemoflist: "将列表 [LIST] 的第 [INDEX] 项替换为 [ITEM](LIST:list, INDEX:string, ITEM:string)",
+    data_itemoflist: "列表 [LIST] 的第 [INDEX] 项(LIST:list, INDEX:string)",
+    data_itemnumoflist: "[ITEM] 在列表 [LIST] 中的编号(ITEM:string, LIST:list)",
+    data_lengthoflist: "列表 [LIST] 的长度(LIST:list)",
+    data_listcontainsitem: "列表 [LIST] 包含 [ITEM]?(LIST:list, ITEM:string)",
+    data_hidelist: "隐藏列表 [LIST](LIST:list)",
+    data_showlist: "显示列表 [LIST](LIST:list)",
     procedures_definition: "自定义积木定义",
-    procedures_call: "调用自定义积木 [PROCEDURE]（PROCEDURE：string）",
-    procedures_call_with_return: "调用自定义积木 [PROCEDURE] 并返回（PROCEDURE：string）",
+    procedures_call: "调用自定义积木 [PROCEDURE](PROCEDURE:string)",
+    procedures_call_with_return: "调用自定义积木 [PROCEDURE] 并返回(PROCEDURE:string)",
   };
 
   static BlockSearchAliases: Record<string, string[]> = {
@@ -788,6 +824,87 @@ export class AITools {
       if (byName) return byName;
     }
     return targetId ? this.vm.runtime?.getTargetById?.(targetId) || null : this.vm.editingTarget || null;
+  }
+
+  private _resolveDataVariable(options?: { targetId?: string; targetName?: string; variableId?: string; name?: string; type?: "variable" | "list" }) {
+    const target = this._resolveTarget(options?.targetId, options?.targetName);
+    if (!target) return { target: null, variable: null, error: "Target not found." };
+    const values = Object.values(target?.variables || {}) as any[];
+    const requestedType = options?.type;
+    const normalizedName = String(options?.name || "").trim().toLowerCase();
+    const variable = values.find((item) => {
+      const itemType = item?.type === "list" || Array.isArray(item?.value) ? "list" : "variable";
+      if (requestedType && itemType !== requestedType) return false;
+      if (options?.variableId && item?.id === options.variableId) return true;
+      return Boolean(normalizedName) && String(item?.name || "").trim().toLowerCase() === normalizedName;
+    });
+    if (!variable) return { target, variable: null, error: `${requestedType || "Data item"} not found.` };
+    return { target, variable, error: "" };
+  }
+
+  private _getProjectSizeProfile(virtualFiles?: VirtualFileEntry[]) {
+    const targets = Array.isArray(this.vm.runtime?.targets) ? this.vm.runtime.targets : [];
+    let variableCount = 0;
+    let listCount = 0;
+    let totalListItems = 0;
+    let maxListLength = 0;
+    let blockCount = 0;
+    let scriptCount = 0;
+    let estimatedVariableChars = 0;
+
+    targets.forEach((target: any) => {
+      const blocks = target?.blocks?._blocks && typeof target.blocks._blocks === "object" ? target.blocks._blocks : {};
+      const blockIds = Object.keys(blocks);
+      blockCount += blockIds.length;
+      scriptCount += blockIds.filter((blockId) => blocks[blockId]?.topLevel && !blocks[blockId]?.parent).length;
+      const values = Object.values(target?.variables || {}) as any[];
+      values.forEach((item) => {
+        const isList = item?.type === "list" || Array.isArray(item?.value);
+        if (isList) {
+          listCount += 1;
+          const length = Array.isArray(item?.value) ? item.value.length : 0;
+          totalListItems += length;
+          maxListLength = Math.max(maxListLength, length);
+          estimatedVariableChars += Math.min(length, LIST_PREVIEW_ITEM_COUNT) * PREVIEW_STRING_MAX_CHARS;
+        } else {
+          variableCount += 1;
+          estimatedVariableChars += typeof item?.value === "string" ? item.value.length : 32;
+        }
+      });
+    });
+
+    const estimatedVirtualFileChars = virtualFiles
+      ? virtualFiles.reduce((sum, entry) => sum + (entry.content?.length || 0), 0)
+      : 0;
+    const estimatedJsonChars = estimatedVariableChars + estimatedVirtualFileChars + blockCount * 500;
+    const scale = totalListItems >= LARGE_PROJECT_MAX_TOTAL_LIST_ITEMS || maxListLength >= LARGE_PROJECT_MAX_LIST_LENGTH
+      ? "huge"
+      : totalListItems >= SMALL_PROJECT_MAX_TOTAL_LIST_ITEMS ||
+        maxListLength >= SMALL_PROJECT_MAX_LIST_LENGTH ||
+        estimatedVirtualFileChars >= SMALL_PROJECT_MAX_VIRTUAL_FILE_CHARS
+        ? "large"
+        : "small";
+
+    return {
+      scale,
+      isSmall: scale === "small",
+      isLargeRuntimeData: scale !== "small",
+      targetCount: targets.length,
+      scriptCount,
+      blockCount,
+      variableCount,
+      listCount,
+      totalListItems,
+      maxListLength,
+      estimatedJsonChars,
+      estimatedVirtualFileChars,
+      thresholds: {
+        smallProjectMaxTotalListItems: SMALL_PROJECT_MAX_TOTAL_LIST_ITEMS,
+        smallProjectMaxListLength: SMALL_PROJECT_MAX_LIST_LENGTH,
+        hugeProjectMaxTotalListItems: LARGE_PROJECT_MAX_TOTAL_LIST_ITEMS,
+        hugeProjectMaxListLength: LARGE_PROJECT_MAX_LIST_LENGTH,
+      },
+    };
   }
 
   private _resolveCostumeIndex(target: any, costumeIndex?: number, costumeName?: string) {
@@ -1014,7 +1131,7 @@ export class AITools {
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([opcode, text]) => {
         const aliases = AITools.BlockSearchAliases[opcode] || [];
-        const aliasText = aliases.length > 0 ? `；用法/别名：${aliases.join("；")}` : "";
+        const aliasText = aliases.length > 0 ? `；用法/别名:${aliases.join("；")}` : "";
         return `- ${opcode}: ${text}${aliasText}`;
       });
 
@@ -1975,6 +2092,27 @@ export class AITools {
     return `${action} script ${scriptId}: ${result?.error || "unknown error"}.${detailText}`;
   }
 
+  private _summarizeSyncResult(result: any) {
+    return {
+      path: result?.path,
+      targetId: result?.targetId,
+      costumeIndex: result?.costumeIndex,
+      costumeName: result?.costumeName,
+      operationCount: Number(result?.operationCount) || 0,
+      operations: Array.isArray(result?.operations)
+        ? result.operations.map((operation: any) => ({
+            type: operation?.type,
+            scriptId: operation?.scriptId,
+            syncMode: operation?.result?.syncMode,
+            blockCount: operation?.result?.blockCount,
+            warningCount: Array.isArray(operation?.result?.warnings) ? operation.result.warnings.length : undefined,
+          }))
+        : [],
+      rotationCenterX: result?.rotationCenterX,
+      rotationCenterY: result?.rotationCenterY,
+    };
+  }
+
   private async _syncVirtualTargetFile(entry: VirtualFileEntry, oldContent: string, newContent: string) {
     const oldSections = extractVirtualScriptSections(oldContent);
     const newSections = extractVirtualScriptSections(newContent);
@@ -2102,8 +2240,11 @@ export class AITools {
     }
 
     const lines = entry.content.split("\n");
+    const hasExplicitRange = startLine !== undefined || endLine !== undefined;
     const start = Math.max(1, Math.floor(startLine || 1));
-    const end = Math.min(lines.length, Math.floor(endLine || lines.length));
+    const defaultEnd = hasExplicitRange ? lines.length : Math.min(lines.length, DEFAULT_READ_FILE_MAX_LINES);
+    const end = Math.min(lines.length, Math.floor(endLine || defaultEnd));
+    const truncated = !hasExplicitRange && end < lines.length;
 
     return {
       success: true,
@@ -2112,7 +2253,143 @@ export class AITools {
       startLine: start,
       endLine: end,
       totalLines: lines.length,
+      truncated,
+      note: truncated
+        ? `File has ${lines.length} total lines. Showing lines ${start}-${end} by default to keep tool output manageable. To read more, call readFile again with startLine and endLine.`
+        : undefined,
       content: lines.slice(start - 1, end).join("\n"),
+    };
+  }
+
+  readVariable(options: { targetId?: string; targetName?: string; variableId?: string; name?: string; startChar?: number; endChar?: number }) {
+    const { target, variable, error } = this._resolveDataVariable({ ...options, type: "variable" });
+    if (!target || !variable) return { success: false, error };
+    const value = variable.value;
+    const startChar = Math.max(0, Math.floor(Number(options?.startChar) || 0));
+    const hasRange = options?.startChar !== undefined || options?.endChar !== undefined;
+    if (typeof value === "string") {
+      const endChar = Math.min(value.length, Math.floor(Number(options?.endChar) || (hasRange ? value.length : PREVIEW_STRING_MAX_CHARS)));
+      return {
+        success: true,
+        targetId: target.id,
+        targetName: this._getTargetName(target),
+        id: variable.id,
+        name: variable.name,
+        type: "variable",
+        valueType: "string",
+        length: value.length,
+        startChar,
+        endChar,
+        value: value.slice(startChar, endChar),
+        truncated: endChar < value.length || startChar > 0,
+        isCloud: Boolean(variable.isCloud),
+      };
+    }
+    return {
+      success: true,
+      targetId: target.id,
+      targetName: this._getTargetName(target),
+      id: variable.id,
+      name: variable.name,
+      type: "variable",
+      valueType: typeof value,
+      value: previewValue(value),
+      truncated: false,
+      isCloud: Boolean(variable.isCloud),
+    };
+  }
+
+  readListSlice(options: { targetId?: string; targetName?: string; variableId?: string; name?: string; start?: number; count?: number }) {
+    const { target, variable, error } = this._resolveDataVariable({ ...options, type: "list" });
+    if (!target || !variable) return { success: false, error };
+    const value = Array.isArray(variable.value) ? variable.value : [];
+    const start = Math.max(0, Math.floor(Number(options?.start) || 0));
+    const requestedCount = Math.floor(Number(options?.count) || 100);
+    const count = Math.max(0, Math.min(DATA_SLICE_MAX_COUNT, requestedCount));
+    const end = Math.min(value.length, start + count);
+    return {
+      success: true,
+      targetId: target.id,
+      targetName: this._getTargetName(target),
+      id: variable.id,
+      name: variable.name,
+      type: "list",
+      length: value.length,
+      start,
+      count: end - start,
+      maxCount: DATA_SLICE_MAX_COUNT,
+      items: value.slice(start, end).map((item: any) => previewValue(item)),
+      truncated: end < value.length,
+    };
+  }
+
+  searchList(options: { targetId?: string; targetName?: string; variableId?: string; name?: string; query?: string; limit?: number; start?: number; maxVisited?: number }) {
+    const { target, variable, error } = this._resolveDataVariable({ ...options, type: "list" });
+    if (!target || !variable) return { success: false, error };
+    const query = String(options?.query || "");
+    if (!query) return { success: false, error: "query is required." };
+    const value = Array.isArray(variable.value) ? variable.value : [];
+    const start = Math.max(0, Math.floor(Number(options?.start) || 0));
+    const limit = Math.max(1, Math.min(100, Math.floor(Number(options?.limit) || 20)));
+    const maxVisited = Math.max(1, Math.min(DATA_SEARCH_MAX_VISITED, Math.floor(Number(options?.maxVisited) || DATA_SEARCH_MAX_VISITED)));
+    const matches: any[] = [];
+    const queryLower = query.toLowerCase();
+    const end = Math.min(value.length, start + maxVisited);
+    for (let index = start; index < end && matches.length < limit; index++) {
+      const item = value[index];
+      if (String(item).toLowerCase().includes(queryLower)) {
+        matches.push({ index, value: previewValue(item) });
+      }
+    }
+    return {
+      success: true,
+      targetId: target.id,
+      targetName: this._getTargetName(target),
+      id: variable.id,
+      name: variable.name,
+      length: value.length,
+      query,
+      start,
+      visited: end - start,
+      limit,
+      matches,
+      truncated: end < value.length && matches.length < limit,
+    };
+  }
+
+  getDataSummary(options?: { targetId?: string; targetName?: string; names?: string[]; sampleCount?: number }) {
+    const target = options?.targetId || options?.targetName ? this._resolveTarget(options.targetId, options.targetName) : null;
+    const targets = target ? [target] : (Array.isArray(this.vm.runtime?.targets) ? this.vm.runtime.targets : []);
+    const requestedNames = new Set((Array.isArray(options?.names) ? options.names : []).map((name) => String(name).trim().toLowerCase()).filter(Boolean));
+    const sampleCount = Math.max(1, Math.min(100, Math.floor(Number(options?.sampleCount) || LIST_PREVIEW_ITEM_COUNT)));
+    return {
+      success: true,
+      sampleCount,
+      targets: targets.map((itemTarget: any) => {
+        const values = (Object.values(itemTarget?.variables || {}) as any[]).filter((item) => {
+          if (requestedNames.size === 0) return true;
+          return requestedNames.has(String(item?.name || "").trim().toLowerCase());
+        });
+        return {
+          targetId: itemTarget.id,
+          targetName: this._getTargetName(itemTarget),
+          variables: values
+            .filter((item) => !Array.isArray(item?.value) && item?.type !== "list")
+            .map((item) => ({ id: item.id, name: item.name, valueType: typeof item.value, preview: previewValue(item.value) })),
+          lists: values
+            .filter((item) => Array.isArray(item?.value) || item?.type === "list")
+            .map((item) => {
+              const list = Array.isArray(item.value) ? item.value : [];
+              return {
+                id: item.id,
+                name: item.name,
+                length: list.length,
+                first: list.slice(0, sampleCount).map((value: any) => previewValue(value)),
+                last: list.slice(Math.max(0, list.length - sampleCount)).map((value: any) => previewValue(value)),
+              };
+            }),
+        };
+      }),
     };
   }
 
@@ -2241,7 +2518,7 @@ export class AITools {
       return {
         success: false,
         error: costumeDraftSaved
-          ? "Patched virtual file has diagnostics errors. No Scratch changes were applied. Invalid costume drafts were saved in 02Agent memory; script changes were discarded."
+          ? "Patched virtual file has diagnostics errors. No Scratch changes were applied. Invalid costume drafts were saved in Nova's memory; script changes were discarded."
           : "Patched virtual file has diagnostics errors. No Scratch blocks were changed.",
         draftSaved: costumeDraftSaved,
         changedFiles: changedEntries.map((entry) => entry.path),
@@ -2249,7 +2526,9 @@ export class AITools {
       };
     }
 
-    const snapshot = typeof this.vm?.toJSON === "function" ? this.vm.toJSON() : "";
+    const sizeProfile = this._getProjectSizeProfile(entries);
+    const useFullSnapshot = sizeProfile.isSmall && typeof this.vm?.toJSON === "function";
+    const snapshot = useFullSnapshot ? this.vm.toJSON() : "";
     const syncResults = [];
 
     try {
@@ -2258,21 +2537,29 @@ export class AITools {
         syncResults.push(result);
       }
     } catch (error) {
-      await this._restoreProjectSnapshot(snapshot);
+      if (snapshot) {
+        await this._restoreProjectSnapshot(snapshot);
+      }
       changedEntries.forEach((entry) => {
         if (entry.kind === "costume") {
           this.draftContentByPath.set(entry.path, nextContentByPath.get(entry.path) || "");
         }
       });
       const costumeDraftSaved = changedEntries.some((entry) => entry.kind === "costume");
+      const largeProjectNote = sizeProfile.isSmall
+        ? undefined
+        : "Large runtime data detected; full project rollback and verbose sync results were skipped to avoid oversized serialization.";
       return {
         success: false,
+        mode: sizeProfile.isSmall ? "full" : "large-project",
+        sizeProfile,
         error: costumeDraftSaved
-          ? `${error instanceof Error ? error.message : "Failed to apply virtual file changes"}. Invalid costume drafts were saved in 02Agent memory when possible; script changes were discarded.`
+          ? `${error instanceof Error ? error.message : "Failed to apply virtual file changes"}. Invalid costume drafts were saved in Nova memory when possible; script changes before the failed operation may already be applied.`
           : error instanceof Error ? error.message : "Failed to apply virtual file changes",
         rolledBack: Boolean(snapshot),
         draftSaved: costumeDraftSaved,
-        syncResults,
+        syncResults: sizeProfile.isSmall ? syncResults : syncResults.map((result) => this._summarizeSyncResult(result)),
+        note: largeProjectNote,
       };
     }
 
@@ -2281,21 +2568,28 @@ export class AITools {
     if (changedTargetEntries.length > 0 && scriptOperationCount === 0) {
       return {
         success: false,
+        mode: sizeProfile.isSmall ? "full" : "large-project",
+        sizeProfile,
         error:
           "Patch changed virtual file text but did not add, delete, or modify any // @script sections. Header-only changes are ignored.",
         changedFiles: changedEntries.map((entry) => entry.path),
-        syncResults,
+        syncResults: sizeProfile.isSmall ? syncResults : syncResults.map((result) => this._summarizeSyncResult(result)),
         diagnostics: validationResults,
       };
     }
 
     return {
       success: true,
+      mode: sizeProfile.isSmall ? "full" : "large-project",
+      sizeProfile,
       changedFiles: changedEntries.map((entry) => entry.path),
       fileCount: changedEntries.length,
       scriptOperationCount,
-      syncResults,
+      syncResults: sizeProfile.isSmall ? syncResults : syncResults.map((result) => this._summarizeSyncResult(result)),
       diagnostics: validationResults,
+      note: sizeProfile.isSmall
+        ? undefined
+        : "Large runtime data detected; applyPatch used compact output and skipped full project snapshot serialization.",
     };
   }
 
@@ -2794,7 +3088,7 @@ export class AITools {
     if (!runtime || !storage || !renderer) {
       return { success: false, error: "Scratch VM runtime/renderer/storage is not ready." };
     }
-    const spriteName = String(options?.name || "02Agent Sprite").trim() || "02Agent Sprite";
+    const spriteName = String(options?.name || "Nova Sprite").trim() || "Nova Sprite";
     const costumeName = String(options?.costumeName || "costume1").trim() || "costume1";
     const runtimeTargets = () => (Array.isArray(runtime.targets) ? runtime.targets : []);
     const targetIdsBefore = new Set(runtimeTargets().map((target: any) => target?.id).filter(Boolean));
@@ -2830,7 +3124,7 @@ export class AITools {
     }
     try {
       const stageTarget = runtime.getTargetForStage?.();
-      const SpriteCtor = stageTarget?.sprite?.constructor || (runtime.targets || []).find((target: any) => target?.sprite)?.sprite?.constructor;
+      const SpriteCtor = stageTarget?.sprite?.constructor || (runtime.targets || []).find((target: any) => target?.sprite)?.sprite?.constructor || ScratchVmSprite;
       if (!SpriteCtor) {
         throw new Error("Sprite constructor is not available.");
       }
@@ -2870,12 +3164,14 @@ export class AITools {
       sprite.sounds = [];
       const createdTarget = sprite.createClone();
       runtime.addTarget(createdTarget);
+      createdTarget.updateAllDrawableProperties?.();
       createdTarget.setXY?.(Number(options?.x ?? 0), Number(options?.y ?? 0));
       createdTarget.setSize?.(Number(options?.size ?? 100));
       createdTarget.setDirection?.(Number(options?.direction ?? 90));
       createdTarget.setRotationStyle?.(String(options?.rotationStyle || "all around"));
       createdTarget.setCostume?.(0);
       this.vm.setEditingTarget?.(createdTarget.id);
+      runtime.setEditingTarget?.(createdTarget);
       this.vm.emitTargetsUpdate?.();
       this.vm.emitWorkspaceUpdate?.();
       runtime.emitProjectChanged?.();
@@ -2909,77 +3205,65 @@ export class AITools {
       };
     } catch (error) {
       await cleanupCreatedTargets();
-      const templateTarget = (this.vm.runtime?.targets || []).find((target: any) => !target.isStage && target.sprite && targetIdsBefore.has(target.id));
-      if (!templateTarget || typeof this.vm.duplicateSprite !== "function") {
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : String(error),
-          removedUnexpectedTargets: await cleanupCreatedTargets(),
-        };
-      }
-      try {
-        await this.vm.duplicateSprite(templateTarget.id);
-        const createdTarget = this.vm.editingTarget;
-        this.vm.renameSprite?.(createdTarget.id, spriteName);
-        createdTarget.setXY?.(Number(options?.x ?? 0), Number(options?.y ?? 0));
-        createdTarget.setSize?.(Number(options?.size ?? 100));
-        createdTarget.setDirection?.(Number(options?.direction ?? 90));
-        createdTarget.setRotationStyle?.(String(options?.rotationStyle || "all around"));
-        if (createdTarget.blocks?._blocks) createdTarget.blocks._blocks = {};
-        createdTarget.comments = {};
-        const firstCostume = createdTarget.sprite?.costumes?.[0];
-        if (!firstCostume) throw new Error("Duplicated sprite has no costume to replace.");
-        createdTarget.sprite.costumes.splice(1);
-        firstCostume.name = costumeName;
-        const fallbackRotationCenter = Number.isFinite(options?.rotationCenterX) && Number.isFinite(options?.rotationCenterY)
-          ? [Number(options.rotationCenterX), Number(options.rotationCenterY)] as [number, number]
-          : this._inferSvgRotationCenter(createdTarget, svg, [Number(firstCostume.rotationCenterX ?? 0), Number(firstCostume.rotationCenterY ?? 0)]);
-        this._applySvgToCostumeObject(
-          firstCostume,
-          svg,
-          fallbackRotationCenter[0],
-          fallbackRotationCenter[1],
-        );
-        this.vm.emitWorkspaceUpdate?.();
-        this.vm.emitTargetsUpdate?.();
-        this.vm.runtime.emitProjectChanged?.();
-        const actualName = normalizeSpriteName(this._getTargetName(createdTarget));
-        if (actualName !== requestedName) {
-          const removedUnexpectedTargets = await cleanupCreatedTargets();
-          return {
-            success: false,
-            error: `Sprite creation fallback was cancelled because Scratch created "${this._getTargetName(createdTarget)}" instead of the requested "${spriteName}". Use addCostumeWithSvg for existing sprites.`,
-            removedUnexpectedTargets,
-          };
-        }
-        return {
-          success: true,
-          targetId: createdTarget?.id,
-          name: spriteName,
-          costumeName,
-          defaultProperties: {
-            x: Number(options?.x ?? 0),
-            y: Number(options?.y ?? 0),
-            size: Number(options?.size ?? 100),
-            direction: Number(options?.direction ?? 90),
-            rotationStyle: String(options?.rotationStyle || "all around"),
-            visible: createdTarget?.visible,
-            currentCostumeIndex: 0,
-          },
-          nextStep: "If the intended initial/current sprite state differs, call updateSpriteProperties now with targetId and the desired x/y/size/direction/rotationStyle/visible/currentCostumeIndex.",
-          rotationCenterX: firstCostume.rotationCenterX,
-          rotationCenterY: firstCostume.rotationCenterY,
-          path: createdTarget ? this._getVirtualPathForTarget(createdTarget) : undefined,
-          fallback: "duplicated-template-sprite",
-        };
-      } catch (fallbackError) {
-        return {
-          success: false,
-          error: `addSprite failed (${error instanceof Error ? error.message : String(error)}); duplicate fallback failed (${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)})`,
-          removedUnexpectedTargets: await cleanupCreatedTargets(),
-        };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        removedUnexpectedTargets: await cleanupCreatedTargets(),
+      };
+    }
+  }
+
+  private _compactExtensionItem(extension: ExtensionRegistryItem & { score?: number }) {
+    return {
+      extensionId: extension.extensionId,
+      name: extension.name,
+      description: extension.description,
+      source: extension.source,
+      extensionURL: extension.extensionURL,
+      builtin: Boolean(extension.builtin),
+      special: Boolean(extension.special),
+      incompatibleWithScratch: Boolean(extension.incompatibleWithScratch),
+      bluetoothRequired: Boolean(extension.bluetoothRequired),
+      internetConnectionRequired: Boolean(extension.internetConnectionRequired),
+      tags: extension.tags || [],
+      credits: extension.credits || [],
+      docsURI: extension.docsURI || null,
+      score: extension.score,
+    };
+  }
+
+  private _getLoadedExtensionIds() {
+    const loaded = new Set<string>();
+    const extensionManager = this.vm?.extensionManager;
+    if (extensionManager?._loadedExtensions instanceof Map) {
+      for (const id of extensionManager._loadedExtensions.keys()) loaded.add(String(id));
+    }
+    if (Array.isArray(this.vm?.runtime?._blockInfo)) {
+      for (const info of this.vm.runtime._blockInfo) {
+        if (info?.id) loaded.add(String(info.id));
       }
     }
+    return [...loaded];
+  }
+
+  private _getLoadedExtensionInfo(extensionId?: string) {
+    const wanted = String(extensionId || "").trim();
+    const blockInfo = Array.isArray(this.vm?.runtime?._blockInfo) ? this.vm.runtime._blockInfo : [];
+    return blockInfo
+      .filter((info: any) => !wanted || info?.id === wanted)
+      .map((info: any) => ({
+        id: info?.id,
+        name: info?.name,
+        blocks: this.getExtensionBlocks(info?.id).slice(0, 40),
+      }));
+  }
+
+  private async _loadExtensionFromText(extensionURL: string) {
+    const response = await fetch(extensionURL);
+    if (!response.ok) throw new Error(`HTTP ${response.status} while fetching extension text.`);
+    const text = await response.text();
+    const dataURL = `data:application/javascript,${encodeURIComponent(text)}`;
+    await this.vm.extensionManager.loadExtensionURL(dataURL);
   }
 
   getTopLevelScripts(targetId?: string) {
@@ -3164,10 +3448,10 @@ export class AITools {
               const args: string[] = [];
               if (block.info.arguments) {
                 for (const [argName, argInfo] of Object.entries(block.info.arguments)) {
-                  args.push(`${argName}：${(argInfo as any).type}`);
+                  args.push(`${argName}:${(argInfo as any).type}`);
                 }
               }
-              const argsStr = args.length > 0 ? `（${args.join(", ")}）` : "";
+              const argsStr = args.length > 0 ? `(${args.join(", ")})` : "";
               resultMap.set(fullOpcode, `${text}${argsStr}`);
             }
           }
@@ -3194,8 +3478,8 @@ export class AITools {
     result.type = result.blockType;
     result.text =
       opcode === "argument_reporter_boolean"
-        ? "自定义积木布尔参数 [VALUE]（VALUE：parameter name）"
-        : "自定义积木参数 [VALUE]（VALUE：parameter name）";
+        ? "自定义积木布尔参数 [VALUE](VALUE:parameter name)"
+        : "自定义积木参数 [VALUE](VALUE:parameter name)";
     result.fields = {
       ...(result.fields || {}),
       VALUE: {
@@ -3756,14 +4040,14 @@ export class AITools {
       result.blockType = "command";
     }
 
-    const matches = [...text.matchAll(/[（(]([^）)]*)[）)]/g)];
+    const matches = [...text.matchAll(/[((]([^))]*)[))]/g)];
     if (matches.length === 0) return;
     const inside = String(matches[matches.length - 1]?.[1] ?? "").trim();
     if (!inside) return;
 
     const parts = inside.split(/[，,]/).map((x) => x.trim()).filter(Boolean);
     for (const part of parts) {
-      const kv = part.split(/[：:]/);
+      const kv = part.split(/[::]/);
       if (kv.length !== 2) continue;
       const argName = kv[0].trim();
       const typeMeta = this._getArgumentTypeMeta(kv[1].trim());
@@ -3817,9 +4101,16 @@ export class AITools {
     const pathByTargetId = new Map(files.map((entry) => [entry.targetId, entry.path]));
     const runtime = this.vm.runtime || {};
     const health = this._getDataHealth(targets, pathByTargetId, listRepairs);
+    const sizeProfile = this._getProjectSizeProfile(virtualFiles);
+    const overviewMode = sizeProfile.isSmall ? "full" : "indexed";
 
     return {
       success: true,
+      mode: overviewMode,
+      sizeProfile,
+      reason: sizeProfile.isSmall
+        ? undefined
+        : "Project has large runtime data; full variable/list values are omitted. Use readVariable, readListSlice, searchList, or getDataSummary for specific data slices.",
       project: {
         stageWidth: runtime.stageWidth,
         stageHeight: runtime.stageHeight,
@@ -3939,7 +4230,11 @@ export class AITools {
             .map((item) => ({
               id: item.id,
               name: item.name,
-              value: item.value,
+              value: sizeProfile.isSmall ? item.value : undefined,
+              preview: sizeProfile.isSmall ? undefined : previewValue(item.value),
+              valueType: typeof item.value,
+              length: typeof item.value === "string" ? item.value.length : undefined,
+              omitted: !sizeProfile.isSmall,
               isCloud: Boolean(item.isCloud),
             })),
           lists: values
@@ -3948,15 +4243,25 @@ export class AITools {
               id: item.id,
               name: item.name,
               length: Array.isArray(item.value) ? item.value.length : 0,
-              preview: Array.isArray(item.value) ? item.value.slice(0, 10) : [],
+              preview: Array.isArray(item.value)
+                ? item.value.slice(0, sizeProfile.isSmall ? Math.min(100, item.value.length) : LIST_PREVIEW_ITEM_COUNT).map((value: any) => previewValue(value))
+                : [],
+              truncated: Array.isArray(item.value) && item.value.length > (sizeProfile.isSmall ? 100 : LIST_PREVIEW_ITEM_COUNT),
+              omitted: !sizeProfile.isSmall,
           })),
         };
       }),
       health,
+      availableDataTools: sizeProfile.isSmall
+        ? ["readVariable", "readListSlice", "searchList", "getDataSummary"]
+        : ["readVariable", "readListSlice", "searchList", "getDataSummary"],
       nextSteps: [
         "Use getScratchGuide for concise DSL patterns.",
         "Use searchBlocks for candidate opcodes.",
         "Use getBlockHelp before writing unfamiliar blocks.",
+        sizeProfile.isSmall
+          ? "Small project mode: overview includes fuller data previews."
+          : "Indexed mode: use readVariable/readListSlice/searchList/getDataSummary for specific variable or list slices before editing data-dependent scripts.",
         'For rendering, algorithms, or reusable parameterized logic, use getScratchGuide({ topic: "procedures" }) and prefer warp custom blocks over broadcast-only flows.',
       ],
     };
@@ -4246,6 +4551,108 @@ export class AITools {
       query,
       matchCount: matches.length,
       matches,
+    };
+  }
+
+  async searchExtensions(options: {
+    query?: string;
+    source?: "scratch" | "tw" | "mistium" | "sharkpool" | "bilup" | "ae" | "special" | "external" | "all";
+    scratchCompatibleOnly?: boolean;
+    includeBuiltin?: boolean;
+    includeRemote?: boolean;
+    includeSpecial?: boolean;
+    maxResults?: number;
+  } = {}) {
+    const matches = await searchKnownExtensions(options);
+    const loadedExtensionIds = this._getLoadedExtensionIds();
+    const loadedSet = new Set(loadedExtensionIds);
+    return {
+      success: true,
+      query: options.query || "",
+      matchCount: matches.length,
+      loadedExtensionIds,
+      matches: matches.map((extension) => ({
+        ...this._compactExtensionItem(extension),
+        loaded: loadedSet.has(extension.extensionId),
+      })),
+      notes: [
+        "Built-in Scratch extensions can be installed by extensionId.",
+        "Remote extension URLs run unsandboxed in this VM; install only trusted known extensions unless allowExternalUrl is explicitly true.",
+      ],
+    };
+  }
+
+  async installExtension(options: {
+    extensionId?: string;
+    extensionURL?: string;
+    query?: string;
+    source?: "scratch" | "tw" | "mistium" | "sharkpool" | "bilup" | "ae" | "special" | "external" | "all";
+    mode?: "auto" | "builtin" | "url" | "text";
+    allowExternalUrl?: boolean;
+    forceRefresh?: boolean;
+  } = {}) {
+    const extensionManager = this.vm?.extensionManager;
+    if (!extensionManager?.loadExtensionURL) {
+      return { success: false, error: "Scratch VM extensionManager.loadExtensionURL is not available." };
+    }
+
+    const resolved = await resolveKnownExtension(options);
+    if (resolved.error) {
+      return { success: false, error: resolved.error, matches: resolved.matches.map((item) => this._compactExtensionItem(item)) };
+    }
+    if (!resolved.item) {
+      return {
+        success: false,
+        error: "Extension did not resolve to exactly one known extension. Use searchExtensions, then pass extensionId or extensionURL.",
+        matches: resolved.matches.map((item) => this._compactExtensionItem(item)),
+      };
+    }
+
+    const item = resolved.item;
+    const mode = options.mode || "auto";
+    const beforeIds = new Set(this._getLoadedExtensionIds());
+
+    if (item.extensionId === "procedures_enable_return") {
+      if (!(window as any).__twEnableProcedureReturns) {
+        return { success: false, error: "Procedure returns helper is not available in this page.", extension: this._compactExtensionItem(item) };
+      }
+      (window as any).__twEnableProcedureReturns();
+    } else if (mode === "builtin" || (mode === "auto" && item.builtin && item.source === "scratch")) {
+      await extensionManager.loadExtensionURL(item.extensionId);
+    } else {
+      const extensionURL = item.extensionURL || options.extensionURL;
+      if (!extensionURL) {
+        return { success: false, error: "Resolved extension has no extensionURL.", extension: this._compactExtensionItem(item) };
+      }
+      if (mode === "text") {
+        await this._loadExtensionFromText(extensionURL);
+      } else {
+        await extensionManager.loadExtensionURL(extensionURL);
+      }
+    }
+
+    try {
+      await extensionManager.refreshBlocks?.();
+    } catch (error) {
+      console.warn("[Bilup Nova] Failed to refresh extension blocks", error);
+    }
+    this.vm.emitWorkspaceUpdate?.();
+
+    const afterIds = this._getLoadedExtensionIds();
+    const addedExtensionIds = afterIds.filter((id) => !beforeIds.has(id));
+    const primaryId = afterIds.includes(item.extensionId) ? item.extensionId : addedExtensionIds[0] || item.extensionId;
+    return {
+      success: true,
+      extension: this._compactExtensionItem(item),
+      requestedMode: mode,
+      external: Boolean(resolved.external),
+      alreadyLoaded: beforeIds.has(primaryId),
+      loadedExtensionIds: afterIds,
+      addedExtensionIds,
+      blocks: this._getLoadedExtensionInfo(primaryId),
+      nextSteps: [
+        "Use searchBlocks or getBlockHelp for exact JS DSL syntax before editing scripts with the new extension blocks.",
+      ],
     };
   }
 

@@ -149,7 +149,7 @@ export const exportConversationText = (session: ChatSession | undefined, message
   );
 
   const header = [
-    "# 02Agent Conversation Export",
+    "# Bilup Nova Conversation Export",
     `title: ${session?.title || "未命名会话"}`,
     `sessionId: ${session?.id || "unsaved"}`,
     `exportedAt: ${new Date().toLocaleString()}`,

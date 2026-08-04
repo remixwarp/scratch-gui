@@ -1,6 +1,7 @@
 import * as React from "react";
-import shell from "../ui/Shell.module.css";
+import shell from "../ui/Shell.module.less";
 import { ChatSession } from "../types";
+import { AIAssistantIcon } from "./AIAssistantIcon";
 
 interface HistoryPanelProps {
   sessions: ChatSession[];
@@ -8,6 +9,7 @@ interface HistoryPanelProps {
   onNewChat: () => void;
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string, e: React.MouseEvent) => void;
+  msg: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export const HistoryPanel: React.FC<HistoryPanelProps> = ({
@@ -16,25 +18,26 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
   onNewChat,
   onSelectSession,
   onDeleteSession,
+  msg,
 }) => {
   return (
     <div className={shell.sidebar}>
       <div className={shell.sidebarHeader}>
         <div className={shell.sidebarBrand}>
-          <span className={shell.sidebarBrandMark}>02</span>
-          <div>
-            <span className={shell.sidebarBrandTitle}>02Agent</span>
-            <div className={shell.sidebarBrandSubtitle}>项目会话</div>
+          <span className={shell.sidebarBrandMark}><AIAssistantIcon /></span>
+          <div className={shell.sidebarBrandText}>
+            <span className={shell.sidebarBrandTitle}>{msg("sidebar-brand-title")}</span>
+            <div className={shell.sidebarBrandSubtitle}>{msg("sidebar-brand-subtitle")}</div>
           </div>
         </div>
       </div>
-      <button onClick={onNewChat} className={shell.sidebarNewChat} title="新对话">
+      <button onClick={onNewChat} className={shell.sidebarNewChat} title={msg("new-chat")}>
         <span className={shell.navIcon}>＋</span>
-        <span>新对话</span>
+        <span>{msg("new-chat")}</span>
       </button>
-      <div className={shell.sidebarSectionLabel}>最近</div>
+      <div className={shell.sidebarSectionLabel}>{msg("recent")}</div>
       <div className={shell.historyList}>
-        {sessions.length === 0 ? <div className={shell.historyEmpty}>还没有会话，开始一个新的提问吧。</div> : null}
+        {sessions.length === 0 ? <div className={shell.historyEmpty}>{msg("no-sessions")}</div> : null}
         {sessions.map((s) => (
           <button
             type="button"
@@ -55,7 +58,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
                   onDeleteSession(s.id, e as unknown as React.MouseEvent);
                 }
               }}
-              title="删除对话"
+              title={msg("delete-session")}
             >
               ×
             </span>

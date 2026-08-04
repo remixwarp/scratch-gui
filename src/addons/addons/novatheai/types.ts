@@ -7,11 +7,14 @@ export interface AgentModel {
 
 export interface Agent {
   id: string;
-  provider: "openai" | "zhipu" | "deepseek" | "custom" | "custom_anthropic" | "anthropic" | "google" | "azure";
+  provider: "openai" | "zhipu" | "deepseek" | "custom" | "custom_anthropic" | "anthropic" | "google" | "azure" | "siliconflow";
   baseUrl: string;
   apiKey: string;
   name: string;
   models: AgentModel[];
+  /** 是否为不可编辑的内置AI */
+  immutable?: boolean;
+  builtin?: boolean;
 }
 
 export interface FlattenedAgent {
@@ -71,6 +74,11 @@ export interface ChatMessage {
   tool_call_id?: string;
   name?: string;
   attachments?: Attachment[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
 }
 
 export interface SessionSnapshot {

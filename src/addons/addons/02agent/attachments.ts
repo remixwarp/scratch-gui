@@ -52,7 +52,7 @@ const readFileAsArrayBuffer = (file: File) =>
 
 const truncatePreview = (content: string, maxLength = 1200) => {
   if (content.length <= maxLength) return content;
-  return `${content.slice(0, maxLength)}\n\n...（内容已截断，发送时会携带完整解析文本）`;
+  return `${content.slice(0, maxLength)}\n\n...(内容已截断，发送时会携带完整解析文本)`;
 };
 
 const parseSpreadsheet = async (file: File) => {
@@ -110,7 +110,7 @@ export const parseLocalAttachment = async (file: File): Promise<Attachment> => {
   } else if (TEXT_EXTENSIONS.has(extension) || file.type.startsWith("text/")) {
     parsed = await parseTextLikeFile(file);
   } else {
-    throw new Error(`暂不支持该文件格式：${file.name}`);
+    throw new Error(`暂不支持该文件格式:${file.name}`);
   }
 
   return {
