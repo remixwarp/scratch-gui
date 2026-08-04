@@ -137,15 +137,15 @@ const ACCENTS = [
         id: 'tw.accent.gay'
     },
     {
-        name: 'Bi',
+        name: 'Bisexual',
         accent: accentBi,
-        description: 'Bi pride flag accent',
+        description: 'Bisexual pride flag accent',
         id: 'mw.accent.bi'
     },
     {
-        name: 'Pan',
+        name: 'Pansexual',
         accent: accentPan,
-        description: 'Pan pride flag accent',
+        description: 'Pansexual pride flag accent',
         id: 'mw.accent.pan'
     },
     {
