@@ -99,13 +99,17 @@ const buildAssistantUtils = (vm) => {
 class AIAssistantBridge extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state = { mounted: false, assistantKey: 0 };
+        this.state = { mounted: false, assistantKey: 0, hasWorkspace: false };
     }
     componentDidMount() {
-        const wrapper = document.createElement("div");
-        wrapper.id = "gandi-plugins-wrapper";
-        wrapper.style.display = "none";
-        document.body.appendChild(wrapper);
+        // embedded 模式不再使用门户 wrapper，兼容保留门户 fallback
+        const wrapper = document.getElementById("gandi-plugins-wrapper") || (() => {
+            const w = document.createElement("div");
+            w.id = "gandi-plugins-wrapper";
+            w.style.display = "none";
+            document.body.appendChild(w);
+            return w;
+        })();
         this.wrapper = wrapper;
         // Initialize default hcnsec agent once
         try {
@@ -133,16 +137,25 @@ class AIAssistantBridge extends React.PureComponent {
             }
         } catch (e) {}
         this.setState({ mounted: true });
+        this._pollTimer = window.setInterval(() => {
+            const { vm } = this.props;
+            const ws =
+                (vm && vm.editingTarget && vm.editingTarget.workspace) ||
+                (vm && vm.runtimeTargets && vm.runtimeTargets[0] && vm.runtimeTargets[0].workspace) ||
+                null;
+            if (ws && !this.state.hasWorkspace) {
+                this.setState({ hasWorkspace: true });
+                window.clearInterval(this._pollTimer);
+            }
+        }, 200);
     }
     componentDidUpdate(prevProps) {
         if (prevProps.vm !== this.props.vm) {
-            this.setState((s) => ({ assistantKey: s.assistantKey + 1 }));
+            this.setState((s) => ({ assistantKey: s.assistantKey + 1, hasWorkspace: false }));
         }
     }
     componentWillUnmount() {
-        if (this.wrapper && this.wrapper.parentNode) {
-            this.wrapper.parentNode.removeChild(this.wrapper);
-        }
+        if (this._pollTimer) window.clearInterval(this._pollTimer);
     }
     render() {
         if (!this.state.mounted) return null;
@@ -153,16 +166,33 @@ class AIAssistantBridge extends React.PureComponent {
             : (vm.runtimeTargets && vm.runtimeTargets[0] && vm.runtimeTargets[0].workspace)
                 ? vm.runtimeTargets[0].workspace
                 : null;
-        if (!workspace) return null;
         const blockly = window.Blockly || (window.Scratch && window.Scratch.Blockly) || null;
         const utils = buildAssistantUtils(vm);
-        return React.createElement(AIAssistant, {
-            key: this.state.assistantKey,
-            vm,
-            workspace,
-            blockly,
-            utils,
-        });
+        return (
+            <div
+                style={{
+                    width: "100%",
+                    height: "100%",
+                    minHeight: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: "1 1 auto",
+                    position: "relative",
+                    overflow: "hidden",
+                }}
+            >
+                {workspace
+                    ? React.createElement(AIAssistant, {
+                          key: this.state.assistantKey,
+                          vm,
+                          workspace,
+                          blockly,
+                          utils,
+                          embedded: true,
+                      })
+                    : null}
+            </div>
+        );
     }
 }
 

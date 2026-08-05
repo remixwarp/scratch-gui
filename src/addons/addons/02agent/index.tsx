@@ -443,8 +443,8 @@ const getResizeHandleClassName = (direction: ResizeDirection) => {
   }
 };
 
-const AIAssistant: React.FC<PluginContext> = ({ vm, blockly, workspace, utils }) => {
-  const [visible, setVisible] = React.useState(false);
+const AIAssistant: React.FC<PluginContext> = ({ vm, blockly, workspace, utils, embedded }) => {
+  const [visible, setVisible] = React.useState(Boolean(embedded));
   const [isMinimized, setIsMinimized] = React.useState(false);
   const [assistantTransition, setAssistantTransition] = React.useState<AssistantTransition>("idle");
   const [assistantMorphTarget, setAssistantMorphTarget] = React.useState<AssistantMorphTarget>({
@@ -1073,7 +1073,10 @@ const AIAssistant: React.FC<PluginContext> = ({ vm, blockly, workspace, utils })
     }, WINDOW_TRANSITION_MS);
   }, [updateAssistantMorphTarget]);
 
-  const pluginsWrapper = document.querySelector(".plugins-wrapper") || document.querySelector("#gandi-plugins-wrapper");
+  const pluginsWrapper =
+    (embedded && containerRef.current) ||
+    document.querySelector(".plugins-wrapper") ||
+    document.querySelector("#gandi-plugins-wrapper");
 
   const latestTodoSnapshot = React.useMemo(() => getLatestTodoSnapshot(messages), [messages]);
   const activeTodo = latestTodoSnapshot?.activeTodo || null;
@@ -1945,13 +1948,45 @@ const AIAssistant: React.FC<PluginContext> = ({ vm, blockly, workspace, utils })
     floatingPosition,
     getFloatingControlWidth(floatingButtonRef.current?.offsetWidth || FLOATING_BUTTON_SIZE_ESTIMATE),
   );
-  const assistantWindowClassName = `${styles.assistantWindow} ${
-    assistantTransition === "minimizing"
-      ? styles.assistantWindowMinimizing
-      : assistantTransition === "restoring"
-        ? styles.assistantWindowRestoring
-        : ""
-  } ${isWindowRelocating ? styles.assistantWindowRelocating : ""}`;
+  const embeddedProps = {
+    rootStyle: embedded
+      ? ({
+          width: "100%",
+          height: "100%",
+          position: "relative" as const,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column" as const,
+          flex: "1 1 auto",
+        })
+      : undefined,
+    assistantWindowStyle: embedded
+      ? ({
+          position: "relative" as const,
+          width: "100%",
+          height: "100%",
+          minHeight: 0,
+          flex: "1 1 auto",
+          display: "flex",
+          flexDirection: "column" as const,
+          transform: undefined,
+          top: undefined,
+          left: undefined,
+          borderRadius: 0,
+          boxShadow: "none",
+          "--assistant-window-x": `0px`,
+          "--assistant-window-y": `0px`,
+          "--assistant-window-width": `100%`,
+          "--assistant-window-height": `100%`,
+          "--assistant-window-content-width": `100%`,
+          "--assistant-window-content-height": `100%`,
+          "--assistant-window-scale": 1,
+        } as React.CSSProperties)
+      : undefined,
+    assistantWindowClassName: embedded
+      ? `${styles.assistantWindow} ${styles.assistantWindowEmbedded || ""}`
+      : assistantWindowClassName,
+  };
   const assistantFloatingClassName = `${styles.assistantFloatingRoot} ${
     assistantTransition === "minimizing"
       ? styles.assistantFloatingRootEntering
@@ -2190,6 +2225,104 @@ const AIAssistant: React.FC<PluginContext> = ({ vm, blockly, workspace, utils })
 
   if (!pluginsWrapper) {
     console.warn("[AI Assistant] No portal target found (.plugins-wrapper or #gandi-plugins-wrapper)");
+  }
+
+  if (embedded) {
+    const shouldShowWindow = visible && (!isMinimized || assistantTransition === "restoring");
+    const embeddedRender = (
+      <section className={`${styles.aiAssistantRoot} ${styles.aiAssistantRootEmbedded || ""}`} ref={containerRef} style={embeddedProps.rootStyle}>
+        <AssistantDialogHost />
+        <div
+          className={`${styles.aiAssistantOverlayRoot} ${assistantThemeClass}`}
+          data-ai-assistant-ui-root="true"
+          style={{
+            position: "relative" as const,
+            width: "100%",
+            height: "100%",
+            minHeight: 0,
+            flex: "1 1 auto",
+            display: "flex",
+            flexDirection: "column" as const,
+            pointerEvents: "auto",
+            background: "transparent",
+          }}
+        >
+          {shouldShowWindow ? (
+            <div
+              ref={windowRef}
+              className={embeddedProps.assistantWindowClassName}
+              style={embeddedProps.assistantWindowStyle}
+            >
+              <div
+                className={styles.assistantWindowSurface}
+                style={{ width: "100%", height: "100%", minHeight: 0, display: "flex", flexDirection: "column" as const, flex: "1 1 auto" }}
+              >
+                <div
+                  className={styles.assistantWindowContent}
+                  style={{ width: "100%", height: "100%", minHeight: 0, display: "flex", flexDirection: "column" as const, flex: "1 1 auto" }}
+                >
+                  <div
+                    className={styles.assistantWindowChrome}
+                    onPointerDown={startWindowDrag}
+                    style={{ cursor: "default", userSelect: "none" }}
+                  >
+                    <div className={styles.assistantWindowTitle}>
+                      <span className={styles.assistantWindowMark}>AI</span>
+                      <span>AI Agent</span>
+                    </div>
+                  </div>
+                  <div className={styles.assistantWindowBody} style={{ minHeight: 0, flex: "1 1 auto" }}>
+                    {assistantContent}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {pendingExternalUrl ? (
+            <div className={styles.assistantGlobalConfirmOverlay} data-no-window-drag="true">
+              <div className={styles.assistantGlobalConfirmDialog} role="dialog" aria-modal="true">
+                <div className={styles.assistantGlobalConfirmMessage}>AI提供的链接可能有风险，确认访问吗？</div>
+                <div className={styles.assistantGlobalConfirmUrl}>{pendingExternalUrl}</div>
+                <div className={styles.assistantGlobalConfirmActions}>
+                  <button
+                    type="button"
+                    className={styles.assistantGlobalConfirmSecondary}
+                    onClick={() => setPendingExternalUrl(null)}
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.assistantGlobalConfirmPrimary}
+                    onClick={handleConfirmExternalUrl}
+                  >
+                    确认访问
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+        {previewAttachment ? (
+          <AttachmentInteractionLayer
+            previewAttachment={previewAttachment}
+            onClosePreview={() => setPreviewAttachment(null)}
+          />
+        ) : null}
+        {shouldShowConverterDebugger() ? (
+          <ConverterDebugger
+            vm={vm}
+            workspace={workspace}
+            blockly={blockly}
+            onPlayUserQuestionSound={playUserQuestionSound}
+          />
+        ) : null}
+      </section>
+    );
+    if (embedded && containerRef.current) {
+      return embeddedRender;
+    }
+    return ReactDOM.createPortal(embeddedRender, pluginsWrapper);
   }
 
   return ReactDOM.createPortal(

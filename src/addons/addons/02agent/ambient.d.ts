@@ -42,4 +42,6 @@ interface PluginContext {
   teamworkManager?: any;
   registerSettings?: any;
   msg?: (descriptor: string) => string;
+  /** 是否以嵌入模式渲染（撑满父容器，不使用浮动按钮/拖拽） */
+  embedded?: boolean;
 }

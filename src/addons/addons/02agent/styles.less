@@ -3407,3 +3407,108 @@
     }
   }
 }
+
+/* =====================================================
+ * 嵌入模式：在 Scratch GUI AI作品 Tab 内撑满父容器
+ * ===================================================== */
+
+.aiAssistantRootEmbedded {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+
+  /* 覆盖 overlay 的 fixed 定位 */
+  & .aiAssistantOverlayRoot {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: transparent !important;
+    pointer-events: auto !important;
+  }
+
+  /* 窗口不再 floating */
+  & .assistantWindow {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  & .assistantWindowSurface {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    clip-path: none !important;
+    background: color-mix(in srgb, var(--ai-bg-app, #f7f9ff) 100%, transparent) !important;
+    transform: none !important;
+  }
+
+  & .assistantWindowContent {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    animation: none !important;
+  }
+
+  /* 隐藏关闭/最小化按钮的容器（保留标题栏以保持视觉层次）*/
+  & .assistantWindowActions {
+    display: none !important;
+  }
+
+  & .assistantWindowResizeHandle,
+  & .assistantResizeHandle {
+    display: none !important;
+  }
+
+  & .assistantWindowChrome {
+    onPointerDown: none;
+    cursor: default !important;
+  }
+
+  & .assistantWindowBody {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  /* 确保 body > container 占满空间 */
+  & .assistantWindowBody > :first-child {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
