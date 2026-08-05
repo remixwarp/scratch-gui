@@ -3728,6 +3728,20 @@ class MenuBar extends React.Component {
                                                     />
                                                 </MenuItem>
                                             )}
+                                            {SettingsStore.getAddonEnabled('novatheai') && (
+                                                <MenuItem
+                                                    onClick={() => {
+                                                        window.dispatchEvent(new Event('novatheai-show-plugin'));
+                                                        this.props.onRequestCloseTools();
+                                                    }}
+                                                >
+                                                    <FormattedMessage
+                                                        defaultMessage="Bilup Nova"
+                                                        description="Menu bar item for Bilup Nova"
+                                                        id="gui.menuBar.bilupNova"
+                                                    />
+                                                </MenuItem>
+                                            )}
                                                 <MenuItem
                                                     onClick={() => {
                                                         this.props.onClickBaiduAI();

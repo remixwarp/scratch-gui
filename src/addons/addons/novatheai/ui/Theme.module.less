@@ -1,0 +1,119 @@
+.themeRoot {
+  --ai-font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ai-font-mono: Consolas, Monaco, "SFMono-Regular", monospace;
+  --ai-radius-xs: 6px;
+  --ai-radius-sm: 8px;
+  --ai-radius-md: 10px;
+  --ai-radius-lg: 14px;
+  --ai-radius-xl: 18px;
+  --ai-radius-pill: 999px;
+  --ai-shadow-menu: 0 18px 46px var(--ai-shadow-strong);
+  --ai-shadow-floating: 0 18px 50px var(--ai-shadow-medium);
+  --ai-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ai-transition-fast: 140ms var(--ai-ease);
+  --ai-transition: 200ms var(--ai-ease);
+  --ai-chat-rail-width: 680px;
+  --ai-chat-user-width: 520px;
+  --ai-composer-width: 720px;
+  --ai-syntax-keyword: var(--motion-primary);
+  --ai-syntax-string: var(--looks-secondary);
+  --ai-syntax-number: var(--motion-primary);
+  --ai-syntax-comment: var(--text-primary);
+  --ai-syntax-identifier: var(--looks-secondary);
+  --ai-syntax-punctuation: var(--text-primary);
+
+  color: var(--ai-text-primary);
+  color-scheme: var(--ai-color-scheme);
+  font-family: var(--ai-font-sans);
+}
+
+.themeRoot,
+.themeRoot *,
+.themeRoot *::before,
+.themeRoot *::after {
+  box-sizing: border-box;
+}
+
+.themeDark {
+  --ai-color-scheme: dark;
+  --ai-bg-app: var(--page-background, #152223);
+  --ai-bg-sidebar: var(--ui-secondary, #182829);
+  --ai-bg-surface: color-mix(in srgb, var(--ui-secondary, #203436) 85%, transparent);
+  --ai-bg-surface-hover: color-mix(in srgb, var(--ui-secondary, #263d40) 85%, transparent);
+  --ai-bg-surface-active: color-mix(in srgb, var(--ui-secondary, #2b484a) 85%, transparent);
+  --ai-bg-elevated: var(--ui-secondary, #203436);
+  --ai-bg-input: var(--input-background, #203436);
+  --ai-bg-code: color-mix(in srgb, var(--page-background, #10191a) 90%, var(--motion-primary));
+  --ai-bg-danger: color-mix(in srgb, #dc2626 15%, transparent);
+  --ai-bg-success: color-mix(in srgb, var(--pen-primary, #0fbd8c) 12%, transparent);
+  --ai-bg-warning: color-mix(in srgb, var(--control-primary, #ffab19) 14%, transparent);
+  --ai-border: #3a3a3a;
+  --ai-border-subtle: #2a2a2a;
+  --ai-border-strong: var(--looks-secondary, #5a8583);
+  --ai-text-primary: var(--text-primary, #e7fffb);
+  --ai-text-secondary: color-mix(in srgb, var(--text-primary, #e7fffb) 80%, transparent);
+  --ai-text-muted: color-mix(in srgb, var(--text-primary, #e7fffb) 60%, transparent);
+  --ai-text-faint: color-mix(in srgb, var(--text-primary, #e7fffb) 45%, transparent);
+  --ai-accent: var(--looks-secondary, #19b8ad);
+  --ai-accent-strong: var(--looks-secondary-dark, #42d5ca);
+  --ai-accent-bg: color-mix(in srgb, var(--looks-secondary, #19b8ad) 18%, transparent);
+  --ai-success: var(--pen-primary, #99f6e4);
+  --ai-success-strong: var(--pen-tertiary, #3fb950);
+  --ai-warning: var(--control-primary, #fcd34d);
+  --ai-warning-bg: linear-gradient(180deg, color-mix(in srgb, var(--control-primary, #ffab19) 92%, transparent) 0%, color-mix(in srgb, var(--control-primary, #ffab19) 82%, transparent) 100%);
+  --ai-warning-border: color-mix(in srgb, var(--control-primary, #ffab19) 28%, transparent);
+  --ai-badge-bg: color-mix(in srgb, var(--ai-text-primary) 20%, transparent);
+  --ai-badge-text: var(--ai-text-primary);
+  --ai-danger: #ef4444;
+  --ai-danger-strong: #ff7b72;
+  --ai-send-bg: var(--looks-secondary);
+  --ai-send-fg: var(--ui-white, #ffffff);
+  --ai-shadow-medium: var(--shadow, rgba(0, 0, 0, 0.32));
+  --ai-shadow-strong: color-mix(in srgb, var(--shadow, rgba(0, 0, 0, 0.32)) 150%, transparent);
+  --ai-overlay: color-mix(in srgb, var(--shadow, rgba(0, 0, 0, 0.32)) 160%, transparent);
+}
+
+.themeLight {
+  --ai-color-scheme: light;
+  --ai-bg-app: var(--page-background, #f2fbfa);
+  --ai-bg-sidebar: var(--ui-secondary, #e5f5f3);
+  --ai-bg-surface: var(--ui-white, #ffffff);
+  --ai-bg-surface-hover: color-mix(in srgb, var(--ui-white, #ffffff) 85%, var(--looks-secondary));
+  --ai-bg-surface-active: color-mix(in srgb, var(--ui-white, #ffffff) 80%, var(--looks-secondary));
+  --ai-bg-elevated: var(--ui-white, #ffffff);
+  --ai-bg-input: var(--input-background, #ffffff);
+  --ai-bg-code: var(--page-background, #f5f7fb);
+  --ai-bg-danger: color-mix(in srgb, #be123c 10%, transparent);
+  --ai-bg-success: color-mix(in srgb, var(--pen-primary, #047857) 5%, transparent);
+  --ai-bg-warning: color-mix(in srgb, var(--control-primary, #a16207) 7%, transparent);
+  --ai-border: #d0d0d0;
+  --ai-border-subtle: #e0e0e0;
+  --ai-border-strong: var(--looks-secondary-dark, #69bbb3);
+  --ai-text-primary: var(--text-primary, #123434);
+  --ai-text-secondary: color-mix(in srgb, var(--text-primary, #123434) 80%, transparent);
+  --ai-text-muted: color-mix(in srgb, var(--text-primary, #123434) 55%, transparent);
+  --ai-text-faint: color-mix(in srgb, var(--text-primary, #123434) 40%, transparent);
+  --ai-accent: var(--looks-secondary);
+  --ai-accent-strong: var(--looks-secondary-dark, #057d78);
+  --ai-accent-bg: color-mix(in srgb, var(--looks-secondary) 11%, transparent);
+  --ai-success: var(--pen-primary, #047857);
+  --ai-success-strong: var(--pen-tertiary, #15803d);
+  --ai-warning: var(--control-primary, #a16207);
+  --ai-warning-bg: linear-gradient(180deg, color-mix(in srgb, var(--control-primary, #fff7da) 92%, transparent) 0%, color-mix(in srgb, var(--control-primary, #ffefb9) 82%, transparent) 100%);
+  --ai-warning-border: color-mix(in srgb, var(--control-primary, #e6c06a) 30%, transparent);
+  --ai-badge-bg: color-mix(in srgb, var(--ui-white, #ffffff) 78%, transparent);
+  --ai-badge-text: var(--control-primary, #7b5c12);
+  --ai-danger: #be123c;
+  --ai-danger-strong: #dc2626;
+  --ai-send-bg: var(--looks-secondary);
+  --ai-send-fg: var(--ui-white, #ffffff);
+  --ai-shadow-medium: var(--shadow, rgba(15, 23, 42, 0.12));
+  --ai-shadow-strong: color-mix(in srgb, var(--shadow, rgba(15, 23, 42, 0.12)) 170%, transparent);
+  --ai-overlay: color-mix(in srgb, var(--shadow, rgba(15, 23, 42, 0.12)) 320%, transparent);
+  --ai-syntax-keyword: var(--motion-primary, #cf222e);
+  --ai-syntax-string: var(--looks-secondary, #0a6099);
+  --ai-syntax-number: var(--motion-primary, #0550ae);
+  --ai-syntax-comment: var(--text-primary, #6e7781);
+  --ai-syntax-identifier: var(--looks-secondary, #8250df);
+  --ai-syntax-punctuation: var(--text-primary, #24292f);
+}
