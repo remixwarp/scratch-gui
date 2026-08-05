@@ -656,6 +656,11 @@
                 "value": "pan"
               }
             ]
+          },
+          "SOUND_MENU": {
+            "acceptReporters": true,
+            "isDynamic": true,
+            "items": []
           }
         }
       },
@@ -680,43 +685,104 @@
               "TIMES": {
                 "type": "NUMBER",
                 "defaultValue": 10
+              },
+              "SUBSTACK": {
+                "type": "SUBSTACK"
               }
             }
           },
           {
             "opcode": "control_forever",
             "blockType": "COMMAND",
-            "text": "forever"
+            "text": "forever",
+            "arguments": {
+              "SUBSTACK": {
+                "type": "SUBSTACK"
+              }
+            }
           },
           {
             "opcode": "control_if",
             "blockType": "COMMAND",
-            "text": "if <[CONDITION]> then"
+            "text": "if <[CONDITION]> then",
+            "arguments": {
+              "CONDITION": {
+                "type": "BOOLEAN"
+              },
+              "SUBSTACK": {
+                "type": "SUBSTACK"
+              }
+            }
           },
           {
             "opcode": "control_if_else",
             "blockType": "COMMAND",
-            "text": "if <[CONDITION]> then...else"
+            "text": "if <[CONDITION]> then...else",
+            "arguments": {
+              "CONDITION": {
+                "type": "BOOLEAN"
+              },
+              "SUBSTACK": {
+                "type": "SUBSTACK"
+              },
+              "SUBSTACK2": {
+                "type": "SUBSTACK"
+              }
+            }
           },
           {
             "opcode": "control_wait_until",
             "blockType": "COMMAND",
-            "text": "wait until <[CONDITION]>"
+            "text": "wait until <[CONDITION]>",
+            "arguments": {
+              "CONDITION": {
+                "type": "BOOLEAN"
+              }
+            }
           },
           {
             "opcode": "control_repeat_until",
             "blockType": "COMMAND",
-            "text": "repeat until <[CONDITION]>"
+            "text": "repeat until <[CONDITION]>",
+            "arguments": {
+              "CONDITION": {
+                "type": "BOOLEAN"
+              },
+              "SUBSTACK": {
+                "type": "SUBSTACK"
+              }
+            }
           },
           {
             "opcode": "control_while",
             "blockType": "COMMAND",
-            "text": "while <[CONDITION]>"
+            "text": "while <[CONDITION]>",
+            "arguments": {
+              "CONDITION": {
+                "type": "BOOLEAN"
+              },
+              "SUBSTACK": {
+                "type": "SUBSTACK"
+              }
+            }
           },
           {
             "opcode": "control_for_each",
             "blockType": "COMMAND",
-            "text": "for each [VARIABLE] in range [VALUE] to [VALUE]"
+            "text": "for each [VARIABLE] in range [VALUE] to [VALUE]",
+            "arguments": {
+              "VARIABLE": {
+                "type": "STRING",
+                "defaultValue": "i"
+              },
+              "VALUE": {
+                "type": "NUMBER",
+                "defaultValue": 10
+              },
+              "SUBSTACK": {
+                "type": "SUBSTACK"
+              }
+            }
           },
           {
             "opcode": "control_stop",
@@ -963,6 +1029,10 @@
               }
             ]
           },
+          "BACKDROP_MENU": {
+            "acceptReporters": false,
+            "isDynamic": true
+          },
           "BROADCAST_MENU": {
             "acceptReporters": true,
             "isDynamic": true
@@ -985,12 +1055,28 @@
           {
             "opcode": "sensing_touchingcolor",
             "blockType": "BOOLEAN",
-            "text": "touching color [COLOR]?"
+            "text": "touching color [COLOR]?",
+            "arguments": {
+              "COLOR": {
+                "type": "COLOR",
+                "defaultValue": "#4C97FF"
+              }
+            }
           },
           {
             "opcode": "sensing_coloristouchingcolor",
             "blockType": "BOOLEAN",
-            "text": "color [COLOR] is touching [COLOR2]?"
+            "text": "color [COLOR] is touching [COLOR2]?",
+            "arguments": {
+              "COLOR": {
+                "type": "COLOR",
+                "defaultValue": "#4C97FF"
+              },
+              "COLOR2": {
+                "type": "COLOR",
+                "defaultValue": "#FFAB19"
+              }
+            }
           },
           {
             "opcode": "sensing_distanceto",
@@ -1592,89 +1678,296 @@
           {
             "opcode": "data_variable",
             "blockType": "REPORTER",
-            "text": "[VARIABLE]"
+            "text": "[VARIABLE]",
+            "arguments": {
+              "VARIABLE": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "my variable"
+              }
+            }
           },
           {
             "opcode": "data_setvariableto",
             "blockType": "COMMAND",
-            "text": "set [VARIABLE] to [VALUE]"
+            "text": "set [VARIABLE] to [VALUE]",
+            "arguments": {
+              "VARIABLE": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "my variable"
+              },
+              "VALUE": {
+                "type": "STRING",
+                "defaultValue": 0
+              }
+            }
           },
           {
             "opcode": "data_changevariableby",
             "blockType": "COMMAND",
-            "text": "change [VARIABLE] by [VALUE]"
+            "text": "change [VARIABLE] by [VALUE]",
+            "arguments": {
+              "VARIABLE": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "my variable"
+              },
+              "VALUE": {
+                "type": "NUMBER",
+                "defaultValue": 1
+              }
+            }
           },
           {
             "opcode": "data_showvariable",
             "blockType": "COMMAND",
-            "text": "show variable [VARIABLE]"
+            "text": "show variable [VARIABLE]",
+            "arguments": {
+              "VARIABLE": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "my variable"
+              }
+            }
           },
           {
             "opcode": "data_hidevariable",
             "blockType": "COMMAND",
-            "text": "hide variable [VARIABLE]"
+            "text": "hide variable [VARIABLE]",
+            "arguments": {
+              "VARIABLE": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "my variable"
+              }
+            }
           },
           {
             "opcode": "data_listcontents",
             "blockType": "REPORTER",
-            "text": "[LIST]"
+            "text": "[LIST]",
+            "arguments": {
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              }
+            }
           },
           {
             "opcode": "data_addtolist",
             "blockType": "COMMAND",
-            "text": "add [ITEM] to [LIST]"
+            "text": "add [ITEM] to [LIST]",
+            "arguments": {
+              "ITEM": {
+                "type": "STRING",
+                "defaultValue": "thing"
+              },
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              }
+            }
           },
           {
             "opcode": "data_deleteoflist",
             "blockType": "COMMAND",
-            "text": "delete [INDEX] of [LIST]"
+            "text": "delete [INDEX] of [LIST]",
+            "arguments": {
+              "INDEX": {
+                "type": "STRING",
+                "menu": "INDEX_ALL_MENU",
+                "defaultValue": 1
+              },
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              }
+            }
           },
           {
             "opcode": "data_deletealloflist",
             "blockType": "COMMAND",
-            "text": "delete all of [LIST]"
+            "text": "delete all of [LIST]",
+            "arguments": {
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              }
+            }
           },
           {
             "opcode": "data_insertatlist",
             "blockType": "COMMAND",
-            "text": "insert [ITEM] at [INDEX] of [LIST]"
+            "text": "insert [ITEM] at [INDEX] of [LIST]",
+            "arguments": {
+              "ITEM": {
+                "type": "STRING",
+                "defaultValue": "thing"
+              },
+              "INDEX": {
+                "type": "STRING",
+                "menu": "INDEX_ALL_MENU",
+                "defaultValue": 1
+              },
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              }
+            }
           },
           {
             "opcode": "data_replaceitemoflist",
             "blockType": "COMMAND",
-            "text": "replace item [INDEX] of [LIST] with [ITEM]"
+            "text": "replace item [INDEX] of [LIST] with [ITEM]",
+            "arguments": {
+              "INDEX": {
+                "type": "STRING",
+                "menu": "INDEX_ALL_MENU",
+                "defaultValue": 1
+              },
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              },
+              "ITEM": {
+                "type": "STRING",
+                "defaultValue": "thing"
+              }
+            }
           },
           {
             "opcode": "data_itemoflist",
             "blockType": "REPORTER",
-            "text": "item [INDEX] of [LIST]"
+            "text": "item [INDEX] of [LIST]",
+            "arguments": {
+              "INDEX": {
+                "type": "STRING",
+                "menu": "INDEX_ALL_MENU",
+                "defaultValue": 1
+              },
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              }
+            }
           },
           {
             "opcode": "data_itemnumoflist",
             "blockType": "REPORTER",
-            "text": "item # of [ITEM] in [LIST]"
+            "text": "item # of [ITEM] in [LIST]",
+            "arguments": {
+              "ITEM": {
+                "type": "STRING",
+                "defaultValue": "thing"
+              },
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              }
+            }
           },
           {
             "opcode": "data_lengthoflist",
             "blockType": "REPORTER",
-            "text": "length of [LIST]"
+            "text": "length of [LIST]",
+            "arguments": {
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              }
+            }
           },
           {
             "opcode": "data_listcontainsitem",
             "blockType": "BOOLEAN",
-            "text": "[LIST] contains [ITEM]?"
+            "text": "[LIST] contains [ITEM]?",
+            "arguments": {
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              },
+              "ITEM": {
+                "type": "STRING",
+                "defaultValue": "thing"
+              }
+            }
           },
           {
             "opcode": "data_showlist",
             "blockType": "COMMAND",
-            "text": "show list [LIST]"
+            "text": "show list [LIST]",
+            "arguments": {
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              }
+            }
           },
           {
             "opcode": "data_hidelist",
             "blockType": "COMMAND",
-            "text": "hide list [LIST]"
+            "text": "hide list [LIST]",
+            "arguments": {
+              "LIST": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "list"
+              }
+            }
           }
-        ]
+        ],
+        "menus": {
+          "INDEX_ALL_MENU": {
+            "acceptReporters": true,
+            "items": [
+              {
+                "text": "1",
+                "value": 1
+              },
+              {
+                "text": "last",
+                "value": "last"
+              },
+              {
+                "text": "random",
+                "value": "random"
+              },
+              {
+                "text": "all",
+                "value": "all"
+              }
+            ]
+          },
+          "INDEX_MENU": {
+            "acceptReporters": true,
+            "items": [
+              {
+                "text": "1",
+                "value": 1
+              },
+              {
+                "text": "last",
+                "value": "last"
+              },
+              {
+                "text": "random",
+                "value": "random"
+              }
+            ]
+          }
+        }
       },
       "procedures": {
         "blocks": [
@@ -1686,17 +1979,38 @@
           {
             "opcode": "procedures_call",
             "blockType": "PROCEDURE_CALL",
-            "text": "[PROCCODE]"
+            "text": "[PROCCODE]",
+            "arguments": {
+              "PROCCODE": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "my block"
+              }
+            }
           },
           {
             "opcode": "argument_reporter_string_number",
             "blockType": "REPORTER",
-            "text": "[VALUE]"
+            "text": "[VALUE]",
+            "arguments": {
+              "VALUE": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "value"
+              }
+            }
           },
           {
             "opcode": "argument_reporter_boolean",
             "blockType": "BOOLEAN",
-            "text": "[VALUE]"
+            "text": "[VALUE]",
+            "arguments": {
+              "VALUE": {
+                "type": "STRING",
+                "field": true,
+                "defaultValue": "condition"
+              }
+            }
           }
         ]
       }
@@ -1976,27 +2290,67 @@
           {
             "opcode": "pen_setPenColorToColor",
             "blockType": "COMMAND",
-            "text": "set pen color to [COLOR]"
+            "text": "set pen color to [COLOR]",
+            "arguments": {
+              "COLOR": {
+                "type": "COLOR",
+                "defaultValue": "#4C97FF"
+              }
+            }
           },
           {
             "opcode": "pen_changePenColorParamBy",
             "blockType": "COMMAND",
-            "text": "change pen [COLOR_PARAM] by [VALUE]"
+            "text": "change pen [COLOR_PARAM] by [VALUE]",
+            "arguments": {
+              "COLOR_PARAM": {
+                "type": "STRING",
+                "menu": "colorParam",
+                "defaultValue": "color"
+              },
+              "VALUE": {
+                "type": "NUMBER",
+                "defaultValue": 10
+              }
+            }
           },
           {
             "opcode": "pen_setPenColorParamTo",
             "blockType": "COMMAND",
-            "text": "set pen [COLOR_PARAM] to [VALUE]"
+            "text": "set pen [COLOR_PARAM] to [VALUE]",
+            "arguments": {
+              "COLOR_PARAM": {
+                "type": "STRING",
+                "menu": "colorParam",
+                "defaultValue": "color"
+              },
+              "VALUE": {
+                "type": "NUMBER",
+                "defaultValue": 50
+              }
+            }
           },
           {
             "opcode": "pen_changePenSizeBy",
             "blockType": "COMMAND",
-            "text": "change pen size by [SIZE]"
+            "text": "change pen size by [SIZE]",
+            "arguments": {
+              "SIZE": {
+                "type": "NUMBER",
+                "defaultValue": 1
+              }
+            }
           },
           {
             "opcode": "pen_setPenSizeTo",
             "blockType": "COMMAND",
-            "text": "set pen size to [SIZE]"
+            "text": "set pen size to [SIZE]",
+            "arguments": {
+              "SIZE": {
+                "type": "NUMBER",
+                "defaultValue": 1
+              }
+            }
           }
         ],
         "menus": {
@@ -2054,12 +2408,24 @@
           {
             "opcode": "video_on",
             "blockType": "HAT",
-            "text": "when video motion > [THRESHOLD]"
+            "text": "when video motion > [THRESHOLD]",
+            "arguments": {
+              "THRESHOLD": {
+                "type": "NUMBER",
+                "defaultValue": 10
+              }
+            }
           },
           {
             "opcode": "video_whenMotionGreaterThan",
             "blockType": "HAT",
-            "text": "when video motion > [THRESHOLD]"
+            "text": "when video motion > [THRESHOLD]",
+            "arguments": {
+              "THRESHOLD": {
+                "type": "NUMBER",
+                "defaultValue": 10
+              }
+            }
           },
           {
             "opcode": "video_of",
@@ -2210,7 +2576,13 @@
           {
             "opcode": "listenAndWait",
             "blockType": "COMMAND",
-            "text": "when I hear [LISTEN]"
+            "text": "when I hear [LISTEN]",
+            "arguments": {
+              "LISTEN": {
+                "type": "STRING",
+                "defaultValue": "hello"
+              }
+            }
           },
           {
             "opcode": "getSpeech",
@@ -2311,12 +2683,30 @@
           {
             "opcode": "wedo2_whenDistance",
             "blockType": "HAT",
-            "text": "when distance [OP] [DISTANCE]"
+            "text": "when distance [OP] [DISTANCE]",
+            "arguments": {
+              "OP": {
+                "type": "STRING",
+                "menu": "OP",
+                "defaultValue": "<"
+              },
+              "DISTANCE": {
+                "type": "NUMBER",
+                "defaultValue": 50
+              }
+            }
           },
           {
             "opcode": "wedo2_whenTilt",
             "blockType": "HAT",
-            "text": "when tilted [TILT_DIRECTION_ANY]"
+            "text": "when tilted [TILT_DIRECTION_ANY]",
+            "arguments": {
+              "TILT_DIRECTION_ANY": {
+                "type": "STRING",
+                "menu": "TILT_DIRECTION_ANY",
+                "defaultValue": "any"
+              }
+            }
           },
           {
             "opcode": "wedo2_getDistance",
@@ -2326,7 +2716,14 @@
           {
             "opcode": "wedo2_getTilt",
             "blockType": "REPORTER",
-            "text": "tilt angle [TILT_DIRECTION_ANY]"
+            "text": "tilt angle [TILT_DIRECTION_ANY]",
+            "arguments": {
+              "TILT_DIRECTION_ANY": {
+                "type": "STRING",
+                "menu": "TILT_DIRECTION_ANY",
+                "defaultValue": "front"
+              }
+            }
           }
         ],
         "menus": {
@@ -2473,12 +2870,25 @@
           {
             "opcode": "microbit_raiseAlert",
             "blockType": "COMMAND",
-            "text": "raise alert with pattern [PATTERN]"
+            "text": "raise alert with pattern [PATTERN]",
+            "arguments": {
+              "PATTERN": {
+                "type": "STRING",
+                "menu": "MATRIX",
+                "defaultValue": "heart"
+              }
+            }
           },
           {
             "opcode": "microbit_runMagneto",
             "blockType": "COMMAND",
-            "text": "run magneto with strength [STRENGTH]"
+            "text": "run magneto with strength [STRENGTH]",
+            "arguments": {
+              "STRENGTH": {
+                "type": "NUMBER",
+                "defaultValue": 100
+              }
+            }
           },
           {
             "opcode": "microbit_getMagneticForce",
@@ -2488,7 +2898,14 @@
           {
             "opcode": "microbit_getTilt",
             "blockType": "REPORTER",
-            "text": "tilt angle [TILT_AXES]"
+            "text": "tilt angle [TILT_AXES]",
+            "arguments": {
+              "TILT_AXES": {
+                "type": "STRING",
+                "menu": "TILT_AXES",
+                "defaultValue": "x"
+              }
+            }
           },
           {
             "opcode": "microbit_getCompass",
@@ -2498,7 +2915,14 @@
           {
             "opcode": "microbit_setMatrix",
             "blockType": "COMMAND",
-            "text": "set [MATRIX] LED on"
+            "text": "set [MATRIX] LED on",
+            "arguments": {
+              "MATRIX": {
+                "type": "STRING",
+                "menu": "MATRIX",
+                "defaultValue": "heart"
+              }
+            }
           }
         ],
         "menus": {
@@ -2756,7 +3180,13 @@
           {
             "opcode": "boost_setLight",
             "blockType": "COMMAND",
-            "text": "turn [COLOR] light on"
+            "text": "turn [COLOR] light on",
+            "arguments": {
+              "COLOR": {
+                "type": "STRING",
+                "defaultValue": "#FF0000"
+              }
+            }
           }
         ],
         "menus": {
@@ -2848,7 +3278,14 @@
           {
             "opcode": "gdx_for_whenTilt",
             "blockType": "HAT",
-            "text": "when tilted [TILT]"
+            "text": "when tilted [TILT]",
+            "arguments": {
+              "TILT": {
+                "type": "STRING",
+                "menu": "TILT",
+                "defaultValue": "front"
+              }
+            }
           },
           {
             "opcode": "gdx_for_getForce",
@@ -2858,7 +3295,14 @@
           {
             "opcode": "gdx_for_getTilt",
             "blockType": "REPORTER",
-            "text": "tilt angle [TILT]"
+            "text": "tilt angle [TILT]",
+            "arguments": {
+              "TILT": {
+                "type": "STRING",
+                "menu": "TILT",
+                "defaultValue": "front"
+              }
+            }
           },
           {
             "opcode": "gdx_for_getRotation",
@@ -3025,12 +3469,34 @@
           {
             "opcode": "ev3_whenDistance",
             "blockType": "HAT",
-            "text": "when distance [OP] [DISTANCE]"
+            "text": "when distance [OP] [DISTANCE]",
+            "arguments": {
+              "OP": {
+                "type": "STRING",
+                "menu": "OP",
+                "defaultValue": "<"
+              },
+              "DISTANCE": {
+                "type": "NUMBER",
+                "defaultValue": 50
+              }
+            }
           },
           {
             "opcode": "ev3_whenBrightness",
             "blockType": "HAT",
-            "text": "when brightness [OP] [BRIGHTNESS]"
+            "text": "when brightness [OP] [BRIGHTNESS]",
+            "arguments": {
+              "OP": {
+                "type": "STRING",
+                "menu": "OP",
+                "defaultValue": "<"
+              },
+              "BRIGHTNESS": {
+                "type": "NUMBER",
+                "defaultValue": 50
+              }
+            }
           },
           {
             "opcode": "ev3_getDistance",

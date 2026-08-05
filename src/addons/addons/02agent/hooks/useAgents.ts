@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
-import useStorageInfo from "../shims/hooks/useStorageInfo";
-import { Agent, AgentModel, FlattenedAgent } from "../types";
-import { PROVIDER_DEFAULT_URLS } from "../constants";
+import { Agent, FlattenedAgent, ImageGenerationModelConfig } from "../types";
+import { useStoredState } from "./useStoredState";
 
 interface ExportedAgentFile {
   version: 1;
@@ -12,23 +11,27 @@ interface ExportedAgentFile {
 const DEFAULT_AGENTS: Agent[] = [
   {
     id: "default-1",
-    name: "Unavailable",
-    provider: "custom",
-    baseUrl: "invalid-url://im-invalid.wrong",
+    name: "OpenAI",
+    provider: "openai",
+    baseUrl: "https://api.openai.com/v1",
     apiKey: "",
     models: [
       {
         id: "default-1-model-1",
-        name: "Don't use me",
-        modelId: "dont-use-me",
-      }
+        name: "Default GPT-3.5",
+        modelId: "gpt-3.5-turbo",
+      },
     ],
   },
 ];
 
 export function useAgents() {
-  const [agents, setAgents] = useStorageInfo<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
-  const [currentModelId, setCurrentModelId] = useStorageInfo<string>("AI_ASSISTANT_CURRENT_AGENT_ID", "default-1-model-1");
+  const [agents, setAgents] = useStoredState<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
+  const [currentModelId, setCurrentModelId] = useStoredState<string>(
+    "AI_ASSISTANT_CURRENT_AGENT_ID",
+    "default-1-model-1",
+  );
+  const [imageModelId, setImageModelId] = useStoredState<string>("AI_ASSISTANT_IMAGE_MODEL_ID", "");
   const [showSettings, setShowSettings] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 
@@ -61,6 +64,18 @@ export function useAgents() {
     return flattenedModels.find((model) => model.id === currentModelId) || flattenedModels[0] || null;
   }, [flattenedModels, currentModelId]);
 
+  const imageGenerationModel = useMemo<ImageGenerationModelConfig | null>(() => {
+    const model = flattenedModels.find((item) => item.id === imageModelId);
+    if (!model) return null;
+    return {
+      provider: model.provider,
+      baseUrl: model.baseUrl,
+      apiKey: model.apiKey,
+      modelName: model.modelName,
+      displayName: model.displayName,
+    };
+  }, [flattenedModels, imageModelId]);
+
   useEffect(() => {
     if (!agents.length) {
       setAgents(DEFAULT_AGENTS);
@@ -71,7 +86,20 @@ export function useAgents() {
     if (!flattenedModels.some((model) => model.id === currentModelId)) {
       setCurrentModelId(flattenedModels[0]?.id || "");
     }
-  }, [agents, currentModelId, setAgents, setCurrentModelId, flattenedModels]);
+
+    if (imageModelId && !flattenedModels.some((model) => model.id === imageModelId)) {
+      setImageModelId("");
+      return;
+    }
+
+    if (!imageModelId) {
+      const legacyAgent = agents.find((agent) => (agent as any).imageModelId) as any;
+      const legacyImageModelId = legacyAgent?.imageModelId;
+      if (legacyImageModelId && flattenedModels.some((model) => model.id === legacyImageModelId)) {
+        setImageModelId(legacyImageModelId);
+      }
+    }
+  }, [agents, currentModelId, imageModelId, setAgents, setCurrentModelId, setImageModelId, flattenedModels]);
 
   const handleSaveAgent = (newAgent: Agent) => {
     const nextAgents = editingAgent
@@ -95,11 +123,16 @@ export function useAgents() {
     const nextAgents = agents.filter((agent) => agent.id !== id);
     setAgents(nextAgents);
 
-    const isCurrentModelDeleted = agents.find(a => a.id === id)?.models.some(m => m.id === currentModelId);
+    const isCurrentModelDeleted = agents.find((a) => a.id === id)?.models.some((m) => m.id === currentModelId);
 
     if (isCurrentModelDeleted) {
       const firstAgent = nextAgents[0];
       setCurrentModelId(firstAgent?.models[0]?.id || "");
+    }
+
+    const isImageModelDeleted = agents.find((a) => a.id === id)?.models.some((m) => m.id === imageModelId);
+    if (isImageModelDeleted) {
+      setImageModelId("");
     }
 
     if (editingAgent?.id === id) {
@@ -113,6 +146,7 @@ export function useAgents() {
 
     // Migrate on export just in case
     const exportAgent = { ...agent };
+    delete (exportAgent as any).imageModelId;
     if (!exportAgent.models) {
       exportAgent.models = [
         {
@@ -149,8 +183,13 @@ export function useAgents() {
       unknown
     >;
 
-    if (!importedAgent || typeof importedAgent.provider !== "string" || typeof importedAgent.baseUrl !== "string" || typeof importedAgent.apiKey !== "string") {
-      throw new Error("导入失败:文件内容不是有效的 Agent 配置");
+    if (
+      !importedAgent ||
+      typeof importedAgent.provider !== "string" ||
+      typeof importedAgent.baseUrl !== "string" ||
+      typeof importedAgent.apiKey !== "string"
+    ) {
+      throw new Error("导入失败：文件内容不是有效的 Agent 配置");
     }
 
     // Handle legacy import
@@ -164,8 +203,8 @@ export function useAgents() {
             name: importedAgent.displayName || "Imported Model",
             modelId: importedAgent.modelName || "gpt-3.5-turbo",
             maxTokens: importedAgent.maxTokens,
-          }
-        ]
+          },
+        ],
       };
     }
 
@@ -175,7 +214,11 @@ export function useAgents() {
     } as Agent;
 
     // Refresh model ids to avoid conflicts
-    nextAgent.models = nextAgent.models.map(m => ({ ...m, id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }));
+    nextAgent.models = nextAgent.models.map((m) => ({
+      ...m,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    }));
+    delete (nextAgent as any).imageModelId;
 
     const nextAgents = [...agents, nextAgent];
     setAgents(nextAgents);
@@ -189,6 +232,9 @@ export function useAgents() {
     currentModelId,
     setCurrentModelId,
     currentAgent,
+    imageModelId,
+    setImageModelId,
+    imageGenerationModel,
     showSettings,
     setShowSettings,
     editingAgent,

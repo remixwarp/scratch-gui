@@ -96,7 +96,6 @@ export default {
   "workspace-tabs": () => import(/* webpackChunkName: "addon-entry-workspace-tabs" */ "../addons/workspace-tabs/_runtime_entry.js"),
   "coder-style": () => import(/* webpackChunkName: "addon-entry-coder-style" */ "../addons/coder-style/_runtime_entry.js"),
   "comment-vscode-sync": () => import(/* webpackChunkName: "addon-entry-comment-vscode-sync" */ "../addons/comment-vscode-sync/_runtime_entry.js"),
-  "novatheai": () => import(/* webpackChunkName: "addon-entry-novatheai" */ "../addons/novatheai/_runtime_entry.js"),
   "Terminal": () => import(/* webpackChunkName: "addon-entry-Terminal" */ "../addons/Terminal/_runtime_entry.js"),
   "astras-copilot": () => import(/* webpackChunkName: "addon-entry-astras-copilot" */ "../addons/astras-copilot/_runtime_entry.js"),
   "02agent": () => import(/* webpackChunkName: "addon-entry-02agent" */ "../addons/02agent/_runtime_entry.js"),

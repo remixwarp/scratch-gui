@@ -26,7 +26,6 @@ export const MessageAttachments: React.FC<MessageAttachmentsProps> = ({ attachme
           <button
             className={styles.attachmentMainButton}
             onClick={() => {
-              console.log("[AI Assistant Jump][MessageAttachments] clicked attachment", attachment);
               onOpenAttachment(attachment);
             }}
             title={getAttachmentDisplayName(attachment, vm)}
@@ -36,6 +35,8 @@ export const MessageAttachments: React.FC<MessageAttachmentsProps> = ({ attachme
                 ? "片段"
                 : attachment.kind === "workspace-ucf"
                   ? "积木"
+                  : attachment.kind === "image"
+                    ? "图片"
                   : "文件"}
             </span>
             <span className={styles.attachmentName}>{getAttachmentDisplayName(attachment, vm)}</span>

@@ -1,6 +1,5 @@
 .toolCallSummary {
   position: relative;
-  overflow: hidden;
   border: 1px solid var(--ai-border);
   border-radius: var(--ai-radius-lg);
   background: var(--ai-bg-surface);
@@ -35,6 +34,7 @@
 .toolCallSummaryHeader {
   min-height: 38px;
   padding: 8px 10px;
+  border-radius: calc(var(--ai-radius-lg) - 1px) calc(var(--ai-radius-lg) - 1px) 0 0;
   transition:
     background var(--ai-transition),
     color var(--ai-transition);
@@ -55,7 +55,9 @@
 
 .toolCallPulseActive {
   background: var(--ai-warning);
-  animation: toolPulse 1.2s ease-out infinite, toolOrbBreath 1.8s ease-in-out infinite;
+  animation:
+    toolPulse 1.2s ease-out infinite,
+    toolOrbBreath 1.8s ease-in-out infinite;
 }
 
 .toolCallSummaryTitle,
@@ -110,12 +112,30 @@
 }
 
 .toolCallChevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-left: auto;
+  transform: rotate(0deg);
+  transition: transform var(--ai-transition-fast);
+}
+
+.toolCallChevronExpanded {
+  transform: rotate(90deg);
+}
+
+.toolCallChevron svg {
+  width: 12px;
+  height: 12px;
 }
 
 .toolCallBody {
   padding: 0;
   border-top: 1px solid var(--ai-border);
+  border-radius: 0 0 calc(var(--ai-radius-lg) - 1px) calc(var(--ai-radius-lg) - 1px);
   background: var(--ai-bg-app);
   animation: toolBodyReveal 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -214,24 +234,14 @@
 }
 
 .toolCallItemHeader {
-  position: relative;
   min-height: 38px;
   padding: 8px 10px;
-  background: var(--ai-bg-surface);
   transition:
-    background var(--ai-transition);
+    background var(--ai-transition),
+    transform var(--ai-transition-fast);
 }
 
-.toolCallItemHeader::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--ai-bg-surface);
-  transition: transform var(--ai-transition-fast);
-  z-index: -1;
-}
-
-.toolCallItemHeader:hover::before {
+.toolCallItemHeader:hover {
   transform: translateX(2px);
 }
 
@@ -251,7 +261,9 @@
   border: 2px solid color-mix(in srgb, var(--ai-warning) 30%, transparent);
   border-top-color: var(--ai-warning);
   box-shadow: 0 0 18px color-mix(in srgb, var(--ai-warning) 20%, transparent);
-  animation: spin 0.9s linear infinite, glyphGlow 1.4s ease-in-out infinite;
+  animation:
+    spin 0.9s linear infinite,
+    glyphGlow 1.4s ease-in-out infinite;
 }
 
 .toolCallGlyphsuccess {
@@ -262,6 +274,11 @@
 .toolCallGlypherror {
   background: var(--ai-bg-danger);
   color: var(--ai-danger);
+}
+
+.toolCallGlyphterminated {
+  background: var(--ai-bg-warning);
+  color: var(--ai-warning);
 }
 
 .toolCallStatus {
@@ -287,6 +304,11 @@
 .toolCallStatuserror {
   background: var(--ai-bg-danger);
   color: var(--ai-danger);
+}
+
+.toolCallStatusterminated {
+  background: var(--ai-bg-warning);
+  color: var(--ai-warning);
 }
 
 .toolCallDetail {
@@ -365,6 +387,79 @@
   white-space: nowrap;
 }
 
+.toolErrorMessage {
+  margin: 0 10px 10px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--ai-danger) 32%, transparent);
+  border-radius: var(--ai-radius-md);
+  background: var(--ai-bg-danger);
+  color: var(--ai-danger);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.stageObservationImage {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  border: 1px solid var(--ai-border-subtle);
+  border-radius: var(--ai-radius-md);
+  background: #000;
+}
+
+.stageObservationGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.memoryArgList {
+  overflow: hidden;
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius-md);
+  background: var(--ai-bg-elevated);
+}
+
+.memoryArgRow {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+  padding: 8px 10px;
+  color: var(--ai-text-muted);
+  font-size: 11.5px;
+}
+
+.memoryArgRow + .memoryArgRow {
+  border-top: 1px solid var(--ai-border-subtle);
+}
+
+.memoryArgRow > span {
+  font-weight: 750;
+}
+
+.memoryArgRow > strong {
+  min-width: 0;
+  color: var(--ai-text-primary);
+  font-weight: 650;
+  word-break: break-word;
+}
+
+.memoryValueText {
+  max-height: 180px;
+  overflow: auto;
+  margin: 0;
+  padding: 8px 9px;
+  border: 1px solid var(--ai-border-subtle);
+  border-radius: var(--ai-radius-sm);
+  background: color-mix(in srgb, var(--ai-bg-code) 76%, transparent);
+  color: var(--ai-text-secondary);
+  font-family: var(--ai-font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 .diffStack {
   display: flex;
   flex-direction: column;
@@ -426,6 +521,92 @@
   max-height: 320px;
   overflow: auto;
   border-top: 1px solid var(--ai-border);
+}
+
+.diffPreviewShell {
+  border-top: 1px solid var(--ai-border);
+  background: var(--ai-bg-code);
+}
+
+.diffPreviewToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ai-border-subtle);
+  background: var(--ai-bg-surface);
+  color: var(--ai-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.diffPreviewActions {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.diffPreviewToggle {
+  flex: 0 0 auto;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius-sm);
+  background: var(--ai-bg-elevated);
+  color: var(--ai-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.diffPreviewToggle:hover {
+  border-color: var(--ai-primary);
+  color: var(--ai-primary);
+}
+
+.diffBlockPreview {
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px;
+  background: color-mix(in srgb, var(--ai-bg-code) 72%, var(--ai-bg-surface));
+}
+
+.diffBlockCanvas {
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--ai-border-subtle);
+  border-radius: var(--ai-radius-sm);
+  background: color-mix(in srgb, var(--ai-bg-elevated) 84%, transparent);
+  box-shadow: none;
+}
+
+.diffBlockSegment {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.diffBlockSegment + .diffBlockSegment {
+  padding-top: 10px;
+  border-top: 1px solid var(--ai-border-subtle);
+}
+
+.diffBlockSvg {
+  width: max-content;
+  max-width: none;
+  zoom: 0.6;
+}
+
+.diffBlockSvg svg {
+  display: block;
+  width: max-content;
+  max-width: none;
+  height: auto;
 }
 
 .diffLine {

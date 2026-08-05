@@ -1,13 +1,9 @@
 import { Attachment } from "./types";
 import { scratchToUCF } from "./ucf";
 import { getAttachmentDisplayName } from "./attachmentUtils";
+import { createVirtualBlockLineReference } from "./blockReferenceUtils";
 
-const isSelectableBlock = (block: Blockly.BlockSvg) => {
-  const isShadow = typeof (block as any).isShadow === "function" ? (block as any).isShadow() : Boolean((block as any).isShadow_);
-  if (isShadow) return false;
-  if (typeof (block as any).isInsertionMarker === "function" && (block as any).isInsertionMarker()) return false;
-  return Boolean(block.svgPath_ || block.getSvgRoot?.());
-};
+const isSelectableBlock = (block: Blockly.BlockSvg) => !block.isShadow_ && Boolean(block.intersects_);
 
 const getSelectedBlocksFromRect = (workspace: Blockly.WorkspaceSvg, rect: DOMRect) => {
   const selectedBlocks: Blockly.BlockSvg[] = [];
@@ -32,16 +28,6 @@ const getSelectedBlocksFromRect = (workspace: Blockly.WorkspaceSvg, rect: DOMRec
     selectedBlocks.push(block);
   }
 
-  console.log(
-    "[AI Assistant Range] rect hit blocks:",
-    selectedBlocks.map((block) => ({
-      id: block.id,
-      opcode: block.type,
-      parent: block.parentBlock_?.id || null,
-      next: block.getNextBlock()?.id || null,
-      rect: block.svgPath_?.getBoundingClientRect(),
-    })),
-  );
 
   return selectedBlocks;
 };
@@ -71,30 +57,18 @@ export const validateContinuousBlockRange = (workspace: Blockly.WorkspaceSvg, bl
   }
 
   const topBlockIds = Array.from(new Set(blocks.map(getTopBlockId)));
-  console.log("[AI Assistant Range] top block ids:", topBlockIds);
   if (topBlockIds.length !== 1) {
     console.warn("[AI Assistant Range] validate failed: multiple top blocks", topBlockIds);
     return { valid: false, reason: "只能选择同一段代码中的积木" };
   }
 
   const chain = getContinuousChain(workspace, topBlockIds[0]);
-  const rawSelectedIds = new Set(blocks.map((block) => block.id));
-  const chainBlockIds = new Set(chain.map((block) => block.id));
-  const selectedIds = new Set(blocks.map((block) => block.id).filter((id) => chainBlockIds.has(id)));
-  console.log(
-    "[AI Assistant Range] full chain:",
-    chain.map((block, index) => ({
-      index,
-      id: block.id,
-      opcode: block.type,
-    })),
-  );
+  const selectedIds = new Set(blocks.map((block) => block.id));
   const selectedIndexes = chain
     .map((block, index) => ({ block, index }))
     .filter(({ block }) => selectedIds.has(block.id))
     .map(({ index }) => index);
 
-  console.log("[AI Assistant Range] selected indexes:", selectedIndexes);
 
   if (!selectedIndexes.length) {
     console.warn("[AI Assistant Range] validate failed: selected indexes empty");
@@ -105,9 +79,6 @@ export const validateContinuousBlockRange = (workspace: Blockly.WorkspaceSvg, bl
   const maxIndex = Math.max(...selectedIndexes);
   const expectedIds = chain.slice(minIndex, maxIndex + 1).map((block) => block.id);
 
-  console.log("[AI Assistant Range] expected continuous ids:", expectedIds);
-  console.log("[AI Assistant Range] actual selected ids:", Array.from(rawSelectedIds));
-  console.log("[AI Assistant Range] selected stack ids:", Array.from(selectedIds));
 
   if (expectedIds.length !== selectedIndexes.length || expectedIds.some((id) => !selectedIds.has(id))) {
     console.warn("[AI Assistant Range] validate failed: non-continuous selection");
@@ -115,13 +86,6 @@ export const validateContinuousBlockRange = (workspace: Blockly.WorkspaceSvg, bl
   }
 
   const rangeBlocks = chain.slice(minIndex, maxIndex + 1);
-  console.log(
-    "[AI Assistant Range] validated range blocks:",
-    rangeBlocks.map((block) => ({
-      id: block.id,
-      opcode: block.type,
-    })),
-  );
   return {
     valid: true,
     blocks: rangeBlocks,
@@ -136,18 +100,6 @@ export const createRangeAttachment = (
   workspace: Blockly.WorkspaceSvg,
   rect: DOMRect,
 ): { attachment?: Attachment; reason?: string } => {
-  console.log("[AI Assistant Range] createRangeAttachment rect:", {
-    left: rect.left,
-    top: rect.top,
-    right: rect.right,
-    bottom: rect.bottom,
-    width: rect.width,
-    height: rect.height,
-  });
-  if (!vm?.editingTarget?.blocks?._blocks) {
-    return { reason: "Bilup Nova 未找到当前角色的积木数据，请确认已切到代码标签页。" };
-  }
-
   const selectedBlocks = getSelectedBlocksFromRect(workspace, rect);
   const validation = validateContinuousBlockRange(workspace, selectedBlocks);
   if (!validation.valid) {
@@ -177,7 +129,6 @@ export const createRangeAttachment = (
     collectReferencedBlocks(block.id);
   });
 
-  console.log("[AI Assistant Range] required block ids:", Array.from(requiredBlockIds));
 
   const selectedOrderMap = new Map(validation.blocks.map((block, index) => [block.id, index]));
   const isWithinSelectedRange = (blockId?: string | null) => Boolean(blockId && selectedOrderMap.has(blockId));
@@ -209,21 +160,8 @@ export const createRangeAttachment = (
     };
   });
 
-  console.log(
-    "[AI Assistant Range] serialized blocks:",
-    serializedBlocks.map((block) => ({
-      id: block.id,
-      opcode: block.opcode,
-      parent: block.parent || null,
-      next: block.next || null,
-      topLevel: Boolean(block.topLevel),
-      inputs: block.inputs,
-      shadow: Boolean(block.shadow),
-    })),
-  );
 
   const content = scratchToUCF(serializedBlocks, { runtime: vm.runtime, includeBlockIds: true });
-  console.log("[AI Assistant Range] generated UCF:\n" + content);
   const attachment: Attachment = {
     id: `${Date.now()}-${validation.startBlockId}`,
     name: "workspace-ucf-range",
@@ -244,4 +182,24 @@ export const createRangeAttachment = (
   };
   attachment.name = getAttachmentDisplayName(attachment, vm);
   return { attachment };
+};
+
+export const createRangeTextReference = (
+  vm: PluginContext["vm"],
+  workspace: Blockly.WorkspaceSvg,
+  rect: DOMRect,
+): { text?: string; reason?: string } => {
+  const selectedBlocks = getSelectedBlocksFromRect(workspace, rect);
+  const validation = validateContinuousBlockRange(workspace, selectedBlocks);
+  if (!validation.valid) {
+    console.warn("[AI Assistant Range] create reference failed:", validation.reason);
+    return { reason: validation.reason };
+  }
+
+  const result = createVirtualBlockLineReference(vm, validation.startBlockId, validation.endBlockId);
+  if (!result.text) {
+    console.warn("[AI Assistant Range] create reference failed:", result.reason);
+    return { reason: result.reason || "无法生成积木引用。" };
+  }
+  return { text: result.text };
 };

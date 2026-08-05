@@ -1,5 +1,5 @@
-import _js from './userscript.js';
+import _js from "./userscript.js";
 
 export const resources = {
-    'userscript.js': _js
+  "userscript.js": _js
 };

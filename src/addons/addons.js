@@ -107,13 +107,11 @@ const addons = [
     'block-pins',
     'tw-comment-markdown-editor',
     'background',
-    'novatheai',
     'santa',
     'project-size-display'
 ];
 
 const newAddons = [
-    'novatheai',
     'expanded-backpack',
     'autosave',
     'no-category-text',

@@ -8,7 +8,163 @@ import {sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
 import {costumeUpload} from '../../lib/file-uploader.js';
 import {getApiConfig, getApiKey} from '../../lib/constants/api-keys.js';
 import {recordAIConversation} from '../../lib/achievements.js';
-import NovaAgentBridge from './nova-agent-bridge.jsx';
+import AIAssistant from '../../addons/addons/02agent/index.tsx';
+
+const buildAssistantUtils = (vm) => {
+    const getTargetById = (id) => {
+        if (!vm || !id) return null;
+        const target = vm.runtimeTargets.find((t) => t.id === id);
+        return target || null;
+    };
+    const ensureCostumeDataUrl = (costume) => {
+        if (!costume) return null;
+        if (costume.asset && costume.asset.url) return costume.asset.url;
+        return null;
+    };
+    const readCostumeAsDataUrl = (costume, targetId) => {
+        if (!costume) return null;
+        const dataUrl = ensureCostumeDataUrl(costume);
+        if (dataUrl) return Promise.resolve(dataUrl);
+        return Promise.resolve(null);
+    };
+    const getCostumeFromTarget = (index, targetId) => {
+        const target = getTargetById(targetId);
+        if (!target || !target.costumes) return null;
+        const costume = target.costumes[index];
+        if (!costume) return null;
+        return readCostumeAsDataUrl(costume, targetId).then((dataUrl) => ({
+            id: costume.id,
+            name: costume.name,
+            index,
+            dataUrl,
+            mimeType: costume.asset && costume.asset.mimeType,
+            fileName: `${costume.name}${costume.asset && costume.asset.mimeType === "image/svg+xml" ? ".svg" : ".png"}`,
+            svg: costume.asset && costume.asset.mimeType === "image/svg+xml" ? costume.asset.data : null,
+        }));
+    };
+    const addCostumeToTarget = async (data, name, mimeType, targetId) => {
+        const target = getTargetById(targetId);
+        if (!target) throw new Error("Target not found");
+        const md5 = Math.random().toString(36).slice(2);
+        const uploadData = typeof data === "string" && mimeType === "image/svg+xml"
+            ? new TextEncoder().encode(data)
+            : data;
+        const asset = vm.addCostume(uploadData, {
+            name,
+            mimeType,
+            md5,
+            rotationCenter: [0, 0],
+        }, targetId);
+        return [{ id: asset && asset.costume ? asset.costume.id : md5, name }];
+    };
+    const deleteCostumeByTargetId = (index, targetId) => {
+        const target = getTargetById(targetId);
+        if (!target || !target.costumes) return;
+        if (typeof target.deleteCostume === "function") {
+            target.deleteCostume(index);
+        } else if (target.costumes[index]) {
+            target.costumes.splice(index, 1);
+        }
+    };
+    const updateCostumeByTargetId = async (index, targetId, patch) => {
+        const target = getTargetById(targetId);
+        if (!target || !target.costumes) return;
+        const costume = target.costumes[index];
+        if (!costume) return;
+        if (patch && patch.name) {
+            costume.name = patch.name;
+        }
+        if (patch && (patch.svg || patch.data)) {
+            const md5 = Math.random().toString(36).slice(2);
+            const data = patch.svg ? new TextEncoder().encode(patch.svg) : patch.data;
+            const asset = vm.addCostume(data, {
+                name: costume.name,
+                mimeType: patch.mimeType || "image/svg+xml",
+                md5,
+                rotationCenter: [0, 0],
+            }, targetId);
+            if (asset && typeof target.replaceCostume === "function") {
+                target.replaceCostume(index, asset.costume || asset);
+            }
+        }
+    };
+    return {
+        addCostumeToTarget,
+        deleteCostumeByTargetId,
+        updateCostumeByTargetId,
+        getCostumeFromTarget,
+    };
+};
+
+class AIAssistantBridge extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.state = { mounted: false, assistantKey: 0 };
+    }
+    componentDidMount() {
+        const wrapper = document.createElement("div");
+        wrapper.id = "gandi-plugins-wrapper";
+        wrapper.style.display = "none";
+        document.body.appendChild(wrapper);
+        this.wrapper = wrapper;
+        // Initialize default hcnsec agent once
+        try {
+            const AGENTS_KEY = "AI_ASSISTANT_AGENTS";
+            const CURRENT_MODEL_KEY = "AI_ASSISTANT_CURRENT_AGENT_ID";
+            const IMAGE_MODEL_KEY = "AI_ASSISTANT_IMAGE_MODEL_ID";
+            const raw = window.localStorage.getItem(AGENTS_KEY);
+            if (!raw) {
+                const DEFAULT_AGENT = [{
+                    id: "hcnsec-default",
+                    name: "hcnsec",
+                    provider: "openai",
+                    baseUrl: "https://api.hcnsec.cn",
+                    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
+                    models: [{
+                        id: "hcnsec-default-model",
+                        name: "DeepSeek-V4-Flash",
+                        modelId: "DeepSeek-V4-Flash",
+                        maxTokens: 16384,
+                    }],
+                }];
+                window.localStorage.setItem(AGENTS_KEY, JSON.stringify(DEFAULT_AGENT));
+                window.localStorage.setItem(CURRENT_MODEL_KEY, "hcnsec-default-model");
+                window.localStorage.setItem(IMAGE_MODEL_KEY, "");
+            }
+        } catch (e) {}
+        this.setState({ mounted: true });
+    }
+    componentDidUpdate(prevProps) {
+        if (prevProps.vm !== this.props.vm) {
+            this.setState((s) => ({ assistantKey: s.assistantKey + 1 }));
+        }
+    }
+    componentWillUnmount() {
+        if (this.wrapper && this.wrapper.parentNode) {
+            this.wrapper.parentNode.removeChild(this.wrapper);
+        }
+    }
+    render() {
+        if (!this.state.mounted) return null;
+        const { vm } = this.props;
+        if (!vm) return null;
+        const workspace = vm.editingTarget && vm.editingTarget.workspace
+            ? vm.editingTarget.workspace
+            : (vm.runtimeTargets && vm.runtimeTargets[0] && vm.runtimeTargets[0].workspace)
+                ? vm.runtimeTargets[0].workspace
+                : null;
+        if (!workspace) return null;
+        const blockly = window.Blockly || (window.Scratch && window.Scratch.Blockly) || null;
+        const utils = buildAssistantUtils(vm);
+        return React.createElement(AIAssistant, {
+            key: this.state.assistantKey,
+            vm,
+            workspace,
+            blockly,
+            utils,
+        });
+    }
+}
 
 const API_CONFIG = getApiConfig('siliconflow');
 const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/chat/completions';
@@ -1995,7 +2151,7 @@ ${JSON.stringify(projectData, null, 2)}
                 <div className={styles.scrollableContent}>
                     {isAgent && this.state.activeTab === 'works' && (
                         <div className={styles.novaTabContent} ref={this.novaContainerRef}>
-                            <NovaAgentBridge vm={this.props.vm} containerRef={this.novaContainerRef} />
+                            <AIAssistantBridge vm={this.props.vm} />
                         </div>
                     )}
                     

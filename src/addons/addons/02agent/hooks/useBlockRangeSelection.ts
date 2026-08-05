@@ -1,32 +1,32 @@
 import * as React from "react";
-import { createRangeAttachment } from "../blockRangeUtils";
-import { Attachment } from "../types";
+import { createRangeTextReference } from "../blockRangeUtils";
 
 interface UseBlockRangeSelectionOptions {
   workspace: Blockly.WorkspaceSvg;
   vm: PluginContext["vm"];
-  onRangeSelected: (attachment: Attachment) => void;
+  onRangeSelected: (text: string) => void;
   onSelectionError: (message: string) => void;
 }
 
-const getActiveWorkspace = (fallback?: Blockly.WorkspaceSvg | null) => {
-  const mainWorkspace = window.Blockly?.getMainWorkspace?.() as Blockly.WorkspaceSvg | null;
-  return mainWorkspace || fallback || null;
+type SelectionPointerEvent = PointerEvent | MouseEvent | TouchEvent;
+
+const getTargetClassName = (target: EventTarget | null) => {
+  const className = (target as SVGElement | null)?.className;
+  if (!className) return "";
+  return typeof className === "string" ? className : className.baseVal || "";
 };
 
-const getWorkspaceSvgNode = (workspace?: Blockly.WorkspaceSvg | null) => {
-  const workspaceSvg = workspace && typeof (workspace as any).getParentSvg === "function"
-    ? ((workspace as any).getParentSvg() as Element | null)
-    : null;
-  if (workspaceSvg?.getBoundingClientRect().width && workspaceSvg.getBoundingClientRect().height) {
-    return workspaceSvg;
-  }
+const isBlocklySelectionTarget = (target: EventTarget | null) => {
+  const targetClassName = getTargetClassName(target);
+  return ["blocklyMainBackground", "blocklyBubbleCanvas"].includes(targetClassName) || targetClassName.includes("blockly");
+};
 
-  const visibleSvg = Array.from(document.querySelectorAll(".blocklySvg")).find((node) => {
-    const rect = node.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
-  });
-  return visibleSvg || workspaceSvg || null;
+const getClientPoint = (event: SelectionPointerEvent) => {
+  if ("clientX" in event && typeof event.clientX === "number") {
+    return { x: event.clientX, y: event.clientY };
+  }
+  const touch = "changedTouches" in event ? event.changedTouches[0] : "touches" in event ? event.touches[0] : null;
+  return touch ? { x: touch.clientX, y: touch.clientY } : null;
 };
 
 export const useBlockRangeSelection = ({
@@ -40,6 +40,31 @@ export const useBlockRangeSelection = ({
   const startPointRef = React.useRef<{ x: number; y: number } | null>(null);
   const svgNodeRef = React.useRef<Element | null>(null);
   const moveCountRef = React.useRef(0);
+  const activePointerIdRef = React.useRef<number | null>(null);
+  const previousTouchActionRef = React.useRef<string | null>(null);
+  const previousUserSelectRef = React.useRef<string | null>(null);
+
+  const restoreTouchInteraction = React.useCallback(() => {
+    if (previousTouchActionRef.current !== null) {
+      document.body.style.touchAction = previousTouchActionRef.current;
+      previousTouchActionRef.current = null;
+    }
+    if (previousUserSelectRef.current !== null) {
+      document.body.style.userSelect = previousUserSelectRef.current;
+      previousUserSelectRef.current = null;
+    }
+  }, []);
+
+  const lockTouchInteraction = React.useCallback(() => {
+    if (previousTouchActionRef.current === null) {
+      previousTouchActionRef.current = document.body.style.touchAction;
+    }
+    if (previousUserSelectRef.current === null) {
+      previousUserSelectRef.current = document.body.style.userSelect;
+    }
+    document.body.style.touchAction = "none";
+    document.body.style.userSelect = "none";
+  }, []);
 
   const clearRect = React.useCallback(() => {
     if (rectNodeRef.current?.parentNode) {
@@ -48,61 +73,63 @@ export const useBlockRangeSelection = ({
     rectNodeRef.current = null;
   }, []);
 
-  const cancelSelecting = React.useCallback(() => {
+  const resetSelectionGesture = React.useCallback(() => {
     clearRect();
     startPointRef.current = null;
     moveCountRef.current = 0;
+    activePointerIdRef.current = null;
+    document.body.style.cursor = "";
+    restoreTouchInteraction();
+  }, [clearRect, restoreTouchInteraction]);
+
+  const cancelSelecting = React.useCallback(() => {
+    resetSelectionGesture();
     setIsSelecting(false);
-  }, [clearRect]);
+  }, [resetSelectionGesture]);
 
   const startSelecting = React.useCallback(() => {
-    const activeWorkspace = getActiveWorkspace(workspace);
-    const nextSvgNode = getWorkspaceSvgNode(activeWorkspace);
-    if (nextSvgNode) {
-      svgNodeRef.current = nextSvgNode;
-    }
-    if (!activeWorkspace || !svgNodeRef.current) {
-      onSelectionError("Bilup Nova 正在等待积木区初始化，请切到代码标签页后再试。");
-      return;
-    }
     setIsSelecting(true);
-  }, [onSelectionError, workspace]);
+  }, []);
 
   React.useEffect(() => {
-    svgNodeRef.current = getWorkspaceSvgNode(getActiveWorkspace(workspace));
-  }, [workspace]);
+    svgNodeRef.current = document.querySelector(".blocklySvg");
+  }, []);
 
   React.useEffect(() => {
     if (!isSelecting || !svgNodeRef.current) return;
 
-    const mousedown = (event: MouseEvent) => {
-      const targetClassName = (event.target as SVGElement)?.className?.baseVal || "";
-      if (
-        !["blocklyMainBackground", "blocklyBubbleCanvas"].includes(targetClassName) &&
-        !targetClassName.includes("blockly")
-      ) {
-        return;
+    const shouldIgnorePointer = (event: SelectionPointerEvent) => {
+      if ("pointerId" in event && activePointerIdRef.current !== null && event.pointerId !== activePointerIdRef.current) {
+        return true;
       }
+      if ("button" in event && event.type === "pointerdown" && event.button !== 0) return true;
+      if ("button" in event && event.type === "mousedown" && event.button !== 0) return true;
+      return false;
+    };
+
+    const beginSelection = (event: SelectionPointerEvent) => {
+      if (shouldIgnorePointer(event) || !isBlocklySelectionTarget(event.target)) return;
+      const point = getClientPoint(event);
+      const workspaceRect = svgNodeRef.current?.getBoundingClientRect();
+      if (!point || !workspaceRect) return;
 
       event.preventDefault();
       event.stopPropagation();
       document.body.style.cursor = "crosshair";
+      lockTouchInteraction();
 
-      const activeWorkspace = getActiveWorkspace(workspace);
-      const activeSvgNode = getWorkspaceSvgNode(activeWorkspace);
-      if (activeSvgNode) {
-        svgNodeRef.current = activeSvgNode;
+      if ("pointerId" in event) {
+        activePointerIdRef.current = event.pointerId;
+        (event.target as Element | null)?.setPointerCapture?.(event.pointerId);
+      } else {
+        activePointerIdRef.current = null;
       }
-
-      const workspaceRect = svgNodeRef.current?.getBoundingClientRect();
-      if (!workspaceRect) return;
 
       moveCountRef.current = 0;
       startPointRef.current = {
-        x: event.clientX - workspaceRect.left,
-        y: event.clientY - workspaceRect.top,
+        x: point.x - workspaceRect.left,
+        y: point.y - workspaceRect.top,
       };
-      console.log("[AI Assistant Range] selection start:", startPointRef.current);
 
       const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       rect.setAttribute("x", String(startPointRef.current.x));
@@ -112,19 +139,23 @@ export const useBlockRangeSelection = ({
       rect.setAttribute("fill", "rgba(76, 151, 255, 0.15)");
       rect.setAttribute("stroke", "#4c97ff");
       rect.setAttribute("stroke-width", "2");
+      rect.setAttribute("pointer-events", "none");
       rectNodeRef.current = rect;
       svgNodeRef.current?.appendChild(rect);
     };
 
-    const mousemove = (event: MouseEvent) => {
-      if (!rectNodeRef.current || !startPointRef.current || !svgNodeRef.current) return;
+    const updateSelection = (event: SelectionPointerEvent) => {
+      if (shouldIgnorePointer(event) || !rectNodeRef.current || !startPointRef.current || !svgNodeRef.current) return;
+      const point = getClientPoint(event);
+      if (!point) return;
+
       event.preventDefault();
       event.stopPropagation();
       moveCountRef.current += 1;
 
       const workspaceRect = svgNodeRef.current.getBoundingClientRect();
-      const offsetX = event.clientX - workspaceRect.left;
-      const offsetY = event.clientY - workspaceRect.top;
+      const offsetX = point.x - workspaceRect.left;
+      const offsetY = point.y - workspaceRect.top;
 
       const width = offsetX - startPointRef.current.x;
       const height = offsetY - startPointRef.current.y;
@@ -135,51 +166,26 @@ export const useBlockRangeSelection = ({
       rectNodeRef.current.setAttribute("y", `${height < 0 ? offsetY : startPointRef.current.y}`);
     };
 
-    const mouseup = (event: MouseEvent) => {
+    const finishSelection = (event: SelectionPointerEvent) => {
+      if (shouldIgnorePointer(event)) return;
       event.preventDefault();
       event.stopPropagation();
-      document.body.style.cursor = "";
+
+      if ("pointerId" in event) {
+        (event.target as Element | null)?.releasePointerCapture?.(event.pointerId);
+      }
 
       if (!rectNodeRef.current || !svgNodeRef.current || moveCountRef.current <= 1) {
-        console.log("[AI Assistant Range] selection cancelled or too small", {
-          hasRect: Boolean(rectNodeRef.current),
-          moveCount: moveCountRef.current,
-        });
-        clearRect();
-        startPointRef.current = null;
-        moveCountRef.current = 0;
+        resetSelectionGesture();
         return;
       }
 
       const rectBounds = rectNodeRef.current.getBoundingClientRect();
-      console.log("[AI Assistant Range] selection end rect:", {
-        left: rectBounds.left,
-        top: rectBounds.top,
-        right: rectBounds.right,
-        bottom: rectBounds.bottom,
-        width: rectBounds.width,
-        height: rectBounds.height,
-      });
-      const activeWorkspace = getActiveWorkspace(workspace);
-      const activeSvgNode = getWorkspaceSvgNode(activeWorkspace);
-      if (activeSvgNode) {
-        svgNodeRef.current = activeSvgNode;
-      }
-      if (!activeWorkspace) {
-        clearRect();
-        startPointRef.current = null;
-        moveCountRef.current = 0;
-        onSelectionError("Bilup Nova 未找到当前积木工作区，请切到代码标签页后再试。");
-        return;
-      }
+      const { text, reason } = createRangeTextReference(vm, workspace, rectBounds);
+      resetSelectionGesture();
 
-      const { attachment, reason } = createRangeAttachment(vm, activeWorkspace, rectBounds);
-      clearRect();
-      startPointRef.current = null;
-      moveCountRef.current = 0;
-
-      if (attachment) {
-        onRangeSelected(attachment);
+      if (text) {
+        onRangeSelected(text);
         setIsSelecting(false);
         return;
       }
@@ -195,20 +201,42 @@ export const useBlockRangeSelection = ({
       }
     };
 
-    document.addEventListener("mousedown", mousedown, { capture: true });
-    document.addEventListener("mousemove", mousemove, { capture: true });
-    document.addEventListener("mouseup", mouseup, { capture: true });
+    const supportsPointerEvents = typeof window.PointerEvent !== "undefined";
+    if (supportsPointerEvents) {
+      document.addEventListener("pointerdown", beginSelection, { capture: true });
+      document.addEventListener("pointermove", updateSelection, { capture: true });
+      document.addEventListener("pointerup", finishSelection, { capture: true });
+      document.addEventListener("pointercancel", finishSelection, { capture: true });
+    } else {
+      document.addEventListener("mousedown", beginSelection, { capture: true });
+      document.addEventListener("mousemove", updateSelection, { capture: true });
+      document.addEventListener("mouseup", finishSelection, { capture: true });
+      document.addEventListener("touchstart", beginSelection, { capture: true, passive: false });
+      document.addEventListener("touchmove", updateSelection, { capture: true, passive: false });
+      document.addEventListener("touchend", finishSelection, { capture: true, passive: false });
+      document.addEventListener("touchcancel", finishSelection, { capture: true, passive: false });
+    }
     document.addEventListener("keydown", keydown);
 
     return () => {
-      document.removeEventListener("mousedown", mousedown, { capture: true });
-      document.removeEventListener("mousemove", mousemove, { capture: true });
-      document.removeEventListener("mouseup", mouseup, { capture: true });
+      if (supportsPointerEvents) {
+        document.removeEventListener("pointerdown", beginSelection, { capture: true });
+        document.removeEventListener("pointermove", updateSelection, { capture: true });
+        document.removeEventListener("pointerup", finishSelection, { capture: true });
+        document.removeEventListener("pointercancel", finishSelection, { capture: true });
+      } else {
+        document.removeEventListener("mousedown", beginSelection, { capture: true });
+        document.removeEventListener("mousemove", updateSelection, { capture: true });
+        document.removeEventListener("mouseup", finishSelection, { capture: true });
+        document.removeEventListener("touchstart", beginSelection, { capture: true });
+        document.removeEventListener("touchmove", updateSelection, { capture: true });
+        document.removeEventListener("touchend", finishSelection, { capture: true });
+        document.removeEventListener("touchcancel", finishSelection, { capture: true });
+      }
       document.removeEventListener("keydown", keydown);
-      document.body.style.cursor = "";
-      clearRect();
+      resetSelectionGesture();
     };
-  }, [cancelSelecting, clearRect, isSelecting, onRangeSelected, onSelectionError, vm, workspace]);
+  }, [cancelSelecting, isSelecting, lockTouchInteraction, onRangeSelected, onSelectionError, resetSelectionGesture, vm, workspace]);
 
   return {
     isSelecting,
