@@ -10,16 +10,17 @@ interface ExportedAgentFile {
 
 const DEFAULT_AGENTS: Agent[] = [
   {
-    id: "default-1",
-    name: "OpenAI",
+    id: "hcnsec-default",
+    name: "hcnsec",
     provider: "openai",
-    baseUrl: "https://api.openai.com/v1",
-    apiKey: "",
+    baseUrl: "https://api.hcnsec.cn",
+    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
     models: [
       {
-        id: "default-1-model-1",
-        name: "Default GPT-3.5",
-        modelId: "gpt-3.5-turbo",
+        id: "hcnsec-default-model",
+        name: "DeepSeek-V4-Flash",
+        modelId: "DeepSeek-V4-Flash",
+        maxTokens: 16384,
       },
     ],
   },
@@ -29,7 +30,7 @@ export function useAgents() {
   const [agents, setAgents] = useStoredState<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
   const [currentModelId, setCurrentModelId] = useStoredState<string>(
     "AI_ASSISTANT_CURRENT_AGENT_ID",
-    "default-1-model-1",
+    "hcnsec-default-model",
   );
   const [imageModelId, setImageModelId] = useStoredState<string>("AI_ASSISTANT_IMAGE_MODEL_ID", "");
   const [showSettings, setShowSettings] = useState(false);
