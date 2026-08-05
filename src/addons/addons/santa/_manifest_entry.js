@@ -26,7 +26,8 @@ const manifest = {
   ],
   "tags": [
     "theme",
-    "new"
+    "new",
+    "turbowarp"
   ]
 };
 
