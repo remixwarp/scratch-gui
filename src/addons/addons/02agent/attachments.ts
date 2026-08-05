@@ -50,14 +50,6 @@ const readFileAsArrayBuffer = (file: File) =>
     reader.readAsArrayBuffer(file);
   });
 
-const readFileAsDataUrl = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(reader.error || new Error(`Failed to read file: ${file.name}`));
-    reader.readAsDataURL(file);
-  });
-
 const truncatePreview = (content: string, maxLength = 1200) => {
   if (content.length <= maxLength) return content;
   return `${content.slice(0, maxLength)}\n\n...（内容已截断，发送时会携带完整解析文本）`;
@@ -107,22 +99,11 @@ const parseTextLikeFile = async (file: File) => {
   };
 };
 
-const parseImageFile = async (file: File) => {
-  const dataUrl = await readFileAsDataUrl(file);
-  return {
-    kind: "image" as const,
-    content: dataUrl,
-    preview: dataUrl,
-  };
-};
-
 export const parseLocalAttachment = async (file: File): Promise<Attachment> => {
   const extension = getFileExtension(file.name);
 
   let parsed;
-  if (file.type.startsWith("image/")) {
-    parsed = await parseImageFile(file);
-  } else if (DOCUMENT_EXTENSIONS.has(extension)) {
+  if (DOCUMENT_EXTENSIONS.has(extension)) {
     parsed = await parseDocument(file);
   } else if (SPREADSHEET_EXTENSIONS.has(extension)) {
     parsed = await parseSpreadsheet(file);

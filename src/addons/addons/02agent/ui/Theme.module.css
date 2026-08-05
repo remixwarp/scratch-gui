@@ -21,19 +21,16 @@
   --ai-syntax-comment: #8b949e;
   --ai-syntax-identifier: #d2a8ff;
   --ai-syntax-punctuation: #c9d1d9;
-
   color: var(--ai-text-primary);
   color-scheme: var(--ai-color-scheme);
   font-family: var(--ai-font-sans);
 }
-
 .themeRoot,
 .themeRoot *,
 .themeRoot *::before,
 .themeRoot *::after {
   box-sizing: border-box;
 }
-
 .themeDark {
   --ai-color-scheme: dark;
   --ai-bg-app: #152223;
@@ -72,7 +69,6 @@
   --ai-shadow-strong: rgba(0, 0, 0, 0.46);
   --ai-overlay: rgba(0, 0, 0, 0.52);
 }
-
 .themeLight {
   --ai-color-scheme: light;
   --ai-bg-app: #f2fbfa;

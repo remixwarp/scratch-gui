@@ -1,26 +1,45 @@
-import { createVirtualBlockLineReference, isProjectIndexCompleteForBlockReferences } from "./blockReferenceUtils";
+import { scratchToUCF } from "./ucf";
 
 export const registerContextMenu = (vm: any) => {
   const menuItemId = window.Blockly.ContextMenu.addDynamicMenuItem(
     (items: any[], target: any) => {
-      const projectIndexReady = isProjectIndexCompleteForBlockReferences(vm);
       items.push({
-        id: "ai-assistant-add-context",
+        id: "02agent-add-context",
         text: "加入对话",
-        enabled: projectIndexReady,
+        enabled: true,
         callback: () => {
-          if (!target || !target.id || !projectIndexReady) return;
+          if (!target || !target.id || !vm.editingTarget) return;
 
-          const reference = createVirtualBlockLineReference(vm, target.id);
-          window.dispatchEvent(
-            new CustomEvent("ai-assistant-add-context", {
-              detail: {
-                referenceText: reference.text,
-                error: reference.text ? undefined : reference.reason || "无法添加积木引用。",
-                blockId: target.id,
-              },
-            }),
-          );
+          const targetId = target.id;
+          const allBlocks = vm.editingTarget.blocks._blocks;
+          console.log("[02Agent Jump][contextMenu] raw target", target);
+          console.log("[02Agent Jump][contextMenu] target.id used as blockId", targetId);
+          console.log("[02Agent Jump][contextMenu] vm.editingTarget.id", vm.editingTarget.id);
+          if (!allBlocks) return;
+
+          const blocksArray = Object.values(allBlocks).map((b: any) => ({
+            ...b,
+            topLevel: b.id === targetId,
+          }));
+
+          const ucfText = scratchToUCF(blocksArray);
+          if (ucfText) {
+            console.log("[02Agent Jump][contextMenu] dispatching attachment", {
+              targetId: vm.editingTarget.id,
+              blockId: targetId,
+              ucfPreview: ucfText.slice(0, 150),
+            });
+            window.dispatchEvent(
+              new CustomEvent("02agent-add-context", {
+                detail: {
+                  content: ucfText,
+                  targetId: vm.editingTarget.id,
+                  blockId: targetId,
+                  name: "选中积木",
+                },
+              }),
+            );
+          }
         },
       });
       return items;

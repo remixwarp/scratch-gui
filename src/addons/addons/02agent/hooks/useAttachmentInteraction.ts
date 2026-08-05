@@ -1,5 +1,5 @@
 import * as React from "react";
-import { scrollBlockIntoView } from "utils/block-helper";
+import { scrollBlockIntoView } from "../shims/utils/block-helper";
 import { Attachment } from "../types";
 
 const findFirstUsableBlockId = (attachment: Attachment, vm: PluginContext["vm"]) => {
@@ -31,7 +31,7 @@ export const useAttachmentInteraction = (vm: PluginContext["vm"], workspace: Blo
 
   React.useEffect(() => {
     const handleTargetUpdate = () => {
-      if (previewBlockIdRef.current) {
+      if (previewBlockIdRef.current && workspace) {
         const handler = () => {
           if (!previewBlockIdRef.current) return;
           const block = workspace.blockDB_[previewBlockIdRef.current];
@@ -54,6 +54,10 @@ export const useAttachmentInteraction = (vm: PluginContext["vm"], workspace: Blo
 
   const handleOpenAttachment = React.useCallback(
     (attachment: Attachment) => {
+      console.log("[AI Assistant Jump][attachmentHook] handleOpenAttachment", {
+        attachment,
+        currentEditingTargetId: vm.editingTarget?.id,
+      });
 
       if (attachment.kind !== "workspace-ucf" && attachment.kind !== "workspace-ucf-range") {
         setPreviewAttachment(attachment);
@@ -64,13 +68,18 @@ export const useAttachmentInteraction = (vm: PluginContext["vm"], workspace: Blo
       const blockId =
         attachment.meta?.startBlockId || attachment.meta?.blockId || findFirstUsableBlockId(attachment, vm);
 
+      console.log("[AI Assistant Jump][attachmentHook] resolved jump target", {
+        targetId,
+        blockId,
+        attachmentMeta: attachment.meta,
+      });
 
       if (!targetId || !blockId) {
         setPreviewAttachment(attachment);
         return;
       }
 
-      if (vm.editingTarget && targetId === vm.editingTarget.id) {
+      if (workspace && vm.editingTarget && targetId === vm.editingTarget.id) {
         const block = workspace.blockDB_[blockId];
         if (block) {
           scrollBlockIntoView(block, workspace);

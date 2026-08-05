@@ -2,444 +2,8 @@ export const scratchToolSchemas = [
   {
     type: "function",
     function: {
-      name: "observeStage",
-      description:
-        "Game Agent only. Capture the visible Scratch stage DOM as an image and report whether the project appears to be running. The image is supplied to the model as image input, not text content.",
-      parameters: {
-        type: "object",
-        properties: {},
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "runStageScript",
-      description:
-        "Game Agent only. Execute a short player-action script against the visible stage DOM. Coordinates default to Scratch coordinates: center is (0,0), y increases upward, height is 360, and width follows the current stage aspect ratio. Use screenshot(); inside the script to capture intermediate stage images; captured images are supplied to the model as image inputs. Supported calls: greenFlag(); stopAll(); wait(ms); screenshot(); click({x,y,button}); doubleClick({x,y,button}); mouseMove({x,y,durationMs}); mouseDown({x,y,button}); mouseUp({x,y,button}); keyDown({key}); keyUp({key}); keyPress({key,durationMs}); typeText({text,intervalMs}). mouseMove durationMs moves in about 20ms steps. click button defaults to left and may be left, middle, or right.",
-      parameters: {
-        type: "object",
-        properties: {
-          script: {
-            type: "string",
-            description: "Semicolon-separated stage action script, for example greenFlag(); wait(1000); click({x:0,y:0});",
-          },
-        },
-        required: ["script"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "updateTodoList",
-      description:
-        "Update the visible todo list for non-trivial work. Always pass the full ordered list; keep at most one item in_progress.",
-      parameters: {
-        type: "object",
-        properties: {
-          todos: {
-            type: "array",
-            description: "Full ordered todo list for the current user request.",
-            items: {
-              type: "object",
-              properties: {
-                id: {
-                  type: "string",
-                  description: "Stable todo id. Reuse the same id when updating status.",
-                },
-                title: {
-                  type: "string",
-                  description: "Short task title shown in the message flow.",
-                },
-                status: {
-                  type: "string",
-                  enum: ["pending", "in_progress", "completed", "cancelled"],
-                },
-              },
-              required: ["title", "status"],
-            },
-          },
-        },
-        required: ["todos"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "askUser",
-      description:
-        "Ask concise question(s) when missing information would change the result. The tool returns the user's answers together.",
-      parameters: {
-        type: "object",
-        properties: {
-          question: {
-            type: "string",
-            description: "The concise question shown above the chat input.",
-          },
-          questions: {
-            type: "array",
-            description: "Optional ordered list of questions to ask one by one.",
-            items: {
-              type: "object",
-              properties: {
-                id: {
-                  type: "string",
-                  description: "Optional stable question id.",
-                },
-                question: {
-                  type: "string",
-                  description: "The concise question text.",
-                },
-                questionType: {
-                  type: "string",
-                  enum: ["choice", "input"],
-                  description: "Optional type: choice shows options first; input opens text input directly.",
-                },
-                options: {
-                  type: "array",
-                  items: {
-                    type: "string",
-                  },
-                },
-                placeholder: {
-                  type: "string",
-                },
-                customOptionLabel: {
-                  type: "string",
-                },
-                allowCustomInput: {
-                  type: "boolean",
-                },
-              },
-              required: ["question"],
-            },
-          },
-          options: {
-            type: "array",
-            description: "Optional short choices; UI adds a custom-input option automatically.",
-            items: {
-              type: "string",
-            },
-          },
-          placeholder: {
-            type: "string",
-            description: "Optional placeholder for free-form user input.",
-          },
-          customOptionLabel: {
-            type: "string",
-            description: "Optional label for the appended custom-input option.",
-          },
-          allowCustomInput: {
-            type: "boolean",
-            description: "Whether the user can provide a custom answer. Defaults to true.",
-          },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "insertCostume",
-      description:
-        "Create a sprite costume or stage backdrop from a name and visual description. The user's default costume type controls ask/vector/bitmap; bitmap uses the configured image model and falls back to SVG on failure.",
-      parameters: {
-        type: "object",
-        properties: {
-          targetId: {
-            type: "string",
-            description: "Optional target id. Omit to use the currently selected target; stage targets create backdrops.",
-          },
-          costumeName: {
-            type: "string",
-            description: "Name for the new costume.",
-          },
-          costumeDescription: {
-            type: "string",
-            description: "Visual style and content of the new costume.",
-          },
-          referenceCostumeId: {
-            type: "string",
-            description: "Optional existing Scratch costume/backdrop id to use as a visual reference.",
-          },
-          referenceCostumePath: {
-            type: "string",
-            description: "Optional existing Scratch costume/backdrop VFS path, for example /Sprite1/custom/costume1.svg.",
-          },
-          referenceCostumeName: {
-            type: "string",
-            description: "Optional existing Scratch costume/backdrop name or file name to use as a visual reference.",
-          },
-          referenceCostumeIndex: {
-            type: "number",
-            description: "Optional zero-based costume/backdrop index on the reference target.",
-          },
-          referenceImageName: {
-            type: "string",
-            description:
-              "Backward-compatible alias for referenceCostumePath/referenceCostumeName. It refers to an existing Scratch costume, not an uploaded image attachment.",
-          },
-          imageSize: {
-            type: "string",
-            description:
-              "Optional bitmap generation size like 1024x1024, 1024x1792, or 1792x1024. Used only when bitmap generation is selected; defaults to 1024x1024.",
-          },
-        },
-        required: ["costumeName", "costumeDescription"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "updateCostume",
-      description:
-        "Update an existing costume or stage backdrop. SVG assets are edited through a temporary SVG AI; bitmap assets use the configured image model through /images/edits. Identify it with costumeId, costumeName, or zero-based costumeIndex.",
-      parameters: {
-        type: "object",
-        properties: {
-          targetId: {
-            type: "string",
-            description: "Optional target id. Omit to use the currently selected target; stage targets update backdrops.",
-          },
-          costumeId: {
-            type: "string",
-            description: "Existing costume id.",
-          },
-          costumeName: {
-            type: "string",
-            description: "Existing costume name.",
-          },
-          costumeIndex: {
-            type: "number",
-            description: "Zero-based existing costume index.",
-          },
-          updateDescription: {
-            type: "string",
-            description: "Description of the requested visual changes.",
-          },
-          referenceCostumeId: {
-            type: "string",
-            description: "Optional existing Scratch costume/backdrop id to use as a visual reference.",
-          },
-          referenceCostumePath: {
-            type: "string",
-            description: "Optional existing Scratch costume/backdrop VFS path, for example /Sprite1/custom/costume1.svg.",
-          },
-          referenceCostumeName: {
-            type: "string",
-            description: "Optional existing Scratch costume/backdrop name or file name to use as a visual reference.",
-          },
-          referenceCostumeIndex: {
-            type: "number",
-            description: "Optional zero-based costume/backdrop index on the reference target.",
-          },
-          referenceImageName: {
-            type: "string",
-            description:
-              "Backward-compatible alias for referenceCostumePath/referenceCostumeName. It refers to an existing Scratch costume, not an uploaded image attachment.",
-          },
-          imageSize: {
-            type: "string",
-            description:
-              "Optional bitmap edit size like 1024x1024, 1024x1792, or 1792x1024. Used only when updating bitmap costumes; defaults to 1024x1024.",
-          },
-        },
-        required: ["updateDescription"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "deleteCostume",
-      description:
-        "Delete an existing sprite costume or stage backdrop. Prefer applyPatch Delete File under /<target>/custom. Identify by costumeId, costumeName, or zero-based costumeIndex.",
-      parameters: {
-        type: "object",
-        properties: {
-          targetId: {
-            type: "string",
-            description: "Optional target id. Omit to use the currently selected target; stage targets delete backdrops.",
-          },
-          costumeId: {
-            type: "string",
-            description: "Existing costume id.",
-          },
-          costumeName: {
-            type: "string",
-            description: "Existing costume name.",
-          },
-          costumeIndex: {
-            type: "number",
-            description: "Zero-based existing costume index.",
-          },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "runSubAgent",
-      description:
-        "Delegate one independent subtask to a configured child AI. @AgentName means a sub agent name for this tool, not a Scratch file/extension. Use Game Agent for visual stage testing when available. For non-simple Scratch work, prefer child AIs for project inspection or block/menu research plus script/resource drafting. Do not delegate steps that need user judgment, shared sequential state, or final integration decisions. Child AIs cannot ask the user, use todos/memory, or launch children.",
-      parameters: {
-        type: "object",
-        properties: {
-          name: {
-            type: "string",
-            description: "Configured child AI display name exactly as listed, for example Game Agent, search Agent, or code Agent.",
-          },
-          task: {
-            type: "string",
-            description: "Concrete delegated task for the child AI to execute.",
-          },
-          context: {
-            type: "string",
-            description: "Optional extra context, constraints, or relevant findings for the child AI.",
-          },
-          successCriteria: {
-            type: "string",
-            description: "Optional explicit definition of done for the delegated task.",
-          },
-        },
-        required: ["name", "task"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "listMemoryBlocks",
-      description:
-        "Low risk. List long-term or current-project memory blocks; project memory exists only for saved projects.",
-      parameters: {
-        type: "object",
-        properties: {
-          scope: {
-            type: "string",
-            enum: ["longTerm", "project"],
-            description: "Optional scope filter: longTerm global, project current saved project.",
-          },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "getMemoryBlock",
-      description: "Low risk. Get the full content of one persistent memory block by id.",
-      parameters: {
-        type: "object",
-        properties: {
-          id: {
-            type: "string",
-            description: "Memory block id returned by listMemoryBlocks or setMemoryBlock.",
-          },
-          scope: {
-            type: "string",
-            enum: ["longTerm", "project"],
-            description: "Optional scope filter for faster lookup.",
-          },
-        },
-        required: ["id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "setMemoryBlock",
-      description:
-        "Medium risk. Create/overwrite memory. Use project for learned understanding of the current saved project; use longTerm for stable user-stated rules/preferences.",
-      parameters: {
-        type: "object",
-        properties: {
-          scope: {
-            type: "string",
-            enum: ["longTerm", "project"],
-            description: "Memory scope. Defaults to longTerm if omitted.",
-          },
-          id: {
-            type: "string",
-            description: "Optional existing memory block id to overwrite. Omit to create a new memory block.",
-          },
-          description: {
-            type: "string",
-            description: "Short human-readable description, such as user_info or project_rules.",
-          },
-          content: {
-            type: "string",
-            description: "Memory content. Maximum 5000 characters.",
-          },
-        },
-        required: ["content"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "replaceMemoryBlockText",
-      description:
-        "Medium risk. Replace exact text inside a persistent memory block without rewriting the whole block.",
-      parameters: {
-        type: "object",
-        properties: {
-          id: {
-            type: "string",
-            description: "Memory block id.",
-          },
-          oldText: {
-            type: "string",
-            description: "Exact text to find in the memory block.",
-          },
-          newText: {
-            type: "string",
-            description: "Replacement text.",
-          },
-          scope: {
-            type: "string",
-            enum: ["longTerm", "project"],
-            description: "Optional scope filter.",
-          },
-        },
-        required: ["id", "oldText", "newText"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "deleteMemoryBlock",
-      description: "High risk. Permanently delete one persistent memory block by id.",
-      parameters: {
-        type: "object",
-        properties: {
-          id: {
-            type: "string",
-            description: "Memory block id to delete.",
-          },
-          scope: {
-            type: "string",
-            enum: ["longTerm", "project"],
-            description: "Optional scope filter.",
-          },
-        },
-        required: ["id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
       name: "listFiles",
-      description:
-        "List virtual Scratch files: target roots, writable scripts/*.js, read-only legacy script.js, custom, audio, data, and docs.",
+      description: "List virtual Scratch project files, including writable stage/sprite JS files, writable SVG costume files, and read-only docs.",
       parameters: {
         type: "object",
         properties: {},
@@ -451,7 +15,7 @@ export const scratchToolSchemas = [
     function: {
       name: "getProjectOverview",
       description:
-        "Compact Scratch overview: stage, coordinates, targets, paths, scripts, assets, variables, lists, and health. Prefer for orientation.",
+        "Get a compact overview of Scratch targets, stage size/runtime options, virtual file paths, scripts, costumes, variables, and lists. Prefer this before reading full files when orienting.",
       parameters: {
         type: "object",
         properties: {},
@@ -463,75 +27,16 @@ export const scratchToolSchemas = [
     function: {
       name: "getScratchGuide",
       description:
-        "Get a concise Scratch JS DSL guide by topic/name, including built-in guides, enabled user/AI guides, and built-in extension guides even when that extension is not installed.",
+        "Get a concise task-oriented Scratch JS DSL guide. Use this instead of reading long docs for common patterns.",
       parameters: {
         type: "object",
         properties: {
           topic: {
             type: "string",
             description:
-              "Optional topic/name: extension-index, quickstart, events, data, control, procedures, custom-args, dynamic-blocks, rendering, menus, pen, patching, debugging, user/AI guide, extension-<extensionId>, or <extensionId>. Defaults to quickstart.",
+              "Optional topic: quickstart, events, data, control, procedures, custom-args, rendering, menus, pen, patching, debugging. Defaults to quickstart.",
           },
         },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "runGuideTool",
-      description:
-        "Run a tool provided by an enabled user/AI guide or installed extension guide. Use this when memory or a guide says a persistent behavior applies, or when a guide tool can perform a reusable same-scenario action. Tool names use skillName.toolName format.",
-      parameters: {
-        type: "object",
-        properties: {
-          tool: {
-            type: "string",
-            description: "Full guide tool name, for example skillName.toolName.",
-          },
-          args: {
-            type: "object",
-            description: "Arguments passed to the guide tool as one object.",
-            additionalProperties: true,
-          },
-        },
-        required: ["tool"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "createAiGuide",
-      description:
-        "Create or update an AI-created guide for future conversations when a repeated scenario or persistent user preference would benefit from reusable guidance or an executable guide tool. The description must state when to use it and what it helps with. Optional indexJs tools should be simple top-level async functions; each function becomes skillName.functionName. If the user asks for a future recurring assistant-side behavior, prefer a real executable tool when possible, and return explicit unavailable/denied results instead of pretending the behavior happened.",
-      parameters: {
-        type: "object",
-        properties: {
-          name: {
-            type: "string",
-            description: "Stable short skill name using English letters, numbers, hyphens, or underscores.",
-          },
-          title: {
-            type: "string",
-            description: "Optional human-readable guide title. Defaults to name.",
-          },
-          description: {
-            type: "string",
-            description: "Short description of when this guide should be called and what it helps with.",
-          },
-          content: {
-            type: "string",
-            description:
-              "Markdown guide content. Keep it concise and focused on when the AI should use the guide, what steps to follow, and which guide tool to call if one is provided.",
-          },
-          indexJs: {
-            type: "string",
-            description:
-              "Optional guide tool JavaScript. Easiest template: async function toolName(args) { return { result: '...' }; }. You may also use export default { tools: { toolName: { async execute(args) { return { result: '...' }; } } } }. Use an empty string when no tool is needed. Tool code should actually perform the reusable action when possible; if the environment cannot do it, return { result: { success:false, reason:'...' } }.",
-          },
-        },
-        required: ["name", "description", "content", "indexJs"],
       },
     },
   },
@@ -540,7 +45,7 @@ export const scratchToolSchemas = [
     function: {
       name: "searchBlocks",
       description:
-        "Search Scratch blocks by opcode, Chinese/English keyword, or DSL term; returns compact examples, fields, inputs, menus, and notes.",
+        "Search Scratch blocks by opcode, Chinese/English keyword, or DSL term and return compact JS DSL examples, fields, inputs, menus, and notes.",
       parameters: {
         type: "object",
         properties: {
@@ -564,26 +69,18 @@ export const scratchToolSchemas = [
   {
     type: "function",
     function: {
-      name: "getBlocksHelp",
+      name: "getBlockHelp",
       description:
-        "Get exact help for multiple Scratch block opcodes, dotted DSL calls, or aliases in one call. Use only for unfamiliar blocks or uncertain fields/menus; do not batch-query common core blocks you already know.",
+        "Get exact help for one Scratch opcode, dotted DSL call, or common alias (for example operator.less / pen.down), including JS syntax, fields, inputs, menus, substacks, and a ready-to-copy example.",
       parameters: {
         type: "object",
         properties: {
-          opcodes: {
-            type: "array",
-            description:
-              "Opcode or dotted DSL calls, for example control_start_as_clone, data.showvariable, pen.setPenColorParamTo. Maximum 40.",
-            items: {
-              type: "string",
-            },
-          },
-          includeSuggestions: {
-            type: "boolean",
-            description: "Whether failed lookups include search suggestions. Defaults to true.",
+          opcode: {
+            type: "string",
+            description: "Opcode or dotted DSL call, for example control_start_as_clone or pen.setPenColorParamTo.",
           },
         },
-        required: ["opcodes"],
+        required: ["opcode"],
       },
     },
   },
@@ -597,8 +94,7 @@ export const scratchToolSchemas = [
         properties: {
           path: {
             type: "string",
-            description:
-              "Virtual path: /stage|<target>/scripts/*.js, /<target>/custom/*.svg, /<target>/custom/order.json, /<target>/audio/*, /variables.json, /lists.json, /docs/*. Data aliases and Chinese aliases are accepted; /<target>/script.js is read-only legacy aggregate.",
+            description: "Virtual path such as /stage.js, /sprites/Cat.js, /sprites/Cat/costumes/1-costume.svg, or /docs/scratch-agent.md.",
           },
           startLine: {
             type: "number",
@@ -643,14 +139,13 @@ export const scratchToolSchemas = [
     function: {
       name: "applyPatch",
       description:
-        "Apply Codex-style patches to writable Scratch VFS files: scripts, global data JSON/aliases, sprite roots, SVG costumes/backdrops, /<target>/custom/order.json costume ordering, renames, and deletions. SVG data-rotation-center-x/y controls pivot and may normalize. Script variable/list references auto-create globals. Invalid drafts are preserved; valid script/SVG/data patches sync to Scratch.",
+        "Apply a Codex-style patch to writable virtual Scratch JS or SVG costume files. Supports standard +/- hunks and full replacement content after Update File. Successful script patches sync to Scratch blocks; successful costume patches update the costume asset. Invalid costume drafts are saved in 02Agent memory for follow-up fixes; invalid script drafts are discarded.",
       parameters: {
         type: "object",
         properties: {
           patch: {
             type: "string",
-            description:
-              "Patch text beginning with *** Begin Patch and containing Add File, Delete File, or Update File hunks.",
+            description: "Patch text beginning with *** Begin Patch and containing one or more *** Update File hunks.",
           },
         },
         required: ["patch"],
@@ -660,112 +155,207 @@ export const scratchToolSchemas = [
   {
     type: "function",
     function: {
+      name: "createSpriteWithSvg",
+      description: "Create a new Scratch sprite target with one SVG costume asset. Use this only for brand new sprites; it refuses existing sprite names. Set intended default x/y/size/direction/rotationStyle here when known, and call updateSpriteProperties immediately afterward if the new sprite needs any default/current state adjustment. Use addCostumeWithSvg to add a costume to an existing sprite.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Sprite name." },
+          costumeName: { type: "string", description: "Costume name. Defaults to costume1." },
+          svg: { type: "string", description: "Complete SVG document for the costume." },
+          x: { type: "number", description: "Initial x position. Defaults to 0." },
+          y: { type: "number", description: "Initial y position. Defaults to 0." },
+          size: { type: "number", description: "Initial size percentage. Defaults to 100." },
+          direction: { type: "number", description: "Initial direction. Defaults to 90." },
+          rotationStyle: { type: "string", description: "Scratch rotation style, for example all around, left-right, or don't rotate." },
+          rotationCenterX: { type: "number", description: "SVG rotation center x in SVG canvas coordinates. Defaults to half SVG width; stage backdrops normally use 240 for a 480x360 canvas." },
+          rotationCenterY: { type: "number", description: "SVG rotation center y in SVG canvas coordinates. Defaults to half SVG height; stage backdrops normally use 180 for a 480x360 canvas." },
+        },
+        required: ["svg"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "listCostumes",
+      description: "List ordered costumes/backdrops for one target or all targets, including their current order and which one is active.",
+      parameters: {
+        type: "object",
+        properties: {
+          targetId: { type: "string", description: "Optional target ID." },
+          targetName: { type: "string", description: "Optional target name such as Cat or Stage." },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "updateSpriteProperties",
+      description: "Update an existing sprite target's initial/current editor state such as x/y, size, direction, rotation style, visibility, or current costume. Stage cannot move/resize/rotate.",
+      parameters: {
+        type: "object",
+        properties: {
+          targetId: { type: "string", description: "Optional target ID." },
+          targetName: { type: "string", description: "Optional sprite name." },
+          x: { type: "number", description: "Sprite x coordinate." },
+          y: { type: "number", description: "Sprite y coordinate." },
+          size: { type: "number", description: "Sprite size percentage." },
+          direction: { type: "number", description: "Sprite direction in degrees." },
+          rotationStyle: { type: "string", description: "Scratch rotation style: all around, left-right, or don't rotate." },
+          visible: { type: "boolean", description: "Whether the sprite is visible." },
+          currentCostumeIndex: { type: "number", description: "Zero-based costume/backdrop index to switch to." },
+          currentCostumeName: { type: "string", description: "Costume/backdrop name to switch to." },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "addCostumeWithSvg",
+      description: "Add a new SVG costume/backdrop to a specific existing target without creating a new sprite. Use this when the user wants another costume for an existing sprite/backdrop.",
+      parameters: {
+        type: "object",
+        properties: {
+          targetId: { type: "string", description: "Optional target ID." },
+          targetName: { type: "string", description: "Optional target name such as Cat or Stage." },
+          costumeName: { type: "string", description: "New costume/backdrop name." },
+          svg: { type: "string", description: "Complete SVG document." },
+          setAsCurrent: { type: "boolean", description: "Whether to switch to the new costume after adding it. Defaults to true." },
+          insertIndex: { type: "number", description: "Optional target order index for the new costume." },
+          rotationCenterX: { type: "number", description: "Optional SVG rotation center x in SVG canvas coordinates. Defaults to half SVG width; use 240 for full-stage 480x360 backdrops." },
+          rotationCenterY: { type: "number", description: "Optional SVG rotation center y in SVG canvas coordinates. Defaults to half SVG height; use 180 for full-stage 480x360 backdrops." },
+        },
+        required: ["svg"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "batchAddCostumesWithSvg",
+      description: "Add multiple SVG costumes/backdrops to one existing target in order. Use this for bulk costume creation instead of repeated createSpriteWithSvg calls.",
+      parameters: {
+        type: "object",
+        properties: {
+          targetId: { type: "string", description: "Optional target ID." },
+          targetName: { type: "string", description: "Optional target name such as Cat or Stage." },
+          costumes: {
+            type: "array",
+            description: "Ordered SVG costumes/backdrops to add.",
+            items: {
+              type: "object",
+              properties: {
+                costumeName: { type: "string", description: "New costume/backdrop name." },
+                svg: { type: "string", description: "Complete SVG document." },
+                insertIndex: { type: "number", description: "Optional target order index for this costume." },
+                rotationCenterX: { type: "number", description: "Optional SVG rotation center x in SVG canvas coordinates. Defaults to half SVG width." },
+                rotationCenterY: { type: "number", description: "Optional SVG rotation center y in SVG canvas coordinates. Defaults to half SVG height." },
+              },
+              required: ["svg"],
+            },
+          },
+          setAsCurrent: { type: "boolean", description: "Whether to switch to the last added costume. Defaults to true." },
+        },
+        required: ["costumes"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "deleteCostume",
+      description: "Delete a specific costume/backdrop from a target by index or name.",
+      parameters: {
+        type: "object",
+        properties: {
+          targetId: { type: "string", description: "Optional target ID." },
+          targetName: { type: "string", description: "Optional target name such as Cat or Stage." },
+          costumeIndex: { type: "number", description: "Zero-based costume/backdrop index." },
+          costumeName: { type: "string", description: "Costume/backdrop name." },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "batchDeleteCostumes",
+      description: "Delete multiple costumes/backdrops from one target by zero-based indices and/or names. A target keeps at least one costume/backdrop.",
+      parameters: {
+        type: "object",
+        properties: {
+          targetId: { type: "string", description: "Optional target ID." },
+          targetName: { type: "string", description: "Optional target name such as Cat or Stage." },
+          costumeIndices: { type: "array", items: { type: "number" }, description: "Zero-based costume/backdrop indices to delete." },
+          costumeNames: { type: "array", items: { type: "string" }, description: "Costume/backdrop names to delete." },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "reorderCostume",
+      description: "Move a costume/backdrop to a new index within the target's ordered costume list.",
+      parameters: {
+        type: "object",
+        properties: {
+          targetId: { type: "string", description: "Optional target ID." },
+          targetName: { type: "string", description: "Optional target name such as Cat or Stage." },
+          costumeIndex: { type: "number", description: "Current zero-based costume/backdrop index." },
+          costumeName: { type: "string", description: "Current costume/backdrop name." },
+          newIndex: { type: "number", description: "New zero-based index to move the costume/backdrop to." },
+        },
+        required: ["newIndex"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "setCostumeOrder",
+      description: "Set the complete costume/backdrop order for a target in one call. Provide every costume exactly once by index or by name.",
+      parameters: {
+        type: "object",
+        properties: {
+          targetId: { type: "string", description: "Optional target ID." },
+          targetName: { type: "string", description: "Optional target name such as Cat or Stage." },
+          orderedCostumeIndices: { type: "array", items: { type: "number" }, description: "Full desired zero-based order, containing every current costume index exactly once." },
+          orderedCostumeNames: { type: "array", items: { type: "string" }, description: "Full desired order by costume/backdrop names." },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "deleteSprite",
+      description: "Delete a sprite target by ID or name. Cannot delete the stage.",
+      parameters: {
+        type: "object",
+        properties: {
+          targetId: { type: "string", description: "Optional target ID." },
+          targetName: { type: "string", description: "Optional sprite name." },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "getDiagnostics",
-      description: "Validate current virtual Scratch JS files and report parser/block diagnostics.",
+      description: "Validate current virtual Scratch JS and SVG costume files and report parser/block/SVG diagnostics.",
       parameters: {
         type: "object",
         properties: {
           path: {
             type: "string",
-            description: "Optional virtual path. If omitted, validates writable Scratch JS, SVG, and data JSON files.",
-          },
-          verbose: {
-            type: "boolean",
-            description:
-              "If true and path is omitted, include read-only legacy aggregate views/directories. Default focuses on writable scripts and editable SVG.",
+            description: "Optional virtual path. If omitted, validates all virtual Scratch JS and SVG costume files.",
           },
         },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "discardDraft",
-      description:
-        "Discard an invalid preserved draft for a /<target>/scripts/*.js file and restore the last synced virtual content. Does not change Scratch blocks.",
-      parameters: {
-        type: "object",
-        properties: {
-          path: {
-            type: "string",
-            description: "Virtual script file path, for example /stage/scripts/sound-play.js.",
-          },
-        },
-        required: ["path"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "getAllExtensions",
-      description:
-        "List installed Scratch extensions. If an extension provides aiAssistant guide data, the result includes guide metadata and guide tools. If an extension has dynamic argument blocks, the result includes a hint to read getScratchGuide({ topic: \"dynamic-blocks\" }).",
-      parameters: {
-        type: "object",
-        properties: {},
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "searchExtensions",
-      description:
-        'Precisely search approved Scratch extensions after reading getScratchGuide({ topic: "extension-index" }) or when the user gives a concrete extension keyword, name, or id. For broad questions about available extensions or feature feasibility, read getScratchGuide({ topic: "extension-index" }) first.',
-      parameters: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "Search keyword. Omit or leave empty to list approved extensions.",
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of results. Defaults to 10, maximum 50.",
-          },
-          includeDisabled: {
-            type: "boolean",
-            description: "Whether to include disabled/offline extensions in the search results. Defaults to false.",
-          },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "addExtension",
-      description:
-        "Add an approved Scratch extension to the current project by extension id. The extension id must come from searchExtensions or the approved extension index.",
-      parameters: {
-        type: "object",
-        properties: {
-          extensionId: {
-            type: "string",
-            description: "Approved extension id, for example moreDataTypes, GandiJoystick, or CCWAdvance.",
-          },
-        },
-        required: ["extensionId"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "getExtensionBlocks",
-      description:
-        "Get block details for one installed extension. If the extension provides aiAssistant guide data, the result includes its read-only guide content and tools. Dynamic argument blocks include dynamicArgsInfo and a hint to read getScratchGuide({ topic: \"dynamic-blocks\" }).",
-      parameters: {
-        type: "object",
-        properties: {
-          extensionId: {
-            type: "string",
-            description: "Extension id, with or without ext_ prefix.",
-          },
-        },
-        required: ["extensionId"],
       },
     },
   },

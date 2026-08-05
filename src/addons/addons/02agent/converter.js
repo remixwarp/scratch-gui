@@ -151,82 +151,6 @@ const AllBlockInfo = {
     "procedures_call_with_return": "调用自定义积木 [PROCEDURE] 并返回（PROCEDURE：string）",
 };
 
-const LIST_INDEX_INPUT_BLOCKS = new Set([
-    'data_deleteoflist',
-    'data_insertatlist',
-    'data_replaceitemoflist',
-    'data_itemoflist'
-]);
-
-export const CORE_MENU_SHADOWS = {
-    motion_pointtowards: {
-        TOWARDS: { opcode: 'motion_pointtowards_menu', fieldName: 'TOWARDS' }
-    },
-    motion_goto: {
-        TO: { opcode: 'motion_goto_menu', fieldName: 'TO' }
-    },
-    motion_glideto: {
-        TO: { opcode: 'motion_glideto_menu', fieldName: 'TO' }
-    },
-    looks_switchcostumeto: {
-        COSTUME: { opcode: 'looks_costume', fieldName: 'COSTUME' }
-    },
-    looks_switchbackdropto: {
-        BACKDROP: { opcode: 'looks_backdrops', fieldName: 'BACKDROP' }
-    },
-    looks_switchbackdroptoandwait: {
-        BACKDROP: { opcode: 'looks_backdrops', fieldName: 'BACKDROP' }
-    },
-    control_create_clone_of: {
-        CLONE_OPTION: { opcode: 'control_create_clone_of_menu', fieldName: 'CLONE_OPTION' }
-    },
-    event_whentouchingobject: {
-        TOUCHINGOBJECTMENU: { opcode: 'sensing_touchingobjectmenu', fieldName: 'TOUCHINGOBJECTMENU' }
-    },
-    sensing_touchingobject: {
-        TOUCHINGOBJECTMENU: { opcode: 'sensing_touchingobjectmenu', fieldName: 'TOUCHINGOBJECTMENU' }
-    },
-    sensing_distanceto: {
-        DISTANCETOMENU: { opcode: 'sensing_distancetomenu', fieldName: 'DISTANCETOMENU' }
-    },
-    sensing_keypressed: {
-        KEY_OPTION: { opcode: 'sensing_keyoptions', fieldName: 'KEY_OPTION' }
-    },
-    sensing_of: {
-        OBJECT: { opcode: 'sensing_of_object_menu', fieldName: 'OBJECT' }
-    }
-};
-
-export function getCoreMenuShadowInfo(opcode, inputName) {
-    const byInput = CORE_MENU_SHADOWS[String(opcode || '')];
-    const entry = byInput?.[String(inputName || '')];
-    if (!entry) return null;
-    return { inputName: String(inputName || ''), ...entry };
-}
-
-function isMathPrimitiveOpcode(opcode) {
-    return String(opcode || '').startsWith('math_');
-}
-
-const MATH_NUMBER_SHADOW_OPCODES = new Set([
-    'math_number',
-    'math_integer',
-    'math_whole_number',
-    'math_positive_number',
-    'math_angle'
-]);
-
-function isMathNumberShadowOpcode(opcode) {
-    return MATH_NUMBER_SHADOW_OPCODES.has(String(opcode || ''));
-}
-
-function isNumericValue(value) {
-    if (typeof value === 'number') return Number.isFinite(value);
-    if (typeof value !== 'string') return false;
-    const trimmed = value.trim();
-    return trimmed.length > 0 && Number.isFinite(Number(trimmed));
-}
-
 function getBlockInfo(opcode, rt) {
     const activeRuntime = rt || runtime;
 
@@ -264,20 +188,8 @@ export function callGetBlockInfo(opcode, rt) {
 function getExpectedShadowType(opcode, inputName, rt) {
     const menuInfo = getExpectedShadowInfo(opcode, inputName, rt);
     if (menuInfo) return menuInfo.opcode;
-    if (LIST_INDEX_INPUT_BLOCKS.has(String(opcode)) && inputName === 'INDEX') return 'math_integer';
-    let info = null;
-    try {
-        info = getBlockInfo(opcode, rt);
-    } catch (e) {
-        return 'text';
-    }
+    const info = getBlockInfo(opcode, rt);
     const argInfo = info?.inputs?.[inputName] || info?.fields?.[inputName];
-    if (!argInfo && isAllowedDynamicArgInput(info, inputName)) {
-        const dynamicType = getDynamicArgTypeForInput(info, inputName).toLowerCase();
-        if (dynamicType === 'n' || dynamicType === 'number') return 'math_number';
-        if (dynamicType === 'b' || dynamicType === 'boolean' || dynamicType === 'bool') return null;
-        return 'text';
-    }
     if (!info.found || !argInfo) return 'text';
 
     const t = String(argInfo.type).toLowerCase();
@@ -286,34 +198,12 @@ function getExpectedShadowType(opcode, inputName, rt) {
     return 'text';
 }
 
-function getShadowTypeForLiteral(opcode, inputName, value, rt) {
-    if (LIST_INDEX_INPUT_BLOCKS.has(String(opcode)) && inputName === 'INDEX') {
-        return isNumericValue(value) ? 'math_integer' : 'text';
-    }
-    return getExpectedShadowType(opcode, inputName, rt);
-}
-
 function getExpectedShadowInfo(opcode, inputName, rt) {
-    let info = null;
-    try {
-        info = getBlockInfo(opcode, rt);
-    } catch (e) {
-        return null;
-    }
-    const coreMenuInfo = getCoreMenuShadowInfo(opcode, inputName);
-    if (coreMenuInfo) return coreMenuInfo;
-    if (inputName === 'BROADCAST_OPTION' && (opcode === 'event_broadcast' || opcode === 'event_broadcastandwait')) {
-        return { opcode: 'event_broadcast_menu', inputName: 'BROADCAST_INPUT', fieldName: 'BROADCAST_OPTION' };
-    }
+    const info = getBlockInfo(opcode, rt);
     if (inputName === 'BROADCAST_INPUT' && (opcode === 'event_broadcast' || opcode === 'event_broadcastandwait')) {
-        return { opcode: 'event_broadcast_menu', inputName: 'BROADCAST_INPUT', fieldName: 'BROADCAST_OPTION' };
+        return { opcode: 'event_broadcast_menu', fieldName: 'BROADCAST_OPTION' };
     }
-    if (inputName === 'SOUND_MENU' && (opcode === 'sound_play' || opcode === 'sound_playuntildone')) {
-        return { opcode: 'sound_sounds_menu', fieldName: 'SOUND_MENU' };
-    }
-    const inputInfo = info?.inputs?.[inputName];
-    const fieldInfo = info?.fields?.[inputName];
-    const argInfo = inputInfo || (fieldInfo?.menuType === 'placeable' ? fieldInfo : null);
+    const argInfo = info?.inputs?.[inputName] || info?.fields?.[inputName];
     if (argInfo && argInfo.menu) {
         const activeRuntime = rt || runtime;
         const namespace = String(opcode).includes('_') ? String(opcode).split('_')[0] : '';
@@ -353,16 +243,8 @@ function getExpectedShadowInfo(opcode, inputName, rt) {
 
 function getMenuShadowFieldName(menuOpcode, inputName, menuName) {
     if (menuOpcode === 'event_broadcast_menu') return 'BROADCAST_OPTION';
-    if (menuOpcode === 'sound_sounds_menu') return 'SOUND_MENU';
     if (menuOpcode === 'pen_menu_colorParam') return 'colorParam';
     return inputName || menuName;
-}
-
-function isCoreMenuShadowOpcode(opcode) {
-    const value = String(opcode || '');
-    return Object.values(CORE_MENU_SHADOWS).some(byInput =>
-        Object.values(byInput).some(info => info?.opcode === value)
-    );
 }
 
 function isEventHatOpcode(opcode) {
@@ -370,22 +252,10 @@ function isEventHatOpcode(opcode) {
     return /^event_when/.test(normalized) || normalized === 'control_start_as_clone';
 }
 
-function buildOpcodeFromDslCall(namespace, method) {
-    const normalizedNamespace = String(namespace || '');
-    const normalizedMethod = String(method || '');
-    if (!normalizedNamespace) return normalizedMethod;
-    if (normalizedMethod.toLowerCase().startsWith(`${normalizedNamespace.toLowerCase()}_`)) {
-        return normalizedMethod;
-    }
-    return `${normalizedNamespace}_${normalizedMethod}`;
-}
-
 function normalizeDslArgKey(opcode, key) {
     const normalizedOpcode = String(opcode || '');
     const normalizedKey = String(key || '');
     const aliases = {
-        event_broadcast: { BROADCAST_OPTION: 'BROADCAST_INPUT' },
-        event_broadcastandwait: { BROADCAST_OPTION: 'BROADCAST_INPUT' },
         operator_add: { OPERAND1: 'NUM1', OPERAND2: 'NUM2', VALUE1: 'NUM1', VALUE2: 'NUM2' },
         operator_subtract: { OPERAND1: 'NUM1', OPERAND2: 'NUM2', VALUE1: 'NUM1', VALUE2: 'NUM2' },
         operator_multiply: { OPERAND1: 'NUM1', OPERAND2: 'NUM2', VALUE1: 'NUM1', VALUE2: 'NUM2' },
@@ -398,140 +268,6 @@ function normalizeDslArgKey(opcode, key) {
         operator_or: { CONDITION1: 'OPERAND1', CONDITION2: 'OPERAND2' },
     };
     return aliases[normalizedOpcode]?.[normalizedKey] || normalizedKey;
-}
-
-function isDynamicArgInputName(name) {
-    return /^DYNAMIC_ARGS[1-9]\d*$/.test(String(name || ''));
-}
-
-function getDynamicArgIndex(name) {
-    const match = String(name || '').match(/^DYNAMIC_ARGS([1-9]\d*)$/);
-    return match ? Number(match[1]) : 0;
-}
-
-function hasDynamicArgsInfo(blockInfo) {
-    return Boolean(blockInfo && blockInfo.dynamicArgsInfo);
-}
-
-function parseJsonArrayAttribute(value) {
-    if (Array.isArray(value)) return value;
-    if (typeof value !== 'string') return null;
-    try {
-        const parsed = JSON.parse(value);
-        return Array.isArray(parsed) ? parsed : null;
-    } catch {
-        return null;
-    }
-}
-
-function getDynamicArgTypeForInput(blockInfo, inputName) {
-    const idx = Math.max(0, getDynamicArgIndex(inputName) - 1);
-    const types = Array.isArray(blockInfo?.dynamicArgsInfo?.dynamicArgTypes)
-        ? blockInfo.dynamicArgsInfo.dynamicArgTypes.map(item => String(item || 's')).filter(Boolean)
-        : [];
-    if (types.length === 0) return 's';
-    if (types.length === 1) return types[0];
-    return types[idx] || types[0] || 's';
-}
-
-function isAllowedDynamicArgInput(blockInfo, inputName) {
-    return hasDynamicArgsInfo(blockInfo) && isDynamicArgInputName(inputName);
-}
-
-function normalizeMutationAttributeValue(value) {
-    if (value === undefined || value === null) return undefined;
-    if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
-        return JSON.stringify(value);
-    }
-    return String(value);
-}
-
-function setMutationAttribute(mutation, key, value) {
-    const normalized = normalizeMutationAttributeValue(value);
-    if (normalized !== undefined) mutation[key] = normalized;
-}
-
-function parseMutationAttributeForJs(value) {
-    if (typeof value !== 'string') return value;
-    const trimmed = value.trim();
-    if (!trimmed) return value;
-    if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
-        try {
-            return JSON.parse(trimmed);
-        } catch {
-            return value;
-        }
-    }
-    return value;
-}
-
-function getDynamicArgIdsFromMutation(mutation) {
-    if (!mutation) return [];
-    const sources = [
-        mutation.dynamicargids,
-        mutation.dynamicArgIds,
-        mutation.dynamicArgs
-    ];
-    for (const source of sources) {
-        const parsed = parseJsonArrayAttribute(source);
-        if (parsed) {
-            return parsed.map(String).filter(isDynamicArgInputName);
-        }
-    }
-    const count = Number(mutation.argnum ?? mutation.dynamicArgCount ?? mutation.dynamicargcount);
-    if (Number.isFinite(count) && count > 0) {
-        return Array.from({ length: Math.floor(count) }, (_, i) => `DYNAMIC_ARGS${i + 1}`);
-    }
-    return [];
-}
-
-function getDynamicArgTypesFromMutation(mutation) {
-    if (!mutation) return [];
-    const parsed = parseJsonArrayAttribute(mutation.dynamicargtypes || mutation.dynamicArgTypes);
-    return parsed ? parsed.map(item => String(item || 's')) : [];
-}
-
-function isDynamicArgMutationKey(key) {
-    return [
-        'dynamicargids',
-        'dynamicargtypes',
-        'dynamicArgIds',
-        'dynamicArgTypes',
-        'dynamicArgs',
-        'argnum',
-        'dynamicArgCount',
-        'dynamicargcount'
-    ].includes(String(key || ''));
-}
-
-function areDynamicArgTypesDefault(blockInfo, dynamicArgIds, dynamicArgTypes) {
-    if (!Array.isArray(dynamicArgIds) || !Array.isArray(dynamicArgTypes)) return true;
-    return dynamicArgIds.every((id, index) => String(dynamicArgTypes[index] || 's') === String(getDynamicArgTypeForInput(blockInfo, id) || 's'));
-}
-
-function ensureDynamicArgsMutation(block, blockInfo) {
-    if (!hasDynamicArgsInfo(blockInfo)) return;
-
-    const inputIds = Object.keys(block.inputs || {}).filter(isDynamicArgInputName);
-    const mutationIds = getDynamicArgIdsFromMutation(block.mutation);
-    const byName = new Set([...mutationIds, ...inputIds]);
-    if (byName.size === 0) return;
-
-    const dynamicArgIds = [...byName].sort((a, b) => getDynamicArgIndex(a) - getDynamicArgIndex(b));
-    const existingTypes = getDynamicArgTypesFromMutation(block.mutation);
-    const dynamicArgTypes = dynamicArgIds.map((id, index) => String(existingTypes[index] || getDynamicArgTypeForInput(blockInfo, id) || 's'));
-
-    if (!block.mutation) {
-        block.mutation = { tagName: "mutation", children: [] };
-    }
-    block.mutation.dynamicargids = JSON.stringify(dynamicArgIds);
-    block.mutation.dynamicargtypes = JSON.stringify(dynamicArgTypes);
-    delete block.mutation.dynamicArgs;
-    delete block.mutation.dynamicArgIds;
-    delete block.mutation.dynamicArgTypes;
-    delete block.mutation.argnum;
-    delete block.mutation.dynamicArgCount;
-    delete block.mutation.dynamicargcount;
 }
 
 // Generate a random Scratch-like ID
@@ -550,8 +286,8 @@ function generateId() {
 export function jsonToJs(jsonArray) {
     const options = arguments.length > 1 && arguments[1] && typeof arguments[1] === 'object' ? arguments[1] : {};
     const includeShadows = options.includeShadows === true;
-    const includePosition = options.includePosition === true;
     const includeBlockIds = options.includeBlockIds === true;
+    const includePosition = options.includePosition === true;
     const commentsByBlockId = options.commentsByBlockId || {};
     const blocks = {};
     jsonArray.forEach(b => blocks[b.id] = b);
@@ -578,37 +314,6 @@ export function jsonToJs(jsonArray) {
         } catch {
             return { opcode, found: false, fields: {}, inputs: {}, substacks: [], extensionId: null };
         }
-    }
-
-    function isInternalShadowOpcodeForJsonToJs(opcode) {
-        const normalized = String(opcode || '');
-        return (
-            normalized === 'text' ||
-            normalized === 'math_number' ||
-            normalized === 'math_integer' ||
-            normalized === 'math_whole_number' ||
-            normalized === 'math_positive_number' ||
-            normalized === 'math_angle' ||
-            normalized === 'colour_picker' ||
-            normalized.endsWith('_menu') ||
-            normalized.includes('_menu_') ||
-            normalized.endsWith('_dropdown')
-        );
-    }
-
-    function isExportableTopLevelBlockForJsonToJs(block) {
-        const opcode = String(block?.opcode || '');
-        if (!block?.topLevel || block?.parent || !opcode) return false;
-        if (block?.shadow) return false;
-        if (isInternalShadowOpcodeForJsonToJs(opcode)) return false;
-        if (
-            opcode === 'procedures_prototype' ||
-            opcode === 'argument_reporter_string_number' ||
-            opcode === 'argument_reporter_boolean'
-        ) {
-            return false;
-        }
-        return true;
     }
     function resolveVariableFieldValueForJs(fieldKey, fieldObj) {
         if (!fieldObj || !fieldObj.id) return fieldObj ? fieldObj.value : undefined;
@@ -683,22 +388,18 @@ export function jsonToJs(jsonArray) {
                 const innerCode = nextId ? parseStack(nextId, indent + '    ') : '';
                 if (block.opcode === 'procedures_definition') {
                     const blockCode = parseBlock(block, indent, true);
-                    const blockIdComment = includeBlockIds ? ` // blockId: ${block.id}` : '';
-                    code += indent + blockCode.substring(0, blockCode.length - 1) + `, () => {${blockIdComment}\n${innerCode}${indent}});\n`;
+                    code += indent + blockCode.substring(0, blockCode.length - 1) + `, () => {\n${innerCode}${indent}})${includeBlockIds ? ` // blockId: ${block.id}` : ''};\n`;
                 } else {
                     const blockCode = parseBlock(block, indent);
                     if (blockCode.endsWith('()')) {
-                        const blockIdComment = includeBlockIds ? ` // blockId: ${block.id}` : '';
-                        code += indent + blockCode.substring(0, blockCode.length - 1) + `() => {${blockIdComment}\n${innerCode}${indent}});\n`;
+                        code += indent + blockCode.substring(0, blockCode.length - 1) + `() => {\n${innerCode}${indent}})${includeBlockIds ? ` // blockId: ${block.id}` : ''};\n`;
                     } else {
-                        const blockIdComment = includeBlockIds ? ` // blockId: ${block.id}` : '';
-                        code += indent + blockCode.substring(0, blockCode.length - 1) + `, () => {${blockIdComment}\n${innerCode}${indent}});\n`;
+                        code += indent + blockCode.substring(0, blockCode.length - 1) + `, () => {\n${innerCode}${indent}})${includeBlockIds ? ` // blockId: ${block.id}` : ''};\n`;
                     }
                 }
                 break; // Stop iterating this stack level because the rest is inside the callback
             } else {
-                const blockIdComment = includeBlockIds ? ` // blockId: ${block.id}` : '';
-                code += indent + parseBlock(block, indent) + `;${blockIdComment}\n`;
+                code += indent + parseBlock(block, indent) + `${includeBlockIds ? ` // blockId: ${block.id}` : ''};\n`;
             }
             currentId = block.next;
         }
@@ -707,7 +408,7 @@ export function jsonToJs(jsonArray) {
 
     function parseBlock(block, indent, isEvent = false) {
         // Handle shadow/primitive blocks inline
-        if (isMathNumberShadowOpcode(block.opcode)) {
+        if (block.opcode === 'math_number') {
             const v = block.fields && block.fields.NUM ? block.fields.NUM.value : '';
             return (v !== undefined && v !== null && String(v).length > 0) ? String(v) : 0;
         }
@@ -732,7 +433,7 @@ export function jsonToJs(jsonArray) {
                 if (m.isglobal === "true") info.push("global");
                 if (m.isreporter === "true") info.push("reporter");
                 if (info.length) simplified.info = info;
-                
+
                 // The callback content (SUBSTACK equivalent for events) is handled by parseStack because it's a topLevel event wrapper
                 return `define(${JSON.stringify(simplified)})`;
             }
@@ -752,7 +453,7 @@ export function jsonToJs(jsonArray) {
         method = method.replace(/\./g, '$dot$').replace(/-/g, '$dash$');
 
         const args = [];
-        
+
         // 1. Fields
         for (const [key, fieldObj] of Object.entries(block.fields || {})) {
             const valStr = JSON.stringify(resolveVariableFieldValueForJs(key, fieldObj));
@@ -764,26 +465,18 @@ export function jsonToJs(jsonArray) {
             }
         }
 
-        const bInfo = safeGetBlockInfoForJsonToJs(block.opcode);
-        const dynamicInputKeys = hasDynamicArgsInfo(bInfo)
-            ? Object.keys(block.inputs || {}).filter(isDynamicArgInputName).sort((a, b) => getDynamicArgIndex(a) - getDynamicArgIndex(b))
-            : [];
-        const useDynamicArgsShorthand = dynamicInputKeys.length > 0;
-        const dynamicInputKeySet = new Set(useDynamicArgsShorthand ? dynamicInputKeys : []);
-
         // 2. Mutation
         let customBlockArgIds = [];
         if (block.mutation) {
             const m = block.mutation;
             // Filter out default values to simplify
-            const simplified = {};
+            const simplified = { proccode: m.proccode };
             // DO NOT export argumentids to JS, but keep them for reference when parsing inputs
             if (m.argumentids && m.argumentids !== "[]") {
                 try {
                     customBlockArgIds = JSON.parse(m.argumentids);
                 } catch (e) {}
             }
-            if (m.proccode !== undefined) simplified.proccode = m.proccode;
             if (m.argumentnames && m.argumentnames !== "[]") {
                 try {
                     simplified.argumentnames = JSON.parse(m.argumentnames);
@@ -803,29 +496,7 @@ export function jsonToJs(jsonArray) {
             if (m.isglobal && m.isglobal !== "false") simplified.isglobal = m.isglobal;
             if (m.type) simplified.type = m.type;
 
-            const handledMutationKeys = new Set([
-                'tagName',
-                'children',
-                'proccode',
-                'argumentids',
-                'argumentnames',
-                'argumentdefaults',
-                'warp',
-                'isreporter',
-                'isglobal',
-                'targetid',
-                'type'
-            ]);
-            for (const [key, value] of Object.entries(m)) {
-                if (handledMutationKeys.has(key)) continue;
-                if (useDynamicArgsShorthand && isDynamicArgMutationKey(key)) continue;
-                if (value === undefined || value === null || value === "") continue;
-                simplified[key] = parseMutationAttributeForJs(value);
-            }
-            
-            if (Object.keys(simplified).length > 0) {
-                args.push(`$mutation: ${JSON.stringify(simplified)}`);
-            }
+            args.push(`$mutation: ${JSON.stringify(simplified)}`);
         }
 
         // 3. TopLevel Coordinates (x, y)
@@ -838,12 +509,12 @@ export function jsonToJs(jsonArray) {
 
         // 4. Inputs
         const inputArgs = [];
-        const dynamicArgValues = [];
         const customArgs = []; // Array for procedures_call positional arguments
+        const bInfo = safeGetBlockInfoForJsonToJs(block.opcode);
 
         for (const [key, inputObj] of Object.entries(block.inputs || {})) {
             if (!inputObj.block) continue;
-            
+
             // Substack (C-blocks) -> arrow function
             if (key.startsWith('SUBSTACK')) {
                 const innerCode = parseStack(inputObj.block, indent + '    ');
@@ -853,7 +524,6 @@ export function jsonToJs(jsonArray) {
                 if (innerBlock) {
                     const fieldSpec = bInfo ? ((bInfo.fields && bInfo.fields[key]) || (bInfo.inputs && bInfo.inputs[key])) : null;
                     const menuType = fieldSpec && fieldSpec.menuType ? String(fieldSpec.menuType) : null;
-                    const expectedMenuInfo = getExpectedShadowInfo(block.opcode, key, runtime);
                     const hasAnyRealInput = innerBlock.inputs && Object.values(innerBlock.inputs).some(v => v && v.block);
                     const menuField = innerBlock.fields && (innerBlock.fields[key] || Object.values(innerBlock.fields)[0]);
                     const looksLikeMenu =
@@ -861,20 +531,11 @@ export function jsonToJs(jsonArray) {
                         innerBlock.fields &&
                         menuField &&
                         !hasAnyRealInput &&
-                        ((expectedMenuInfo && innerBlock.opcode === expectedMenuInfo.opcode) ||
-                            String(innerBlock.opcode).endsWith('_menu') ||
-                            String(innerBlock.opcode).includes('menu') ||
-                            String(innerBlock.opcode).endsWith('options'));
-                    const shouldKeepInput = LIST_INDEX_INPUT_BLOCKS.has(String(block.opcode)) && key === 'INDEX';
-                    const shouldCompressToField =
-                        !shouldKeepInput &&
-                        (expectedMenuInfo || (fieldSpec && (fieldSpec.menu || menuType === 'placeable'))) &&
-                        looksLikeMenu &&
-                        (!expectedMenuInfo || innerBlock.opcode === expectedMenuInfo.opcode);
+                        (String(innerBlock.opcode).endsWith('_menu') || String(innerBlock.opcode).includes('menu') || String(innerBlock.opcode).endsWith('options'));
+                    const shouldCompressToField = fieldSpec && (fieldSpec.menu || menuType === 'placeable') && looksLikeMenu;
                     if (shouldCompressToField) {
-                        const menuValue = menuField.value;
-                        const valStr = JSON.stringify(menuValue);
-                        const finalKey = expectedMenuInfo ? `$field_${expectedMenuInfo.fieldName || key}` : `$field_${key}`;
+                        const valStr = JSON.stringify(menuField.value);
+                        const finalKey = key === 'BROADCAST_INPUT' ? key : `$field_${key}`;
                         if (/^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(finalKey)) {
                             inputArgs.push(`${finalKey}: ${valStr}`);
                         } else {
@@ -883,13 +544,11 @@ export function jsonToJs(jsonArray) {
                         continue;
                     }
                     const val = parseBlock(innerBlock, indent);
-                    
+
                     // Check if this input is actually a custom block argument
                     const argIndex = customBlockArgIds.indexOf(key);
                     if (argIndex !== -1) {
                         customArgs[argIndex] = val;
-                    } else if (dynamicInputKeySet.has(key)) {
-                        dynamicArgValues[getDynamicArgIndex(key) - 1] = val;
                     } else {
                         // Regular input
                         if (/^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(key)) {
@@ -914,21 +573,6 @@ export function jsonToJs(jsonArray) {
             }
         }
 
-        if (dynamicArgValues.length > 0) {
-            for (let i = 0; i < dynamicArgValues.length; i++) {
-                if (dynamicArgValues[i] === undefined) dynamicArgValues[i] = 'null';
-            }
-            inputArgs.push(`$dynamicArgs: [${dynamicArgValues.join(', ')}]`);
-
-            const mutationIds = getDynamicArgIdsFromMutation(block.mutation);
-            const dynamicArgIds = mutationIds.length > 0 ? mutationIds : dynamicInputKeys;
-            const mutationTypes = getDynamicArgTypesFromMutation(block.mutation);
-            const dynamicArgTypes = dynamicArgIds.map((id, index) => String(mutationTypes[index] || getDynamicArgTypeForInput(bInfo, id) || 's'));
-            if (!areDynamicArgTypesDefault(bInfo, dynamicArgIds, dynamicArgTypes)) {
-                inputArgs.push(`$dynamicArgTypes: ${JSON.stringify(dynamicArgTypes)}`);
-            }
-        }
-
         // Add custom block positional arguments as an array if they exist
         if (customArgs.length > 0) {
             // Fill empty slots with null just in case
@@ -949,7 +593,7 @@ export function jsonToJs(jsonArray) {
         return isEvent ? `${namespace}.${method}` : `${namespace}.${method}(${argStr})`;
     }
 
-    const topLevels = jsonArray.filter(isExportableTopLevelBlockForJsonToJs);
+    const topLevels = jsonArray.filter(b => b.topLevel);
     for (const top of topLevels) {
         jsCode += parseStack(top.id, '') + '\n';
     }
@@ -966,22 +610,11 @@ export function jsToJson(jsCode) {
     const parsedComments = [];
     const ast = acorn.parse(jsCode, { ecmaVersion: 2020, locations: true, onComment: parsedComments });
     const blocks = [];
-    const blocksById = new Map();
     let topLevelIndex = 0;
     const procArgIdsByProccode = new Map();
     const procArgTypesByProccode = new Map();
     const scratchIdChars = '!#%()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
     const fieldIdByTypeAndName = new Map();
-
-    function pushBlock(block) {
-        blocks.push(block);
-        if (block && block.id) blocksById.set(block.id, block);
-        return block;
-    }
-
-    function getParsedBlockById(id) {
-        return blocksById.get(id) || null;
-    }
 
     function decodeIdFromJs(b64url) {
         if (typeof b64url !== 'string') return null;
@@ -1046,31 +679,6 @@ export function jsToJson(jsCode) {
         const id = stableScratchId(key);
         fieldIdByTypeAndName.set(key, id);
         return id;
-    }
-
-    function createMenuShadowBlock(id, opcode, fieldName, value, parentId, options = {}) {
-        const field = {
-            name: fieldName,
-            value: String(value ?? '')
-        };
-        if (options.variableType) {
-            field.variableType = options.variableType;
-            field.id = options.id || randomFieldId(options.variableType, field.value);
-        }
-
-        return {
-            id,
-            opcode,
-            inputs: {},
-            fields: { [fieldName]: field },
-            next: null,
-            topLevel: false,
-            parent: parentId,
-            shadow: true,
-            hidden: false,
-            locked: false,
-            collapsed: false
-        };
     }
 
     function unescapeDefineProccode(s) {
@@ -1256,7 +864,7 @@ export function jsToJson(jsCode) {
             const val = evaluateLiteral(node);
             const shadowId = generateId();
             const isNumber = typeof val === 'number';
-            pushBlock({
+            blocks.push({
                 id: shadowId,
                 opcode: isNumber ? 'math_number' : 'text',
                 inputs: {},
@@ -1275,7 +883,7 @@ export function jsToJson(jsCode) {
         }
         if (node.type === 'CallExpression' || node.type === 'MemberExpression') {
             const shadowFirstId = parseBlockStatement([{ type: 'ExpressionStatement', expression: node }], parentId, false);
-            const shadowBlock = getParsedBlockById(shadowFirstId);
+            const shadowBlock = blocks.find(b => b.id === shadowFirstId);
             if (shadowBlock) shadowBlock.shadow = true;
             return shadowFirstId;
         }
@@ -1307,32 +915,20 @@ export function jsToJson(jsCode) {
         }
 
         const menuId = generateId();
-        pushBlock(createMenuShadowBlock(menuId, menuInfo.opcode, menuInfo.fieldName, value, block.id));
+        blocks.push({
+            id: menuId,
+            opcode: menuInfo.opcode,
+            inputs: {},
+            fields: { [menuInfo.fieldName]: { name: menuInfo.fieldName, value: String(value ?? '') } },
+            next: null,
+            topLevel: false,
+            parent: block.id,
+            shadow: true,
+            hidden: false,
+            locked: false,
+            collapsed: false
+        });
         block.inputs[fieldName] = { name: fieldName, block: menuId, shadow: menuId };
-    }
-
-    function addExpectedMenuInput(block, fieldName, value, options = {}) {
-        const blockInfo = getBlockInfo(block.opcode, activeRuntime);
-        const fieldSpec = blockInfo?.fields?.[fieldName];
-        const inputSpec = blockInfo?.inputs?.[fieldName];
-        if (fieldSpec && !inputSpec && fieldSpec.menuType !== 'placeable' && !getCoreMenuShadowInfo(block.opcode, fieldName)) {
-            return false;
-        }
-
-        const menuInfo = getExpectedShadowInfo(block.opcode, fieldName, activeRuntime);
-        if (!menuInfo?.opcode) return false;
-        if (fieldSpec && !inputSpec && fieldSpec.menuType !== 'placeable' && !getCoreMenuShadowInfo(block.opcode, fieldName)) {
-            return false;
-        }
-        const menuId = generateId();
-        const fieldValue = String(value ?? '');
-        const inputName = menuInfo.inputName || fieldName;
-
-        pushBlock(createMenuShadowBlock(menuId, menuInfo.opcode, menuInfo.fieldName, fieldValue, block.id, options));
-        block.inputs[inputName] = { name: inputName, block: menuId, shadow: menuId };
-        delete block.fields[fieldName];
-        if (inputName !== fieldName) delete block.fields[inputName];
-        return true;
     }
 
     function addMissingMenuDefaults(block, blockInfo) {
@@ -1387,10 +983,10 @@ export function jsToJson(jsCode) {
             const leadingCommentText = getLeadingCommentText(stmt);
 
             if (!firstId) firstId = blockId;
-            
+
             // Link previous block to current block
             if (linkStatements && prevId) {
-                const prevBlock = getParsedBlockById(prevId);
+                const prevBlock = blocks.find(b => b.id === prevId);
                 if (prevBlock) prevBlock.next = blockId;
             }
 
@@ -1428,7 +1024,7 @@ export function jsToJson(jsCode) {
                     // Restore original dots and dashes
                     namespace = namespace.replace(/\$dot\$/g, '.').replace(/\$dash\$/g, '-');
                     method = method.replace(/\$dot\$/g, '.').replace(/\$dash\$/g, '-');
-                    block.opcode = buildOpcodeFromDslCall(namespace, method);
+                    block.opcode = `${namespace}_${method}`;
                 } else {
                     let method = fullPath.replace(/\$dot\$/g, '.').replace(/\$dash\$/g, '-');
                     block.opcode = method;
@@ -1436,7 +1032,7 @@ export function jsToJson(jsCode) {
             } else if (expr.callee.type === 'Identifier') {
                 block.opcode = expr.callee.name.replace(/\$dot\$/g, '.').replace(/\$dash\$/g, '-');
             }
-            
+
             let blockInfo = null;
             try {
                 blockInfo = getBlockInfo(block.opcode, activeRuntime);
@@ -1464,7 +1060,7 @@ export function jsToJson(jsCode) {
                 if (expr.arguments[0].type === 'ObjectExpression') {
                     argsObject = expr.arguments[0];
                 }
-                
+
                 // Check if it's an event wrapper or definition wrapper with a callback
                 if ((isEventHatOpcode(block.opcode) || block.opcode === 'define') && callbackNode) {
                     hasCallback = true;
@@ -1474,7 +1070,7 @@ export function jsToJson(jsCode) {
                     block.next = subFirstId;
                 }
             }
-            
+
             if (!hasCallback && isEventHatOpcode(block.opcode) && argsObject) {
                 for (const prop of argsObject.properties) {
                     const key = prop.key.name || prop.key.value;
@@ -1527,7 +1123,7 @@ export function jsToJson(jsCode) {
                         targetid: "null"
                     }
                 };
-                
+
                 if (argsObject) {
                     let customArgsArray = null;
                     let infoArray = null;
@@ -1589,7 +1185,7 @@ export function jsToJson(jsCode) {
                             const argNode = customArgsArray.elements[i];
                             const argId = argIds[i];
                             if (!argNode) continue;
-                            
+
                             if (argNode.type === 'CallExpression' || argNode.type === 'MemberExpression') {
                                 const subBlockId = parseBlockStatement([{ type: 'ExpressionStatement', expression: argNode }], protoId, false);
                                 protoBlock.inputs[argId] = {
@@ -1597,7 +1193,7 @@ export function jsToJson(jsCode) {
                                     block: subBlockId,
                                     shadow: subBlockId
                                 };
-                                const innerBlock = getParsedBlockById(subBlockId);
+                                const innerBlock = blocks.find(b => b.id === subBlockId);
                                 if (innerBlock) innerBlock.shadow = true;
                             }
                         }
@@ -1618,7 +1214,7 @@ export function jsToJson(jsCode) {
                             const argId = argIds[i];
                             const reporterId = generateId();
                             const reporterOpcode = t === 'b' ? 'argument_reporter_boolean' : 'argument_reporter_string_number';
-                            pushBlock({
+                            blocks.push({
                                 id: reporterId,
                                 opcode: reporterOpcode,
                                 inputs: {},
@@ -1639,9 +1235,9 @@ export function jsToJson(jsCode) {
                         }
                     }
                 }
-                
-                pushBlock(protoBlock);
-                pushBlock(block);
+
+                blocks.push(protoBlock);
+                blocks.push(block);
                 prevId = linkStatements ? blockId : null;
                 continue; // Skip the rest of the generic parsing for 'define'
             }
@@ -1651,7 +1247,7 @@ export function jsToJson(jsCode) {
                     const rawKey = String(prop.key.name || prop.key.value);
                     const key = rawKey.startsWith('$') ? rawKey : normalizeDslArgKey(block.opcode, rawKey);
                     const valNode = prop.value;
-                    
+
                     if (eventBodyKey !== null && key === eventBodyKey && valNode && valNode.type === 'ArrowFunctionExpression') {
                         continue;
                     }
@@ -1661,7 +1257,7 @@ export function jsToJson(jsCode) {
                         pendingShadows[normalizeDslArgKey(block.opcode, shadowKey)] = valNode;
                         continue;
                     }
-                    
+
                     if (!key.startsWith('$') && valNode && valNode.type === 'ArrowFunctionExpression') {
                         const targetKey = key;
                         if (allowedSubstacks.length > 0 && !allowedSubstacks.includes(targetKey)) {
@@ -1707,28 +1303,14 @@ export function jsToJson(jsCode) {
                         const explicitId = (literalValueOrObj && typeof literalValueOrObj === 'object' && !Array.isArray(literalValueOrObj))
                             ? (literalValueOrObj.id_b64 ? decodeIdFromJs(literalValueOrObj.id_b64) : (literalValueOrObj.id || null))
                             : null;
-                        
-                        const fieldSpec = blockInfo && blockInfo.fields ? blockInfo.fields[actualKey] : null;
-                        let vType = null;
-                        if (fieldSpec && fieldSpec.type === 'list') vType = 'list';
-                        else if (fieldSpec && fieldSpec.type === 'broadcast') vType = 'broadcast_msg';
-                        else if (fieldSpec && fieldSpec.type === 'variable') vType = '';
-                        else if (actualKey === 'BROADCAST_OPTION') vType = 'broadcast_msg';
-                        if (explicitVarType !== undefined) vType = explicitVarType;
 
-                        if (addExpectedMenuInput(block, actualKey, literalValue, { variableType: vType, id: explicitId })) {
-                            continue;
-                        }
-                        const aliasedMenuInfo = getExpectedShadowInfo(block.opcode, actualKey, activeRuntime);
-                        if (aliasedMenuInfo?.inputName && addExpectedMenuInput(block, aliasedMenuInfo.inputName, literalValue, { variableType: vType, id: explicitId })) {
-                            continue;
-                        }
+                        const fieldSpec = blockInfo && blockInfo.fields ? blockInfo.fields[actualKey] : null;
                         if (fieldSpec && fieldSpec.menuType === 'placeable' && (typeof literalValue === 'string' || typeof literalValue === 'number')) {
                             const menuInfo = getExpectedShadowInfo(block.opcode, actualKey, activeRuntime);
                             const menuOpcode = menuInfo?.opcode || `${block.opcode}_menu`;
                             const menuFieldName = menuInfo?.fieldName || actualKey;
                             const menuId = generateId();
-                            pushBlock({
+                            blocks.push({
                                 id: menuId,
                                 opcode: menuOpcode,
                                 inputs: {},
@@ -1745,11 +1327,18 @@ export function jsToJson(jsCode) {
                             continue;
                         }
 
+                        let vType = null;
+                        if (fieldSpec && fieldSpec.type === 'list') vType = 'list';
+                        else if (fieldSpec && fieldSpec.type === 'broadcast') vType = 'broadcast_msg';
+                        else if (fieldSpec && fieldSpec.type === 'variable') vType = '';
+                        else if (actualKey === 'BROADCAST_OPTION') vType = 'broadcast_msg';
+                        if (explicitVarType !== undefined) vType = explicitVarType;
+
                         block.fields[actualKey] = {
                             name: actualKey,
                             value: literalValue
                         };
-                        
+
                         if (vType !== null) { // Note: vType can be empty string now
                             block.fields[actualKey].variableType = vType;
                             if (explicitId) {
@@ -1758,7 +1347,7 @@ export function jsToJson(jsCode) {
                                 block.fields[actualKey].id = randomFieldId(vType, literalValue);
                             }
                         }
-                    } 
+                    }
                     else if (!key.startsWith('$') && allowedFieldNames.has(key) && valNode && valNode.type === 'Literal') {
                         const actualKey = key;
                         const literalValue = valNode.value;
@@ -1799,131 +1388,6 @@ export function jsToJson(jsCode) {
                                 type: m.type || undefined
                             };
                             if (!block.mutation.type) delete block.mutation.type;
-
-                            const handledMutationKeys = new Set([
-                                'tagName',
-                                'children',
-                                'proccode',
-                                'argumentids',
-                                'argumentnames',
-                                'argumentdefaults',
-                                'warp',
-                                'isreporter',
-                                'isglobal',
-                                'targetid',
-                                'type'
-                            ]);
-                            for (const [mutationKey, mutationValue] of Object.entries(m || {})) {
-                                if (handledMutationKeys.has(mutationKey)) continue;
-                                setMutationAttribute(block.mutation, mutationKey, mutationValue);
-                            }
-                        }
-                    } 
-                    // 2.3. Dynamic extension block positional inputs ($dynamicArgs)
-                    else if (key === '$dynamicArgs') {
-                        if (!hasDynamicArgsInfo(blockInfo)) {
-                            throw new Error(JSON.stringify({
-                                error: 'invalid_dynamic_args',
-                                opcode: block.opcode,
-                                blockId,
-                                message: '$dynamicArgs is only valid for blocks whose blockInfo has dynamicArgsInfo.',
-                                blockInfo
-                            }));
-                        }
-                        if (!valNode || valNode.type !== 'ArrayExpression') {
-                            throw new Error(JSON.stringify({
-                                error: 'invalid_dynamic_args',
-                                opcode: block.opcode,
-                                blockId,
-                                message: '$dynamicArgs must be an array.',
-                                blockInfo
-                            }));
-                        }
-
-                        for (let i = 0; i < valNode.elements.length; i++) {
-                            const argNode = valNode.elements[i];
-                            if (!argNode) continue;
-                            const inputKey = `DYNAMIC_ARGS${i + 1}`;
-
-                            if (argNode.type === 'Literal' || (argNode.type === 'UnaryExpression' && argNode.operator === '-')) {
-                                const val = evaluateLiteral(argNode);
-                                const shadowId = generateId();
-                                const v = val === null || val === undefined ? "" : String(val);
-                                const expectedType = getShadowTypeForLiteral(block.opcode, inputKey, v, activeRuntime);
-                                if (expectedType === null) {
-                                    throw new Error(JSON.stringify({
-                                        error: 'invalid_boolean_literal',
-                                        opcode: block.opcode,
-                                        blockId,
-                                        inputKey,
-                                        value: val,
-                                        blockInfo
-                                    }));
-                                }
-                                const isNumber = isMathPrimitiveOpcode(expectedType);
-                                pushBlock({
-                                    id: shadowId,
-                                    opcode: isNumber ? expectedType : 'text',
-                                    inputs: {},
-                                    fields: isNumber
-                                        ? { NUM: { name: 'NUM', value: v } }
-                                        : { TEXT: { name: 'TEXT', value: v } },
-                                    next: null,
-                                    topLevel: false,
-                                    parent: blockId,
-                                    shadow: true,
-                                    hidden: false,
-                                    locked: false,
-                                    collapsed: false
-                                });
-                                block.inputs[inputKey] = {
-                                    name: inputKey,
-                                    block: shadowId,
-                                    shadow: shadowId
-                                };
-                            } else if (argNode.type === 'CallExpression' || argNode.type === 'MemberExpression') {
-                                const subBlockId = parseBlockStatement([{ type: 'ExpressionStatement', expression: argNode }], blockId, false);
-                                let shadowId = null;
-                                const innerBlock = getParsedBlockById(subBlockId);
-                                const shadowLike = innerBlock && (innerBlock.opcode === 'text' || innerBlock.opcode.startsWith('math_') || innerBlock.opcode === 'event_broadcast_menu' || isCoreMenuShadowOpcode(innerBlock.opcode));
-                                if (shadowLike) {
-                                    innerBlock.shadow = true;
-                                    shadowId = subBlockId;
-                                } else {
-                                    const expectedType = getExpectedShadowType(block.opcode, inputKey, activeRuntime);
-                                    if (expectedType) {
-                                        shadowId = generateId();
-                                        pushBlock({
-                                            id: shadowId,
-                                            opcode: expectedType,
-                                            inputs: {},
-                                            fields: isMathPrimitiveOpcode(expectedType)
-                                                ? { NUM: { name: 'NUM', value: "" } }
-                                                : { TEXT: { name: 'TEXT', value: "" } },
-                                            next: null,
-                                            topLevel: false,
-                                            parent: blockId,
-                                            shadow: true,
-                                            hidden: false,
-                                            locked: false,
-                                            collapsed: false
-                                        });
-                                    }
-                                }
-                                block.inputs[inputKey] = {
-                                    name: inputKey,
-                                    block: subBlockId,
-                                    shadow: shadowId
-                                };
-                            }
-                        }
-                    }
-                    // 2.4. Optional dynamic extension input type overrides ($dynamicArgTypes)
-                    else if (key === '$dynamicArgTypes') {
-                        const typeValues = evaluateLiteral(valNode);
-                        if (Array.isArray(typeValues)) {
-                            if (!block.mutation) block.mutation = { tagName: "mutation", children: [] };
-                            block.mutation.dynamicargtypes = JSON.stringify(typeValues.map(item => String(item || 's')));
                         }
                     }
                     // 2.5. Custom Block Positional Arguments ($args)
@@ -1940,12 +1404,12 @@ export function jsToJson(jsCode) {
                             if (argIds.length === 0 && block.mutation && block.mutation.argumentids && block.mutation.argumentids !== "[]") {
                                 try { argIds = JSON.parse(block.mutation.argumentids); } catch (e) {}
                             }
-                            
+
                             // Ensure we have enough IDs
                             while (argIds.length < argsArray.length) {
                                 argIds.push("arg_" + generateId().substring(0, 10));
                             }
-                            
+
                             // Update mutation
                             if (!block.mutation) {
                                 block.mutation = { tagName: "mutation", children: [], proccode: "", argumentids: "[]", warp: "false", isreporter: "false", isglobal: "false", targetid: "null" };
@@ -1959,11 +1423,11 @@ export function jsToJson(jsCode) {
                             for (let i = 0; i < argsArray.length; i++) {
                                 const argVal = argsArray[i];
                                 const argId = argIds[i];
-                                
+
                                 // We need the AST node for this argument, which we can find in the ObjectExpression
                                 const argNode = valNode.elements[i];
                                  if (!argNode) continue;
- 
+
                                  if (argNode.type === 'Literal' || (argNode.type === 'UnaryExpression' && argNode.operator === '-')) {
                                      const val = evaluateLiteral(argNode);
                                      const shadowId = generateId();
@@ -1972,7 +1436,7 @@ export function jsToJson(jsCode) {
                                          id: shadowId,
                                          opcode: isNumber ? 'math_number' : 'text',
                                          inputs: {},
-                                         fields: isNumber 
+                                         fields: isNumber
                                              ? { NUM: { name: 'NUM', value: String(val) } }
                                              : { TEXT: { name: 'TEXT', value: String(val) } },
                                          next: null,
@@ -1983,8 +1447,8 @@ export function jsToJson(jsCode) {
                                          locked: false,
                                          collapsed: false
                                      };
-                                      pushBlock(shadowBlock);
-                                     
+                                     blocks.push(shadowBlock);
+
                                      // For prototypes, literal arguments are shadows of themselves
                                      block.inputs[argId] = {
                                          name: argId,
@@ -1994,7 +1458,7 @@ export function jsToJson(jsCode) {
                                  } else if (argNode.type === 'CallExpression' || argNode.type === 'MemberExpression') {
                                      // Treat like a nested block
                                      const subBlockId = parseBlockStatement([{ type: 'ExpressionStatement', expression: argNode }], blockId, false);
-                                     
+
                                      // ALWAYS generate a default shadow block so the input field doesn't disappear when the nested block is removed
                                      let expectedType = 'text';
                                      if (block.opcode === 'procedures_call' && proccode) {
@@ -2005,15 +1469,15 @@ export function jsToJson(jsCode) {
                                              else if (t === 'b') expectedType = null;
                                          }
                                      }
-                                     
+
                                      let shadowId = null;
                                      if (expectedType) {
                                          shadowId = generateId();
-                                          pushBlock({
+                                         blocks.push({
                                              id: shadowId,
                                              opcode: expectedType,
                                              inputs: {},
-                                             fields: isMathPrimitiveOpcode(expectedType)
+                                             fields: expectedType === 'math_number'
                                                  ? { NUM: { name: 'NUM', value: "" } }
                                                  : { TEXT: { name: 'TEXT', value: "" } },
                                              next: null,
@@ -2040,7 +1504,7 @@ export function jsToJson(jsCode) {
                         const coords = evaluateLiteral(valNode);
                         if (coords.x !== undefined) block.x = coords.x;
                         if (coords.y !== undefined) block.y = coords.y;
-                    } 
+                    }
                     // 3. Inputs (Substack)
                     else if (valNode.type === 'ArrowFunctionExpression') {
                         const subStatements = valNode.body.type === 'BlockStatement' ? valNode.body.body : [ { type: 'ExpressionStatement', expression: valNode.body } ];
@@ -2050,14 +1514,14 @@ export function jsToJson(jsCode) {
                             block: subFirstId,
                             shadow: null
                         };
-                    } 
+                    }
                     // 4. Inputs (Primitive -> Shadow Block)
                     else if (valNode.type === 'Literal' || (valNode.type === 'UnaryExpression' && valNode.operator === '-')) {
                         const val = evaluateLiteral(valNode);
                         const shadowId = generateId();
                         const expectedShadowInfo = getExpectedShadowInfo(block.opcode, key, activeRuntime);
+                        const expectedType = getExpectedShadowType(block.opcode, key, activeRuntime);
                         const v = val === null || val === undefined ? "" : String(val);
-                        const expectedType = getShadowTypeForLiteral(block.opcode, key, v, activeRuntime);
                         if (expectedType === null) {
                             throw new Error(JSON.stringify({
                                 error: 'invalid_boolean_literal',
@@ -2067,15 +1531,49 @@ export function jsToJson(jsCode) {
                                 value: val,
                                 blockInfo
                             }));
-                        } else if (expectedShadowInfo?.opcode) {
-                            const menuFieldName = expectedShadowInfo?.fieldName || key;
-                            const variableType = expectedType === 'event_broadcast_menu' ? 'broadcast_msg' : undefined;
-                            pushBlock(createMenuShadowBlock(shadowId, expectedType, menuFieldName, v, blockId, { variableType }));
-                        } else {
-                            const isNumber = isMathPrimitiveOpcode(expectedType);
-                            pushBlock({
+                        } else if (expectedType === 'event_broadcast_menu') {
+                            blocks.push({
                                 id: shadowId,
-                                opcode: isNumber ? expectedType : 'text',
+                                opcode: 'event_broadcast_menu',
+                                inputs: {},
+                                fields: {
+                                    BROADCAST_OPTION: {
+                                        name: 'BROADCAST_OPTION',
+                                        value: v,
+                                        variableType: 'broadcast_msg',
+                                        id: randomFieldId('broadcast_msg', v)
+                                    }
+                                },
+                                next: null,
+                                topLevel: false,
+                                parent: blockId,
+                                shadow: true,
+                                hidden: false,
+                                locked: false,
+                                collapsed: false
+                            });
+                        } else if (expectedType && expectedType.endsWith('_menu')) {
+                            const menuFieldName = expectedShadowInfo?.fieldName || key;
+                            blocks.push({
+                                id: shadowId,
+                                opcode: expectedType,
+                                inputs: {},
+                                fields: {
+                                    [menuFieldName]: { name: menuFieldName, value: v }
+                                },
+                                next: null,
+                                topLevel: false,
+                                parent: blockId,
+                                shadow: true,
+                                hidden: false,
+                                locked: false,
+                                collapsed: false
+                            });
+                        } else {
+                            const isNumber = expectedType === 'math_number';
+                            blocks.push({
+                                id: shadowId,
+                                opcode: isNumber ? 'math_number' : 'text',
                                 inputs: {},
                                 fields: isNumber
                                     ? { NUM: { name: 'NUM', value: v } }
@@ -2094,18 +1592,18 @@ export function jsToJson(jsCode) {
                             block: shadowId,
                             shadow: shadowId
                         };
-                    } 
+                    }
                     // 5. Inputs (Nested Block)
                     else if (valNode.type === 'CallExpression' || valNode.type === 'MemberExpression') {
                         const subBlockId = parseBlockStatement([{ type: 'ExpressionStatement', expression: valNode }], blockId, false);
-                        
+
                         let shadowId = null;
                         if (pendingShadows[key]) {
                             shadowId = createShadowFromNode(pendingShadows[key], blockId);
                             delete pendingShadows[key];
                         } else {
-                            const innerBlock = getParsedBlockById(subBlockId);
-                            const shadowLike = innerBlock && (innerBlock.opcode === 'text' || innerBlock.opcode.startsWith('math_') || innerBlock.opcode === 'event_broadcast_menu' || isCoreMenuShadowOpcode(innerBlock.opcode));
+                            const innerBlock = blocks.find(b => b.id === subBlockId);
+                            const shadowLike = innerBlock && (innerBlock.opcode === 'text' || innerBlock.opcode.startsWith('math_') || innerBlock.opcode === 'looks_costume' || innerBlock.opcode === 'event_broadcast_menu');
                             if (shadowLike) {
                                 innerBlock.shadow = true;
                                 shadowId = subBlockId;
@@ -2114,16 +1612,50 @@ export function jsToJson(jsCode) {
                                 const expectedType = getExpectedShadowType(block.opcode, key, activeRuntime);
                                 if (expectedType) {
                                     shadowId = generateId();
-                                    if (expectedShadowInfo?.opcode) {
-                                        const menuFieldName = expectedShadowInfo?.fieldName || key;
-                                        const variableType = expectedType === 'event_broadcast_menu' ? 'broadcast_msg' : undefined;
-                                        pushBlock(createMenuShadowBlock(shadowId, expectedType, menuFieldName, "", blockId, { variableType }));
-                                    } else {
-                                        pushBlock({
+                                    if (expectedType === 'event_broadcast_menu') {
+                                        blocks.push({
                                             id: shadowId,
                                             opcode: expectedType,
                                             inputs: {},
-                                            fields: isMathPrimitiveOpcode(expectedType)
+                                            fields: {
+                                                BROADCAST_OPTION: {
+                                                    name: 'BROADCAST_OPTION',
+                                                    value: "",
+                                                    variableType: 'broadcast_msg',
+                                                    id: randomFieldId('broadcast_msg', "")
+                                                }
+                                            },
+                                            next: null,
+                                            topLevel: false,
+                                            parent: blockId,
+                                            shadow: true,
+                                            hidden: false,
+                                            locked: false,
+                                            collapsed: false
+                                        });
+                                    } else if (expectedType.endsWith('_menu')) {
+                                        const menuFieldName = expectedShadowInfo?.fieldName || key;
+                                        blocks.push({
+                                            id: shadowId,
+                                            opcode: expectedType,
+                                            inputs: {},
+                                            fields: {
+                                                [menuFieldName]: { name: menuFieldName, value: "" }
+                                            },
+                                            next: null,
+                                            topLevel: false,
+                                            parent: blockId,
+                                            shadow: true,
+                                            hidden: false,
+                                            locked: false,
+                                            collapsed: false
+                                        });
+                                    } else {
+                                        blocks.push({
+                                            id: shadowId,
+                                            opcode: expectedType,
+                                            inputs: {},
+                                            fields: expectedType === 'math_number'
                                                 ? { NUM: { name: 'NUM', value: "" } }
                                                 : { TEXT: { name: 'TEXT', value: "" } },
                                             next: null,
@@ -2144,9 +1676,9 @@ export function jsToJson(jsCode) {
                         let shadowVal = shadowId;
                         if (block.opcode === 'procedures_definition' && key === 'custom_block') {
                             shadowVal = subBlockId;
-                            
+
                             // The nested prototype block MUST have shadow = true
-                            const protoBlock = getParsedBlockById(subBlockId);
+                            const protoBlock = blocks.find(b => b.id === subBlockId);
                             if (protoBlock) {
                                 protoBlock.shadow = true;
                             }
@@ -2154,7 +1686,7 @@ export function jsToJson(jsCode) {
 
                         // DO NOT set topLevel to true for procedures_prototype
                         if (block.opcode === 'procedures_definition' && key === 'custom_block') {
-                             const protoBlock = getParsedBlockById(subBlockId);
+                             const protoBlock = blocks.find(b => b.id === subBlockId);
                              if (protoBlock) protoBlock.topLevel = false;
                         }
 
@@ -2210,9 +1742,8 @@ export function jsToJson(jsCode) {
                 }
             }
 
-            ensureDynamicArgsMutation(block, blockInfo);
             addMissingMenuDefaults(block, blockInfo);
-            pushBlock(block);
+            blocks.push(block);
             prevId = linkStatements ? blockId : null;
         }
 
@@ -2222,7 +1753,7 @@ export function jsToJson(jsCode) {
     // Start parsing from top-level Program body.
     if (options.linkTopLevelStatements === true) {
         const firstTopLevelId = parseBlockStatement(ast.body, null, false);
-        const firstTopLevelBlock = getParsedBlockById(firstTopLevelId);
+        const firstTopLevelBlock = blocks.find(b => b.id === firstTopLevelId);
         if (firstTopLevelBlock) {
             firstTopLevelBlock.topLevel = true;
             firstTopLevelBlock.parent = null;
@@ -2238,7 +1769,7 @@ export function jsToJson(jsCode) {
 
     const byId = new Map();
     for (const b of blocks) byId.set(b.id, b);
-    
+
     function validateBlocks() {
         const errors = [];
         const infoCache = new Map();
@@ -2255,7 +1786,7 @@ export function jsToJson(jsCode) {
             infoCache.set(k, info);
             return info;
         };
-        
+
         for (const b of blocks) {
             if (b.next && !byId.has(b.next)) errors.push(`missing next: ${b.opcode} ${b.id} -> ${b.next}`);
             if (b.parent && !byId.has(b.parent)) errors.push(`missing parent: ${b.opcode} ${b.id} -> ${b.parent}`);
@@ -2265,9 +1796,9 @@ export function jsToJson(jsCode) {
             }
             if (errors.length > 50) break;
         }
-        
+
         for (const b of blocks) {
-            if (typeof b.opcode === 'string' && (b.opcode.endsWith('_menu') || isCoreMenuShadowOpcode(b.opcode))) continue;
+            if (typeof b.opcode === 'string' && b.opcode.endsWith('_menu')) continue;
             const info = getInfoCached(b.opcode);
             if (!info || !info.found) continue;
             const allowedFields = new Set(Object.keys(info.fields || {}));
@@ -2283,7 +1814,6 @@ export function jsToJson(jsCode) {
                     if (!allowedInputs.has(k)) {
                         if (String(k).startsWith('SUBSTACK')) continue;
                         if (b.opcode === 'procedures_call') continue;
-                        if (isAllowedDynamicArgInput(info, k)) continue;
                         const f = info && info.fields ? info.fields[k] : null;
                         if (f && f.menuType === 'placeable') continue;
                         errors.push(`unexpected input: ${b.opcode} ${b.id} ${k}`);
@@ -2293,7 +1823,7 @@ export function jsToJson(jsCode) {
             }
             if (errors.length > 50) break;
         }
-        
+
         if (errors.length > 0) {
             const msg = errors.slice(0, 50).join('\n');
             const first = errors[0] || '';
@@ -2323,7 +1853,7 @@ export function jsToJson(jsCode) {
         if (da !== db) return da - db;
         return (originalOrder.get(a.id) || 0) - (originalOrder.get(b.id) || 0);
     });
-    
+
     if (options.validate !== false) {
         validateBlocks();
     }

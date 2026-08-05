@@ -1,5 +1,5 @@
 import * as React from "react";
-import styles from "../styles.less";
+import styles from "../styles.css";
 
 interface SelectionHintProps {
   visible: boolean;
@@ -8,5 +8,5 @@ interface SelectionHintProps {
 export const SelectionHint: React.FC<SelectionHintProps> = ({ visible }) => {
   if (!visible) return null;
 
-  return <div className={styles.selectionHint}>鼠标拖拽或手指拖动框选同一段中连续的积木，Esc 退出</div>;
+  return <div className={styles.selectionHint}>拖拽框选同一段中连续的积木，Esc 退出</div>;
 };
