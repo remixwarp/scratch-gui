@@ -66,7 +66,8 @@ const base = {
             'scratch-render-fonts$': path.resolve(__dirname, 'src/lib/tw-scratch-render-fonts'),
             'exports-loader': require.resolve('exports-loader'),
             'components': path.resolve(__dirname, 'src/components/ai/gandi/components'),
-            'utils': path.resolve(__dirname, 'src/utils')
+            'utils': path.resolve(__dirname, 'src/utils'),
+            'html2canvas': path.resolve(__dirname, 'src/lib/html2canvas-stub.js')
         }
     },
     node: {
