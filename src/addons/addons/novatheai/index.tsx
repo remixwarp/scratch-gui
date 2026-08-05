@@ -14,18 +14,18 @@ import { useAttachmentInteraction } from "./hooks/useAttachmentInteraction";
 import { useBlockRangeSelection } from "./hooks/useBlockRangeSelection";
 import { useChatSessions } from "./hooks/useChatSessions";
 import { useChat } from "./hooks/useChat";
-import { Attachment, Agent } from "./types";
+import { Attachment, Agent as AgentType } from "./types";
 import { getAttachmentDisplayName } from "./attachmentUtils";
 import { exportConversationText } from "./conversationExport";
 
 type SettingsProps = {
-  agents: Agent[];
-  editingAgent: Agent | null;
-  onSaveAgent: (agent: Agent) => void;
+  agents: AgentType[];
+  editingAgent: AgentType | null;
+  onSaveAgent: (agent: AgentType) => void;
   onDeleteAgent: (id: string) => void;
   onExportAgent: (id: string) => void;
   onImportAgent: (file: File) => Promise<void>;
-  onEditAgent: (agent: Agent | null) => void;
+  onEditAgent: (agent: AgentType | null) => void;
   onClose: () => void;
   msg: (key: string, params?: Record<string, string | number>) => string;
 };
@@ -56,7 +56,7 @@ const Agent: React.FC<AgentProps> = ({ vm, workspace, editorThemeMode = "light",
   const [themeMode, setThemeMode] = React.useState<ThemeMode>(editorThemeMode);
   const agentMenuRef = React.useRef<HTMLDivElement | null>(null);
   const [enableReasoning, setEnableReasoning] = useStoredState<boolean>("NOVA_ENABLE_REASONING", false);
-  const [editingAgent, setEditingAgent] = React.useState<Agent | null>(null);
+  const [editingAgent, setEditingAgent] = React.useState<AgentType | null>(null);
 
   const useDrawerHistory = windowWidth < 760;
 
