@@ -20,7 +20,7 @@ export default {
         }
     ],
     editorOnly: true,
-    tags: ['recommended','new', 'ai'],
+    tags: ['editor', 'new', 'bilup', 'ai'],
     enabledByDefault: false,
     dynamicDisable: false,
     userscripts: [
