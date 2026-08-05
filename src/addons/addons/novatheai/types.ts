@@ -7,14 +7,11 @@ export interface AgentModel {
 
 export interface Agent {
   id: string;
-  provider: "openai" | "zhipu" | "deepseek" | "custom" | "custom_anthropic" | "anthropic" | "google" | "azure" | "siliconflow";
+  provider: "openai" | "zhipu" | "deepseek" | "custom" | "custom_anthropic" | "anthropic" | "google" | "azure";
   baseUrl: string;
   apiKey: string;
   name: string;
   models: AgentModel[];
-  /** 是否为不可编辑的内置AI */
-  immutable?: boolean;
-  builtin?: boolean;
 }
 
 export interface FlattenedAgent {

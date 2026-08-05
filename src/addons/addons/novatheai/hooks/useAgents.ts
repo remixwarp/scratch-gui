@@ -11,61 +11,24 @@ interface ExportedAgentFile {
 
 const DEFAULT_AGENTS: Agent[] = [
   {
-    id: "default-hcnsec-chat",
-    name: "Bilup Nova",
-    provider: "siliconflow",
-    baseUrl: "https://api.hcnsec.cn/v1/chat/completions",
-    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
+    id: "default-1",
+    name: "Unavailable",
+    provider: "custom",
+    baseUrl: "invalid-url://im-invalid.wrong",
+    apiKey: "",
     models: [
       {
-        id: "default-hcnsec-model-1",
-        name: "DeepSeek-V4-Flash（推荐）",
-        modelId: "DeepSeek-V4-Flash",
-      },
-      {
-        id: "default-hcnsec-model-2",
-        name: "Auto 路由",
-        modelId: "auto",
-      },
+        id: "default-1-model-1",
+        name: "Don't use me",
+        modelId: "dont-use-me",
+      }
     ],
-    immutable: true,
-    builtin: true,
   },
 ];
 
-/** 强制把 immutable 内置 Agent 恢复为默认值，避免用户通过 devtools 篡改 */
-const enforceImmutableDefaults = (list: Agent[]): Agent[] => {
-  const defaultsMap = new Map(DEFAULT_AGENTS.filter((a) => a.immutable).map((a) => [a.id, a]));
-  const seenBuiltin = new Set<string>();
-  const next: Agent[] = [];
-  for (const agent of list) {
-    if (defaultsMap.has(agent.id)) {
-      next.push({ ...defaultsMap.get(agent.id)! });
-      seenBuiltin.add(agent.id);
-    } else {
-      next.push(agent);
-    }
-  }
-  // 确保所有默认内置 Agent 都存在
-  for (const def of DEFAULT_AGENTS) {
-    if (def.immutable && !seenBuiltin.has(def.id)) {
-      next.unshift({ ...def });
-    }
-  }
-  return next;
-};
-
 export function useAgents() {
-  const [rawAgents, setRawAgents] = useStorageInfo<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
-  const agents = enforceImmutableDefaults(rawAgents);
-  const setAgents = (next: Agent[] | ((prev: Agent[]) => Agent[])) => {
-    if (typeof next === "function") {
-      setRawAgents((prev) => enforceImmutableDefaults(next(enforceImmutableDefaults(prev))));
-    } else {
-      setRawAgents(enforceImmutableDefaults(next));
-    }
-  };
-  const [currentModelId, setCurrentModelId] = useStorageInfo<string>("AI_ASSISTANT_CURRENT_AGENT_ID", "default-hcnsec-model-1");
+  const [agents, setAgents] = useStorageInfo<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
+  const [currentModelId, setCurrentModelId] = useStorageInfo<string>("AI_ASSISTANT_CURRENT_AGENT_ID", "default-1-model-1");
   const [showSettings, setShowSettings] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 

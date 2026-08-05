@@ -4,7 +4,6 @@ export const PROVIDER_DEFAULT_URLS: Record<string, string> = {
   anthropic: "https://api.anthropic.com/v1",
   deepseek: "https://api.deepseek.com",
   google: "https://generativelanguage.googleapis.com/v1beta",
-  siliconflow: "https://api.hcnsec.cn/v1",
   azure: "",
   custom: "",
   custom_anthropic: "",

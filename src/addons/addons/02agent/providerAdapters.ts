@@ -119,7 +119,7 @@ const getToolCallInputFallback = (
   return parseJsonObject(fallbackToolCall?.function?.arguments);
 };
 
-const OPENAI_COMPATIBLE_PROVIDERS = new Set<Agent["provider"]>(["openai", "zhipu", "deepseek", "custom", "siliconflow"]);
+const OPENAI_COMPATIBLE_PROVIDERS = new Set<Agent["provider"]>(["openai", "zhipu", "deepseek", "custom"]);
 
 class OpenAICompatibleAdapter implements ProviderAdapter {
   async sendChatCompletion({

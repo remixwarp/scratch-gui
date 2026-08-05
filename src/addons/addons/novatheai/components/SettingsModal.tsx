@@ -27,7 +27,6 @@ const PROVIDER_LABELS: Record<Agent["provider"], string> = {
   anthropic: "Anthropic",
   google: "Google",
   azure: "Azure",
-  siliconflow: "SiliconFlow",
   custom: "自定义 OpenAI",
   custom_anthropic: "自定义 Anthropic",
 };
@@ -358,11 +357,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                   </div>
                   <form className={settings.cardBody} onSubmit={handleSave}>
-                    {editingAgent?.immutable ? (
-                      <div className={settings.hint} style={{ padding: "12px 0", borderBottom: "1px solid var(--ai-border)", marginBottom: 16 }}>
-                        此为系统内置 Agent，API Key、Base URL 等敏感配置已锁定，不可修改。
-                      </div>
-                    ) : null}
                     <div className={settings.formGrid}>
                       <label className={settings.field}>
                         <span className={settings.label}>名称</span>
@@ -372,7 +366,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           onChange={(event) => setFormData({ ...formData, name: event.target.value })}
                           placeholder="例如:我的 OpenAI"
                           required
-                          disabled={!!editingAgent?.immutable}
                         />
                       </label>
                       <label className={settings.field}>
@@ -381,40 +374,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           className={settings.select}
                           value={formData.provider || "openai"}
                           onChange={handleProviderChange}
-                          disabled={!!editingAgent?.immutable}
                         >
                           <option value="openai">OpenAI</option>
                           <option value="zhipu">智谱清言</option>
                           <option value="anthropic">Anthropic</option>
                           <option value="deepseek">DeepSeek</option>
-                          <option value="siliconflow">SiliconFlow</option>
                           <option value="custom">自定义 OpenAI 兼容接口</option>
                           <option value="custom_anthropic">自定义 Anthropic 兼容接口</option>
                         </select>
                       </label>
-                      {editingAgent?.immutable ? null : (
-                        <>
-                          <label className={`${settings.field} ${settings.fieldFull}`}>
-                            <span className={settings.label}>Base URL</span>
-                            <input
-                              className={settings.input}
-                              value={formData.baseUrl || ""}
-                              onChange={(event) => setFormData({ ...formData, baseUrl: event.target.value })}
-                              placeholder="留空使用供应商默认地址"
-                            />
-                          </label>
-                          <label className={`${settings.field} ${settings.fieldFull}`}>
-                            <span className={settings.label}>API Key</span>
-                            <input
-                              className={settings.input}
-                              type="password"
-                              value={formData.apiKey || ""}
-                              onChange={(event) => setFormData({ ...formData, apiKey: event.target.value })}
-                              placeholder="sk-..."
-                            />
-                          </label>
-                        </>
-                      )}
+                      <label className={`${settings.field} ${settings.fieldFull}`}>
+                        <span className={settings.label}>Base URL</span>
+                        <input
+                          className={settings.input}
+                          value={formData.baseUrl || ""}
+                          onChange={(event) => setFormData({ ...formData, baseUrl: event.target.value })}
+                          placeholder="留空使用供应商默认地址"
+                        />
+                      </label>
+                      <label className={`${settings.field} ${settings.fieldFull}`}>
+                        <span className={settings.label}>API Key</span>
+                        <input
+                          className={settings.input}
+                          type="password"
+                          value={formData.apiKey || ""}
+                          onChange={(event) => setFormData({ ...formData, apiKey: event.target.value })}
+                          placeholder="sk-..."
+                        />
+                      </label>
                     </div>
 
                     <div className={settings.cardHeader}>
@@ -476,7 +463,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             onChange={(event) => updateModel(model.id, "name", event.target.value)}
                             placeholder="显示名称"
                             required
-                            disabled={!!editingAgent?.immutable}
                           />
                           <input
                             className={settings.input}
@@ -485,7 +471,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             onChange={(event) => updateModel(model.id, "modelId", event.target.value)}
                             placeholder="模型 ID"
                             required
-                            disabled={!!editingAgent?.immutable}
                           />
                           <input
                             className={settings.input}
@@ -501,13 +486,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                               )
                             }
                             placeholder="Max Tokens"
-                            disabled={!!editingAgent?.immutable}
                           />
                           <button
                             type="button"
                             className={settings.dangerButton}
                             onClick={() => removeModel(model.id)}
-                            disabled={models.length <= 1 || !!editingAgent?.immutable}
+                            disabled={models.length <= 1}
                           >
                             删除
                           </button>
@@ -516,20 +500,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
 
                     <div className={`${settings.toolbar} ${settings.formActions}`}>
-                      <div className={settings.hint}>
-                        {editingAgent?.immutable ? "系统内置配置，无法更改。" : "配置只保存在本地插件存储中。"}
-                      </div>
+                      <div className={settings.hint}>配置只保存在本地插件存储中。</div>
                       <div className={settings.actions}>
                         {editingAgent ? (
                           <button type="button" className={settings.button} onClick={() => onEditAgent(null)}>
-                            {editingAgent.immutable ? "关闭" : "取消编辑"}
+                            取消编辑
                           </button>
                         ) : null}
-                        {editingAgent?.immutable ? null : (
-                          <button type="submit" className={settings.primaryButton}>
-                            {editingAgent ? "保存修改" : "添加 Agent"}
-                          </button>
-                        )}
+                        <button type="submit" className={settings.primaryButton}>
+                          {editingAgent ? "保存修改" : "添加 Agent"}
+                        </button>
                       </div>
                     </div>
                   </form>
@@ -544,38 +524,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   <div className={`${settings.cardBody} ${settings.agentList}`}>
                     {agents.map((agent) => (
-                      <article
-                        key={agent.id}
-                        className={`${settings.agentItem} ${agent.builtin ? settings.agentItemBuiltin : ""}`}
-                      >
+                      <article key={agent.id} className={settings.agentItem}>
                         <div className={settings.agentItemHeader}>
                           <div>
-                            <div className={settings.agentName}>
-                              {agent.builtin ? <span className={settings.badge}>系统</span> : null}
-                              {agent.name || (agent as any).displayName}
-                            </div>
+                            <div className={settings.agentName}>{agent.name || (agent as any).displayName}</div>
                             <div className={settings.agentProvider}>
                               {PROVIDER_LABELS[agent.provider] || agent.provider}
                             </div>
                           </div>
                           <div className={settings.actions}>
                             <button type="button" className={settings.button} onClick={() => onEditAgent(agent)}>
-                              {agent.immutable ? "查看" : "编辑"}
+                              编辑
                             </button>
-                            {agent.immutable ? null : (
-                              <>
-                                <button type="button" className={settings.button} onClick={() => onExportAgent(agent.id)}>
-                                  导出
-                                </button>
-                                <button
-                                  type="button"
-                                  className={settings.dangerButton}
-                                  onClick={() => onDeleteAgent(agent.id)}
-                                >
-                                  删除
-                                </button>
-                              </>
-                            )}
+                            <button type="button" className={settings.button} onClick={() => onExportAgent(agent.id)}>
+                              导出
+                            </button>
+                            <button
+                              type="button"
+                              className={settings.dangerButton}
+                              onClick={() => onDeleteAgent(agent.id)}
+                            >
+                              删除
+                            </button>
                           </div>
                         </div>
                         <div className={settings.modelList}>

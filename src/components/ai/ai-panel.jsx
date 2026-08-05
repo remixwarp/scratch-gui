@@ -8,6 +8,7 @@ import {sanitizeSvg, fixForVanilla} from '@turbowarp/scratch-svg-renderer';
 import {costumeUpload} from '../../lib/file-uploader.js';
 import {getApiConfig, getApiKey} from '../../lib/constants/api-keys.js';
 import {recordAIConversation} from '../../lib/achievements.js';
+import NovaAgentBridge from './nova-agent-bridge.jsx';
 
 const API_CONFIG = getApiConfig('siliconflow');
 const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/chat/completions';
@@ -58,6 +59,7 @@ class AIPanel extends React.PureComponent {
         this.handleAddCostume = this.handleAddCostume.bind(this);
         this.handleAddGeneratedImage = this.handleAddGeneratedImage.bind(this);
         this.messagesEnd = React.createRef();
+        this.novaContainerRef = React.createRef();
         this.inputRef = React.createRef();
     }
 
@@ -1963,7 +1965,7 @@ ${JSON.stringify(projectData, null, 2)}
                     <div className={styles.header}>
                         {isAgent ? (
                             <div className={styles.headerWithTabs}>
-                                <div className={styles.headerTitle}>AI Agent</div>
+                                <div className={styles.headerTitle}>AI agent</div>
                                 <div className={styles.tabs}>
                                     <button 
                                         className={classNames(styles.tab, {[styles.activeTab]: this.state.activeTab === 'works'})}
@@ -1992,176 +1994,8 @@ ${JSON.stringify(projectData, null, 2)}
                 )}
                 <div className={styles.scrollableContent}>
                     {isAgent && this.state.activeTab === 'works' && (
-                        <div className={styles.tabContent}>
-                            <div className={styles.messagesWrapper}>
-                            <div className={styles.messages}>
-                                {this.state.messages.map((m, i) => (
-                                    <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
-                                        {m.from === 'user' ? (
-                                            m.text
-                                        ) : (
-                                            <MarkdownRenderer content={m.text} />
-                                        )}
-                                    </div>
-                                ))}
-                                <div ref={this.messagesEnd} />
-                            </div>
-                        </div>
-                        {/* 多步骤进度显示 */}
-                        {this.state.multiStepMode && (
-                            <div className={classNames(styles.progressContainer, {
-                                [styles.progressCollapsed]: !this.state.progressExpanded
-                            })}>
-                                {this.state.progressExpanded ? (
-                                    // 展开状态
-                                    <>
-                                        <div 
-                                            className={styles.progressHeader}
-                                            onClick={() => this.setState({progressExpanded: false})}
-                                            style={{cursor: 'pointer'}}
-                                        >
-                                            <span className={styles.progressTitle}>🚀 多步骤创作进度</span>
-                                            <div className={styles.progressHeaderRight}>
-                                                <span className={styles.progressCounter}>步骤 {this.state.currentStep}/4</span>
-                                                <button 
-                                                    className={styles.progressToggle}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        this.setState({progressExpanded: false});
-                                                    }}
-                                                >
-                                                    ▼
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className={styles.progressBar}>
-                                            <div 
-                                                className={styles.progressFill} 
-                                                style={{width: `${(this.state.currentStep / this.state.totalSteps) * 100}%`}}
-                                            />
-                                        </div>
-                                    </>
-                                ) : (
-                                    // 收缩状态 - 窄条显示
-                                    <div 
-                                        className={styles.progressHeaderCollapsed}
-                                        onClick={() => this.setState({progressExpanded: true})}
-                                        style={{cursor: 'pointer'}}
-                                    >
-                                        <span className={styles.progressStepIndicator}>第{this.state.currentStep}步</span>
-                                        <div className={styles.progressBarCollapsed}>
-                                            <div 
-                                                className={styles.progressFillCollapsed} 
-                                                style={{width: `${(this.state.currentStep / this.state.totalSteps) * 100}%`}}
-                                            />
-                                        </div>
-                                        <button 
-                                            className={styles.progressToggle}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                this.setState({progressExpanded: true});
-                                            }}
-                                        >
-                                            ▶
-                                        </button>
-                                    </div>
-                                )}
-                                {this.state.progressExpanded && (
-                                    <div className={styles.stepList}>
-                                        {[
-                                            {icon: '📋', name: '设计程序结构'},
-                                            {icon: '💻', name: '编写代码'},
-                                            {icon: '🔧', name: '修复代码'},
-                                            {icon: '🎨', name: '绘制图形'}
-                                        ].map((step, index) => {
-                                            const status = this.state.stepStatus[index];
-                                            const isActive = index + 1 === this.state.currentStep;
-                                            return (
-                                                <div 
-                                                    key={index} 
-                                                    className={classNames(styles.stepItem, {
-                                                        [styles.stepActive]: isActive,
-                                                        [styles.stepCompleted]: status === 'completed',
-                                                        [styles.stepError]: status === 'error'
-                                                    })}
-                                                >
-                                                    <span className={styles.stepIcon}>
-                                                        {status === 'completed' ? '✅' : 
-                                                         status === 'error' ? '❌' : 
-                                                         status === 'running' ? '⏳' : 
-                                                         step.icon}
-                                                    </span>
-                                                    <span className={styles.stepName}>{step.name}</span>
-                                                    {isActive && <span className={styles.stepStatus}>进行中...</span>}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        
-                        {this.state.loading && !this.state.multiStepMode && <div className={styles.loading}>思考中...</div>}
-                        {this.state.error && <div className={styles.error}>{this.state.error}</div>}
-                        <div className={styles.controls}>
-                            <textarea 
-                                ref={this.inputRef} 
-                                className={styles.input} 
-                                value={this.state.input} 
-                                onChange={this.handleChange} 
-                                placeholder={placeholder} 
-                                disabled={this.state.multiStepMode}
-                            />
-                            <div className={styles.actions}>
-                                {!this.state.multiStepMode && (
-                                    <Button 
-                                        onClick={this.handleMultiStepStart} 
-                                        className={classNames(styles.multiStepButton, {
-                                            [styles.multiStepButtonDisabled]: this.state.loading || !this.state.input
-                                        })}
-                                        disabled={this.state.loading || !this.state.input}
-                                    >
-                                        🚀 多步骤创作
-                                    </Button>
-                                )}
-                                <Button 
-                                    onClick={this.handleSend} 
-                                    className={styles.sendButton} 
-                                    disabled={this.state.loading || this.state.multiStepMode || !this.state.input || this.state.input.trim() === ''}
-                                >
-                                    发送
-                                </Button>
-                                <Button 
-                                    onClick={this.handleConvertToProject} 
-                                    className={classNames(styles.convertButton, {
-                                        [styles.convertButtonDisabled]: this.state.loading || 
-                                            (this.state.multiStepMode ? 
-                                                !this.state.stepStatus.every(s => s === 'completed') : 
-                                                !this.state.messages.some(m => m.from === 'assistant'))
-                                    })}
-                                    disabled={this.state.loading || 
-                                        (this.state.multiStepMode ? 
-                                            !this.state.stepStatus.every(s => s === 'completed') : 
-                                            !this.state.messages.some(m => m.from === 'assistant'))}
-                                >
-                                    转换为作品
-                                </Button>
-                            </div>
-                        </div>
-                        {/* 警告消息 - 放在底部 */}
-                        <div className={styles.warningBanner}>
-                            <div className={styles.warningIcon}>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
-                                    <path d="M12 9v4"></path>
-                                    <path d="M12 17h.01"></path>
-                                </svg>
-                            </div>
-                            <div className={styles.warningContent}>
-                                <strong><span>警告：</span></strong>
-                                <span dangerouslySetInnerHTML={{__html: warningText}} />
-                            </div>
-                        </div>
+                        <div className={styles.novaTabContent} ref={this.novaContainerRef}>
+                            <NovaAgentBridge vm={this.props.vm} containerRef={this.novaContainerRef} />
                         </div>
                     )}
                     
