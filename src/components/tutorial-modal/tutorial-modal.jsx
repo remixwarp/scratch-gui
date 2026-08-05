@@ -92,7 +92,8 @@ const tutorialData = [
         category: 4,
         bt: '在turbowarp做通知横幅？13分钟长教程教会你！',
         jj: '不小心做太长了。',
-        fm: require('./images/BV1brGZ6CE3z.jpg')
+        fm: require('./images/BV1brGZ6CE3z.jpg'),
+        url: 'https://rw-vep.pages.dev/BV1brGZ6CE3z.sb3'
     },
     {
         id: 'BV1CVEh66Ew3',
