@@ -12,6 +12,7 @@ export interface Agent {
   apiKey: string;
   name: string;
   models: AgentModel[];
+  locked?: boolean;
 }
 
 export interface FlattenedAgent {

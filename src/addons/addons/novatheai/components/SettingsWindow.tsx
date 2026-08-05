@@ -164,6 +164,8 @@ const AgentsSettings: React.FC<{
   const [isFetchingModels, setIsFetchingModels] = React.useState(false);
   const [modelFetchMessage, setModelFetchMessage] = React.useState("");
 
+  const isLocked = Boolean(editingAgent?.locked);
+
   React.useEffect(() => {
     if (editingAgent) {
       setFormData({
@@ -331,6 +333,8 @@ const AgentsSettings: React.FC<{
                 onChange={(event) => setFormData({ ...formData, name: event.target.value })}
                 placeholder={msg("placeholder-agent-name")}
                 required
+                disabled={isLocked}
+                readOnly={isLocked}
               />
             </label>
             <label className={styles.field}>
@@ -339,6 +343,7 @@ const AgentsSettings: React.FC<{
                 className={styles.select}
                 value={formData.provider || "openai"}
                 onChange={handleProviderChange}
+                disabled={isLocked}
               >
                 <option value="openai">{msg("provider-openai")}</option>
                 <option value="zhipu">{msg("provider-zhipu")}</option>
@@ -355,6 +360,8 @@ const AgentsSettings: React.FC<{
                 value={formData.baseUrl || ""}
                 onChange={(event) => setFormData({ ...formData, baseUrl: event.target.value })}
                 placeholder={msg("placeholder-base-url")}
+                disabled={isLocked}
+                readOnly={isLocked}
               />
             </label>
             <label className={`${styles.field} ${styles.fieldFull}`}>
@@ -365,6 +372,8 @@ const AgentsSettings: React.FC<{
                 value={formData.apiKey || ""}
                 onChange={(event) => setFormData({ ...formData, apiKey: event.target.value })}
                 placeholder="sk-..."
+                disabled={isLocked}
+                readOnly={isLocked}
               />
             </label>
           </div>
@@ -374,9 +383,11 @@ const AgentsSettings: React.FC<{
               <h5>{msg("models-list")}</h5>
               <p>{msg("models-list-description")}</p>
             </div>
-            <button type="button" className={styles.button} onClick={addModel}>
-              {msg("add-model")}
-            </button>
+            {!isLocked && (
+              <button type="button" className={styles.button} onClick={addModel}>
+                {msg("add-model")}
+              </button>
+            )}
           </div>
           <div className={styles.modelFetchPanel}>
             <div className={styles.modelFetchControls}>
@@ -384,7 +395,7 @@ const AgentsSettings: React.FC<{
                 className={styles.select}
                 value={selectedFetchedModelId}
                 onChange={(event) => setSelectedFetchedModelId(event.target.value)}
-                disabled={fetchedModels.length === 0}
+                disabled={fetchedModels.length === 0 || isLocked}
               >
                 {fetchedModels.length === 0 ? <option value="">{msg("no-models-available")}</option> : null}
                 {fetchedModels.map((model) => (
@@ -397,7 +408,7 @@ const AgentsSettings: React.FC<{
                 type="button"
                 className={styles.button}
                 onClick={() => void handleFetchModels()}
-                disabled={isFetchingModels}
+                disabled={isFetchingModels || isLocked}
               >
                 {isFetchingModels ? msg("fetching") : msg("refresh-models")}
               </button>
@@ -405,7 +416,7 @@ const AgentsSettings: React.FC<{
                 type="button"
                 className={styles.button}
                 onClick={addFetchedModel}
-                disabled={!selectedFetchedModelId}
+                disabled={!selectedFetchedModelId || isLocked}
               >
                 {msg("add-selected")}
               </button>
@@ -428,6 +439,8 @@ const AgentsSettings: React.FC<{
                   onChange={(event) => updateModel(model.id, "name", event.target.value)}
                   placeholder={msg("placeholder-model-name")}
                   required
+                  disabled={isLocked}
+                  readOnly={isLocked}
                 />
                 <input
                   className={styles.input}
@@ -436,6 +449,8 @@ const AgentsSettings: React.FC<{
                   onChange={(event) => updateModel(model.id, "modelId", event.target.value)}
                   placeholder={msg("placeholder-model-id")}
                   required
+                  disabled={isLocked}
+                  readOnly={isLocked}
                 />
                 <input
                   className={styles.input}
@@ -451,12 +466,14 @@ const AgentsSettings: React.FC<{
                     )
                   }
                   placeholder="Max Tokens"
+                  disabled={isLocked}
+                  readOnly={isLocked}
                 />
                 <button
                   type="button"
                   className={styles.dangerButton}
                   onClick={() => removeModel(model.id)}
-                  disabled={models.length <= 1}
+                  disabled={models.length <= 1 || isLocked}
                 >
                   {msg("delete")}
                 </button>
@@ -465,16 +482,23 @@ const AgentsSettings: React.FC<{
           </div>
 
           <div className={`${styles.toolbar} ${styles.formActions}`}>
-            <div className={styles.hint}>{msg("config-stored-locally")}</div>
+            <div className={styles.hint}>{msg("config-stored-locally")}{isLocked ? " (内置配置不可编辑)" : ""}</div>
             <div className={styles.actions}>
-              {editingAgent ? (
+              {editingAgent && !isLocked ? (
                 <button type="button" className={styles.button} onClick={() => onEditAgent(null)}>
                   {msg("cancel-edit")}
                 </button>
               ) : null}
-              <button type="submit" className={styles.primaryButton}>
-                {editingAgent ? msg("save-changes") : msg("add-agent")}
-              </button>
+              {!isLocked && (
+                <button type="submit" className={styles.primaryButton}>
+                  {editingAgent ? msg("save-changes") : msg("add-agent")}
+                </button>
+              )}
+              {editingAgent && isLocked && (
+                <button type="button" className={styles.button} onClick={() => onEditAgent(null)}>
+                  关闭
+                </button>
+              )}
             </div>
           </div>
         </form>
@@ -509,19 +533,28 @@ const AgentsSettings: React.FC<{
                     </div>
                   </div>
                   <div className={styles.actions}>
-                    <button type="button" className={styles.button} onClick={() => onEditAgent(agent)}>
-                      {msg("edit")}
-                    </button>
+                    {!agent.locked && (
+                      <button type="button" className={styles.button} onClick={() => onEditAgent(agent)}>
+                        {msg("edit")}
+                      </button>
+                    )}
                     <button type="button" className={styles.button} onClick={() => onExportAgent(agent.id)}>
                       {msg("export")}
                     </button>
-                    <button
-                      type="button"
-                      className={styles.dangerButton}
-                      onClick={() => onDeleteAgent(agent.id)}
-                    >
-                      {msg("delete")}
-                    </button>
+                    {!agent.locked && (
+                      <button
+                        type="button"
+                        className={styles.dangerButton}
+                        onClick={() => onDeleteAgent(agent.id)}
+                      >
+                        {msg("delete")}
+                      </button>
+                    )}
+                    {agent.locked && (
+                      <span style={{ fontSize: "12px", color: "#888", padding: "0 8px" }}>
+                        内置
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className={styles.modelList}>

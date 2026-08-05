@@ -13,8 +13,8 @@ const DEFAULT_AGENTS: Agent[] = [
   {
     id: "hcnsec-default",
     name: "hcnsec",
-    provider: "openai",
-    baseUrl: "https://api.hcnsec.cn",
+    provider: "custom",
+    baseUrl: "https://api.hcnsec.cn/v1",
     apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
     models: [
       {
@@ -24,8 +24,25 @@ const DEFAULT_AGENTS: Agent[] = [
         maxTokens: 16384,
       },
     ],
+    locked: true,
   },
 ];
+
+const ensureDefaultAgent = (agents: Agent[]): Agent[] => {
+  const defaultExists = agents.some((a) => a.id === DEFAULT_AGENTS[0].id);
+  if (!defaultExists) {
+    return [...DEFAULT_AGENTS, ...agents];
+  }
+  return agents.map((agent) => {
+    if (agent.id !== DEFAULT_AGENTS[0].id) return agent;
+    const def = DEFAULT_AGENTS[0];
+    return {
+      ...def,
+      models: def.models,
+      locked: def.locked,
+    };
+  });
+};
 
 export function useAgents() {
   const [agents, setAgents] = useStorageInfo<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
@@ -63,6 +80,13 @@ export function useAgents() {
   }, [flattenedModels, currentModelId]);
 
   useEffect(() => {
+    const enforcedAgents = ensureDefaultAgent(agents);
+    const needsRefresh = JSON.stringify(enforcedAgents) !== JSON.stringify(agents);
+    if (needsRefresh) {
+      setAgents(enforcedAgents);
+      return;
+    }
+
     if (!agents.length) {
       setAgents(DEFAULT_AGENTS);
       setCurrentModelId(DEFAULT_AGENTS[0].models[0].id);
@@ -70,11 +94,16 @@ export function useAgents() {
     }
 
     if (!flattenedModels.some((model) => model.id === currentModelId)) {
-      setCurrentModelId(flattenedModels[0]?.id || "");
+      const defaultModel = flattenedModels.find((m) => m.id === DEFAULT_AGENTS[0].models[0].id);
+      setCurrentModelId(defaultModel?.id || flattenedModels[0]?.id || "");
     }
   }, [agents, currentModelId, setAgents, setCurrentModelId, flattenedModels]);
 
   const handleSaveAgent = (newAgent: Agent) => {
+    if (editingAgent?.locked) {
+      setEditingAgent(null);
+      return;
+    }
     const nextAgents = editingAgent
       ? agents.map((agent) => (agent.id === editingAgent.id ? newAgent : agent))
       : [...agents, newAgent];
@@ -90,6 +119,11 @@ export function useAgents() {
 
   const handleDeleteAgent = (id: string) => {
     if (agents.length <= 1) {
+      return;
+    }
+
+    const targetAgent = agents.find((a) => a.id === id);
+    if (targetAgent?.locked) {
       return;
     }
 
