@@ -1,5 +1,5 @@
 import React from 'react';
-import Agent, {
+import NovaAgent, {
     registerSettingsWindow,
     registerUpdateSettingsWindow
 } from '../../addons/addons/02agent/index.tsx';
@@ -133,7 +133,7 @@ const NovaAgentBridge = ({vm, containerRef}) => {
     }
 
     return (
-        <Agent
+        <NovaAgent
             vm={vm}
             workspace={workspace}
             editorThemeMode={editorThemeMode}

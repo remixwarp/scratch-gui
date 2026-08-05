@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Agent, { registerSettingsWindow, registerUpdateSettingsWindow } from './index.tsx';
+import NovaAgent, { registerSettingsWindow, registerUpdateSettingsWindow } from './index.tsx';
 import { createSettingsWindow, updateSettingsWindow } from './components/SettingsWindow.tsx';
 
 const AgentHost = ({addonApi, windowWidth, windowHeight}) => {
@@ -43,7 +43,7 @@ const AgentHost = ({addonApi, windowWidth, windowHeight}) => {
         return () => redux.removeEventListener?.('statechanged', handleStateChanged);
     }, [addon, getEditorThemeMode]);
 
-    return <Agent vm={vm} workspace={workspace} editorThemeMode={editorThemeMode} windowWidth={windowWidth} windowHeight={windowHeight} msg={msg} />;
+    return <NovaAgent vm={vm} workspace={workspace} editorThemeMode={editorThemeMode} windowWidth={windowWidth} windowHeight={windowHeight} msg={msg} />;
 };
 
 let agentWindow = null;
