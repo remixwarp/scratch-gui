@@ -926,6 +926,16 @@ const AIAssistant: React.FC<PluginContext> = ({ vm, blockly, workspace, utils, e
     setIsFloatingInputOpen(false);
   };
 
+  React.useEffect(() => {
+    const handleShowPlugin = () => {
+      handleShow();
+    };
+    window.addEventListener("02agent-show-plugin", handleShowPlugin);
+    return () => {
+      window.removeEventListener("02agent-show-plugin", handleShowPlugin);
+    };
+  }, [handleShow]);
+
   const handleRestoreToUserMessage = React.useCallback(
     async (messageId: string, message: { content: string; attachments?: Attachment[] }) => {
       const result = rollbackToMessage(messageId, message.content, message.attachments || []);
@@ -2328,9 +2338,11 @@ const AIAssistant: React.FC<PluginContext> = ({ vm, blockly, workspace, utils, e
   return ReactDOM.createPortal(
     <>
       <AssistantDialogHost />
-      <section className={styles.aiAssistantRoot} ref={containerRef}>
-        <Tooltip className={styles.icon} icon={<AIAssistantIcon />} onClick={handleShow} tipText={"AI Assistant"} />
-      </section>
+      {!visible && (
+        <section className={styles.aiAssistantRoot} ref={containerRef}>
+          <Tooltip className={styles.icon} icon={<AIAssistantIcon />} onClick={handleShow} tipText={"AI Assistant"} />
+        </section>
+      )}
       {visible &&
         ReactDOM.createPortal(
           <div className={`${styles.aiAssistantOverlayRoot} ${assistantThemeClass}`} data-ai-assistant-ui-root="true">
