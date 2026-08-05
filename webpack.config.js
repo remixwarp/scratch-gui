@@ -65,7 +65,8 @@ const base = {
             'text-encoding$': path.resolve(__dirname, 'src/lib/tw-text-encoder'),
             'scratch-render-fonts$': path.resolve(__dirname, 'src/lib/tw-scratch-render-fonts'),
             'exports-loader': require.resolve('exports-loader'),
-            'components': path.resolve(__dirname, 'src/components/ai/gandi/components')
+            'components': path.resolve(__dirname, 'src/components/ai/gandi/components'),
+            'utils': path.resolve(__dirname, 'src/utils')
         }
     },
     node: {
