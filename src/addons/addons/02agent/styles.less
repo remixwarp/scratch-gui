@@ -683,6 +683,8 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    opacity: 0.88;
+    filter: saturate(0.75);
   }
 
   .reasoningInlineButton {
@@ -694,13 +696,13 @@
     padding: 0;
     border: none;
     background: transparent;
-    color: #6a7591;
+    color: #8a93a8;
     cursor: pointer;
     font: inherit;
     text-align: left;
 
     &:hover {
-      color: #4f5b79;
+      color: #6a7591;
     }
   }
 
@@ -719,7 +721,11 @@
   }
 
   .reasoningInlineBody {
-    padding-left: 4px;
+    padding: 8px 10px;
+    margin: 2px 0 0 0;
+    border-radius: 12px;
+    background: var(--ai-bg-surface, rgba(246, 248, 255, 0.45));
+    border: 1px dashed color-mix(in srgb, var(--ai-border, rgba(105,119,160,0.2)) 45%, transparent);
   }
 
   .reasoningText {
@@ -727,10 +733,12 @@
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: anywhere;
-    color: #4c5a78;
+    color: #7d88a3;
+    background: transparent;
     font-family: Consolas, Monaco, monospace;
     font-size: 11px;
     line-height: 1.55;
+    opacity: 0.88;
   }
 
   .toolCallSummary {

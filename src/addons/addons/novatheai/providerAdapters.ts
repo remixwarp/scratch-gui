@@ -332,6 +332,22 @@ class OpenAICompatibleAdapter implements ProviderAdapter {
       throw new Error("Stream ended unexpectedly. The API provider might be overloaded or the connection was dropped.");
     }
 
+    // 从 content 中剥离内嵌的 <think> ... </think> / 流式未闭合 <think> ，合并到 reasoning
+    if (content) {
+      const thinkStart = content.indexOf("<think>");
+      const thinkEnd = content.lastIndexOf("</think>");
+      if (thinkStart !== -1 && thinkEnd !== -1 && thinkEnd > thinkStart) {
+        reasoning += (reasoning.length ? "\n" : "") + content.slice(thinkStart + "<think>".length, thinkEnd).trim();
+        content = (content.slice(0, thinkStart) + content.slice(thinkEnd + "</think>".length)).trim();
+      } else if (thinkStart !== -1) {
+        reasoning += (reasoning.length ? "\n" : "") + content.slice(thinkStart + "<think>".length).trim();
+        content = content.slice(0, thinkStart).trim();
+      } else if (thinkEnd !== -1) {
+        reasoning += (reasoning.length ? "\n" : "") + content.slice(0, thinkEnd).trim();
+        content = content.slice(thinkEnd + "</think>".length).trim();
+      }
+    }
+
     const validToolCalls = toolCalls.filter((toolCall) => toolCall.id || toolCall.function.name);
     return {
       choices: [
@@ -731,6 +747,22 @@ class AnthropicAdapter implements ProviderAdapter {
 
     if (!finished && !signal?.aborted && !hasContent) {
       throw new Error("Stream ended unexpectedly. The API provider might be overloaded or the connection was dropped.");
+    }
+
+    // 从 content 中剥离内嵌的 <think> ... </think> / 流式未闭合 <think> ，合并到 reasoning
+    if (content) {
+      const thinkStart = content.indexOf("<think>");
+      const thinkEnd = content.lastIndexOf("</think>");
+      if (thinkStart !== -1 && thinkEnd !== -1 && thinkEnd > thinkStart) {
+        reasoning += (reasoning.length ? "\n" : "") + content.slice(thinkStart + "<think>".length, thinkEnd).trim();
+        content = (content.slice(0, thinkStart) + content.slice(thinkEnd + "</think>".length)).trim();
+      } else if (thinkStart !== -1) {
+        reasoning += (reasoning.length ? "\n" : "") + content.slice(thinkStart + "<think>".length).trim();
+        content = content.slice(0, thinkStart).trim();
+      } else if (thinkEnd !== -1) {
+        reasoning += (reasoning.length ? "\n" : "") + content.slice(0, thinkEnd).trim();
+        content = content.slice(thinkEnd + "</think>".length).trim();
+      }
     }
 
     for (const [blockIndex, toolCallIndex] of toolCallIndexByContentIndex) {

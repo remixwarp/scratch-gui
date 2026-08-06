@@ -67,6 +67,30 @@ class AIPanel extends React.PureComponent {
         }
     }
 
+    // 将文本中嵌入的 <think>...</think> 与正常内容拆分
+    // 返回 { reasoning, content }
+    splitThinkAndContent (raw) {
+        if (typeof raw !== 'string') raw = '';
+        let reasoning = '';
+        let content = raw;
+        // 贪婪剥离首个 <think> 到最后一个 </think>
+        const thinkStart = content.indexOf('<think>');
+        const thinkEnd = content.lastIndexOf('</think>');
+        if (thinkStart !== -1 && thinkEnd !== -1 && thinkEnd > thinkStart) {
+            reasoning = content.slice(thinkStart + '<think>'.length, thinkEnd);
+            content = content.slice(0, thinkStart) + content.slice(thinkEnd + '</think>'.length);
+        } else if (thinkStart !== -1 && thinkEnd === -1) {
+            // 正在流式生成的过程中，<think> 已经打开但还未关闭
+            reasoning = content.slice(thinkStart + '<think>'.length);
+            content = content.slice(0, thinkStart);
+        } else if (thinkStart === -1 && thinkEnd !== -1) {
+            // 流式中，之前截在 <think> 内，现在遇到关闭
+            reasoning = content.slice(0, thinkEnd);
+            content = content.slice(thinkEnd + '</think>'.length);
+        }
+        return { reasoning: reasoning.trim(), content: content.trim() };
+    }
+
     async componentDidMount () {
         if (this.inputRef && this.inputRef.current) {
             this.inputRef.current.focus();
@@ -463,9 +487,35 @@ class AIPanel extends React.PureComponent {
             let reasoning = '';
 
             this.setState(state => ({
-                messages: [...state.messages, {from: 'assistant', text: ''}],
+                messages: [...state.messages, {from: 'assistant', text: '', reasoning: '', content: ''}],
                 loading: true
             }), this.scrollToBottom);
+
+            const updateMsg = (partialContent, partialReasoning) => {
+                // 在 partialContent 中如果有内嵌 <think> 标签，动态分离
+                const embedded = this.splitThinkAndContent(partialContent);
+                const mergedReasoning = (partialReasoning || '') + embedded.reasoning;
+                const finalContent = embedded.content;
+                this.setState(state => {
+                    const msgs = [...state.messages];
+                    if (msgs.length > 0 && msgs[msgs.length - 1].from === 'assistant') {
+                        msgs[msgs.length - 1] = {
+                            ...msgs[msgs.length - 1],
+                            text: finalContent, // 兼容旧字段
+                            reasoning: mergedReasoning,
+                            content: finalContent
+                        };
+                    } else {
+                        msgs.push({
+                            from: 'assistant',
+                            text: finalContent,
+                            reasoning: mergedReasoning,
+                            content: finalContent
+                        });
+                    }
+                    return {messages: msgs};
+                });
+            };
 
             while (true) {
                 const {done, value} = await reader.read();
@@ -485,24 +535,21 @@ class AIPanel extends React.PureComponent {
                     try {
                         const parsed = JSON.parse(payload);
                         const delta = parsed.choices?.[0]?.delta;
-                        if (delta?.content) {
-                            content += delta.content;
-                            this.setState(state => {
-                                const msgs = [...state.messages];
-                                if (msgs.length > 0 && msgs[msgs.length - 1].from === 'assistant') {
-                                    msgs[msgs.length - 1] = {...msgs[msgs.length - 1], text: content};
-                                } else {
-                                    msgs.push({from: 'assistant', text: content});
-                                }
-                                return {messages: msgs};
-                            });
-                        }
-                        if (delta?.reasoning_content) {
-                            reasoning += delta.reasoning_content;
-                        }
-                        // Handle thinking tags from deepseek-r1 models
-                        if (parsed.choices?.[0]?.delta?.content === null && parsed.choices?.[0]?.finish_reason === null) {
-                            // Streaming thinking content, skip
+                        if (delta) {
+                            if (typeof delta.content === 'string' && delta.content) {
+                                content += delta.content;
+                            }
+                            if (typeof delta.reasoning_content === 'string' && delta.reasoning_content) {
+                                reasoning += delta.reasoning_content;
+                            }
+                            updateMsg(content, reasoning);
+                        } else {
+                            const msg = parsed.choices?.[0]?.message;
+                            if (msg) {
+                                if (typeof msg.content === 'string' && msg.content) content += msg.content;
+                                if (typeof msg.reasoning_content === 'string' && msg.reasoning_content) reasoning += msg.reasoning_content;
+                                updateMsg(content, reasoning);
+                            }
                         }
                     } catch {
                         // Ignore malformed data
@@ -510,7 +557,7 @@ class AIPanel extends React.PureComponent {
                 }
             }
 
-            // Flush remaining buffer
+            // Flush remaining buffer (最后一行data行如果没有换行就会留在 buffer)
             if (buffer) {
                 const line = buffer.trim();
                 if (line.startsWith('data:')) {
@@ -519,33 +566,32 @@ class AIPanel extends React.PureComponent {
                         try {
                             const parsed = JSON.parse(payload);
                             const delta = parsed.choices?.[0]?.delta;
-                            if (delta?.content) {
-                                content += delta.content;
+                            if (delta) {
+                                if (typeof delta.content === 'string' && delta.content) content += delta.content;
+                                if (typeof delta.reasoning_content === 'string' && delta.reasoning_content) reasoning += delta.reasoning_content;
+                            } else {
+                                const msg = parsed.choices?.[0]?.message;
+                                if (msg) {
+                                    if (typeof msg.content === 'string') content += msg.content;
+                                    if (typeof msg.reasoning_content === 'string') reasoning += msg.reasoning_content;
+                                }
                             }
                         } catch {
-                            // Ignore
+                            // Ignore malformed trailing data
                         }
                     }
                 }
+                buffer = '';
             }
 
-            if (!content && reasoning) {
-                content = reasoning;
-            }
+            updateMsg(content, reasoning);
 
             // 如果是AI操控标签页，解析并执行快捷键
             if (isAgent && isControlTab) {
-                this.handleControlCommand(content);
+                this.handleControlCommand(content || '');
             }
 
-            this.setState(state => ({
-                messages: [...state.messages.map((m, i) => 
-                    i === state.messages.length - 1 && m.from === 'assistant' 
-                        ? {...m, text: content || reasoning} 
-                        : m
-                )],
-                loading: false
-            }), this.scrollToBottom);
+            this.setState({ loading: false }, this.scrollToBottom);
         })
         .catch(err => {
             this.setState({loading: false, error: String(err)});
@@ -571,8 +617,9 @@ class AIPanel extends React.PureComponent {
 
             const totpBody = {
                 model: MODEL,
+                stream: false,
                 messages: [
-                    {role: 'system', content: '你是一个专业的SVG图形设计师，只输出完整的SVG代码，不要任何其他文字解释。'},
+                    {role: 'system', content: '你是一个专业的SVG图形设计师，只输出完整的SVG代码，不要任何其他文字解释。不要输出思考内容或<think>标签。'},
                     {role: 'user', content: svgPrompt}
                 ]
             };
@@ -582,7 +629,49 @@ class AIPanel extends React.PureComponent {
                 body: JSON.stringify(totpBody)
             });
 
-            const data = await response.json();
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch {
+                // 可能是流式响应，尝试手动解析最后一条非 [DONE] 且非错误的消息
+                const lines = text.split('\n');
+                let finalContent = '';
+                let finalReasoning = '';
+                for (const rawLine of lines) {
+                    const line = rawLine.trim();
+                    if (!line.startsWith('data:')) continue;
+                    const payload = line.slice(5).trim();
+                    if (!payload || payload === '[DONE]') continue;
+                    try {
+                        const parsed = JSON.parse(payload);
+                        const choice = parsed.choices?.[0];
+                        const delta = choice?.delta;
+                        if (delta) {
+                            if (typeof delta.content === 'string' && delta.content) {
+                                finalContent += delta.content;
+                            }
+                            if (typeof delta.reasoning_content === 'string' && delta.reasoning_content) {
+                                finalReasoning += delta.reasoning_content;
+                            }
+                        } else if (choice?.message) {
+                            if (typeof choice.message.content === 'string') {
+                                finalContent += choice.message.content;
+                            }
+                            if (typeof choice.message.reasoning_content === 'string') {
+                                finalReasoning += choice.message.reasoning_content;
+                            }
+                        }
+                    } catch {
+                        // Ignore malformed line
+                    }
+                }
+                if (finalContent || finalReasoning) {
+                    data = { choices: [{ message: { content: finalContent, reasoning_content: finalReasoning } }] };
+                } else {
+                    throw new Error('无法解析响应，请稍后再试。');
+                }
+            }
             console.log('API响应:', data);
             
             let svgContent = null;
@@ -590,15 +679,22 @@ class AIPanel extends React.PureComponent {
             // 尝试从响应中提取AI的回复
             if (data && data.choices && data.choices[0]) {
                 const choice = data.choices[0];
-                if (choice.message && choice.message.content) {
-                    svgContent = choice.message.content;
+                let rawContent = '';
+                if (choice.message) {
+                    if (choice.message.content) rawContent = choice.message.content;
+                    else if (choice.message.reasoning_content) rawContent = choice.message.reasoning_content;
                 } else if (choice.text) {
-                    svgContent = choice.text;
+                    rawContent = choice.text;
                 }
+                // 剥离 <think> 标签及其内容
+                svgContent = rawContent
+                    .replace(/<think>[\s\S]*?<\/think>/g, '')
+                    .replace(/^<\/?think>$/gm, '')
+                    .trim();
             }
             
             if (!svgContent) {
-                throw new Error('无法从响应中获取AI回复');
+                throw new Error('无法从响应中获取AI回复，请稍后再试。');
             }
             
             console.log('提取的AI回复:', svgContent);
@@ -607,7 +703,7 @@ class AIPanel extends React.PureComponent {
             let svgCode = this.extractSvgFromText(svgContent);
             
             if (!svgCode) {
-                throw new Error('无法从AI回复中提取有效的SVG代码');
+                throw new Error('无法从AI回复中提取有效的SVG代码，请换一种描述再试。');
             }
             
             console.log('提取的SVG代码:', svgCode);
@@ -2080,15 +2176,33 @@ ${JSON.stringify(projectData, null, 2)}
                         <div className={styles.tabContent}>
                             <div className={styles.messagesWrapper}>
                             <div className={styles.messages}>
-                                {this.state.messages.map((m, i) => (
-                                    <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
-                                        {m.from === 'user' ? (
-                                            m.text
-                                        ) : (
-                                            <MarkdownRenderer content={m.text} />
-                                        )}
-                                    </div>
-                                ))}
+                                {this.state.messages.map((m, i) => {
+                                    if (m.from === 'user') {
+                                        return (
+                                            <div key={i} className={styles.userMsg}>
+                                                {m.text}
+                                            </div>
+                                        );
+                                    }
+                                    const hasReasoning = m.reasoning && m.reasoning.trim().length > 0;
+                                    const hasContent = m.content && m.content.trim().length > 0;
+                                    const useTextAsFallback = !hasReasoning && !hasContent && m.text && m.text.trim().length > 0;
+                                    return (
+                                        <div key={i} className={styles.assistantMsgWrapper}>
+                                            {hasReasoning && (
+                                                <details className={styles.reasoningBlock} open>
+                                                    <summary>思考过程</summary>
+                                                    <div style={{marginTop: 6}}>{m.reasoning}</div>
+                                                </details>
+                                            )}
+                                            {(hasContent || useTextAsFallback) && (
+                                                <div className={styles.assistantMsgFull}>
+                                                    <MarkdownRenderer content={useTextAsFallback ? m.text : m.content} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                                 <div ref={this.messagesEnd} />
                             </div>
                         </div>
