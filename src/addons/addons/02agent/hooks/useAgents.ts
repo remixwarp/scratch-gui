@@ -15,18 +15,13 @@ const DEFAULT_AGENTS: Agent[] = [
     id: "default-free-chat",
     name: "AI助手",
     provider: "custom",
-    baseUrl: "https://api.hcnsec.cn/v1/chat/completions",
-    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
+    baseUrl: "https://aiapi.remix.de5.net/v1/chat/completions",
+    apiKey: "sk-remixworld",
     models: [
       {
         id: "default-free-model-1",
-        name: "DeepSeek-V4-Flash (推荐)",
-        modelId: "DeepSeek-V4-Flash",
-      },
-      {
-        id: "default-free-model-2",
-        name: "通用路由 auto",
-        modelId: "auto",
+        name: "deepseek-r1-distill-qwen-32b（DeepSeek R1 蒸馏版）",
+        modelId: "deepseek-r1-distill-qwen-32b",
       },
     ],
     immutable: true,

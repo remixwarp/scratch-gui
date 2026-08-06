@@ -14,13 +14,13 @@ const DEFAULT_AGENTS: Agent[] = [
     id: "hcnsec-default",
     name: "hcnsec",
     provider: "custom",
-    baseUrl: "https://api.hcnsec.cn/v1",
-    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
+    baseUrl: "https://aiapi.remix.de5.net/v1/chat/completions",
+    apiKey: "sk-remixworld",
     models: [
       {
         id: "hcnsec-default-model",
-        name: "DeepSeek-V4-Flash",
-        modelId: "DeepSeek-V4-Flash",
+        name: "deepseek-r1-distill-qwen-32b（DeepSeek R1 蒸馏版）",
+        modelId: "deepseek-r1-distill-qwen-32b",
         maxTokens: 16384,
       },
     ],
