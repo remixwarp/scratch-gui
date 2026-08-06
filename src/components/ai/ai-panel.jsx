@@ -10,12 +10,12 @@ import {getApiConfig, getApiKey} from '../../lib/constants/api-keys.js';
 import {recordAIConversation} from '../../lib/achievements.js';
 
 const API_CONFIG = getApiConfig('siliconflow');
-const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/chat/completions';
-const MODEL = API_CONFIG ? API_CONFIG.model : 'deepseek-ai/DeepSeek-V3';
+const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://aiapi.remix.de5.net/v1/chat/completions';
+const MODEL = API_CONFIG ? API_CONFIG.model : 'deepseek-r1-distill-qwen-32b';
 
 const IMAGE_API_CONFIG = getApiConfig('siliconflowImages');
-const IMAGE_API_ENDPOINT = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.endpoint : 'https://api.siliconflow.cn/v1/images/generations';
-const IMAGE_MODEL = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.model : 'Kwai-Kolors/Kolors';
+const IMAGE_API_ENDPOINT = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.endpoint : 'https://aiapi.remix.de5.net/v1/images/generations';
+const IMAGE_MODEL = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.model : 'deepseek-r1-distill-qwen-32b';
 
 // 直接带 Authorization 头发往上流；API 密钥由环境变量构建时注入。
 const buildRequestHeaders = () => {
@@ -45,7 +45,7 @@ class AIPanel extends React.PureComponent {
             stepContext: {}, // 存储各步骤的上下文
             progressExpanded: true, // 创作进度展开/收起状态
             // 标签页状态
-            activeTab: 'costume', // costume, control
+            activeTab: 'chat', // chat, costume, control
             // 造型生成状态
             generatedSVG: null, // 存储生成的SVG代码
             generatedImageUrl: null // 存储生成的图片URL（密钥已迁移到 Worker 端）
@@ -88,6 +88,7 @@ class AIPanel extends React.PureComponent {
         const isAgent = type === 'agent';
         const isCostumeTab = this.state.activeTab === 'costume';
         const isControlTab = this.state.activeTab === 'control';
+        const isChatTab = this.state.activeTab === 'chat';
         
         // AI Agent的系统提示词，包含Scratch积木的完整信息
         const agentSystemPrompt = `你是RemixWarp的AI Agent助手，专门帮助用户编写Scratch项目。
@@ -393,7 +394,11 @@ class AIPanel extends React.PureComponent {
         let systemPrompt;
         
         if (isAgent) {
-            if (isCostumeTab) {
+            if (isChatTab) {
+                // AI Chat标签页
+                userMessageContent = '你是RemixWarp的智能AI助手。回答的大部分是Scratch（及修改版）代码的问题。用户问题：' + input;
+                systemPrompt = chatSystemPrompt;
+            } else if (isCostumeTab) {
                 // AI造型标签页
                 userMessageContent = costumeSystemPrompt + input + '直接输出svg代码。不要有任何无关提示信息和符号。';
                 systemPrompt = costumeSystemPrompt;
@@ -435,30 +440,110 @@ class AIPanel extends React.PureComponent {
             headers: buildRequestHeaders(),
             body: JSON.stringify({
                 model: MODEL,
+                stream: true,
                 messages: [
                     {role: 'system', content: systemPrompt},
                     userMessage
                 ]
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            // Try to extract assistant reply from common response shapes
-            let reply = null;
-            if (data && data.choices && data.choices[0]) {
-                const choice = data.choices[0];
-                if (choice.message && choice.message.content) reply = choice.message.content;
-                else if (choice.text) reply = choice.text;
+        .then(async response => {
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => '');
+                throw new Error(`API Error: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
             }
-            if (!reply) reply = JSON.stringify(data);
-            
+            if (!response.body) {
+                throw new Error('Empty response body');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let content = '';
+            let reasoning = '';
+
+            this.setState(state => ({
+                messages: [...state.messages, {from: 'assistant', text: ''}],
+                loading: true
+            }), this.scrollToBottom);
+
+            while (true) {
+                const {done, value} = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, {stream: true});
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const rawLine of lines) {
+                    const line = rawLine.trim();
+                    if (!line.startsWith('data:')) continue;
+
+                    const payload = line.slice(5).trim();
+                    if (!payload || payload === '[DONE]') continue;
+
+                    try {
+                        const parsed = JSON.parse(payload);
+                        const delta = parsed.choices?.[0]?.delta;
+                        if (delta?.content) {
+                            content += delta.content;
+                            this.setState(state => {
+                                const msgs = [...state.messages];
+                                if (msgs.length > 0 && msgs[msgs.length - 1].from === 'assistant') {
+                                    msgs[msgs.length - 1] = {...msgs[msgs.length - 1], text: content};
+                                } else {
+                                    msgs.push({from: 'assistant', text: content});
+                                }
+                                return {messages: msgs};
+                            });
+                        }
+                        if (delta?.reasoning_content) {
+                            reasoning += delta.reasoning_content;
+                        }
+                        // Handle thinking tags from deepseek-r1 models
+                        if (parsed.choices?.[0]?.delta?.content === null && parsed.choices?.[0]?.finish_reason === null) {
+                            // Streaming thinking content, skip
+                        }
+                    } catch {
+                        // Ignore malformed data
+                    }
+                }
+            }
+
+            // Flush remaining buffer
+            if (buffer) {
+                const line = buffer.trim();
+                if (line.startsWith('data:')) {
+                    const payload = line.slice(5).trim();
+                    if (payload && payload !== '[DONE]') {
+                        try {
+                            const parsed = JSON.parse(payload);
+                            const delta = parsed.choices?.[0]?.delta;
+                            if (delta?.content) {
+                                content += delta.content;
+                            }
+                        } catch {
+                            // Ignore
+                        }
+                    }
+                }
+            }
+
+            if (!content && reasoning) {
+                content = reasoning;
+            }
+
             // 如果是AI操控标签页，解析并执行快捷键
             if (isAgent && isControlTab) {
-                this.handleControlCommand(reply);
+                this.handleControlCommand(content);
             }
-            
+
             this.setState(state => ({
-                messages: [...state.messages, {from: 'assistant', text: reply}],
+                messages: [...state.messages.map((m, i) => 
+                    i === state.messages.length - 1 && m.from === 'assistant' 
+                        ? {...m, text: content || reasoning} 
+                        : m
+                )],
                 loading: false
             }), this.scrollToBottom);
         })
@@ -1963,8 +2048,14 @@ ${JSON.stringify(projectData, null, 2)}
                     <div className={styles.header}>
                         {isAgent ? (
                             <div className={styles.headerWithTabs}>
-                                <div className={styles.headerTitle}>AI agent</div>
+                                <div className={styles.headerTitle}>AI Agent</div>
                                 <div className={styles.tabs}>
+                                    <button 
+                                        className={classNames(styles.tab, {[styles.activeTab]: this.state.activeTab === 'chat'})}
+                                        onClick={() => this.handleTabChange('chat')}
+                                    >
+                                        AI Chat
+                                    </button>
                                     <button 
                                         className={classNames(styles.tab, {[styles.activeTab]: this.state.activeTab === 'costume'})}
                                         onClick={() => this.handleTabChange('costume')}
@@ -1985,6 +2076,58 @@ ${JSON.stringify(projectData, null, 2)}
                     </div>
                 )}
                 <div className={styles.scrollableContent}>
+                    {isAgent && this.state.activeTab === 'chat' && (
+                        <div className={styles.tabContent}>
+                            <div className={styles.messagesWrapper}>
+                            <div className={styles.messages}>
+                                {this.state.messages.map((m, i) => (
+                                    <div key={i} className={m.from === 'user' ? styles.userMsg : styles.assistantMsg}>
+                                        {m.from === 'user' ? (
+                                            m.text
+                                        ) : (
+                                            <MarkdownRenderer content={m.text} />
+                                        )}
+                                    </div>
+                                ))}
+                                <div ref={this.messagesEnd} />
+                            </div>
+                        </div>
+                        {this.state.loading && <div className={styles.loading}>思考中...</div>}
+                        {this.state.error && <div className={styles.error}>{this.state.error}</div>}
+                        <div className={styles.controls}>
+                            <textarea 
+                                ref={this.inputRef} 
+                                className={styles.input} 
+                                value={this.state.input} 
+                                onChange={this.handleChange} 
+                                placeholder="聊聊你的代码..."
+                                disabled={this.state.loading}
+                            />
+                            <div className={styles.actions}>
+                                <Button 
+                                    onClick={this.handleSend} 
+                                    className={styles.sendButton} 
+                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === ''}
+                                >
+                                    发送
+                                </Button>
+                            </div>
+                        </div>
+                        <div className={styles.warningBanner}>
+                            <div className={styles.warningIcon}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+                                    <path d="M12 9v4"></path>
+                                    <path d="M12 17h.01"></path>
+                                </svg>
+                            </div>
+                            <div className={styles.warningContent}>
+                                <strong><span>提示：</span></strong>
+                                <span dangerouslySetInnerHTML={{__html: 'AI Chat - 与AI对话，解答编程问题<br/>内容为AI生成，请注意仔细鉴别'}} />
+                            </div>
+                        </div>
+                        </div>
+                    )}
                     {isAgent && this.state.activeTab === 'costume' && (
                         <div className={styles.tabContent}>
                             <div className={styles.messagesWrapper}>

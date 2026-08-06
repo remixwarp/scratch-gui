@@ -1,19 +1,19 @@
 // ============================================================================
 // AI 接口：全部硬编码在 GUI 里，不经过任何 Worker 代理，不需要人机验证。
-// 平台：hcnsec (OneAPI / NewAPI 兼容)
-// Base URL：https://api.hcnsec.cn
-// Chat 模型：DeepSeek-V4-Flash  （也可直接用 auto 由后端路由）
-// 图片模型：step-image-edit-2
+// 平台：remix.de5.net
+// Base URL：https://aiapi.remix.de5.net
+// Chat 模型：deepseek-r1-distill-qwen-32b
+// 图片模型：deepseek-r1-distill-qwen-32b
 // ============================================================================
 
-const BASE_URL = 'https://api.hcnsec.cn';
-const API_KEY = 'sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB';
+const BASE_URL = 'https://aiapi.remix.de5.net';
+const API_KEY = 'sk-remixworld';
 
 const CHAT_ENDPOINT = `${BASE_URL}/v1/chat/completions`;
 const IMAGES_ENDPOINT = `${BASE_URL}/v1/images/generations`;
 
-const CHAT_MODEL = 'DeepSeek-V4-Flash';
-const IMAGE_MODEL = 'step-image-edit-2';
+const CHAT_MODEL = 'deepseek-r1-distill-qwen-32b';
+const IMAGE_MODEL = 'deepseek-r1-distill-qwen-32b';
 
 const API_KEY_CONFIG = {
     siliconflow: {

@@ -3669,93 +3669,65 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                     )}
                                     <MenuItem
-                                        expanded={this.props.aiMenuOpen}
+                                        onClick={() => {
+                                            this.props.onClickAIAgent();
+                                            this.props.onRequestCloseTools();
+                                        }}
                                     >
-                                        <div
-                                            className={styles.option}
-                                            onClick={this.props.onClickAI}
+                                        <Sparkles className={styles.icon} />
+                                        <span className={styles.submenuLabel}>
+                                            <FormattedMessage
+                                                defaultMessage="AI Agent"
+                                                description="Menu bar item for AI agent"
+                                                id="gui.menuBar.aiAgent"
+                                            />
+                                        </span>
+                                    </MenuItem>
+                                    {SettingsStore.getAddonEnabled('02agent') && (
+                                        <MenuItem
+                                            onClick={() => {
+                                                window.dispatchEvent(new Event('02agent-show-plugin'));
+                                                this.props.onRequestCloseTools();
+                                            }}
                                         >
-                                            <Sparkles className={styles.icon} />
                                             <span className={styles.submenuLabel}>
                                                 <FormattedMessage
-                                                    defaultMessage="AI"
-                                                    description="AI sub-menu"
-                                                    id="gui.menuBar.ai"
+                                                    defaultMessage="02Agent"
+                                                    description="Menu bar item for 02Agent"
+                                                    id="gui.menuBar.02agent"
                                                 />
                                             </span>
-                                            <ChevronDown className={styles.expandCaret} />
-                                        </div>
-                                        <Submenu
-                                            className={styles.languageSubmenu}
-                                            place={this.props.isRtl ? 'left' : 'right'}
+                                        </MenuItem>
+                                    )}
+                                    {SettingsStore.getAddonEnabled('novatheai') && (
+                                        <MenuItem
+                                            onClick={() => {
+                                                window.dispatchEvent(new Event('novatheai-show-plugin'));
+                                                this.props.onRequestCloseTools();
+                                            }}
                                         >
-                                            <MenuSection>
-                                                <MenuItem
-                                                    onClick={() => {
-                                                        this.props.onClickAIChat();
-                                                        this.props.onRequestCloseTools();
-                                                    }}
-                                                >
-                                                    <FormattedMessage
-                                                        defaultMessage="AI Chat"
-                                                        description="Menu bar item for AI chat"
-                                                        id="gui.menuBar.aiChat"
-                                                    />
-                                                </MenuItem>
-                                                <MenuItem
-                                                    onClick={() => {
-                                                        this.props.onClickAIAgent();
-                                                        this.props.onRequestCloseTools();
-                                                    }}
-                                                >
-                                                    <FormattedMessage
-                                                        defaultMessage="AI Agent"
-                                                        description="Menu bar item for AI agent"
-                                                        id="gui.menuBar.aiAgent"
-                                                    />
-                                                </MenuItem>
-                                            {SettingsStore.getAddonEnabled('02agent') && (
-                                                <MenuItem
-                                                    onClick={() => {
-                                                        window.dispatchEvent(new Event('02agent-show-plugin'));
-                                                        this.props.onRequestCloseTools();
-                                                    }}
-                                                >
-                                                    <FormattedMessage
-                                                        defaultMessage="02Agent"
-                                                        description="Menu bar item for 02Agent"
-                                                        id="gui.menuBar.02agent"
-                                                    />
-                                                </MenuItem>
-                                            )}
-                                            {SettingsStore.getAddonEnabled('novatheai') && (
-                                                <MenuItem
-                                                    onClick={() => {
-                                                        window.dispatchEvent(new Event('novatheai-show-plugin'));
-                                                        this.props.onRequestCloseTools();
-                                                    }}
-                                                >
-                                                    <FormattedMessage
-                                                        defaultMessage="Bilup Nova"
-                                                        description="Menu bar item for Bilup Nova"
-                                                        id="gui.menuBar.bilupNova"
-                                                    />
-                                                </MenuItem>
-                                            )}
-                                                <MenuItem
-                                                    onClick={() => {
-                                                        this.props.onClickBaiduAI();
-                                                        this.props.onRequestCloseTools();
-                                                    }}
-                                                >
-                                                    <FormattedMessage
-                                                        defaultMessage="百度AI"
-                                                        description="Menu bar item for Baidu AI"
-                                                        id="gui.menuBar.baiduAI"
-                                                    />
-                                                </MenuItem>
-                                            </MenuSection>
-                                        </Submenu>
+                                            <span className={styles.submenuLabel}>
+                                                <FormattedMessage
+                                                    defaultMessage="Bilup Nova"
+                                                    description="Menu bar item for Bilup Nova"
+                                                    id="gui.menuBar.bilupNova"
+                                                />
+                                            </span>
+                                        </MenuItem>
+                                    )}
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onClickBaiduAI();
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <span className={styles.submenuLabel}>
+                                            <FormattedMessage
+                                                defaultMessage="百度AI"
+                                                description="Menu bar item for Baidu AI"
+                                                id="gui.menuBar.baiduAI"
+                                            />
+                                        </span>
                                     </MenuItem>
                                 </MenuSection>
                                 {window.__mistwarpDebuggerToggle || window.__mistwarpVariableManagerToggle ? (

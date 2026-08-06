@@ -677,6 +677,7 @@ class AnthropicAdapter implements ProviderAdapter {
               currentToolCall.function.arguments += partialJson;
             }
             onToolCallsDelta?.(cloneToolCalls(toolCalls.filter((toolCall) => toolCall.id || toolCall.function.name)));
+          }
         }
       }
     }

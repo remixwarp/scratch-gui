@@ -7,4 +7,7 @@ export const PROVIDER_DEFAULT_URLS: Record<string, string> = {
   azure: "",
   custom: "",
   custom_anthropic: "",
+  siliconflow: "https://aiapi.remix.de5.net/v1/chat/completions",
 };
+
+export const DEFAULT_FREE_API_KEY = "sk-remixworld";
