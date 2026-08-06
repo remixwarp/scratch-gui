@@ -285,7 +285,50 @@ class OpenAICompatibleAdapter implements ProviderAdapter {
       }
     }
 
-    if (!finished && !signal?.aborted) {
+    // Flush remaining buffer after stream ends — the last chunk may contain
+    // a final data line without a trailing newline.
+    if (buffer) {
+      const line = buffer.trim();
+      if (line.startsWith("data:")) {
+        const payload = line.slice(5).trim();
+        if (payload === "[DONE]") {
+          finished = true;
+        } else if (payload) {
+          try {
+            const parsed = JSON.parse(payload);
+            if (parsed.error) {
+              throw new Error(parsed.error.message || JSON.stringify(parsed.error));
+            }
+            if (parsed.usage) {
+              usage = parsed.usage;
+            }
+            const choice = parsed.choices?.[0];
+            if (choice?.finish_reason) {
+              finished = true;
+            }
+            const delta = choice?.delta;
+            if (delta) {
+              const reasoningDelta = getOpenAIReasoningDelta(delta as Record<string, unknown>);
+              if (reasoningDelta) {
+                reasoning += reasoningDelta;
+                onReasoningDelta?.(reasoningDelta);
+              }
+              if (typeof delta.content === "string" && delta.content) {
+                content += delta.content;
+                onTextDelta?.(delta.content);
+              }
+            }
+          } catch {
+            // Ignore malformed trailing data
+          }
+        }
+      }
+      buffer = "";
+    }
+
+    const hasContent = content.length > 0 || reasoning.length > 0 || toolCalls.length > 0;
+
+    if (!finished && !signal?.aborted && !hasContent) {
       throw new Error("Stream ended unexpectedly. The API provider might be overloaded or the connection was dropped.");
     }
 
@@ -653,7 +696,40 @@ class AnthropicAdapter implements ProviderAdapter {
       }
     }
 
-    if (!finished && !signal?.aborted) {
+    // Flush remaining buffer after stream ends
+    if (buffer) {
+      const line = buffer.trim();
+      if (line.startsWith("data:")) {
+        const payload = line.slice(5).trim();
+        if (payload) {
+          try {
+            const parsed = JSON.parse(payload);
+            if (parsed.type === "message_stop") {
+              finished = true;
+            } else if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
+              const deltaText = parsed.delta.text || "";
+              if (deltaText) {
+                content += deltaText;
+                onTextDelta?.(deltaText);
+              }
+            } else if (parsed.type === "content_block_delta" && parsed.delta?.type === "thinking_delta") {
+              const thinkingText = parsed.delta.thinking || parsed.delta.text || "";
+              if (thinkingText) {
+                reasoning += thinkingText;
+                onReasoningDelta?.(thinkingText);
+              }
+            }
+          } catch {
+            // Ignore malformed trailing data
+          }
+        }
+      }
+      buffer = "";
+    }
+
+    const hasContent = content.length > 0 || reasoning.length > 0 || toolCalls.length > 0;
+
+    if (!finished && !signal?.aborted && !hasContent) {
       throw new Error("Stream ended unexpectedly. The API provider might be overloaded or the connection was dropped.");
     }
 
