@@ -1,75 +1,53 @@
-import classNames from 'classnames';
-import PropTypes from 'prop-types';
 import React from 'react';
-import {connect} from 'react-redux';
-import {FolderOpen} from 'lucide-react';
-
-import menuBarStyles from './menu-bar.css';
-import MwNotifications from './mw-notifications.jsx';
-import MyStuffPage from '../../community/pages/MyStuff.jsx';
-import openMistWarpCommunityWindow from '../../lib/mw/open-mw-community-window.jsx';
+import PropTypes from 'prop-types';
+import {FolderOpen, Bell} from 'lucide-react';
 import {useIntl} from '../../lib/tw-use-intl.jsx';
 
-const openMyStuff = title => openMistWarpCommunityWindow({
-    id: 'mw-mystuff-window',
-    title,
-    initialPath: '/mystuff',
-    element: <MyStuffPage />
-});
+import menuBarStyles from './menu-bar.css';
 
-const NavItem = ({title, icon: Icon, onClick}) => {
-    const handleKeyDown = e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onClick();
-        }
-    };
-    return (
-        <div
-            className={classNames(menuBarStyles.menuBarItem, menuBarStyles.hoverable)}
-            title={title}
-            aria-label={title}
-            role="button"
-            tabIndex={0}
-            onClick={onClick}
-            onKeyDown={handleKeyDown}
-        >
-            <Icon size={18} />
-        </div>
-    );
-};
+const NavItem = ({title, icon: Icon, url}) => (
+    <a
+        className={menuBarStyles.menuBarItem}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={title}
+        aria-label={title}
+    >
+        <Icon size={18} />
+    </a>
+);
 
 NavItem.propTypes = {
     icon: PropTypes.elementType.isRequired,
-    onClick: PropTypes.func.isRequired,
-    title: PropTypes.string.isRequired
+    title: PropTypes.string.isRequired,
+    url: PropTypes.string.isRequired
 };
 
-const MwEditorNav = ({username}) => {
+const MwEditorNav = () => {
     const intl = useIntl();
-    if (!username) {
-        return null;
-    }
     const myStuffTitle = intl.formatMessage({
         id: 'mw.menuBar.myStuff',
         defaultMessage: 'My Stuff'
+    });
+    const notificationsTitle = intl.formatMessage({
+        id: 'mw.menuBar.notifications',
+        defaultMessage: 'Notifications'
     });
     return (
         <React.Fragment>
             <NavItem
                 title={myStuffTitle}
                 icon={FolderOpen}
-                onClick={() => openMyStuff(myStuffTitle)}
+                url="https://editor.bilup.org/mystuff"
             />
-            <MwNotifications />
+            <NavItem
+                title={notificationsTitle}
+                icon={Bell}
+                url="https://editor.bilup.org/notifications"
+            />
         </React.Fragment>
     );
 };
 
-MwEditorNav.propTypes = {
-    username: PropTypes.string
-};
-
-export default connect(state => ({
-    username: state.scratchGui.rotur.username
-}))(MwEditorNav);
+export default MwEditorNav;

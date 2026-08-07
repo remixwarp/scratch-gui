@@ -149,11 +149,25 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
     } else if (method !== 'GET' && !path.endsWith('/view')) {
         clearApiCache();
     }
+    // If we don't yet have a mistwarp session but the user has logged in with
+    // Bilup Accounts (a rotur token exists), exchange it now so the very first
+    // request already carries a valid Bearer token instead of waiting for a 401.
+    let session = loadSession();
+    if (!session && loadRoturToken()) {
+        try {
+            await runExchange(loadRoturToken());
+            session = loadSession();
+        } catch (e) {
+            // exchange failed; fall through to whatever token we do have
+        }
+    }
+    const roturFallback = loadRoturToken();
     const doFetch = () => {
-        const session = loadSession();
+        const currentSession = loadSession() || session;
         const finalHeaders = {...headers};
-        if (session) {
-            finalHeaders.Authorization = `Bearer ${session}`;
+        const bearer = currentSession || roturFallback;
+        if (bearer) {
+            finalHeaders.Authorization = `Bearer ${bearer}`;
         }
         const options = {method, headers: finalHeaders};
         if (body instanceof FormData) {

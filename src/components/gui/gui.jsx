@@ -59,7 +59,6 @@ import CompatibilityModal from '../../containers/tv-compatibility-modal.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
-import MwLoginWarningModal from '../mw-login-warning-modal/mw-login-warning-modal.jsx';
 import {closeRoturLoginModal} from '../../reducers/modals.js';
 
 import SimpleDialog from '../../containers/simple-dialog.jsx';
@@ -326,8 +325,6 @@ const GUIComponent = props => {
         renderLogin,
         roturLoginModalVisible,
         onRequestCloseRoturLogin,
-        roturStatus,
-        roturUsername,
         onClickAbout,
         onClickAccountNav,
         onCloseAccountNav,
@@ -416,17 +413,7 @@ const GUIComponent = props => {
         });
     }, [requestProjectUpload, onLoadingStarted, onLoadingFinished, onLoadingFailed, onSetProjectTitle, loadingState, vm, onStartSelectingFileUpload]);
 
-    // Re-show the Bilup login warning modal whenever the user just finished logging in
-    // (roturStatus transitions from a non-ready state to 'ready'). This fires both on
-    // the initial auto-login (idle -> ready) and whenever the user clicks the red
-    // "Continue with Bilup Accounts" button (logging-in -> ready).
-    useEffect(() => {
-        const prev = prevRoturStatusRef.current;
-        if (prev !== 'ready' && roturStatus === 'ready') {
-            setDismissLoginWarning(false);
-        }
-        prevRoturStatusRef.current = roturStatus;
-    }, [roturStatus]);
+
     
     useEffect(() => {
         const printLogo = () => {
@@ -708,8 +695,6 @@ const GUIComponent = props => {
     }, [getStageBorderExtraWidth]);
 
     const lastResizeWidthRef = useRef(null);
-    const prevRoturStatusRef = useRef(null);
-    const [dismissLoginWarning, setDismissLoginWarning] = useState(false);
     useEffect(() => {
         if (typeof stageContainerWidth !== 'number') return;
 
@@ -958,11 +943,6 @@ const GUIComponent = props => {
             {roturLoginModalVisible && (
                 <RoturLoginModal onRequestClose={onRequestCloseRoturLogin} />
             )}
-            {!dismissLoginWarning && roturStatus === 'ready' && roturUsername && (
-                <MwLoginWarningModal
-                    onRequestClose={() => setDismissLoginWarning(true)}
-                />
-            )}
         </React.Fragment>
     ), [
         securityManager,
@@ -983,9 +963,6 @@ const GUIComponent = props => {
         readmeModalVisible,
         roturLoginModalVisible,
         onRequestCloseRoturLogin,
-        roturStatus,
-        roturUsername,
-        dismissLoginWarning,
         isEmbedded,
         vm
     ]);
@@ -1432,8 +1409,6 @@ GUIComponent.propTypes = {
     renderLogin: PropTypes.func,
     roturLoginModalVisible: PropTypes.bool,
     onRequestCloseRoturLogin: PropTypes.func,
-    roturStatus: PropTypes.string,
-    roturUsername: PropTypes.string,
     securityManager: PropTypes.shape({}),
     showComingSoon: PropTypes.bool,
     showOpenFilePicker: PropTypes.func,

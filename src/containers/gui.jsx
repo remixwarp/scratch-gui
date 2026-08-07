@@ -294,8 +294,6 @@ const mapStateToProps = state => {
         invalidProjectModalVisible: state.scratchGui.modals.invalidProjectModal,
         gitModalVisible: state.scratchGui.modals.gitModal,
         roturLoginModalVisible: state.scratchGui.modals.roturLoginModal,
-        roturStatus: state.scratchGui.rotur.status,
-        roturUsername: state.scratchGui.rotur.username,
         vm: state.scratchGui.vm
     };
 };
