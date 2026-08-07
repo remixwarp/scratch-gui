@@ -620,6 +620,26 @@ a:active, a:focus {
     margin-right: 10px;
 }
 
+/* 插件不兼容红色警告 */
+.conflict-warning {
+    padding: 12px 20px;
+    margin: 0 10px 10px 10px;
+    border-radius: 5px;
+    background: #fd2b2b;
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 1px solid #d81212;
+    box-shadow: 0 2px 5px $shadow;
+}
+.conflict-warning-text strong {
+    color: #ffe600;
+}
+.conflict-warning-text {
+    display: inline;
+}
+
 .setting-container {
     margin-top: 10px;
     display: flex;

@@ -32,6 +32,7 @@ const manifest = {
     "theme",
     "new"
   ],
-  "enabledByDefault": false
+  "enabledByDefault": false,
+  "incompatibleWith": ["cat-blocks"]
 };
 export default manifest;

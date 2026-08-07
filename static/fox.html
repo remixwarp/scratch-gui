@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>轻盈狐 · 版权声明 | RemixWarp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #0b0c10 0%, #1a1c22 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', 'Space Grotesk', system-ui, -apple-system, sans-serif;
+      padding: 1.5rem;
+      margin: 0;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .card {
+      max-width: 760px;
+      width: 100%;
+      background: rgba(22, 24, 30, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 2.5rem;
+      padding: 2.2rem 2.2rem 2rem;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      color: #e8eaed;
+      transition: all 0.2s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle at center, rgba(255, 140, 100, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      z-index: -1;
+      filter: blur(40px);
+    }
+
+    /* 语言切换按钮 */
+    .lang-switch {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 1rem;
+    }
+
+    .lang-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #b0b8c5;
+      padding: 0.45rem 1.2rem;
+      border-radius: 2rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.3px;
+    }
+
+    .lang-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #f0f2f5;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .lang-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.2rem;
+      flex-wrap: wrap;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 1.5rem;
+    }
+
+    .logo-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      background: rgba(255, 140, 100, 0.12);
+      border-radius: 18px;
+      color: #f9a86b;
+      flex-shrink: 0;
+    }
+
+    .logo-icon svg {
+      width: 34px;
+      height: 34px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .title-section h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      background: linear-gradient(to right, #ffffff, #d1d5db);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.2rem;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .sub {
+      font-size: 0.9rem;
+      color: #9aa0b0;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: rgba(255, 140, 100, 0.18);
+      color: #ffb08c;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      border: 1px solid rgba(255, 140, 100, 0.3);
+    }
+
+    .character-box {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 1.8rem;
+      padding: 1.5rem;
+      margin: 1.8rem 0;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+
+    .fox-avatar {
+      width: 80px;
+      height: 80px;
+      background: #2a2d36;
+      border-radius: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1);
+      color: #f9a86b;
+    }
+
+    .fox-avatar svg {
+      width: 44px;
+      height: 44px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.6;
+    }
+
+    .character-details h2 {
+      font-size: 1.9rem;
+      font-weight: 600;
+      color: #f8f9fc;
+      margin-bottom: 0.2rem;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .character-details .en-name {
+      color: #f9a86b;
+      font-weight: 500;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+    }
+
+    .author-info {
+      background: #101216;
+      border-radius: 1.2rem;
+      padding: 1.2rem 1.4rem;
+      margin: 1.5rem 0 1.8rem;
+      font-size: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .author-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+    }
+
+    .author-label {
+      color: #a0a7b8;
+      font-weight: 500;
+      min-width: 70px;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .author-label svg {
+      width: 16px;
+      height: 16px;
+      stroke: #a0a7b8;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .highlight {
+      color: #ffb791;
+      font-weight: 600;
+    }
+
+    a {
+      color: #ffa967;
+      text-decoration: none;
+      border-bottom: 1px dotted rgba(255, 169, 103, 0.5);
+      transition: all 0.2s;
+      word-break: break-all;
+    }
+
+    a:hover {
+      color: #ffc49b;
+      border-bottom-color: #ffc49b;
+    }
+
+    .divider {
+      margin: 1.8rem 0 1.5rem;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent);
+    }
+
+    .rule-block {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid #f9a86b;
+    }
+
+    .rule-title {
+      font-weight: 600;
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #f9a86b;
+    }
+
+    .rule-title svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .condition {
+      background: #1e2027;
+      border-radius: 1rem;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-weight: 500;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+    }
+
+    .condition svg {
+      width: 20px;
+      height: 20px;
+      stroke: #f9a86b;
+      fill: none;
+      stroke-width: 2;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .fan-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: #3b82f6;
+      color: white;
+      padding: 0.2rem 0.7rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+
+    .fan-badge-orange {
+      background: #f97316;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: white;
+      padding: 0.2rem 0.7rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+
+    .channel-box {
+      background: #181a20;
+      border-radius: 1.2rem;
+      padding: 1.2rem;
+      margin: 1.5rem 0 1rem;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .channel-link {
+      font-size: 1rem;
+      background: #2b2e38;
+      padding: 0.8rem 1.2rem;
+      border-radius: 2.5rem;
+      display: inline-block;
+      margin: 0.8rem 0 0.3rem;
+      word-break: break-word;
+      font-weight: 500;
+      color: #ffb57a;
+      transition: 0.2s;
+      border: 1px solid #4a4f5a;
+      text-decoration: none;
+    }
+
+    .channel-link:hover {
+      background: #353944;
+      color: #ffc796;
+    }
+
+    .admin-note {
+      font-size: 0.9rem;
+      color: #b0b8c5;
+      margin-top: 0.8rem;
+    }
+
+    .footer-note {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: #6b7280;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 1.3rem;
+    }
+
+    @media (max-width: 500px) {
+      .card {
+        padding: 1.8rem 1.2rem;
+      }
+      .title-section h1 {
+        font-size: 1.7rem;
+      }
+    }
+
+    [data-lang] {
+      transition: opacity 0.2s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <!-- 语言切换按钮 -->
+    <div class="lang-switch">
+      <button id="langToggleBtn" class="lang-btn" aria-label="切换语言">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor"/>
+          <path d="M2 12H22" stroke="currentColor"/>
+          <path d="M12 2C14.5 4.5 15.5 8.5 15.5 12C15.5 15.5 14.5 19.5 12 22C9.5 19.5 8.5 15.5 8.5 12C8.5 8.5 9.5 4.5 12 2Z" stroke="currentColor"/>
+        </svg>
+        <span id="langLabel">EN</span>
+      </button>
+    </div>
+
+    <!-- 头部标识 -->
+    <div class="header">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3C8.5 3 5 5.5 4 9C3 12 4 15 7 17C8 18 9 19 9 21H15C15 19 16 18 17 17C20 15 21 12 20 9C19 5.5 15.5 3 12 3Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 9C9 9 10 11 12 11C14 11 15 9 15 9" stroke="currentColor" stroke-linecap="round"/>
+          <circle cx="9.5" cy="13" r="1" fill="currentColor" stroke="none"/>
+          <circle cx="14.5" cy="13" r="1" fill="currentColor" stroke="none"/>
+          <path d="M8 5L6 2" stroke="currentColor" stroke-linecap="round"/>
+          <path d="M16 5L18 2" stroke="currentColor" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="title-section">
+        <h1>
+          <span data-lang="zh">轻盈狐 · 版权声明</span>
+          <span data-lang="en" style="display: none;">Flick Fox · Copyright Notice</span>
+        </h1>
+        <div class="sub">
+          <span data-lang="zh">RemixWarp 编辑器默认角色</span>
+          <span data-lang="en" style="display: none;">RemixWarp Editor Default Character</span>
+          <span class="badge">Flick Fox</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 角色形象与基础信息 -->
+    <div class="character-box">
+      <div class="fox-avatar">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 12C20 16 17 20 12 20C7 20 4 16 4 12C4 8 7 4 12 4C17 4 20 8 20 12Z" stroke="currentColor" stroke-linecap="round"/>
+          <path d="M12 7L10 4H14L12 7Z" fill="currentColor" stroke="none"/>
+          <path d="M8 10L5 9L7 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="9" cy="13" r="1.2" fill="currentColor" stroke="none"/>
+          <circle cx="14" cy="13" r="1.2" fill="currentColor" stroke="none"/>
+          <path d="M10 16C10.5 17 12 17.5 13 17" stroke="currentColor" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="character-details">
+        <h2 data-lang="zh">轻盈狐</h2>
+        <h2 data-lang="en" style="display: none;">Flick Fox</h2>
+        <div class="en-name">Flick Fox</div>
+        <div style="margin-top: 0.5rem; color: #b9c0d0; font-size: 0.9rem;">
+          <span data-lang="zh">RemixWarp 原创角色 · 受版权保护</span>
+          <span data-lang="en" style="display: none;">Original RemixWarp Character · Copyright Protected</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 作者信息区块 -->
+    <div class="author-info">
+      <div class="author-row">
+        <span class="author-label">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 20H20M4 20H8M14 6L18 2L22 6L18 10M14 6L4 16V20H8L18 10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span data-lang="zh">作者</span>
+          <span data-lang="en" style="display: none;">Author</span>
+        </span>
+        <span class="highlight">Catnap</span>
+      </div>
+      <div class="author-row">
+        <span class="author-label">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          QQ
+        </span>
+        <span><a href="tencent://message/?uin=3841377484&Site=RemixWarp&Menu=yes">3841377484</a></span>
+      </div>
+      <div class="author-row">
+        <span class="author-label">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M6.906 4.537C6.545 4.314 6.126 4.208 5.706 4.234C5.286 4.26 4.882 4.416 4.55 4.682C4.218 4.948 3.974 5.31 3.851 5.72C3.728 6.13 3.732 6.568 3.863 6.976L6.183 14.077C6.298 14.428 6.507 14.741 6.789 14.984C7.071 15.226 7.415 15.388 7.785 15.453L18.107 17.264C18.545 17.34 18.992 17.273 19.387 17.072C19.782 16.871 20.107 16.545 20.317 16.14C20.527 15.734 20.613 15.269 20.563 14.808C20.513 14.347 20.33 13.913 20.038 13.565L14.406 6.843C14.113 6.491 13.721 6.238 13.281 6.115C12.841 5.992 12.374 6.005 11.941 6.153L6.906 4.537Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="9.5" cy="11.5" r="1.5" fill="currentColor" stroke="none"/>
+            <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"/>
+          </svg>
+          bilibili
+        </span>
+        <span>
+          <a href="https://space.bilibili.com/3546662593104166" target="_blank" rel="noopener noreferrer">
+            Turboratch
+          </a>
+          <span style="color: #8b92a2; margin-left: 0.3rem; font-size:0.8rem;">(UID:3546662593104166)</span>
+        </span>
+      </div>
+      <div style="margin-top: 0.3rem; color: #a2a9b8; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5">
+          <path d="M5 13L9 17L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span data-lang="zh">经作者明确授权并同意以下使用条款</span>
+        <span data-lang="en" style="display: none;">Explicitly authorized by the author with the following terms</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 核心版权规则 -->
+    <div class="rule-block">
+      <div class="rule-title">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M12 12H15M12 16H15M9 12H9.01M9 16H9.01" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span data-lang="zh">使用授权 · 按粉丝量分级</span>
+        <span data-lang="en" style="display: none;">Usage License · Tiered by Follower Count</span>
+      </div>
+      
+      <!-- 1500及以下 -->
+      <div style="margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem; flex-wrap: wrap;">
+          <span class="fan-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+              <path d="M17 21V19C17 16.7909 15.2091 15 13 15H11C8.79086 15 7 16.7909 7 19V21" stroke-linecap="round"/>
+              <circle cx="12" cy="7" r="4" stroke="none" fill="white"/>
+            </svg>
+            <span data-lang="zh">≤ 1500 粉丝</span>
+            <span data-lang="en" style="display: none;">≤ 1500 Followers</span>
+          </span>
+          <span style="font-weight: 600; color: #e2e6f0;">
+            <span data-lang="zh">个人/组织团体</span>
+            <span data-lang="en" style="display: none;">Individuals / Organizations</span>
+          </span>
+        </div>
+        <div class="condition">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor"/>
+            <path d="M12 8V12L15 15" stroke="currentColor" stroke-linecap="round"/>
+          </svg>
+          <div>
+            <strong>
+              <span data-lang="zh">免费使用 · 非商用</span>
+              <span data-lang="en" style="display: none;">Free Use · Non-Commercial</span>
+            </strong><br>
+            <span style="color: #b9c0d0; font-size: 0.9rem;">
+              <span data-lang="zh">可将轻盈狐用于编辑器之外的展示（视频、图文、直播等），<span style="color: #ff8c6b;">不可商用</span>。商用需单独授权。</span>
+              <span data-lang="en" style="display: none;">Flick Fox may be used for display outside the editor (videos, images, live streams, etc.), <span style="color: #ff8c6b;">no commercial use</span>. Commercial use requires separate authorization.</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1500以上 -->
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem; flex-wrap: wrap;">
+          <span class="fan-badge-orange">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+              <path d="M17 21V19C17 16.7909 15.2091 15 13 15H11C8.79086 15 7 16.7909 7 19V21" stroke-linecap="round"/>
+              <circle cx="12" cy="7" r="4" stroke="none" fill="white"/>
+              <path d="M23 21V19C22.9993 17.1771 21.765 15.5857 20 15.13" stroke="white" stroke-linecap="round"/>
+              <path d="M16 3.13C17.7699 3.58317 19.0078 5.17767 19.0078 7.005C19.0078 8.83233 17.7699 10.4268 16 10.88" stroke="white" stroke-linecap="round"/>
+            </svg>
+            <span data-lang="zh">＞ 1500 粉丝</span>
+            <span data-lang="en" style="display: none;">＞ 1500 Followers</span>
+          </span>
+          <span style="font-weight: 600; color: #e2e6f0;">
+            <span data-lang="zh">个人/组织团体</span>
+            <span data-lang="en" style="display: none;">Individuals / Organizations</span>
+          </span>
+        </div>
+        <div class="condition">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor"/>
+            <path d="M3 10H21" stroke="currentColor"/>
+          </svg>
+          <div>
+            <strong>
+              <span data-lang="zh">需申请授权 · 可商用</span>
+              <span data-lang="en" style="display: none;">Authorization Required · Commercial Use Allowed</span>
+            </strong><br>
+            <span style="color: #b9c0d0; font-size: 0.9rem;">
+              <span data-lang="zh">须在腾讯频道发帖，获得任意超级管理员（或频道主）同意后方可使用。<span style="color: #ffb791;">一般需要为RemixWarp捐款</span>。</span>
+              <span data-lang="en" style="display: none;">Must post in the Tencent channel and obtain consent from any super admin (or channel owner) before use. <span style="color: #ffb791;">Generally requires a donation to RemixWarp</span>.</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 腾讯频道链接 -->
+    <div class="channel-box">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; color: #d1d5db; font-weight: 500; flex-wrap: wrap; text-align: center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f9a86b" stroke-width="2">
+          <path d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9404 15.7513 14.6898C16.4231 14.4392 17.0331 14.0471 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.4791 3.53087C19.5521 2.60383 18.298 2.07799 16.987 2.0666C15.676 2.0552 14.413 2.55918 13.47 3.46997L11.75 5.17997" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 11C13.5705 10.4259 13.0226 9.95083 12.3934 9.60707C11.7642 9.26331 11.0685 9.05889 10.3533 9.00768C9.63819 8.95646 8.92037 9.05963 8.24861 9.31023C7.57685 9.56082 6.96684 9.95294 6.45996 10.46L3.45996 13.46C2.54917 14.403 2.04519 15.666 2.05659 16.977C2.06798 18.288 2.59382 19.5421 3.52086 20.4691C4.44791 21.3962 5.70197 21.922 7.01295 21.9334C8.32393 21.9448 9.58694 21.4408 10.53 20.53L12.24 18.82" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span data-lang="zh">点击链接加入腾讯频道【RemixWarp重构跃迁】</span>
+        <span data-lang="en" style="display: none;">Join the Tencent Channel [RemixWarp Reconstruction Leap]</span>
+      </div>
+      <a href="https://pd.qq.com/s/6em7c4w9l" target="_blank" rel="noopener noreferrer" class="channel-link">
+        https://pd.qq.com/s/6em7c4w9l
+      </a>
+      <div class="admin-note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b0b8c5" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+          <circle cx="12" cy="12" r="10" stroke="currentColor"/>
+          <path d="M12 16V12M12 8H12.01" stroke="currentColor" stroke-linecap="round"/>
+        </svg>
+        <span data-lang="zh">发帖后需获得任意超级管理员或频道主明确同意，方可合规使用（可商用）。</span>
+        <span data-lang="en" style="display: none;">After posting, explicit consent from any super admin or channel owner is required for compliant use (commercial use allowed).</span>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      <span data-lang="zh">© 2026 RemixWarp · 轻盈狐版权归作者Catnap所有 · 侵权必究</span>
+      <span data-lang="en" style="display: none;">© 2026 RemixWarp · Flick Fox copyright owned by author Catnap · All rights reserved</span>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const btn = document.getElementById('langToggleBtn');
+      const labelSpan = document.getElementById

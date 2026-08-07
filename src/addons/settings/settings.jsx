@@ -759,27 +759,60 @@ Presets.propTypes = {
     }))
 };
 
+// 查找与指定插件不兼容且已开启的插件
+const findIncompatibleAddons = (id, allSettings) => {
+    const manifest = importedAddons[id];
+    if (!manifest || !Array.isArray(manifest.incompatibleWith)) {
+        return [];
+    }
+    return manifest.incompatibleWith
+        .filter(conflictId => {
+            const conflictSettings = allSettings && allSettings[conflictId];
+            return conflictSettings && conflictSettings.enabled;
+        })
+        .map(conflictId => ({
+            id: conflictId,
+            name: addonTranslations[`${conflictId}/@name`] ||
+                (importedAddons[conflictId] && importedAddons[conflictId].name) ||
+                conflictId
+        }));
+};
+
 const Addon = ({
     id,
     settings,
     manifest,
-    extended
-}) => (
+    extended,
+    allSettings
+}) => {
+    const [showConflictWarning, setShowConflictWarning] = React.useState(false);
+    const incompatibleAddons = findIncompatibleAddons(id, allSettings);
+
+    const handleToggle = value => {
+        // 尝试开启插件时检查不兼容性
+        if (value) {
+            const conflicts = findIncompatibleAddons(id, allSettings);
+            if (conflicts.length > 0) {
+                // 存在不兼容且已开启的插件，阻止开启并显示红色警告
+                setShowConflictWarning(true);
+                return;
+            }
+            if (manifest.tags.includes('danger') && !confirm(settingsTranslations.enableDangerous)) {
+                return;
+            }
+        }
+        setShowConflictWarning(false);
+        SettingsStore.setAddonEnabled(id, value);
+    };
+
+    return (
     <div className={classNames(styles.addon, {[styles.addonDirty]: settings.dirty})}>
         <div className={styles.addonHeader}>
             <label className={styles.addonTitle}>
                 <div className={styles.addonSwitch}>
                     <Switch
                         value={settings.enabled}
-                        onChange={value => {
-                            if (
-                                !value ||
-                                !manifest.tags.includes('danger') ||
-                                confirm(settingsTranslations.enableDangerous)
-                            ) {
-                                SettingsStore.setAddonEnabled(id, value);
-                            }
-                        }}
+                        onChange={handleToggle}
                     />
                 </div>
                 {manifest.tags.includes('theme') ? (
@@ -829,6 +862,20 @@ const Addon = ({
                 )}
             </div>
         </div>
+        {showConflictWarning && (
+            <div className={styles.conflictWarning}>
+                <span className={styles.conflictWarningText}>
+                    该插件与
+                    {incompatibleAddons.map((conflict, index) => (
+                        <span key={conflict.id}>
+                            <strong>{conflict.name}</strong>
+                            {index < incompatibleAddons.length - 1 ? '、' : ''}
+                        </span>
+                    ))}
+                    插件不兼容，无法同时开启，已停止选择该插件。
+                </span>
+            </div>
+        )}
         {settings.enabled && (
             <div className={styles.addonDetails}>
                 <div className={styles.description}>
@@ -878,7 +925,8 @@ const Addon = ({
             </div>
         )}
     </div>
-);
+    );
+};
 Addon.propTypes = {
     id: PropTypes.string,
     settings: PropTypes.shape({
@@ -897,9 +945,12 @@ Addon.propTypes = {
         })),
         presets: PropTypes.arrayOf(PropTypes.shape({})),
         tags: PropTypes.arrayOf(PropTypes.string),
-        noCompiler: PropTypes.bool
+        noCompiler: PropTypes.bool,
+        incompatibleWith: PropTypes.arrayOf(PropTypes.string)
     }),
-    extended: PropTypes.bool
+    extended: PropTypes.bool,
+    // eslint-disable-next-line react/forbid-prop-types
+    allSettings: PropTypes.object
 };
 
 const Dirty = props => (
@@ -948,7 +999,7 @@ UnsupportedAddons.propTypes = {
     }))
 };
 
-const InternalAddonList = ({addons, extended}) => (
+const InternalAddonList = ({addons, extended, allSettings}) => (
     addons.map(({id, manifest, state}) => (
         <Addon
             key={id}
@@ -956,6 +1007,7 @@ const InternalAddonList = ({addons, extended}) => (
             settings={state}
             manifest={manifest}
             extended={extended}
+            allSettings={allSettings}
         />
     ))
 );
@@ -997,6 +1049,7 @@ class AddonGroup extends React.Component {
                     <InternalAddonList
                         addons={this.props.addons}
                         extended={this.props.extended}
+                        allSettings={this.props.allSettings}
                     />
                 )}
             </div>
@@ -1011,7 +1064,9 @@ AddonGroup.propTypes = {
         state: PropTypes.shape({}).isRequired,
         manifest: PropTypes.shape({}).isRequired
     })).isRequired,
-    extended: PropTypes.bool.isRequired
+    extended: PropTypes.bool.isRequired,
+    // eslint-disable-next-line react/forbid-prop-types
+    allSettings: PropTypes.object
 };
 
 const addonToSearchItem = ({id, manifest}) => {
@@ -1168,6 +1223,7 @@ class AddonList extends React.Component {
                     <InternalAddonList
                         addons={addons}
                         extended={this.props.extended}
+                        allSettings={this.props.allSettings}
                     />
                 </div>
             );
@@ -1212,6 +1268,7 @@ class AddonList extends React.Component {
                             open={open}
                             addons={addons}
                             extended={this.props.extended}
+                            allSettings={this.props.allSettings}
                         />
                     )
                 ))}
@@ -1229,7 +1286,9 @@ AddonList.propTypes = {
     selectedTags: PropTypes.instanceOf(Set).isRequired,
     selectedEditors: PropTypes.arrayOf(PropTypes.string).isRequired,
     editorCategories: PropTypes.objectOf(PropTypes.string).isRequired,
-    extended: PropTypes.bool.isRequired
+    extended: PropTypes.bool.isRequired,
+    // eslint-disable-next-line react/forbid-prop-types
+    allSettings: PropTypes.object
 };
 
 class AddonSettingsComponent extends React.Component {
@@ -1708,6 +1767,7 @@ class AddonSettingsComponent extends React.Component {
                                     selectedEditors={this.state.selectedEditors}
                                     editorCategories={this.state.editorCategories}
                                     extended={this.state.extended}
+                                    allSettings={this.state}
                                 />
                                 <div className={styles.footerButtons}>
                                     <button
