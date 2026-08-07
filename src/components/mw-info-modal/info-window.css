@@ -1,0 +1,82 @@
+.root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px 20px;
+    background: #1e1e1e;
+    color: #f1f1f1;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow: auto;
+}
+
+.heading {
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border: 1px solid #d23a3a;
+    background: rgba(210, 58, 58, 0.15);
+    border-radius: 6px;
+    color: #ffb3b3;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.warningIcon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    color: #ff6b6b;
+}
+
+.warningText {
+    flex: 1;
+}
+
+.sectionTitle {
+    margin: 16px 0 8px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.sectionTitle:first-of-type {
+    margin-top: 0;
+}
+
+.body {
+    white-space: pre-wrap;
+    color: #d6d6d6;
+    font-size: 14px;
+    line-height: 1.7;
+    margin: 0 0 12px 0;
+}
+
+.body p {
+    margin: 0 0 12px 0;
+}
+
+.body p:last-child {
+    margin-bottom: 0;
+}
+
+.link {
+    color: #ff6b6b;
+    text-decoration: underline;
+}
+
+.link:hover {
+    color: #ff8585;
+}

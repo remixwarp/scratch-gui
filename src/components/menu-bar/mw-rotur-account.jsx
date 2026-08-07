@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
-import {LogOut, Settings, Trophy, User, Users} from 'lucide-react';
+import {Info, LogOut, Settings, Trophy, User, Users} from 'lucide-react';
 
 import MenuLabel from './tw-menu-label.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
@@ -15,6 +15,7 @@ import menuBarStyles from './menu-bar.css';
 import accountNavStyles from './account-nav.css';
 import {getRoturSessionApi} from '../../lib/rotur/session-api.js';
 import {buildAuthUrl} from '../../lib/rotur/client.js';
+import openRemixWarpInfoWindow from '../../lib/mw/open-mw-info-window.jsx';
 import {
     openAccountMenu,
     closeAccountMenu,
@@ -27,6 +28,7 @@ const messages = defineMessages({
     profile: {id: 'mw.rotur.accountMenu.profile', defaultMessage: 'Profile'},
     leaderboard: {id: 'mw.rotur.accountMenu.leaderboard', defaultMessage: 'Leaderboard'},
     settings: {id: 'mw.rotur.accountMenu.settings', defaultMessage: 'Settings'},
+    infoButton: {id: 'mw.rotur.accountMenu.infoButton', defaultMessage: 'About RemixWarp'},
     switchAccount: {id: 'mw.rotur.accountMenu.switchAccount', defaultMessage: 'Switch account'},
     signOut: {id: 'mw.rotur.accountMenu.signOut', defaultMessage: 'Sign out'}
 });
@@ -100,6 +102,15 @@ const RoturAccount = props => {
                 >
                     <Settings />
                     <FormattedMessage {...messages.settings} />
+                </MenuItemContainer>
+                <MenuItemContainer
+                    onClick={() => {
+                        props.onCloseMenu();
+                        openRemixWarpInfoWindow();
+                    }}
+                >
+                    <Info />
+                    <FormattedMessage {...messages.infoButton} />
                 </MenuItemContainer>
                 <MenuSection>
                     <MenuItemContainer
