@@ -20,28 +20,11 @@ const DEFAULT_AGENTS: Agent[] = [
     models: [
       {
         id: "default-free-model-1",
-        name: "llama-3.3-70b-instruct-fp8-fast（Llama 3.3 70B）",
-        modelId: "llama-3.3-70b-instruct-fp8-fast",
+        name: "gemma-7b-it（Gemma 7B）",
+        modelId: "gemma-7b-it",
       },
     ],
     immutable: true,
-    builtin: true,
-  },
-  {
-    id: "rw-default",
-    name: "rw",
-    provider: "custom",
-    baseUrl: "https://api.hcnsec.cn/v1/chat/completions",
-    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
-    models: [
-      {
-        id: "rw-default-model",
-        name: "kat-coder-pro-v2.5",
-        modelId: "kat-coder-pro-v2.5",
-      },
-    ],
-    // builtin: UI 中隐藏「编辑」「导出」按钮；不设 immutable，允许用户删除
-    immutable: false,
     builtin: true,
   },
 ];
