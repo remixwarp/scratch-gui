@@ -186,21 +186,21 @@ const Footer = () => (
                         {/* Do not translate */}
                         {'02Engine Packager'}
                     </a>
-                    <a href="https://docs.warp.mistium.com/embedding">
+                    <a href="https://rw-do-cs.pages.dev/embedding">
                         <FormattedMessage
                             defaultMessage="Embedding"
                             description="Link in footer to embedding documentation for embedding link"
                             id="tw.footer.embed"
                         />
                     </a>
-                    <a href="https://docs.warp.mistium.com/url-parameters">
+                    <a href="https://rw-do-cs.pages.dev/url-parameters">
                         <FormattedMessage
                             defaultMessage="URL Parameters"
                             description="Link in footer to URL parameters documentation"
                             id="tw.footer.parameters"
                         />
                     </a>
-                    <a href="https://docs.warp.mistium.com">
+                    <a href="https://rw-do-cs.pages.dev">
                         <FormattedMessage
                             defaultMessage="Documentation"
                             description="Link in footer to additional documentation"
@@ -396,11 +396,11 @@ class Interface extends React.Component {
                                                 values={{
                                                     link: (
                                                         <a
-                                                            href="https://docs.warp.mistium.com/unshared-projects"
+                                                            href="https://rw-do-cs.pages.dev/unshared-projects"
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         >
-                                                            {'https://docs.warp.mistium.com/unshared-projects'}
+                                                            {'https://rw-do-cs.pages.dev/unshared-projects'}
                                                         </a>
                                                     )
                                                 }}
