@@ -11,7 +11,7 @@ import {recordAIConversation} from '../../lib/achievements.js';
 
 const API_CONFIG = getApiConfig('siliconflow');
 const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://aiapi.remix.de5.net/v1/chat/completions';
-const MODEL = API_CONFIG ? API_CONFIG.model : 'deepseek-r1-distill-qwen-32b';
+const MODEL = API_CONFIG ? API_CONFIG.model : 'llama-3.1-8b-instruct-fast';
 
 const IMAGE_API_CONFIG = getApiConfig('siliconflowImages');
 const IMAGE_API_ENDPOINT = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.endpoint : 'https://aiapi.remix.de5.net/v1/images/generations';

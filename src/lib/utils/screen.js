@@ -4,6 +4,7 @@ import {
     STAGE_DISPLAY_SIZES,
     FIXED_WIDTH
 } from '../constants/layout-constants';
+import {defaultStageSize} from '../../reducers/custom-stage-size';
 
 const maxScaleParam = typeof URLSearchParams !== 'undefined' && new URLSearchParams(location.search).get('scale');
 
@@ -53,9 +54,14 @@ const resolveStageSize = (stageSizeMode, isUnconstrained) => {
  * @return {StageDimensions} - an object describing the dimensions of the stage.
  */
 const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageContainerWidth) => {
+    // 当舞台模式为 initial（宽屏按钮）时，始终使用默认舞台尺寸 480x360
+    // 忽略用户可能设置的自定义舞台尺寸
+    const isInitialMode = stageSize === STAGE_DISPLAY_SIZES.initial;
+    const baseStageSize = isInitialMode ? defaultStageSize : customStageSize;
+
     const stageDimensions = {
-        heightDefault: customStageSize.height,
-        widthDefault: customStageSize.width,
+        heightDefault: baseStageSize.height,
+        widthDefault: baseStageSize.width,
         height: 0,
         width: 0,
         scale: 0
@@ -68,14 +74,14 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageConta
             menuBarHeight -
             STAGE_DIMENSION_DEFAULTS.fullScreenSpacingBorderAdjustment;
 
-        stageDimensions.width = stageDimensions.height * (customStageSize.width / customStageSize.height);
+        stageDimensions.width = stageDimensions.height * (baseStageSize.width / baseStageSize.height);
 
         const maxWidth = maxScaleParam ? (
-            Math.min(window.innerWidth, maxScaleParam * customStageSize.width)
+            Math.min(window.innerWidth, maxScaleParam * baseStageSize.width)
         ) : window.innerWidth;
         if (stageDimensions.width > maxWidth) {
             stageDimensions.width = maxWidth;
-            stageDimensions.height = stageDimensions.width * (customStageSize.height / customStageSize.width);
+            stageDimensions.height = stageDimensions.width * (baseStageSize.height / baseStageSize.width);
         }
 
         stageDimensions.scale = stageDimensions.width / stageDimensions.widthDefault;

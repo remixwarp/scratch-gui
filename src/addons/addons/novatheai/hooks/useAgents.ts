@@ -19,8 +19,8 @@ const DEFAULT_AGENTS: Agent[] = [
     models: [
       {
         id: "hcnsec-default-model",
-        name: "deepseek-r1-distill-qwen-32b（DeepSeek R1 蒸馏版）",
-        modelId: "deepseek-r1-distill-qwen-32b",
+        name: "llama-3.1-8b-instruct-fast（Llama 3.1 8B）",
+        modelId: "llama-3.1-8b-instruct-fast",
         maxTokens: 16384,
       },
     ],
@@ -29,11 +29,14 @@ const DEFAULT_AGENTS: Agent[] = [
 ];
 
 const ensureDefaultAgent = (agents: Agent[]): Agent[] => {
-  const defaultExists = agents.some((a) => a.id === DEFAULT_AGENTS[0].id);
+  // 过滤掉 02agent 版本的内置 Agent，避免重复
+  const filteredAgents = agents.filter((a) => a.id !== "default-free-chat");
+
+  const defaultExists = filteredAgents.some((a) => a.id === DEFAULT_AGENTS[0].id);
   if (!defaultExists) {
-    return [...DEFAULT_AGENTS, ...agents];
+    return [...DEFAULT_AGENTS, ...filteredAgents];
   }
-  return agents.map((agent) => {
+  return filteredAgents.map((agent) => {
     if (agent.id !== DEFAULT_AGENTS[0].id) return agent;
     const def = DEFAULT_AGENTS[0];
     return {
@@ -119,11 +122,7 @@ export function useAgents() {
 
   const handleDeleteAgent = (id: string) => {
     if (agents.length <= 1) {
-      return;
-    }
-
-    const targetAgent = agents.find((a) => a.id === id);
-    if (targetAgent?.locked) {
+      window.alert("至少保留一个 Agent");
       return;
     }
 

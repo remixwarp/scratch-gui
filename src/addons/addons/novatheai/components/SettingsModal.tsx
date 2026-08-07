@@ -533,12 +533,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                           </div>
                           <div className={settings.actions}>
-                            <button type="button" className={settings.button} onClick={() => onEditAgent(agent)}>
-                              编辑
-                            </button>
-                            <button type="button" className={settings.button} onClick={() => onExportAgent(agent.id)}>
-                              导出
-                            </button>
+                            {!agent.locked && (
+                              <button type="button" className={settings.button} onClick={() => onEditAgent(agent)}>
+                                编辑
+                              </button>
+                            )}
+                            {!agent.locked && (
+                              <button type="button" className={settings.button} onClick={() => onExportAgent(agent.id)}>
+                                导出
+                              </button>
+                            )}
                             <button
                               type="button"
                               className={settings.dangerButton}

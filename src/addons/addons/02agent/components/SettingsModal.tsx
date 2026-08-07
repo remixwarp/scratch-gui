@@ -359,28 +359,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                           </div>
                           <div className={settings.actions}>
-                             <button type="button" className={settings.button} onClick={() => {
-                               if (SYSTEM_AGENT_IDS.includes(agent.id)) {
-                                 window.alert("系统AI，不可编辑");
-                                 return;
-                               }
-                               onEditAgent(agent);
-                             }}>
-                               编辑
-                             </button>
-                            <button type="button" className={settings.button} onClick={() => onExportAgent(agent.id)}>
-                              导出
-                            </button>
+                            {!agent.builtin && !agent.immutable && (
+                              <button type="button" className={settings.button} onClick={() => onEditAgent(agent)}>
+                                编辑
+                              </button>
+                            )}
+                            {!agent.builtin && !agent.immutable && (
+                              <button type="button" className={settings.button} onClick={() => onExportAgent(agent.id)}>
+                                导出
+                              </button>
+                            )}
                             <button
                               type="button"
                               className={settings.dangerButton}
-                              onClick={() => {
-                                if (SYSTEM_AGENT_IDS.includes(agent.id)) {
-                                  window.alert("系统AI，不可删除");
-                                  return;
-                                }
-                                onDeleteAgent(agent.id);
-                              }}
+                              onClick={() => onDeleteAgent(agent.id)}
                             >
                               删除
                             </button>

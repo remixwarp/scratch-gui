@@ -145,30 +145,48 @@ class OpenAICompatibleAdapter implements ProviderAdapter {
       headers["Authorization"] = `Bearer ${agent.apiKey}`;
     }
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: agent.modelName,
-        messages,
-        tools,
-        tool_choice: toolChoice,
-        stream: true,
-        ...(agent.maxTokens ? { max_tokens: agent.maxTokens } : {}),
-        ...(enableReasoning
-          ? {
-              reasoning: { enabled: true },
-              include_reasoning: true,
-              ...(agent.provider === "deepseek" || agent.baseUrl.includes("deepseek")
-                ? { thinking: { type: "enabled" } }
-                : {}),
-            }
-          : agent.provider === "deepseek" || agent.baseUrl.includes("deepseek")
+    const modelId = (agent.modelName || "").toLowerCase();
+    const isDeepseek = agent.provider === "deepseek" ||
+      agent.provider === "siliconflow" ||
+      agent.baseUrl.includes("deepseek") ||
+      agent.baseUrl.includes("iamhc") ||
+      agent.baseUrl.includes("remix") ||
+      modelId.includes("deepseek") ||
+      modelId.includes("r1") ||
+      modelId.includes("reasoner");
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: agent.modelName,
+          messages,
+          tools,
+          tool_choice: toolChoice,
+          stream: true,
+          ...(agent.maxTokens ? { max_tokens: agent.maxTokens } : {}),
+          ...(enableReasoning
+            ? isDeepseek
+              ? { thinking: { type: "enabled" } }
+              : { reasoning: { enabled: true }, include_reasoning: true }
+            : isDeepseek
             ? { thinking: { type: "disabled" } }
             : {}),
-      }),
-      signal,
-    });
+        }),
+        signal,
+      });
+    } catch (fetchErr: any) {
+      if (fetchErr?.name === "AbortError") throw fetchErr;
+      const msg = fetchErr?.message || String(fetchErr);
+      if (msg.includes("NetworkError") || msg.includes("Failed to fetch")) {
+        throw new Error(
+          `无法连接到 AI 服务 (${url})。请检查：\n1. 网络连接是否正常\n2. Base URL 是否正确\n3. 该 API 服务是否支持跨域访问 (CORS)`,
+        );
+      }
+      throw fetchErr;
+    }
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
@@ -482,23 +500,29 @@ class AnthropicAdapter implements ProviderAdapter {
       headers["Authorization"] = `Bearer ${agent.apiKey}`;
     }
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: agent.modelName,
-        system: systemMessages.join("\n\n"),
-        max_tokens: agent.maxTokens || 4096,
-        stream: true,
-        messages: anthropicMessages,
-        ...(enableReasoning
-          ? {
-              thinking: {
-                type: "enabled",
-                budget_tokens: 2048,
-              },
-            }
-          : agent.provider === "custom_anthropic" || agent.baseUrl.includes("deepseek")
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: agent.modelName,
+          system: systemMessages.join("\n\n"),
+          max_tokens: agent.maxTokens || 4096,
+          stream: true,
+          messages: anthropicMessages,
+          ...(enableReasoning
+            ? {
+                thinking: {
+                    type: "enabled",
+                    budget_tokens: 2048,
+                },
+              }
+          : agent.provider === "custom_anthropic" ||
+            agent.baseUrl.includes("deepseek") ||
+            agent.baseUrl.includes("iamhc") ||
+            agent.baseUrl.includes("remix") ||
+            (agent.modelName && (agent.modelName.toLowerCase().includes("deepseek") || agent.modelName.toLowerCase().includes("r1") || agent.modelName.toLowerCase().includes("reasoner")))
             ? {
                 thinking: {
                   type: "disabled",
@@ -515,6 +539,16 @@ class AnthropicAdapter implements ProviderAdapter {
       }),
       signal,
     });
+    } catch (fetchErr: any) {
+      if (fetchErr?.name === "AbortError") throw fetchErr;
+      const msg = fetchErr?.message || String(fetchErr);
+      if (msg.includes("NetworkError") || msg.includes("Failed to fetch")) {
+        throw new Error(
+          `无法连接到 AI 服务 (${url})。请检查：\n1. 网络连接是否正常\n2. Base URL 是否正确\n3. 该 API 服务是否支持跨域访问 (CORS)`,
+        );
+      }
+      throw fetchErr;
+    }
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");

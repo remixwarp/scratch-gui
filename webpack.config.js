@@ -177,6 +177,10 @@ const base = {
             use: 'raw-loader'
         },
         {
+            test: /\.(glsl|vert|frag)$/,
+            use: 'raw-loader'
+        },
+        {
             test: /\.json$/,
             type: 'json'
         }]

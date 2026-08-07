@@ -249,11 +249,11 @@
 
 .accent-submenu > ul {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(10, 1fr);
     gap: 0.5rem;
     padding: 0.5rem;
     margin: 0;
-    min-width: 320px;
+    min-width: 592px;
     max-width: none;
     max-height: calc(100vh - 5rem);
     max-height: calc(100dvh - 5rem);
@@ -352,17 +352,17 @@
 /* Responsive adjustments for smaller screens */
 @media only screen and (max-width: 768px) {
     .accent-submenu > ul {
-        grid-template-columns: repeat(3, 1fr);
-        min-width: 160px;
-        max-width: 220px;
+        grid-template-columns: repeat(7, 1fr);
+        min-width: 448px;
+        max-width: none;
     }
 }
 
 @media only screen and (max-width: 480px) {
     .accent-submenu > ul {
-        grid-template-columns: repeat(2, 1fr);
-        min-width: 120px;
-        max-width: 160px;
+        grid-template-columns: repeat(5, 1fr);
+        min-width: 320px;
+        max-width: none;
     }
 }
 

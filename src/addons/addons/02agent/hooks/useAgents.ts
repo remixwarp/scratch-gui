@@ -20,8 +20,8 @@ const DEFAULT_AGENTS: Agent[] = [
     models: [
       {
         id: "default-free-model-1",
-        name: "deepseek-r1-distill-qwen-32b（DeepSeek R1 蒸馏版）",
-        modelId: "deepseek-r1-distill-qwen-32b",
+        name: "llama-3.1-8b-instruct-fast（Llama 3.1 8B）",
+        modelId: "llama-3.1-8b-instruct-fast",
       },
     ],
     immutable: true,
@@ -62,7 +62,7 @@ function enforceImmutableDefaults (stored: Agent[]): Agent[] {
 
 export function useAgents() {
   // 从存储读取，读取后强制覆盖 immutable Agent，避免用户篡改
-  const [storedAgents, setStoredAgents] = useStorageInfo<Agent[]>("AI_ASSISTANT_AGENTS", DEFAULT_AGENTS);
+  const [storedAgents, setStoredAgents] = useStorageInfo<Agent[]>("AI_ASSISTANT_AGENTS_02", DEFAULT_AGENTS);
   const agents = enforceImmutableDefaults(storedAgents);
   useEffect(() => {
     if (JSON.stringify(storedAgents) !== JSON.stringify(agents)) {
@@ -77,7 +77,7 @@ export function useAgents() {
     return setStoredAgents(coerced);
   };
 
-  const [currentModelId, setCurrentModelId] = useStorageInfo<string>("AI_ASSISTANT_CURRENT_AGENT_ID", "default-free-model-1");
+  const [currentModelId, setCurrentModelId] = useStorageInfo<string>("AI_ASSISTANT_CURRENT_AGENT_ID_02", "default-free-model-1");
   const [showSettings, setShowSettings] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 
@@ -157,16 +157,11 @@ export function useAgents() {
   };
 
   const handleDeleteAgent = (id: string) => {
-    if (BUILTIN_AGENT_IDS.has(id)) {
-      window.alert("系统内置 AI 不可删除");
-      return;
-    }
-    const mutableAgents = agents.filter(a => !BUILTIN_AGENT_IDS.has(a.id));
-    if (mutableAgents.length <= 1) {
-      return;
-    }
-
     const nextAgents = agents.filter((agent) => agent.id !== id);
+    if (nextAgents.length === 0) {
+      window.alert("至少保留一个 Agent");
+      return;
+    }
     setAgents(nextAgents);
 
     const isCurrentModelDeleted = agents.find(a => a.id === id)?.models.some(m => m.id === currentModelId);
