@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
 import {LogOut, Settings, Trophy, User, Users} from 'lucide-react';
 
 import MenuLabel from './tw-menu-label.jsx';
@@ -22,6 +22,15 @@ import {
 } from '../../reducers/menus.js';
 import {openRoturLoginModal} from '../../reducers/modals.js';
 
+const messages = defineMessages({
+    login: {id: 'mw.rotur.menuBar.login', defaultMessage: 'Login'},
+    profile: {id: 'mw.rotur.accountMenu.profile', defaultMessage: 'Profile'},
+    leaderboard: {id: 'mw.rotur.accountMenu.leaderboard', defaultMessage: 'Leaderboard'},
+    settings: {id: 'mw.rotur.accountMenu.settings', defaultMessage: 'Settings'},
+    switchAccount: {id: 'mw.rotur.accountMenu.switchAccount', defaultMessage: 'Switch account'},
+    signOut: {id: 'mw.rotur.accountMenu.signOut', defaultMessage: 'Sign out'}
+});
+
 const RoturAccount = props => {
     if (!props.username) {
         return (
@@ -37,11 +46,7 @@ const RoturAccount = props => {
                     }
                 }}
             >
-                <FormattedMessage
-                    defaultMessage="Login"
-                    description="Menu bar item to open Bilup Accounts login when signed out"
-                    id="mw.rotur.menuBar.login"
-                />
+                <FormattedMessage {...messages.login} />
             </div>
         );
     }
@@ -82,31 +87,19 @@ const RoturAccount = props => {
             >
                 <MenuItemContainer onClick={go(`/users/${encodeURIComponent(props.username)}`)}>
                     <User />
-                    <FormattedMessage
-                        defaultMessage="Profile"
-                        description="Text to link to my user profile, in the account navigation menu"
-                        id="gui.accountMenu.profile"
-                    />
+                    <FormattedMessage {...messages.profile} />
                 </MenuItemContainer>
                 {props.showEditorItems ? null : (
                     <MenuItemContainer onClick={go('/leaderboard')}>
                         <Trophy />
-                        <FormattedMessage
-                            defaultMessage="Leaderboard"
-                            description="Text to link to the leaderboard, in the Bilup Accounts account navigation menu"
-                            id="mw.rotur.accountMenu.leaderboard"
-                        />
+                        <FormattedMessage {...messages.leaderboard} />
                     </MenuItemContainer>
                 )}
                 <MenuItemContainer
                     onClick={() => window.open('https://com.bilup.org/settings', '_blank', 'noopener,noreferrer')}
                 >
                     <Settings />
-                    <FormattedMessage
-                        defaultMessage="Settings"
-                        description="Text to link to settings, in the Bilup Accounts account navigation menu"
-                        id="mw.rotur.accountMenu.settings"
-                    />
+                    <FormattedMessage {...messages.settings} />
                 </MenuItemContainer>
                 <MenuSection>
                     <MenuItemContainer
@@ -118,11 +111,7 @@ const RoturAccount = props => {
                         }}
                     >
                         <Users />
-                        <FormattedMessage
-                            defaultMessage="Switch account"
-                            description="Account menu item that signs out and opens the Bilup Accounts auth page"
-                            id="mw.rotur.accountMenu.switchAccount"
-                        />
+                        <FormattedMessage {...messages.switchAccount} />
                     </MenuItemContainer>
                     <MenuItemContainer
                         onClick={() => {
@@ -131,11 +120,7 @@ const RoturAccount = props => {
                         }}
                     >
                         <LogOut />
-                        <FormattedMessage
-                            defaultMessage="Sign out"
-                            description="Text to link to sign out, in the account navigation menu"
-                            id="gui.accountMenu.signOut"
-                        />
+                        <FormattedMessage {...messages.signOut} />
                     </MenuItemContainer>
                 </MenuSection>
             </MenuBarMenu>

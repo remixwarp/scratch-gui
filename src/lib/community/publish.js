@@ -1,4 +1,5 @@
 import JSZip from '@turbowarp/jszip';
+import md5 from 'js-md5';
 import {
     createProject, uploadProject, publishProject, updateProject, checkProjectAssets, getProject, remixProject,
     deleteProject
@@ -6,10 +7,130 @@ import {
 
 const ZIP_COMPRESSABLE = ['.json', '.svg', '.wav', '.ttf', '.otf'];
 
+// Recompute each asset's md5 and, if the current file name doesn't match the
+// actual content, rename the file AND update every reference in project.json.
+// This avoids "asset filename does not match its content" errors when a
+// costume/sound was loaded with a stale/incorrect assetId.
+const hashAssetData = data => {
+    if (typeof data === 'string') {
+        return md5(data);
+    }
+    if (data instanceof Uint8Array) {
+        // js-md5 accepts ArrayBuffer/Uint8Array directly.
+        return md5(data);
+    }
+    if (data instanceof ArrayBuffer) {
+        return md5(data);
+    }
+    if (data && typeof data.buffer === 'object' && data.buffer instanceof ArrayBuffer) {
+        return md5(data.buffer);
+    }
+    return md5(String(data));
+};
+
+const normalizeAssetHashes = files => {
+    let project = null;
+    try {
+        project = JSON.parse(files['project.json']);
+    } catch (e) {
+        // malformed project.json; leave files untouched
+        return files;
+    }
+
+    // The current on-disk name for an asset, computing it from the actual file
+    // content if it has been remapped. The sb3 json stores BOTH `assetId` and
+    // `md5ext` which must remain in sync; we always derive the canonical name
+    // from whichever field the costume still references.
+    const currentName = name => {
+        if (typeof name !== 'string') return null;
+        const match = /^([0-9a-f]{32})(\.[a-zA-Z0-9]+)?$/.exec(name);
+        if (!match) return null;
+        const ext = match[2] || '';
+        if (files[name]) {
+            // entry still exists under this name; recanonicalize
+            const correct = `${hashAssetData(files[name])}${ext}`;
+            if (correct !== name) {
+                const data = files[name];
+                delete files[name];
+                files[correct] = data;
+            }
+            return correct;
+        }
+        // entry was already remapped; find the file with matching content
+        for (const candidate of Object.keys(files)) {
+            if (candidate === 'project.json') continue;
+            const m = /^([0-9a-f]{32})(\.[a-zA-Z0-9]+)?$/.exec(candidate);
+            if (!m || m[2] !== ext) continue;
+            try {
+                if (`${hashAssetData(files[candidate])}${m[2]}` === name) {
+                    return candidate;
+                }
+            } catch (e) { /* ignore */ }
+        }
+        return name; // give up; leave the field pointing to the original name
+    };
+
+    const fixRefs = obj => {
+        if (!obj || typeof obj !== 'object') return;
+        // assetId and md5ext always co-reference the same file. Normalize both
+        // against the canonical (content-derived) name in a single pass.
+        if (typeof obj.assetId === 'string' || typeof obj.md5ext === 'string') {
+            // Pick whichever field points to a real entry; if neither does,
+            // fall back to assetId (then md5ext).
+            const probe = (typeof obj.assetId === 'string' && files[obj.assetId]) ?
+                obj.assetId :
+                (typeof obj.md5ext === 'string' && files[obj.md5ext] ? obj.md5ext : null);
+            if (probe) {
+                const match = /^([0-9a-f]{32})(\.[a-zA-Z0-9]+)?$/.exec(probe);
+                const ext = match ? (match[2] || '') : '';
+                const correct = `${hashAssetData(files[probe])}${ext}`;
+                if (typeof obj.assetId === 'string') obj.assetId = correct;
+                if (typeof obj.md5ext === 'string') obj.md5ext = correct;
+            } else if (typeof obj.assetId === 'string') {
+                // Try to find the entry that matches this assetId's content.
+                const found = currentName(obj.assetId);
+                if (found && found !== obj.assetId) {
+                    obj.assetId = found;
+                    if (typeof obj.md5ext === 'string') obj.md5ext = found;
+                }
+            }
+        }
+        for (const key of Object.keys(obj)) {
+            const value = obj[key];
+            if (key === 'assetId' || key === 'md5ext') continue;
+            if (Array.isArray(value)) {
+                value.forEach(item => fixRefs(item));
+            } else if (value && typeof value === 'object') {
+                fixRefs(value);
+            }
+        }
+    };
+
+    // project.json references assets by both assetId and md5ext; fix every
+    // reference so on-disk file names and the json stay in sync.
+    fixRefs(project);
+
+    // Also fix any stray asset file that isn't referenced but has a wrong hash.
+    const dataFiles = Object.keys(files).filter(name => name !== 'project.json');
+    for (const name of dataFiles) {
+        const match = /^([0-9a-f]{32})(\.[a-zA-Z0-9]+)?$/.exec(name);
+        if (!match) continue;
+        const correct = `${hashAssetData(files[name])}${match[2] || ''}`;
+        if (correct !== name) {
+            const data = files[name];
+            delete files[name];
+            files[correct] = data;
+        }
+    }
+
+    files['project.json'] = JSON.stringify(project);
+    return files;
+};
+
 // Only ship project.json plus assets the server does not already have;
 // assets are content-addressed server-side so everything else is reused.
 const buildSparseSb3 = async (vm, platformId) => {
-    const files = vm.saveProjectSb3DontZip();
+    const files = normalizeAssetHashes(vm.saveProjectSb3DontZip());
     const names = Object.keys(files).filter(name => name !== 'project.json');
     const {missing} = await checkProjectAssets(platformId, names);
     const missingSet = new Set(missing);
@@ -176,10 +297,83 @@ const prepareThumbnailBlob = async dataUri => {
 // Save the project to MistWarp: stored on the server (R2), not git.
 // A git remote is only involved if the user explicitly connects one elsewhere.
 // Sharing is a separate, explicit act (share: true, or the project page).
+
+// Recompute md5 for every asset on every target and overwrite the asset's
+// `assetId`/`md5`. Without this, projects that have a stale assetId (e.g.
+// loaded from sb3 files where `assetId` does not match the content hash)
+// raise "asset filename does not match its content" when re-saved.
+const fixAssetIds = vm => {
+    if (!vm || !vm.runtime || !Array.isArray(vm.runtime.targets)) return;
+    for (const target of vm.runtime.targets) {
+        const sprite = target && target.sprite;
+        if (!sprite) continue;
+        const fix = costume => {
+            if (!costume) return;
+            try {
+                // The actual asset bytes live on `costume.asset.data` in
+                // scratch-vm. Some older/custom builds put data directly on the
+                // costume. Handle both shapes so we always normalize the real
+                // fields scratch-vm serializes (costume.assetId, costume.md5,
+                // asset.assetId, asset.md5).
+                const asset = costume.asset;
+                const data = asset && asset.data ? asset.data : costume.data;
+                const dataFormat = asset && asset.dataFormat ? asset.dataFormat : costume.dataFormat;
+                if (!data) return;
+
+                const newMd5 = hashAssetData(data);
+                const newExt = `${newMd5}.${dataFormat}`;
+
+                if (asset && asset.data) {
+                    if (asset.assetId !== newMd5) asset.assetId = newMd5;
+                    if (asset.md5 !== newExt) asset.md5 = newExt;
+                }
+                if (costume.assetId !== newMd5) costume.assetId = newMd5;
+                if (costume.md5 !== newExt) costume.md5 = newExt;
+
+                // The `broken` shadow also carries an asset; fix it too.
+                const brokenAsset = costume.broken && (costume.broken.asset || costume.broken);
+                const brokenData = brokenAsset && brokenAsset.data ? brokenAsset.data : (costume.broken && costume.broken.data);
+                if (brokenData) {
+                    const bFormat = brokenAsset && brokenAsset.dataFormat ? brokenAsset.dataFormat : dataFormat;
+                    const bMd5 = hashAssetData(brokenData);
+                    const bExt = `${bMd5}.${bFormat}`;
+                    if (brokenAsset && brokenAsset.assetId !== bMd5) brokenAsset.assetId = bMd5;
+                    if (brokenAsset && brokenAsset.md5 !== bExt) brokenAsset.md5 = bExt;
+                    if (costume.broken && costume.broken.assetId !== bMd5) costume.broken.assetId = bMd5;
+                    if (costume.broken && costume.broken.md5 !== bExt) costume.broken.md5 = bExt;
+                }
+            } catch (e) {
+                // ignore individual asset errors
+            }
+        };
+        if (Array.isArray(sprite.costumes)) sprite.costumes.forEach(fix);
+        if (Array.isArray(sprite.sounds)) sprite.sounds.forEach(fix);
+    }
+};
+
 const publishToMistWarp = async ({
-    vm, title, thumbnailBlob, share = false, updateOnly = false, onProgress = () => {}
+    vm, title, thumbnailBlob, share = false, updateOnly = false, onProgress = () => {},
+    progressMessages
 }) => {
+    fixAssetIds(vm);
     const projectTitle = (title && title.trim()) || 'Untitled';
+
+    // progressMessages is an optional map of pre-localized status strings. If
+    // not provided, fall back to the English defaults so this function is still
+    // safe to call from contexts that don't have access to react-intl.
+    const msg = (key, fallback) =>
+        (progressMessages && typeof progressMessages[key] === 'string')
+            ? progressMessages[key]
+            : fallback;
+    const creatingRemix = msg('creatingRemix', 'Creating remix');
+    const creatingProject = msg('creatingProject', 'Creating project');
+    const packagingProject = msg('packagingProject', 'Packaging project');
+    const uploadingProject = msg('uploadingProject', 'Uploading project');
+    const processingOnServer = msg('processingOnServer', 'Processing on server');
+    const uploadingPercent = (percent) => {
+        const tpl = msg('uploadingPercent', 'Uploading {percent}%');
+        return tpl.replace('{percent}', percent);
+    };
 
     let platformProject = getRememberedPlatformProjectState();
     let platformId = platformProject && platformProject.id;
@@ -196,7 +390,7 @@ const publishToMistWarp = async ({
             }
         }
         if (platformId && !platformProject.isOwner) {
-            onProgress({phase: 'register', message: 'Creating remix'});
+            onProgress({phase: 'register', message: creatingRemix});
             const remix = await remixProject(platformId);
             platformId = remix.id;
             platformProject = {id: platformId, isOwner: true, shared: false};
@@ -206,7 +400,7 @@ const publishToMistWarp = async ({
 
     let createdNow = false;
     if (!platformId) {
-        onProgress({phase: 'register', message: 'Creating project'});
+        onProgress({phase: 'register', message: creatingProject});
         const scratchOrigin = getScratchOrigin();
         const payload = {title: projectTitle};
         if (scratchOrigin) {
@@ -226,7 +420,7 @@ const publishToMistWarp = async ({
     // Create + upload must be atomic: if the upload fails on a project we just
     // created, delete it so we never leave a data-less project behind.
     try {
-        onProgress({phase: 'package', message: 'Packaging project'});
+        onProgress({phase: 'package', message: packagingProject});
         await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
         let sb3Blob;
         try {
@@ -235,13 +429,13 @@ const publishToMistWarp = async ({
             sb3Blob = await vm.saveProjectSb3();
         }
         const thumbnail = updateOnly ? null : (thumbnailBlob || await captureThumbnail(vm));
-        onProgress({phase: 'upload', message: 'Uploading project'});
+        onProgress({phase: 'upload', message: uploadingProject});
         try {
             await uploadProject(platformId, sb3Blob, thumbnail, (loaded, total) => {
                 const percent = Math.min(100, Math.round((loaded / total) * 100));
                 onProgress({
                     phase: 'upload',
-                    message: percent >= 100 ? 'Processing on server' : `Uploading ${percent}%`,
+                    message: percent >= 100 ? processingOnServer : uploadingPercent(percent),
                     loaded,
                     total
                 });
@@ -279,7 +473,7 @@ const publishToMistWarp = async ({
         // ignore
     }
 
-    return {id: platformId, url: `/project/${platformId}`, shared};
+    return {id: platformId, url: `https://editor.bilup.org/project/${platformId}`, shared};
 };
 
 // Compatibility aliases: bilup-ui historically imports these as publishToBilup/

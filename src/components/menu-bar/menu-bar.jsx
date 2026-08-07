@@ -2062,7 +2062,7 @@ class MenuBar extends React.Component {
     handleClickSeeBilupPage () {
         this.props.onRequestCloseFile();
         if (this.state.mistwarpProject) {
-            window.location.href = `/project/${this.state.mistwarpProject.id}`;
+            window.location.href = `https://editor.bilup.org/project/${this.state.mistwarpProject.id}`;
         }
     }
     handleClickPackager () {
