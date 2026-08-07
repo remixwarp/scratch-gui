@@ -2,8 +2,8 @@
 // AI 接口：全部硬编码在 GUI 里，不经过任何 Worker 代理，不需要人机验证。
 // 平台：remix.de5.net
 // Base URL：https://aiapi.remix.de5.net
-// Chat 模型：deepseek-r1-distill-qwen-32b
-// 图片模型：deepseek-r1-distill-qwen-32b
+// Chat 模型：llama-3.3-70b-instruct-fp8-fast
+// 图片模型：llama-3.3-70b-instruct-fp8-fast
 // ============================================================================
 
 const BASE_URL = 'https://aiapi.remix.de5.net';
@@ -12,8 +12,8 @@ const API_KEY = 'sk-remixworld';
 const CHAT_ENDPOINT = `${BASE_URL}/v1/chat/completions`;
 const IMAGES_ENDPOINT = `${BASE_URL}/v1/images/generations`;
 
-const CHAT_MODEL = 'deepseek-r1-distill-qwen-32b';
-const IMAGE_MODEL = 'deepseek-r1-distill-qwen-32b';
+const CHAT_MODEL = 'llama-3.3-70b-instruct-fp8-fast';
+const IMAGE_MODEL = 'llama-3.3-70b-instruct-fp8-fast';
 
 const API_KEY_CONFIG = {
     siliconflow: {

@@ -8,7 +8,7 @@ import {openProjectMetadataModal} from '../../reducers/modals';
 let shareWindow = null;
 let container = null;
 
-const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save', onPublished}) => {
+const openMWShareWindow = ({vm, initialTitle, initialError, action = 'save', onPublished}) => {
     if (shareWindow) {
         shareWindow.show().bringToFront();
         return;
@@ -30,8 +30,8 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
 
     shareWindow = WindowManager.createWindow({
         id: 'mw-share-window',
-        title: action === 'remix' ? 'Remix to MistWarp' :
-            action === 'update' ? 'Update MistWarp project' : 'Save to MistWarp',
+        title: action === 'remix' ? 'Remix to Bilup' :
+            action === 'update' ? 'Update Bilup project' : 'Save to Bilup',
         width: 460,
         height: 380,
         minWidth: 360,
@@ -74,4 +74,4 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
     shareWindow.show();
 };
 
-export default openMistWarpShareWindow;
+export default openMWShareWindow;

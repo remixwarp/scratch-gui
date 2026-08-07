@@ -2,7 +2,7 @@ import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
 
-const API_BASE = 'https://mwapi.mistium.com/api';
+const API_BASE = 'https://api.bilup.org/api';
 
 const SESSION_KEY = 'mw:mistwarp-session';
 const ROTUR_TOKEN_KEY = 'mw:rotur-token';
@@ -90,14 +90,14 @@ const parseResponse = async response => {
     return data;
 };
 
-const exchangeValidator = async (roturToken, appKey = 'mistwarp') => {
+const exchangeValidator = async (roturToken, appKey = 'bilup') => {
     const validatorResponse = await fetch(
-        `https://api.rotur.dev/generate_validator?key=${encodeURIComponent(appKey)}&auth=${encodeURIComponent(roturToken)}`
+        `https://api.accounts.bilup.org/generate_validator?key=${encodeURIComponent(appKey)}&auth=${encodeURIComponent(roturToken)}`
     );
     const validatorData = await validatorResponse.json().catch(() => ({}));
     const validator = validatorData.validator;
     if (!validator) {
-        const error = new Error(validatorData.error || 'Could not validate Rotur login');
+        const error = new Error(validatorData.error || 'Could not validate Bilup Accounts login');
         if (validatorData.error || validatorResponse.status === 403) {
             error.code = 'VALIDATOR_GENERATION_FAILED';
         }

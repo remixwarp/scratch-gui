@@ -1,6 +1,6 @@
-import openMistWarpShareWindow from './open-mw-share-window.js';
-import {getRememberedPlatformProjectState, publishToMistWarp} from '../community/publish.js';
-import {request} from '../community/api.js';
+import openMWShareWindow from './open-mw-share-window.js';
+import {getRememberedPlatformProjectState, publishToBilup, getBilupAction} from '../community/publish.js';
+import {request, isLoggedIn} from '../community/api.js';
 import communityEnabled from '../community/enabled.js';
 import downloadBlob from '../utils/download-blob';
 import {embedRepoIntoSb3Blob} from '../git/browser-git.js';
@@ -14,10 +14,10 @@ const agreementAccepted = async () => {
     }
 };
 
-// Ctrl+S / save button. Own project already on MistWarp -> upload the current
-// version silently. Someone else's project -> the window (remix makes a copy).
-// Not on MistWarp yet -> download an sb3. The window only reappears for an
-// update when a new upload agreement needs accepting, or the silent upload fails.
+// Ctrl+S or save button. Smart save to Bilup:
+// - Own project on Bilup → upload silently
+// - Someone else's project → show window for remix
+// - Not on Bilup → download as .sb3
 const smartSave = async ({vm, title, onSaved = () => {}}) => {
     const platform = communityEnabled ? getRememberedPlatformProjectState() : null;
 
@@ -28,19 +28,19 @@ const smartSave = async ({vm, title, onSaved = () => {}}) => {
     }
 
     if (platform.isOwner === false) {
-        openMistWarpShareWindow({vm, initialTitle: title, action: 'remix', onPublished: onSaved});
+        openMWShareWindow({vm, initialTitle: title, action: 'remix', onPublished: onSaved});
         return;
     }
 
     if (!(await agreementAccepted())) {
-        openMistWarpShareWindow({vm, initialTitle: title, action: 'update', onPublished: onSaved});
+        openMWShareWindow({vm, initialTitle: title, action: 'update', onPublished: onSaved});
         return;
     }
 
     try {
-        onSaved(await publishToMistWarp({vm, title: null, updateOnly: true}));
+        onSaved(await publishToBilup({vm, title: null, updateOnly: true}));
     } catch (e) {
-        openMistWarpShareWindow({
+        openMWShareWindow({
             vm,
             initialTitle: title,
             initialError: e,
@@ -50,4 +50,18 @@ const smartSave = async ({vm, title, onSaved = () => {}}) => {
     }
 };
 
-export default smartSave;
+// Export for use by menu-bar save button
+const saveToBilup = async ({vm, title, share = false, onProgress = () => {}, onSaved = () => {}}) => {
+    if (!isLoggedIn()) {
+        throw new Error('Not logged in to Bilup Accounts');
+    }
+    const result = await publishToBilup({vm, title, share, onProgress});
+    onSaved(result);
+    return result;
+};
+
+export {
+    smartSave as default,
+    saveToBilup,
+    getBilupAction
+};

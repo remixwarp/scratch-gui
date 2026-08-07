@@ -67,7 +67,13 @@ const base = {
             'exports-loader': require.resolve('exports-loader'),
             'components': path.resolve(__dirname, 'src/components/ai/gandi/components'),
             'utils': path.resolve(__dirname, 'src/utils'),
-            'html2canvas': path.resolve(__dirname, 'src/lib/html2canvas-stub.js')
+            'html2canvas': path.resolve(__dirname, 'src/lib/html2canvas-stub.js'),
+            'just-bash$': path.resolve(__dirname, 'node_modules/just-bash/dist/bundle/browser.js'),
+            'node:zlib$': path.resolve(__dirname, 'src/lib/just-bash-zlib.js'),
+            // just-bash bundles an ESM-only minimatch@10 that webpack 4 cannot parse.
+            // Pin it to the hoisted CJS minimatch@3 (already used by glob/babel/eslint),
+            // whose API is a superset of what just-bash needs (minimatch()).
+            'minimatch': require.resolve('minimatch')
         }
     },
     node: {
@@ -76,6 +82,21 @@ const base = {
     },
     module: {
         rules: [{
+            // accounts-sdk ships esbuild/tsc output that uses TS class-field syntax
+            // (e.g. `status;` / `data;` inside class bodies), which webpack 4's own
+            // parser cannot handle. Force it through babel with class-properties support.
+            test: /node_modules[\\/]accounts-sdk[\\/].*\.(js|mjs)$/,
+            loader: 'babel-loader',
+            options: {
+                babelrc: false,
+                plugins: [require.resolve('@babel/plugin-proposal-class-properties')],
+                presets: [
+                    ['@babel/preset-env', {
+                        targets: {esmodules: true}
+                    }]
+                ]
+            }
+        }, {
             test: /\.(jsx?|tsx?)$/,
             loader: 'babel-loader',
             include: [
@@ -87,7 +108,11 @@ const base = {
                 /node_modules[\\/]domutils/,
                 /node_modules[\\/]react-markdown/,
                 /node_modules[\\/]isomorphic-git/,
-                /node_modules[\\/]fractch/
+                /node_modules[\\/]fractch/,
+                /node_modules[\\/]just-bash/,
+                /node_modules[\\/]monaco-editor/,
+                /node_modules[\\/]rotur-sdk/,
+                /node_modules[\\/]accounts-sdk/
             ],
             options: {
                 cacheDirectory: true,

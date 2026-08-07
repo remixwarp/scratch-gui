@@ -1,0 +1,192 @@
+@import "../../css/colors.css";
+@import "../../css/units.css";
+
+.modal-content {
+    /* 由 windowed-modal.jsx 控制尺寸 */
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 1.25rem 1.5rem 1.25rem 1.5rem;
+    box-sizing: border-box;
+    height: 100%;
+    overflow-y: auto;
+    color: $ui-white;
+    background-color: #1f1f24;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.header-row {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.icon-wrap {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4dd0e1;
+}
+
+.header-icon {
+    width: 48px;
+    height: 48px;
+    color: #4dd0e1;
+}
+
+.heading {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: $ui-white;
+    line-height: 1.25;
+}
+
+.description {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.after-login-label,
+.coming-soon-label {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.02em;
+}
+
+.feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+}
+
+.feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+}
+
+.feature-item:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.feature-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4dd0e1;
+    background-color: rgba(77, 208, 225, 0.12);
+}
+
+.feature-icon-share {
+    color: #4dd0e1;
+    background-color: rgba(77, 208, 225, 0.12);
+}
+
+.feature-icon-cloud {
+    color: #4dd0e1;
+    background-color: rgba(77, 208, 225, 0.12);
+}
+
+.feature-icon-git {
+    color: #ff7043;
+    background-color: rgba(255, 112, 67, 0.12);
+}
+
+.feature-icon-friends {
+    color: #ba68c8;
+    background-color: rgba(186, 104, 200, 0.12);
+}
+
+.feature-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.feature-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $ui-white;
+    margin-bottom: 0.15rem;
+    line-height: 1.3;
+}
+
+.feature-desc {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.button-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+}
+
+.later-button,
+.continue-button {
+    appearance: none;
+    border: 1px solid transparent;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    font-family: inherit;
+    line-height: 1.2;
+}
+
+.later-button {
+    background-color: transparent;
+    border-color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.later-button:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.continue-button {
+    background-color: #4dd0e1;
+    color: #0d1f24;
+    border-color: #4dd0e1;
+}
+
+.continue-button:hover {
+    background-color: #5de2f3;
+    border-color: #5de2f3;
+}
+
+.footer-note {
+    margin: 0.4rem 0 0 0;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 0.5rem;
+}

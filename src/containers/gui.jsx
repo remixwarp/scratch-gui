@@ -43,7 +43,9 @@ import {
     openRestorePointModal,
     openShortcutManagerModal,
     openSimpleDialog,
-    openInvalidProjectModal
+    openInvalidProjectModal,
+    openRoturLoginModal,
+    closeRoturLoginModal
 } from '../reducers/modals';
 
 import FontLoaderHOC from '../lib/components/font-loader-hoc.jsx';
@@ -291,6 +293,7 @@ const mapStateToProps = state => {
         unknownPlatformModalVisible: state.scratchGui.modals.unknownPlatformModal,
         invalidProjectModalVisible: state.scratchGui.modals.invalidProjectModal,
         gitModalVisible: state.scratchGui.modals.gitModal,
+        roturLoginModalVisible: state.scratchGui.modals.roturLoginModal,
         vm: state.scratchGui.vm
     };
 };
@@ -321,7 +324,9 @@ const mapDispatchToProps = dispatch => ({
     openSettingsModal: () => dispatch(openSettingsModal()),
     openRestorePointModal: () => dispatch(openRestorePointModal()),
     onError: error => dispatch(projectError(error)),
-    onOpenInvalidProjectModal: () => dispatch(openInvalidProjectModal())
+    onOpenInvalidProjectModal: () => dispatch(openInvalidProjectModal()),
+    openRoturLoginModal: () => dispatch(openRoturLoginModal()),
+    onRequestCloseRoturLogin: () => dispatch(closeRoturLoginModal())
 });
 
 const ConnectedGUI = injectIntl(connect(

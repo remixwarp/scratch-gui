@@ -99,6 +99,8 @@
     "react-popover": "0.5.10",
     "react-redux": "5.0.7",
     "react-responsive": "5.0.0",
+    "react-router": "^6.30.4",
+    "react-router-dom": "^6.30.4",
     "react-string-replace": "^0.4.4",
     "react-style-proptype": "3.2.2",
     "react-tabs": "2.3.0",
@@ -117,7 +119,12 @@
     "to-style": "1.3.3",
     "wav-encoder": "1.3.0",
     "xhr": "2.5.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "accounts-sdk": "github:Bilup/accounts-sdk#main",
+    "rotur-sdk": "github:Bilup/accounts-sdk#main",
+    "just-bash": "^3.2.0",
+    "turndown": "^7.2.4",
+    "@mixmark-io/domino": "^2.2.0"
   },
   "devDependencies": {
     "@babel/cli": "7.14.8",
@@ -187,6 +194,7 @@
   "overrides": {
     "webpack@4.47.0": {
       "terser-webpack-plugin": "^4.2.3"
-    }
+    },
+    "rotur-sdk": "github:Bilup/accounts-sdk#main"
   }
 }

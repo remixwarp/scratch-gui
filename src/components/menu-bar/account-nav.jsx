@@ -1,7 +1,6 @@
 /*
 NOTE: this file only temporarily resides in scratch-gui.
-Nearly identical code appears in scratch-www, and the two should
-eventually be consolidated.
+Updated with Bilup Accounts menu items.
 */
 
 import classNames from 'classnames';
@@ -28,6 +27,8 @@ const AccountNavComponent = ({
     onClick,
     onClose,
     onLogOut,
+    onSwitchAccount,
+    onSaveToBilup,
     profileUrl,
     thumbnailUrl,
     username
@@ -71,6 +72,31 @@ const AccountNavComponent = ({
                     id="gui.accountMenu.profile"
                 />
             </MenuItemContainer>
+            <MenuItemContainer href="/accounts/settings/">
+                <FormattedMessage
+                    defaultMessage="Settings"
+                    description="Text to link to account settings"
+                    id="gui.accountMenu.settings"
+                />
+            </MenuItemContainer>
+            <MenuSection>
+                <MenuItemContainer onClick={onSaveToBilup}>
+                    <FormattedMessage
+                        defaultMessage="Save to Bilup"
+                        description="Text to save project to Bilup cloud"
+                        id="gui.accountMenu.saveToBilup"
+                    />
+                </MenuItemContainer>
+            </MenuSection>
+            <MenuSection>
+                <MenuItemContainer onClick={onSwitchAccount}>
+                    <FormattedMessage
+                        defaultMessage="Switch account"
+                        description="Text to switch to a different Bilup account"
+                        id="gui.accountMenu.switchAccount"
+                    />
+                </MenuItemContainer>
+            </MenuSection>
             <MenuItemContainer href="/mystuff/">
                 <FormattedMessage
                     defaultMessage="My Stuff"
@@ -96,13 +122,6 @@ const AccountNavComponent = ({
                     />
                 </MenuItemContainer>
             ) : null}
-            <MenuItemContainer href="/accounts/settings/">
-                <FormattedMessage
-                    defaultMessage="Account settings"
-                    description="Text to link to my account settings, in the account navigation menu"
-                    id="gui.accountMenu.accountSettings"
-                />
-            </MenuItemContainer>
             <MenuSection>
                 <MenuItemContainer onClick={onLogOut}>
                     <FormattedMessage
@@ -127,6 +146,8 @@ AccountNavComponent.propTypes = {
     onClick: PropTypes.func,
     onClose: PropTypes.func,
     onLogOut: PropTypes.func,
+    onSwitchAccount: PropTypes.func,
+    onSaveToBilup: PropTypes.func,
     profileUrl: PropTypes.string,
     thumbnailUrl: PropTypes.string,
     username: PropTypes.string

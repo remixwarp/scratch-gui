@@ -37,6 +37,12 @@ import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
 import TWNews from './tw-news.jsx';
 import CollaborationContainer from '../../containers/collaboration-container.jsx';
+import AccountNav from '../../containers/account-nav.jsx';
+import LoginDropdown from './login-dropdown.jsx';
+import RoturAccount from './mw-rotur-account.jsx';
+import {getCurrentUser, isLoggedIn} from '../../lib/community/api.js';
+import {saveToBilup as saveProjectToBilup} from '../../lib/mw/smart-save.js';
+import communityEnabled from '../../lib/community/enabled.js';
 import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
@@ -321,6 +327,7 @@ class MenuBar extends React.Component {
             'handleClickRemix',
             'handleClickSave',
             'handleClickSaveAsCopy',
+            'handleClickSaveToBilup',
             'handleClickPackager',
             'handleClickDesktopSettings',
             'handleClickRestorePoints',
@@ -1972,6 +1979,20 @@ class MenuBar extends React.Component {
         this.props.onRequestCloseFile();
     }
 
+    handleOpenBilupLoginModal () {
+        this.setState({bilupLoginModalOpen: true});
+        if (this.props.onRequestCloseAccount) {
+            this.props.onRequestCloseAccount();
+        }
+        if (this.props.onCloseAccountNav) {
+            this.props.onCloseAccountNav();
+        }
+    }
+
+    handleCloseBilupLoginModal () {
+        this.setState({bilupLoginModalOpen: false});
+    }
+
     handleClickNew () {
         // if the project is dirty, and user owns the project, we will autosave.
         // but if they are not logged in and can't save, user should consider
@@ -2008,6 +2029,44 @@ class MenuBar extends React.Component {
             unlockAchievement('late-night-coding');
         }
         this.props.onRequestCloseFile();
+    }
+    handleClickSaveToBilup () {
+        this.props.onRequestCloseFile();
+        if (!communityEnabled) {
+            this.showAlert(
+                'Bilup',
+                'Cloud community features are disabled.'
+            );
+            return;
+        }
+        if (!isLoggedIn()) {
+            // 未登录则打开登录提示框
+            this.handleOpenBilupLoginModal();
+            return;
+        }
+        const vm = this.props.vm;
+        const title = (this.props.projectTitle || 'Untitled').trim() || 'Untitled';
+        this.showAlert(
+            'Saving to Bilup',
+            `Uploading "${title}" to Bilup, please wait...`
+        );
+        saveProjectToBilup({
+            vm,
+            title,
+            share: false,
+            onSaved: result => {
+                this.showAlert(
+                    'Saved to Bilup',
+                    `Project saved: /project/${result.id}`
+                );
+            }
+        }).catch(err => {
+            const message = (err && err.message) || 'Failed to save to Bilup';
+            this.showAlert(
+                'Save to Bilup failed',
+                message
+            );
+        });
     }
     handleClickPackager () {
         this.props.onClickPackager();
@@ -3171,6 +3230,25 @@ class MenuBar extends React.Component {
                                             )}
                                         </MenuSection>
                                     )}
+                                    {communityEnabled && (
+                                        <MenuSection>
+                                            <MenuItem
+                                                isRtl={this.props.isRtl}
+                                                onClick={this.handleClickSaveToBilup}
+                                            >
+                                                <Cloud
+                                                    width={20}
+                                                    height={20}
+                                                    size={20}
+                                                />
+                                                <FormattedMessage
+                                                    defaultMessage="Save to Bilup"
+                                                    description="Menu bar item to save the project to Bilup"
+                                                    id="gui.menuBar.saveToBilup"
+                                                />
+                                            </MenuItem>
+                                        </MenuSection>
+                                    )}
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.props.onStartSelectingFileUpload}
@@ -3985,12 +4063,13 @@ class MenuBar extends React.Component {
                             showSaveFilePicker={this.props.showSaveFilePicker}
                         />
                     </span>
-                    {this.props.onClickSettingsModal && (
-                        <span data-mw-item="settings">
-                            <SettingsButton onClick={this.props.onClickSettingsModal} />
-                        </span>
-                    )}
                     <span data-mw-item="about">{aboutButton}</span>
+                    <span className={styles.roturAccountSlot}>
+                        <RoturAccount
+                            closeFileMenu={this.props.onRequestCloseFile}
+                            openRoturLoginModal={this.props.openRoturLoginModal}
+                        />
+                    </span>
                 </div>
             </Box>
         );

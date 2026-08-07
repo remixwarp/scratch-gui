@@ -538,18 +538,18 @@ const AgentsSettings: React.FC<{
                         {msg("edit")}
                       </button>
                     )}
-                    <button type="button" className={styles.button} onClick={() => onExportAgent(agent.id)}>
-                      {msg("export")}
-                    </button>
                     {!agent.locked && (
-                      <button
-                        type="button"
-                        className={styles.dangerButton}
-                        onClick={() => onDeleteAgent(agent.id)}
-                      >
-                        {msg("delete")}
+                      <button type="button" className={styles.button} onClick={() => onExportAgent(agent.id)}>
+                        {msg("export")}
                       </button>
                     )}
+                    <button
+                      type="button"
+                      className={styles.dangerButton}
+                      onClick={() => onDeleteAgent(agent.id)}
+                    >
+                      {msg("delete")}
+                    </button>
                     {agent.locked && (
                       <span style={{ fontSize: "12px", color: "#888", padding: "0 8px" }}>
                         内置

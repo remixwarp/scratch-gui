@@ -56,6 +56,10 @@ import BaiduAIModal from '../../containers/baidu-ai-modal.jsx';
 import ExtensionEditorModal from '../../containers/extension-editor-modal.jsx';
 import SuperRefactorModal from '../../containers/super-refactor-modal.jsx';
 import CompatibilityModal from '../../containers/tv-compatibility-modal.jsx';
+import RoturSession from '../../containers/rotur-session.jsx';
+import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
+import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
+import {closeRoturLoginModal} from '../../reducers/modals.js';
 
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 import TutorialModal from '../../containers/tutorial-modal.jsx';
@@ -319,6 +323,8 @@ const GUIComponent = props => {
         locale,
         logo,
         renderLogin,
+        roturLoginModalVisible,
+        onRequestCloseRoturLogin,
         onClickAbout,
         onClickAccountNav,
         onCloseAccountNav,
@@ -884,6 +890,8 @@ const GUIComponent = props => {
 
     const alwaysEnabledModals = useMemo(() => (
         <React.Fragment>
+            <RoturSession />
+            {!isEmbedded && <RoturExtensionHost />}
             <AchievementTracker vm={vm} />
             <Achievements />
             <NotificationsProvider />
@@ -930,6 +938,9 @@ const GUIComponent = props => {
             {props.gandiHelpModal && <GandiHelp onClose={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/CLOSE_MODAL', modal: 'gandiHelpModal'})} />}
             {customThemeVisible && <CustomThemeModal />}
             {readmeModalVisible && <AEReadMe />}
+            {roturLoginModalVisible && (
+                <RoturLoginModal onRequestClose={onRequestCloseRoturLogin} />
+            )}
         </React.Fragment>
     ), [
         securityManager,
@@ -948,6 +959,9 @@ const GUIComponent = props => {
         props.gandiHelpModal,
         customThemeVisible,
         readmeModalVisible,
+        roturLoginModalVisible,
+        onRequestCloseRoturLogin,
+        isEmbedded,
         vm
     ]);
 
@@ -1391,6 +1405,8 @@ GUIComponent.propTypes = {
     onSetStageSize: PropTypes.func,
     onSetFullScreen: PropTypes.func,
     renderLogin: PropTypes.func,
+    roturLoginModalVisible: PropTypes.bool,
+    onRequestCloseRoturLogin: PropTypes.func,
     securityManager: PropTypes.shape({}),
     showComingSoon: PropTypes.bool,
     showOpenFilePicker: PropTypes.func,

@@ -20,11 +20,28 @@ const DEFAULT_AGENTS: Agent[] = [
     models: [
       {
         id: "default-free-model-1",
-        name: "llama-3.1-8b-instruct-fast（Llama 3.1 8B）",
-        modelId: "llama-3.1-8b-instruct-fast",
+        name: "llama-3.3-70b-instruct-fp8-fast（Llama 3.3 70B）",
+        modelId: "llama-3.3-70b-instruct-fp8-fast",
       },
     ],
     immutable: true,
+    builtin: true,
+  },
+  {
+    id: "rw-default",
+    name: "rw",
+    provider: "custom",
+    baseUrl: "https://api.hcnsec.cn/v1/chat/completions",
+    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
+    models: [
+      {
+        id: "rw-default-model",
+        name: "kat-coder-pro-v2.5",
+        modelId: "kat-coder-pro-v2.5",
+      },
+    ],
+    // builtin: UI 中隐藏「编辑」「导出」按钮；不设 immutable，允许用户删除
+    immutable: false,
     builtin: true,
   },
 ];
@@ -34,27 +51,65 @@ export const BUILTIN_AGENT_IDS = new Set<string>(
   DEFAULT_AGENTS.filter((a) => a.immutable || a.builtin).map((a) => a.id),
 );
 
+// 已被用户主动删除的 builtin Agent ID 列表（持久化在 localStorage 中）
+const REMOVED_BUILTIN_AGENTS_KEY = "AI_ASSISTANT_REMOVED_BUILTIN_AGENTS_02";
+const readRemovedBuiltinAgentIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(REMOVED_BUILTIN_AGENTS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((item): item is string => typeof item === "string"));
+  } catch {
+    return new Set();
+  }
+};
+const writeRemovedBuiltinAgentIds = (ids: Set<string>) => {
+  try {
+    localStorage.setItem(REMOVED_BUILTIN_AGENTS_KEY, JSON.stringify(Array.from(ids)));
+  } catch {
+    // 忽略写入失败
+  }
+};
+
 /**
  * 确保 immutable Agent 不会被用户编辑过的存储值覆盖。
  * 每次加载存储后，将 immutable Agent 的 id 与 DEFAULT_AGENTS 中相同 id 的对象重置回默认值，
  * 避免用户通过手动改 localStorage 暴露密钥。
+ *
+ * builtin 但非 immutable 的 Agent（可删除）：
+ * - 如果用户在之前主动删除过，则不会自动重新注入；
+ * - 否则首次出现时（用户存储中不存在且未被记录为已删除）会自动注入到列表前面。
  */
 function enforceImmutableDefaults (stored: Agent[]): Agent[] {
-  const builtinIndex = new Map(DEFAULT_AGENTS.filter(a => a.immutable).map(a => [a.id, a]));
-  const seenBuiltin = new Set<string>();
+  const immutableIndex = new Map(DEFAULT_AGENTS.filter(a => a.immutable).map(a => [a.id, a]));
+  const builtinOnlyIndex = new Map(DEFAULT_AGENTS.filter(a => !a.immutable && a.builtin).map(a => [a.id, a]));
+  const seenImmutable = new Set<string>();
+  const seenBuiltinOnly = new Set<string>();
+  const removedBuiltinIds = readRemovedBuiltinAgentIds();
   const next: Agent[] = [];
   for (const agent of stored) {
-    if (builtinIndex.has(agent.id)) {
-      seenBuiltin.add(agent.id);
-      next.push({ ...builtinIndex.get(agent.id)! });
+    if (immutableIndex.has(agent.id)) {
+      seenImmutable.add(agent.id);
+      next.push({ ...immutableIndex.get(agent.id)! });
+    } else if (builtinOnlyIndex.has(agent.id)) {
+      seenBuiltinOnly.add(agent.id);
+      // 即使是 builtin，存储中的值也以默认值为准（避免被改密钥）
+      next.push({ ...builtinOnlyIndex.get(agent.id)! });
     } else {
       next.push(agent);
     }
   }
-  // 确保所有内置 Agent 始终出现在列表最前面
-  for (const id of builtinIndex.keys()) {
-    if (!seenBuiltin.has(id)) {
-      next.unshift({ ...builtinIndex.get(id)! });
+  // 确保所有 immutable Agent 始终出现在列表最前面
+  for (const id of immutableIndex.keys()) {
+    if (!seenImmutable.has(id)) {
+      next.unshift({ ...immutableIndex.get(id)! });
+    }
+  }
+  // 对 builtin（但非 immutable）的 Agent：若用户没有主动删除过，则补齐到列表前面
+  for (const id of builtinOnlyIndex.keys()) {
+    if (!seenBuiltinOnly.has(id) && !removedBuiltinIds.has(id)) {
+      next.unshift({ ...builtinOnlyIndex.get(id)! });
     }
   }
   return next;
@@ -162,6 +217,15 @@ export function useAgents() {
       window.alert("至少保留一个 Agent");
       return;
     }
+
+    // 如果删除的是 builtin 但非 immutable 的 Agent，记录到已删除列表，避免下次启动时自动补回
+    const deletedAgent = agents.find((a) => a.id === id);
+    if (deletedAgent && deletedAgent.builtin && !deletedAgent.immutable) {
+      const removedIds = readRemovedBuiltinAgentIds();
+      removedIds.add(id);
+      writeRemovedBuiltinAgentIds(removedIds);
+    }
+
     setAgents(nextAgents);
 
     const isCurrentModelDeleted = agents.find(a => a.id === id)?.models.some(m => m.id === currentModelId);

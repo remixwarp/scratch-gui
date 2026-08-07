@@ -19,26 +19,71 @@ const DEFAULT_AGENTS: Agent[] = [
     models: [
       {
         id: "hcnsec-default-model",
-        name: "llama-3.1-8b-instruct-fast（Llama 3.1 8B）",
-        modelId: "llama-3.1-8b-instruct-fast",
+        name: "llama-3.3-70b-instruct-fp8-fast（Llama 3.3 70B）",
+        modelId: "llama-3.3-70b-instruct-fp8-fast",
         maxTokens: 16384,
+      },
+    ],
+    locked: true,
+  },
+  {
+    id: "rw-default",
+    name: "rw",
+    provider: "custom",
+    baseUrl: "https://api.hcnsec.cn/v1/chat/completions",
+    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
+    models: [
+      {
+        id: "rw-default-model",
+        name: "kat-coder-pro-v2.5",
+        modelId: "kat-coder-pro-v2.5",
       },
     ],
     locked: true,
   },
 ];
 
+// 已被用户主动删除的 locked 内置 Agent ID 列表（持久化在 localStorage 中）
+const REMOVED_LOCKED_AGENTS_KEY = "AI_ASSISTANT_REMOVED_LOCKED_AGENTS";
+const readRemovedLockedAgentIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(REMOVED_LOCKED_AGENTS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((item): item is string => typeof item === "string"));
+  } catch {
+    return new Set();
+  }
+};
+const writeRemovedLockedAgentIds = (ids: Set<string>) => {
+  try {
+    localStorage.setItem(REMOVED_LOCKED_AGENTS_KEY, JSON.stringify(Array.from(ids)));
+  } catch {
+    // 忽略写入失败
+  }
+};
+
 const ensureDefaultAgent = (agents: Agent[]): Agent[] => {
   // 过滤掉 02agent 版本的内置 Agent，避免重复
   const filteredAgents = agents.filter((a) => a.id !== "default-free-chat");
 
-  const defaultExists = filteredAgents.some((a) => a.id === DEFAULT_AGENTS[0].id);
-  if (!defaultExists) {
-    return [...DEFAULT_AGENTS, ...filteredAgents];
+  const lockedDefaults = new Map(DEFAULT_AGENTS.filter((a) => a.locked).map((a) => [a.id, a]));
+  const presentLockedIds = new Set(filteredAgents.filter((a) => lockedDefaults.has(a.id)).map((a) => a.id));
+  const removedLockedIds = readRemovedLockedAgentIds();
+
+  // 对每个 locked 内置 agent：如果不在列表中且用户没主动删除过，则补齐到列表前面
+  const missingLockedAgents = DEFAULT_AGENTS
+    .filter((a) => a.locked && !presentLockedIds.has(a.id) && !removedLockedIds.has(a.id))
+    .map((a) => ({ ...a, models: a.models.map((m) => ({ ...m })) }));
+
+  if (missingLockedAgents.length > 0) {
+    return [...missingLockedAgents, ...filteredAgents];
   }
+
   return filteredAgents.map((agent) => {
-    if (agent.id !== DEFAULT_AGENTS[0].id) return agent;
-    const def = DEFAULT_AGENTS[0];
+    const def = lockedDefaults.get(agent.id);
+    if (!def) return agent;
     return {
       ...def,
       models: def.models,
@@ -126,6 +171,14 @@ export function useAgents() {
       return;
     }
 
+    // 如果删除的是 locked 内置 Agent，记录到已删除列表，避免下次启动时自动补回
+    const deletedAgent = agents.find((a) => a.id === id);
+    if (deletedAgent?.locked) {
+      const removedIds = readRemovedLockedAgentIds();
+      removedIds.add(id);
+      writeRemovedLockedAgentIds(removedIds);
+    }
+
     const nextAgents = agents.filter((agent) => agent.id !== id);
     setAgents(nextAgents);
 
@@ -144,6 +197,10 @@ export function useAgents() {
   const handleExportAgent = (agentId: string) => {
     const agent = agents.find((item) => item.id === agentId);
     if (!agent) return;
+    if (agent.locked) {
+      window.alert("系统内置 AI 不允许导出（避免密钥外泄）");
+      return;
+    }
 
     // Migrate on export just in case
     const exportAgent = { ...agent };
