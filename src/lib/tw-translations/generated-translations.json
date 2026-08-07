@@ -1089,7 +1089,7 @@
     "mw.share.progress.packagingProject": "正在打包项目",
     "mw.share.progress.uploadingProject": "正在上传项目",
     "mw.share.progress.processingOnServer": "正在服务器上处理",
-    "mw.share.progress.uploadingPercent": "正在上传 {percent}%"
-  },
-  "gui.opcodeLabels.costumes": "造型"
+    "mw.share.progress.uploadingPercent": "正在上传 {percent}%",
+    "gui.opcodeLabels.costumes": "造型"
+  }
 }
