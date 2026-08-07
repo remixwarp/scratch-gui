@@ -4,6 +4,7 @@ import bindAll from 'lodash.bindall';
 import React from 'react';
 import SB3Downloader from './sb3-downloader.jsx';
 import {openSimpleDialog} from '../reducers/modals';
+import {setProjectUnchanged} from '../reducers/project-changed';
 import ToastNotification from '../components/toast-notification/toast-notification.jsx';
 
 const MenuBarHOC = function (WrappedComponent) {
@@ -96,7 +97,8 @@ const MenuBarHOC = function (WrappedComponent) {
         }),
         hideToast: () => dispatch({
             type: 'scratch-gui/HIDE_TOAST'
-        })
+        }),
+        onProjectUnchanged: () => dispatch(setProjectUnchanged())
     });
     // Allow incoming props to override redux-provided props. Used to mock in tests.
     const mergeProps = (stateProps, dispatchProps, ownProps) => Object.assign(

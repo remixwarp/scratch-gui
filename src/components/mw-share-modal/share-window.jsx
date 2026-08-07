@@ -1,8 +1,45 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {publishToBilup, captureThumbnailDataUri, prepareThumbnailBlob} from '../../lib/community/publish.js';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
+import {publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob} from '../../lib/community/publish.js';
 import {request} from '../../lib/community/api.js';
 import styles from './share-window.css';
+
+const messages = defineMessages({
+    saving: {id: 'mw.share.saving', defaultMessage: 'Saving…'},
+    thumbnailNotice: {
+        id: 'mw.share.thumbnailNotice',
+        defaultMessage: 'Couldn\'t attach thumbnail; publishing without it.'
+    },
+    couldNotSave: {id: 'mw.share.couldNotSave', defaultMessage: 'Could not save'},
+    couldNotAcceptAgreement: {id: 'mw.share.couldNotAcceptAgreement', defaultMessage: 'Could not accept agreement.'},
+    remix: {id: 'mw.share.remix', defaultMessage: 'Remix'},
+    update: {id: 'mw.share.update', defaultMessage: 'Update'},
+    save: {id: 'mw.share.save', defaultMessage: 'Save'},
+    checkStorage: {id: 'mw.share.checkStorage', defaultMessage: 'Check project storage'},
+    uploadAgreement: {id: 'mw.share.uploadAgreement', defaultMessage: 'Upload agreement v{version}'},
+    cancel: {id: 'mw.share.cancel', defaultMessage: 'Cancel'},
+    accepting: {id: 'mw.share.accepting', defaultMessage: 'Accepting…'},
+    acceptAgreement: {id: 'mw.share.acceptAgreement', defaultMessage: 'Accept v{version} & {action}'},
+    savedAndShared: {id: 'mw.share.savedAndShared', defaultMessage: 'Your project is saved and shared.'},
+    savedPrivate: {
+        id: 'mw.share.savedPrivate',
+        defaultMessage: 'Your project is saved to Bilup. It stays private until you share it from its project page.'
+    },
+    close: {id: 'mw.share.close', defaultMessage: 'Close'},
+    openProjectPage: {id: 'mw.share.openProjectPage', defaultMessage: 'Open project page'},
+    updateDescription: {
+        id: 'mw.share.updateDescription',
+        defaultMessage: 'Upload the current version of this project to Bilup. The title and thumbnail stay as they are; edit those on the project page.'
+    },
+    title: {id: 'mw.share.title', defaultMessage: 'Title'},
+    untitled: {id: 'mw.share.untitled', defaultMessage: 'Untitled'},
+    thumbnail: {id: 'mw.share.thumbnail', defaultMessage: 'Thumbnail'},
+    thumbnailAlt: {id: 'mw.share.thumbnailAlt', defaultMessage: 'Project thumbnail'},
+    noPreview: {id: 'mw.share.noPreview', defaultMessage: 'No preview'},
+    useCurrentCanvas: {id: 'mw.share.useCurrentCanvas', defaultMessage: 'Use current canvas'},
+    uploadImage: {id: 'mw.share.uploadImage', defaultMessage: 'Upload an image'}
+});
 
 class ShareWindow extends React.Component {
     constructor (props) {
@@ -14,7 +51,7 @@ class ShareWindow extends React.Component {
         this.handleAcceptAgreement = this.handleAcceptAgreement.bind(this);
         this.fileInput = React.createRef();
         this.state = {
-            title: props.initialTitle || 'Untitled',
+            title: props.initialTitle || '',
             thumbnail: null,
             status: null,
             error: props.initialError ? props.initialError.message : null,
@@ -74,20 +111,28 @@ class ShareWindow extends React.Component {
             // proceed with upload if agreement check fails
         }
 
-        this.setState({status: 'Saving…', error: null, errorCode: null, notice: null, agreement: null});
+        this.setState({
+            status: this.props.intl.formatMessage(messages.saving),
+            error: null,
+            errorCode: null,
+            notice: null,
+            agreement: null
+        });
         let thumbnailBlob = null;
         if (!isUpdate && this.state.thumbnail) {
             try {
                 thumbnailBlob = await prepareThumbnailBlob(this.state.thumbnail);
             } catch (e) {
                 thumbnailBlob = null;
-                this.setState({notice: 'Couldn\'t attach thumbnail; publishing without it.'});
+                this.setState({
+                    notice: this.props.intl.formatMessage(messages.thumbnailNotice)
+                });
             }
         }
         try {
-            const result = await publishToBilup({
+            const result = await publishToMistWarp({
                 vm: this.props.vm,
-                title: isUpdate ? null : this.state.title,
+                title: isUpdate ? null : (this.state.title || this.props.intl.formatMessage(messages.untitled)),
                 thumbnailBlob,
                 updateOnly: isUpdate,
                 onProgress: ({message}) => this.setState({status: message})
@@ -95,7 +140,11 @@ class ShareWindow extends React.Component {
             this.setState({status: null, done: result});
             this.props.onPublished(result);
         } catch (e) {
-            this.setState({status: null, error: e.message || 'Could not save', errorCode: e.code || null});
+            this.setState({
+                status: null,
+                error: e.message || this.props.intl.formatMessage(messages.couldNotSave),
+                errorCode: e.code || null
+            });
         }
     }
 
@@ -107,7 +156,10 @@ class ShareWindow extends React.Component {
             // proceed with the save now that agreement is accepted
             this.handlePublish();
         } catch (e) {
-            this.setState({agreeBusy: false, agreeError: e.message || 'Could not accept agreement.'});
+            this.setState({
+                agreeBusy: false,
+                agreeError: e.message || this.props.intl.formatMessage(messages.couldNotAcceptAgreement)
+            });
         }
     }
     renderError () {
@@ -120,22 +172,26 @@ class ShareWindow extends React.Component {
                         className={styles.reviewStorage}
                         onClick={this.props.onReviewStorage}
                     >
-                        {'Check project storage'}
+                        {this.props.intl.formatMessage(messages.checkStorage)}
                     </button>
                 )}
             </div>
         );
     }
     render () {
-        const actionLabel = this.props.action === 'remix' ? 'Remix' :
-            this.props.action === 'update' ? 'Update' : 'Save';
+        const intl = this.props.intl;
+        const title = this.state.title || intl.formatMessage(messages.untitled);
+        const actionLabel = this.props.action === 'remix' ? intl.formatMessage(messages.remix) :
+            this.props.action === 'update' ? intl.formatMessage(messages.update) : intl.formatMessage(messages.save);
 
         if (this.state.agreement) {
             return (
                 <div className={styles.root}>
                     <div className={styles.body}>
                         <h3 className={styles.agreeTitle}>
-                            Upload agreement v{this.state.agreement.version}
+                            {intl.formatMessage(messages.uploadAgreement, {
+                                version: this.state.agreement.version
+                            })}
                         </h3>
                         <div className={styles.agreeBody}>
                             <pre className={styles.agreeText}>{this.state.agreement.text}</pre>
@@ -149,15 +205,18 @@ class ShareWindow extends React.Component {
                             className={styles.secondary}
                             onClick={() => this.setState({agreement: null, agreeError: ''})}
                             disabled={this.state.agreeBusy}
-                        >Cancel</button>
+                        >{intl.formatMessage(messages.cancel)}</button>
                         <button
                             className={styles.primary}
                             onClick={this.handleAcceptAgreement}
                             disabled={this.state.agreeBusy}
                         >
                             {this.state.agreeBusy ?
-                                'Accepting…' :
-                                `Accept v${this.state.agreement.version} & ${actionLabel.toLowerCase()}`}
+                                intl.formatMessage(messages.accepting) :
+                                intl.formatMessage(messages.acceptAgreement, {
+                                    version: this.state.agreement.version,
+                                    action: actionLabel.toLowerCase()
+                                })}
                         </button>
                     </div>
                 </div>
@@ -170,23 +229,22 @@ class ShareWindow extends React.Component {
                     <div className={styles.body}>
                         <p className={styles.doneMessage}>
                             {this.state.done.shared ?
-                                'Your project is saved and shared.' :
-                                'Your project is saved to Bilup. ' +
-                                'It stays private until you share it from its project page.'}
+                                intl.formatMessage(messages.savedAndShared) :
+                                intl.formatMessage(messages.savedPrivate)}
                         </p>
                     </div>
                     <div className={styles.footer}>
                         <button
                             className={styles.secondary}
                             onClick={this.props.onClose}
-                        >Close</button>
+                        >{intl.formatMessage(messages.close)}</button>
                         <button
                             className={styles.primary}
                             onClick={() => {
                                 window.open(this.state.done.url, '_blank', 'noopener');
                                 this.props.onClose();
                             }}
-                        >Open project page</button>
+                        >{intl.formatMessage(messages.openProjectPage)}</button>
                     </div>
                 </div>
             );
@@ -197,8 +255,7 @@ class ShareWindow extends React.Component {
                 <div className={styles.root}>
                     <div className={styles.body}>
                         <p className={styles.doneMessage}>
-                            {'Upload the current version of this project to Bilup. ' +
-                            'The title and thumbnail stay as they are; edit those on the project page.'}
+                            {intl.formatMessage(messages.updateDescription)}
                         </p>
                         {this.renderError()}
                     </div>
@@ -207,7 +264,7 @@ class ShareWindow extends React.Component {
                             className={styles.secondary}
                             onClick={this.props.onClose}
                             disabled={!!this.state.status}
-                        >Cancel</button>
+                        >{intl.formatMessage(messages.cancel)}</button>
                         <button
                             className={styles.primary}
                             onClick={this.handlePublish}
@@ -220,37 +277,37 @@ class ShareWindow extends React.Component {
         return (
             <div className={styles.root}>
                 <div className={styles.body}>
-                    <label className={styles.label} htmlFor="mw-share-title">Title</label>
+                    <label className={styles.label} htmlFor="mw-share-title">{intl.formatMessage(messages.title)}</label>
                     <input
                         id="mw-share-title"
                         className={styles.input}
-                        value={this.state.title}
+                        value={title}
                         maxLength={100}
                         onChange={this.handleTitleChange}
                     />
 
-                    <div className={styles.label}>Thumbnail</div>
+                    <div className={styles.label}>{intl.formatMessage(messages.thumbnail)}</div>
                     <div className={styles.thumbRow}>
                         {this.state.thumbnail ? (
                             <img
                                 className={styles.thumb}
                                 src={this.state.thumbnail}
-                                alt="Project thumbnail"
+                                alt={intl.formatMessage(messages.thumbnailAlt)}
                             />
                         ) : (
-                            <div className={styles.thumbEmpty}>No preview</div>
+                            <div className={styles.thumbEmpty}>{intl.formatMessage(messages.noPreview)}</div>
                         )}
                         <div className={styles.thumbButtons}>
                             <button
                                 className={styles.secondary}
                                 onClick={this.handleRetake}
                                 disabled={!!this.state.status}
-                            >Use current canvas</button>
+                            >{intl.formatMessage(messages.useCurrentCanvas)}</button>
                             <button
                                 className={styles.secondary}
                                 onClick={() => this.fileInput.current && this.fileInput.current.click()}
                                 disabled={!!this.state.status}
-                            >Upload an image</button>
+                            >{intl.formatMessage(messages.uploadImage)}</button>
                             <input
                                 ref={this.fileInput}
                                 className={styles.hiddenInput}
@@ -271,11 +328,11 @@ class ShareWindow extends React.Component {
                         className={styles.secondary}
                         onClick={this.props.onClose}
                         disabled={!!this.state.status}
-                    >Cancel</button>
+                    >{intl.formatMessage(messages.cancel)}</button>
                     <button
                         className={styles.primary}
                         onClick={this.handlePublish}
-                        disabled={!!this.state.status || !this.state.title.trim()}
+                        disabled={!!this.state.status || !title.trim()}
                     >{this.state.status || actionLabel}</button>
                 </div>
             </div>
@@ -284,6 +341,7 @@ class ShareWindow extends React.Component {
 }
 
 ShareWindow.propTypes = {
+    intl: intlShape.isRequired,
     vm: PropTypes.shape({
         saveProjectSb3: PropTypes.func,
         renderer: PropTypes.object
@@ -303,4 +361,4 @@ ShareWindow.defaultProps = {
     action: 'save'
 };
 
-export default ShareWindow;
+export default injectIntl(ShareWindow);

@@ -43,6 +43,8 @@ import RoturAccount from './mw-rotur-account.jsx';
 import MwEditorNav from './mw-editor-nav.jsx';
 import {getCurrentUser, isLoggedIn} from '../../lib/community/api.js';
 import {saveToBilup as saveProjectToBilup} from '../../lib/mw/smart-save.js';
+import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
+import {getBilupAction} from '../../lib/community/publish.js';
 import communityEnabled from '../../lib/community/enabled.js';
 import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
 
@@ -315,7 +317,8 @@ class MenuBar extends React.Component {
             workspaceBookmarksCategories: ['General'],
             workspaceBookmarksCollapsedCategories: [],
             canUndo: true,
-            canRedo: true
+            canRedo: true,
+            mistwarpProject: null
         };
         this.workspaceBookmarksProjectListener = null;
         this.autosaveCountdownInterval = null;
@@ -329,6 +332,7 @@ class MenuBar extends React.Component {
             'handleClickSave',
             'handleClickSaveAsCopy',
             'handleClickSaveToBilup',
+            'handleClickSeeBilupPage',
             'handleClickPackager',
             'handleClickDesktopSettings',
             'handleClickRestorePoints',
@@ -2045,29 +2049,21 @@ class MenuBar extends React.Component {
             this.handleOpenBilupLoginModal();
             return;
         }
-        const vm = this.props.vm;
-        const title = (this.props.projectTitle || 'Untitled').trim() || 'Untitled';
-        this.showAlert(
-            'Saving to Bilup',
-            `Uploading "${title}" to Bilup, please wait...`
-        );
-        saveProjectToBilup({
-            vm,
-            title,
-            share: false,
-            onSaved: result => {
-                this.showAlert(
-                    'Saved to Bilup',
-                    `Project saved: /project/${result.id}`
-                );
+        openMistWarpShareWindow({
+            vm: this.props.vm,
+            initialTitle: this.props.projectTitle,
+            action: getBilupAction(this.state.mistwarpProject, this.props.projectChanged),
+            onPublished: result => {
+                this.setState({mistwarpProject: {id: result.id, isOwner: true, shared: !!result.shared}});
+                this.props.onProjectUnchanged();
             }
-        }).catch(err => {
-            const message = (err && err.message) || 'Failed to save to Bilup';
-            this.showAlert(
-                'Save to Bilup failed',
-                message
-            );
         });
+    }
+    handleClickSeeBilupPage () {
+        this.props.onRequestCloseFile();
+        if (this.state.mistwarpProject) {
+            window.location.href = `/project/${this.state.mistwarpProject.id}`;
+        }
     }
     handleClickPackager () {
         this.props.onClickPackager();

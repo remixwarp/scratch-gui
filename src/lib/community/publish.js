@@ -282,8 +282,15 @@ const publishToMistWarp = async ({
     return {id: platformId, url: `/project/${platformId}`, shared};
 };
 
+// Compatibility aliases: bilup-ui historically imports these as publishToBilup/
+// getBilupAction. The implementations are the same as the mistwarp ones in
+// this project.
+const publishToBilup = publishToMistWarp;
+const getBilupAction = getMistWarpAction;
+
 export {
     publishToMistWarp,
+    publishToBilup,
     captureThumbnail,
     captureThumbnailDataUri,
     prepareThumbnailBlob,
@@ -291,6 +298,7 @@ export {
     getRememberedPlatformProject,
     getRememberedPlatformProjectState,
     getMistWarpAction,
+    getBilupAction,
     rememberScratchOrigin,
     getScratchOrigin
 };

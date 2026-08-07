@@ -1,6 +1,7 @@
 import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
+import {isLoggedIn as roturIsLoggedIn, fetchCurrentUser as roturFetchCurrentUser} from '../rotur/client.js';
 
 const API_BASE = 'https://api.bilup.org/api';
 
@@ -329,6 +330,32 @@ const remixProject = id => request(`/projects/${id}/remix`, {method: 'POST'});
 
 const deleteProject = id => request(`/projects/${id}`, {method: 'DELETE'});
 
+const isLoggedIn = () => {
+    if (typeof roturIsLoggedIn === 'function') {
+        try {
+            return roturIsLoggedIn();
+        } catch (e) {
+            // rotur client not initialized yet
+        }
+    }
+    return Boolean(loadSession() || loadRoturToken());
+};
+
+const getCurrentUser = async () => {
+    if (typeof roturFetchCurrentUser === 'function') {
+        try {
+            const user = await roturFetchCurrentUser();
+            if (user) return user;
+        } catch (e) {
+            // fall through to local fallback
+        }
+    }
+    if (loadSession() || loadRoturToken()) {
+        return {loggedIn: true};
+    }
+    return null;
+};
+
 const HANDOFF_KEY = 'mw:project-handoff';
 const HANDOFF_MAX_AGE = 5 * 60 * 1000;
 
@@ -376,5 +403,7 @@ export {
     request,
     getCustomExtensionUrls,
     hashExtensionUrl,
-    extensionSourceUrl
+    extensionSourceUrl,
+    isLoggedIn,
+    getCurrentUser
 };
