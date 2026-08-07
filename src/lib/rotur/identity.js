@@ -40,6 +40,13 @@ const setState = patch => {
 
 const subscribe = cb => {
     listeners.add(cb);
+    // Replay current state so subscribers mounted after login don't have to
+    // wait for the next status change to discover that the user is logged in.
+    try {
+        cb(state);
+    } catch (_) {
+        // ignore
+    }
     return () => listeners.delete(cb);
 };
 

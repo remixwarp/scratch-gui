@@ -1,0 +1,37 @@
+.label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+.select,
+.textarea {
+    width: 100%;
+    font: inherit;
+    color: var(--mw-text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 10px;
+}
+
+.textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.select:focus,
+.textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.error {
+    color: #e25555;
+    font-size: 13px;
+}
+
+.sent {
+    margin: 0;
+    color: var(--mw-text);
+}

@@ -40,6 +40,7 @@ import CollaborationContainer from '../../containers/collaboration-container.jsx
 import AccountNav from '../../containers/account-nav.jsx';
 import LoginDropdown from './login-dropdown.jsx';
 import RoturAccount from './mw-rotur-account.jsx';
+import MwEditorNav from './mw-editor-nav.jsx';
 import {getCurrentUser, isLoggedIn} from '../../lib/community/api.js';
 import {saveToBilup as saveProjectToBilup} from '../../lib/mw/smart-save.js';
 import communityEnabled from '../../lib/community/enabled.js';
@@ -464,7 +465,7 @@ class MenuBar extends React.Component {
             'TurboWarp': { name: 'TurboWarp', url: 'https://turbowarp.org' },
             '02Engine': { name: '02Engine', url: 'https://02engine.02studio.xyz/' },
             'AstraEditor': { name: 'AstraEditor', url: 'https://editors.astras.top/' },
-            'Bilup': { name: 'Bilup', url: 'https://editor.bilup.org/' },
+            'Bilup': { name: 'Bilup', url: 'https://com.bilup.org/' },
             'Gandi': { name: 'Gandi', url: 'https://getgandi.com/' },
             'Kitten4': { name: 'Kitten4', url: 'https://www.codemao.cn/' }
         };
@@ -4064,6 +4065,7 @@ class MenuBar extends React.Component {
                         />
                     </span>
                     <span data-mw-item="about">{aboutButton}</span>
+                    <MwEditorNav />
                     <span className={styles.roturAccountSlot}>
                         <RoturAccount
                             closeFileMenu={this.props.onRequestCloseFile}

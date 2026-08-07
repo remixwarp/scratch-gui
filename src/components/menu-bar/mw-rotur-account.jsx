@@ -98,7 +98,9 @@ const RoturAccount = props => {
                         />
                     </MenuItemContainer>
                 )}
-                <MenuItemContainer onClick={go('/settings')}>
+                <MenuItemContainer
+                    onClick={() => window.open('https://com.bilup.org/settings', '_blank', 'noopener,noreferrer')}
+                >
                     <Settings />
                     <FormattedMessage
                         defaultMessage="Settings"
