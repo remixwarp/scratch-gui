@@ -53,8 +53,13 @@ const ensureDefaultAgent = (agents: Agent[]): Agent[] => {
   // 过滤掉 02agent 版本的内置 Agent，避免重复
   const filteredAgents = agents.filter((a) => a.id !== "default-free-chat");
 
+  // 强制清理已被移除的内置 Agent（包括老版本遗留的 rw-default 等）
+  // 这些 ID 已不再出现在 DEFAULT_AGENTS 中，但仍可能残留在用户的 localStorage 中
+  const REMOVED_BUILTIN_AGENT_IDS = new Set<string>(["rw-default"]);
+  const cleanedAgents = filteredAgents.filter((a) => !REMOVED_BUILTIN_AGENT_IDS.has(a.id));
+
   const lockedDefaults = new Map(DEFAULT_AGENTS.filter((a) => a.locked).map((a) => [a.id, a]));
-  const presentLockedIds = new Set(filteredAgents.filter((a) => lockedDefaults.has(a.id)).map((a) => a.id));
+  const presentLockedIds = new Set(cleanedAgents.filter((a) => lockedDefaults.has(a.id)).map((a) => a.id));
   const removedLockedIds = readRemovedLockedAgentIds();
 
   // 对每个 locked 内置 agent：如果不在列表中且用户没主动删除过，则补齐到列表前面
@@ -63,10 +68,10 @@ const ensureDefaultAgent = (agents: Agent[]): Agent[] => {
     .map((a) => ({ ...a, models: a.models.map((m) => ({ ...m })) }));
 
   if (missingLockedAgents.length > 0) {
-    return [...missingLockedAgents, ...filteredAgents];
+    return [...missingLockedAgents, ...cleanedAgents];
   }
 
-  return filteredAgents.map((agent) => {
+  return cleanedAgents.map((agent) => {
     const def = lockedDefaults.get(agent.id);
     if (!def) return agent;
     return {

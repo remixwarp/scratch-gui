@@ -64,14 +64,20 @@ const writeRemovedBuiltinAgentIds = (ids: Set<string>) => {
  * - 如果用户在之前主动删除过，则不会自动重新注入；
  * - 否则首次出现时（用户存储中不存在且未被记录为已删除）会自动注入到列表前面。
  */
+// 已被移除的内置 Agent ID 列表（旧版本遗留，会被强制从用户存储中清理）
+const REMOVED_BUILTIN_AGENT_IDS = new Set<string>(["rw-default"]);
+
 function enforceImmutableDefaults (stored: Agent[]): Agent[] {
+  // 先强制清理已被移除的内置 Agent
+  const cleaned = stored.filter((a) => !REMOVED_BUILTIN_AGENT_IDS.has(a.id));
+
   const immutableIndex = new Map(DEFAULT_AGENTS.filter(a => a.immutable).map(a => [a.id, a]));
   const builtinOnlyIndex = new Map(DEFAULT_AGENTS.filter(a => !a.immutable && a.builtin).map(a => [a.id, a]));
   const seenImmutable = new Set<string>();
   const seenBuiltinOnly = new Set<string>();
   const removedBuiltinIds = readRemovedBuiltinAgentIds();
   const next: Agent[] = [];
-  for (const agent of stored) {
+  for (const agent of cleaned) {
     if (immutableIndex.has(agent.id)) {
       seenImmutable.add(agent.id);
       next.push({ ...immutableIndex.get(agent.id)! });
