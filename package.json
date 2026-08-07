@@ -112,7 +112,7 @@
     "scratch-audio": "github:remixwarp/scratch-audio#main",
     "scratch-blocks": "github:remixwarp/scratch-blocks#main",
     "scratch-paint": "github:Bilup/scratch-paint#develop",
-    "scratch-render": "github:remixwarp/scratch-render#38f5d43200a266a55519ec6a1150899d9e689bb0",
+    "scratch-render": "github:remixwarp/scratch-render#0d2ae141e6c0d658054f92856ab38ba2dfd42a47",
     "scratch-vm": "github:remixwarp/scratch-vm#main",
     "style-loader": "^0.23.0",
     "text-encoding": "0.7.0",
