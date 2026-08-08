@@ -1037,7 +1037,7 @@
     "mw.roturLogin.contentLabel": "使用 Bilup Accounts 登录",
     "mw.roturLogin.loggedInContentLabel": "Bilup 中的 Bilup Accounts",
     "mw.roturLogin.loggedInTitle": "Bilup 中的 Bilup Accounts",
-    "mw.roturLogin.connectTitle": "将 Bilup 连接到 Bilup Accounts",
+    "mw.roturLogin.connectTitle": "将 RemixWarp 连接到 Bilup Accounts",
     "mw.roturLogin.subtitle": "登录后可使用在线状态、个人头像以及主题和设置的云同步。",
     "mw.roturLogin.loggedInSubtitle": "你已以 {username} 身份登录。以下是你的账号启用的功能。",
     "mw.roturLogin.unlockTitle": "你将获得的功能",
