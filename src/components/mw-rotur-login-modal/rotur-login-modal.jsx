@@ -148,7 +148,7 @@ class RoturLoginModal extends React.Component {
                             alt=""
                             className={styles.logo}
                             draggable={false}
-                            src={window.location.href.replace(/editor\.html$/i, '512.png')}
+                            src="images/512.png"
                         />
                         <div className={styles.heroText}>
                             <h2 className={styles.title}>
