@@ -339,6 +339,16 @@ const messages = defineMessages({
         description: 'EnableAutoUpdateCheck help',
         id: 'tw.settingsModal.enableautoupdatecheckhelp'
     },
+    enableblockcounter: {
+        defaultMessage: '启用积木计数（需要刷新）',
+        description: 'EnableBlockCounter label',
+        id: 'tw.settingsModal.enableblockcounter'
+    },
+    enableblockcounterhelp: {
+        defaultMessage: '打开后，舞台上会显示积木计数按钮。点击按钮可查看项目中各积木的使用数量统计。',
+        description: 'EnableBlockCounter help',
+        id: 'tw.settingsModal.enableblockcounterhelp'
+    },
     customdefaultsprite: {
         defaultMessage: '自定义默认角色（需刷新）',
         description: 'Custom default sprite label',
@@ -815,6 +825,22 @@ const EnableAutoUpdateCheck = props => (
         help={
             <FormattedMessage
                 {...messages.enableautoupdatecheckhelp}
+            />
+        }
+    />
+);
+
+const EnableBlockCounter = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                {...messages.enableblockcounter}
+            />
+        }
+        help={
+            <FormattedMessage
+                {...messages.enableblockcounterhelp}
             />
         }
     />
@@ -1825,6 +1851,13 @@ const pageConfigurations = {
                         props: props => ({
                             value: AEsettings.get('enableAutoUpdateCheck') || false,
                             onChange: (e) => { AEsettings.set("enableAutoUpdateCheck", e.target.checked); notifySettingsChange(); location.reload(); }
+                        })
+                    },
+                    {
+                        component: EnableBlockCounter,
+                        props: props => ({
+                            value: AEsettings.get('EnableBlockCounter') || false,
+                            onChange: (e) => { AEsettings.set("EnableBlockCounter", e.target.checked); notifySettingsChange(); location.reload(); }
                         })
                     },
                     {

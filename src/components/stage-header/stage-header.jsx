@@ -146,7 +146,19 @@ const StageHeaderComponent = function (props) {
         }
     };
 
+    const checkBlockCounterEnabled = () => {
+        try {
+            const stored = localStorage.getItem('AESettings');
+            if (!stored) return false;
+            const settings = JSON.parse(stored);
+            return settings.EnableBlockCounter === true;
+        } catch (e) {
+            return false;
+        }
+    };
+
     const isMobileModeEnabled = checkMobileTouchDragEnabled();
+    const isBlockCounterEnabled = checkBlockCounterEnabled();
 
     const useContainerWidth = !(isFullScreen || isEmbedded) && typeof stageContainerWidth === 'number';
     const stageDimensions = getStageDimensions(
@@ -270,14 +282,16 @@ const StageHeaderComponent = function (props) {
                     >
                         {stageControls}
                         <div className={styles.stageButtonsGroup}>
-                            <BlockCounterToggle 
-                                isVisible={!showBlockCounter}
-                                onClick={() => {
-                                    localStorage.setItem('blockCounterClosed', 'false');
-                                    setShowBlockCounter(true);
-                                    window.dispatchEvent(new CustomEvent('blockCounterShow'));
-                                }}
-                            />
+                            {isBlockCounterEnabled ? (
+                                <BlockCounterToggle 
+                                    active={showBlockCounter}
+                                    onClick={() => {
+                                        localStorage.setItem('blockCounterClosed', 'false');
+                                        setShowBlockCounter(true);
+                                        window.dispatchEvent(new CustomEvent('blockCounterShow'));
+                                    }}
+                                />
+                            ) : null}
                             {isMobileModeEnabled && (
                                 <Button
                                     className={styles.stageButton}

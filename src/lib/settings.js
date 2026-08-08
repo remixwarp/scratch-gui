@@ -7,7 +7,8 @@ const DEFAULT_SETTINGS = {
     EnableVSCodeLayout: false,
     EnableMobileLayout: false,
     EnableMobileTouchDrag: false,
-    enableAutoUpdateCheck: false
+    enableAutoUpdateCheck: false,
+    EnableBlockCounter: false
 };
 
 export class AESettings {

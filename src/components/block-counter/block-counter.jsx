@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import AddonHooks from '../../addons/hooks.js';
+import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
+
+// 12x12 超粗像素字体，更有冲击力
 
 // 12x12 超粗像素字体，更有冲击力
 const pixelFonts12x12 = {
@@ -555,86 +558,59 @@ const BlockCounter = ({ theme, onClose, onReset }) => {
 
     const countBlocks = () => {
         try {
-            const workspace = AddonHooks.blocklyWorkspace;
-            if (workspace && workspace.getAllBlocks) {
-                const blocks = workspace.getAllBlocks(false);
-                const count = blocks.length;
-                stableCountRef.current = count;
-                
-                // 清除之前的定时器
-                if (debounceTimerRef.current) {
-                    clearTimeout(debounceTimerRef.current);
-                }
-                
-                // 设置防抖，等待500ms后计数稳定
-                debounceTimerRef.current = setTimeout(() => {
-                    const stableCount = stableCountRef.current;
-                    setCurrentCount(stableCount);
-                    
-                    if (stableCount > maxCount) {
-                        setMaxCount(stableCount);
-                        localStorage.setItem('maxBlockCount', stableCount.toString());
-                    }
-
-                    if (stableCount > previousCountRef.current) {
-                        const isNiceNumber = stableCount > 0 && (stableCount % 10 === 0 || stableCount % 25 === 0 || stableCount % 50 === 0 || stableCount % 100 === 0);
-                        if (isNiceNumber) {
-                            setShowNice(true);
-                            setColorIndex((prev) => (prev + 1) % colorPalette.length);
-                            setTimeout(() => setShowNice(false), 2000);
-                        }
-                    }
-                    previousCountRef.current = stableCount;
-                }, 1000);
+            // 直接读取 block-count addon 暴露的全局变量（与菜单栏 "N个积木" 一致）
+            const count = (typeof window.__blockCountValue === 'number') ? window.__blockCountValue : 0;
+            stableCountRef.current = count;
+            
+            // 清除之前的定时器
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
             }
+            
+            // 设置防抖，等待300ms后计数稳定
+            debounceTimerRef.current = setTimeout(() => {
+                const stableCount = stableCountRef.current;
+                setCurrentCount(stableCount);
+                
+                setMaxCount(prevMax => {
+                    if (stableCount > prevMax) {
+                        localStorage.setItem('maxBlockCount', stableCount.toString());
+                        return stableCount;
+                    }
+                    return prevMax;
+                });
+
+                if (stableCount > previousCountRef.current) {
+                    const isNiceNumber = stableCount > 0 && (stableCount % 10 === 0 || stableCount % 25 === 0 || stableCount % 50 === 0 || stableCount % 100 === 0);
+                    if (isNiceNumber) {
+                        setShowNice(true);
+                        setColorIndex((prev) => (prev + 1) % colorPalette.length);
+                        setTimeout(() => setShowNice(false), 2000);
+                    }
+                }
+                previousCountRef.current = stableCount;
+            }, 300);
         } catch (e) {
             console.error('Error counting blocks:', e);
         }
     };
 
-    // 使用Blockly工作区事件代替定时器
+    // 定时轮询 window.__blockCountValue（与菜单栏 "N个积木" 完全同步）
     useEffect(() => {
-        let workspace = null;
+        // 立即读取一次
+        countBlocks();
         
-        // 等待工作区加载
-        const checkWorkspace = setInterval(() => {
-            workspace = AddonHooks.blocklyWorkspace;
-            if (workspace && workspace.addChangeListener) {
-                clearInterval(checkWorkspace);
-                
-                // 添加工作区变更监听器
-                const handleWorkspaceChange = (event) => {
-                    // 只在以下情况计数：
-                    // - 积木创建/删除
-                    // - 积木移动
-                    if (
-                        event.type === 'create' || 
-                        event.type === 'delete' ||
-                        event.type === 'move'
-                    ) {
-                        // 稍微延迟一下确保DOM更新
-                        setTimeout(countBlocks, 10);
-                    }
-                };
-                
-                workspace.addChangeListener(handleWorkspaceChange);
-                
-                // 初始计数
-                setTimeout(countBlocks, 100);
-                
-                return () => {
-                    if (debounceTimerRef.current) {
-                        clearTimeout(debounceTimerRef.current);
-                    }
-                    if (workspace && workspace.removeChangeListener) {
-                        workspace.removeChangeListener(handleWorkspaceChange);
-                    }
-                };
-            }
-        }, 100);
+        // 每 300ms 轮询一次
+        const intervalId = setInterval(() => {
+            countBlocks();
+        }, 300);
         
-        return () => clearInterval(checkWorkspace);
-    }, [maxCount]);
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // 保留扫描线动画
     useEffect(() => {
@@ -780,4 +756,14 @@ const BlockCounter = ({ theme, onClose, onReset }) => {
     );
 };
 
-export default BlockCounter;
+BlockCounter.propTypes = {
+    theme: PropTypes.string,
+    onClose: PropTypes.func,
+    onReset: PropTypes.func
+};
+
+const mapStateToProps = state => ({
+    theme: state.scratchGui.theme.theme
+});
+
+export default connect(mapStateToProps)(BlockCounter);

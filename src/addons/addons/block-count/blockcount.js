@@ -1471,6 +1471,8 @@ export default async function ({ addon, console, msg }) {
         
         const updateDisplay = () => {
           const metrics = getProjectComplexity();
+          // 暴露全局变量供其他组件（如 BlockCounter）读取
+          window.__blockCountValue = metrics.blockCount;
           if (addon.settings.get('show_complexity_score')) {
             display.innerText = `${msg("blocks", { num: metrics.blockCount })} (${msg("complexity-short")}: ${metrics.complexityScore})`;
           } else {
