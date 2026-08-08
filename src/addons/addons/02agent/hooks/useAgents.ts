@@ -13,15 +13,15 @@ interface ExportedAgentFile {
 const DEFAULT_AGENTS: Agent[] = [
   {
     id: "default-free-chat",
-    name: "AI助手",
+    name: "kat-coder-pro-v2.5",
     provider: "custom",
-    baseUrl: "https://aiapi.remix.de5.net/v1/chat/completions",
-    apiKey: "sk-remixworld",
+    baseUrl: "https://api.hcnsec.cn/v1/chat/completions",
+    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
     models: [
       {
         id: "default-free-model-1",
-        name: "gemma-7b-it（Gemma 7B）",
-        modelId: "gemma-7b-it",
+        name: "kat-coder-pro-v2.5",
+        modelId: "kat-coder-pro-v2.5",
       },
     ],
     immutable: true,
@@ -64,12 +64,8 @@ const writeRemovedBuiltinAgentIds = (ids: Set<string>) => {
  * - 如果用户在之前主动删除过，则不会自动重新注入；
  * - 否则首次出现时（用户存储中不存在且未被记录为已删除）会自动注入到列表前面。
  */
-// 已被移除的内置 Agent ID 列表（旧版本遗留，会被强制从用户存储中清理）
-const REMOVED_BUILTIN_AGENT_IDS = new Set<string>(["rw-default"]);
-
 function enforceImmutableDefaults (stored: Agent[]): Agent[] {
-  // 先强制清理已被移除的内置 Agent
-  const cleaned = stored.filter((a) => !REMOVED_BUILTIN_AGENT_IDS.has(a.id));
+  const cleaned = stored;
 
   const immutableIndex = new Map(DEFAULT_AGENTS.filter(a => a.immutable).map(a => [a.id, a]));
   const builtinOnlyIndex = new Map(DEFAULT_AGENTS.filter(a => !a.immutable && a.builtin).map(a => [a.id, a]));
@@ -122,6 +118,7 @@ export function useAgents() {
   };
 
   const [currentModelId, setCurrentModelId] = useStorageInfo<string>("AI_ASSISTANT_CURRENT_AGENT_ID_02", "default-free-model-1");
+
   const [showSettings, setShowSettings] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 

@@ -570,7 +570,7 @@ const AgentsSettings: React.FC<{
                 </div>
                 {agent.locked ? (
                   <div className={styles.hint} style={{ marginTop: 8 }}>
-                    必须能够成功连接 https://aiapi.remix.de5.net/v1/chat/completions 才能够使用本AI。
+                    必须能够成功连接 https://api.hcnsec.cn/v1/chat/completions 才能够使用本AI。
                   </div>
                 ) : null}
               </article>

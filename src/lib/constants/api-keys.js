@@ -1,19 +1,19 @@
 // ============================================================================
 // AI 接口：全部硬编码在 GUI 里，不经过任何 Worker 代理，不需要人机验证。
-// 平台：remix.de5.net
-// Base URL：https://aiapi.remix.de5.net
-// Chat 模型：gemma-7b-it
-// 图片模型：gemma-7b-it
+// 平台：hcnsec.cn
+// Base URL：https://api.hcnsec.cn
+// Chat 模型：kat-coder-pro-v2.5
+// 图片模型：kat-coder-pro-v2.5
 // ============================================================================
 
-const BASE_URL = 'https://aiapi.remix.de5.net';
-const API_KEY = 'sk-remixworld';
+const BASE_URL = 'https://api.hcnsec.cn';
+const API_KEY = 'sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB';
 
 const CHAT_ENDPOINT = `${BASE_URL}/v1/chat/completions`;
 const IMAGES_ENDPOINT = `${BASE_URL}/v1/images/generations`;
 
-const CHAT_MODEL = 'gemma-7b-it';
-const IMAGE_MODEL = 'gemma-7b-it';
+const CHAT_MODEL = 'kat-coder-pro-v2.5';
+const IMAGE_MODEL = 'kat-coder-pro-v2.5';
 
 const API_KEY_CONFIG = {
     siliconflow: {

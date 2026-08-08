@@ -10,12 +10,12 @@ import {getApiConfig, getApiKey} from '../../lib/constants/api-keys.js';
 import {recordAIConversation} from '../../lib/achievements.js';
 
 const API_CONFIG = getApiConfig('siliconflow');
-const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://aiapi.remix.de5.net/v1/chat/completions';
-const MODEL = API_CONFIG ? API_CONFIG.model : 'gemma-7b-it';
+const API_ENDPOINT = API_CONFIG ? API_CONFIG.endpoint : 'https://api.hcnsec.cn/v1/chat/completions';
+const MODEL = API_CONFIG ? API_CONFIG.model : 'kat-coder-pro-v2.5';
 
 const IMAGE_API_CONFIG = getApiConfig('siliconflowImages');
-const IMAGE_API_ENDPOINT = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.endpoint : 'https://aiapi.remix.de5.net/v1/images/generations';
-const IMAGE_MODEL = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.model : 'gemma-7b-it';
+const IMAGE_API_ENDPOINT = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.endpoint : 'https://api.hcnsec.cn/v1/images/generations';
+const IMAGE_MODEL = IMAGE_API_CONFIG ? IMAGE_API_CONFIG.model : 'kat-coder-pro-v2.5';
 
 // 直接带 Authorization 头发往上流；API 密钥由环境变量构建时注入。
 const buildRequestHeaders = () => {
