@@ -41,8 +41,8 @@ class SuperRefactorModalContainer extends React.Component {
             wordWrap: true, // 自动换行
             useMonacoEditor: false, // 是否使用 Monaco 编辑器
             monacoIframeReady: false, // iframe 中的 Monaco 是否就绪
-            modalWidth: Math.min(1400, window.innerWidth - 40),
-            modalHeight: Math.min(900, window.innerHeight - 60)
+            modalWidth: Math.min(1100, window.innerWidth - 60),
+            modalHeight: Math.min(700, window.innerHeight - 80)
         };
         
         this.monacoIframeRef = React.createRef();
@@ -77,8 +77,8 @@ class SuperRefactorModalContainer extends React.Component {
 
     handleWindowResize () {
         this.setState({
-            modalWidth: Math.min(1400, window.innerWidth - 40),
-            modalHeight: Math.min(900, window.innerHeight - 60)
+            modalWidth: Math.min(1100, window.innerWidth - 60),
+            modalHeight: Math.min(700, window.innerHeight - 80)
         });
     }
 
@@ -324,14 +324,8 @@ class SuperRefactorModalContainer extends React.Component {
         this.setState({ 
             useMonacoEditor: newValue,
             monacoIframeReady: false
-        }, () => {
-            if (newValue) {
-                // 切换到新版编辑器，延迟发送初始化消息等 iframe 加载
-                setTimeout(() => {
-                    this.sendMonacoInit();
-                }, 500);
-            }
         });
+        // 初始化由 iframe 的 monaco-ready 消息触发，无需手动延迟发送
     }
 
     // 向 Monaco iframe 发送初始化消息
@@ -373,9 +367,12 @@ class SuperRefactorModalContainer extends React.Component {
 
         switch (data.type) {
             case 'monaco-ready':
-                this.setState({ monacoIframeReady: true });
-                // iframe 就绪后发送初始化数据
-                this.sendMonacoInit();
+                // 只在首次就绪时发送初始化，避免重复创建编辑器
+                if (!this.state.monacoIframeReady) {
+                    this.setState({ monacoIframeReady: true }, () => {
+                        this.sendMonacoInit();
+                    });
+                }
                 break;
 
             case 'monaco-content-change':
@@ -1022,10 +1019,11 @@ class SuperRefactorModalContainer extends React.Component {
                                             src="/monaco-editor-iframe.html"
                                             style={{
                                                 flex: 1,
+                                                minHeight: 0,
                                                 border: `1px solid ${colors.border}`,
                                                 borderRadius: '0 0 4px 4px',
-                                                overflow: 'hidden',
-                                                width: '100%'
+                                                width: '100%',
+                                                pointerEvents: 'auto'
                                             }}
                                             frameBorder="0"
                                         />
@@ -1135,10 +1133,11 @@ class SuperRefactorModalContainer extends React.Component {
                                         src="/monaco-editor-iframe.html"
                                         style={{
                                             flex: 1,
+                                            minHeight: 0,
                                             border: `1px solid ${colors.border}`,
                                             borderRadius: '0 0 4px 4px',
-                                            overflow: 'hidden',
-                                            width: '100%'
+                                            width: '100%',
+                                            pointerEvents: 'auto'
                                         }}
                                         frameBorder="0"
                                     />

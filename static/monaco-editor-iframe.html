@@ -37,129 +37,172 @@
         var currentTheme = 'vs-dark';
         var currentLanguage = 'plaintext';
         var currentWordWrap = 'on';
+        var monacoLoaded = false;
+        var pendingInit = null; // 缓存 monaco 加载完成前收到的 init 消息
 
-        require(['vs/editor/editor.main'], function() {
-            function createEditor(value, language, theme, wordWrap) {
-                if (editor) {
-                    editor.dispose();
-                    editor = null;
-                }
+        // 立即注册消息监听器（在 monaco 加载完成之前）
+        window.addEventListener('message', function(event) {
+            var data = event.data;
+            if (!data || !data.type) return;
 
-                var lang = language || 'plaintext';
-                var thm = theme || 'vs-dark';
-                var wrap = wordWrap || 'on';
+            switch (data.type) {
+                case 'monaco-init':
+                    if (monacoLoaded) {
+                        createEditor(data.content, data.language, data.theme, data.wordWrap);
+                    } else {
+                        // monaco 还没加载完，缓存 init 数据
+                        pendingInit = data;
+                    }
+                    break;
 
-                // Map language types
-                var langMap = {
-                    'json': 'json',
-                    'svg': 'xml',
-                    'xml': 'xml',
-                    'javascript': 'javascript',
-                    'js': 'javascript',
-                    'jsx': 'javascript',
-                    'typescript': 'typescript',
-                    'ts': 'typescript',
-                    'tsx': 'typescript',
-                    'css': 'css',
-                    'html': 'html',
-                    'plaintext': 'plaintext'
-                };
+                case 'monaco-set-content':
+                    if (editor) {
+                        if (data.language) {
+                            var langMap2 = {
+                                'json': 'json',
+                                'svg': 'xml',
+                                'xml': 'xml',
+                                'javascript': 'javascript',
+                                'js': 'javascript',
+                                'jsx': 'javascript',
+                                'typescript': 'typescript',
+                                'ts': 'typescript',
+                                'tsx': 'typescript',
+                                'css': 'css',
+                                'html': 'html'
+                            };
+                            var lang2 = langMap2[data.language] || 'plaintext';
+                            if (lang2 !== currentLanguage) {
+                                currentLanguage = lang2;
+                                monaco.editor.setModelLanguage(editor.getModel(), lang2);
+                            }
+                        }
+                        if (editor.getValue() !== data.content) {
+                            editor.setValue(data.content || '');
+                        }
+                    }
+                    break;
 
-                currentLanguage = langMap[lang] || 'plaintext';
-                currentTheme = thm;
-                currentWordWrap = wrap;
+                case 'monaco-set-theme':
+                    currentTheme = data.theme || 'vs-dark';
+                    if (editor) {
+                        monaco.editor.setTheme(currentTheme);
+                    }
+                    break;
 
-                editor = monaco.editor.create(document.getElementById('container'), {
-                    value: value || '',
-                    language: currentLanguage,
-                    theme: currentTheme,
-                    automaticLayout: true,
-                    fontSize: 13,
-                    minimap: { enabled: false },
-                    wordWrap: currentWordWrap,
-                    lineNumbers: 'on',
-                    scrollBeyondLastLine: false,
-                    renderLineHighlight: 'all',
-                    cursorBlinking: 'smooth',
-                    smoothScrolling: true,
-                    tabSize: 4
-                });
+                case 'monaco-set-wordwrap':
+                    currentWordWrap = data.wordWrap ? 'on' : 'off';
+                    if (editor) {
+                        editor.updateOptions({ wordWrap: currentWordWrap });
+                    }
+                    break;
 
-                // Notify parent of content changes
-                editor.onDidChangeModelContent(function() {
-                    var content = editor.getValue();
-                    window.parent.postMessage({
-                        type: 'monaco-content-change',
-                        content: content
-                    }, '*');
-                });
+                case 'monaco-dispose':
+                    if (editor) {
+                        editor.dispose();
+                        editor = null;
+                    }
+                    break;
 
-                // Notify parent that editor is ready
-                window.parent.postMessage({
-                    type: 'monaco-ready'
-                }, '*');
+                case 'monaco-focus':
+                    if (editor) {
+                        editor.focus();
+                    }
+                    break;
+            }
+        });
+
+        function createEditor(value, language, theme, wordWrap) {
+            if (editor) {
+                editor.dispose();
+                editor = null;
             }
 
-            // Listen for messages from parent
-            window.addEventListener('message', function(event) {
-                var data = event.data;
-                if (!data || !data.type) return;
+            var lang = language || 'plaintext';
+            var thm = theme || 'vs-dark';
+            var wrap = wordWrap || 'on';
 
-                switch (data.type) {
-                    case 'monaco-set-content':
-                        if (editor) {
-                            if (data.language) {
-                                var langMap = {
-                                    'json': 'json',
-                                    'svg': 'xml',
-                                    'xml': 'xml',
-                                    'javascript': 'javascript',
-                                    'js': 'javascript',
-                                    'jsx': 'javascript',
-                                    'typescript': 'typescript',
-                                    'ts': 'typescript',
-                                    'tsx': 'typescript',
-                                    'css': 'css',
-                                    'html': 'html'
-                                };
-                                var lang = langMap[data.language] || 'plaintext';
-                                if (lang !== currentLanguage) {
-                                    currentLanguage = lang;
-                                    monaco.editor.setModelLanguage(editor.getModel(), lang);
-                                }
-                            }
-                            if (editor.getValue() !== data.content) {
-                                editor.setValue(data.content || '');
-                            }
-                        }
-                        break;
+            var langMap = {
+                'json': 'json',
+                'svg': 'xml',
+                'xml': 'xml',
+                'javascript': 'javascript',
+                'js': 'javascript',
+                'jsx': 'javascript',
+                'typescript': 'typescript',
+                'ts': 'typescript',
+                'tsx': 'typescript',
+                'css': 'css',
+                'html': 'html',
+                'plaintext': 'plaintext'
+            };
 
-                    case 'monaco-set-theme':
-                        currentTheme = data.theme || 'vs-dark';
-                        if (editor) {
-                            monaco.editor.setTheme(currentTheme);
-                        }
-                        break;
+            currentLanguage = langMap[lang] || 'plaintext';
+            currentTheme = thm;
+            currentWordWrap = wrap;
 
-                    case 'monaco-set-wordwrap':
-                        currentWordWrap = data.wordWrap ? 'on' : 'off';
-                        if (editor) {
-                            editor.updateOptions({ wordWrap: currentWordWrap });
-                        }
-                        break;
+            editor = monaco.editor.create(document.getElementById('container'), {
+                value: value || '',
+                language: currentLanguage,
+                theme: currentTheme,
+                automaticLayout: true,
+                fontSize: 13,
+                minimap: { enabled: false },
+                wordWrap: currentWordWrap,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                renderLineHighlight: 'all',
+                cursorBlinking: 'smooth',
+                smoothScrolling: true,
+                tabSize: 4
+            });
 
-                    case 'monaco-init':
-                        createEditor(data.content, data.language, data.theme, data.wordWrap);
-                        break;
+            editor.onDidChangeModelContent(function() {
+                var content = editor.getValue();
+                window.parent.postMessage({
+                    type: 'monaco-content-change',
+                    content: content
+                }, '*');
+            });
 
-                    case 'monaco-dispose':
-                        if (editor) {
-                            editor.dispose();
-                            editor = null;
-                        }
-                        break;
+            // 自动聚焦编辑器
+            setTimeout(function() {
+                if (editor) {
+                    editor.focus();
+                }
+            }, 100);
+
+            window.parent.postMessage({
+                type: 'monaco-ready'
+            }, '*');
+        }
+
+        // 加载 Monaco Editor
+        require(['vs/editor/editor.main'], function() {
+            monacoLoaded = true;
+
+            // 监听点击事件，确保编辑器获得焦点
+            document.addEventListener('click', function() {
+                if (editor) {
+                    editor.focus();
                 }
             });
+
+            // 通知父窗口 monaco 已就绪
+            window.parent.postMessage({
+                type: 'monaco-ready'
+            }, '*');
+
+            // 如果有缓存的 init 消息，立即创建编辑器
+            if (pendingInit) {
+                createEditor(
+                    pendingInit.content,
+                    pendingInit.language,
+                    pendingInit.theme,
+                    pendingInit.wordWrap
+                );
+                pendingInit = null;
+            }
         });
     </script>
 </body>
