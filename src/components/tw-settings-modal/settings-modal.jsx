@@ -349,6 +349,16 @@ const messages = defineMessages({
         description: 'EnableBlockCounter help',
         id: 'tw.settingsModal.enableblockcounterhelp'
     },
+    enabledynamicstagebackground: {
+        defaultMessage: '动态舞台背景色（需刷新）',
+        description: 'EnableDynamicStageBackground label',
+        id: 'tw.settingsModal.enabledynamicstagebackground'
+    },
+    enabledynamicstagebackgroundhelp: {
+        defaultMessage: '打开后，切换深浅色主题时舞台背景色会随之变化：浅色模式为白色，深色模式为黑色。关闭后舞台背景始终为白色。',
+        description: 'EnableDynamicStageBackground help',
+        id: 'tw.settingsModal.enabledynamicstagebackgroundhelp'
+    },
     customdefaultsprite: {
         defaultMessage: '自定义默认角色（需刷新）',
         description: 'Custom default sprite label',
@@ -841,6 +851,22 @@ const EnableBlockCounter = props => (
         help={
             <FormattedMessage
                 {...messages.enableblockcounterhelp}
+            />
+        }
+    />
+);
+
+const EnableDynamicStageBackground = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                {...messages.enabledynamicstagebackground}
+            />
+        }
+        help={
+            <FormattedMessage
+                {...messages.enabledynamicstagebackgroundhelp}
             />
         }
     />
@@ -1858,6 +1884,13 @@ const pageConfigurations = {
                         props: props => ({
                             value: AEsettings.get('EnableBlockCounter') || false,
                             onChange: (e) => { AEsettings.set("EnableBlockCounter", e.target.checked); notifySettingsChange(); location.reload(); }
+                        })
+                    },
+                    {
+                        component: EnableDynamicStageBackground,
+                        props: props => ({
+                            value: AEsettings.get('EnableDynamicStageBackground') || false,
+                            onChange: (e) => { AEsettings.set("EnableDynamicStageBackground", e.target.checked); notifySettingsChange(); location.reload(); }
                         })
                     },
                     {

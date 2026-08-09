@@ -18,6 +18,7 @@ import {
 } from '../reducers/color-picker';
 
 import {setHighQualityPenState} from '../reducers/tw';
+import {AESettings} from '../lib/settings.js';
 
 const colorPickerRadius = 20;
 const dragThreshold = 3; // Same as the block drag threshold
@@ -79,10 +80,16 @@ class Stage extends React.Component {
             this.props.vm.renderer.on('UseHighQualityRenderChanged', this.props.onHighQualityPenChanged);
         }
 
-        // Set default stage background color based on theme:
-        // white for light mode, black for dark mode
-        const isDark = this.props.theme && typeof this.props.theme.isDark === 'function' && this.props.theme.isDark();
-        this.renderer.setBackgroundColor(isDark ? 0 : 1, isDark ? 0 : 1, isDark ? 0 : 1);
+        // Set default stage background color based on theme and AESettings:
+        // When EnableDynamicStageBackground is enabled, white for light mode, black for dark mode
+        // When disabled (default), always white
+        const dynamicBgEnabled = AESettings.get('EnableDynamicStageBackground');
+        if (dynamicBgEnabled) {
+            const isDark = this.props.theme && typeof this.props.theme.isDark === 'function' && this.props.theme.isDark();
+            this.renderer.setBackgroundColor(isDark ? 0 : 1, isDark ? 0 : 1, isDark ? 0 : 1);
+        } else {
+            this.renderer.setBackgroundColor(1, 1, 1);
+        }
         this.renderer.draw();
 
         this.props.vm.attachV2BitmapAdapter(new V2BitmapAdapter());
@@ -113,8 +120,8 @@ class Stage extends React.Component {
         } else if (!this.props.isColorPicking && prevProps.isColorPicking) {
             this.stopColorPickingLoop();
         }
-        // Update stage background color when theme changes
-        if (this.props.theme !== prevProps.theme) {
+        // Update stage background color when theme changes (only if dynamic background is enabled)
+        if (this.props.theme !== prevProps.theme && AESettings.get('EnableDynamicStageBackground')) {
             const isDark = this.props.theme && typeof this.props.theme.isDark === 'function' && this.props.theme.isDark();
             this.renderer.setBackgroundColor(isDark ? 0 : 1, isDark ? 0 : 1, isDark ? 0 : 1);
             this.renderer.draw();
