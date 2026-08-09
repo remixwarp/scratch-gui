@@ -74,7 +74,7 @@ const base = {
             // Pin it to the hoisted CJS minimatch@3 (already used by glob/babel/eslint),
             // whose API is a superset of what just-bash needs (minimatch()).
             'minimatch': require.resolve('minimatch'),
-            '@remixwarp/scratch-l10n/editor$': path.resolve(__dirname, 'node_modules/@remixwarp/scratch-l10n/editor')
+            '@remixwarp/scratch-l10n': path.resolve(__dirname, 'node_modules/@remixwarp/scratch-l10n')
         }
     },
     node: {
@@ -117,7 +117,7 @@ const base = {
                 /node_modules[\\/]@remixwarp[\\/]scratch-l10n/
             ],
             exclude: [
-                /\.(vert|frag|glsl)$/,
+                /\.(vert|frag|glsl|ttf|woff2?|eot|png|jpe?g|gif|svg)$/,
                 /node_modules[\\/]scratch-render[\\/]src[\\/]shaders/
             ],
             options: {
