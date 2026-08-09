@@ -48,7 +48,7 @@ class LibraryComponent extends React.Component {
             'setFilteredDataRef'
         ]);
         const favorites = this.readFavoritesFromStorage();
-        this._isMounted = false;
+        this._mounted = false;
         this.state = {
             playingItem: null,
             filterQuery: '',
@@ -59,11 +59,11 @@ class LibraryComponent extends React.Component {
         };
     }
     componentDidMount () {
-        this._isMounted = true;
+        this._mounted = true;
         // Rendering all the items in the library can take a bit, so we'll always
         // show one frame with a loading spinner.
         setTimeout(() => {
-            if (this._isMounted) {
+            if (this._mounted) {
                 this.setState({
                     canDisplay: true
                 });
@@ -72,7 +72,7 @@ class LibraryComponent extends React.Component {
         if (this.props.setStopHandler) this.props.setStopHandler(this.handlePlayingEnd);
     }
     componentWillUnmount () {
-        this._isMounted = false;
+        this._mounted = false;
     }
     componentDidUpdate (prevProps, prevState) {
         if (prevState.filterQuery !== this.state.filterQuery ||

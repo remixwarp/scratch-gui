@@ -68,6 +68,7 @@ class LoaderComponent extends React.Component {
         this.messageEl = null;
         this.ignoreProgress = false;
         this.randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+        this._mounted = false;
         
         this.state = {
             displayText: TYPE_STRING
@@ -75,11 +76,10 @@ class LoaderComponent extends React.Component {
         this.typingInterval = null;
         this.lastUpdateTime = Date.now();
         this.currentIndex = TYPE_STRING.length;
-        
-        this.startTyping();
     }
     
     componentDidMount () {
+        this._mounted = true;
         if (this.props.vm) {
             this.handleAssetProgress(
                 this.props.vm.runtime.finishedAssetRequests,
@@ -88,9 +88,11 @@ class LoaderComponent extends React.Component {
             this.props.vm.on('ASSET_PROGRESS', this.handleAssetProgress);
             this.props.vm.runtime.on('PROJECT_LOADED', this.handleProjectLoaded);
         }
+        this.startTyping();
     }
     
     componentWillUnmount () {
+        this._mounted = false;
         if (this.props.vm) {
             this.props.vm.off('ASSET_PROGRESS', this.handleAssetProgress);
             this.props.vm.runtime.off('PROJECT_LOADED', this.handleProjectLoaded);
@@ -106,11 +108,18 @@ class LoaderComponent extends React.Component {
         }
         
         this.currentIndex = 0;
-        this.setState({
-            displayText: ''
-        });
+        if (this._mounted) {
+            this.setState({
+                displayText: ''
+            });
+        }
         
         this.typingInterval = setInterval(() => {
+            if (!this._mounted) {
+                clearInterval(this.typingInterval);
+                return;
+            }
+            
             const now = Date.now();
             if (now - this.lastUpdateTime > 3000) {
                 this.setState({
@@ -131,6 +140,7 @@ class LoaderComponent extends React.Component {
                     displayText: TYPE_STRING
                 });
                 setTimeout(() => {
+                    if (!this._mounted) return;
                     this.currentIndex = 0;
                     this.setState({
                         displayText: ''

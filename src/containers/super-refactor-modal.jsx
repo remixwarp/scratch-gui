@@ -23,7 +23,12 @@ class SuperRefactorModalContainer extends React.Component {
             'toggleViewMode',
             'handleEditorScroll',
             'handleEditorKeyDown',
-            'handleWordWrapToggle'
+            'handleWordWrapToggle',
+            'toggleMonacoEditor',
+            'loadMonacoEditor',
+            'initMonacoEditor',
+            'disposeMonacoEditor',
+            'updateMonacoEditorContent'
         ]);
 
         this.state = {
@@ -41,6 +46,7 @@ class SuperRefactorModalContainer extends React.Component {
         this.monacoEditorRef = React.createRef();
         this.monacoLoaded = false;
         this.monacoEditorInstance = null;
+        this.monaco = null; // 存储导入的 monaco 模块
     }
 
     componentDidMount () {
@@ -325,27 +331,16 @@ class SuperRefactorModalContainer extends React.Component {
 
     // 加载 Monaco 编辑器
     loadMonacoEditor () {
-        if (window.monaco) {
+        // 使用动态 import 代替 require.js，兼容 webpack
+        import('monaco-editor').then(monaco => {
+            this.monaco = monaco;
+            this.monacoLoaded = true;
             this.initMonacoEditor();
-            return;
-        }
-
-        // 动态加载 Monaco Editor
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/loader.js';
-        script.onload = () => {
-            require.config({
-                paths: {
-                    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs'
-                }
-            });
-            require(['vs/editor/editor.main'], () => {
-                this.monacoLoaded = true;
-                // 确保 DOM 已就绪
-                setTimeout(() => this.initMonacoEditor(), 0);
-            });
-        };
-        document.head.appendChild(script);
+        }).catch(err => {
+            console.error('Failed to load Monaco Editor:', err);
+            this.setState({ message: '✗ Monaco 编辑器加载失败' });
+            setTimeout(() => this.setState({ message: '' }), 5000);
+        });
     }
 
     // 初始化 Monaco 编辑器
@@ -368,7 +363,7 @@ class SuperRefactorModalContainer extends React.Component {
             else if (currentFileObj.name.endsWith('.html')) language = 'html';
         }
 
-        this.monacoEditorInstance = window.monaco.editor.create(this.monacoEditorRef.current, {
+        this.monacoEditorInstance = this.monaco.editor.create(this.monacoEditorRef.current, {
             value: content,
             language: language,
             theme: isDarkTheme ? 'vs-dark' : 'vs-light',

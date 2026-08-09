@@ -131,11 +131,11 @@ class MWFontsWindow extends React.Component {
             localScreen: ''
         };
         this.searchTimeout = null;
-        this._isMounted = false;
+        this._mounted = false;
     }
 
     componentDidMount () {
-        this._isMounted = true;
+        this._mounted = true;
         const fontManager = this.getFontManager();
         if (fontManager) {
             this.refreshLocalFonts();
@@ -144,7 +144,7 @@ class MWFontsWindow extends React.Component {
     }
 
     componentWillUnmount () {
-        this._isMounted = false;
+        this._mounted = false;
         const fontManager = this.getFontManager();
         if (fontManager) fontManager.off('change', this.refreshLocalFonts);
         if (this.searchTimeout) clearTimeout(this.searchTimeout);
@@ -206,12 +206,12 @@ class MWFontsWindow extends React.Component {
         this.setState({loading: true});
         try {
             const results = await searchGoogleFonts(trimmed);
-            if (this._isMounted) this.setState({searchResults: results});
+            if (this._mounted) this.setState({searchResults: results});
         } catch (err) {
             console.error('Error searching Google Fonts:', err);
-            if (this._isMounted) this.setState({searchResults: []});
+            if (this._mounted) this.setState({searchResults: []});
         } finally {
-            if (this._isMounted) this.setState({loading: false});
+            if (this._mounted) this.setState({loading: false});
         }
     };
 

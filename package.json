@@ -38,6 +38,7 @@
     }
   },
   "dependencies": {
+    "monaco-editor": "^0.52.0",
     "@isomorphic-git/lightning-fs": "^4.6.2",
     "@microbit/microbit-universal-hex": "0.2.2",
     "@remixwarp/scratch-l10n": "github:remixwarp/scratch-l10n#main",

@@ -324,7 +324,7 @@ const PixelCharacter12x12 = ({ char, x, y, color }) => {
             );
         }
     }
-    return <>{elements}</>;
+    return <g>{elements}</g>;
 };
 
 const PixelCharacterSmall = ({ char, x, y, color }) => {
@@ -349,7 +349,7 @@ const PixelCharacterSmall = ({ char, x, y, color }) => {
             );
         }
     }
-    return <>{elements}</>;
+    return <g>{elements}</g>;
 };
 
 const PixelNumberDisplay = ({ number, startX, startY, color, isSmall = false }) => {
@@ -384,7 +384,7 @@ const PixelNumberDisplay = ({ number, startX, startY, color, isSmall = false }) 
         x += charWidth;
     }
     
-    return <>{elements}</>;
+    return <g>{elements}</g>;
 };
 
 const PixelLabel = ({ label, startX, startY, color }) => {
@@ -408,7 +408,7 @@ const PixelLabel = ({ label, startX, startY, color }) => {
         x += charWidth;
     }
     
-    return <>{elements}</>;
+    return <g>{elements}</g>;
 };
 
 // 全局实例标记，确保只有一个BlockCounter实例
@@ -442,8 +442,6 @@ const BlockCounter = ({ theme, onClose, onReset }) => {
     });
     
     const previousCountRef = useRef(0);
-    const debounceTimerRef = useRef(null);
-    const stableCountRef = useRef(0);
     const dragStartRef = useRef({ x: 0, y: 0 });
     const currentPositionRef = useRef(position);
 
@@ -560,36 +558,25 @@ const BlockCounter = ({ theme, onClose, onReset }) => {
         try {
             // 直接读取 block-count addon 暴露的全局变量（与菜单栏 "N个积木" 一致）
             const count = (typeof window.__blockCountValue === 'number') ? window.__blockCountValue : 0;
-            stableCountRef.current = count;
+            setCurrentCount(count);
             
-            // 清除之前的定时器
-            if (debounceTimerRef.current) {
-                clearTimeout(debounceTimerRef.current);
-            }
-            
-            // 设置防抖，等待300ms后计数稳定
-            debounceTimerRef.current = setTimeout(() => {
-                const stableCount = stableCountRef.current;
-                setCurrentCount(stableCount);
-                
-                setMaxCount(prevMax => {
-                    if (stableCount > prevMax) {
-                        localStorage.setItem('maxBlockCount', stableCount.toString());
-                        return stableCount;
-                    }
-                    return prevMax;
-                });
-
-                if (stableCount > previousCountRef.current) {
-                    const isNiceNumber = stableCount > 0 && (stableCount % 10 === 0 || stableCount % 25 === 0 || stableCount % 50 === 0 || stableCount % 100 === 0);
-                    if (isNiceNumber) {
-                        setShowNice(true);
-                        setColorIndex((prev) => (prev + 1) % colorPalette.length);
-                        setTimeout(() => setShowNice(false), 2000);
-                    }
+            setMaxCount(prevMax => {
+                if (count > prevMax) {
+                    localStorage.setItem('maxBlockCount', count.toString());
+                    return count;
                 }
-                previousCountRef.current = stableCount;
-            }, 300);
+                return prevMax;
+            });
+
+            if (count > previousCountRef.current) {
+                const isNiceNumber = count > 0 && (count % 10 === 0 || count % 25 === 0 || count % 50 === 0 || count % 100 === 0);
+                if (isNiceNumber) {
+                    setShowNice(true);
+                    setColorIndex((prev) => (prev + 1) % colorPalette.length);
+                    setTimeout(() => setShowNice(false), 2000);
+                }
+            }
+            previousCountRef.current = count;
         } catch (e) {
             console.error('Error counting blocks:', e);
         }
@@ -607,7 +594,6 @@ const BlockCounter = ({ theme, onClose, onReset }) => {
         
         return () => {
             if (intervalId) clearInterval(intervalId);
-            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -623,7 +609,7 @@ const BlockCounter = ({ theme, onClose, onReset }) => {
 
     const currentColor = colorPalette[colorIndex % colorPalette.length];
     const maxColor = colorPalette[(colorIndex + 1) % colorPalette.length];
-    
+
     const scanLines = [];
     for (let line = 0; line < 30; line++) {
         const y = line * 3;
@@ -757,7 +743,9 @@ const BlockCounter = ({ theme, onClose, onReset }) => {
 };
 
 BlockCounter.propTypes = {
-    theme: PropTypes.string,
+    theme: PropTypes.shape({
+        isDark: PropTypes.func
+    }),
     onClose: PropTypes.func,
     onReset: PropTypes.func
 };

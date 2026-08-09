@@ -65,18 +65,18 @@ class SoundLibrary extends React.PureComponent {
          */
         this.handleStop = null;
 
-        this._isMounted = false;
+        this._mounted = false;
 
         this.state = {
             data: null
         };
     }
     componentDidMount () {
-        this._isMounted = true;
+        this._mounted = true;
         const soundLibrary = getSoundLibrary();
         if (soundLibrary.then) {
             soundLibrary.then(data => {
-                if (this._isMounted) {
+                if (this._mounted) {
                     this.setState({
                         data: getSoundLibraryThumbnailData(data, this.props.isRtl)
                     });
@@ -91,7 +91,7 @@ class SoundLibrary extends React.PureComponent {
         this.playingSoundPromise = null;
     }
     componentWillUnmount () {
-        this._isMounted = false;
+        this._mounted = false;
         this.stopPlayingSound();
     }
     onStop () {
@@ -156,7 +156,7 @@ class SoundLibrary extends React.PureComponent {
         // instruction after the play instruction.
         this.playingSoundPromise = vm.runtime.storage.load(vm.runtime.storage.AssetType.Sound, md5)
             .then(soundAsset => {
-                if (soundAsset && this._isMounted && this.audioEngine) {
+                if (soundAsset && this._mounted && this.audioEngine) {
                     const sound = {
                         md5: md5ext,
                         name: soundItem.name,

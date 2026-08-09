@@ -568,13 +568,13 @@ class ExtensionLibrary extends React.PureComponent {
             galleryError: null,
             galleryTimedOut: false
         };
-        this._isMounted = false;
+        this._mounted = false;
     }
     componentDidMount() {
-        this._isMounted = true;
+        this._mounted = true;
         if (!this.state.gallery) {
             const timeout = setTimeout(() => {
-                if (this._isMounted) {
+                if (this._mounted) {
                     this.setState({
                         galleryTimedOut: true
                     });
@@ -605,7 +605,7 @@ class ExtensionLibrary extends React.PureComponent {
         }
     }
     componentWillUnmount() {
-        this._isMounted = false;
+        this._mounted = false;
     }
     handleItemSelect(item) {
         if (item.href) {

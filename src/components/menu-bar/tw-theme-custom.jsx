@@ -981,12 +981,12 @@ class CustomThemeMenu extends React.Component {
         this.gradientEditorContainer = null;
         this.pixelEditorContainer = null;
 
-        this._isMounted = false;
+        this._mounted = false;
         this._activeFileReader = null;
     }
 
     componentDidMount () {
-        this._isMounted = true;
+        this._mounted = true;
         // Listen for custom theme changes
         this._unsubscribeCustomThemes = customThemeManager.subscribe(() => {
             this.safeSetState({customThemes: customThemeManager.getAllThemes()});
@@ -994,7 +994,7 @@ class CustomThemeMenu extends React.Component {
         
         // Listen for pixel theme import from Bilme marketplace
         this._handlePixelEditorOpen = () => {
-            if (this._isMounted) {
+            if (this._mounted) {
                 this.openPixelEditorWindow();
             }
         };
@@ -1123,7 +1123,7 @@ class CustomThemeMenu extends React.Component {
     // TODO: Migrate to functional component with useEffect cleanup
     // componentWillUnmount is deprecated in React 16.3+
     componentWillUnmount () {
-        this._isMounted = false;
+        this._mounted = false;
 
         if (this._unsubscribeCustomThemes) {
             try {
@@ -1166,12 +1166,12 @@ class CustomThemeMenu extends React.Component {
     }
 
     safeForceUpdate = () => {
-        if (!this._isMounted) return;
+        if (!this._mounted) return;
         this.forceUpdate();
     };
 
     safeSetState = (state, callback) => {
-        if (!this._isMounted) return;
+        if (!this._mounted) return;
         this.setState(state, callback);
     };
 
@@ -1262,7 +1262,7 @@ class CustomThemeMenu extends React.Component {
             onClose: () => {
                 try {
                     const {originalThemeBeforePreview} = this.state;
-                    if (originalThemeBeforePreview && this._isMounted) {
+                    if (originalThemeBeforePreview && this._mounted) {
                         this.props.onChangeTheme(originalThemeBeforePreview);
                         this.safeSetState({originalThemeBeforePreview: null});
                     }
@@ -1318,7 +1318,7 @@ class CustomThemeMenu extends React.Component {
                             },
                             onCancel: () => {
                                 const {originalThemeBeforePreview} = this.state;
-                                if (originalThemeBeforePreview && this._isMounted) {
+                                if (originalThemeBeforePreview && this._mounted) {
                                     this.props.onChangeTheme(originalThemeBeforePreview);
                                     this.safeSetState({originalThemeBeforePreview: null});
                                 }
@@ -1360,7 +1360,7 @@ class CustomThemeMenu extends React.Component {
             onClose: () => {
                 try {
                     const {originalThemeBeforePreview} = this.state;
-                    if (originalThemeBeforePreview && this._isMounted) {
+                    if (originalThemeBeforePreview && this._mounted) {
                         this.props.onChangeTheme(originalThemeBeforePreview);
                         this.safeSetState({originalThemeBeforePreview: null});
                     }
@@ -1416,7 +1416,7 @@ class CustomThemeMenu extends React.Component {
                             },
                             onCancel: () => {
                                 const {originalThemeBeforePreview} = this.state;
-                                if (originalThemeBeforePreview && this._isMounted) {
+                                if (originalThemeBeforePreview && this._mounted) {
                                     this.props.onChangeTheme(originalThemeBeforePreview);
                                     this.safeSetState({originalThemeBeforePreview: null});
                                 }
@@ -1458,7 +1458,7 @@ class CustomThemeMenu extends React.Component {
             onClose: () => {
                 try {
                     const {originalThemeBeforePreview} = this.state;
-                    if (originalThemeBeforePreview && this._isMounted) {
+                    if (originalThemeBeforePreview && this._mounted) {
                         this.props.onChangeTheme(originalThemeBeforePreview);
                         this.safeSetState({originalThemeBeforePreview: null});
                     }
@@ -1504,7 +1504,7 @@ class CustomThemeMenu extends React.Component {
                                 },
                                 onCancel: () => {
                                     const {originalThemeBeforePreview} = this.state;
-                                    if (originalThemeBeforePreview && this._isMounted) {
+                                    if (originalThemeBeforePreview && this._mounted) {
                                         this.props.onChangeTheme(originalThemeBeforePreview);
                                         this.safeSetState({originalThemeBeforePreview: null});
                                     }
@@ -1766,7 +1766,7 @@ class CustomThemeMenu extends React.Component {
                 primaryColor: gradientInfo.primaryColor,
                 selectedPreset: ''
             }, () => {
-                if (this._isMounted) this.openGradientEditorWindow(themeUuid);
+                if (this._mounted) this.openGradientEditorWindow(themeUuid);
             });
         } catch (error) {
             await showAlert(this.props.intl.formatMessage({

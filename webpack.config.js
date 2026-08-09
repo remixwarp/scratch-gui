@@ -114,7 +114,10 @@ const base = {
                 /node_modules[\\/]rotur-sdk/,
                 /node_modules[\\/]accounts-sdk/
             ],
-            exclude: /\.(vert|frag|glsl)$/,
+            exclude: [
+                /\.(vert|frag|glsl)$/,
+                /node_modules[\\/]scratch-render[\\/]src[\\/]shaders/
+            ],
             options: {
                 cacheDirectory: true,
                 // Explicitly disable babelrc so we don't catch various config
@@ -204,6 +207,9 @@ const base = {
         },
         {
             test: /\.(glsl|vert|frag)$/,
+            include: [
+                path.resolve(__dirname, 'node_modules/scratch-render/src/shaders')
+            ],
             use: 'raw-loader'
         },
         {

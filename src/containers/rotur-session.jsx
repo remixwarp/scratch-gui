@@ -27,7 +27,7 @@ import {
 } from '../reducers/rotur.js';
 import {closeModal} from '../reducers/modals.js';
 import {setTheme} from '../reducers/theme.js';
-import {detectTheme, applyThemeVisuals} from '../lib/themes/themePersistance.js';
+import {detectTheme, applyTheme} from '../lib/themes/themePersistance.js';
 import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {applyLayout} from '../lib/mw-menu-bar-layout.js';
 import {setShellUser} from '../lib/git/browser-terminal';
@@ -148,7 +148,7 @@ class RoturSession extends React.Component {
             try {
                 const theme = detectTheme();
                 this.props.onSetTheme(theme);
-                applyThemeVisuals(theme);
+                applyTheme(theme);
             } catch (e) {
                 // eslint-disable-next-line no-console
                 console.warn('[Rotur] Failed to re-apply theme from cloud', e);
