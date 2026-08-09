@@ -809,8 +809,10 @@ const GUIComponent = props => {
     }
 
     useEffect(() => {
+        if (isEmbedded || isPlayerOnly) return;
+        const experience = localStorage.getItem('rw:achievement-experience');
         const hasSeenOnboarding = localStorage.getItem('mw:has-seen-onboarding');
-        if (!hasSeenOnboarding && !isEmbedded && !isPlayerOnly && typeof onOpenOnboarding === 'function') {
+        if (experience === 'sc-newbie' && !hasSeenOnboarding && typeof onOpenOnboarding === 'function') {
             const timer = setTimeout(() => {
                 onOpenOnboarding();
             }, 500);
@@ -819,7 +821,6 @@ const GUIComponent = props => {
     }, [isEmbedded, isPlayerOnly, onOpenOnboarding]);
 
     useEffect(() => {
-        // 监听show-onboarding事件，用于重播教程
         const handleShowOnboarding = () => {
             if (typeof onOpenOnboarding === 'function') {
                 onOpenOnboarding();
@@ -1159,7 +1160,7 @@ const GUIComponent = props => {
                     onToggleLoginOpen={onToggleLoginOpen}
                 />
                 <Box className={styles.bodyWrapper}>
-                    <Box className={styles.flexWrapper} style={(Settings.get('EnableMobileLayout') && !['localhost', '127.0.0.1'].includes(window.location.hostname)) ? {
+                    <Box className={styles.flexWrapper} style={AESettings.get('EnableMobileLayout') ? {
                         flexDirection: 'column',
                         alignItems: 'stretch'
                     } : {}}>

@@ -734,5 +734,18 @@
   "novatheai/about-repo": "Repository",
   "02agent/about-repo": "Repository",
   "novatheai/about-repo-button": "GitHub Repository",
-  "02agent/about-repo-button": "GitHub Repository"
+  "02agent/about-repo-button": "GitHub Repository",
+  "achievements.welcomeTitle": "Welcome to RemixWarp",
+  "achievements.welcomeSubtitle": "Choose your editor experience to decide whether achievements are enabled by default.",
+  "achievements.scratchBeginner": "Scratch Beginner",
+  "achievements.scratchBeginnerDesc": "Auto-enable achievements + show onboarding tutorial",
+  "achievements.turboWarpExpert": "TurboWarp Expert",
+  "achievements.turboWarpExpertDesc": "Enable achievements in settings, no onboarding tutorial",
+  "achievements.selectDeviceTitle": "Choose Your Device",
+  "achievements.selectDeviceSubtitle": "Select your primary device type and we'll optimize the editor experience for you.",
+  "achievements.mobileDevice": "Mobile",
+  "achievements.mobileDeviceDesc": "Auto-enable mobile layout and touch mode",
+  "achievements.pcDevice": "PC",
+  "achievements.pcDeviceDesc": "Use standard desktop layout",
+  "achievements.goBack": "Back"
 }

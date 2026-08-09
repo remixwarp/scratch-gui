@@ -131,7 +131,20 @@
     "tw.menuBar.tutorial": "教程",
     "tw.tutorialModal.title": "教程",
     "tw.tutorialModal.tutorial1.title": "RemixWarp 入门教程",
-    "tw.tutorialModal.tutorial1.description": "学习如何使用 RemixWarp 编辑器的基本功能"
+    "tw.tutorialModal.tutorial1.description": "学习如何使用 RemixWarp 编辑器的基本功能",
+    "achievements.welcomeTitle": "Welcome to RemixWarp",
+    "achievements.welcomeSubtitle": "Choose your editor experience to decide whether achievements are enabled by default.",
+    "achievements.scratchBeginner": "Scratch Beginner",
+    "achievements.scratchBeginnerDesc": "Auto-enable achievements + show onboarding tutorial",
+    "achievements.turboWarpExpert": "TurboWarp Expert",
+    "achievements.turboWarpExpertDesc": "Enable achievements in settings, no onboarding tutorial",
+    "achievements.selectDeviceTitle": "Choose Your Device",
+    "achievements.selectDeviceSubtitle": "Select your primary device type and we'll optimize the editor experience for you.",
+    "achievements.mobileDevice": "Mobile",
+    "achievements.mobileDeviceDesc": "Auto-enable mobile layout and touch mode",
+    "achievements.pcDevice": "PC",
+    "achievements.pcDeviceDesc": "Use standard desktop layout",
+    "achievements.goBack": "Back"
   },
   "zh-cn": {
     "gui.collaboration.captchaTitle": "人机验证",
@@ -1098,6 +1111,19 @@
     "mw.share.progress.uploadingProject": "正在上传项目",
     "mw.share.progress.processingOnServer": "正在服务器上处理",
     "mw.share.progress.uploadingPercent": "正在上传 {percent}%",
-    "gui.opcodeLabels.costumes": "造型"
+    "gui.opcodeLabels.costumes": "造型",
+    "achievements.welcomeTitle": "欢迎使用 RemixWarp",
+    "achievements.welcomeSubtitle": "请选择你的编辑器经验，以决定是否默认启用成就。",
+    "achievements.scratchBeginner": "Scratch小白",
+    "achievements.scratchBeginnerDesc": "自动开启成就，显示新手教程",
+    "achievements.turboWarpExpert": "TurboWarp大佬",
+    "achievements.turboWarpExpertDesc": "可在实验性设置中开启成就，不显示新手教程",
+    "achievements.selectDeviceTitle": "选择你的设备",
+    "achievements.selectDeviceSubtitle": "请选择你主要使用的设备类型，我们将为你优化编辑器体验。",
+    "achievements.mobileDevice": "移动端",
+    "achievements.mobileDeviceDesc": "自动开启移动端布局和触屏模式",
+    "achievements.pcDevice": "PC 端",
+    "achievements.pcDeviceDesc": "使用标准桌面版布局",
+    "achievements.goBack": "返回"
   }
 }

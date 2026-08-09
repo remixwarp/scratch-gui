@@ -127,13 +127,13 @@
 }
 
 .choice-actions {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: .75rem;
-    grid-template-columns: repeat(2, 1fr);
     margin-top: 1.25rem;
 }
 
-.choice-actions button {
+.choice-button {
     background: $badge-background;
     border: 1px solid $badge-border;
     border-radius: .5rem;
@@ -141,19 +141,68 @@
     cursor: pointer;
     padding: 1rem;
     text-align: left;
+    width: 100%;
+    transition: filter 0.15s ease, transform 0.15s ease;
 }
 
-.choice-actions button:hover {
+.choice-button:hover {
     filter: brightness(.95);
+    transform: translateX(2px);
 }
 
-.choice-actions strong,
-.choice-actions small {
+.choice-button:active {
+    transform: translateX(4px);
+}
+
+.choice-button-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.choice-button-text {
+    flex: 1;
+}
+
+.choice-button strong,
+.choice-button small {
     display: block;
 }
 
-.choice-actions small {
+.choice-button small {
     margin-top: .3rem;
+}
+
+.arrow-icon {
+    flex-shrink: 0;
+    margin-left: 1rem;
+    opacity: 0.7;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    fill: currentColor;
+}
+
+.choice-button:hover .arrow-icon {
+    opacity: 1;
+    transform: translateX(4px);
+}
+
+.back-button {
+    background: none;
+    border: none;
+    color: $text-primary-transparent;
+    cursor: pointer;
+    font-size: .9rem;
+    padding: 0;
+    margin-bottom: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.15s ease;
+}
+
+.back-button:hover {
+    color: $text-primary;
 }
 
 .categories {

@@ -1017,5 +1017,18 @@
   "bl.warptheme.downloadsCount": "{count} 下载",
   "bl.warptheme.applyTheme": "应用",
   "bl.warptheme.downloadTheme": "下载主题",
-  "bl.warptheme.openInWarpTheme": "在 WarpTheme 中打开"
+  "bl.warptheme.openInWarpTheme": "在 WarpTheme 中打开",
+  "achievements.welcomeTitle": "欢迎使用 RemixWarp",
+  "achievements.welcomeSubtitle": "请选择你的编辑器经验，以决定是否默认启用成就。",
+  "achievements.scratchBeginner": "Scratch小白",
+  "achievements.scratchBeginnerDesc": "自动开启成就，显示新手教程",
+  "achievements.turboWarpExpert": "TurboWarp大佬",
+  "achievements.turboWarpExpertDesc": "可在实验性设置中开启成就，不显示新手教程",
+  "achievements.selectDeviceTitle": "选择你的设备",
+  "achievements.selectDeviceSubtitle": "请选择你主要使用的设备类型，我们将为你优化编辑器体验。",
+  "achievements.mobileDevice": "移动端",
+  "achievements.mobileDeviceDesc": "自动开启移动端布局和触屏模式",
+  "achievements.pcDevice": "PC 端",
+  "achievements.pcDeviceDesc": "使用标准桌面版布局",
+  "achievements.goBack": "返回"
 }
