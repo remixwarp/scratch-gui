@@ -307,7 +307,7 @@ module.exports = [
             runtimeChunk: 'single',
             minimize: process.env.NODE_ENV === 'production',
             minimizer: process.env.NODE_ENV === 'production' ? [
-                new require('terser-webpack-plugin')({
+                new (require('terser-webpack-plugin').default || require('terser-webpack-plugin'))({
                     terserOptions: {
                         compress: {
                             drop_console: true,
