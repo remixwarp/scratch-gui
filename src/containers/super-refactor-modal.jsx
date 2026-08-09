@@ -440,13 +440,6 @@ class SuperRefactorModalContainer extends React.Component {
         }
     }
 
-    handleEditorScroll (e) {
-        const lineNumbers = e.target.previousElementSibling;
-        if (lineNumbers) {
-            lineNumbers.scrollTop = e.target.scrollTop;
-        }
-    }
-
     highlightSyntax (code, type) {
         if (!code) return '';
         

@@ -467,11 +467,7 @@ const control = function (isInitialSetup, isStage, targetId, colors) {
         <block id="wait_until" type="control_wait_until"/>
         <block id="repeat_until" type="control_repeat_until"/>
         <block id="for_each" type="control_for_each">
-            <value name="VARIABLE">
-                <shadow type="variables_get">
-                    <field name="VAR">i</field>
-                </shadow>
-            </value>
+            <field name="VARIABLE">i</field>
             <value name="VALUE">
                 <shadow type="math_whole_number">
                     <field name="NUM">10</field>

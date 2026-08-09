@@ -1007,5 +1007,15 @@
   "novatheai/about-repo": "开源地址",
   "02agent/about-repo": "开源地址",
   "novatheai/about-repo-button": "GitHub 仓库",
-  "02agent/about-repo-button": "GitHub 仓库"
+  "02agent/about-repo-button": "GitHub 仓库",
+  "gui.collaboration.settingsButtonTitle": "连接设置",
+  "gui.collaboration.joinPrivacyNotice": "主持人可以看到你的IP地址。其他成员看不到。",
+  "gui.collaboration.hostPrivacyNotice": "加入的人可以看到你的IP地址，你也可以看到他们的。",
+  "tw.collaboration.chatPlaceholder": "说点什么...（最多500字）",
+  "bl.bilme.downloadTheme": "下载主题",
+  "bl.warptheme.likesCount": "{count} 点赞",
+  "bl.warptheme.downloadsCount": "{count} 下载",
+  "bl.warptheme.applyTheme": "应用",
+  "bl.warptheme.downloadTheme": "下载主题",
+  "bl.warptheme.openInWarpTheme": "在 WarpTheme 中打开"
 }
