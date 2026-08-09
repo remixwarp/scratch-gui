@@ -210,9 +210,6 @@ const base = {
         },
         {
             test: /\.(glsl|vert|frag)$/,
-            include: [
-                path.resolve(__dirname, 'node_modules/scratch-render/src/shaders')
-            ],
             use: 'raw-loader'
         },
         {
