@@ -218,6 +218,12 @@ const base = {
         {
             test: /\.json$/,
             type: 'json'
+        }, {
+            test: /\.(ttf|eot|woff2?)$/,
+            loader: 'file-loader',
+            options: {
+                name: 'static/assets/[name].[hash:8].[ext]'
+            }
         }]
     },
     plugins: [
