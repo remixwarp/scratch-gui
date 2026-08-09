@@ -73,7 +73,8 @@ const base = {
             // just-bash bundles an ESM-only minimatch@10 that webpack 4 cannot parse.
             // Pin it to the hoisted CJS minimatch@3 (already used by glob/babel/eslint),
             // whose API is a superset of what just-bash needs (minimatch()).
-            'minimatch': require.resolve('minimatch')
+            'minimatch': require.resolve('minimatch'),
+            '@remixwarp/scratch-l10n/editor$': path.resolve(__dirname, 'node_modules/@remixwarp/scratch-l10n/editor')
         }
     },
     node: {
@@ -112,7 +113,8 @@ const base = {
                 /node_modules[\\/]just-bash/,
                 /node_modules[\\/]monaco-editor/,
                 /node_modules[\\/]rotur-sdk/,
-                /node_modules[\\/]accounts-sdk/
+                /node_modules[\\/]accounts-sdk/,
+                /node_modules[\\/]@remixwarp[\\/]scratch-l10n/
             ],
             exclude: [
                 /\.(vert|frag|glsl)$/,
@@ -124,6 +126,7 @@ const base = {
                 // in much lower dependencies.
                 babelrc: false,
                 plugins: [
+                    '@babel/plugin-transform-class-static-block',
                     ['react-intl', {
                         messagesDir: './translations/messages/'
                     }]
