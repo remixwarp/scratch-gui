@@ -34,8 +34,13 @@ class SuperRefactorModalContainer extends React.Component {
             searchQuery: '',
             filteredFiles: [],
             viewMode: 'code', // code or preview for SVG
-            wordWrap: true // 自动换行
+            wordWrap: true, // 自动换行
+            useMonacoEditor: false // 是否使用 Monaco 编辑器
         };
+        
+        this.monacoEditorRef = React.createRef();
+        this.monacoLoaded = false;
+        this.monacoEditorInstance = null;
     }
 
     componentDidMount () {
@@ -47,6 +52,18 @@ class SuperRefactorModalContainer extends React.Component {
         if (prevProps.theme !== this.props.theme) {
             this.applyThemeToWindow();
         }
+        
+        // 主题变化时更新 Monaco 编辑器
+        if (this.state.useMonacoEditor && this.monacoEditorInstance) {
+            const isDarkTheme = this.props.theme && typeof this.props.theme.isDark === 'function' ? this.props.theme.isDark() : false;
+            this.monacoEditorInstance.updateOptions({
+                theme: isDarkTheme ? 'vs-dark' : 'vs-light'
+            });
+        }
+    }
+
+    componentWillUnmount () {
+        this.disposeMonacoEditor();
     }
 
     applyThemeToWindow () {
@@ -174,7 +191,9 @@ class SuperRefactorModalContainer extends React.Component {
                         content: content,
                         size: content ? content.length : 0,
                         assetType: costume.asset.assetType ? costume.asset.assetType.name : 'image',
-                        costume: costume // 保存原始造型对象
+                        costume: costume,
+                        targetId: target.id, // 保存目标ID，用于精确定位
+                        isStage: isStage
                     });
                 }
             });
@@ -193,7 +212,9 @@ class SuperRefactorModalContainer extends React.Component {
                         type: 'sound',
                         content: sound.asset.data,
                         size: sound.asset.data ? sound.asset.data.length : 0,
-                        assetType: sound.asset.assetType ? sound.asset.assetType.name : 'sound'
+                        assetType: sound.asset.assetType ? sound.asset.assetType.name : 'sound',
+                        targetId: target.id,
+                        isStage: isStage
                     });
                 }
             });
@@ -271,7 +292,139 @@ class SuperRefactorModalContainer extends React.Component {
     handleWordWrapToggle () {
         this.setState(prevState => ({
             wordWrap: !prevState.wordWrap
-        }));
+        }), () => {
+            // 更新 Monaco 编辑器的 wordWrap 设置
+            if (this.monacoEditorInstance) {
+                this.monacoEditorInstance.updateOptions({
+                    wordWrap: this.state.wordWrap ? 'on' : 'off'
+                });
+            }
+        });
+    }
+
+    // 切换到 Monaco 编辑器
+    toggleMonacoEditor () {
+        const newValue = !this.state.useMonacoEditor;
+        this.setState({ useMonacoEditor: newValue }, () => {
+            if (newValue) {
+                // 使用 setTimeout 确保 DOM 已更新（re-render 完成）
+                setTimeout(() => {
+                    if (!this.monacoLoaded) {
+                        this.loadMonacoEditor();
+                    } else {
+                        // Monaco 已加载，直接初始化
+                        this.initMonacoEditor();
+                    }
+                }, 0);
+            } else {
+                // 切回旧版编辑器，销毁 Monaco
+                this.disposeMonacoEditor();
+            }
+        });
+    }
+
+    // 加载 Monaco 编辑器
+    loadMonacoEditor () {
+        if (window.monaco) {
+            this.initMonacoEditor();
+            return;
+        }
+
+        // 动态加载 Monaco Editor
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/loader.js';
+        script.onload = () => {
+            require.config({
+                paths: {
+                    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs'
+                }
+            });
+            require(['vs/editor/editor.main'], () => {
+                this.monacoLoaded = true;
+                // 确保 DOM 已就绪
+                setTimeout(() => this.initMonacoEditor(), 0);
+            });
+        };
+        document.head.appendChild(script);
+    }
+
+    // 初始化 Monaco 编辑器
+    initMonacoEditor () {
+        // 确保组件仍在 Monaco 模式且 DOM 就绪
+        if (!this.state.useMonacoEditor || !this.monacoEditorRef.current || this.monacoEditorInstance) return;
+
+        const {content} = this.state;
+        const isDarkTheme = this.props.theme && typeof this.props.theme.isDark === 'function' ? this.props.theme.isDark() : false;
+
+        // 根据文件类型确定语言
+        const currentFileObj = this.state.files[this.state.currentFile];
+        let language = 'plaintext';
+        if (currentFileObj) {
+            if (currentFileObj.type === 'json') language = 'json';
+            else if (currentFileObj.type === 'svg') language = 'xml';
+            else if (currentFileObj.name.endsWith('.js') || currentFileObj.name.endsWith('.jsx')) language = 'javascript';
+            else if (currentFileObj.name.endsWith('.ts') || currentFileObj.name.endsWith('.tsx')) language = 'typescript';
+            else if (currentFileObj.name.endsWith('.css')) language = 'css';
+            else if (currentFileObj.name.endsWith('.html')) language = 'html';
+        }
+
+        this.monacoEditorInstance = window.monaco.editor.create(this.monacoEditorRef.current, {
+            value: content,
+            language: language,
+            theme: isDarkTheme ? 'vs-dark' : 'vs-light',
+            automaticLayout: true,
+            fontSize: 13,
+            minimap: { enabled: false },
+            wordWrap: this.state.wordWrap ? 'on' : 'off',
+            lineNumbers: 'on',
+            scrollBeyondLastLine: false,
+            renderLineHighlight: 'all',
+            cursorBlinking: 'smooth',
+            smoothScrolling: true
+        });
+
+        // 监听内容变化
+        this.monacoEditorInstance.onDidChangeModelContent(() => {
+            const newContent = this.monacoEditorInstance.getValue();
+            this.setState({ content: newContent });
+            // 更新 files 数组中的内容
+            const files = [...this.state.files];
+            files[this.state.currentFile].content = newContent;
+            this.setState({ files });
+        });
+    }
+
+    // 销毁 Monaco 编辑器
+    disposeMonacoEditor () {
+        if (this.monacoEditorInstance) {
+            this.monacoEditorInstance.dispose();
+            this.monacoEditorInstance = null;
+        }
+    }
+
+    // 当文件切换时更新 Monaco 编辑器
+    updateMonacoEditorContent () {
+        if (this.monacoEditorInstance) {
+            const {content} = this.state;
+            const currentFileObj = this.state.files[this.state.currentFile];
+            let language = 'plaintext';
+            if (currentFileObj) {
+                if (currentFileObj.type === 'json') language = 'json';
+                else if (currentFileObj.type === 'svg') language = 'xml';
+                else if (currentFileObj.name.endsWith('.js') || currentFileObj.name.endsWith('.jsx')) language = 'javascript';
+                else if (currentFileObj.name.endsWith('.ts') || currentFileObj.name.endsWith('.tsx')) language = 'typescript';
+                else if (currentFileObj.name.endsWith('.css')) language = 'css';
+                else if (currentFileObj.name.endsWith('.html')) language = 'html';
+            }
+            
+            this.monacoEditorInstance.setValue(content);
+            this.monacoEditorInstance.setMode(language);
+            
+            const isDarkTheme = this.props.theme && typeof this.props.theme.isDark === 'function' ? this.props.theme.isDark() : false;
+            this.monacoEditorInstance.updateOptions({
+                theme: isDarkTheme ? 'vs-dark' : 'vs-light'
+            });
+        }
     }
 
     formatJSON (jsonString) {
@@ -480,6 +633,11 @@ class SuperRefactorModalContainer extends React.Component {
             files,
             currentFile: fullIndex,
             content: content
+        }, () => {
+            // 文件切换后更新 Monaco 编辑器
+            if (this.state.useMonacoEditor) {
+                this.updateMonacoEditorContent();
+            }
         });
     }
 
@@ -525,14 +683,14 @@ class SuperRefactorModalContainer extends React.Component {
                         setTimeout(() => this.setState({ message: '' }), 5000);
                     });
                 }
-            } else if (file.type === 'svg' && file.costume) {
-                // 更新SVG造型
+            } else if (file.type === 'svg' && file.costume && file.targetId) {
+                // 更新SVG造型 - 使用存储的 targetId 精确定位目标
                 if (this.props.vm) {
                     const runtime = this.props.vm.runtime;
                     if (runtime) {
-                        // 找到对应的角色/舞台
-                        const targets = runtime.targets || [];
-                        for (const target of targets) {
+                        // 直接通过 targetId 找到对应的目标，避免因 assetId 冲突导致错误更新到舞台
+                        const target = runtime.targets.find(t => t.id === file.targetId);
+                        if (target) {
                             const costumes = target.getCostumes ? target.getCostumes() : [];
                             const costumeIndex = costumes.findIndex(c => c.asset && c.asset.id === file.costume.asset.id);
                             if (costumeIndex !== -1) {
@@ -560,7 +718,7 @@ class SuperRefactorModalContainer extends React.Component {
                         }
                     }
                 }
-                this.setState({ message: '✗ 未找到对应的造型' });
+                this.setState({ message: '✗ 未找到对应的造型或目标' });
                 setTimeout(() => this.setState({ message: '' }), 5000);
             } else {
                 this.setState({ message: '只有 project.json 和 SVG 可以应用到作品' });
@@ -877,11 +1035,152 @@ class SuperRefactorModalContainer extends React.Component {
                                             {wordWrap ? '自动换行' : '禁用换行'}
                                         </button>
                                     )}
+                                    {/* Monaco 编辑器切换按钮 */}
+                                    {canEdit && (
+                                        <button
+                                            onClick={this.toggleMonacoEditor}
+                                            style={{
+                                                padding: '4px 8px',
+                                                background: this.state.useMonacoEditor ? '#4d97ff' : colors.buttonBg,
+                                                color: this.state.useMonacoEditor ? 'white' : colors.text,
+                                                border: `1px solid ${colors.border}`,
+                                                borderRadius: '3px',
+                                                cursor: 'pointer',
+                                                fontSize: '10px',
+                                                fontWeight: this.state.useMonacoEditor ? 'bold' : 'normal'
+                                            }}
+                                            title={this.state.useMonacoEditor ? '切换到旧版编辑器' : '切换到新版编辑器'}
+                                        >
+                                            {this.state.useMonacoEditor ? '旧版编辑器' : '新版编辑器'}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             
                             {isSvg ? (
                                 viewMode === 'code' ? (
+                                    this.state.useMonacoEditor ? (
+                                        // Monaco 编辑器
+                                        <div
+                                            ref={this.monacoEditorRef}
+                                            style={{
+                                                flex: 1,
+                                                border: `1px solid ${colors.border}`,
+                                                borderRadius: '0 0 4px 4px',
+                                                overflow: 'hidden'
+                                            }}
+                                        />
+                                    ) : (
+                                        <div style={{
+                                            flex: 1,
+                                            display: 'flex',
+                                            border: `1px solid ${colors.border}`,
+                                            borderRadius: '0 0 4px 4px',
+                                            overflow: 'hidden',
+                                            position: 'relative'
+                                        }}>
+                                            <div style={{
+                                                width: '40px',
+                                                background: colors.headerBg,
+                                                borderRight: `1px solid ${colors.border}`,
+                                                overflow: 'hidden'
+                                            }} dangerouslySetInnerHTML={{ __html: this.getLineNumbers(content) }} />
+                                            <div style={{
+                                                flex: 1,
+                                                position: 'relative',
+                                                overflow: 'hidden'
+                                            }}>
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    bottom: 0,
+                                                    padding: '15px',
+                                                    fontFamily: "Consolas, 'Courier New', monospace",
+                                                    fontSize: '13px',
+                                                    lineHeight: '1.5',
+                                                    whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+                                                    wordWrap: wordWrap ? 'break-word' : 'normal',
+                                                    overflow: 'auto',
+                                                    pointerEvents: 'none',
+                                                    color: colors.text
+                                                }} dangerouslySetInnerHTML={{ __html: this.highlightSyntax(content, 'svg') }} />
+                                                <textarea
+                                                    value={content}
+                                                    onChange={this.handleFileChange}
+                                                    onKeyDown={this.handleEditorKeyDown}
+                                                    onScroll={this.handleEditorScroll}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        left: 0,
+                                                        right: 0,
+                                                        bottom: 0,
+                                                        padding: '15px',
+                                                        fontFamily: "Consolas, 'Courier New', monospace",
+                                                        fontSize: '13px',
+                                                        lineHeight: '1.5',
+                                                        resize: 'none',
+                                                        outline: 'none',
+                                                        background: 'transparent',
+                                                        color: 'transparent',
+                                                        caretColor: colors.text,
+                                                        border: 'none',
+                                                        whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+                                                        wordWrap: wordWrap ? 'break-word' : 'normal',
+                                                        overflow: 'auto'
+                                                    }}
+                                                    spellCheck="false"
+                                                />
+                                            </div>
+                                        </div>
+                                    )
+                                ) : (
+                                    <div style={{
+                                        flex: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        border: `1px solid ${colors.border}`,
+                                        borderRadius: '0 0 4px 4px',
+                                        background: colors.headerBg,
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{
+                                            flex: 1,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            overflow: 'auto',
+                                            margin: '20px'
+                                        }}>
+                                            {content ? (
+                                                <div style={{
+                                                    maxWidth: '100%',
+                                                    maxHeight: '100%'
+                                                }}>
+                                                    <svg dangerouslySetInnerHTML={{ __html: content }} />
+                                                </div>
+                                            ) : (
+                                                <div style={{color: '#999'}}>无法预览SVG</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            ) : canEdit ? (
+                                this.state.useMonacoEditor ? (
+                                    // Monaco 编辑器
+                                    <div
+                                        ref={this.monacoEditorRef}
+                                        style={{
+                                            flex: 1,
+                                            border: `1px solid ${colors.border}`,
+                                            borderRadius: '0 0 4px 4px',
+                                            overflow: 'hidden'
+                                        }}
+                                    />
+                                ) : (
                                     <div style={{
                                         flex: 1,
                                         display: 'flex',
@@ -916,105 +1215,8 @@ class SuperRefactorModalContainer extends React.Component {
                                                 overflow: 'auto',
                                                 pointerEvents: 'none',
                                                 color: colors.text
-                                            }} dangerouslySetInnerHTML={{ __html: this.highlightSyntax(content, 'svg') }} />
-                                            <textarea
-                                                value={content}
-                                                onChange={this.handleFileChange}
-                                                onKeyDown={this.handleEditorKeyDown}
-                                                onScroll={this.handleEditorScroll}
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    right: 0,
-                                                    bottom: 0,
-                                                    padding: '15px',
-                                                    fontFamily: "Consolas, 'Courier New', monospace",
-                                                    fontSize: '13px',
-                                                    lineHeight: '1.5',
-                                                    resize: 'none',
-                                                    outline: 'none',
-                                                    background: 'transparent',
-                                                    color: 'transparent',
-                                                    caretColor: colors.text,
-                                                    border: 'none',
-                                                    whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
-                                                    wordWrap: wordWrap ? 'break-word' : 'normal',
-                                                    overflow: 'auto'
-                                                }}
-                                                spellCheck="false"
-                                            />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div style={{
-                                        flex: 1,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        border: `1px solid ${colors.border}`,
-                                        borderRadius: '0 0 4px 4px',
-                                        background: colors.headerBg,
-                                        overflow: 'hidden'
-                                    }}>
-                                        <div style={{
-                                            flex: 1,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            overflow: 'auto',
-                                            margin: '20px'
-                                        }}>
-                                            {content ? (
-                                                <div style={{
-                                                    maxWidth: '100%',
-                                                    maxHeight: '100%'
-                                                }}>
-                                                    <svg dangerouslySetInnerHTML={{ __html: content }} />
-                                                </div>
-                                            ) : (
-                                                <div style={{color: '#999'}}>无法预览SVG</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )
-                            ) : canEdit ? (
-                                <div style={{
-                                    flex: 1,
-                                    display: 'flex',
-                                    border: `1px solid ${colors.border}`,
-                                    borderRadius: '0 0 4px 4px',
-                                    overflow: 'hidden',
-                                    position: 'relative'
-                                }}>
-                                    <div style={{
-                                        width: '40px',
-                                        background: colors.headerBg,
-                                        borderRight: `1px solid ${colors.border}`,
-                                        overflow: 'hidden'
-                                    }} dangerouslySetInnerHTML={{ __html: this.getLineNumbers(content) }} />
-                                    <div style={{
-                                        flex: 1,
-                                        position: 'relative',
-                                        overflow: 'hidden'
-                                    }}>
-                                        <div style={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                left: 0,
-                                                right: 0,
-                                                bottom: 0,
-                                                padding: '15px',
-                                                fontFamily: "Consolas, 'Courier New', monospace",
-                                                fontSize: '13px',
-                                                lineHeight: '1.5',
-                                                whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
-                                                wordWrap: wordWrap ? 'break-word' : 'normal',
-                                                overflow: 'auto',
-                                                pointerEvents: 'none',
-                                                color: colors.text
                                             }} dangerouslySetInnerHTML={{ __html: this.highlightSyntax(content, 'json') }} />
-                                        <textarea
+                                            <textarea
                                                 value={content}
                                                 onChange={this.handleFileChange}
                                                 onKeyDown={this.handleEditorKeyDown}
@@ -1043,6 +1245,7 @@ class SuperRefactorModalContainer extends React.Component {
                                             />
                                     </div>
                                 </div>
+                            )
                             ) : currentFileType === 'image' ? (
                                 <div style={{
                                     flex: 1,

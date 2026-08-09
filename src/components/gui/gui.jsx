@@ -276,6 +276,14 @@ const GUIComponent = props => {
     });
     
     const [vscodeLayout, setVSCodeLayout] = useState(initialVSCodeLayout);
+    const [enableBlockCounter, setEnableBlockCounter] = useState(() => {
+        try {
+            const stored = localStorage.getItem('AESettings');
+            return stored ? JSON.parse(stored).EnableBlockCounter : false;
+        } catch (e) {
+            return false;
+        }
+    });
     
     const {
         accountNavOpen,
@@ -572,6 +580,29 @@ const GUIComponent = props => {
         
         return () => {
             window.removeEventListener('storage', updateVSCodeLayout);
+        };
+    }, []);
+
+    // 监听积木计数器设置变化
+    useEffect(() => {
+        const updateBlockCounter = () => {
+            const storedSettings = localStorage.getItem('AESettings');
+            try {
+                const settings = JSON.parse(storedSettings);
+                setEnableBlockCounter(settings.EnableBlockCounter);
+            } catch (e) {
+                setEnableBlockCounter(false);
+            }
+        };
+        
+        window.addEventListener('storage', updateBlockCounter);
+        window.addEventListener('ae-settings-changed', updateBlockCounter);
+        
+        updateBlockCounter();
+        
+        return () => {
+            window.removeEventListener('storage', updateBlockCounter);
+            window.removeEventListener('ae-settings-changed', updateBlockCounter);
         };
     }, []);
     
@@ -1323,7 +1354,7 @@ const GUIComponent = props => {
                 onClose={handleCloseDonationModal} 
                 count={donationCount} 
             />
-            <BlockCounter theme={theme} />
+            {enableBlockCounter && <BlockCounter theme={theme} />}
 
         </Box>
         );

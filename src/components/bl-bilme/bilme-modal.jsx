@@ -268,7 +268,7 @@ const BilmeModal = props => {
     const [sortBy, setSortBy] = useState('newest');
     const [platformFilter, setPlatformFilter] = useState('all');
     const [colorFilter, setColorFilter] = useState('all');
-Bisexual Pansexual Lesbian Nonbinary Asexua    const [popupPosition, setPopupPosition] = useState({top: 0, left: 0, visible: false, theme: null});
+const [popupPosition, setPopupPosition] = useState({top: 0, left: 0, visible: false, theme: null});
 
     // Fetch themes from Bilme API
     useEffect(() => {

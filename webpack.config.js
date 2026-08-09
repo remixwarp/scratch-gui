@@ -114,6 +114,7 @@ const base = {
                 /node_modules[\\/]rotur-sdk/,
                 /node_modules[\\/]accounts-sdk/
             ],
+            exclude: /\.(vert|frag|glsl)$/,
             options: {
                 cacheDirectory: true,
                 // Explicitly disable babelrc so we don't catch various config
