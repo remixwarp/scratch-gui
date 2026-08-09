@@ -7,7 +7,7 @@ npm-*
 *.zip
 
 # bun
-bun.lock
+# bun.lock is committed for CF Pages build
 
 # Environment variables
 .env
