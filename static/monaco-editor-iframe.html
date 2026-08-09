@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>Monaco Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1e1e1e;
+        }
+        #container {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/loader.js"></script>
+    <script>
+        require.config({
+            paths: {
+                'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs'
+            }
+        });
+
+        var editor = null;
+        var currentTheme = 'vs-dark';
+        var currentLanguage = 'plaintext';
+        var currentWordWrap = 'on';
+
+        require(['vs/editor/editor.main'], function() {
+            function createEditor(value, language, theme, wordWrap) {
+                if (editor) {
+                    editor.dispose();
+                    editor = null;
+                }
+
+                var lang = language || 'plaintext';
+                var thm = theme || 'vs-dark';
+                var wrap = wordWrap || 'on';
+
+                // Map language types
+                var langMap = {
+                    'json': 'json',
+                    'svg': 'xml',
+                    'xml': 'xml',
+                    'javascript': 'javascript',
+                    'js': 'javascript',
+                    'jsx': 'javascript',
+                    'typescript': 'typescript',
+                    'ts': 'typescript',
+                    'tsx': 'typescript',
+                    'css': 'css',
+                    'html': 'html',
+                    'plaintext': 'plaintext'
+                };
+
+                currentLanguage = langMap[lang] || 'plaintext';
+                currentTheme = thm;
+                currentWordWrap = wrap;
+
+                editor = monaco.editor.create(document.getElementById('container'), {
+                    value: value || '',
+                    language: currentLanguage,
+                    theme: currentTheme,
+                    automaticLayout: true,
+                    fontSize: 13,
+                    minimap: { enabled: false },
+                    wordWrap: currentWordWrap,
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    renderLineHighlight: 'all',
+                    cursorBlinking: 'smooth',
+                    smoothScrolling: true,
+                    tabSize: 4
+                });
+
+                // Notify parent of content changes
+                editor.onDidChangeModelContent(function() {
+                    var content = editor.getValue();
+                    window.parent.postMessage({
+                        type: 'monaco-content-change',
+                        content: content
+                    }, '*');
+                });
+
+                // Notify parent that editor is ready
+                window.parent.postMessage({
+                    type: 'monaco-ready'
+                }, '*');
+            }
+
+            // Listen for messages from parent
+            window.addEventListener('message', function(event) {
+                var data = event.data;
+                if (!data || !data.type) return;
+
+                switch (data.type) {
+                    case 'monaco-set-content':
+                        if (editor) {
+                            if (data.language) {
+                                var langMap = {
+                                    'json': 'json',
+                                    'svg': 'xml',
+                                    'xml': 'xml',
+                                    'javascript': 'javascript',
+                                    'js': 'javascript',
+                                    'jsx': 'javascript',
+                                    'typescript': 'typescript',
+                                    'ts': 'typescript',
+                                    'tsx': 'typescript',
+                                    'css': 'css',
+                                    'html': 'html'
+                                };
+                                var lang = langMap[data.language] || 'plaintext';
+                                if (lang !== currentLanguage) {
+                                    currentLanguage = lang;
+                                    monaco.editor.setModelLanguage(editor.getModel(), lang);
+                                }
+                            }
+                            if (editor.getValue() !== data.content) {
+                                editor.setValue(data.content || '');
+                            }
+                        }
+                        break;
+
+                    case 'monaco-set-theme':
+                        currentTheme = data.theme || 'vs-dark';
+                        if (editor) {
+                            monaco.editor.setTheme(currentTheme);
+                        }
+                        break;
+
+                    case 'monaco-set-wordwrap':
+                        currentWordWrap = data.wordWrap ? 'on' : 'off';
+                        if (editor) {
+                            editor.updateOptions({ wordWrap: currentWordWrap });
+                        }
+                        break;
+
+                    case 'monaco-init':
+                        createEditor(data.content, data.language, data.theme, data.wordWrap);
+                        break;
+
+                    case 'monaco-dispose':
+                        if (editor) {
+                            editor.dispose();
+                            editor = null;
+                        }
+                        break;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

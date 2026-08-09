@@ -25,10 +25,9 @@ class SuperRefactorModalContainer extends React.Component {
             'handleEditorKeyDown',
             'handleWordWrapToggle',
             'toggleMonacoEditor',
-            'loadMonacoEditor',
-            'initMonacoEditor',
-            'disposeMonacoEditor',
-            'updateMonacoEditorContent'
+            'handleMonacoMessage',
+            'sendToMonacoIframe',
+            'handleWindowResize'
         ]);
 
         this.state = {
@@ -40,18 +39,20 @@ class SuperRefactorModalContainer extends React.Component {
             filteredFiles: [],
             viewMode: 'code', // code or preview for SVG
             wordWrap: true, // 自动换行
-            useMonacoEditor: false // 是否使用 Monaco 编辑器
+            useMonacoEditor: false, // 是否使用 Monaco 编辑器
+            monacoIframeReady: false, // iframe 中的 Monaco 是否就绪
+            modalWidth: Math.min(1400, window.innerWidth - 40),
+            modalHeight: Math.min(900, window.innerHeight - 60)
         };
         
-        this.monacoEditorRef = React.createRef();
-        this.monacoLoaded = false;
-        this.monacoEditorInstance = null;
-        this.monaco = null; // 存储导入的 monaco 模块
+        this.monacoIframeRef = React.createRef();
     }
 
     componentDidMount () {
         this.loadProjectFiles();
         this.applyThemeToWindow();
+        window.addEventListener('resize', this.handleWindowResize);
+        window.addEventListener('message', this.handleMonacoMessage);
     }
 
     componentDidUpdate (prevProps) {
@@ -59,17 +60,26 @@ class SuperRefactorModalContainer extends React.Component {
             this.applyThemeToWindow();
         }
         
-        // 主题变化时更新 Monaco 编辑器
-        if (this.state.useMonacoEditor && this.monacoEditorInstance) {
+        // 主题变化时更新 Monaco iframe
+        if (this.state.useMonacoEditor && this.state.monacoIframeReady) {
             const isDarkTheme = this.props.theme && typeof this.props.theme.isDark === 'function' ? this.props.theme.isDark() : false;
-            this.monacoEditorInstance.updateOptions({
+            this.sendToMonacoIframe({
+                type: 'monaco-set-theme',
                 theme: isDarkTheme ? 'vs-dark' : 'vs-light'
             });
         }
     }
 
     componentWillUnmount () {
-        this.disposeMonacoEditor();
+        window.removeEventListener('resize', this.handleWindowResize);
+        window.removeEventListener('message', this.handleMonacoMessage);
+    }
+
+    handleWindowResize () {
+        this.setState({
+            modalWidth: Math.min(1400, window.innerWidth - 40),
+            modalHeight: Math.min(900, window.innerHeight - 60)
+        });
     }
 
     applyThemeToWindow () {
@@ -296,62 +306,38 @@ class SuperRefactorModalContainer extends React.Component {
     }
 
     handleWordWrapToggle () {
-        this.setState(prevState => ({
-            wordWrap: !prevState.wordWrap
-        }), () => {
-            // 更新 Monaco 编辑器的 wordWrap 设置
-            if (this.monacoEditorInstance) {
-                this.monacoEditorInstance.updateOptions({
-                    wordWrap: this.state.wordWrap ? 'on' : 'off'
+        const newWordWrap = !this.state.wordWrap;
+        this.setState({ wordWrap: newWordWrap }, () => {
+            // 更新 Monaco iframe 的 wordWrap 设置
+            if (this.state.useMonacoEditor && this.state.monacoIframeReady) {
+                this.sendToMonacoIframe({
+                    type: 'monaco-set-wordwrap',
+                    wordWrap: newWordWrap
                 });
             }
         });
     }
 
-    // 切换到 Monaco 编辑器
+    // 切换到 Monaco 编辑器（iframe 方式）
     toggleMonacoEditor () {
         const newValue = !this.state.useMonacoEditor;
-        this.setState({ useMonacoEditor: newValue }, () => {
+        this.setState({ 
+            useMonacoEditor: newValue,
+            monacoIframeReady: false
+        }, () => {
             if (newValue) {
-                // 使用 setTimeout 确保 DOM 已更新（re-render 完成）
+                // 切换到新版编辑器，延迟发送初始化消息等 iframe 加载
                 setTimeout(() => {
-                    if (!this.monacoLoaded) {
-                        this.loadMonacoEditor();
-                    } else {
-                        // Monaco 已加载，直接初始化
-                        this.initMonacoEditor();
-                    }
-                }, 0);
-            } else {
-                // 切回旧版编辑器，销毁 Monaco
-                this.disposeMonacoEditor();
+                    this.sendMonacoInit();
+                }, 500);
             }
         });
     }
 
-    // 加载 Monaco 编辑器
-    loadMonacoEditor () {
-        // 使用动态 import 代替 require.js，兼容 webpack
-        import('monaco-editor').then(monaco => {
-            this.monaco = monaco;
-            this.monacoLoaded = true;
-            this.initMonacoEditor();
-        }).catch(err => {
-            console.error('Failed to load Monaco Editor:', err);
-            this.setState({ message: '✗ Monaco 编辑器加载失败' });
-            setTimeout(() => this.setState({ message: '' }), 5000);
-        });
-    }
-
-    // 初始化 Monaco 编辑器
-    initMonacoEditor () {
-        // 确保组件仍在 Monaco 模式且 DOM 就绪
-        if (!this.state.useMonacoEditor || !this.monacoEditorRef.current || this.monacoEditorInstance) return;
-
-        const {content} = this.state;
-        const isDarkTheme = this.props.theme && typeof this.props.theme.isDark === 'function' ? this.props.theme.isDark() : false;
-
-        // 根据文件类型确定语言
+    // 向 Monaco iframe 发送初始化消息
+    sendMonacoInit () {
+        if (!this.state.useMonacoEditor) return;
+        const {content, wordWrap} = this.state;
         const currentFileObj = this.state.files[this.state.currentFile];
         let language = 'plaintext';
         if (currentFileObj) {
@@ -362,63 +348,45 @@ class SuperRefactorModalContainer extends React.Component {
             else if (currentFileObj.name.endsWith('.css')) language = 'css';
             else if (currentFileObj.name.endsWith('.html')) language = 'html';
         }
+        const isDarkTheme = this.props.theme && typeof this.props.theme.isDark === 'function' ? this.props.theme.isDark() : false;
 
-        this.monacoEditorInstance = this.monaco.editor.create(this.monacoEditorRef.current, {
-            value: content,
+        this.sendToMonacoIframe({
+            type: 'monaco-init',
+            content: content || '',
             language: language,
             theme: isDarkTheme ? 'vs-dark' : 'vs-light',
-            automaticLayout: true,
-            fontSize: 13,
-            minimap: { enabled: false },
-            wordWrap: this.state.wordWrap ? 'on' : 'off',
-            lineNumbers: 'on',
-            scrollBeyondLastLine: false,
-            renderLineHighlight: 'all',
-            cursorBlinking: 'smooth',
-            smoothScrolling: true
-        });
-
-        // 监听内容变化
-        this.monacoEditorInstance.onDidChangeModelContent(() => {
-            const newContent = this.monacoEditorInstance.getValue();
-            this.setState({ content: newContent });
-            // 更新 files 数组中的内容
-            const files = [...this.state.files];
-            files[this.state.currentFile].content = newContent;
-            this.setState({ files });
+            wordWrap: wordWrap ? 'on' : 'off'
         });
     }
 
-    // 销毁 Monaco 编辑器
-    disposeMonacoEditor () {
-        if (this.monacoEditorInstance) {
-            this.monacoEditorInstance.dispose();
-            this.monacoEditorInstance = null;
+    // 向 Monaco iframe 发送消息
+    sendToMonacoIframe (data) {
+        if (this.monacoIframeRef.current && this.monacoIframeRef.current.contentWindow) {
+            this.monacoIframeRef.current.contentWindow.postMessage(data, '*');
         }
     }
 
-    // 当文件切换时更新 Monaco 编辑器
-    updateMonacoEditorContent () {
-        if (this.monacoEditorInstance) {
-            const {content} = this.state;
-            const currentFileObj = this.state.files[this.state.currentFile];
-            let language = 'plaintext';
-            if (currentFileObj) {
-                if (currentFileObj.type === 'json') language = 'json';
-                else if (currentFileObj.type === 'svg') language = 'xml';
-                else if (currentFileObj.name.endsWith('.js') || currentFileObj.name.endsWith('.jsx')) language = 'javascript';
-                else if (currentFileObj.name.endsWith('.ts') || currentFileObj.name.endsWith('.tsx')) language = 'typescript';
-                else if (currentFileObj.name.endsWith('.css')) language = 'css';
-                else if (currentFileObj.name.endsWith('.html')) language = 'html';
-            }
-            
-            this.monacoEditorInstance.setValue(content);
-            this.monacoEditorInstance.setMode(language);
-            
-            const isDarkTheme = this.props.theme && typeof this.props.theme.isDark === 'function' ? this.props.theme.isDark() : false;
-            this.monacoEditorInstance.updateOptions({
-                theme: isDarkTheme ? 'vs-dark' : 'vs-light'
-            });
+    // 处理来自 Monaco iframe 的消息
+    handleMonacoMessage (event) {
+        const data = event.data;
+        if (!data || !data.type) return;
+
+        switch (data.type) {
+            case 'monaco-ready':
+                this.setState({ monacoIframeReady: true });
+                // iframe 就绪后发送初始化数据
+                this.sendMonacoInit();
+                break;
+
+            case 'monaco-content-change':
+                if (data.content !== undefined) {
+                    const files = [...this.state.files];
+                    if (files[this.state.currentFile]) {
+                        files[this.state.currentFile].content = data.content;
+                    }
+                    this.setState({ content: data.content, files });
+                }
+                break;
         }
     }
 
@@ -622,9 +590,9 @@ class SuperRefactorModalContainer extends React.Component {
             currentFile: fullIndex,
             content: content
         }, () => {
-            // 文件切换后更新 Monaco 编辑器
-            if (this.state.useMonacoEditor) {
-                this.updateMonacoEditorContent();
+            // 文件切换后更新 Monaco iframe
+            if (this.state.useMonacoEditor && this.state.monacoIframeReady) {
+                this.sendMonacoInit();
             }
         });
     }
@@ -803,8 +771,8 @@ class SuperRefactorModalContainer extends React.Component {
                 className={`super-refactor-modal ${isDarkTheme ? 'dark-theme' : ''}`}
                 onRequestClose={this.handleClose}
                 showHeader={true}
-                width={900}
-                height={650}
+                width={this.state.modalWidth}
+                height={this.state.modalHeight}
             >
                 <div style={{
                     display: 'flex',
@@ -1048,15 +1016,18 @@ class SuperRefactorModalContainer extends React.Component {
                             {isSvg ? (
                                 viewMode === 'code' ? (
                                     this.state.useMonacoEditor ? (
-                                        // Monaco 编辑器
-                                        <div
-                                            ref={this.monacoEditorRef}
+                                        // Monaco 编辑器 iframe
+                                        <iframe
+                                            ref={this.monacoIframeRef}
+                                            src="/monaco-editor-iframe.html"
                                             style={{
                                                 flex: 1,
                                                 border: `1px solid ${colors.border}`,
                                                 borderRadius: '0 0 4px 4px',
-                                                overflow: 'hidden'
+                                                overflow: 'hidden',
+                                                width: '100%'
                                             }}
+                                            frameBorder="0"
                                         />
                                     ) : (
                                         <div style={{
@@ -1158,15 +1129,18 @@ class SuperRefactorModalContainer extends React.Component {
                                 )
                             ) : canEdit ? (
                                 this.state.useMonacoEditor ? (
-                                    // Monaco 编辑器
-                                    <div
-                                        ref={this.monacoEditorRef}
+                                    // Monaco 编辑器 iframe
+                                    <iframe
+                                        ref={this.monacoIframeRef}
+                                        src="/monaco-editor-iframe.html"
                                         style={{
                                             flex: 1,
                                             border: `1px solid ${colors.border}`,
                                             borderRadius: '0 0 4px 4px',
-                                            overflow: 'hidden'
+                                            overflow: 'hidden',
+                                            width: '100%'
                                         }}
+                                        frameBorder="0"
                                     />
                                 ) : (
                                     <div style={{

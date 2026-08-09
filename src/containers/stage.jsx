@@ -75,15 +75,16 @@ class Stage extends React.Component {
             // Only attach a video provider once because it is stateful
             this.props.vm.setVideoProvider(new VideoProvider());
 
-            // Calling draw a single time before any project is loaded just makes
-            // the canvas white instead of solid black–needed because it is not
-            // possible to use CSS to style the canvas to have a different
-            // default color
-            this.props.vm.renderer.draw();
-
             // tw: handle changes to high quality pen
             this.props.vm.renderer.on('UseHighQualityRenderChanged', this.props.onHighQualityPenChanged);
         }
+
+        // Set default stage background color based on theme:
+        // white for light mode, black for dark mode
+        const isDark = this.props.theme && typeof this.props.theme.isDark === 'function' && this.props.theme.isDark();
+        this.renderer.setBackgroundColor(isDark ? 0 : 1, isDark ? 0 : 1, isDark ? 0 : 1);
+        this.renderer.draw();
+
         this.props.vm.attachV2BitmapAdapter(new V2BitmapAdapter());
     }
     componentDidMount () {
@@ -103,13 +104,20 @@ class Stage extends React.Component {
             this.state.question !== nextState.question ||
             this.props.micIndicator !== nextProps.micIndicator ||
             this.props.isStarted !== nextProps.isStarted ||
-            this.props.customStageSize !== nextProps.customStageSize;
+            this.props.customStageSize !== nextProps.customStageSize ||
+            this.props.theme !== nextProps.theme;
     }
     componentDidUpdate (prevProps) {
         if (this.props.isColorPicking && !prevProps.isColorPicking) {
             this.startColorPickingLoop();
         } else if (!this.props.isColorPicking && prevProps.isColorPicking) {
             this.stopColorPickingLoop();
+        }
+        // Update stage background color when theme changes
+        if (this.props.theme !== prevProps.theme) {
+            const isDark = this.props.theme && typeof this.props.theme.isDark === 'function' && this.props.theme.isDark();
+            this.renderer.setBackgroundColor(isDark ? 0 : 1, isDark ? 0 : 1, isDark ? 0 : 1);
+            this.renderer.draw();
         }
         this.updateRect();
         this.renderer.resize(this.rect.width, this.rect.height);
@@ -507,6 +515,7 @@ const mapStateToProps = state => ({
     dimensions: state.scratchGui.tw.dimensions,
     isStarted: state.scratchGui.vmStatus.started,
     micIndicator: state.scratchGui.micIndicator,
+    theme: state.scratchGui.theme.theme,
     // Do not use editor drag style in fullscreen or player mode.
     useEditorDragStyle: !(state.scratchGui.mode.isFullScreen || state.scratchGui.mode.isPlayerOnly)
 });
