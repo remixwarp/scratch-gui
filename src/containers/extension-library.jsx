@@ -583,7 +583,7 @@ class ExtensionLibrary extends React.PureComponent {
 
             fetchLibrary()
                 .then(result => {
-                    if (this._isMounted) {
+                    if (this._mounted) {
                         cachedGallery = result;
                         cachedLoadStatus = result.loadStatus;
                         this.setState({
@@ -595,7 +595,7 @@ class ExtensionLibrary extends React.PureComponent {
                 })
                 .catch(error => {
                     log.error(error);
-                    if (this._isMounted) {
+                    if (this._mounted) {
                         this.setState({
                             galleryError: error
                         });
