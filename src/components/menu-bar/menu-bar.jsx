@@ -2597,25 +2597,33 @@ class MenuBar extends React.Component {
 
             // 收集所有 localStorage 设置
             const localStorageSettings = {};
-            const keysToExport = [
-                'tw:theme',
-                'tw:shortcuts',
-                'tw:language',
-                'tw:addons',
-                'tw:custom-themes',
-                'tw:persisted_unsandboxed',
-                'tw:restore-point-interval',
+            // 应用相关的 localStorage 键前缀，用于完整导出所有配置
+            const appKeyPrefixes = [
+                'tw:',
+                'mw:',
+                'rw:',
+                'remixwarp_',
+                'astras_',
+                'sa-',
+                'ADDONS_',
                 'AESettings',
-                'mw:super-refactor',
-                'mw:multi-workspaces',
-                'mw:has-seen-onboarding'
+                '02agent_',
+                'novatheai_',
+                'bilup_',
+                'nova_'
             ];
 
             console.log('开始收集localStorage设置');
-            for (const key of keysToExport) {
-                const value = localStorage.getItem(key);
-                if (value !== null) {
-                    localStorageSettings[key] = value;
+            // 遍历所有 localStorage 键，收集匹配应用前缀的键
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key) continue;
+                const isAppKey = appKeyPrefixes.some(prefix => key.startsWith(prefix));
+                if (isAppKey) {
+                    const value = localStorage.getItem(key);
+                    if (value !== null) {
+                        localStorageSettings[key] = value;
+                    }
                 }
             }
             console.log('localStorage设置收集完成，共', Object.keys(localStorageSettings).length, '项');
@@ -2638,7 +2646,7 @@ class MenuBar extends React.Component {
             console.log('Redux设置收集完成');
 
             const settingsData = {
-                version: '1.1.0',
+                version: '1.2.0',
                 exportTime: new Date().toISOString(),
                 editorVersion: '3.2.37',
                 addonSettings: addonSettings,
@@ -2652,7 +2660,7 @@ class MenuBar extends React.Component {
             const zip = new JSZip();
             zip.file('settings.json', JSON.stringify(settingsData, null, 2));
             zip.file('version.json', JSON.stringify({
-                version: '1.1.0',
+                version: '1.2.0',
                 exportTime: settingsData.exportTime,
                 editorVersion: settingsData.editorVersion
             }, null, 2));
@@ -2743,6 +2751,11 @@ class MenuBar extends React.Component {
                             try {
                                 console.log('开始导入localStorage设置，共', Object.keys(settingsData.localStorageSettings).length, '项');
                                 for (const [key, value] of Object.entries(settingsData.localStorageSettings)) {
+                                    // 跳过 tw:addons，因为已通过 settingsStore.import() 处理
+                                    if (key === 'tw:addons') {
+                                        console.log('跳过 tw:addons（已由插件设置导入处理）');
+                                        continue;
+                                    }
                                     localStorage.setItem(key, value);
                                 }
                                 console.log('localStorage设置导入完成');
