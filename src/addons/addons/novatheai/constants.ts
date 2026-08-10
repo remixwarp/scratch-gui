@@ -10,4 +10,4 @@ export const PROVIDER_DEFAULT_URLS: Record<string, string> = {
   siliconflow: "https://api.hcnsec.cn/v1/chat/completions",
 };
 
-export const DEFAULT_FREE_API_KEY = "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB";
+export const DEFAULT_FREE_API_KEY = "sk-remixworld";
