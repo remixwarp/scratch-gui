@@ -1453,6 +1453,41 @@ const pickAndCommitSb3 = async ({
     });
 };
 
+let _formatMessage = null;
+let _intl = null;
+
+const setFormatMessage = fn => {
+    _formatMessage = fn;
+};
+
+const setIntl = obj => {
+    _intl = obj;
+};
+
+const getFormatMessage = () => _formatMessage;
+const getIntl = () => _intl;
+
+const exportRepoToGitJsonStringSync = () => {
+    try {
+        const repo = {
+            version: 1,
+            exportedAt: Date.now()
+        };
+        return JSON.stringify(repo);
+    } catch (e) {
+        return '{}';
+    }
+};
+
+const importRepoFromGitJsonString = async jsonStr => {
+    if (!jsonStr || typeof jsonStr !== 'string') return;
+    try {
+        JSON.parse(jsonStr);
+    } catch (e) {
+        return;
+    }
+};
+
 export {
     getDefaultAuthor,
     setDefaultAuthor,
@@ -1502,6 +1537,12 @@ export {
     applyFractchWorkspace,
     readReadme,
     writeReadme,
+    setFormatMessage,
+    setIntl,
+    getFormatMessage,
+    getIntl,
+    exportRepoToGitJsonStringSync,
+    importRepoFromGitJsonString,
     REPO_DIR,
     git
 };

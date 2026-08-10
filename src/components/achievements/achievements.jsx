@@ -171,7 +171,7 @@ const Achievements = ({intl}) => {
     }, []);
 
     useEffect(() => {
-        if (!notice) return null;
+        if (!notice) return;
         const timeout = setTimeout(() => setNotice(null), 4500);
         return () => clearTimeout(timeout);
     }, [notice]);

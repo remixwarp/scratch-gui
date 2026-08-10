@@ -257,14 +257,15 @@ export default async function ({ addon, console, msg }) {
 
   const verifySortableHOC = (sortableHOCInstance) => {
     const SortableHOC = sortableHOCInstance.constructor;
+    // Redux connect wraps the component, check the wrapped component's prototype
+    const proto = SortableHOC.WrappedComponent ?
+        SortableHOC.WrappedComponent.prototype :
+        SortableHOC.prototype;
     if (
-      Array.isArray(sortableHOCInstance.props.items) &&
-      (typeof sortableHOCInstance.props.selectedId === "string" ||
-        typeof sortableHOCInstance.props.selectedItemIndex === "number") &&
       typeof sortableHOCInstance.containerBox !== "undefined" &&
-      typeof SortableHOC.prototype.handleAddSortable === "function" &&
-      typeof SortableHOC.prototype.handleRemoveSortable === "function" &&
-      typeof SortableHOC.prototype.setRef === "function"
+      typeof proto.handleAddSortable === "function" &&
+      typeof proto.handleRemoveSortable === "function" &&
+      typeof proto.setRef === "function"
     )
       return;
     throw new Error("Can not comprehend SortableHOC");
@@ -1314,7 +1315,9 @@ export default async function ({ addon, console, msg }) {
     verifySortableHOC(sortableHOCInstance);
     verifySpriteSelectorItem(spriteSelectorItemInstance);
     verifyVM(vm);
-    patchSortableHOC(sortableHOCInstance.constructor, TYPE_SPRITES);
+    // Redux connect wraps the component, get the actual wrapped component for patching
+    const actualSortableHOC = sortableHOCInstance.constructor.WrappedComponent || sortableHOCInstance.constructor;
+    patchSortableHOC(actualSortableHOC, TYPE_SPRITES);
     patchSpriteSelectorItem(spriteSelectorItemInstance.constructor);
     sortableHOCInstance.saInitialSetup();
     patchVM();
@@ -1337,7 +1340,8 @@ export default async function ({ addon, console, msg }) {
     });
     const sortableHOCInstance = getSortableHOCFromElement(selectorListItem);
     verifySortableHOC(sortableHOCInstance);
-    patchSortableHOC(sortableHOCInstance.constructor, TYPE_ASSETS);
+    const actualSortableHOC = sortableHOCInstance.constructor.WrappedComponent || sortableHOCInstance.constructor;
+    patchSortableHOC(actualSortableHOC, TYPE_ASSETS);
     sortableHOCInstance.saInitialSetup();
     
     // Add language change listener to force re-render

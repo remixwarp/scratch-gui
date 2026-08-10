@@ -217,6 +217,15 @@ const logout = async () => {
     }
 };
 
+const switchAccount = async () => {
+    await logout();
+    try {
+        localStorage.removeItem(ROTUR_TOKEN_KEY);
+    } catch (e) {
+        // ignore
+    }
+};
+
 const createProject = payload => request('/projects', {method: 'POST', body: payload});
 
 const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject) => {
@@ -391,6 +400,7 @@ export {
     onAuthInvalid,
     onBanned,
     logout,
+    switchAccount,
     createProject,
     uploadProject,
     publishProject,

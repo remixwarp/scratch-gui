@@ -220,9 +220,9 @@ const UpdateLogModal = ({ intl, visible, onClose, versions, themeColors, locale 
                                         background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
                                     }}
                                 >
-                                    {versionInfo.isExplicitVersion
-                                        ? (locale === 'zh-cn' ? `版本 ${versionInfo.version}` : `Version ${versionInfo.version}`)
-                                        : (locale === 'zh-cn' ? '非固定版本' : 'Unfixed Version')}
+                                    {versionInfo.version && versionInfo.version.length >= 7
+                                        ? (locale === 'zh-cn' ? `提交 ${versionInfo.version.substring(0, 7)}` : `Commit ${versionInfo.version.substring(0, 7)}`)
+                                        : (locale === 'zh-cn' ? `版本 ${versionInfo.version}` : `Version ${versionInfo.version}`)}
                                 </div>
                                 <div className={styles.updateDate}>
                                     {locale === 'zh-cn' ? `更新日期: ${versionInfo.date}` : `Update Date: ${versionInfo.date}`}

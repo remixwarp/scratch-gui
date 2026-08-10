@@ -143,6 +143,8 @@ const initMenuBarLayout = () => {
 export {
     ZONES,
     ALL_ITEMS,
+    ORDER_KEY,
+    HIDDEN_KEY,
     CHANGE_EVENT,
     getStoredOrder,
     setZoneOrder,

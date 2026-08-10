@@ -333,7 +333,7 @@ for (const accent of ACCENTS) {
         id: accent.id
     };
 }
-const ACCENT_DEFAULT = 'red';
+const ACCENT_DEFAULT = 'pale blue';
 
 export {
     ACCENTS,

@@ -43,6 +43,7 @@ const MODAL_PREVIEW_EXT = 'previewExt';
 const MODAL_AE_FEATURES = 'aeFeaturesModal';
 const MODAL_COMPATIBILITY = 'compatibilityModal';
 const MODAL_ROTUR_LOGIN = 'roturLoginModal';
+const MODAL_PROJECT_METADATA = 'projectMetadataModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -86,6 +87,7 @@ const initialState = {
     [MODAL_AE_FEATURES]: false,
     [MODAL_COMPATIBILITY]: false,
     [MODAL_ROTUR_LOGIN]: false,
+    [MODAL_PROJECT_METADATA]: false,
     extensionLoadChoiceData: null,
     videoModalData: null
 };
@@ -405,6 +407,16 @@ const openRoturLoginModal = function () {
 const closeRoturLoginModal = function () {
     return closeModal(MODAL_ROTUR_LOGIN);
 };
+const openProjectMetadataModal = function (tab) {
+    return {
+        type: OPEN_MODAL,
+        modal: MODAL_PROJECT_METADATA,
+        metadataTab: tab
+    };
+};
+const closeProjectMetadataModal = function () {
+    return closeModal(MODAL_PROJECT_METADATA);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -490,6 +502,8 @@ export {
     closeCompatibilityModal,
     openRoturLoginModal,
     closeRoturLoginModal,
+    openProjectMetadataModal,
+    closeProjectMetadataModal,
     MODAL_GANDI_HELP,
     MODAL_WARPTHEME,
     MODAL_WARPTHEME_STORE,
