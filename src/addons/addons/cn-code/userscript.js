@@ -39,6 +39,38 @@ export default async function ({ addon, msg }) {
     const cnCodeStates = new Map();
 
     // ============ 弹窗（直接克隆 middle-click-popup 结构）============
+    // 注入序号标签样式
+    const numBtnStyle = document.createElement('style');
+    numBtnStyle.textContent = `
+        .cn-code-num-label {
+            fill: white;
+            font-size: 12px;
+            font-weight: bold;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: all;
+            cursor: pointer;
+        }
+        .cn-code-num-bg {
+            fill: #ff6b35;
+            stroke: #e55a2b;
+            stroke-width: 1;
+            pointer-events: all;
+            cursor: pointer;
+            rx: 4;
+            ry: 4;
+        }
+        .cn-code-num-bg:hover {
+            fill: #ff8c42;
+        }
+        .sa-mcp-preview-container {
+            padding-left: 26px;
+            box-sizing: border-box;
+        }
+    `;
+    document.head.appendChild(numBtnStyle);
+
     const popupRoot = document.body.appendChild(document.createElement('div'));
     popupRoot.classList.add('sa-mcp-root');
     popupRoot.dir = addon.tab.direction;
@@ -223,11 +255,14 @@ export default async function ({ addon, msg }) {
         queryPreviews = [];
 
         let y = 0;
+        let visibleIndex = 0;
 
         for (let resultIdx = 0; resultIdx < blockList.length; resultIdx++) {
             const result = blockList[resultIdx];
             if (result.isHeader || result.isSprite || result.isCostume || result.isCustomBlock) continue;
             if (!result.block) continue;
+
+            visibleIndex++;
 
             const svgBackground = popupPreviewBlocks.appendChild(
                 document.createElementNS('http://www.w3.org/2000/svg', 'rect')
@@ -246,35 +281,64 @@ export default async function ({ addon, msg }) {
             svgBackground.classList.add('sa-mcp-preview-block-bg');
             svgGroup.classList.add('sa-mcp-preview-block');
 
-            // 背景矩形：屏幕坐标定位
-            const bgOffset = (result.isHeader || result.isSprite || result.isCostume) ? 0 : actualHeight / 10;
-            const screenY = (y + bgOffset) * previewScale;
+            const BLOCK_GAP = 4;
+            const topOffset = 4;
+            // 第一块积木额外下移半个积木高度
+            const firstBlockExtra = (y === 0) ? actualHeight * 0.5 : 0;
+            const groupTranslateY = (y + topOffset + firstBlockExtra) * previewScale;
+            const screenY = (y + topOffset + firstBlockExtra) * previewScale;
+
             svgBackground.setAttribute('transform', `translate(0, ${screenY})`);
             svgBackground.setAttribute('height', `${actualHeight * previewScale}px`);
-
-            // 积木组：与背景对齐，先平移再缩放
-            // 平移量 = y * scale（与背景的 y 对齐），缩放后积木自然变小
-            const groupTranslateY = y * previewScale;
             svgGroup.setAttribute('transform', `translate(0, ${groupTranslateY}) scale(${previewScale})`);
 
-            // 为第一个积木添加上方缓冲，防止被裁剪
-            if (y === 0) {
-                svgGroup.setAttribute('transform', `translate(0, ${groupTranslateY + 16}) scale(${previewScale})`);
-            }
+            // 在 SVG 内绘制序号标签（圆形背景 + 数字）
+            const labelY = screenY + (actualHeight * previewScale) / 2;
+            const labelX = -16;
+            const numBg = popupPreviewBlocks.appendChild(
+                document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+            );
+            numBg.setAttribute('x', labelX - 9);
+            numBg.setAttribute('y', labelY - 9);
+            numBg.setAttribute('width', '18');
+            numBg.setAttribute('height', '18');
+            numBg.setAttribute('rx', '4');
+            numBg.setAttribute('ry', '4');
+            numBg.classList.add('cn-code-num-bg');
+
+            const numText = popupPreviewBlocks.appendChild(
+                document.createElementNS('http://www.w3.org/2000/svg', 'text')
+            );
+            numText.setAttribute('x', labelX);
+            numText.setAttribute('y', labelY);
+            numText.classList.add('cn-code-num-label');
+            numText.textContent = visibleIndex;
 
             queryPreviews.push({
                 block: result.block,
                 svgBlock: svgGroup,
                 svgBackground,
                 renderedBlock,
-                height: actualHeight
+                height: actualHeight,
+                index: visibleIndex
             });
 
-            y += actualHeight;
+            // 点击积木或序号可直接插入
+            svgBackground.style.cursor = 'pointer';
+            svgGroup.style.cursor = 'pointer';
+            const insertHandler = (ev) => {
+                ev.stopPropagation();
+                insertBlockByIndex(visibleIndex);
+            };
+            svgBackground.addEventListener('click', insertHandler);
+            svgGroup.addEventListener('click', insertHandler);
+            numBg.addEventListener('click', insertHandler);
+            numText.addEventListener('click', insertHandler);
+
+            y += actualHeight + BLOCK_GAP + firstBlockExtra;
         }
 
-        const topPadding = 20;
-        const totalHeight = (y + 8) * previewScale + topPadding;
+        const totalHeight = (y + topOffset + 8) * previewScale;
         previewHeight = Math.min(Math.max(totalHeight, 40), previewMaxHeight);
 
         popupPreviewBlocks.setAttribute('height', `${totalHeight}px`);
@@ -354,6 +418,68 @@ export default async function ({ addon, msg }) {
             return performSearch(trimmed, querier, blockTypes, vm, PREVIEW_LIMIT);
         } catch (e) {
             return null;
+        }
+    }
+
+    function insertBlockByIndex(index) {
+        if (!queryPreviews[index - 1]) return;
+        const preview = queryPreviews[index - 1];
+        const blockType = preview.block;
+        if (!blockType) return;
+
+        const workspace = Blockly.getMainWorkspace();
+        if (!workspace) return;
+
+        // 找到当前活跃的 cn-code 注释
+        const allComments = [];
+        try {
+            if (workspace.getTopComments) {
+                const comments = workspace.getTopComments(false);
+                if (Array.isArray(comments)) allComments.push(...comments);
+            }
+            for (const b of workspace.getAllBlocks(false)) {
+                if (b.comment) allComments.push(b.comment);
+            }
+        } catch (e) {}
+
+        for (const comment of allComments) {
+            try {
+                const text = comment.getText ? comment.getText() : (comment.text || '');
+                if (!text || !text.startsWith(TAG)) continue;
+
+                const state = cnCodeStates.get(comment.id);
+                if (!state) continue;
+
+                // 获取最后一行
+                const lines = text.split('\n');
+                const dataLines = lines.slice(1);
+                const lastIdx = dataLines.length - 1;
+
+                if (lastIdx < 0) continue;
+
+                const trimmed = (dataLines[lastIdx] || '').trim();
+                if (!trimmed) continue;
+
+                // 创建积木并替换当前行
+                const existingBlock = state.lineBlocks.get(lastIdx);
+                if (existingBlock) safeDispose(existingBlock);
+
+                const newBlock = createBlockInstance(blockType);
+                if (newBlock) {
+                    state.lineBlocks.set(lastIdx, newBlock);
+                    state.lineLastText.set(lastIdx, trimmed);
+                    state.linePinnedIndex.set(lastIdx, index);
+
+                    // 重建链
+                    const commentPos = getCommentWSPos(workspace, comment.id);
+                    const refWsPos = state.initialWsPos || commentPos;
+                    const basePos = refWsPos
+                        ? { x: refWsPos.x + 320, y: refWsPos.y }
+                        : { x: 100, y: 100 };
+                    buildChain(state, basePos.x, basePos.y);
+                }
+                break;
+            } catch (e) {}
         }
     }
 
@@ -501,6 +627,7 @@ export default async function ({ addon, msg }) {
             state = {
                 lineBlocks: new Map(),
                 lineLastText: new Map(),
+                linePinnedIndex: new Map(),
                 initialWsPos: null,
                 initialScreenPos: null,
                 commentSized: false
@@ -571,6 +698,7 @@ export default async function ({ addon, msg }) {
                     safeDispose(state.lineBlocks.get(i));
                     state.lineBlocks.delete(i);
                     state.lineLastText.delete(i);
+                    state.linePinnedIndex.delete(i);
                     blocksChanged = true;
                 }
                 continue;
@@ -579,7 +707,14 @@ export default async function ({ addon, msg }) {
             const lastText = state.lineLastText.get(i);
             const existingBlock = state.lineBlocks.get(i);
 
-            if (lastText === trimmed && existingBlock) continue;
+            if (lastText === trimmed && existingBlock) {
+                    // 文本没变且已有积木，保留 pinned index
+                    continue;
+                }
+                // 文本变了，清除旧的 pinned index
+                if (lastText !== trimmed) {
+                    state.linePinnedIndex.delete(i);
+                }
 
             const result = doSearch(trimmed);
             if (!result) {
@@ -592,12 +727,24 @@ export default async function ({ addon, msg }) {
                 continue;
             }
 
-            // 找第一个非 header/sprite/costume/custom 的积木
+            // 找积木：优先使用用户手动选中的序号
             const blockList = result.blockList;
             let match = null;
-            for (const item of blockList) {
-                if (item.isHeader || item.isSprite || item.isCostume || item.isCustomBlock) continue;
-                if (item.block) { match = item.block; break; }
+            const pinnedIdx = state.linePinnedIndex.get(i);
+            if (pinnedIdx && pinnedIdx >= 1) {
+                let counter = 0;
+                for (const item of blockList) {
+                    if (item.isHeader || item.isSprite || item.isCostume || item.isCustomBlock) continue;
+                    if (!item.block) continue;
+                    counter++;
+                    if (counter === pinnedIdx) { match = item.block; break; }
+                }
+            }
+            if (!match) {
+                for (const item of blockList) {
+                    if (item.isHeader || item.isSprite || item.isCostume || item.isCustomBlock) continue;
+                    if (item.block) { match = item.block; break; }
+                }
             }
 
             if (!match) {
@@ -635,6 +782,7 @@ export default async function ({ addon, msg }) {
                 safeDispose(block);
                 state.lineBlocks.delete(idx);
                 state.lineLastText.delete(idx);
+                state.linePinnedIndex.delete(idx);
                 blocksChanged = true;
             }
         }
