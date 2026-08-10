@@ -307,7 +307,7 @@ class ShortcutManager extends React.Component {
             'aiAgent': messages.aiAgent
         };
 
-        return defaultShortcuts.map(shortcut => {
+        const coreShortcuts = defaultShortcuts.map(shortcut => {
             const label = intl.formatMessage(shortcutMessages[shortcut.id]);
             if (customShortcuts[shortcut.id]) {
                 return {
@@ -321,6 +321,23 @@ class ShortcutManager extends React.Component {
                 label
             };
         });
+
+        // 合并 addon 快捷键（由 keymap-cheatsheet addon 通过 window.RW_ADDON_SHORTCUTS 暴露）
+        // 这类快捷键为只读（readOnly: true），来源于各 addon，不可自定义
+        const addonShortcuts = (typeof window !== 'undefined' && Array.isArray(window.RW_ADDON_SHORTCUTS))
+            ? window.RW_ADDON_SHORTCUTS.map(s => ({
+                id: s.id,
+                key: s.key,
+                defaultKey: s.defaultKey,
+                category: s.category,
+                label: s.label,
+                source: s.source,
+                readOnly: true,
+                actionType: null
+            }))
+            : [];
+
+        return [...coreShortcuts, ...addonShortcuts];
     }
 
     getFilteredShortcuts () {

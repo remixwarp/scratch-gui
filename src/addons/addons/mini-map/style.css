@@ -1,0 +1,12 @@
+/* Mini Map 窗口内容样式 */
+.rw-minimap-content {
+    padding: 8px;
+    background: rgba(30, 30, 30, 0.92);
+}
+
+.rw-minimap-canvas {
+    display: block;
+    border-radius: 3px;
+    cursor: crosshair;
+    background: rgba(0, 0, 0, 0.25);
+}

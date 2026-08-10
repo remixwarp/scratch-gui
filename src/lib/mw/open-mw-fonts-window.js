@@ -34,8 +34,9 @@ const openMWFontsWindow = ({vm, store, locale, messages}) => {
         className: 'mw-fonts-window',
         onClose: () => {
             try {
-                if (!mwFontsContainer) return;
-                ReactDOM.unmountComponentAtNode(mwFontsContainer);
+                if (mwFontsContainer) {
+                    ReactDOM.unmountComponentAtNode(mwFontsContainer);
+                }
             } catch (e) {
                 // ignore
             }

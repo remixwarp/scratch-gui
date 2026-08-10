@@ -46,6 +46,7 @@ class Controls extends React.Component {
             const targetFps = this.props.vm.runtime.frameLoop.framerate;
             this.maxFps = targetFps === 0 ? 60 : targetFps;
             this.currentFps = Math.min(this.renderTimes.length, this.maxFps);
+            window.__currentFps = this.currentFps;
             recordActualFramerate(this.currentFps, this.maxFps);
         }
         return ret;
@@ -102,7 +103,6 @@ class Controls extends React.Component {
                 active={projectRunning && isStarted}
                 turbo={turbo}
                 framerate={framerate}
-                actualFps={projectRunning ? this.currentFps : null}
                 isEditor={isEditor}
                 onGreenFlagClick={this.handleGreenFlagClick}
                 onStopAllClick={this.handleStopAllClick}

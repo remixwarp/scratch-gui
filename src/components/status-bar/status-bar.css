@@ -1,0 +1,80 @@
+@import "../../css/colors.css";
+
+.status-bar {
+    display: flex;
+    align-items: center;
+    height: 24px;
+    flex-shrink: 0;
+    padding: 0 8px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 0.7rem;
+    user-select: none;
+    border-top: 1px solid $ui-black-transparent;
+    z-index: 100;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.status-bar.dark {
+    background-color: $ui-tertiary;
+    color: $text-primary;
+}
+
+.status-bar.light {
+    background-color: $ui-tertiary;
+    color: $text-primary;
+}
+
+.segment {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px;
+    height: 100%;
+    border-radius: 3px;
+    cursor: default;
+    transition: background-color 0.15s ease;
+}
+
+.segment:hover {
+    background-color: $ui-black-transparent;
+}
+
+.icon {
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.label {
+    line-height: 1;
+}
+
+.divider {
+    width: 1px;
+    height: 14px;
+    background-color: $ui-black-transparent;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+.running {
+    color: #4ECDC4;
+}
+
+.ai-busy {
+    background-color: $ui-black-transparent;
+}
+
+.ai-busy .icon {
+    color: $looks-secondary;
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.85; }
+    50% { opacity: 0.3; }
+}

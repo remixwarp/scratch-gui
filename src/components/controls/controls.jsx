@@ -34,7 +34,6 @@ const Controls = function (props) {
         framerate,
         interpolation,
         isSmall,
-        actualFps,
         isEditor,
         ...componentProps
     } = props;
@@ -60,7 +59,6 @@ const Controls = function (props) {
                 <FramerateIndicator
                     framerate={framerate}
                     interpolation={interpolation}
-                    actualFps={actualFps}
                     isEditor={isEditor}
                 />
             )}
@@ -78,7 +76,6 @@ Controls.propTypes = {
     interpolation: PropTypes.bool,
     isSmall: PropTypes.bool,
     turbo: PropTypes.bool,
-    actualFps: PropTypes.number,
     isEditor: PropTypes.bool
 };
 

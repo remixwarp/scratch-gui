@@ -143,7 +143,7 @@ class FontsThemeMenu extends React.Component {
                             <div className={styles.selectedFontsList}>
                                 {selectedFont ? (
                                     <div className={styles.selectedFont}>
-                                        <span style={{fontFamily: selectedFont}}>{selectedFont}</span>
+                                        <span data-font-preview style={{fontFamily: selectedFont}}>{selectedFont}</span>
                                         <button
                                             className={styles.removeButton}
                                             onClick={this.handleRemoveSelectedFont}

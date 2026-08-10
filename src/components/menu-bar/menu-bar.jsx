@@ -174,7 +174,7 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
-    Zap, Gauge, BookOpen, Code, Trophy, ListTodo
+    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -3895,6 +3895,17 @@ class MenuBar extends React.Component {
                                             description="Menu bar item for keyboard shortcuts"
                                             id="tw.menuBar.keyboardShortcuts"
                                         />
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => {
+                                            if (window.RWMiniMap && typeof window.RWMiniMap.toggle === 'function') {
+                                                window.RWMiniMap.toggle();
+                                            }
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <Map />
+                                        {this.props.locale === 'zh-cn' ? 'Mini Map' : 'Mini Map'}
                                     </MenuItem>
                                 </MenuSection>
                                 <MenuSection>

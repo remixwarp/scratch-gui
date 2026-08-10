@@ -50,6 +50,7 @@ class ManageFont extends React.Component {
                     <div
                         className={styles.manageFontName}
                         title={this.props.family}
+                        data-font-preview
                         style={{
                             fontFamily: this.props.family
                         }}

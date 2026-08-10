@@ -1388,6 +1388,12 @@ export default async function ({ addon, console, msg }) {
                 <p>加载中...</p>
               </div>
             </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--ui-black-transparent, #e0e0e0);">
+              <button id="saExportImageBtn" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: transform 0.2s, box-shadow 0.2s;">
+                📸 导出结果为图片
+              </button>
+            </div>
           </div>
         `;
         
@@ -1398,6 +1404,55 @@ export default async function ({ addon, console, msg }) {
           console.log('分析完成:', analysis);
           await updateAstraAnalysisResults(analysis);
           console.log('结果更新完成');
+
+          // 绑定导出图片按钮事件
+          const exportBtn = document.getElementById('saExportImageBtn');
+          if (exportBtn) {
+            exportBtn.addEventListener('click', async () => {
+              const resultsEl = document.getElementById('saAnalyzeResults');
+              if (!resultsEl) return;
+
+              exportBtn.textContent = '⏳ 导出中...';
+              exportBtn.disabled = true;
+
+              try {
+                // 动态加载 html2canvas
+                if (!window.html2canvas) {
+                  await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                  });
+                }
+
+                const canvas = await window.html2canvas(resultsEl, {
+                  scale: 2,
+                  useCORS: true,
+                  backgroundColor: '#ffffff',
+                  logging: false
+                });
+
+                canvas.toBlob(blob => {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `astra-analysis-${Date.now()}.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }, 'image/png');
+              } catch (err) {
+                console.error('导出图片失败:', err);
+                alert('导出图片失败：' + err.message);
+              } finally {
+                exportBtn.textContent = '📸 导出结果为图片';
+                exportBtn.disabled = false;
+              }
+            });
+          }
         }, 100);
       }
       

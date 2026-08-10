@@ -9,7 +9,8 @@ const DEFAULT_SETTINGS = {
     EnableMobileTouchDrag: false,
     enableAutoUpdateCheck: false,
     EnableBlockCounter: false,
-    EnableDynamicStageBackground: false
+    EnableDynamicStageBackground: false,
+    EnableStatusBar: false
 };
 
 export class AESettings {

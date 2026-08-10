@@ -20,6 +20,7 @@ class FontDropdownItem extends React.Component {
             <div
                 className={styles.fontDropdownItem}
                 title={this.props.family}
+                data-font-preview
                 style={{
                     fontFamily: this.props.family
                 }}

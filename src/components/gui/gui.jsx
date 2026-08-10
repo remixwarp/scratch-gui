@@ -78,7 +78,8 @@ import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import Onboarding from '../../containers/onboarding.jsx';
 import BlockCounter from '../../components/block-counter/block-counter.jsx';
-import {recordSponsorIntent} from '../../lib/achievements.js';
+import StatusBar from '../../components/status-bar/status-bar.jsx';
+import {recordSponsorIntent, isAchievementsEnabled} from '../../lib/achievements.js';
 import AchievementTracker from '../achievements/achievement-tracker.jsx';
 import Achievements from '../achievements/achievements.jsx';
 
@@ -88,6 +89,11 @@ import {Theme} from '../../lib/themes';
 
 import {setStageSize} from '../../reducers/stage-size';
 import {showOnboarding} from '../../reducers/onboarding';
+import {openGitModal, openAIAgentModal} from '../../reducers/modals.js';
+import {openWorkspaceBookmarksMenu} from '../../reducers/menus.js';
+import {openCollaborationModal} from '../../reducers/collaboration.js';
+import SettingsStore from '../../addons/settings-store-singleton.js';
+import {GitBranch, ListTodo, Handshake, Trophy, Bookmark, PackagePlus, Sparkles} from 'lucide-react';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
@@ -280,6 +286,14 @@ const GUIComponent = props => {
         try {
             const stored = localStorage.getItem('AESettings');
             return stored ? JSON.parse(stored).EnableBlockCounter : false;
+        } catch (e) {
+            return false;
+        }
+    });
+    const [enableStatusBar, setEnableStatusBar] = useState(() => {
+        try {
+            const stored = localStorage.getItem('AESettings');
+            return stored ? JSON.parse(stored).EnableStatusBar : false;
         } catch (e) {
             return false;
         }
@@ -594,15 +608,38 @@ const GUIComponent = props => {
                 setEnableBlockCounter(false);
             }
         };
-        
+
         window.addEventListener('storage', updateBlockCounter);
         window.addEventListener('ae-settings-changed', updateBlockCounter);
-        
+
         updateBlockCounter();
-        
+
         return () => {
             window.removeEventListener('storage', updateBlockCounter);
             window.removeEventListener('ae-settings-changed', updateBlockCounter);
+        };
+    }, []);
+
+    // 监听状态栏设置变化
+    useEffect(() => {
+        const updateStatusBar = () => {
+            const storedSettings = localStorage.getItem('AESettings');
+            try {
+                const settings = JSON.parse(storedSettings);
+                setEnableStatusBar(settings.EnableStatusBar);
+            } catch (e) {
+                setEnableStatusBar(false);
+            }
+        };
+
+        window.addEventListener('storage', updateStatusBar);
+        window.addEventListener('ae-settings-changed', updateStatusBar);
+
+        updateStatusBar();
+
+        return () => {
+            window.removeEventListener('storage', updateStatusBar);
+            window.removeEventListener('ae-settings-changed', updateStatusBar);
         };
     }, []);
     
@@ -1254,6 +1291,65 @@ const GUIComponent = props => {
                                                 "README"
                                             )}
                                         </button>}
+                                    {vscodeLayout && (
+                                        <>
+                                            <div className={styles.activityBarSeparator} />
+                                            <button
+                                                className={styles.activityBarButton}
+                                                title={intl.formatMessage(messages.addExtension)}
+                                                onClick={onExtensionButtonClick}
+                                            >
+                                                <PackagePlus size={20} />
+                                            </button>
+                                            <div className={styles.activityBarSeparator} />
+                                            <button
+                                                className={styles.activityBarButton}
+                                                title={intl.formatMessage({defaultMessage: 'Live Collaboration', id: 'tw.menuBar.collaboration'})}
+                                                onClick={() => props.dispatch(openCollaborationModal())}
+                                            >
+                                                <Handshake size={20} />
+                                            </button>
+                                            {SettingsStore.getAddonEnabled('todo-list') && (
+                                                <button
+                                                    className={styles.activityBarButton}
+                                                    title={intl.formatMessage({defaultMessage: 'Todo', id: 'gui.menuBar.todo'})}
+                                                    onClick={() => window.dispatchEvent(new Event('rw-todo-open'))}
+                                                >
+                                                    <ListTodo size={20} />
+                                                </button>
+                                            )}
+                                            <button
+                                                className={styles.activityBarButton}
+                                                title={intl.formatMessage({defaultMessage: 'Git', id: 'mw.menuBar.git'})}
+                                                onClick={() => props.dispatch(openGitModal())}
+                                            >
+                                                <GitBranch size={20} />
+                                            </button>
+                                            <button
+                                                className={styles.activityBarButton}
+                                                title={intl.formatMessage({defaultMessage: 'Bookmarks', id: 'tw.workspaceBookmarks.menuLabel'})}
+                                                onClick={() => props.dispatch(openWorkspaceBookmarksMenu())}
+                                            >
+                                                <Bookmark size={20} />
+                                            </button>
+                                            <button
+                                                className={styles.activityBarButton}
+                                                title={intl.formatMessage({defaultMessage: 'AI Agent', id: 'gui.menuBar.aiAgent'})}
+                                                onClick={() => props.dispatch(openAIAgentModal())}
+                                            >
+                                                <Sparkles size={20} />
+                                            </button>
+                                            {isAchievementsEnabled() && (
+                                                <button
+                                                    className={styles.activityBarButton}
+                                                    title={locale === 'zh-cn' ? '成就' : 'Achievements'}
+                                                    onClick={() => window.dispatchEvent(new Event('rw-achievements-open'))}
+                                                >
+                                                    <Trophy size={20} />
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
                                 </TabList>
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     <Box className={styles.blocksWrapper}>
@@ -1336,6 +1432,7 @@ const GUIComponent = props => {
                         </Box>
                     </Box>
                 </Box>
+                {enableStatusBar && <StatusBar vm={vm} />}
                 {extensionLibraryVisible ? (
                     <Suspense fallback={<Loader />}>
                         <ExtensionLibrary

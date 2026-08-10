@@ -38,6 +38,108 @@
     height: 100%;
 }
 
+/* 设置项搜索框 — 完全同步插件设置（addons/settings）的样式 */
+.search-container {
+    display: flex;
+    background-color: $ui-secondary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    margin: 0.5rem 0.75rem;
+    flex-shrink: 0;
+}
+.search-container:focus-within {
+    box-shadow: 0 0 0 3px $looks-transparent;
+}
+.search-input {
+    color: inherit;
+    flex: 1;
+    min-width: 0;
+    height: 16px;
+    padding: 10px 0 10px 15px;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    font-size: 14px;
+}
+/* legacy edge */
+.search-input::-ms-clear {
+    display: none;
+}
+.search-button {
+    height: 36px;
+    width: 36px;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    background-color: transparent;
+    background-image: url("../../addons/settings/icons/search.svg");
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: $filter-icon-black;
+    flex-shrink: 0;
+}
+.search-button.is-clear {
+    background-image: url("../../addons/settings/icons/clear.svg");
+}
+
+/* 搜索结果列表 */
+.searchResults {
+    padding: 0.25rem 0;
+}
+
+.searchResultsHeader {
+    padding: 0.4rem 0.75rem 0.25rem;
+    font-size: 0.6875rem;
+    color: $text-primary;
+    opacity: 0.55;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.searchResultItem {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    width: 100%;
+    padding: 0.4rem 0.75rem;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.12s;
+}
+
+.searchResultItem:hover {
+    background: $ui-black-transparent;
+}
+
+.searchResultItemActive {
+    background: $ui-black-transparent;
+}
+
+.searchResultLabel {
+    font-size: 0.78rem;
+    color: $text-primary;
+    font-weight: 500;
+}
+
+.searchResultCategory {
+    font-size: 0.6875rem;
+    color: $text-primary;
+    opacity: 0.5;
+}
+
+.searchEmpty {
+    padding: 1.5rem 0.75rem;
+    text-align: center;
+    color: $text-primary;
+    opacity: 0.5;
+    font-size: 0.78rem;
+    font-style: italic;
+}
+
 .sidebarItems::-webkit-scrollbar {
     width: 6px;
 }

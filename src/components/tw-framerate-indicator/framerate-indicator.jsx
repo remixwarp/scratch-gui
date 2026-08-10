@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
 
@@ -12,12 +12,30 @@ const getFpsColor = (fps, maxFps) => {
     return 'rgb(255, 130, 130)';
 };
 
-const FramerateIndicator = ({framerate, interpolation, actualFps, isSmall, isEditor}) => {
+const FramerateIndicator = ({framerate, interpolation, isSmall, isEditor}) => {
+    const [realFps, setRealFps] = useState(() => {
+        if (typeof window !== 'undefined' && typeof window.__currentFps === 'number') {
+            return window.__currentFps;
+        }
+        return 0;
+    });
+
+    // 实时轮询 window.__currentFps（与状态栏共用同一数据源）
+    useEffect(() => {
+        const update = () => {
+            const val = (typeof window.__currentFps === 'number') ? window.__currentFps : 0;
+            setRealFps(val);
+        };
+        update();
+        const id = setInterval(update, 500);
+        return () => clearInterval(id);
+    }, []);
+
     const maxFps = framerate === 0 ? 60 : framerate;
-    const hasActualFps = actualFps !== null;
-    const displayFps = hasActualFps ? actualFps : framerate;
-    const fpsColor = hasActualFps ?
-        getFpsColor(actualFps, maxFps) :
+    // 优先使用实时 FPS；未运行时回退到目标帧率
+    const displayFps = realFps > 0 ? realFps : maxFps;
+    const fpsColor = realFps > 0 ?
+        getFpsColor(realFps, maxFps) :
         '#82c1ff';
 
     if (!isEditor || isSmall) {
@@ -51,13 +69,11 @@ const FramerateIndicator = ({framerate, interpolation, actualFps, isSmall, isEdi
 FramerateIndicator.propTypes = {
     framerate: PropTypes.number,
     interpolation: PropTypes.bool,
-    actualFps: PropTypes.number,
     isSmall: PropTypes.bool,
     isEditor: PropTypes.bool
 };
 
 FramerateIndicator.defaultProps = {
-    actualFps: null,
     isSmall: false,
     isEditor: true
 };

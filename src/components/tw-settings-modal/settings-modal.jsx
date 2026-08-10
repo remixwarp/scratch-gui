@@ -36,7 +36,7 @@ import {
     getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
 } from '../../lib/git/config.js';
 
-import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, Bug, GitBranch, Variable, Upload} from 'lucide-react';
+import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, Bug, GitBranch, Variable, Upload, Search} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -358,6 +358,16 @@ const messages = defineMessages({
         defaultMessage: '打开后，切换深浅色主题时舞台背景色会随之变化：浅色模式为白色，深色模式为黑色。关闭后舞台背景始终为白色。',
         description: 'EnableDynamicStageBackground help',
         id: 'tw.settingsModal.enabledynamicstagebackgroundhelp'
+    },
+    enablestatusbar: {
+        defaultMessage: '启用状态栏',
+        description: 'EnableStatusBar label',
+        id: 'tw.settingsModal.enablestatusbar'
+    },
+    enablestatusbarhelp: {
+        defaultMessage: '在编辑器底部显示常驻状态栏，实时展示鼠标坐标、积木数、当前角色、FPS、运行状态和 AI 状态等信息。',
+        description: 'EnableStatusBar help',
+        id: 'tw.settingsModal.enablestatusbarhelp'
     },
     customdefaultsprite: {
         defaultMessage: '自定义默认角色（需刷新）',
@@ -867,6 +877,22 @@ const EnableDynamicStageBackground = props => (
         help={
             <FormattedMessage
                 {...messages.enabledynamicstagebackgroundhelp}
+            />
+        }
+    />
+);
+
+const EnableStatusBar = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                {...messages.enablestatusbar}
+            />
+        }
+        help={
+            <FormattedMessage
+                {...messages.enablestatusbarhelp}
             />
         }
     />
@@ -1894,6 +1920,13 @@ const pageConfigurations = {
                         })
                     },
                     {
+                        component: EnableStatusBar,
+                        props: props => ({
+                            value: AEsettings.get('EnableStatusBar') || false,
+                            onChange: (e) => { AEsettings.set("EnableStatusBar", e.target.checked); notifySettingsChange(); }
+                        })
+                    },
+                    {
                         component: EnableAchievements,
                         props: () => ({
                             value: isAchievementsEnabled(),
@@ -2484,19 +2517,165 @@ SettingsRouter.propTypes = {
     onStoreProjectOptions: PropTypes.func
 };
 
+// 设置项搜索索引：每项包含显示标签、搜索关键字、所属分类 id、分类显示名
+// 用于在设置面板搜索框中快速定位设置项
+const SETTINGS_SEARCH_INDEX = [
+    // 常规
+    {label: '帧率', keywords: '帧率 framerate fps 速度', category: 'general'},
+    {label: '高质量画笔', keywords: '高质量画笔 high quality pen 画笔 渲染', category: 'general'},
+    {label: '插值', keywords: '插值 interpolation 平滑', category: 'general'},
+    {label: '无限克隆', keywords: '无限克隆 infinite clones 克隆体', category: 'general'},
+    {label: '移除边界', keywords: '移除边界 remove fencing 围栏 限制', category: 'general'},
+    {label: '移除限制', keywords: '移除限制 remove limits 限制', category: 'general'},
+    {label: 'Warp 计时器', keywords: 'warp timer 计时器 无限制', category: 'general'},
+    {label: '舞台尺寸', keywords: '舞台尺寸 stage size 宽度 高度', category: 'general'},
+    {label: '编译器', keywords: '编译器 compiler 禁用', category: 'general'},
+    {label: '大小写敏感列表', keywords: '大小写敏感 case sensitive lists 列表', category: 'general'},
+    {label: '优化动画', keywords: '优化动画 optimize animations 动画', category: 'general'},
+    {label: '调试模式', keywords: '调试模式 debug mode 调试', category: 'general'},
+    {label: 'FPS 计数器', keywords: 'fps 计数器 fps counter 帧率显示', category: 'general'},
+    {label: '多工作区', keywords: '多工作区 multi workspaces 标签', category: 'general'},
+    {label: '帽子积木注释提醒', keywords: '帽子积木 注释 提醒 hat block comment', category: 'general'},
+    {label: '云变量服务器', keywords: '云变量 服务器 cloud variable server', category: 'general'},
+    {label: '成就系统', keywords: '成就 achievement 勋章', category: 'general'},
+    // 编辑器
+    {label: '方形舞台角', keywords: '方形舞台角 square stage corners 直角', category: 'editor'},
+    {label: '隐藏扩展按钮', keywords: '隐藏扩展按钮 hide extension button', category: 'editor'},
+    {label: '隐藏运算符箭头', keywords: '隐藏运算符箭头 hide operator arrows 运算符', category: 'editor'},
+    {label: '隐藏删除按钮', keywords: '隐藏删除按钮 hide delete button', category: 'editor'},
+    {label: '隐藏背包', keywords: '隐藏背包 hide backpack 背包', category: 'editor'},
+    {label: '默认角色', keywords: '默认角色 default sprite 自定义', category: 'editor'},
+    // 样式
+    {label: '标签样式', keywords: '标签样式 tab style 外观', category: 'styles'},
+    {label: '标签外观', keywords: '标签外观 tab looks 样式', category: 'styles'},
+    {label: '窗口样式', keywords: '窗口样式 window style 风格', category: 'styles'},
+    {label: '自定义主题', keywords: '自定义主题 custom theme 颜色 配色', category: 'styles'},
+    // 菜单栏
+    {label: '菜单栏布局', keywords: '菜单栏布局 menu bar layout 位置', category: 'menuBar'},
+    // 版本控制
+    {label: 'Git 作者', keywords: 'git 作者 author 名字 邮箱', category: 'versionControl'},
+    {label: '默认分支', keywords: '默认分支 default branch git 分支', category: 'versionControl'},
+    {label: '自动提交', keywords: '自动提交 auto commit git', category: 'versionControl'},
+    // 变量管理器
+    {label: '变量管理器', keywords: '变量管理器 variable manager 变量 列表', category: 'variableManager'},
+    // 调试器
+    {label: '调试器设置', keywords: '调试器 debugger 断点 设置', category: 'debugger'},
+    // 实验性
+    {label: '实验性功能', keywords: '实验性 experimental 高级', category: 'experimental'},
+    // AE 设置
+    {label: 'AE 设置', keywords: 'ae 设置 addons 插件 高级编辑器', category: 'ae'}
+];
+
+// 简单模糊匹配：支持中文子串 + 英文大小写不敏感 + 子序列匹配
+const fuzzyMatchSettings = (query, target) => {
+    if (!query) return true;
+    const q = query.toLowerCase().trim();
+    const t = (target || '').toLowerCase();
+    if (!q) return true;
+    if (t.includes(q)) return true;
+    // 子序列匹配（适用于英文缩写）
+    let qi = 0;
+    for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+        if (t[ti] === q[qi]) qi++;
+    }
+    return qi === q.length;
+};
+
 class SettingsModalComponent extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, ['handleNavigate', 'handleStoreProjectOptions', 'handleToggleGroup']);
+        bindAll(this, ['handleNavigate', 'handleStoreProjectOptions', 'handleToggleGroup',
+            'handleSearchChange', 'handleSearchResultClick', 'handleSearchClear',
+            'handleSearchButtonClick', 'handleSearchInputRef']);
 
         this.state = {
             currentView: 'general',
-            collapsedGroups: {}
+            collapsedGroups: {},
+            searchQuery: ''
         };
     }
 
     handleNavigate (category) {
         this.setState({currentView: category});
+    }
+
+    handleSearchChange (e) {
+        this.setState({searchQuery: e.target.value});
+    }
+
+    handleSearchClear () {
+        this.setState({searchQuery: ''});
+    }
+
+    handleSearchButtonClick () {
+        if (this.state.searchQuery) {
+            this.setState({searchQuery: ''});
+        } else if (this._searchInputRef) {
+            this._searchInputRef.focus();
+        }
+    }
+
+    handleSearchInputRef (el) {
+        this._searchInputRef = el;
+    }
+
+    handleSearchResultClick (category) {
+        this.setState({currentView: category, searchQuery: ''});
+    }
+
+    getSearchResults (query) {
+        if (!query || !query.trim()) return [];
+        const q = query.trim();
+        return SETTINGS_SEARCH_INDEX.filter(item =>
+            fuzzyMatchSettings(q, `${item.label} ${item.keywords} ${item.category}`)
+        );
+    }
+
+    getCategoryLabel (categoryId, sidebarGroups) {
+        for (const group of sidebarGroups) {
+            for (const item of group.items) {
+                if (item.id === categoryId) return item.label;
+            }
+        }
+        return categoryId;
+    }
+
+    renderSearchResults (query, sidebarGroups, currentView) {
+        const results = this.getSearchResults(query);
+        if (results.length === 0) {
+            return (
+                <div className={styles.searchEmpty}>
+                    {this.props.intl.formatMessage({
+                        id: 'tw.settingsModal.searchNoResults',
+                        defaultMessage: '未找到匹配的设置项'
+                    })}
+                </div>
+            );
+        }
+        return (
+            <div className={styles.searchResults}>
+                <div className={styles.searchResultsHeader}>
+                    {this.props.intl.formatMessage({
+                        id: 'tw.settingsModal.searchResultsCount',
+                        defaultMessage: '找到 {count} 项'
+                    }, {count: results.length})}
+                </div>
+                {results.map((item, idx) => (
+                    <button
+                        key={`${item.category}-${idx}`}
+                        className={classNames(styles.searchResultItem, {
+                            [styles.searchResultItemActive]: currentView === item.category
+                        })}
+                        onClick={() => this.handleSearchResultClick(item.category)}
+                    >
+                        <span className={styles.searchResultLabel}>{item.label}</span>
+                        <span className={styles.searchResultCategory}>
+                            {this.getCategoryLabel(item.category, sidebarGroups)}
+                        </span>
+                    </button>
+                ))}
+            </div>
+        );
     }
 
     handleToggleGroup (groupId) {
@@ -2514,7 +2693,7 @@ class SettingsModalComponent extends React.Component {
 
     render () {
         const {intl} = this.props;
-        const {currentView} = this.state;
+        const {currentView, searchQuery} = this.state;
 
         const sidebarGroups = [
             {
@@ -2603,33 +2782,60 @@ class SettingsModalComponent extends React.Component {
             >
                 <Box className={styles.sidebarLayout}>
                     <div className={styles.sidebar}>
+                        <div className={styles.searchContainer}>
+                            <input
+                                className={styles.searchInput}
+                                value={searchQuery}
+                                onChange={this.handleSearchChange}
+                                placeholder={intl.formatMessage({
+                                    id: 'tw.settingsModal.searchPlaceholder',
+                                    defaultMessage: '搜索设置项…'
+                                })}
+                                aria-label={intl.formatMessage({
+                                    id: 'tw.settingsModal.searchPlaceholder',
+                                    defaultMessage: '搜索设置项…'
+                                })}
+                                ref={this.handleSearchInputRef}
+                                spellCheck="false"
+                            />
+                            <div
+                                className={classNames(styles.searchButton, {
+                                    [styles.isClear]: searchQuery
+                                })}
+                                onClick={this.handleSearchButtonClick}
+                            />
+                        </div>
                         <div className={styles.sidebarItems}>
-                            {sidebarGroups.map(group => {
-                                const collapsed = !!this.state.collapsedGroups[group.id];
-                                return (
-                                    <div
-                                        key={group.id}
-                                        className={styles.sidebarGroup}
-                                    >
-                                        <SidebarGroupHeader
-                                            id={group.id}
-                                            label={group.label}
-                                            collapsed={collapsed}
-                                            onClick={this.handleToggleGroup}
-                                        />
-                                        {!collapsed && group.items.map(cat => (
-                                            <SidebarItem
-                                                key={cat.id}
-                                                id={cat.id}
-                                                label={cat.label}
-                                                icon={cat.icon}
-                                                onClick={this.handleNavigate}
-                                                isSelected={currentView === cat.id}
+                            {searchQuery.trim() ? (
+                                this.renderSearchResults(searchQuery, sidebarGroups, currentView)
+                            ) : (
+                                sidebarGroups.map(group => {
+                                    const collapsed = !!this.state.collapsedGroups[group.id];
+                                    return (
+                                        <div
+                                            key={group.id}
+                                            className={styles.sidebarGroup}
+                                        >
+                                            <SidebarGroupHeader
+                                                id={group.id}
+                                                label={group.label}
+                                                collapsed={collapsed}
+                                                onClick={this.handleToggleGroup}
                                             />
-                                        ))}
-                                    </div>
-                                );
-                            })}
+                                            {!collapsed && group.items.map(cat => (
+                                                <SidebarItem
+                                                    key={cat.id}
+                                                    id={cat.id}
+                                                    label={cat.label}
+                                                    icon={cat.icon}
+                                                    onClick={this.handleNavigate}
+                                                    isSelected={currentView === cat.id}
+                                                />
+                                            ))}
+                                        </div>
+                                    );
+                                })
+                            )}
                         </div>
                     </div>
                     <div className={styles.contentArea}>

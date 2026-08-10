@@ -181,6 +181,74 @@
     transform: none;
 }
 
+/* VS Code 活动栏分隔符 */
+.activity-bar-separator {
+    width: 24px;
+    height: 1px;
+    background-color: $ui-black-transparent;
+    margin: 6px 0;
+    flex-shrink: 0;
+}
+
+/* VS Code 活动栏工具按钮 */
+.activity-bar-button {
+    width: 40px;
+    height: 40px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    border-radius: 0px !important;
+    margin: 0 !important;
+    padding: 10px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #00000000;
+    border: 0;
+    cursor: pointer;
+    margin-bottom: 10px !important;
+}
+
+.activity-bar-button svg {
+    width: 2rem;
+    height: 2rem;
+    margin: 0 !important;
+    filter: grayscale(100%);
+    color: $text-primary-transparent;
+}
+
+.activity-bar-button:hover svg {
+    filter: none;
+    color: $text-primary;
+}
+
+[dir="rtl"] .activity-bar-button svg {
+    margin: 0 !important;
+    transform: none;
+}
+
+/* VS Code Layout: Find bar as floating overlay */
+.editor-wrapper.vscodeLayout .mw-native-find-bar-container {
+    position: absolute;
+    top: 0;
+    left: 50px;
+    right: 10px;
+    max-width: none;
+    width: auto;
+    z-index: 1000;
+    flex: none;
+    display: flex !important;
+}
+
+.editor-wrapper.vscodeLayout .sa-find-bar {
+    width: 100%;
+    max-width: none;
+}
+
+.editor-wrapper.vscodeLayout .sa-find-bar[hidden] {
+    display: none !important;
+}
+
 .tab-list {
     height: $stage-menu-height;
     width: 250px; /* Match width of the toolbox */

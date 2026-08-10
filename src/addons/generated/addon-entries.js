@@ -2,6 +2,7 @@
 export default {
   "calculator": () => import(/* webpackChunkName: "addon-entry-calculator" */ "../addons/calculator/_runtime_entry.js"),
   "cn-code": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/cn-code/_runtime_entry.js"),
+  "keymap-cheatsheet": () => import(/* webpackChunkName: "addon-entry-keymap-cheatsheet" */ "../addons/keymap-cheatsheet/_runtime_entry.js"),
   "cat-blocks": () => import(/* webpackChunkName: "addon-entry-cat-blocks" */ "../addons/cat-blocks/_runtime_entry.js"),
   "cat-blocks-extended": () => import(/* webpackChunkName: "addon-entry-cat-blocks-extended" */ "../addons/cat-blocks-extended/_runtime_entry.js"),
   "dev-inspector": () => import(/* webpackChunkName: "addon-entry-dev-inspector" */ "../addons/dev-inspector/_runtime_entry.js"),
@@ -9,6 +10,7 @@ export default {
   "editor-devtools": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/editor-devtools/_runtime_entry.js"),
   "find-bar": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/find-bar/_runtime_entry.js"),
   "middle-click-popup": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/middle-click-popup/_runtime_entry.js"),
+  "mini-map": () => import(/* webpackChunkName: "addon-entry-mini-map" */ "../addons/mini-map/_runtime_entry.js"),
   "jump-to-def": () => require("../addons/jump-to-def/_runtime_entry.js"),
   "reorder-custom-inputs": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/reorder-custom-inputs/_runtime_entry.js"),
   "editor-searchable-dropdowns": () => import(/* webpackChunkName: "addon-default-entry" */ "../addons/editor-searchable-dropdowns/_runtime_entry.js"),
