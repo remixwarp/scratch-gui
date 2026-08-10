@@ -10,7 +10,8 @@ import {
     Gauge,
     Play,
     Square,
-    Sparkles
+    Sparkles,
+    ZoomIn
 } from 'lucide-react';
 
 import styles from './status-bar.css';
@@ -22,9 +23,10 @@ const StatusBar = ({vm, theme}) => {
     const [isRunning, setIsRunning] = useState(false);
     const [mouseCoords, setMouseCoords] = useState({x: 0, y: 0});
     const [stageMouseCoords, setStageMouseCoords] = useState({x: 0, y: 0});
+    const [zoomLevel, setZoomLevel] = useState(100);
     const [aiStatus, setAiStatus] = useState('就绪');
 
-    // 积木数 + 当前角色名：300ms 轮询（与 BlockCounter 同步频率）
+    // 积木数 + 当前角色名 + 缩放比例：300ms 轮询
     useEffect(() => {
         const update = () => {
             const count = (typeof window.__blockCountValue === 'number') ? window.__blockCountValue : 0;
@@ -39,11 +41,36 @@ const StatusBar = ({vm, theme}) => {
                     // ignore
                 }
             }
+            // 工作区缩放比例
+            const Blockly = window.Blockly;
+            if (Blockly) {
+                const workspace = Blockly.getMainWorkspace && Blockly.getMainWorkspace();
+                if (workspace && workspace.scale) {
+                    setZoomLevel(Math.round(workspace.scale * 100));
+                }
+            }
         };
         update();
         const id = setInterval(update, 300);
         return () => clearInterval(id);
     }, [vm]);
+
+    // 点击重置缩放并居中工作区
+    const handleResetZoom = () => {
+        const Blockly = window.Blockly;
+        if (!Blockly) return;
+        const workspace = Blockly.getMainWorkspace && Blockly.getMainWorkspace();
+        if (!workspace) return;
+        try {
+            workspace.setScale(1);
+            if (workspace.scrollCenter) {
+                workspace.scrollCenter();
+            }
+            setZoomLevel(100);
+        } catch (e) {
+            // ignore
+        }
+    };
 
     // FPS：从全局 window.__currentFps 读取（与舞台上方 FPS 显示共用同一数据源）
     useEffect(() => {
@@ -156,6 +183,15 @@ const StatusBar = ({vm, theme}) => {
                 <Monitor size={13} className={styles.icon} />
                 <span className={styles.label}>x: {stageMouseCoords.x}</span>
                 <span className={styles.label}>y: {stageMouseCoords.y}</span>
+            </div>
+            <div className={styles.divider} />
+            <div
+                className={`${styles.segment} ${styles.clickable}`}
+                title="点击重置缩放到 100% 并居中"
+                onClick={handleResetZoom}
+            >
+                <ZoomIn size={13} className={styles.icon} />
+                <span className={styles.label}>{zoomLevel}%</span>
             </div>
             <div className={styles.divider} />
             <div className={styles.segment} title="项目积木总数">

@@ -40,6 +40,14 @@
     background-color: $ui-black-transparent;
 }
 
+.clickable {
+    cursor: pointer;
+}
+
+.clickable:active {
+    filter: brightness(0.85);
+}
+
 .icon {
     flex-shrink: 0;
     opacity: 0.85;
