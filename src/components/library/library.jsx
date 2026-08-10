@@ -303,6 +303,7 @@ class LibraryComponent extends React.Component {
                                             )}
                                             key={`tag-button-${id}`}
                                             onClick={this.handleTagClick}
+                                            onRetry={this.props.onRetryTag}
                                             {...tagProps}
                                         />
                                     ))}
@@ -419,6 +420,7 @@ LibraryComponent.propTypes = {
     tags: PropTypes.arrayOf(PropTypes.shape(TagButton.propTypes)),
     title: PropTypes.string.isRequired,
     visible: PropTypes.bool,
+    onRetryTag: PropTypes.func,
     removedTrademarks: PropTypes.bool
 };
 

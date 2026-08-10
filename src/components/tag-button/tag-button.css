@@ -24,22 +24,41 @@
 }
 
 .status-dot {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
     flex-shrink: 0;
 }
 
-.status-dot.online {
-    background-color: #4CAF50;
+.status-dot-svg {
+    display: block;
 }
 
-.status-dot.local {
-    background-color: #FFC107;
+.status-blink {
+    animation: statusBlink 1s ease-in-out infinite;
 }
 
-.status-dot.error {
-    background-color: #F44336;
+@keyframes statusBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+.refresh-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.refresh-button:hover {
+    opacity: 1;
+}
+
+.refresh-icon {
+    display: block;
+    fill: white;
 }
 
 .active {

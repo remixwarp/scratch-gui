@@ -57,6 +57,15 @@ const translateStaticItem = (item, locale) => {
 let cachedGallery = null;
 let cachedLoadStatus = null;
 
+// 存储各扩展库的刷新函数，供 tag-button 调用
+const retryFetchers = {};
+
+const fetchWithTimeout = (url, timeoutMs) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timeoutId));
+};
+
 const fetchLibrary = async () => {
     const emptyBanner = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAACXBIWXMAAAsTAAALEwEAmpwYAAADGWlDQ1BQaG90b3Nob3AgSUNDIHByb2ZpbGUAAHjaY2BgnuDo4uTKJMDAUFBUUuQe5BgZERmlwH6egY2BmYGBgYGBITG5uMAxIMCHgYGBIS8/L5UBA3y7xsDIwMDAcFnX0cXJlYE0wJpcUFTCwMBwgIGBwSgltTiZgYHhCwMDQ3p5SUEJAwNjDAMDg0hSdkEJAwNjAQMDg0h2SJAzAwNjCwMDE09JakUJAwMDg3N+QWVRZnpGiYKhpaWlgmNKflKqQnBlcUlqbrGCZ15yflFBflFiSWoKAwMD1A4GBgYGXpf8EgX3xMw8BUNTVQYqg4jIKAX08EGIIUByaVEZhMXIwMDAIMCgxeDHUMmwiuEBozRjFOM8xqdMhkwNTJeYNZgbme+y2LDMY2VmzWa9yubEtoldhX0mhwBHJycrZzMXM1cbNzf3RB4pnqW8xryH+IL5nvFXCwgJrBZ0E3wk1CisKHxYJF2UV3SrWJw4p/hWiRRJYcmjUhXSutJPZObIhsoJyp2V71HwUeRVvKA0RTlKRUnltepWtUZ1Pw1Zjbea+7QmaqfqWOsK6b7SO6I/36DGMMrI0ljS+LfJPdPDZivM+y0qLBOtfKwtbFRtRexY7L7aP3e47XjB6ZjzXpetruvdVrov9VjkudBrgfdCn8W+y/xW+a8P2Bq4N+hY8PmQW6HPwr5EMEUKRilFG8e4xUbF5cW3JMxO3Jx0Nvl5KlOaXLpNRlRmVdas7D059/KY8tULfAqLi2YXHy55WyZR7lJRWDmv6mz131q9uvj6SQ3HGn83G7Skt85ru94h2Ond1d59uJehz76/bsK+if8nO05pnXpiOu+M4JmzZj2aozW3ZN6+BVwLwxYtXvxxqcOyCcsfrjRe1br65lrddU3rb2402NSx+cFWq21Tt3/Y6btr1R6Oven7jh9QP9h56PURv6Obj4ufqD355LT3mS3nZM+3X/h0Ke7yqasW15bdEL3ZeuvrnfS7N+/7PDjwyPTx6qeKz2a+EHzZ9Zr5Td3bn+9LP3z6VPD53de8b+9+5P/88Lv4z7d/Vf//AwAqvx2K829RWwAAACBjSFJNAAB6JQAAgIMAAPn/AACA6QAAdTAAAOpgAAA6mAAAF2+SX8VGAAAAEUlEQVR42mL4zwAAAAD//wMAAgEBAJlUum0AAAAASUVORK5CYII=";
 
@@ -69,6 +78,8 @@ const fetchLibrary = async () => {
     let engineExtensions = [];
     let yesshapeExtensions = [];
     let bilupExtensions = [];
+
+    const loadStatus = {};
 
     try {
         const twRes = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
@@ -111,6 +122,7 @@ const fetchLibrary = async () => {
                 incompatibleWithScratch: true,
                 featured: true
             }));
+            loadStatus['tw'] = 'online';
         }
     } catch (error) {
         console.warn('Failed to load TurboWarp extensions:', error);
@@ -138,6 +150,7 @@ const fetchLibrary = async () => {
                     incompatibleWithScratch: true,
                     featured: extension.featured
                 }));
+            loadStatus['mistium'] = 'online';
         }
     } catch (error) {
         console.warn('Failed to load Mistium extensions:', error);
@@ -204,6 +217,7 @@ const fetchLibrary = async () => {
                     incompatibleWithScratch: true,
                     featured: true
                 }));
+            loadStatus['sharkpools'] = 'online';
         }
     } catch (error) {
         console.warn('Failed to load SharkPools extensions:', error);
@@ -248,6 +262,7 @@ const fetchLibrary = async () => {
                 incompatibleWithScratch: true,
                 featured: true
             }));
+            loadStatus['penguinmod'] = 'online';
     } catch (error) {
         console.warn('Failed to load PenguinMod extensions:', error);
     }
@@ -294,82 +309,48 @@ const fetchLibrary = async () => {
                 incompatibleWithScratch: extension.incompatibleWithScratch || true,
                 featured: extension.featured || true
             }));
+            loadStatus['remixwarp'] = 'online';
         }
     } catch (error) {
         console.warn('Failed to load RemixWarp extensions:', error);
     }
 
-    try {
-        const engineRes = await fetch('https://rw-extensions.pages.dev/02engine/02engine-extensions/extensions.json');
-        if (!engineRes.ok) {
-            console.warn(`02Engine extensions: HTTP status ${engineRes.status}`);
-        } else {
-            const engineData = await engineRes.json();
-            engineExtensions = engineData.extensions.map(extension => ({
-                name: extension.name,
-                nameTranslations: extension.nameTranslations || {},
-                description: extension.description,
-                descriptionTranslations: extension.descriptionTranslations || {},
-                extensionId: extension.id,
-                extensionURL: `https://rw-extensions.pages.dev/02engine/02engine-extensions/extension/${encodeURIComponent(extension.slug)}.js`,
-                iconURL: `https://rw-extensions.pages.dev/02engine/02engine-extensions/image/${encodeURIComponent(extension.image)}`,
-                tags: ['02engine'],
-                credits: (extension.by || []).map(credit => {
-                    if (credit.link) {
-                        return (
-                            <a
-                                href={credit.link}
-                                target="_blank"
-                                rel="noreferrer"
-                                key={credit.name}
-                            >
-                                {credit.name}
-                            </a>
-                        );
-                    }
-                    return credit.name;
-                }),
-                docsURI: extension.docs ? `https://rw-extensions.pages.dev/02engine/02engine-extensions/doc/${encodeURIComponent(extension.slug)}/index.html` : null,
-                samples: extension.samples ? extension.samples.map(sample => {
-                    const sampleUrl = `https://rw-extensions.pages.dev/02engine/02engine-extensions/samples/${encodeURIComponent(sample)}.sb3`;
-                    return {
-                        href: `${process.env.ROOT}editor?project_url=${sampleUrl}`,
-                        text: sample
-                    };
-                }) : null,
-                incompatibleWithScratch: true,
-                featured: true
-            }));
-        }
-    } catch (error) {
-        console.warn('Failed to load 02Engine extensions:', error);
-    }
-
-    const loadStatus = {};
-
     const fetchWithFallback = async (tag, officialUrl, localUrl, transformFn) => {
+        // 标记为加载中
+        loadStatus[tag] = 'loading';
+
+        // 先尝试官方源，5秒超时
         try {
-            const officialRes = await fetch(officialUrl);
+            const officialRes = await fetchWithTimeout(officialUrl, 5000);
             if (officialRes.ok) {
                 const data = await officialRes.json();
                 loadStatus[tag] = 'online';
                 return transformFn(data);
             }
-            console.warn(`${tag} extensions: HTTP status ${officialRes.status}, trying local...`);
+            console.warn(`${tag} extensions: HTTP status ${officialRes.status}, trying fallback...`);
         } catch (error) {
-            console.warn(`Failed to load ${tag} extensions from official:`, error);
+            if (error.name === 'AbortError') {
+                console.warn(`${tag} extensions: official source timed out (5s), trying fallback...`);
+            } else {
+                console.warn(`Failed to load ${tag} extensions from official:`, error);
+            }
         }
 
+        // 官方源失败，尝试备用源，15秒超时
         try {
-            const localRes = await fetch(localUrl);
+            const localRes = await fetchWithTimeout(localUrl, 15000);
             if (localRes.ok) {
                 const data = await localRes.json();
                 loadStatus[tag] = 'local';
                 return transformFn(data);
             }
-            console.warn(`${tag} extensions: HTTP status ${localRes.status} from local`);
+            console.warn(`${tag} extensions: HTTP status ${localRes.status} from fallback`);
         } catch (error) {
-            console.warn(`Failed to load ${tag} extensions from local:`, error);
+            if (error.name === 'AbortError') {
+                console.warn(`${tag} extensions: fallback source timed out (15s)`);
+            } else {
+                console.warn(`Failed to load ${tag} extensions from fallback:`, error);
+            }
         }
 
         loadStatus[tag] = 'error';
@@ -499,7 +480,225 @@ const fetchLibrary = async () => {
         }))
     );
 
+    engineExtensions = await fetchWithFallback(
+        '02engine',
+        'https://raw.githubusercontent.com/DDguan2010/extensions/main/generated-metadata/extensions-v0.json',
+        'https://rw-extensions.pages.dev/02engine/02engine-extensions/extensions.json',
+        data => data.extensions.map(extension => ({
+            name: extension.name,
+            nameTranslations: extension.nameTranslations || {},
+            description: extension.description,
+            descriptionTranslations: extension.descriptionTranslations || {},
+            extensionId: extension.id,
+            extensionURL: `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.slug}.js`,
+            iconURL: extension.image
+                ? `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.image}`
+                : `https://rw-extensions.pages.dev/02engine/02engine-extensions/image/${encodeURIComponent(extension.image || '')}`,
+            tags: ['02engine'],
+            credits: (extension.by || []).map(credit => {
+                if (credit.link) {
+                    return (
+                        <a
+                            href={credit.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            key={credit.name}
+                        >
+                            {credit.name}
+                        </a>
+                    );
+                }
+                return credit.name;
+            }),
+            docsURI: extension.docs
+                ? `https://raw.githubusercontent.com/DDguan2010/extensions/main/doc/${encodeURIComponent(extension.slug)}/index.html`
+                : null,
+            samples: extension.samples ? extension.samples.map(sample => {
+                const sampleUrl = `https://rw-extensions.pages.dev/02engine/02engine-extensions/samples/${encodeURIComponent(sample)}.sb3`;
+                return {
+                    href: `${process.env.ROOT}editor?project_url=${sampleUrl}`,
+                    text: sample
+                };
+            }) : null,
+            incompatibleWithScratch: true,
+            featured: true
+        }))
+    );
+
     cachedLoadStatus = loadStatus;
+
+    // 注册各扩展库的刷新函数
+    retryFetchers['bilup'] = async () => {
+        const result = await fetchWithFallback(
+            'bilup',
+            'https://extensions.bilup.org/generated-metadata/extensions-v0.json',
+            'https://rw-extensions.pages.dev/bilup/extensions-index.json',
+            data => data.extensions.map(extension => ({
+                name: extension.name,
+                nameTranslations: extension.nameTranslations || {},
+                description: extension.description,
+                descriptionTranslations: extension.descriptionTranslations || {},
+                extensionId: extension.id,
+                extensionURL: `https://extensions.bilup.org/${extension.slug}.js`,
+                iconURL: `https://extensions.bilup.org/${extension.image || 'images/unknown.svg'}`,
+                tags: ['bilup'],
+                credits: [
+                    ...(extension.by || []),
+                    ...(extension.original || [])
+                ].map(credit => {
+                    if (credit.link) {
+                        return React.createElement('a', { href: credit.link, target: '_blank', rel: 'noreferrer', key: credit.name }, credit.name);
+                    }
+                    return credit.name;
+                }),
+                docsURI: extension.docs ? `https://extensions.bilup.org/${extension.slug}` : null,
+                samples: extension.samples ? extension.samples.map(sample => ({
+                    href: `${process.env.ROOT}editor?project_url=https://extensions.bilup.org/samples/${encodeURIComponent(sample)}.sb3`,
+                    text: sample
+                })) : null,
+                incompatibleWithScratch: true,
+                featured: true
+            }))
+        );
+        if (cachedGallery) {
+            cachedGallery.extensions = dedupeFetchedExtensions([
+                ...cachedGallery.extensions.filter(e => !(e.tags || []).includes('bilup')),
+                ...result
+            ]);
+        }
+        cachedLoadStatus = { ...cachedLoadStatus, bilup: loadStatus['bilup'] };
+        return cachedLoadStatus;
+    };
+
+    retryFetchers['ow'] = async () => {
+        const result = await fetchWithFallback(
+            'ow',
+            'https://openwarp-extensions.pages.dev/generated-metadata/extensions-v0.json',
+            'https://rw-extensions.pages.dev/yesshape/extensions-index.json',
+            data => data.extensions.map(extension => ({
+                name: extension.name,
+                nameTranslations: extension.nameTranslations || {},
+                description: extension.description,
+                descriptionTranslations: extension.descriptionTranslations || {},
+                extensionId: extension.id,
+                extensionURL: `https://openwarp-extensions.pages.dev/${extension.slug}.js`,
+                iconURL: `https://openwarp-extensions.pages.dev/${extension.image || 'images/unknown.svg'}`,
+                tags: ['ow'],
+                credits: [
+                    ...(extension.by || []),
+                    ...(extension.original || [])
+                ].map(credit => {
+                    if (credit.link) {
+                        return React.createElement('a', { href: credit.link, target: '_blank', rel: 'noreferrer', key: credit.name }, credit.name);
+                    }
+                    return credit.name;
+                }),
+                docsURI: extension.docs ? `https://openwarp-extensions.pages.dev/${extension.slug}` : null,
+                samples: extension.samples ? extension.samples.map(sample => ({
+                    href: `${process.env.ROOT}editor?project_url=https://openwarp-extensions.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
+                    text: sample
+                })) : null,
+                incompatibleWithScratch: true,
+                featured: true
+            }))
+        );
+        if (cachedGallery) {
+            cachedGallery.extensions = dedupeFetchedExtensions([
+                ...cachedGallery.extensions.filter(e => !(e.tags || []).includes('ow')),
+                ...result
+            ]);
+        }
+        cachedLoadStatus = { ...cachedLoadStatus, ow: loadStatus['ow'] };
+        return cachedLoadStatus;
+    };
+
+    retryFetchers['ae'] = async () => {
+        const result = await fetchWithFallback(
+            'ae',
+            'https://editors.astras.top/extensions/generated-metadata/extensions-v0.json',
+            'https://rw-extensions.pages.dev/astraeditor/extensions-index.json',
+            data => data.extensions.map(extension => ({
+                name: extension.name,
+                nameTranslations: extension.nameTranslations || {},
+                description: extension.description,
+                descriptionTranslations: extension.descriptionTranslations || {},
+                extensionId: extension.id,
+                extensionURL: `https://editors.astras.top/extensions/${extension.slug}.js`,
+                iconURL: `https://editors.astras.top/extensions/${extension.image || 'images/unknown.svg'}`,
+                tags: ['ae'],
+                credits: [
+                    ...(extension.by || []),
+                    ...(extension.original || [])
+                ].map(credit => {
+                    if (credit.link) {
+                        return React.createElement('a', { href: credit.link, target: '_blank', rel: 'noreferrer', key: credit.name }, credit.name);
+                    }
+                    return credit.name;
+                }),
+                docsURI: extension.docs ? `https://editors.astras.top/extensions/${extension.slug}` : null,
+                samples: extension.samples ? extension.samples.map(sample => ({
+                    href: `${process.env.ROOT}editor?project_url=https://editors.astras.top/extensions/samples/${encodeURIComponent(sample)}.sb3`,
+                    text: sample
+                })) : null,
+                incompatibleWithScratch: true,
+                featured: true
+            }))
+        );
+        if (cachedGallery) {
+            cachedGallery.extensions = dedupeFetchedExtensions([
+                ...cachedGallery.extensions.filter(e => !(e.tags || []).includes('ae')),
+                ...result
+            ]);
+        }
+        cachedLoadStatus = { ...cachedLoadStatus, ae: loadStatus['ae'] };
+        return cachedLoadStatus;
+    };
+
+    retryFetchers['02engine'] = async () => {
+        const result = await fetchWithFallback(
+            '02engine',
+            'https://raw.githubusercontent.com/DDguan2010/extensions/main/generated-metadata/extensions-v0.json',
+            'https://rw-extensions.pages.dev/02engine/02engine-extensions/extensions.json',
+            data => data.extensions.map(extension => ({
+                name: extension.name,
+                nameTranslations: extension.nameTranslations || {},
+                description: extension.description,
+                descriptionTranslations: extension.descriptionTranslations || {},
+                extensionId: extension.id,
+                extensionURL: `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.slug}.js`,
+                iconURL: extension.image
+                    ? `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.image}`
+                    : `https://rw-extensions.pages.dev/02engine/02engine-extensions/image/${encodeURIComponent(extension.image || '')}`,
+                tags: ['02engine'],
+                credits: (extension.by || []).map(credit => {
+                    if (credit.link) {
+                        return React.createElement('a', { href: credit.link, target: '_blank', rel: 'noreferrer', key: credit.name }, credit.name);
+                    }
+                    return credit.name;
+                }),
+                docsURI: extension.docs
+                    ? `https://raw.githubusercontent.com/DDguan2010/extensions/main/doc/${encodeURIComponent(extension.slug)}/index.html`
+                    : null,
+                samples: extension.samples ? extension.samples.map(sample => {
+                    const sampleUrl = `https://rw-extensions.pages.dev/02engine/02engine-extensions/samples/${encodeURIComponent(sample)}.sb3`;
+                    return {
+                        href: `${process.env.ROOT}editor?project_url=${sampleUrl}`,
+                        text: sample
+                    };
+                }) : null,
+                incompatibleWithScratch: true,
+                featured: true
+            }))
+        );
+        if (cachedGallery) {
+            cachedGallery.extensions = dedupeFetchedExtensions([
+                ...cachedGallery.extensions.filter(e => !(e.tags || []).includes('02engine')),
+                ...result
+            ]);
+        }
+        cachedLoadStatus = { ...cachedLoadStatus, '02engine': loadStatus['02engine'] };
+        return cachedLoadStatus;
+    };
 
     return {
         extensions: dedupeFetchedExtensions([
@@ -560,7 +759,8 @@ class ExtensionLibrary extends React.PureComponent {
     constructor(props) {
         super(props);
         bindAll(this, [
-            'handleItemSelect'
+            'handleItemSelect',
+            'handleRetryTag'
         ]);
         this.state = {
             gallery: cachedGallery ? cachedGallery.extensions : null,
@@ -606,6 +806,31 @@ class ExtensionLibrary extends React.PureComponent {
     }
     componentWillUnmount() {
         this._mounted = false;
+    }
+    handleRetryTag(tag) {
+        const fetcher = retryFetchers[tag];
+        if (!fetcher || !this._mounted) return;
+
+        // 先设置为加载中状态（黄点闪烁）
+        this.setState(prevState => ({
+            loadStatus: { ...prevState.loadStatus, [tag]: 'loading' }
+        }));
+
+        fetcher().then(newLoadStatus => {
+            if (this._mounted && cachedGallery) {
+                this.setState({
+                    gallery: cachedGallery.extensions,
+                    loadStatus: newLoadStatus
+                });
+            }
+        }).catch(error => {
+            log.error(`Failed to retry ${tag} extensions:`, error);
+            if (this._mounted) {
+                this.setState(prevState => ({
+                    loadStatus: { ...prevState.loadStatus, [tag]: 'error' }
+                }));
+            }
+        });
     }
     handleItemSelect(item) {
         if (item.href) {
@@ -694,6 +919,7 @@ class ExtensionLibrary extends React.PureComponent {
                 title={this.props.intl.formatMessage(messages.extensionTitle)}
                 visible={this.props.visible}
                 onItemSelected={this.handleItemSelect}
+                onRetryTag={this.handleRetryTag}
                 onRequestClose={this.props.onRequestClose}
             />
         );
