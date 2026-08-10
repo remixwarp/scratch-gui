@@ -427,6 +427,9 @@ export default async function ({ addon, msg }) {
         const blockType = preview.block;
         if (!blockType) return;
 
+        // 获取积木的 type ID
+        const blockTypeId = blockType.typeInfo ? blockType.typeInfo.id : blockType.type;
+
         const workspace = Blockly.getMainWorkspace();
         if (!workspace) return;
 
@@ -468,7 +471,7 @@ export default async function ({ addon, msg }) {
                 if (newBlock) {
                     state.lineBlocks.set(lastIdx, newBlock);
                     state.lineLastText.set(lastIdx, trimmed);
-                    state.linePinnedIndex.set(lastIdx, index);
+                    state.linePinnedIndex.set(lastIdx, blockTypeId);
 
                     // 重建链
                     const commentPos = getCommentWSPos(workspace, comment.id);
@@ -727,17 +730,16 @@ export default async function ({ addon, msg }) {
                 continue;
             }
 
-            // 找积木：优先使用用户手动选中的序号
+            // 找积木：优先使用用户手动选中的 type ID
             const blockList = result.blockList;
             let match = null;
-            const pinnedIdx = state.linePinnedIndex.get(i);
-            if (pinnedIdx && pinnedIdx >= 1) {
-                let counter = 0;
+            const pinnedTypeId = state.linePinnedIndex.get(i);
+            if (pinnedTypeId) {
                 for (const item of blockList) {
                     if (item.isHeader || item.isSprite || item.isCostume || item.isCustomBlock) continue;
                     if (!item.block) continue;
-                    counter++;
-                    if (counter === pinnedIdx) { match = item.block; break; }
+                    const id = item.block.typeInfo ? item.block.typeInfo.id : item.block.type;
+                    if (id === pinnedTypeId) { match = item.block; break; }
                 }
             }
             if (!match) {
@@ -758,7 +760,8 @@ export default async function ({ addon, msg }) {
             }
 
             // 类型没变
-            if (existingBlock && existingBlock.type === match.type) {
+            const matchTypeId = match.typeInfo ? match.typeInfo.id : match.type;
+            if (existingBlock && existingBlock.type === matchTypeId) {
                 state.lineLastText.set(i, trimmed);
                 continue;
             }
