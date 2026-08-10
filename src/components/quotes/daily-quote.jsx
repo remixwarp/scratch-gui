@@ -1,9 +1,8 @@
-import React, {useEffect, useState, useRef, useCallback, useMemo} from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import PropTypes from 'prop-types';
 
 import styles from './daily-quote.css';
 import SettingsStore from '../../addons/settings-store-singleton';
-import {AESettings} from '../../lib/settings.js';
 
 const LOCAL_KEY_INTERVAL = 'dailyQuoteInterval';
 const LOCAL_KEY_QUOTES = 'dailyQuoteCustomQuotes';
@@ -460,17 +459,6 @@ const DailyQuote = ({alertsList}) => {
 
     const [position, setPosition] = useState(loadPosition);
 
-    // 触摸拖动开关：与自由窗口一致，读取 EnableMobileTouchDrag（移动端模式开启时与 EnableMobileLayout 同时为 true）
-    // 两个设置任一开启即允许触摸拖动（双常开），切换设置会 location.reload()，挂载时读取一次即可
-    const touchEnabled = useMemo(() => {
-        try {
-            return AESettings.get('EnableMobileTouchDrag') === true ||
-                AESettings.get('EnableMobileLayout') === true;
-        } catch (e) {
-            return false;
-        }
-    }, []);
-
     const containerRef = useRef(null);
 
     // 判断点击/触摸目标是否可拖动（按钮、链接、输入框等交互元素不触发拖动）
@@ -542,7 +530,7 @@ const DailyQuote = ({alertsList}) => {
     // 触摸拖动（参考自由窗口 AddonWindow 的实现：原生事件 + {passive:false}）
     useEffect(() => {
         const el = containerRef.current;
-        if (!el || !touchEnabled) return;
+        if (!el) return;
 
         // touchstart：与自由窗口一致使用 {passive:false}，以便 preventDefault 阻止滚动/默认手势
         const onTouchStart = (e) => {
@@ -591,7 +579,7 @@ const DailyQuote = ({alertsList}) => {
             document.removeEventListener('touchend', onTouchEnd);
             document.removeEventListener('touchcancel', onTouchEnd);
         };
-    }, [touchEnabled, position]);
+    }, [position]);
 
     useEffect(() => {
         window.addEventListener('mousemove', handleMouseMove);
