@@ -95,6 +95,37 @@ export default async function ({addon, msg}) {
     });
     document.addEventListener('mousedown', e => {
         mousePosition = {x: e.clientX, y: e.clientY};
+        
+        // Open on middle-click or shift+left-click on code area
+        // We check if the click target is in the code area (not in a menu, input, etc.)
+        const target = e.target;
+        if (!target) return;
+        
+        // Check if target is an input field or UI element that shouldn't trigger the popup
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+            return;
+        }
+        
+        // Check for middle mouse button (button === 1) or shift+left click (button === 0 && shiftKey)
+        if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+            // Check if we're clicking in the code area (workspace, SVG, or related elements)
+            const isInCodeArea = 
+                target.closest('.workspace-svg') || 
+                target.closest('.blocklySvg') || 
+                target.closest('.blocklyWorkspace') ||
+                target.tagName === 'svg' ||
+                target.tagName === 'rect' ||
+                target.tagName === 'g' ||
+                target.classList.contains('blocklyDraggable') ||
+                target.classList.contains('blocklyFlyout');
+                
+            if (isInCodeArea) {
+                console.log('Middle-click popup: Middle-click or Shift+Left-click detected in code area');
+                e.preventDefault();
+                e.stopPropagation();
+                openPopup(false); // Non-centered mode, opens at cursor position
+            }
+        }
     }, {capture: true});
 
     onClearTextWidthCache(closePopup);
@@ -141,11 +172,18 @@ export default async function ({addon, msg}) {
     let previewMaxHeight = 0;
 
     function openPopup (centered = false) {
-        if (addon.self.disabled) return;
+        console.log('Middle-click popup: openPopup called, centered:', centered);
+        
+        if (addon.self.disabled) {
+            console.log('Middle-click popup: Addon is disabled');
+            return;
+        }
 
         // Don't show the menu if we're not in the code editor
-        if (addon.tab.editorMode !== 'editor') return;
-        if (addon.tab.redux.state.scratchGui.editorTab.activeTabIndex !== 0) return;
+        if (addon.tab.editorMode !== 'editor' && addon.tab.editorMode !== 'project') {
+            console.warn('Middle-click popup: Not in editor mode, current mode:', addon.tab.editorMode);
+            return;
+        }
 
         const workspace = Blockly.getMainWorkspace();
         if (!workspace) {
@@ -714,16 +752,32 @@ export default async function ({addon, msg}) {
 
     // Open on ctrl + space (centered mode)
     document.addEventListener('keydown', e => {
+        // Ignore if user is typing in an input field (except our own popup)
+        const target = e.target;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') && !target.classList.contains('sa-mcp-input')) {
+            return;
+        }
+
         if (e.key === ' ' && (e.ctrlKey || e.metaKey)) {
-            openPopup(true);
+            console.log('Middle-click popup: Ctrl+Space detected');
+            // Always prevent default and stop propagation for the shortcut
             e.preventDefault();
             e.stopPropagation();
+            openPopup(true);
         }
         // Open on shift + ctrl/cmd + p (centered mode, like VSCode command palette)
         if (e.key === 'p' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
-            openPopup(true);
+            console.log('Middle-click popup: Ctrl+Shift+P detected');
             e.preventDefault();
             e.stopPropagation();
+            openPopup(true);
         }
-    });
+        // Open on shift + alt + b (centered mode, more standard combo)
+        if (e.key === 'b' && e.shiftKey && e.altKey) {
+            console.log('Middle-click popup: Shift+Alt+B detected');
+            e.preventDefault();
+            e.stopPropagation();
+            openPopup(true);
+        }
+    }, true); // Add capture: true to ensure we get the event before others
 }
