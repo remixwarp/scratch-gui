@@ -1,6 +1,6 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {FormattedMessage} from 'react-intl';
 
 import Button from '../button/button.jsx';
@@ -23,6 +23,37 @@ const StatusDot = ({ color }) => (
         />
     </svg>
 );
+
+// 闪烁圆点组件 - 用 JS 定时器驱动，避免 CSS Modules 对 @keyframes 的兼容问题
+const BlinkingDot = ({ color }) => {
+    const [visible, setVisible] = useState(true);
+    const mountedRef = useRef(true);
+
+    useEffect(() => {
+        mountedRef.current = true;
+        const interval = setInterval(() => {
+            if (mountedRef.current) {
+                setVisible(v => !v);
+            }
+        }, 500);
+        return () => {
+            mountedRef.current = false;
+            clearInterval(interval);
+        };
+    }, []);
+
+    return (
+        <span
+            style={{
+                opacity: visible ? 1 : 0.15,
+                transition: 'opacity 0.45s ease-in-out',
+                display: 'inline-flex'
+            }}
+        >
+            <StatusDot color={color} />
+        </span>
+    );
+};
 
 // 刷新图标 SVG
 const RefreshIcon = () => (
@@ -93,10 +124,12 @@ const TagButtonComponent = ({
                 )}
             </span>
             {loadStatus && (
-                <span className={classNames(styles.statusDot, {
-                    [styles.statusBlink]: loadStatus === 'loading'
-                })}>
-                    <StatusDot color={STATUS_COLORS[loadStatus] || '#888'} />
+                <span className={styles.statusDot}>
+                    {loadStatus === 'loading' ? (
+                        <BlinkingDot color={STATUS_COLORS[loadStatus]} />
+                    ) : (
+                        <StatusDot color={STATUS_COLORS[loadStatus] || '#888'} />
+                    )}
                 </span>
             )}
         </Button>

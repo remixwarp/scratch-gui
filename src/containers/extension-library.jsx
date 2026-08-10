@@ -773,6 +773,13 @@ class ExtensionLibrary extends React.PureComponent {
     componentDidMount() {
         this._mounted = true;
         if (!this.state.gallery) {
+            // 初始化所有标签为加载中状态（黄点闪烁）
+            const initialLoadStatus = {};
+            extensionTags.forEach(tag => {
+                initialLoadStatus[tag.tag] = 'loading';
+            });
+            this.setState({ loadStatus: initialLoadStatus });
+
             const timeout = setTimeout(() => {
                 if (this._mounted) {
                     this.setState({
