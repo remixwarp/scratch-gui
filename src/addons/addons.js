@@ -86,7 +86,6 @@ const addons = [
     'no-category-text',
     'green-flag-order',
     'remove-extension-button',
-    'workspace-tabs',
     'stage-camera',
     'sprite-folders',
     'tab-styles',

@@ -95,7 +95,6 @@ import _stage_camera from "../addons/stage-camera/_manifest_entry.js";
 import _sprite_folders from "../addons/sprite-folders/_manifest_entry.js";
 import _tab_styles from "../addons/tab-styles/_manifest_entry.js";
 import _window_theme from "../addons/window-theme/_manifest_entry.js";
-import _workspace_tabs from "../addons/workspace-tabs/_manifest_entry.js";
 import _coder_style from "../addons/coder-style/_manifest_entry.js";
 import _comment_vscode_sync from "../addons/comment-vscode-sync/_manifest_entry.js";
 import _Terminal from "../addons/Terminal/_manifest_entry.js";
@@ -213,7 +212,6 @@ export default {
   "sprite-folders": _sprite_folders,
   "tab-styles": _tab_styles,
   "window-theme": _window_theme,
-  "workspace-tabs": _workspace_tabs,
   "coder-style": _coder_style,
   "comment-vscode-sync": _comment_vscode_sync,
   "Terminal": _Terminal,

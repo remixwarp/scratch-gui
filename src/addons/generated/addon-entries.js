@@ -96,7 +96,6 @@ export default {
   "sprite-folders": () => import(/* webpackChunkName: "addon-entry-sprite-folders" */ "../addons/sprite-folders/_runtime_entry.js"),
   "tab-styles": () => import(/* webpackChunkName: "addon-entry-tab-styles" */ "../addons/tab-styles/_runtime_entry.js"),
   "window-theme": () => import(/* webpackChunkName: "addon-entry-window-theme" */ "../addons/window-theme/_runtime_entry.js"),
-  "workspace-tabs": () => import(/* webpackChunkName: "addon-entry-workspace-tabs" */ "../addons/workspace-tabs/_runtime_entry.js"),
   "coder-style": () => import(/* webpackChunkName: "addon-entry-coder-style" */ "../addons/coder-style/_runtime_entry.js"),
   "comment-vscode-sync": () => import(/* webpackChunkName: "addon-entry-comment-vscode-sync" */ "../addons/comment-vscode-sync/_runtime_entry.js"),
   "Terminal": () => import(/* webpackChunkName: "addon-entry-Terminal" */ "../addons/Terminal/_runtime_entry.js"),

@@ -117,6 +117,19 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
         setActiveIndex(index);
     };
 
+    // ========== 标签下拉菜单（点倒三角才展开） ==========
+    const [dropdownOpenTab, setDropdownOpenTab] = useState(null);
+    useEffect(() => {
+        if (dropdownOpenTab === null) return undefined;
+        const handler = (e) => {
+            if (!e.target.closest || !e.target.closest('[data-mw-tab-dropdown]')) {
+                setDropdownOpenTab(null);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [dropdownOpenTab]);
+
     // ========== 点击标签：切换到拆分模式时该工作区位置 ==========
     const setWorkspaceTarget = (index, targetId) => {
         setWorkspaces(prev => prev.map((w, i) => i === index ? {...w, id: targetId} : w));
@@ -201,34 +214,74 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
         const runtime = vm && vm.runtime;
         const targets = runtime ? runtime.targets : [];
         const name = targetNames[w.id] || (w.id ? '未选择' : '未设置');
+        const isOpen = dropdownOpenTab === i;
 
         return (
-            <button
+            <div
                 key={i}
                 className={classNames(styles.tab, {[styles.activeTab]: i === activeIndex})}
-                onClick={() => selectWorkspace(i)}
-                title={name}
             >
-                <select
-                    className={styles.tabSelect}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                        e.stopPropagation();
-                        setWorkspaceTarget(i, e.target.value);
-                        setActiveIndex(i);
-                    }}
-                    value={w.id || ''}
+                <button
+                    type="button"
+                    className={styles.tabMain}
+                    onClick={() => selectWorkspace(i)}
+                    title={name}
                 >
-                    {targets && targets.map(t => (
-                        <option key={t.id} value={t.id}>
-                            {(t.isStage ? '舞台 ' : '角色 ') + (targetNames[t.id] || t.id)}
-                        </option>
-                    ))}
-                </select>
+                    {name}
+                </button>
+                <button
+                    type="button"
+                    className={classNames(styles.tabCaret, {[styles.tabCaretOpen]: isOpen})}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setDropdownOpenTab(isOpen ? null : i);
+                    }}
+                    title={'选择角色/背景'}
+                    aria-haspopup="menu"
+                    aria-expanded={isOpen}
+                >
+                    <svg width="10" height="6" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 0 L5 6 L10 0 Z" fill="currentColor" />
+                    </svg>
+                </button>
                 {workspaces.length > 1 ? (
-                    <span className={styles.close} onClick={(e) => { e.stopPropagation(); removeWorkspace(i); }}>×</span>
+                    <span
+                        className={styles.close}
+                        onClick={(e) => { e.stopPropagation(); removeWorkspace(i); }}
+                        title={'关闭该工作区'}
+                    >×</span>
                 ) : null}
-            </button>
+                {isOpen ? (
+                    <ul
+                        className={styles.tabMenu}
+                        data-mw-tab-dropdown
+                        onClick={(e) => e.stopPropagation()}
+                        role="menu"
+                    >
+                        {targets && targets.map(t => (
+                            <li
+                                key={t.id}
+                                role="menuitem"
+                                className={classNames(styles.tabMenuItem, {
+                                    [styles.tabMenuItemSelected]: t.id === w.id
+                                })}
+                                onClick={() => {
+                                    setWorkspaceTarget(i, t.id);
+                                    setActiveIndex(i);
+                                    setDropdownOpenTab(null);
+                                }}
+                            >
+                                <span className={styles.tabMenuItemIcon}>
+                                    {t.isStage ? '舞台' : '角色'}
+                                </span>
+                                <span className={styles.tabMenuItemLabel}>
+                                    {targetNames[t.id] || t.id}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : null}
+            </div>
         );
     };
 
