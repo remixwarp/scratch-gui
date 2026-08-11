@@ -35,12 +35,16 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
     const [targetNames, setTargetNames] = useState({});
 
     // ========== 切换 activeIndex → vm.setEditingTarget ==========
+    // 仅在非拆分模式下同步全局编辑目标；
+    // 拆分模式下由两侧各自的 onMouseDownCapture 控制当前编辑目标，
+    // 避免这里的 effect 把编辑目标覆盖回 workspaces[0]，导致两侧同步。
     useEffect(() => {
+        if (splitMode) return;
         const id = workspaces[activeIndex] && workspaces[activeIndex].id;
         if (id && vm && typeof vm.setEditingTarget === 'function') {
             vm.setEditingTarget(id);
         }
-    }, [activeIndex, workspaces, vm]);
+    }, [activeIndex, workspaces, vm, splitMode]);
 
     // ========== 更新角色名 ==========
     useEffect(() => {
@@ -140,7 +144,20 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
     // ========== 渲染 Blocks 组件 ==========
     const renderBlocks = (index) => {
         const w = workspaces[index];
-        return (
+        // 拆分模式下：点击某一侧工作区时，把全局编辑目标切换到该侧锁定的角色，
+        // 这样在该侧添加/编辑积木会作用到正确的角色，而不会影响另一侧显示。
+        const handlePanelFocus = () => {
+            if (splitMode && w && w.id && vm && typeof vm.setEditingTarget === 'function') {
+                const current = vm.editingTarget && vm.editingTarget.id;
+                if (current !== w.id) {
+                    vm.setEditingTarget(w.id);
+                }
+            }
+        };
+        // 仅在拆分模式下给 Blocks 传 workspaceTargetId，让每侧独立显示各自角色的积木；
+        // 非拆分模式不传，走 Blocks 原始逻辑，避免回归。
+        const lockedId = splitMode ? (w ? w.id : undefined) : undefined;
+        const blocksElement = (
             <Blocks
                 key={`multi-blocks-${index}-${w ? w.id : 'null'}`}
                 canUseCloud={canUseCloud}
@@ -152,9 +169,22 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                 theme={theme}
                 vm={vm}
                 workspaceIndex={index}
-                workspaceTargetId={w ? w.id : undefined}
+                workspaceTargetId={lockedId}
             />
         );
+        // 拆分模式需要外层 div 处理点击聚焦 + flex 布局；
+        // 非拆分模式不需要包裹，避免破坏原有布局导致积木区不显示。
+        if (splitMode) {
+            return (
+                <div
+                    className={styles.blocksPanelInner}
+                    onMouseDownCapture={handlePanelFocus}
+                >
+                    {blocksElement}
+                </div>
+            );
+        }
+        return blocksElement;
     };
 
     // ========== 辅助：计算能否再添加工作区 ==========
@@ -191,7 +221,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                 >
                     {targets && targets.map(t => (
                         <option key={t.id} value={t.id}>
-                            {(t.isStage ? '🎬 ' : '🧍 ') + (targetNames[t.id] || t.id)}
+                            {(t.isStage ? '舞台 ' : '角色 ') + (targetNames[t.id] || t.id)}
                         </option>
                     ))}
                 </select>
@@ -253,7 +283,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                         onClick={enableSplitMode}
                         title={'向右拆分编辑器（并排显示两个工作区）'}
                     >
-                        ⊢ 拆分
+                        <svg t="1786431037339" className="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6043" width="18" height="18"><path d="M414.418824 124.235294c22.829176 0 41.592471 17.408 43.730823 39.695059l0.210824 4.216471V835.764706c0 22.829176-17.438118 41.592471-39.695059 43.730823l-4.216471 0.180706H168.448a43.941647 43.941647 0 0 1-43.730824-39.695059l-0.210823-4.21647V677.647059a26.352941 26.352941 0 0 1 52.495059-3.312941l0.210823 3.312941v149.323294h228.382118V176.941176H177.242353v149.323295a26.352941 26.352941 0 0 1-23.04 26.172235l-3.312941 0.180706a26.352941 26.352941 0 0 1-26.142118-23.04l-0.210823-3.312941v-158.117647c0-22.829176 17.438118-41.562353 39.695058-43.700706l4.216471-0.210824h245.970824zM836.065882 124.235294c22.829176 0 41.592471 17.408 43.730824 39.695059l0.210823 4.216471v158.117647a26.352941 26.352941 0 0 1-52.525176 3.312941l-0.180706-3.312941-0.030118-149.323295h-228.382117v650.029177h228.382117V677.647059c0-13.432471 10.059294-24.515765 23.070118-26.142118l3.312941-0.210823c13.432471 0 24.515765 10.059294 26.142118 23.04l0.210823 3.312941v158.117647c0 22.829176-17.438118 41.592471-39.695058 43.730823l-4.216471 0.180706h-245.970824a43.911529 43.911529 0 0 1-43.730823-39.695059l-0.210824-4.21647V168.146824c0-22.829176 17.438118-41.562353 39.695059-43.700706l4.216471-0.210824h245.970823z" fill="#bfbfbf" p-id="6044"></path><path d="M572.566588 475.617882l281.088 0.210824a26.352941 26.352941 0 0 1 3.282824 52.525176l-3.312941 0.180706-281.088-0.210823a26.352941 26.352941 0 0 1-3.282824-52.525177l3.312941-0.180706zM431.977412 475.617882a26.352941 26.352941 0 0 1 3.343059 52.495059l-3.312942 0.210824-281.088 0.210823a26.352941 26.352941 0 0 1-3.343058-52.495059l3.312941-0.210823 281.088-0.210824z" fill="#bfbfbf" p-id="6045"></path><path d="M751.134118 399.570824a26.352941 26.352941 0 0 1 34.605176-2.379295l2.710588 2.379295 83.84753 83.847529c9.426824 9.426824 10.209882 24.244706 2.349176 34.575059l-2.349176 2.710588-83.877647 83.817412a26.352941 26.352941 0 0 1-39.604706-34.544941l2.349176-2.710589 65.204706-65.234823-65.204706-65.204706a26.352941 26.352941 0 0 1-2.349176-34.575059l2.349176-2.710588zM215.823059 399.691294A26.352941 26.352941 0 0 1 255.397647 434.296471l-2.349176 2.710588-65.234824 65.204706 65.234824 65.234823c9.426824 9.426824 10.24 24.244706 2.349176 34.575059l-2.349176 2.710588a26.352941 26.352941 0 0 1-34.575059 2.349177l-2.710588-2.379294-83.84753-83.84753a26.352941 26.352941 0 0 1-2.349176-34.575059l2.349176-2.710588 83.877647-83.847529z" fill="#bfbfbf" p-id="6046"></path></svg>
                     </button>
                 )}
             </div>

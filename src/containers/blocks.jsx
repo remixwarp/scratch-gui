@@ -499,6 +499,15 @@ class Blocks extends React.Component {
         );
     }
     componentDidUpdate (prevProps) {
+        // 拆分模式：若本工作区锁定到一个角色/背景，但当前显示的目标还不是它
+        // （例如锁定目标不是全局编辑目标，尚未加载过），则加载其自身积木 XML，
+        // 保证两列分别显示各自角色，互不影响。
+        if (this.props.workspaceTargetId && this.props.isVisible && this.workspace) {
+            if (this._loadedTargetId !== this.props.workspaceTargetId) {
+                this.loadLockedTargetWorkspace();
+            }
+        }
+
         // Update block colors when theme changes (check properties, not just reference)
         const prevTheme = prevProps.theme;
         const currentTheme = this.props.theme;
@@ -526,6 +535,15 @@ class Blocks extends React.Component {
         // Do not check against prevProps.toolboxXML because that may not have been rendered.
         if (this.props.isVisible && this.props.toolboxXML !== this._renderedToolboxXML) {
             this.requestToolboxUpdate();
+        }
+
+        // 拆分模式：若本工作区锁定到一个角色/背景，但当前显示的目标还不是它
+        // （例如锁定目标不是全局编辑目标，尚未加载过），则加载其自身积木 XML，
+        // 保证两列分别显示各自角色，互不影响。
+        if (this.props.workspaceTargetId && this.props.isVisible && this.workspace) {
+            if (this._loadedTargetId !== this.props.workspaceTargetId) {
+                this.loadLockedTargetWorkspace();
+            }
         }
 
         if (this.props.isVisible === prevProps.isVisible) {
@@ -1381,7 +1399,11 @@ class Blocks extends React.Component {
         // Code inside intentionally ignores several error situations (no stage, etc.)
         // Because they would get caught by this try/catch
         try {
-            let {editingTarget: target, runtime} = this.props.vm;
+            const runtime = this.props.vm.runtime;
+            // 拆分模式下，若该侧工作区已锁定到某个角色/背景，则工具箱使用该锁定目标，
+            // 以便变量、扩展等与对应角色一致，而不是跟随全局编辑目标。
+            let target = this.props.workspaceTargetId ?
+                runtime.getTargetById(this.props.workspaceTargetId) : this.props.vm.editingTarget;
             const stage = runtime.getTargetForStage();
             if (!target) target = stage; // If no editingTarget, use the stage
 
@@ -1407,6 +1429,18 @@ class Blocks extends React.Component {
         const toolboxXML = this.getToolboxXML();
         if (toolboxXML) {
             this.props.updateToolboxState(toolboxXML);
+        }
+
+        // 拆分模式：该工作区锁定到了某个角色/背景（workspaceTargetId）。
+        // 只有当锁定目标恰好是全局编辑目标（即用户正在操作这一侧）时，
+        // 才用 data.xml（编辑目标的积木）刷新本侧；否则保持本侧当前显示，
+        // 避免被另一侧编辑的角色积木覆盖，从而实现两列分别编辑不同角色。
+        const lockedId = this.props.workspaceTargetId;
+        const isActiveLocked = lockedId && this.props.vm.editingTarget &&
+            lockedId === this.props.vm.editingTarget.id;
+        if (lockedId && !isActiveLocked) {
+            // 非激活锁定侧：仅更新工具箱，不重载积木，保持独立显示。
+            return;
         }
 
         if (this.props.vm.editingTarget && !this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
@@ -1443,9 +1477,44 @@ class Blocks extends React.Component {
             this.workspace.resize();
         }
 
+        // 记录本工作区当前显示的目标，供 componentDidUpdate 判断是否需要初次加载锁定目标。
+        this._loadedTargetId = lockedId || (this.props.vm.editingTarget && this.props.vm.editingTarget.id);
+
         // Clear the undo state of the workspace since this is a
         // fresh workspace and we don't want any changes made to another sprites
         // workspace to be 'undone' here.
+        this.workspace.clearUndo();
+    }
+    // 拆分模式下，为锁定到非全局编辑目标的工作区初次加载其自身角色的 XML，
+    // 使其显示正确角色的积木，而不依赖全局 WORKSPACE_UPDATE 事件。
+    loadLockedTargetWorkspace () {
+        const lockedId = this.props.workspaceTargetId;
+        if (!lockedId || !this.workspace) return;
+        if (this._loadedTargetId === lockedId) return;
+        const target = this.props.vm.runtime.getTargetById(lockedId);
+        if (!target || !target.blocks || typeof target.blocks.toXML !== 'function') return;
+        let xml;
+        try {
+            xml = target.blocks.toXML(target.comments ? target.comments : undefined);
+        } catch (e) {
+            return;
+        }
+        if (!xml) return;
+        // scratch-vm 的 blocks.toXML() 只返回内部 <block> 元素，
+        // 缺少 clearWorkspaceAndLoadFromXml 所需的 <xml> 根节点，需要自行包裹。
+        xml = `<xml xmlns="http://www.w3.org/1999/xhtml">${xml}</xml>`;
+        const toolboxXML = this.getToolboxXML();
+        if (toolboxXML) this.props.updateToolboxState(toolboxXML);
+        this.workspace.removeChangeListener(this.props.vm.blockListener);
+        try {
+            const dom = this.ScratchBlocks.Xml.textToDom(xml);
+            this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
+        } catch (error) {
+            if (error.message) error.message = `Locked Workspace Update Error: ${error.message}`;
+            log.error(error);
+        }
+        this.workspace.addChangeListener(this.props.vm.blockListener);
+        this._loadedTargetId = lockedId;
         this.workspace.clearUndo();
     }
     handleMonitorsUpdate (monitors) {

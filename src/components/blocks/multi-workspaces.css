@@ -135,6 +135,18 @@
   overflow: hidden;
   position: relative;
 }
+.blocksPanelInner {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+.blocksPanelInner > div {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
 .blocksPanelTitle {
   padding: 4px 10px;
   font-size: 12px;
