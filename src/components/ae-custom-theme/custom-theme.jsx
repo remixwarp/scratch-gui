@@ -47,7 +47,7 @@ function rgbToHex(r, g, b) {
 /* eslint-disable react/no-multi-comp */
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Costom Theme',
+        defaultMessage: 'Custom Theme',
         description: 'Title of custom theme modal',
         id: 'tw.customTheme.title'
     }

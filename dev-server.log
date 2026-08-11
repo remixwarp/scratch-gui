@@ -11669,10 +11669,10 @@
 <s> [webpack.Progress] 69% building 5786/5852 modules 66 active E:\RemixWarp\scratch-gui\node_modules\babel-loader\lib\index.js??ref--5!E:\RemixWarp\scratch-gui\src\lib\mw\system-clipboard.js
 <s> [webpack.Progress] 69% building 5787/5852 modules 65 active E:\RemixWarp\scratch-gui\node_modules\babel-loader\lib\index.js??ref--5!E:\RemixWarp\scratch-gui\src\lib\mw\system-clipboard.js
 <s> [webpack.Progress] 69% building 5787/5853 modules 66 active E:\RemixWarp\scratch-gui\node_modules\babel-loader\lib\index.js??ref--5!E:\RemixWarp\scratch-gui\src\addons\modal.js
-<s> [webpack.Progress] 69% building 5787/5854 modules 67 active E:\RemixWarp\scratch-gui\src\lib\themes\pixel-presets\MC风格主题_←_pixel_theme.json
-<s> [webpack.Progress] 69% building 5787/5855 modules 68 active E:\RemixWarp\scratch-gui\src\lib\themes\pixel-presets\MC风格主题_○_pixel_theme.json
-<s> [webpack.Progress] 69% building 5787/5856 modules 69 active E:\RemixWarp\scratch-gui\src\lib\themes\pixel-presets\MC风格主题_→_pixel_theme.json
-<s> [webpack.Progress] 69% building 5788/5856 modules 68 active E:\RemixWarp\scratch-gui\src\lib\themes\pixel-presets\MC风格主题_→_pixel_theme.json
+<s> [webpack.Progress] 69% building 5787/5854 modules 67 active E:\RemixWarp\scratch-gui\src\lib\themes\pixel-presets\MC_←_pixel_theme.json
+<s> [webpack.Progress] 69% building 5787/5855 modules 68 active E:\RemixWarp\scratch-gui\src\lib\themes\pixel-presets\MC_○_pixel_theme.json
+<s> [webpack.Progress] 69% building 5787/5856 modules 69 active E:\RemixWarp\scratch-gui\src\lib\themes\pixel-presets\MC_→_pixel_theme.json
+<s> [webpack.Progress] 69% building 5788/5856 modules 68 active E:\RemixWarp\scratch-gui\src\lib\themes\pixel-presets\MC_→_pixel_theme.json
 <s> [webpack.Progress] 69% building 5788/5857 modules 69 active E:\RemixWarp\scratch-gui\node_modules\babel-loader\lib\index.js??ref--5!E:\RemixWarp\scratch-gui\src\addons\contextmenu.js
 <s> [webpack.Progress] 69% building 5788/5858 modules 70 active E:\RemixWarp\scratch-gui\node_modules\babel-loader\lib\index.js??ref--5!E:\RemixWarp\scratch-gui\src\addons\generated\addon-entries.js
 <s> [webpack.Progress] 69% building 5788/5859 modules 71 active E:\RemixWarp\scratch-gui\node_modules\babel-loader\lib\index.js??ref--5!E:\RemixWarp\scratch-gui\src\lib\utils\data-uri-to-blob.js

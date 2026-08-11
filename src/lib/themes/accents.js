@@ -46,6 +46,7 @@ import * as accentMatrix from './accent/matrix';
 import * as accentHoney from './accent/honey';
 
 const ACCENTS = [
+    // ===== 纯色主题 =====
     {
         name: 'Red',
         accent: accentRed,
@@ -119,6 +120,68 @@ const ACCENTS = [
         id: 'tw.accent.eggplant-purple'
     },
     {
+        name: 'Pink',
+        accent: accentPink,
+        description: 'Pink accent color',
+        id: 'tw.accent.pink'
+    },
+    {
+        name: 'Pink (V2)',
+        accent: accentPinkV2,
+        description: 'Pink (V2) accent color',
+        id: 'tw.accent.pinkv2'
+    },
+    {
+        name: 'Magenta',
+        accent: accentMagenta,
+        description: 'Magenta accent color',
+        id: 'tw.accent.magenta'
+    },
+    {
+        name: 'AstraEditor',
+        accent: accentAstraEditor,
+        description: 'AstraEditor accent color',
+        id: 'tw.accent.ae'
+    },
+    {
+        name: '02',
+        accent: accent02,
+        description: '02 accent color',
+        id: 'tw.accent.02e'
+    },
+    {
+        name: 'CE Pink',
+        accent: accentCE,
+        description: 'CyberExplorer Pink accent color',
+        id: 'tw.accent.ce'
+    },
+    {
+        name: 'Miku Green',
+        accent: accentMiku,
+        description: 'Miku Green accent color',
+        id: 'tw.accent.miku'
+    },
+    {
+        name: 'Tianyi Blue',
+        accent: accentTY,
+        description: 'Tianyi Blue accent color',
+        id: 'tw.accent.ty'
+    },
+    {
+        name: 'Oubi',
+        accent: accentOubi,
+        description: 'Oubi gradient',
+        id: 'tw.accent.oubi'
+    },
+    {
+        name: 'OM Blue',
+        accent: accentOmniBlue,
+        description: 'OmniMAX Blue gradient',
+        id: 'tw.accent.omniblue'
+    },
+
+    // ===== 渐变色主题 =====
+    {
         name: 'Rainbow',
         accent: accentRainbow,
         description: 'Rainbow accent color',
@@ -171,18 +234,6 @@ const ACCENTS = [
         accent: accentRotur,
         description: 'Rotur accent color',
         id: 'tw.accent.rotur'
-    },
-    {
-        name: 'Pink',
-        accent: accentPink,
-        description: 'Pink accent color',
-        id: 'tw.accent.pink'
-    },
-    {
-        name: 'Pink (V2)',
-        accent: accentPinkV2,
-        description: 'Pink (V2) accent color',
-        id: 'tw.accent.pinkv2'
     },
     {
         name: 'Sunset',
@@ -255,54 +306,6 @@ const ACCENTS = [
         accent: accentCoral,
         description: 'Warm coral to peach gradient',
         id: 'tw.accent.coral'
-    },
-    {
-        name: 'AstraEditor',
-        accent: accentAstraEditor,
-        description: 'AstraEditor accent color',
-        id: 'tw.accent.ae'
-    },
-    {
-        name: '02',
-        accent: accent02,
-        description: '02 accent color',
-        id: 'tw.accent.02e'
-    },
-    {
-        name: 'CE Pink',
-        accent: accentCE,
-        description: 'CyberExplorer Pink accent color',
-        id: 'tw.accent.ce'
-    },
-    {
-        name: 'Miku Green',
-        accent: accentMiku,
-        description: 'Miku Green accent color',
-        id: 'tw.accent.miku'
-    },
-    {
-        name: 'Magenta',
-        accent: accentMagenta,
-        description: 'Magenta accent color',
-        id: 'tw.accent.magenta'
-    },
-    {
-        name: 'Tianyi Blue',
-        accent: accentTY,
-        description: 'Tianyi Blue accent color',
-        id: 'tw.accent.ty'
-    },
-    {
-        name: 'Oubi',
-        accent: accentOubi,
-        description: 'Oubi gradient',
-        id: 'tw.accent.oubi'
-    },
-    {
-        name: 'OM Blue',
-        accent: accentOmniBlue,
-        description: 'OmniMAX Blue gradient',
-        id: 'tw.accent.omniblue'
     },
     {
         name: 'Vaporwave',

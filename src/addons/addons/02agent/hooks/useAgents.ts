@@ -13,15 +13,40 @@ interface ExportedAgentFile {
 const DEFAULT_AGENTS: Agent[] = [
   {
     id: "default-free-chat",
-    name: "kat-coder-pro-v2.5",
+    name: "RemixWorld AI",
     provider: "custom",
-    baseUrl: "https://api.hcnsec.cn/v1/chat/completions",
-    apiKey: "sk-WP2blxGDtLWURyHA9CP4KzDbNt1OjtJi4GFe1UCg0TuIJ9rB",
+    baseUrl: "https://aiapi.remix.de5.net/v1/chat/completions",
+    apiKey: "sk-remixworld",
     models: [
       {
         id: "default-free-model-1",
-        name: "kat-coder-pro-v2.5",
-        modelId: "kat-coder-pro-v2.5",
+        name: "Meta Llama 3.3 70B (推荐)",
+        modelId: "llama-3.3-70b-instruct-fp8-fast",
+      },
+      {
+        id: "default-free-model-2",
+        name: "DeepSeek R1 推理模型",
+        modelId: "deepseek-r1-distill-qwen-32b",
+      },
+      {
+        id: "default-free-model-3",
+        name: "Meta Llama 4 Scout 17B",
+        modelId: "llama-4-scout-17b-16e-instruct",
+      },
+      {
+        id: "default-free-model-4",
+        name: "Google Gemma 7B",
+        modelId: "gemma-7b-it",
+      },
+      {
+        id: "default-free-model-5",
+        name: "Meta Llama 3.1 8B Fast",
+        modelId: "llama-3.1-8b-instruct-fast",
+      },
+      {
+        id: "default-free-model-6",
+        name: "Mistral 7B v0.2",
+        modelId: "mistral-7b-instruct-v0.2",
       },
     ],
     immutable: true,

@@ -110,6 +110,13 @@ const detectTheme = () => {
  * @param {Theme} theme the theme
  */
 const persistTheme = theme => {
+    // When RWC applies a config it writes the exported theme snapshot
+    // directly to localStorage. If this runs during the brief window
+    // before page reload, it would overwrite the just-written value with
+    // the stale Redux theme. The flag is set by applyConfigFromUrl() and
+    // disappears on reload.
+    if (window._rwcSkipPersist) return;
+
     const systemPreferences = systemPreferencesTheme();
     const nonDefaultSettings = {};
 

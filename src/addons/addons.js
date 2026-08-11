@@ -109,7 +109,10 @@ const addons = [
     'tw-comment-markdown-editor',
     'background',
     'santa',
-    'project-size-display'
+    'project-size-display',
+    'project-health-dashboard',
+    'lint-system',
+    'script-tabs'
 ];
 
 const newAddons = [
@@ -127,7 +130,10 @@ const newAddons = [
     'my-blocks-plus',
     'hide-menubar',
     'santa',
-    'project-size-display'
+    'project-size-display',
+    'project-health-dashboard',
+    'lint-system',
+    'script-tabs'
 ];
 
 // eslint-disable-next-line import/no-commonjs

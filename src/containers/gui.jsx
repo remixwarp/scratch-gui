@@ -68,6 +68,7 @@ import {initialize as initializeShortcuts} from
     '../lib/shortcuts/event-router.js';
 import startFractchLiveReload from '../lib/fractch-live';
 import smartSave from '../lib/mw/smart-save.js';
+import rwcBridge from '../lib/mw/rwc-bridge.js';
 
 const {RequestMetadata, setMetadata, unsetMetadata} = storage.scratchFetch;
 
@@ -87,6 +88,8 @@ class GUI extends React.Component {
         this.props.onStorageInit(storage);
         this.props.onVmInit(this.props.vm);
         setProjectIdMetadata(this.props.projectId);
+
+        rwcBridge.init();
 
 
 

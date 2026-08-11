@@ -114,4 +114,7 @@ export default {
   "background": () => import(/* webpackChunkName: "addon-entry-background" */ "../addons/background/_runtime_entry.js"),
   "santa": () => import(/* webpackChunkName: "addon-entry-santa" */ "../addons/santa/_runtime_entry.js"),
   "project-size-display": () => import(/* webpackChunkName: "addon-entry-project-size-display" */ "../addons/project-size-display/_runtime_entry.js"),
+  "project-health-dashboard": () => import(/* webpackChunkName: "addon-entry-project-health-dashboard" */ "../addons/project-health-dashboard/_runtime_entry.js"),
+  "lint-system": () => import(/* webpackChunkName: "addon-entry-lint-system" */ "../addons/lint-system/_runtime_entry.js"),
+  "script-tabs": () => import(/* webpackChunkName: "addon-entry-script-tabs" */ "../addons/script-tabs/_runtime_entry.js"),
 };

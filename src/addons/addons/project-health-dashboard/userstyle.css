@@ -1,0 +1,568 @@
+/* Project Health Dashboard — 与 simple-project-analyzer 一致的卡片式深色主题 */
+
+/* 根容器 — 确保不被裁剪 */
+.rw-phd-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--ui-tertiary, #2e2e2e);
+    color: var(--text-primary, #eeeeee);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+        "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 13px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* 工具栏 */
+.rw-phd-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+    background: var(--ui-secondary, #2a2a2a);
+}
+
+.rw-phd-refresh-btn {
+    background: #3a3a3a;
+    color: var(--text-primary, #eeeeee);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, opacity 0.15s;
+}
+
+.rw-phd-refresh-btn:hover {
+    border-color: var(--motion-primary, #4C97FF);
+}
+
+.rw-phd-refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 内容容器 — 带 padding 防裁剪 */
+.rw-phd-inner {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+}
+
+.rw-phd-loading,
+.rw-phd-empty {
+    text-align: center;
+    color: var(--text-primary, #e8e8e8);
+    opacity: 0.6;
+    padding: 40px 20px;
+    font-size: 14px;
+}
+
+/* Tab 栏 */
+.rw-phd-tabbar {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+    margin-bottom: 16px;
+}
+
+.rw-phd-tab {
+    background: transparent;
+    color: var(--text-primary, #e8e8e8);
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.7;
+    transition: opacity 0.15s, border-color 0.15s, color 0.15s;
+    font-weight: 500;
+    font-family: inherit;
+}
+
+.rw-phd-tab:hover {
+    opacity: 1;
+}
+
+.rw-phd-tab.active {
+    opacity: 1;
+    border-bottom-color: var(--ui-primary, #4C97FF);
+    color: var(--ui-primary, #4C97FF);
+}
+
+.rw-phd-tab-icon {
+    font-size: 12px;
+}
+
+/* 面板 */
+.rw-phd-panel {
+    animation: rw-phd-fadein 0.18s ease-out;
+}
+
+@keyframes rw-phd-fadein {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* === 卡片容器（与 sa-analyze-section 一致） === */
+.rw-phd-section {
+    background: var(--ui-secondary, #2a2a2a);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.rw-phd-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary, #e8e8e8);
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+/* === 健康度分数卡片 === */
+.rw-phd-score-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.rw-phd-score-bar {
+    flex: 1;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.rw-phd-score-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.4s ease;
+}
+
+.rw-phd-score-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.rw-phd-score-num {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.rw-phd-score-level {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.rw-phd-score-desc {
+    font-size: 12px;
+    opacity: 0.75;
+    margin-top: 6px;
+}
+
+/* === 统计卡片网格（与 sa-analyze-stats-grid 一致） === */
+.rw-phd-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.rw-phd-stat {
+    background: #3a3a3a;
+    border-radius: 8px;
+    padding: 14px 12px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.rw-phd-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.rw-phd-stat-value {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--motion-primary, #3C7699);
+    margin-bottom: 6px;
+    line-height: 1;
+}
+
+.rw-phd-stat-label {
+    font-size: 12px;
+    color: var(--text-primary, #eeeeee);
+    opacity: 0.8;
+}
+
+/* === 扣分项 === */
+.rw-phd-factor-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.rw-phd-factor-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.rw-phd-factor-list li:last-child {
+    border-bottom: none;
+}
+
+.rw-phd-factor-name {
+    font-weight: 600;
+    min-width: 70px;
+}
+
+.rw-phd-factor-reason {
+    flex: 1;
+    opacity: 0.7;
+    font-size: 12px;
+}
+
+.rw-phd-factor-penalty {
+    color: #FF6680;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+/* === 摘要网格 === */
+.rw-phd-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.rw-phd-summary-grid > div {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.rw-phd-summary-grid span {
+    opacity: 0.7;
+}
+
+.rw-phd-summary-grid b {
+    font-weight: 600;
+}
+
+/* === Lint 摘要 === */
+.rw-phd-lint-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.rw-phd-lint-stat {
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.rw-phd-lint-stat.error {
+    border-top: 3px solid #FF6680;
+}
+
+.rw-phd-lint-stat.warning {
+    border-top: 3px solid #FFBF00;
+}
+
+.rw-phd-lint-stat.info {
+    border-top: 3px solid #5CB1D6;
+}
+
+.rw-phd-lint-num {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.rw-phd-lint-stat.error .rw-phd-lint-num { color: #FF6680; }
+.rw-phd-lint-stat.warning .rw-phd-lint-num { color: #FFBF00; }
+.rw-phd-lint-stat.info .rw-phd-lint-num { color: #5CB1D6; }
+
+.rw-phd-lint-label {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+/* === 表格 === */
+.rw-phd-table-wrap {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rw-phd-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: #3a3a3a;
+    color: var(--text-primary, #eeeeee);
+}
+
+.rw-phd-table th,
+.rw-phd-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rw-phd-table th {
+    font-weight: 600;
+    opacity: 0.8;
+    background: rgba(0, 0, 0, 0.2);
+    font-size: 12px;
+}
+
+.rw-phd-table td {
+    font-size: 13px;
+}
+
+.rw-phd-table tr:hover td {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* === 图表容器 === */
+.rw-phd-chart-wrap {
+    position: relative;
+    background: #3a3a3a;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    height: 300px;
+}
+
+/* === Lint 过滤器 === */
+.rw-phd-lint-filter {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.rw-phd-filter-btn {
+    background: rgba(0, 0, 0, 0.12);
+    color: var(--text-primary, #e8e8e8);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+}
+
+.rw-phd-filter-btn:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.rw-phd-filter-btn.active {
+    background: var(--ui-primary, #4C97FF);
+    color: #fff;
+    border-color: var(--ui-primary, #4C97FF);
+}
+
+/* === Lint 列表 === */
+.rw-phd-lint-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.rw-phd-lint-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.12);
+    border-left: 3px solid transparent;
+}
+
+.rw-phd-lint-item.error {
+    border-left-color: #FF6680;
+}
+
+.rw-phd-lint-item.warning {
+    border-left-color: #FFBF00;
+}
+
+.rw-phd-lint-item.info {
+    border-left-color: #5CB1D6;
+}
+
+.rw-phd-lint-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.rw-phd-lint-item.error .rw-phd-lint-icon { background: #FF6680; }
+.rw-phd-lint-item.warning .rw-phd-lint-icon { background: #FFBF00; }
+.rw-phd-lint-item.info .rw-phd-lint-icon { background: #5CB1D6; }
+
+.rw-phd-lint-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.rw-phd-lint-msg {
+    font-size: 13px;
+    color: var(--text-primary, #e8e8e8);
+    word-break: break-word;
+}
+
+.rw-phd-lint-meta {
+    font-size: 11px;
+    opacity: 0.6;
+    margin-top: 3px;
+}
+
+/* === 依赖图 === */
+.rw-phd-deps-ctrl {
+    margin-bottom: 10px;
+}
+
+.rw-phd-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.rw-phd-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.85;
+}
+
+.rw-phd-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.rw-phd-legend-line {
+    width: 18px;
+    display: inline-block;
+}
+
+.rw-phd-svg-wrap {
+    margin-bottom: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rw-phd-svg-wrap svg {
+    background: #3a3a3a;
+    color: var(--text-primary, #eeeeee);
+    display: block;
+}
+
+.rw-phd-deps-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 6px;
+    font-size: 12px;
+    opacity: 0.85;
+}
+
+/* === 滚动条 === */
+.rw-phd-inner::-webkit-scrollbar,
+.rw-phd-lint-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.rw-phd-inner::-webkit-scrollbar-track,
+.rw-phd-lint-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+.rw-phd-inner::-webkit-scrollbar-thumb,
+.rw-phd-lint-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 4px;
+}
+
+.rw-phd-inner::-webkit-scrollbar-thumb:hover,
+.rw-phd-lint-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+/* === 响应式 === */
+@media (max-width: 540px) {
+    .rw-phd-inner {
+        padding: 12px;
+    }
+
+    .rw-phd-stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    }
+
+    .rw-phd-stat {
+        padding: 10px;
+    }
+
+    .rw-phd-stat-value {
+        font-size: 18px;
+    }
+
+    .rw-phd-lint-summary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .rw-phd-score-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

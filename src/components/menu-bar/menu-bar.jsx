@@ -44,6 +44,7 @@ import MwEditorNav from './mw-editor-nav.jsx';
 import {getCurrentUser, isLoggedIn} from '../../lib/community/api.js';
 import {saveToBilup as saveProjectToBilup} from '../../lib/mw/smart-save.js';
 import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
+import openConfigPlazaWindow from '../../lib/mw/open-config-plaza-window.js';
 import {getBilupAction} from '../../lib/community/publish.js';
 import communityEnabled from '../../lib/community/enabled.js';
 import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
@@ -174,7 +175,7 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
-    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map
+    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -2082,6 +2083,10 @@ class MenuBar extends React.Component {
             this.props.vm.emit('TRIGGER_MANUAL_RESTORE_POINT');
         }
     };
+    handleClickConfigPlaza = () => {
+        openConfigPlazaWindow();
+        this.props.onRequestCloseFile();
+    };
     handleClickSeeCommunity (waitForUpdate) {
         if (this.props.shouldSaveBeforeTransition()) {
             this.props.autoUpdateProject(); // save before transitioning to project page
@@ -3389,6 +3394,10 @@ class MenuBar extends React.Component {
                                                 <MenuItem onClick={this.handleImportSettings}>
                                                     {this.props.locale === 'zh-cn' ? '导入全部配置' : 'Import All Config'}
                                                 </MenuItem>
+                                                <MenuItem onClick={this.handleClickConfigPlaza}>
+                                                    <Store size={20} />
+                                                    {this.props.locale === 'zh-cn' ? '配置广场' : 'Config Plaza'}
+                                                </MenuItem>
                                             </Submenu>
                                         </MenuItem>
                                     </MenuSection>
@@ -3906,6 +3915,28 @@ class MenuBar extends React.Component {
                                     >
                                         <Map />
                                         {this.props.locale === 'zh-cn' ? 'Mini Map' : 'Mini Map'}
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => {
+                                            if (window.RWHealthDashboard && typeof window.RWHealthDashboard.toggle === 'function') {
+                                                window.RWHealthDashboard.toggle();
+                                            }
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <Activity />
+                                        {this.props.locale === 'zh-cn' ? '项目健康度仪表盘' : 'Project Health Dashboard'}
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => {
+                                            if (window.RWLintSystem && typeof window.RWLintSystem.toggle === 'function') {
+                                                window.RWLintSystem.toggle();
+                                            }
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <Bug />
+                                        {this.props.locale === 'zh-cn' ? 'Lint 系统' : 'Lint System'}
                                     </MenuItem>
                                 </MenuSection>
                                 <MenuSection>
