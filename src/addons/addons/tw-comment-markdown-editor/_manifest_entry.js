@@ -3,7 +3,7 @@ const manifest = {
     noTranslations: true,
     name: 'Comment Markdown Editor',
     description: 'Add Markdown editing and preview functions to the annotation boxes, supporting syntax such as headings, bold, italic, code and links. Use the shortcut key Ctrl+M to quickly switch between editing and preview modes.',
-    tags: ["new", "astraeditor"],
+    tags: ["astraeditor"],
     credits: [
         {
             name: 'NeuronPulse',
