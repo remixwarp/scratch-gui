@@ -59,7 +59,9 @@ import CompatibilityModal from '../../containers/tv-compatibility-modal.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
-import {closeRoturLoginModal} from '../../reducers/modals.js';
+import Avatar from '../mw-avatar/avatar.jsx';
+import {closeRoturLoginModal, openRoturLoginModal} from '../../reducers/modals.js';
+import {openAccountMenu} from '../../reducers/menus.js';
 
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 import TutorialModal from '../../containers/tutorial-modal.jsx';
@@ -93,7 +95,7 @@ import {openGitModal, openAIAgentModal} from '../../reducers/modals.js';
 import {openWorkspaceBookmarksMenu} from '../../reducers/menus.js';
 import {openCollaborationModal} from '../../reducers/collaboration.js';
 import SettingsStore from '../../addons/settings-store-singleton.js';
-import {GitBranch, ListTodo, Handshake, Trophy, Bookmark, PackagePlus, Sparkles} from 'lucide-react';
+import {GitBranch, ListTodo, Handshake, Trophy, Bookmark, PackagePlus, Sparkles, Settings as SettingsIcon, Puzzle, LogIn} from 'lucide-react';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
@@ -346,6 +348,7 @@ const GUIComponent = props => {
         logo,
         renderLogin,
         roturLoginModalVisible,
+        roturUsername,
         onRequestCloseRoturLogin,
         onClickAbout,
         onClickAccountNav,
@@ -1296,6 +1299,13 @@ const GUIComponent = props => {
                                             <div className={styles.activityBarSeparator} />
                                             <button
                                                 className={styles.activityBarButton}
+                                                title={intl.formatMessage({defaultMessage: '插件设置', id: 'tw.addonSettings.title'})}
+                                                onClick={onClickAddonSettings}
+                                            >
+                                                <Puzzle size={20} />
+                                            </button>
+                                            <button
+                                                className={styles.activityBarButton}
                                                 title={intl.formatMessage(messages.addExtension)}
                                                 onClick={onExtensionButtonClick}
                                             >
@@ -1348,6 +1358,32 @@ const GUIComponent = props => {
                                                     <Trophy size={20} />
                                                 </button>
                                             )}
+                                            <div className={styles.activityBarBottomPush} />
+                                            {roturUsername ? (
+                                                <button
+                                                    className={classNames(styles.activityBarButton, styles.activityBarAvatarButton)}
+                                                    title={roturUsername}
+                                                    onClick={() => props.dispatch && props.dispatch(openAccountMenu())}
+                                                >
+                                                    <Avatar username={roturUsername} size={28} />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className={styles.activityBarButton}
+                                                    title={intl.formatMessage({defaultMessage: '登录', id: 'tw.login.button'})}
+                                                    onClick={() => props.dispatch && props.dispatch(openRoturLoginModal())}
+                                                >
+                                                    <LogIn size={20} />
+                                                </button>
+                                            )}
+                                            <div className={styles.activityBarBottomGap} />
+                                            <button
+                                                className={styles.activityBarButton}
+                                                title={intl.formatMessage({defaultMessage: '高级设置', id: 'gui.menuBar.settings'})}
+                                                onClick={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'settingsModal'})}
+                                            >
+                                                <SettingsIcon size={20} />
+                                            </button>
                                         </>
                                     )}
                                 </TabList>
@@ -1611,7 +1647,8 @@ const mapStateToProps = state => ({
     editingTarget: state.scratchGui.targets && state.scratchGui.targets.editingTarget,
     // AstraEditor features
     customThemeVisible: state.scratchGui.modals.customtheme,
-    readmeModalVisible: state.scratchGui.modals.readme
+    readmeModalVisible: state.scratchGui.modals.readme,
+    roturUsername: state.scratchGui.rotur ? state.scratchGui.rotur.username : null
 });
 
 const mapDispatchToProps = dispatch => ({

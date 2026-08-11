@@ -566,3 +566,53 @@
     border-left: 3px solid #4fc3f7;
     font-size: 0.8125rem;
 }
+
+/* ============ 布局（Scratch / VS Code）卡片选择 ============ */
+.layout-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+.layout-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.75rem;
+    width: 13rem;
+    background: $ui-primary;
+    border: 2px solid $ui-black-transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    color: $text-primary;
+    font: inherit;
+    text-align: left;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.layout-option:hover {
+    border-color: color-mix(in srgb, $looks-secondary 60%, transparent);
+    transform: translateY(-1px);
+}
+.layout-option-selected {
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+}
+.layout-preview {
+    width: 100%;
+    height: 4.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 6px;
+    background: $ui-tertiary;
+}
+.layout-option-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+.layout-option-desc {
+    font-size: 0.75rem;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+}

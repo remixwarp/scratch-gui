@@ -12,7 +12,7 @@ import styles from './multi-workspaces.css';
  */
 const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensionModal, editingTarget}) => {
     // ========== 工作区列表 ==========
-    // 每个 workspace: { id: targetId }
+    // 每个 workspace: { id: targetId, pinned: 是否固定 }
     const [workspaces, setWorkspaces] = useState(() => {
         const runtime = vm && vm.runtime;
         const stage = runtime ? runtime.getTargetForStage() : null;
@@ -21,7 +21,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
         const ids = [];
         if (first) ids.push(first);
         if (ids.length === 0) ids.push(null);
-        return ids.map(id => ({id}));
+        return ids.map(id => ({id, pinned: false}));
     });
 
     // 当前选中的工作区
@@ -72,7 +72,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
         if (!editingTarget) return;
         setWorkspaces(prev => {
             if (prev.some(w => w.id === editingTarget)) return prev;
-            return prev.concat({id: editingTarget});
+            return prev.concat({id: editingTarget, pinned: false});
         });
     }, [editingTarget]);
 
@@ -96,7 +96,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
         const nextIndex = workspaces.length;
         setWorkspaces(prev => {
             if (prev.some(w => w.id === id)) return prev;
-            return [...prev, {id}];
+            return [...prev, {id, pinned: false}];
         });
         setActiveIndex(nextIndex);
     };
@@ -113,6 +113,34 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
     const selectWorkspace = index => {
         setActiveIndex(index);
     };
+
+    // ========== 固定 / 取消固定工作区 ==========
+    const togglePin = index => {
+        setWorkspaces(prev => prev.map((w, i) => i === index ? {...w, pinned: !w.pinned} : w));
+    };
+
+    // ========== 标签右键菜单 ==========
+    const [contextMenu, setContextMenu] = useState(null); // {index, x, y}
+    useEffect(() => {
+        if (!contextMenu) return undefined;
+        const close = (e) => {
+            // 点击/右键发生在菜单内部时，不在此处关闭（由菜单项自己的点击处理决定）
+            if (e.target && e.target.closest && e.target.closest('[data-mw-context-menu]')) {
+                return;
+            }
+            setContextMenu(null);
+        };
+        document.addEventListener('mousedown', close);
+        document.addEventListener('click', close);
+        document.addEventListener('contextmenu', close);
+        window.addEventListener('scroll', close, true);
+        return () => {
+            document.removeEventListener('mousedown', close);
+            document.removeEventListener('click', close);
+            document.removeEventListener('contextmenu', close);
+            window.removeEventListener('scroll', close, true);
+        };
+    }, [contextMenu]);
 
     // ========== 标签下拉菜单（点倒三角才展开） ==========
     const [dropdownOpenTab, setDropdownOpenTab] = useState(null);
@@ -165,12 +193,29 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
         const targets = runtime ? runtime.targets : [];
         const name = targetNames[w.id] || (w.id ? '未选择' : '未设置');
         const isOpen = dropdownOpenTab === i;
+        const isPinned = !!w.pinned;
 
         return (
             <div
                 key={i}
-                className={classNames(styles.tab, {[styles.activeTab]: i === activeIndex})}
+                className={classNames(styles.tab, {
+                    [styles.activeTab]: i === activeIndex,
+                    [styles.tabPinned]: isPinned
+                })}
+                onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDropdownOpenTab(null);
+                    setContextMenu({index: i, x: e.clientX, y: e.clientY});
+                }}
+                onClick={() => {
+                    if (contextMenu) setContextMenu(null);
+                }}
+                title={isPinned ? `${name}（已固定，右键可取消）` : name}
             >
+                {isPinned ? (
+                    <span className={styles.pinDot} title={'已固定（移到上面可删除）'} />
+                ) : null}
                 <button
                     type="button"
                     className={styles.tabMain}
@@ -194,13 +239,27 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                         <path d="M0 0 L5 6 L10 0 Z" fill="currentColor" />
                     </svg>
                 </button>
-                {workspaces.length > 1 ? (
+                {isPinned ? (
+                    // 固定状态下：小圆点，鼠标移上去变成删除按钮，点击则取消固定并删除
+                    <span
+                        className={styles.closeAsDot}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setContextMenu(null);
+                            removeWorkspace(i);
+                        }}
+                        title={'取消固定并删除该工作区'}
+                    >
+                        <span className={styles.closeDotGlyph} />
+                        <span className={styles.closeXGlyph}>×</span>
+                    </span>
+                ) : (workspaces.length > 1 ? (
                     <span
                         className={styles.close}
-                        onClick={(e) => { e.stopPropagation(); removeWorkspace(i); }}
+                        onClick={(e) => { e.stopPropagation(); setContextMenu(null); removeWorkspace(i); }}
                         title={'关闭该工作区'}
                     >×</span>
-                ) : null}
+                ) : null)}
                 {isOpen ? (
                     <ul
                         className={styles.tabMenu}
@@ -257,6 +316,47 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
             <div className={styles.blocksContainer}>
                 {renderBlocks(activeIndex)}
             </div>
+
+            {/* 标签右键菜单 */}
+            {contextMenu ? (
+                <ul
+                    className={styles.contextMenu}
+                    data-mw-context-menu
+                    style={{left: contextMenu.x, top: contextMenu.y}}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    onContextMenu={(e) => e.stopPropagation()}
+                    role="menu"
+                >
+                    <li
+                        role="menuitem"
+                        className={styles.contextMenuItem}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={() => {
+                            togglePin(contextMenu.index);
+                            setContextMenu(null);
+                        }}
+                    >
+                        <span className={styles.contextMenuIcon}>
+                            {workspaces[contextMenu.index] && workspaces[contextMenu.index].pinned ? '取消固定' : '固定'}
+                        </span>
+                    </li>
+                    {workspaces.length > 1 ? (
+                        <li
+                            role="menuitem"
+                            className={classNames(styles.contextMenuItem, styles.contextMenuDanger)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={() => {
+                                const idx = contextMenu.index;
+                                setContextMenu(null);
+                                removeWorkspace(idx);
+                            }}
+                        >
+                            <span className={styles.contextMenuIcon}>删除</span>
+                        </li>
+                    ) : null}
+                </ul>
+            ) : null}
         </div>
     );
 };

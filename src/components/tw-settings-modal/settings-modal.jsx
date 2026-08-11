@@ -24,8 +24,9 @@ import {
 import storage from '../../lib/persistence/storage.js';
 import {costumeUpload} from '../../lib/file-uploader.js';
 
-import {STYLE_GROUPS} from '../../lib/mw-style-settings';
+import {STYLE_GROUPS, setStyleSetting} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
+import SettingsStore from '../../addons/settings-store-singleton.js';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
     setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
@@ -36,7 +37,7 @@ import {
     getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
 } from '../../lib/git/config.js';
 
-import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, Bug, GitBranch, Variable, Upload, Search} from 'lucide-react';
+import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, Bug, GitBranch, Variable, Upload, Search, PanelsTopLeft} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -1745,7 +1746,131 @@ const WindowStyleSelect = props => (
 );
 WindowStyleSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func, intl: intlShape};
 
+// ============ 布局（Layout）选择：Scratch 布局 vs VS Code 布局 ============
+// 选择布局时联动以下设置：
+//   Scratch 布局：标签页样式=TurboWarp、关闭多工作区、关闭状态栏、关闭 VS Code 布局、关闭角色文件列表视图
+//   VS Code 布局 ：标签页样式=TurboWarp、开启多工作区、开启状态栏、开启 VS Code 布局、开启角色文件列表视图
+const applyLayout = (vscode) => {
+    // 1. 标签页样式 → TurboWarp
+    try { setStyleSetting('tab-style', 'turbowarp'); } catch (e) { /* ignore */ }
+
+    // 2. 多工作区（mw:multi-workspaces）
+    try {
+        localStorage.setItem('mw:multi-workspaces', vscode ? 'true' : 'false');
+        window.dispatchEvent(new CustomEvent('mw-settings-changed', {
+            detail: {key: 'multi-workspaces', value: vscode}
+        }));
+    } catch (e) { /* ignore */ }
+
+    // 3. 状态栏（EnableStatusBar）
+    try { AEsettings.set('EnableStatusBar', vscode); } catch (e) { /* ignore */ }
+
+    // 4. VS Code 布局（EnableVSCodeLayout）
+    try { AEsettings.set('EnableVSCodeLayout', vscode); } catch (e) { /* ignore */ }
+
+    // 5. 角色文件列表视图（sprite-folders addon）
+    try { SettingsStore.setAddonEnabled('sprite-folders', vscode); } catch (e) { /* ignore */ }
+
+    // 6. 通知其它组件设置已变更
+    try { notifySettingsChange(); } catch (e) { /* ignore */ }
+
+    // 7. 布局切换涉及 VS Code 布局与 addon，需要强制刷新编辑器界面才能完整生效。
+    //    先尝试 location.reload()，再用 href 强制导航兜底，确保 iframe/嵌入环境也能刷新。
+    setTimeout(() => {
+        try {
+            window.location.reload();
+        } catch (e) { /* ignore */ }
+        // 兜底：若 reload 未生效（例如某些嵌入环境），强制重新导航
+        setTimeout(() => {
+            try {
+                window.location.href = window.location.href;
+            } catch (e2) { /* ignore */ }
+        }, 800);
+    }, 500);
+};
+
+const LayoutOption = ({vscode, selected, onSelect}) => (
+    <button
+        type="button"
+        className={classNames(styles.layoutOption, {[styles.layoutOptionSelected]: selected})}
+        onClick={() => onSelect(vscode)}
+    >
+        <div className={styles.layoutPreview}>
+            {vscode ? (
+                <svg width="80" height="48" viewBox="0 0 80 48" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="0.5" y="0.5" width="18" height="47" rx="2" fill="#e9f2ff" stroke="#7aa6ff"/>
+                    <rect x="5" y="5" width="9" height="5" rx="1" fill="#4C97FF"/>
+                    <rect x="5" y="14" width="9" height="5" rx="1" fill="#b8d3ff"/>
+                    <rect x="5" y="23" width="9" height="5" rx="1" fill="#b8d3ff"/>
+                    <rect x="5" y="32" width="9" height="5" rx="1" fill="#b8d3ff"/>
+                    <rect x="22" y="0.5" width="57" height="15" rx="2" fill="#f0f3f7" stroke="#c5ccd6"/>
+                    <rect x="22" y="19" width="57" height="28" rx="2" fill="#f7f9fc" stroke="#c5ccd6"/>
+                </svg>
+            ) : (
+                <svg width="80" height="48" viewBox="0 0 80 48" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="0.5" y="0.5" width="79" height="47" rx="2" fill="#f0f3f7" stroke="#c5ccd6"/>
+                    <rect x="0.5" y="0.5" width="79" height="9" rx="2" fill="#e6ebf2"/>
+                    <circle cx="9" cy="5" r="2" fill="#ff6b6b"/>
+                    <circle cx="16" cy="5" r="2" fill="#ffd93d"/>
+                    <circle cx="23" cy="5" r="2" fill="#6bcb77"/>
+                    <rect x="5" y="14" width="22" height="7" rx="1.5" fill="#4C97FF"/>
+                    <rect x="5" y="25" width="70" height="7" rx="1.5" fill="#b8d3ff"/>
+                    <rect x="5" y="36" width="48" height="7" rx="1.5" fill="#b8d3ff"/>
+                </svg>
+            )}
+        </div>
+        <span className={styles.layoutOptionLabel}>
+            {vscode ? 'VS Code 布局' : 'Scratch 布局'}
+        </span>
+        <span className={styles.layoutOptionDesc}>
+            {vscode ? '左侧活动栏 + 右侧多标签工作区' : '经典 Scratch 界面布局'}
+        </span>
+    </button>
+);
+LayoutOption.propTypes = {
+    vscode: PropTypes.bool.isRequired,
+    selected: PropTypes.bool,
+    onSelect: PropTypes.func.isRequired
+};
+
+const LayoutSelect = props => {
+    const currentVscode = !!AEsettings.get('EnableVSCodeLayout');
+    return (
+        <div className={styles.setting}>
+            <div className={styles.label}>{'选择布局后会自动切换相关设置'}</div>
+            <div className={styles.layoutPicker}>
+                <LayoutOption
+                    vscode={false}
+                    selected={!currentVscode}
+                    onSelect={() => applyLayout(false)}
+                />
+                <LayoutOption
+                    vscode
+                    selected={currentVscode}
+                    onSelect={() => applyLayout(true)}
+                />
+            </div>
+        </div>
+    );
+};
+LayoutSelect.propTypes = {
+    intl: intlShape
+};
+
 const pageConfigurations = {
+    layout: {
+        sections: [
+            {
+                headerMessage: null,
+                settings: [
+                    {
+                        component: LayoutSelect,
+                        props: () => ({})
+                    }
+                ]
+            }
+        ]
+    },
     general: {
         sections: [
             {
@@ -2229,6 +2354,10 @@ const MenuBarPage = props => (<PageRenderer
     config={pageConfigurations.menuBar}
     {...props}
 />);
+const LayoutPage = props => (<PageRenderer
+    config={pageConfigurations.layout}
+    {...props}
+/>);
 
 const STAGE_CONTROL_SETTINGS = ['stage_pause_button', 'stage_step_button'];
 
@@ -2491,6 +2620,8 @@ const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
     case 'general':
         return <GeneralPage {...handlers} />;
+    case 'layout':
+        return <LayoutPage {...handlers} />;
     case 'editor':
         return <EditorPage {...handlers} />;
     case 'styles':
@@ -2711,6 +2842,11 @@ class SettingsModalComponent extends React.Component {
                 id: 'appearance',
                 label: intl.formatMessage({id: 'mw.settings.groupAppearance', defaultMessage: '外观'}),
                 items: [
+                    {
+                        id: 'layout',
+                        label: intl.formatMessage({id: 'mw.settings.layout', defaultMessage: '布局'}),
+                        icon: PanelsTopLeft
+                    },
                     {
                         id: 'editor',
                         label: intl.formatMessage({id: 'mw.settings.editor', defaultMessage: '编辑器'}),
