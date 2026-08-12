@@ -1857,6 +1857,90 @@ LayoutSelect.propTypes = {
     intl: intlShape
 };
 
+// 设备布局（移动端 / PC 端），套用欢迎界面里的设置
+const applyDeviceLayout = (device) => {
+    if (device === 'mobile') {
+        // 同欢迎界面 chooseDevice('mobile')：同时开启移动端布局与实验性移动端模式
+        AESettings.set('EnableMobileLayout', true);
+        AESettings.set('EnableMobileTouchDrag', true);
+    } else {
+        AESettings.set('EnableMobileLayout', false);
+        AESettings.set('EnableMobileTouchDrag', false);
+    }
+    // 与欢迎界面一致，强制刷新使布局生效
+    setTimeout(() => {
+        try {
+            const win = window;
+            // 仅当编辑器窗口处于可卸载状态时刷新
+            win.location.reload(true);
+        } catch (e) {
+            console.warn('Failed to reload editor for device layout:', e);
+        }
+    }, 500);
+};
+
+const DeviceLayoutOption = ({device, selected, onSelect}) => (
+    <button
+        type="button"
+        className={classNames(styles.layoutOption, {[styles.layoutOptionSelected]: selected})}
+        onClick={() => onSelect(device)}
+    >
+        <div className={styles.layoutPreview}>
+            {device === 'mobile' ? (
+                <svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="2" width="32" height="44" rx="4" fill="#3c3c3c" stroke="#888" strokeWidth="1.5" />
+                    <rect x="8" y="7" width="24" height="30" rx="2" fill="#1e88e5" />
+                    <circle cx="20" cy="42" r="2" fill="#888" />
+                    <rect x="17" y="4" width="6" height="1.5" rx="0.75" fill="#888" />
+                </svg>
+            ) : (
+                <svg width="56" height="40" viewBox="0 0 56 40" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="4" width="52" height="32" rx="3" fill="#3c3c3c" stroke="#888" strokeWidth="1.5" />
+                    <rect x="6" y="8" width="20" height="24" rx="1" fill="#1e88e5" />
+                    <rect x="30" y="8" width="18" height="11" rx="1" fill="#43a047" />
+                    <rect x="30" y="22" width="18" height="10" rx="1" fill="#fb8c00" />
+                </svg>
+            )}
+        </div>
+        <span className={styles.layoutOptionLabel}>
+            {device === 'mobile' ? '移动端布局' : 'PC 端布局'}
+        </span>
+        <span className={styles.layoutOptionDesc}>
+            {device === 'mobile' ?
+                '启用移动布局 + 触屏拖动模式（同欢迎界面）' :
+                '标准桌面布局，关闭移动相关设置'}
+        </span>
+    </button>
+);
+DeviceLayoutOption.propTypes = {
+    device: PropTypes.oneOf(['mobile', 'pc']).isRequired,
+    selected: PropTypes.bool,
+    onSelect: PropTypes.func
+};
+
+const DeviceLayoutSelect = () => {
+    const mobileEnabled = !!AESettings.get('EnableMobileLayout');
+    const touchDragEnabled = !!AESettings.get('EnableMobileTouchDrag');
+    const currentMobile = mobileEnabled && touchDragEnabled;
+    return (
+        <div className={styles.setting}>
+            <div className={styles.label}>{'设备布局'}</div>
+            <div className={styles.layoutPicker}>
+                <DeviceLayoutOption
+                    device="mobile"
+                    selected={currentMobile}
+                    onSelect={() => applyDeviceLayout('mobile')}
+                />
+                <DeviceLayoutOption
+                    device="pc"
+                    selected={!currentMobile}
+                    onSelect={() => applyDeviceLayout('pc')}
+                />
+            </div>
+        </div>
+    );
+};
+
 const pageConfigurations = {
     layout: {
         sections: [
@@ -1865,6 +1949,10 @@ const pageConfigurations = {
                 settings: [
                     {
                         component: LayoutSelect,
+                        props: () => ({})
+                    },
+                    {
+                        component: DeviceLayoutSelect,
                         props: () => ({})
                     }
                 ]
@@ -2915,6 +3003,12 @@ class SettingsModalComponent extends React.Component {
                 onRequestClose={this.props.onClose}
                 contentLabel={intl.formatMessage(messages.title)}
                 id="settingsModal"
+                width={950}
+                minWidth={600}
+                maxWidth={2400}
+                height={700}
+                minHeight={500}
+                maxHeight={2000}
             >
                 <Box className={styles.sidebarLayout}>
                     <div className={styles.sidebar}>

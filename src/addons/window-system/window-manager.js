@@ -266,7 +266,7 @@ class AddonWindow {
         // 移动端：大尺寸（需 !important 覆盖 window-theme 插件的样式）
         const imp = mobile ? ' !important' : '';
         const svgSize = mobile ? 18 : 12;
-        const btnSize = mobile ? 42 : 28;
+        const btnSize = mobile ? 48 : 28;
         
         // Create SVG icon based on button type
         let svgIcon = '';
@@ -338,12 +338,34 @@ class AddonWindow {
         button.addEventListener('mousedown', e => {
             e.stopPropagation();
         });
-        
+
         button.addEventListener('click', e => {
             e.stopPropagation();
             onClick();
         });
-        
+
+        // 触摸支持：直接处理 touch 事件，避免依赖浏览器合成的鼠标事件（300ms 延迟/失效）
+        if (mobile) {
+            button.addEventListener('touchstart', e => {
+                e.preventDefault(); // 阻止触摸穿透到拖拽/滚动
+                e.stopPropagation();
+                // 触摸按下视觉反馈
+                button.style.background = 'var(--ui-black-transparent)';
+            }, { passive: false });
+
+            button.addEventListener('touchend', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                button.style.background = 'transparent';
+                onClick();
+            }, { passive: false });
+
+            button.addEventListener('touchcancel', e => {
+                e.stopPropagation();
+                button.style.background = 'transparent';
+            });
+        }
+
         return button;
     }
     
