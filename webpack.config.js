@@ -216,10 +216,16 @@ const base = {
             test: /\.json$/,
             type: 'json'
         }, {
+            // Fonts: inline as data URLs if small enough (<200KB) to avoid CORS/SPA fallback issues
+            // in dev server. Woff2 fonts are typically 10-100KB each, so inlining all 7 fonts
+            // adds less than 0.5MB to the bundle but guarantees they load reliably.
+            // If any font exceeds this limit, file-loader outputs it to static/assets/ as a fallback.
             test: /\.(ttf|eot|woff2?)$/,
-            loader: 'file-loader',
+            loader: 'url-loader',
             options: {
-                name: 'static/assets/[name].[hash:8].[ext]'
+                limit: 200 * 1024,
+                name: 'static/assets/[name].[hash:8].[ext]',
+                esModule: false
             }
         }]
     },
@@ -272,7 +278,9 @@ module.exports = [
         module: {
             rules: base.module.rules.concat([
                 {
-                    test: /\.(svg|png|wav|mp3|gif|jpg|woff2)$/,
+                    // Note: woff2?/ttf/eot fonts are already handled by base rule with
+                    // larger inline limit (200KB) above, so do not re-include them here.
+                    test: /\.(svg|png|wav|mp3|gif|jpg)$/,
                     loader: 'url-loader',
                     options: {
                         limit: 2048,
@@ -429,7 +437,9 @@ module.exports = [
             module: {
                 rules: base.module.rules.concat([
                     {
-                        test: /\.(svg|png|wav|mp3|gif|jpg|woff2)$/,
+                        // Note: woff2?/ttf/eot fonts are already handled by base rule with
+                        // larger inline limit (200KB) above, so do not re-include them here.
+                        test: /\.(svg|png|wav|mp3|gif|jpg)$/,
                         loader: 'url-loader',
                         options: {
                             limit: 2048,

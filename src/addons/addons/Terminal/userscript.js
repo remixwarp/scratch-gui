@@ -1,4 +1,4 @@
-export default async function ({ addon, console }) {
+export default async function ({ addon, msg, console }) {
   // 等待 DOM 加载完成
   await addon.tab.waitForElement("body", { markAsSeen: true });
 
@@ -180,7 +180,7 @@ export default async function ({ addon, console }) {
     others: 'sa-terminal-button'
   });
   // 使用intl获取翻译，确保在不同语言环境下显示正确的文本
-  const terminalText = addon.tab.t("Terminal/@name") || "Terminal";
+  const terminalText = msg ? (msg("@name") || "终端") : "终端";
   terminalButton.textContent = terminalText;
   terminalButton.title = "打开终端窗口";
   terminalButton.addEventListener("click", openTerminalWindow);

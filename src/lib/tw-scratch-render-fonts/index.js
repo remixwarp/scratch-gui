@@ -21,28 +21,59 @@ const fontSource = {
 
 const fontData = {};
 
+// Try to detect if a value is already a data URL (some webpack configs inline fonts)
+const isDataUrl = (val) => typeof val === 'string' && val.startsWith('data:');
+
 const fetchFonts = () => {
     const promises = [];
     for (const fontName of Object.keys(fontSource)) {
-        promises.push(fetch(fontSource[fontName])
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error(`Cannot load font: ${fontName} (invalid HTTP response)`);
+        const source = fontSource[fontName];
+
+        // Case 1: Already inlined as data URL via webpack url-loader
+        if (isDataUrl(source)) {
+            fontData[fontName] = `@font-face{font-family:"${fontName}";src:url("${source}");}`;
+            promises.push(Promise.resolve());
+            continue;
+        }
+
+        // Case 2: A URL path that we need to fetch
+        promises.push(
+            (async () => {
+                try {
+                    const res = await fetch(source, {
+                        // Avoid CORS preflight for same-origin static assets
+                        credentials: 'same-origin',
+                        cache: 'force-cache'
+                    });
+
+                    if (!res.ok) {
+                        throw new Error(`Cannot load font: ${fontName} (HTTP ${res.status})`);
+                    }
+
+                    // Guard against the dev server returning SPA fallback HTML instead of the font
+                    const contentType = res.headers && res.headers.get && res.headers.get('content-type');
+                    if (contentType && /text\/html|application\/xhtml/i.test(contentType)) {
+                        throw new Error(`Cannot load font: ${fontName} (server returned HTML, font URL likely misconfigured)`);
+                    }
+
+                    const blob = await res.blob();
+                    if (blob.size < 100) {
+                        throw new Error(`Cannot load font: ${fontName} (suspiciously small response: ${blob.size} bytes)`);
+                    }
+
+                    const dataUrl = await new Promise((resolve, reject) => {
+                        const fr = new FileReader();
+                        fr.onload = () => resolve(fr.result);
+                        fr.onerror = () => reject(new Error(`Cannot load font: ${fontName} (could not read blob)`));
+                        fr.readAsDataURL(blob);
+                    });
+
+                    fontData[fontName] = `@font-face{font-family:"${fontName}";src:url("${dataUrl}");}`;
+                } catch (err) {
+                    log.error(err);
+                    // Don't let one font failure break the entire Promise.all
                 }
-                return res.blob();
-            })
-            .then(blob => new Promise((resolve, reject) => {
-                const fr = new FileReader();
-                fr.onload = () => resolve(fr.result);
-                fr.onerror = () => reject(new Error(`Cannot load font: ${fontName} (could not read)`));
-                fr.readAsDataURL(blob);
-            }))
-            .then(url => {
-                fontData[fontName] = `@font-face{font-family:"${fontName}";src:url("${url}");}`;
-            })
-            .catch(err => {
-                log.error(err);
-            })
+            })()
         );
     }
     return Promise.all(promises);
@@ -69,7 +100,11 @@ const waitForFontsToLoad = () => {
     const promises = [];
     if (document.fonts && document.fonts.load) {
         for (const fontName in fontData) {
-            promises.push(document.fonts.load(`12px ${fontName}`));
+            promises.push(
+                document.fonts.load(`12px ${fontName}`).catch(err => {
+                    log.error(`Font load failed for ${fontName}:`, err);
+                })
+            );
         }
     }
     return Promise.all(promises);
