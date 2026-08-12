@@ -30,6 +30,17 @@ try {
 
 import getMenuBarHeight from '../../lib/utils/menu-bar-height';
 
+const isMobileLayoutEnabled = () => {
+    try {
+        const stored = localStorage.getItem('AESettings');
+        if (!stored) return false;
+        const settings = JSON.parse(stored);
+        return settings.EnableMobileLayout === true;
+    } catch (e) {
+        return false;
+    }
+};
+
 class AddonWindow {
     constructor (options = {}) {
         this.id = options.id || `addon-window-${++windowCount}`;
@@ -78,7 +89,8 @@ class AddonWindow {
     createWindow () {
         // Create main window element
         this.element = document.createElement('div');
-        this.element.className = `addon-window ${this.className}`;
+        const mobileClass = isMobileLayoutEnabled() ? ' addon-window-mobile' : '';
+        this.element.className = `addon-window ${this.className}${mobileClass}`;
         this.element.style.cssText = `
             position: fixed;
             left: ${this.x}px;
@@ -128,18 +140,19 @@ class AddonWindow {
         // Create header
         this.headerElement = document.createElement('div');
         this.headerElement.className = 'addon-window-header';
+        const mobile = isMobileLayoutEnabled();
         this.headerElement.style.cssText = `
             background: linear-gradient(135deg, 
                 var(--ui-secondary, #f8f9fa) 0%, 
                 var(--ui-primary, #ffffff) 100%);
             border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
-            padding: 8px 16px;
+            padding: ${mobile ? '12px' : '8px'} 16px;
             cursor: move;
             user-select: none;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            min-height: 44px;
+            min-height: ${mobile ? '60px' : '44px'};
             box-sizing: border-box;
             backdrop-filter: blur(10px);
             position: relative;
@@ -168,7 +181,7 @@ class AddonWindow {
         titleElement.textContent = this.title;
         titleElement.style.cssText = `
             font-weight: 600;
-            font-size: 14px;
+            font-size: ${mobile ? '16px' : '14px'};
             color: var(--text-primary, #2d3748);
             flex: 1;
             overflow: hidden;
@@ -182,7 +195,7 @@ class AddonWindow {
         controlsElement.className = 'addon-window-controls';
         controlsElement.style.cssText = `
             display: flex;
-            gap: 6px;
+            gap: ${mobile ? '10px' : '6px'};
             align-items: center;
             z-index: 1;
             overflow: hidden;
@@ -248,24 +261,28 @@ class AddonWindow {
         button.title = title;
         button.className = `addon-window-btn addon-window-btn-${type}`;
         
+        const mobile = isMobileLayoutEnabled();
+        const svgSize = mobile ? 18 : 12;
+        const btnSize = mobile ? 44 : 28;
+        
         // Create SVG icon based on button type
         let svgIcon = '';
         switch (type) {
         case 'maximize':
-            svgIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+            svgIcon = `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 </svg>`;
             break;
         case 'restore':
-            svgIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+            svgIcon = `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                 </svg>`;
             break;
         case 'close':
-            svgIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+            svgIcon = `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 6 6 18"/>
                     <path d="m6 6 12 12"/>
@@ -280,8 +297,8 @@ class AddonWindow {
             background: transparent;
             border: none;
             cursor: pointer;
-            width: 28px;
-            height: 28px;
+            width: ${btnSize}px;
+            height: ${btnSize}px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -326,13 +343,15 @@ class AddonWindow {
     
     updateMaximizeButton () {
         if (this.maximizeBtn) {
+            const mobile = isMobileLayoutEnabled();
+            const svgSize = mobile ? 18 : 12;
             const svgIcon = this.isMaximized ?
-                `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                     </svg>` :
-                `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                     </svg>`;
