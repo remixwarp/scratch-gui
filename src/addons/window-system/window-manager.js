@@ -35,7 +35,8 @@ const isMobileLayoutEnabled = () => {
         const stored = localStorage.getItem('AESettings');
         if (!stored) return false;
         const settings = JSON.parse(stored);
-        return settings.EnableMobileLayout === true;
+        // 同时支持"启用移动布局"(EnableMobileLayout) 与"开启移动端模式"(EnableMobileTouchDrag)
+        return settings.EnableMobileLayout === true || settings.EnableMobileTouchDrag === true;
     } catch (e) {
         return false;
     }
@@ -195,7 +196,7 @@ class AddonWindow {
         controlsElement.className = 'addon-window-controls';
         controlsElement.style.cssText = `
             display: flex;
-            gap: ${mobile ? '10px' : '6px'};
+            gap: ${mobile ? '4.5px' : '6px'};
             align-items: center;
             z-index: 1;
             overflow: hidden;
@@ -262,28 +263,33 @@ class AddonWindow {
         button.className = `addon-window-btn addon-window-btn-${type}`;
         
         const mobile = isMobileLayoutEnabled();
+        // 移动端：大尺寸（需 !important 覆盖 window-theme 插件的样式）
+        const imp = mobile ? ' !important' : '';
         const svgSize = mobile ? 18 : 12;
-        const btnSize = mobile ? 44 : 28;
+        const btnSize = mobile ? 42 : 28;
         
         // Create SVG icon based on button type
         let svgIcon = '';
         switch (type) {
         case 'maximize':
             svgIcon = `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="width: ${svgSize}px${imp}; height: ${svgSize}px${imp};">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 </svg>`;
             break;
         case 'restore':
             svgIcon = `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="width: ${svgSize}px${imp}; height: ${svgSize}px${imp};">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                 </svg>`;
             break;
         case 'close':
             svgIcon = `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="width: ${svgSize}px${imp}; height: ${svgSize}px${imp};">
                     <path d="M18 6 6 18"/>
                     <path d="m6 6 12 12"/>
                 </svg>`;
@@ -294,21 +300,21 @@ class AddonWindow {
         
         // Modern button styling
         button.style.cssText = `
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            width: ${btnSize}px;
-            height: ${btnSize}px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 5px;
-            color: var(--text-primary, #666);
-            position: relative;
-            overflow: hidden;
-            font-size: 0;
-            margin: 0;
-            padding: 0;
+            background: transparent${imp};
+            border: none${imp};
+            cursor: pointer${imp};
+            width: ${btnSize}px${imp};
+            height: ${btnSize}px${imp};
+            display: flex${imp};
+            align-items: center${imp};
+            justify-content: center${imp};
+            border-radius: 5px${imp};
+            color: var(--text-primary, #666)${imp};
+            position: relative${imp};
+            overflow: hidden${imp};
+            font-size: 0${imp};
+            margin: 0${imp};
+            padding: 0${imp};
         `;
         
         // Hover effects
@@ -344,15 +350,17 @@ class AddonWindow {
     updateMaximizeButton () {
         if (this.maximizeBtn) {
             const mobile = isMobileLayoutEnabled();
+            const imp = mobile ? ' !important' : '';
             const svgSize = mobile ? 18 : 12;
+            const styleAttr = `style="width: ${svgSize}px${imp}; height: ${svgSize}px${imp};"`;
             const svgIcon = this.isMaximized ?
                 `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${styleAttr}>
                         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                     </svg>` :
                 `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${styleAttr}>
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                     </svg>`;
             this.maximizeBtn.innerHTML = svgIcon;

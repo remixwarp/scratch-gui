@@ -39,6 +39,7 @@
   "language-package/settings-name-languagePackage": "Enable Language Package Manager",
   "language-package/settings-description-languagePackage": "Allow users to upload custom language packages to extend translation functionality.",
   "language-package/menu-item": "Language Package Manager",
+  "Terminal/name": "Terminal",
   "block-pins/name": "Block Pinning",
   "block-pins/description": "Pin frequently used blocks to the top of the toolbox for quick access.",
   "block-pins/@info-checkbox-notice": "Warning: Pinned blocks with checkboxes may behave unexpectedly when checked.",

@@ -1,25 +1,60 @@
-/* Terminal 按钮样式 - 与 Scratch 菜单栏按钮风格一致 */
+/* Terminal 侧边栏图标按钮（VS Code 布局） */
 .sa-terminal-button {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 0.7rem;
-  font-weight: bold;
-  padding: 0 10px;
+  width: 32px;
   height: 32px;
-  background: transparent;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background-color 0.15s ease;
 }
 
 .sa-terminal-button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ui-black-transparent);
 }
 
 .sa-terminal-button:active {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--ui-black-transparent);
+}
+
+/* 终端图标（内联 SVG，currentColor 跟随主题） */
+.sa-terminal-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  display: block;
+  fill: currentColor;
+}
+
+/* 工具菜单栏菜单项 */
+.sa-terminal-menu-item {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.sa-terminal-menu-item .sa-terminal-icon {
+  margin-right: 0.5rem;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.sa-terminal-menu-item > span:last-child {
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* 深色模式微调 */
+.sa-terminal-button.sa-terminal-dark:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sa-terminal-dark .sa-terminal-icon {
+  opacity: 0.9;
 }

@@ -415,6 +415,7 @@
   "language-package/settings-name-languagePackage": "启用语言包管理",
   "language-package/settings-description-languagePackage": "允许用户上传自定义语言包来扩展翻译功能。",
   "language-package/menu-item": "语言包管理",
+  "Terminal/name": "终端",
   "block-pins/name": "积木置顶",
   "block-pins/description": "将常用积木固定到工具箱顶部，方便快速访问。",
   "block-pins/@info-checkbox-notice": "警告：带有复选框的置顶积木在勾选时可能会出现异常行为。",
