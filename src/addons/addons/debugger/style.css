@@ -933,3 +933,40 @@
   will-change: transform;
   transform: translateZ(0);
 }
+
+/* #20 变量/列表详情表视图 */
+.sa-memory-detail-section {
+  margin-top: 16px;
+}
+.sa-memory-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: var(--ui-modal-background);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--ui-black-transparent);
+}
+.sa-memory-detail-table th,
+.sa-memory-detail-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ui-black-transparent);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+.sa-memory-detail-table th {
+  background: var(--ui-secondary);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+.sa-memory-detail-table tr:hover td {
+  background: var(--ui-black-transparent);
+}
+.sa-memory-cell-value:hover {
+  text-decoration: underline;
+}

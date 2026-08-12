@@ -1750,7 +1750,7 @@ WindowStyleSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func
 // 选择布局时联动以下设置：
 //   Scratch 布局：标签页样式=TurboWarp、关闭多工作区、关闭状态栏、关闭 VS Code 布局、关闭角色文件列表视图
 //   VS Code 布局 ：标签页样式=TurboWarp、开启多工作区、开启状态栏、开启 VS Code 布局、开启角色文件列表视图
-const applyLayout = (vscode) => {
+export const applyLayout = (vscode) => {
     // 1. 标签页样式 → TurboWarp
     try { setStyleSetting('tab-style', 'turbowarp'); } catch (e) { /* ignore */ }
 

@@ -2,6 +2,7 @@ import {isPaused, setPaused, onPauseChanged, setup} from './module.js';
 import createLogsTab from './logs.js';
 import createPerformanceTab from './performance.js';
 import createMemoryTab from './memory.js';
+import createThreadsTab from './threads.js';
 import Utils from '../find-bar/blockly/Utils.js';
 import addSmallStageClass from '../../libraries/common/cs/small-stage.js';
 import WindowManager from '../../window-system/window-manager.js';
@@ -828,7 +829,8 @@ export default async function ({addon, console, msg}) {
     logsTab = await createLogsTab(api);
     const performanceTab = await createPerformanceTab(api);
     const memoryTab = await createMemoryTab(api);
-    allTabs = [logsTab, performanceTab, memoryTab].filter(tab => tab && tab.tab && tab.tab.element);
+    const threadsTab = await createThreadsTab(api);
+    allTabs = [logsTab, threadsTab, performanceTab, memoryTab].filter(tab => tab && tab.tab && tab.tab.element);
 
     for (const message of messagesLoggedBeforeLogsTabLoaded) {
         logsTab.addLog(...message);

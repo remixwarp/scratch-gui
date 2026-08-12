@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
+import {GripVertical, RefreshCw, Trash2} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
-import Box from '../box/box.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 
 import extensionLibrary from '../../lib/libraries/extensions/index.jsx';
@@ -19,35 +19,85 @@ const messages = defineMessages({
         description: 'Title of modal that appears when opening the Extension Manager',
         id: 'tw.extensionManager.title'
     },
-    delete: {
-        defaultMessage: 'Delete',
+    refresh: {
+        defaultMessage: 'Refresh',
+        description: 'Recalculate the block counts shown for each extension',
+        id: 'tw.extensionManager.refresh'
+    },
+    noneLoadedDescription: {
+        defaultMessage: 'Extensions you add will appear here.',
+        description: 'Hint shown when no extensions are loaded',
+        id: 'tw.extensionManager.noneLoadedDescription'
+    },
+    deleteSelected: {
+        defaultMessage: 'Delete selected ({count})',
         description: 'Button to delete selected extensions',
-        id: 'tw.extensionManager.delete'
+        id: 'tw.extensionManager.deleteSelected'
     },
-    noneLoaded: {
-        defaultMessage: 'No extensions loaded',
-        description: 'Label shown when no extensions are loaded',
-        id: 'tw.extensionManager.noneLoaded'
+    deleteExtension: {
+        defaultMessage: 'Delete extension',
+        description: 'Tooltip/aria label for removing a single extension',
+        id: 'tw.extensionManager.deleteExtension'
     },
-    oneLoaded: {
-        defaultMessage: '1 loaded extension',
-        description: 'Label shown when one extension is loaded',
-        id: 'tw.extensionManager.oneLoaded'
-    },
-    manyLoaded: {
-        defaultMessage: '{count} loaded extensions',
-        description: 'Label shown when multiple extensions are loaded',
-        id: 'tw.extensionManager.manyLoaded'
+    dragHint: {
+        defaultMessage: 'Drag rows to reorder extensions',
+        description: 'Hint shown in the footer',
+        id: 'tw.extensionManager.dragHint'
     }
 });
 
 const ExtensionManagerModal = props => {
     const [selected, setSelected] = useState([]);
     const [dragIndex, setDragIndex] = useState(null);
+    const [refreshCounter, setRefreshCounter] = useState(0);
 
     const [blockIconURIs, setBlockIconURIs] = useState({});
+    const [extensionColors, setExtensionColors] = useState({});
 
     const extensionLibraryById = useMemo(() => new Map(extensionLibrary.map(i => [i.extensionId, i])), []);
+
+    const readExtensionIds = useCallback(() => {
+        const map = props.vm?.extensionManager?._loadedExtensions;
+        if (!map) return [];
+        return Array.from(map.keys());
+    }, [props.vm]);
+
+    const initialExtensions = useMemo(() => {
+        if (!props.vm || !props.vm.extensionManager) return [];
+        return Array.from(props.vm.extensionManager._loadedExtensions.keys());
+    }, [props.vm]);
+
+    const [extensionIds, setExtensionIds] = useState(initialExtensions);
+
+    // Count how many blocks in the project use each loaded extension.
+    // Extension block opcodes are prefixed with `${extensionId}_`, so the
+    // part before the first underscore identifies the owning extension.
+    const calculateBlockCounts = useCallback(() => {
+        const counts = new Map(extensionIds.map(id => [id, 0]));
+        const targets = (props.vm && props.vm.runtime && props.vm.runtime.targets) || [];
+        for (const target of targets) {
+            if (!target || target.isOriginal === false) continue;
+            const blocks = target.blocks && target.blocks._blocks;
+            if (!blocks) continue;
+            for (const block of Object.values(blocks)) {
+                if (!block || block.shadow || !block.opcode) continue;
+                const separator = block.opcode.indexOf('_');
+                if (separator === -1) continue;
+                const prefix = block.opcode.substring(0, separator);
+                if (counts.has(prefix)) {
+                    counts.set(prefix, counts.get(prefix) + 1);
+                }
+            }
+        }
+        return counts;
+    }, [props.vm, extensionIds]);
+
+    const [blockCounts, setBlockCounts] = useState(() => calculateBlockCounts());
+
+    // Recompute whenever the extension list or VM changes
+    useEffect(() => {
+        setBlockCounts(calculateBlockCounts());
+    }, [calculateBlockCounts]);
 
     const getExtensionIconURL = useCallback(extensionId => {
         const libraryItem = extensionLibraryById.get(extensionId);
@@ -61,39 +111,43 @@ const ExtensionManagerModal = props => {
         return extensionId;
     }, [extensionLibraryById, props.vm]);
 
-    const readExtensionIds = useCallback(() => {
-        const map = props.vm?.extensionManager?._loadedExtensions;
-        if (!map) return [];
-        const ids = Array.from(map.keys());
-        return ids;
-    }, [props.vm]);
-
-    const initialExtensions = useMemo(() => {
-        if (!props.vm || !props.vm.extensionManager) return [];
-        return Array.from(props.vm.extensionManager._loadedExtensions.keys());
-    }, [props.vm]);
-
-    const [extensionIds, setExtensionIds] = useState(initialExtensions);
+    const getExtensionColor = useCallback(extensionId => {
+        return extensionColors[extensionId] || null;
+    }, [extensionColors]);
 
     useEffect(() => {
         const map = props.vm?.extensionManager?._loadedExtensions;
         if (!map) return;
 
-        let cancelled = false;
+        // Extensions already in the library have a built-in icon, so only
+        // fetch icon + color info for unknown (usually third-party) ones.
+        // Icon and color are loaded together from a single getInfo() call.
         const idsToFetch = extensionIds.filter(id => (
             !extensionLibraryById.has(id) &&
             !blockIconURIs[id] &&
+            !extensionColors[id] &&
             map.has(id)
         ));
         if (idsToFetch.length === 0) return;
 
+        let cancelled = false;
         idsToFetch.forEach(id => {
             const serviceName = map.get(id);
             centralDispatch.call(serviceName, 'getInfo')
                 .then(info => {
+                    if (cancelled) return;
                     const uri = info && info.blockIconURI;
-                    if (!uri || cancelled) return;
-                    setBlockIconURIs(prev => (prev[id] ? prev : {...prev, [id]: uri}));
+                    const color = info && info.color1;
+                    if (!uri && !color) return;
+                    // Only store the icon when we actually got a URI, so a
+                    // failed icon fetch can be retried on the next refresh
+                    // instead of being permanently cached as undefined.
+                    setBlockIconURIs(prev => (
+                        prev[id] || !uri ? prev : {...prev, [id]: uri}
+                    ));
+                    if (color) {
+                        setExtensionColors(prev => ({...prev, [id]: color}));
+                    }
                 })
                 .catch(() => {
                     // ignore
@@ -103,7 +157,7 @@ const ExtensionManagerModal = props => {
         return () => {
             cancelled = true;
         };
-    }, [props.vm, extensionIds, extensionLibraryById, blockIconURIs]);
+    }, [props.vm, extensionIds, refreshCounter, blockIconURIs, extensionColors, extensionLibraryById]);
 
     const updateExtensionIds = useCallback(() => {
         setExtensionIds(readExtensionIds());
@@ -115,18 +169,12 @@ const ExtensionManagerModal = props => {
         const vm = props.vm;
         if (!vm) return;
 
-        const onAdded = extensionObject => {
-            const id = extensionObject && extensionObject.id;
-            if (!id) return;
-
-            setExtensionIds(old => (old.includes(id) ? old : [...old, id]));
+        const onAdded = () => {
+            updateExtensionIds();
         };
-        const onRemoved = extensionObject => {
-            const id = extensionObject && extensionObject.id;
-            if (!id) return;
-
-            setExtensionIds(old => old.filter(i => i !== id));
-            setSelected(old => old.filter(i => i !== id));
+        const onRemoved = () => {
+            updateExtensionIds();
+            setSelected([]);
         };
         const onReordered = info => {
             if (info && Array.isArray(info.ids)) {
@@ -158,15 +206,20 @@ const ExtensionManagerModal = props => {
         setSelected(prev => prev.filter(id => loaded.has(id)));
     }, [extensionIds]);
 
-    const loadedAmountText = (() => {
-        if (extensionIds.length === 0) {
-            return props.intl.formatMessage(messages.noneLoaded);
-        }
-        if (extensionIds.length === 1) {
-            return props.intl.formatMessage(messages.oneLoaded);
-        }
-        return props.intl.formatMessage(messages.manyLoaded, {count: extensionIds.length});
-    })();
+    const handleRefresh = useCallback(() => {
+        // Re-read the loaded extension list and force a fresh block count
+        // calculation, since the project's blocks can change without any
+        // of the memoized dependencies (vm, extensionIds) changing.
+        setRefreshCounter(c => c + 1);
+        updateExtensionIds();
+        setBlockCounts(calculateBlockCounts());
+    }, [updateExtensionIds, calculateBlockCounts]);
+
+    const totalBlocks = useMemo(() => {
+        let total = 0;
+        for (const count of blockCounts.values()) total += count;
+        return total;
+    }, [blockCounts]);
 
     const updateSelection = e => {
         const {value, checked} = e.target;
@@ -180,25 +233,20 @@ const ExtensionManagerModal = props => {
         e.stopPropagation();
     };
 
-    const removeSelected = () => {
+    const removeExtension = extensionId => {
         if (!props.vm || !props.vm.extensionManager) return;
         if (typeof props.vm.extensionManager.removeExtension !== 'function') return;
 
-        const selectedSet = new Set(selected);
-        const successfullyRemoved = new Set();
-        for (const extensionId of selectedSet) {
-            const removed = props.vm.extensionManager.removeExtension(extensionId);
-            if (removed) {
-                successfullyRemoved.add(extensionId);
-            }
-        }
+        props.vm.extensionManager.removeExtension(extensionId);
+        setExtensionIds(old => old.filter(i => i !== extensionId));
+        setSelected(old => old.filter(i => i !== extensionId));
+    };
 
-        if (successfullyRemoved.size > 0) {
-            setExtensionIds(old => old.filter(i => !successfullyRemoved.has(i)));
+    const removeSelected = () => {
+        for (const extensionId of selected) {
+            removeExtension(extensionId);
         }
-
         setSelected([]);
-
         updateExtensionIds();
     };
 
@@ -253,64 +301,176 @@ const ExtensionManagerModal = props => {
 
     return (
         <Modal
+            centered
             className={styles.modalContent}
-            onRequestClose={props.onClose}
             contentLabel={props.intl.formatMessage(messages.title)}
+            height={560}
             id="extensionManagerModal"
+            minHeight={420}
+            minWidth={500}
+            onRequestClose={props.onClose}
+            width={680}
         >
-            <Box className={styles.body}>
-                <p className={styles.loadedAmount}>{loadedAmountText}</p>
-
-                {extensionIds.map((extensionId, index) => (
-                    <div
-                        className={styles.extensionCard}
-                        key={extensionId}
-                        draggable={props.draggable}
-                        data-index={index}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                    >
-                        <div className={styles.extensionInfo}>
-                            {getExtensionIconURL(extensionId) ? (
-                                <img
-                                    className={styles.extensionIcon}
-                                    src={getExtensionIconURL(extensionId)}
-                                    alt=""
-                                    aria-hidden="true"
-                                    draggable={false}
-                                />
-                            ) : null}
-                            <p className={styles.extensionName}>{getExtensionName(extensionId)}</p>
-                        </div>
-
-                        <FancyCheckbox
-                            className={styles.checkboxOption}
-                            checked={selected.includes(extensionId)}
-                            onChange={updateSelection}
-                            value={extensionId}
-                            draggable={false}
-                            onClick={stopDragAndClickBubbling}
-                            onMouseDown={stopDragAndClickBubbling}
-                            onDragStart={stopDragAndClickBubbling}
-                        />
+            <div className={styles.body}>
+                <div className={styles.listToolbar}>
+                    <div>
+                        <strong>
+                            <FormattedMessage
+                                defaultMessage="Loaded extensions"
+                                id="tw.extensionManager.loadedHeading"
+                            />
+                        </strong>
+                        <span className={styles.summary}>
+                            <FormattedMessage
+                                defaultMessage="{count} extensions · {totalBlocks} blocks"
+                                id="tw.extensionManager.summary"
+                                values={{count: extensionIds.length, totalBlocks}}
+                            />
+                        </span>
                     </div>
-                ))}
+                    <div className={styles.headerActions}>
+                        <button
+                            aria-label={props.intl.formatMessage(messages.refresh)}
+                            className={styles.iconButton}
+                            onClick={handleRefresh}
+                            title={props.intl.formatMessage(messages.refresh)}
+                        >
+                            <RefreshCw />
+                        </button>
+                    </div>
+                </div>
+
+                {extensionIds.length === 0 ? (
+                    <div className={styles.state}>
+                        <strong>
+                            <FormattedMessage
+                                defaultMessage="No extensions loaded"
+                                id="tw.extensionManager.noneLoaded"
+                            />
+                        </strong>
+                        <span>
+                            {props.intl.formatMessage(messages.noneLoadedDescription)}
+                        </span>
+                    </div>
+                ) : (
+                    <div className={styles.table}>
+                        <div className={styles.tableHeader}>
+                            <span>
+                                <FormattedMessage
+                                    defaultMessage="Extension"
+                                    id="tw.extensionManager.extensionColumn"
+                                />
+                            </span>
+                            <span>
+                                <FormattedMessage
+                                    defaultMessage="Blocks"
+                                    id="tw.extensionManager.blocksColumn"
+                                />
+                            </span>
+                            <span />
+                        </div>
+                        <div className={styles.extensionContainer}>
+                            {extensionIds.map((extensionId, index) => {
+                                const extensionColor = getExtensionColor(extensionId);
+                                const count = blockCounts.get(extensionId) || 0;
+                                return (
+                                    <div
+                                        className={`${styles.extensionRow}${dragIndex === index ? ` ${styles.dragging}` : ''}`}
+                                        key={extensionId}
+                                        draggable={props.draggable}
+                                        data-index={index}
+                                        onDragStart={handleDragStart}
+                                        onDragEnd={handleDragEnd}
+                                        onDragOver={handleDragOver}
+                                        onDrop={handleDrop}
+                                        style={extensionColor ? {borderLeft: `4px solid ${extensionColor}`} : null}
+                                    >
+                                        <div className={styles.extensionInfo}>
+                                            <span
+                                                className={styles.extensionIconCircle}
+                                                style={extensionColor ? {backgroundColor: extensionColor} : null}
+                                            >
+                                                {getExtensionIconURL(extensionId) ? (
+                                                    <img
+                                                        className={styles.extensionIcon}
+                                                        src={getExtensionIconURL(extensionId)}
+                                                        alt=""
+                                                        aria-hidden="true"
+                                                        draggable={false}
+                                                    />
+                                                ) : null}
+                                            </span>
+                                            <span className={styles.extensionName}>{getExtensionName(extensionId)}</span>
+                                        </div>
+                                        <div className={styles.blocksCell}>
+                                            <strong>{count}</strong>
+                                            <span>
+                                                {count === 0 ? (
+                                                    <FormattedMessage
+                                                        defaultMessage="No blocks used"
+                                                        id="tw.extensionManager.noBlocks"
+                                                    />
+                                                ) : (
+                                                    <FormattedMessage
+                                                        defaultMessage="blocks"
+                                                        id="tw.extensionManager.blocksUnit"
+                                                    />
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className={styles.extensionActions}>
+                                            <span
+                                                className={styles.dragHandle}
+                                                onDragStart={stopDragAndClickBubbling}
+                                                onMouseDown={stopDragAndClickBubbling}
+                                                title={props.intl.formatMessage(messages.dragHint)}
+                                            >
+                                                <GripVertical />
+                                            </span>
+                                            <button
+                                                aria-label={props.intl.formatMessage(messages.deleteExtension)}
+                                                className={`${styles.actionButton} ${styles.deleteButton}`}
+                                                onClick={() => removeExtension(extensionId)}
+                                                onDragStart={stopDragAndClickBubbling}
+                                                onMouseDown={stopDragAndClickBubbling}
+                                                title={props.intl.formatMessage(messages.deleteExtension)}
+                                            >
+                                                <Trash2 />
+                                            </button>
+                                            <FancyCheckbox
+                                                className={styles.checkboxOption}
+                                                checked={selected.includes(extensionId)}
+                                                onChange={updateSelection}
+                                                value={extensionId}
+                                                draggable={false}
+                                                onClick={stopDragAndClickBubbling}
+                                                onMouseDown={stopDragAndClickBubbling}
+                                                onDragStart={stopDragAndClickBubbling}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {extensionIds.length > 0 ? (
-                    <Box className={styles.multiSelectRow}>
+                    <div className={styles.footer}>
+                        <span>
+                            {props.intl.formatMessage(messages.dragHint)}
+                        </span>
                         <button
-                            type="button"
-                            className={styles.multiSelectDelete}
-                            onClick={removeSelected}
+                            className={styles.deleteAllButton}
                             disabled={selected.length === 0}
+                            onClick={removeSelected}
                         >
-                            {props.intl.formatMessage(messages.delete)}
+                            <Trash2 />
+                            {props.intl.formatMessage(messages.deleteSelected, {count: selected.length})}
                         </button>
-                    </Box>
+                    </div>
                 ) : null}
-            </Box>
+            </div>
         </Modal>
     );
 };
@@ -323,7 +483,8 @@ ExtensionManagerModal.propTypes = {
         off: PropTypes.func,
         runtime: PropTypes.shape({
             on: PropTypes.func,
-            off: PropTypes.func
+            off: PropTypes.func,
+            targets: PropTypes.arrayOf(PropTypes.object)
         }),
         extensionManager: PropTypes.shape({
             _loadedExtensions: PropTypes.instanceOf(Map),

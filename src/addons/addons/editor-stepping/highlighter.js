@@ -8,6 +8,28 @@ containerSvg.style.width = "0";
 containerSvg.style.height = "0";
 document.body.appendChild(containerSvg);
 
+// 执行流箭头样式与动画
+const arrowStyle = document.createElement("style");
+arrowStyle.textContent = `
+  .rw-step-arrow {
+    width: 0;
+    height: 0;
+    border-left: 11px solid #ffab19;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    position: fixed;
+    z-index: 2147483000;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.45));
+    animation: rw-step-pulse 0.5s ease-in-out infinite;
+  }
+  @keyframes rw-step-pulse {
+    0%, 100% { transform: translateX(0); opacity: 1; }
+    50% { transform: translateX(5px); opacity: 0.65; }
+  }
+`;
+document.head.appendChild(arrowStyle);
+
 let nextGlowerId = 0;
 
 const highlightsPerElement = new WeakMap();
@@ -102,9 +124,43 @@ class Highlighter {
     this.filterFlood.setAttribute("flood-color", color);
   }
 
+  // 在当前执行位置的积木左侧显示脉冲箭头指示
+  setCurrentBlockArrow(blockId) {
+    this.removeArrow();
+    if (!blockId) return;
+    const workspace = Blockly.getMainWorkspace();
+    if (!workspace) return;
+    const block = workspace.getBlockById(blockId);
+    if (!block || !block.svgPath_ || typeof block.getBoundingRectangle !== "function") return;
+    try {
+      const rect = block.getBoundingRectangle();
+      const metrics = workspace.getMetrics();
+      const scale = workspace.scale || 1;
+      const x = (rect.left - metrics.contentLeft) * scale + metrics.absoluteLeft - 16;
+      const y = ((rect.top - metrics.contentTop) * scale + metrics.absoluteTop +
+        ((rect.bottom - rect.top) * scale) / 2) - 7;
+      const arrow = document.createElement("div");
+      arrow.className = "rw-step-arrow";
+      arrow.style.left = `${x}px`;
+      arrow.style.top = `${y}px`;
+      document.body.appendChild(arrow);
+      this.arrowElement = arrow;
+    } catch (e) {
+      this.arrowElement = null;
+    }
+  }
+
+  removeArrow() {
+    if (this.arrowElement) {
+      this.arrowElement.remove();
+      this.arrowElement = null;
+    }
+  }
+
   setGlowingThreads(threads) {
     const elementsToHighlight = new Set();
     const workspace = Blockly.getMainWorkspace();
+    let currentBlockId = null;
 
     if (workspace) {
       for (const thread of threads) {
@@ -126,6 +182,10 @@ class Highlighter {
             elementsToHighlight.add(svgPath);
           }
         });
+        // 记录每个线程栈顶作为"当前执行"位置指示
+        if (thread.stack && thread.stack.length) {
+          currentBlockId = thread.stack[thread.stack.length - 1];
+        }
       }
     }
 
@@ -140,6 +200,13 @@ class Highlighter {
       }
     }
     this.previousElements = elementsToHighlight;
+
+    // 更新执行流箭头
+    if (threads && threads.length) {
+      this.setCurrentBlockArrow(currentBlockId);
+    } else {
+      this.removeArrow();
+    }
   }
 }
 

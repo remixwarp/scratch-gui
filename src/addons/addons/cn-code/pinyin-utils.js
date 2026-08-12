@@ -319,10 +319,76 @@ function expandPinyinQuery(query, pinyinIndex) {
     return results;
 }
 
+/**
+ * 提取单个 BlockTypeInfo 中所有汉字的拼音首字母缩写
+ * 例如 parts 含 "计算" → "js"
+ * @param {object} blockType - BlockTypeInfo 实例（含 parts 数组）
+ * @returns {string} 首字母缩写（小写）
+ */
+function getInitialsOfBlockType(blockType) {
+    let initials = '';
+    const parts = blockType.parts;
+    if (!parts) return initials;
+    for (const part of parts) {
+        if (typeof part !== 'string') continue;
+        for (const ch of part) {
+            if (!isChineseChar(ch)) continue;
+            const py = PINYIN_MAP[ch];
+            if (py) initials += py[0];
+        }
+    }
+    return initials.toLowerCase();
+}
+
+/**
+ * 构建首字母索引：缩写（如 "js"）→ BlockTypeInfo 列表
+ * @param {Array} blockTypes - BlockTypeInfo 数组
+ * @returns {Map<string, object[]>}
+ */
+function buildInitialIndex(blockTypes) {
+    const map = new Map();
+    for (const bt of blockTypes) {
+        const initials = getInitialsOfBlockType(bt);
+        if (!initials) continue;
+        if (!map.has(initials)) map.set(initials, []);
+        map.get(initials).push(bt);
+    }
+    return map;
+}
+
+/**
+ * 首字母匹配：用户输入拼音缩写（如 "js"）时，模糊匹配积木汉字的拼音首字母（如 "计算" → "js"）
+ * 支持包含匹配与起始匹配
+ * @param {string} query - 用户输入的 ASCII 缩写
+ * @param {Map<string, object[]>} initialIndex - 缩写索引
+ * @returns {object[]} 匹配的 BlockTypeInfo 列表（已去重）
+ */
+function matchInitialQuery(query, initialIndex) {
+    const q = String(query || '').toLowerCase().trim();
+    if (!q) return [];
+    const seen = new Set();
+    const results = [];
+    for (const [initials, bts] of initialIndex) {
+        if (!initials) continue;
+        if (initials.includes(q) || q.startsWith(initials)) {
+            for (const bt of bts) {
+                const key = bt.id || bt.type || bt;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    results.push(bt);
+                }
+            }
+        }
+    }
+    return results;
+}
+
 export {
     isAsciiPinyin,
     extractChineseChars,
     buildPinyinIndex,
     expandPinyinQuery,
+    buildInitialIndex,
+    matchInitialQuery,
     PINYIN_MAP
 };

@@ -11,6 +11,7 @@ export default async function ({ addon, console }) {
 
   addon.self.addEventListener("disabled", () => {
     highlighter.setGlowingThreads([]);
+    highlighter.removeArrow();
   });
 
   const oldStep = vm.runtime._step;

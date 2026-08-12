@@ -345,14 +345,126 @@ export default async function createMemoryTab({ debug, addon, console, msg }) {
     }
   });
 
+  // ===== 变量引用 / List 表格视图（#20 增强）=====
+  const detailSection = Object.assign(document.createElement("div"), {
+    className: "sa-memory-detail-section",
+  });
+
+  const detailTitle = Object.assign(document.createElement("h2"), {
+    textContent: "变量 / 列表详情",
+  });
+
+  const detailTable = Object.assign(document.createElement("table"), {
+    className: "sa-memory-detail-table",
+  });
+  const tableHead = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  [["角色", "名称"], ["类型", "type"], ["引用位置", "refs"], ["当前值", "value"]].forEach(([label, key]) => {
+    const th = document.createElement("th");
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  tableHead.appendChild(headRow);
+  const tableBody = document.createElement("tbody");
+  detailTable.appendChild(tableHead);
+  detailTable.appendChild(tableBody);
+
+  // 计算某个积木 id 在所有脚本中被引用的次数（变量/列表的使用位置）
+  const countBlockRefs = (target, id) => {
+    let count = 0;
+    const blocks = target.blocks ? target.blocks._blocks : null;
+    if (!blocks) return 0;
+    for (const key in blocks) {
+      const block = blocks[key];
+      if (!block || block.id === id) continue;
+      if (block.fields) {
+        for (const fieldKey in block.fields) {
+          const field = block.fields[fieldKey];
+          if (field && field.id === id) count++;
+        }
+      }
+    }
+    return count;
+  };
+
+  const renderDetailTable = () => {
+    while (tableBody.firstChild) tableBody.removeChild(tableBody.lastChild);
+    for (const target of vm.runtime.targets) {
+      if (!target.isOriginal) continue;
+      const variableMap = target.variables;
+      for (const variableId in variableMap) {
+        const variable = variableMap[variableId];
+        const row = document.createElement("tr");
+        const cellTarget = document.createElement("td");
+        cellTarget.textContent = target.getName();
+        const cellName = document.createElement("td");
+        cellName.textContent = variable.name || "?";
+        const cellType = document.createElement("td");
+        cellType.textContent = variable.type === "list" ? "列表" : "变量";
+        const cellRefs = document.createElement("td");
+        const refs = countBlockRefs(target, variableId);
+        cellRefs.textContent = refs;
+        const cellValue = document.createElement("td");
+        cellValue.className = "sa-memory-cell-value";
+        if (variable.type === "list" && Array.isArray(variable.value)) {
+          // List 表格视图：以逗号分隔展示（过长截断 + 可展开）
+          const text = variable.value.join(", ");
+          cellValue.textContent = text.length > 60 ? text.slice(0, 60) + "…" : text;
+          cellValue.title = text;
+          cellValue.dataset.listId = variableId;
+          cellValue.dataset.targetId = target.id;
+          cellValue.style.cursor = "pointer";
+          cellValue.addEventListener("click", () => {
+            const items = variable.value;
+            const detail = prompt(`【${variable.name}】共 ${items.length} 项\n每行一项：`, items.join("\n"));
+            if (detail === null) return;
+            // 非空行写入（保持原列表长度限制由 VM 处理）
+            const newItems = detail.split("\n").filter((l, i) => l !== "" || i === 0);
+            for (let i = 0; i < newItems.length; i++) {
+              variable.value[i] = newItems[i];
+            }
+            variable.value.length = newItems.length;
+          });
+        } else {
+          cellValue.textContent = String(variable.value);
+          cellValue.title = String(variable.value);
+        }
+        row.appendChild(cellTarget);
+        row.appendChild(cellName);
+        row.appendChild(cellType);
+        row.appendChild(cellRefs);
+        row.appendChild(cellValue);
+        tableBody.appendChild(row);
+      }
+    }
+  };
+
+  detailSection.appendChild(detailTitle);
+  detailSection.appendChild(detailTable);
+  content.appendChild(detailSection);
+
   let isVisible = false;
   const show = () => {
     isVisible = true;
     updateMemoryInfo(); // Immediate update when tab becomes visible
+    renderDetailTable();
   };
   const hide = () => {
     isVisible = false;
   };
+
+  // 每 2 秒刷新详情表（避免每帧重建开销）
+  let lastDetailRender = 0;
+  const afterStepCb = () => {
+    if (!isVisible || isPaused()) return;
+    const t = now();
+    if (t - lastDetailRender > 2000) {
+      lastDetailRender = t;
+      renderDetailTable();
+    }
+  };
+  // 复用 addAfterStepCallback 插入第二个回调
+  debug.addAfterStepCallback(afterStepCb);
 
   return {
     tab,

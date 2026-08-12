@@ -13,7 +13,7 @@ import { performSearch } from '../middle-click-popup/searchUtils.js';
 import WorkspaceQuerier from '../middle-click-popup/WorkspaceQuerier.js';
 import { renderMenuItem, calculateActualHeight } from '../middle-click-popup/renderingUtils.js';
 import { handleBlockSelection } from '../middle-click-popup/selectionUtils.js';
-import { isAsciiPinyin, buildPinyinIndex, expandPinyinQuery } from './pinyin-utils.js';
+import { isAsciiPinyin, buildPinyinIndex, expandPinyinQuery, buildInitialIndex, matchInitialQuery } from './pinyin-utils.js';
 
 const TAG = '#cn.code';
 const PREVIEW_LIMIT = 100;
@@ -28,6 +28,9 @@ export default async function ({ addon, msg }) {
     let pollTimer = null;
     /** @type {Map<string, string[]>} 拼音→汉字列表 */
     let pinyinIndex = null;
+
+    /** @type {Map<string, object[]>} 拼音首字母缩写→积木类型列表 */
+    let initialIndex = null;
 
     /** @type {Map<string, {
      *   lineBlocks: Map<number, any>,
@@ -370,6 +373,8 @@ export default async function ({ addon, msg }) {
             });
             // 构建拼音索引（只包含积木中实际出现的汉字）
             pinyinIndex = buildPinyinIndex(blockTypes);
+            // 构建拼音首字母缩写索引（如 "计算" → "js"）
+            initialIndex = buildInitialIndex(blockTypes);
             return true;
         } catch (e) {
             return false;
@@ -409,6 +414,17 @@ export default async function ({ addon, msg }) {
 
                 if (allBlockList.length > 0) {
                     return { blockList: allBlockList.slice(0, PREVIEW_LIMIT), limited: false };
+                }
+            }
+
+            // 拼音首字母匹配：如输入 "js" 匹配 "计算"
+            if (initialIndex) {
+                const initialMatches = matchInitialQuery(trimmed, initialIndex);
+                if (initialMatches.length > 0) {
+                    const allBlockList = initialMatches
+                        .slice(0, PREVIEW_LIMIT)
+                        .map(blockType => ({ block: blockType }));
+                    return { blockList: allBlockList, limited: false };
                 }
             }
         }

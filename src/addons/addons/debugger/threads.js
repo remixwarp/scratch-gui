@@ -60,6 +60,13 @@ export default async function createThreadsTab({ debug, addon, console, msg }) {
       if (preview) {
         root.appendChild(preview);
       }
+      // 点击栈项可直接跳转到对应积木
+      root.style.cursor = "pointer";
+      root.addEventListener("mousedown", (e) => {
+        if (e.target.closest("a, button")) return;
+        const link = debug.createBlockLink(debug.getTargetInfoById(row.targetId), row.blockId);
+        link.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      });
     }
 
     if (row.type === "compiled") {

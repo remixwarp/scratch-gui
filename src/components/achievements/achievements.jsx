@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import Modal from '../../containers/windowed-modal.jsx';
 import {AESettings} from '../../lib/settings.js';
+import {applyLayout} from '../tw-settings-modal/settings-modal.jsx';
 import {
     ACHIEVEMENTS,
     getAchievementExperience,
@@ -85,6 +86,36 @@ const messages = defineMessages({
         defaultMessage: 'Back',
         description: 'Go back button',
         id: 'achievements.goBack'
+    },
+    selectLayoutTitle: {
+        defaultMessage: 'Choose Your Layout',
+        description: 'Layout selection title',
+        id: 'achievements.selectLayoutTitle'
+    },
+    selectLayoutSubtitle: {
+        defaultMessage: 'Pick the editor layout. This is the same option as "选择布局" in Advanced Settings.',
+        description: 'Layout selection subtitle',
+        id: 'achievements.selectLayoutSubtitle'
+    },
+    vscodeLayout: {
+        defaultMessage: 'VS Code Layout',
+        description: 'VS Code layout option',
+        id: 'achievements.vscodeLayout'
+    },
+    vscodeLayoutDesc: {
+        defaultMessage: 'Left activity bar + right multi-tab workspace',
+        description: 'VS Code layout description',
+        id: 'achievements.vscodeLayoutDesc'
+    },
+    scratchLayout: {
+        defaultMessage: 'Scratch Layout',
+        description: 'Scratch layout option',
+        id: 'achievements.scratchLayout'
+    },
+    scratchLayoutDesc: {
+        defaultMessage: 'Classic Scratch interface layout',
+        description: 'Scratch layout description',
+        id: 'achievements.scratchLayoutDesc'
     }
 });
 
@@ -136,7 +167,9 @@ const Achievements = ({intl}) => {
     const [enabled, setEnabled] = useState(() => isAchievementsEnabled());
     const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
     const [deviceStep, setDeviceStep] = useState(false);
+    const [layoutStep, setLayoutStep] = useState(false);
     const [pendingExperience, setPendingExperience] = useState(null);
+    const [pendingDevice, setPendingDevice] = useState(null);
 
     const categoriesNavRef = useRef(null);
     const dragStateRef = useRef({isDragging: false, startX: 0, scrollLeft: 0, moved: false});
@@ -184,15 +217,28 @@ const Achievements = ({intl}) => {
     const chooseDevice = device => {
         if (!pendingExperience) return;
 
+        if (device === 'mobile') {
+            AESettings.set('EnableMobileLayout', true);
+            AESettings.set('EnableMobileTouchDrag', true);
+        } else {
+            AESettings.set('EnableMobileLayout', false);
+            AESettings.set('EnableMobileTouchDrag', false);
+        }
+
+        setPendingDevice(device);
+        setLayoutStep(true);
+    };
+
+    const chooseLayout = vscode => {
+        // 在布局选择完成时才真正提交经验选择（保持 experience 在第三步仍为空，确保布局步骤可见）。
         selectAchievementExperience(pendingExperience);
         setExperience(pendingExperience);
         setEnabled(pendingExperience === 'sc-newbie');
 
-        if (device === 'mobile') {
-            AESettings.set('EnableMobileLayout', true);
-            AESettings.set('EnableMobileTouchDrag', true);
-            window.location.reload();
-        } else if (pendingExperience === 'sc-newbie') {
+        // 应用到高级设置里的"选择布局"选项（与设置面板 applyLayout 完全一致）。
+        applyLayout(vscode);
+
+        if (pendingExperience === 'sc-newbie' && pendingDevice !== 'mobile') {
             setTimeout(() => {
                 window.dispatchEvent(new Event('show-onboarding'));
             }, 300);
@@ -204,10 +250,17 @@ const Achievements = ({intl}) => {
         setPendingExperience(null);
     };
 
+    const goBackToDevice = () => {
+        setLayoutStep(false);
+        setPendingDevice(null);
+    };
+
     const onChooseNewbie = () => chooseExperience('sc-newbie');
     const onChooseVeteran = () => chooseExperience('tw-veteran');
     const onChooseMobile = () => chooseDevice('mobile');
     const onChoosePc = () => chooseDevice('pc');
+    const onChooseVSCode = () => chooseLayout(true);
+    const onChooseScratch = () => chooseLayout(false);
     const onOpenAchievements = () => window.dispatchEvent(new Event('rw-achievements-open'));
     const onCloseModal = () => setIsOpen(false);
 
@@ -347,6 +400,61 @@ const Achievements = ({intl}) => {
                                         </strong>
                                         <small>
                                             {intl.formatMessage(messages.pcDeviceDesc)}
+                                        </small>
+                                    </div>
+                                    <ArrowRightIcon />
+                                </div>
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            )}
+            {!experience && layoutStep && (
+                <div className={styles.backdrop}>
+                    <section
+                        aria-label={intl.formatMessage(messages.selectLayoutTitle)}
+                        className={styles.choicePanel}
+                    >
+                        <button
+                            className={styles.backButton}
+                            onClick={goBackToDevice}
+                            type="button"
+                        >
+                            {'← '}
+                            {intl.formatMessage(messages.goBack)}
+                        </button>
+                        <h2>{intl.formatMessage(messages.selectLayoutTitle)}</h2>
+                        <p>{intl.formatMessage(messages.selectLayoutSubtitle)}</p>
+                        <div className={styles.choiceActions}>
+                            <button
+                                onClick={onChooseVSCode}
+                                type="button"
+                                className={styles.choiceButton}
+                            >
+                                <div className={styles.choiceButtonContent}>
+                                    <div className={styles.choiceButtonText}>
+                                        <strong>
+                                            {intl.formatMessage(messages.vscodeLayout)}
+                                        </strong>
+                                        <small>
+                                            {intl.formatMessage(messages.vscodeLayoutDesc)}
+                                        </small>
+                                    </div>
+                                    <ArrowRightIcon />
+                                </div>
+                            </button>
+                            <button
+                                onClick={onChooseScratch}
+                                type="button"
+                                className={styles.choiceButton}
+                            >
+                                <div className={styles.choiceButtonContent}>
+                                    <div className={styles.choiceButtonText}>
+                                        <strong>
+                                            {intl.formatMessage(messages.scratchLayout)}
+                                        </strong>
+                                        <small>
+                                            {intl.formatMessage(messages.scratchLayoutDesc)}
                                         </small>
                                     </div>
                                     <ArrowRightIcon />
