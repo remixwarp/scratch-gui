@@ -49,6 +49,9 @@
     "mw.menuBar.myStuff": "My Stuff",
     "mw.menuBar.notifications": "Notifications",
     "gui.menuBar.saveToBilup": "Save to Bilup",
+    "gui.menuBar.todo": "Todo",
+    "gui.menuBar.aiAgent": "AI Agent",
+    "tw.login.button": "Login",
     "mw.rotur.menuBar.login": "Login",
     "mw.rotur.accountMenu.profile": "Profile",
     "mw.rotur.accountMenu.leaderboard": "Leaderboard",
@@ -159,7 +162,10 @@
     "gui.collaboration.joinPrivacyNotice": "By joining a collaboration room, your username and project will be shared with other participants.",
     "gui.collaboration.hostPrivacyNotice": "The host can see the usernames and project content of all participants in the room.",
     "tw.collaboration.chatPlaceholder": "Type a message...",
-    "bl.bilme.downloadTheme": "Download Theme"
+    "bl.bilme.downloadTheme": "Download Theme",
+    "gui.menuBar.todo": "待辦事項",
+    "gui.menuBar.aiAgent": "AI 代理",
+    "tw.login.button": "登入"
   },
   "zh-cn": {
     "gui.collaboration.captchaTitle": "人机验证",
@@ -1074,6 +1080,9 @@
     "mw.menuBar.myStuff": "我的作品",
     "mw.menuBar.notifications": "通知",
     "gui.menuBar.saveToBilup": "保存到 Bilup",
+    "gui.menuBar.todo": "待办事项",
+    "gui.menuBar.aiAgent": "AI 助手",
+    "tw.login.button": "登录",
     "mw.rotur.menuBar.login": "登录",
     "mw.rotur.accountMenu.profile": "个人资料",
     "mw.rotur.accountMenu.leaderboard": "排行榜",

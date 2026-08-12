@@ -82,6 +82,9 @@ const base = {
         __filename: false
     },
     module: {
+        // peerjs bundles its own parcel module system; webpack's static analysis
+        // trips over its dynamic require() and emits a "Critical dependency" warning.
+        noParse: /node_modules[\\/]peerjs[\\/]dist[\\/]peerjs\.min\.js/,
         rules: [{
             // accounts-sdk ships esbuild/tsc output that uses TS class-field syntax
             // (e.g. `status;` / `data;` inside class bodies), which webpack 4's own
