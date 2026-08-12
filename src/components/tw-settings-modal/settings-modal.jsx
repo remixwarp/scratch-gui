@@ -1907,7 +1907,7 @@ const DeviceLayoutOption = ({device, selected, onSelect}) => (
         </span>
         <span className={styles.layoutOptionDesc}>
             {device === 'mobile' ?
-                '启用移动布局 + 触屏拖动模式（同欢迎界面）' :
+                '启用移动布局 + 触屏拖动模式' :
                 '标准桌面布局，关闭移动相关设置'}
         </span>
     </button>

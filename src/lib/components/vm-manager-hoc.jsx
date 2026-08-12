@@ -88,34 +88,39 @@ const vmManagerHOC = function (WrappedComponent) {
 
             const originalLoadProject = vm.loadProject;
             vm.loadProject = async data => {
-                let gitJson = null;
-
-                try {
-                    let buffer = null;
-                    if (data instanceof ArrayBuffer) {
-                        buffer = data;
-                    } else if (ArrayBuffer.isView(data)) {
-                        buffer = data.buffer.slice(
-                            data.byteOffset,
-                            data.byteOffset + data.byteLength
-                        );
-                    } else if (typeof Blob !== 'undefined' && data instanceof Blob) {
-                        buffer = await data.arrayBuffer();
-                    }
-
-                    if (buffer) {
-                        const zip = await JSZip.loadAsync(buffer);
-                        const file = zip.file('git.json');
-                        if (file) {
-                            gitJson = await file.async('string');
+                // tw: 提取 git.json 在后台异步进行（JSZip 只读解析，不修改数据），
+                // 避免在 originalLoadProject 之前串行完整解压一遍项目文件，
+                // 大项目可显著减少加载等待时间。
+                const gitJsonPromise = (async () => {
+                    try {
+                        let buffer = null;
+                        if (data instanceof ArrayBuffer) {
+                            buffer = data;
+                        } else if (ArrayBuffer.isView(data)) {
+                            buffer = data.buffer.slice(
+                                data.byteOffset,
+                                data.byteOffset + data.byteLength
+                            );
+                        } else if (typeof Blob !== 'undefined' && data instanceof Blob) {
+                            buffer = await data.arrayBuffer();
                         }
+
+                        if (buffer) {
+                            const zip = await JSZip.loadAsync(buffer);
+                            const file = zip.file('git.json');
+                            if (file) {
+                                return file.async('string');
+                            }
+                        }
+                    } catch (e) {
+                        // ignore
                     }
-                } catch (e) {
-                    // ignore
-                }
+                    return null;
+                })();
 
                 const result = await originalLoadProject.call(vm, data);
 
+                const gitJson = await gitJsonPromise;
                 if (gitJson) {
                     try {
                         await BrowserGit.importRepoFromGitJsonString(gitJson);

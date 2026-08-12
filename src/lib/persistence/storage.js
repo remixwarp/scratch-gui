@@ -55,11 +55,11 @@ class Storage extends ScratchStorage {
         this.assetHost = assetHost;
     }
     getAssetGetConfig (asset) {
-        // 清除缓存，强制从网络加载最新资源
-        if (this.builtinHelper && this.builtinHelper.assets) {
-            delete this.builtinHelper.assets[asset.assetId];
-        }
-        return `${this.assetHost}/asset/${asset.assetId}.${asset.dataFormat}?v=${Date.now()}`;
+        // 素材本身是内容寻址的（assetId 即为内容哈希），无需每次都绕过缓存。
+        // 之前每次请求都 delete 内置缓存并追加 ?v=Date.now()，
+        // 导致加载作品时每个素材都强制重新从远程 CDN 拉取，无法复用任何缓存，
+        // 这正是加载作品极其缓慢的根因。这里恢复为稳定的可缓存 URL。
+        return `${this.assetHost}/asset/${asset.assetId}.${asset.dataFormat}`;
     }
     getAssetCreateConfig (asset) {
         return {

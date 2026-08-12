@@ -1380,19 +1380,29 @@ class Blocks extends React.Component {
         }
     }
     onScriptGlowOn (data) {
-        this.workspace.glowStack(data.id, true);
+        if (this.workspace && this.workspace.getBlockById(data.id)) {
+            this.workspace.glowStack(data.id, true);
+        }
     }
     onScriptGlowOff (data) {
-        this.workspace.glowStack(data.id, false);
+        if (this.workspace && this.workspace.getBlockById(data.id)) {
+            this.workspace.glowStack(data.id, false);
+        }
     }
     onBlockGlowOn (data) {
-        this.workspace.glowBlock(data.id, true);
+        if (this.workspace && this.workspace.getBlockById(data.id)) {
+            this.workspace.glowBlock(data.id, true);
+        }
     }
     onBlockGlowOff (data) {
-        this.workspace.glowBlock(data.id, false);
+        if (this.workspace && this.workspace.getBlockById(data.id)) {
+            this.workspace.glowBlock(data.id, false);
+        }
     }
     onVisualReport (data) {
-        this.workspace.reportValue(data.id, data.value, data.fullValue);
+        if (this.workspace && this.workspace.getBlockById(data.id)) {
+            this.workspace.reportValue(data.id, data.value, data.fullValue);
+        }
     }
     getToolboxXML () {
         // Use try/catch because this requires digging pretty deep into the VM
