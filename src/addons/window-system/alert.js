@@ -19,14 +19,15 @@ const showAlert = (intl, message, options = {}) => new Promise(resolve => {
         closable: true,
         modal: true,
         alwaysOnTop: true,
-        className: 'mw-alert-window'
+        className: 'mw-alert-window',
+        msg: key => intl.formatMessage({id: key, defaultMessage: key})
     });
 
     let windowGrabbedHandler = null;
 
     const cleanup = () => {
         if (windowGrabbedHandler) {
-            document.removeEventListener('mousedown', windowGrabbedHandler);
+            document.removeEventListener('pointerdown', windowGrabbedHandler);
             windowGrabbedHandler = null;
         }
     };
@@ -37,6 +38,7 @@ const showAlert = (intl, message, options = {}) => new Promise(resolve => {
             try {
                 win.close();
             } catch (err) {
+                // ignore
             }
             resolve();
             cleanup();
@@ -45,10 +47,13 @@ const showAlert = (intl, message, options = {}) => new Promise(resolve => {
 
     windowGrabbedHandler = handleWindowGrabbed;
     setTimeout(() => {
-        document.addEventListener('mousedown', windowGrabbedHandler);
+        document.addEventListener('pointerdown', windowGrabbedHandler);
     }, 100);
+
     const content = document.createElement('div');
-    content.style.cssText = 'padding:18px;display:flex;flex-direction:column;gap:12px;align-items:stretch;justify-content:center;min-height:100%;box-sizing:border-box;font-family:inherit;color:var(--ui-modal-foreground, #111);';
+    content.style.cssText = 'padding:18px;display:flex;flex-direction:column;gap:12px;' +
+        'align-items:stretch;justify-content:center;min-height:100%;box-sizing:border-box;' +
+        'font-family:inherit;color:var(--ui-modal-foreground, #111);';
 
     const msgEl = document.createElement('div');
     msgEl.innerText = String(message === null ? '' : message);
@@ -58,9 +63,10 @@ const showAlert = (intl, message, options = {}) => new Promise(resolve => {
     controls.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:6px;';
 
     const okBtn = document.createElement('button');
-    okBtn.innerText = options.okLabel || 'OK';
+    okBtn.innerText = options.okLabel || intl.formatMessage({id: 'tw.alertOk', defaultMessage: 'OK'});
     okBtn.className = 'mw-alert-ok-btn';
-    okBtn.style.cssText = 'padding:8px 14px;border-radius:8px;border:none;background:var(--looks-secondary, #4C97FF);color:white;cursor:pointer;font-weight:600;';
+    okBtn.style.cssText = 'padding:8px 14px;border-radius:8px;border:none;' +
+        'background:var(--ui-primary, #4C97FF);color:white;cursor:pointer;font-weight:600;';
 
     okBtn.addEventListener('click', () => {
         try {
@@ -72,7 +78,6 @@ const showAlert = (intl, message, options = {}) => new Promise(resolve => {
         resolve();
     });
 
-    // allow closing by pressing Enter or Escape
     const keyHandler = e => {
         if (e.key === 'Enter' || e.key === 'Escape') {
             e.preventDefault();
@@ -93,7 +98,6 @@ const showAlert = (intl, message, options = {}) => new Promise(resolve => {
     win.setContent(content);
     win.center().show();
 
-    // Focus button
     setTimeout(() => {
         try {
             okBtn.focus();
@@ -103,7 +107,6 @@ const showAlert = (intl, message, options = {}) => new Promise(resolve => {
         document.addEventListener('keydown', keyHandler);
     }, 10);
 
-    // cleanup on close
     const origOnClose = win.onClose;
     win.onClose = () => {
         document.removeEventListener('keydown', keyHandler);

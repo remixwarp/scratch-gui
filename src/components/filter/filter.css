@@ -15,23 +15,22 @@
     position: relative;
 }
 
-.filter-icon {
+.search-icon {
     position: absolute;
-    top: 0;
-
-    height: 1rem;
-    width: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $text-primary;
+    opacity: 0.5;
+    pointer-events: none;
 }
 
-[dir="ltr"] .filter-icon {
-    left: 0;
-    margin: 0.75rem 0.75rem 0.75rem 1rem;
+[dir="ltr"] .search-icon {
+    left: 1rem;
 }
 
-[dir="rtl"] .filter-icon {
-    right: 0;
-    margin: 0.75rem 1rem 0.75rem 0.75rem;
-    transform: scaleX(-1);
+[dir="rtl"] .search-icon {
+    right: 1rem;
+    transform: translateY(-50%) scaleX(-1);
 }
 
 .filter:focus-within {

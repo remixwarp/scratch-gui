@@ -28,7 +28,7 @@ let created = null;
 
 /**
  * Set (or clear, with null) the account whose name goes on saves.
- * @param {{username: string, id: string}|null} user The signed-in Rotur user.
+ * @param {{username: string, id: string}|null} user The signed-in Bilup Accounts user.
  */
 const setProjectAuthor = user => {
     author = user && user.username ? {

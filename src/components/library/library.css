@@ -1,6 +1,15 @@
 @import "../../css/units.css";
 @import "../../css/colors.css";
 
+@keyframes sidebar-loading-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+.sidebar-loading-dot {
+    animation: sidebar-loading-blink 1s ease-in-out infinite;
+}
+
 .library-modal-content {
     display: flex;
     height: 100%;
@@ -8,6 +17,26 @@
     overflow: hidden;
     min-height: 0;
     max-height: 100%;
+}
+
+.library-modal-content.with-sidebar {
+    flex-direction: row;
+}
+
+.library-sidebar {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.library-main-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .library-scroll-grid {

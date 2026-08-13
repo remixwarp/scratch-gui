@@ -1,7 +1,6 @@
 import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
-import {isLoggedIn as roturIsLoggedIn, fetchCurrentUser as roturFetchCurrentUser} from '../rotur/client.js';
 
 const API_BASE = 'https://api.bilup.org/api';
 
@@ -150,25 +149,11 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
     } else if (method !== 'GET' && !path.endsWith('/view')) {
         clearApiCache();
     }
-    // If we don't yet have a mistwarp session but the user has logged in with
-    // Bilup Accounts (a rotur token exists), exchange it now so the very first
-    // request already carries a valid Bearer token instead of waiting for a 401.
-    let session = loadSession();
-    if (!session && loadRoturToken()) {
-        try {
-            await runExchange(loadRoturToken());
-            session = loadSession();
-        } catch (e) {
-            // exchange failed; fall through to whatever token we do have
-        }
-    }
-    const roturFallback = loadRoturToken();
     const doFetch = () => {
-        const currentSession = loadSession() || session;
+        const session = loadSession();
         const finalHeaders = {...headers};
-        const bearer = currentSession || roturFallback;
-        if (bearer) {
-            finalHeaders.Authorization = `Bearer ${bearer}`;
+        if (session) {
+            finalHeaders.Authorization = `Bearer ${session}`;
         }
         const options = {method, headers: finalHeaders};
         if (body instanceof FormData) {
@@ -214,15 +199,6 @@ const logout = async () => {
         await request('/logout', {method: 'POST'});
     } finally {
         storeSession(null);
-    }
-};
-
-const switchAccount = async () => {
-    await logout();
-    try {
-        localStorage.removeItem(ROTUR_TOKEN_KEY);
-    } catch (e) {
-        // ignore
     }
 };
 
@@ -339,32 +315,6 @@ const remixProject = id => request(`/projects/${id}/remix`, {method: 'POST'});
 
 const deleteProject = id => request(`/projects/${id}`, {method: 'DELETE'});
 
-const isLoggedIn = () => {
-    if (typeof roturIsLoggedIn === 'function') {
-        try {
-            return roturIsLoggedIn();
-        } catch (e) {
-            // rotur client not initialized yet
-        }
-    }
-    return Boolean(loadSession() || loadRoturToken());
-};
-
-const getCurrentUser = async () => {
-    if (typeof roturFetchCurrentUser === 'function') {
-        try {
-            const user = await roturFetchCurrentUser();
-            if (user) return user;
-        } catch (e) {
-            // fall through to local fallback
-        }
-    }
-    if (loadSession() || loadRoturToken()) {
-        return {loggedIn: true};
-    }
-    return null;
-};
-
 const HANDOFF_KEY = 'mw:project-handoff';
 const HANDOFF_MAX_AGE = 5 * 60 * 1000;
 
@@ -400,7 +350,6 @@ export {
     onAuthInvalid,
     onBanned,
     logout,
-    switchAccount,
     createProject,
     uploadProject,
     publishProject,
@@ -413,7 +362,5 @@ export {
     request,
     getCustomExtensionUrls,
     hashExtensionUrl,
-    extensionSourceUrl,
-    isLoggedIn,
-    getCurrentUser
+    extensionSourceUrl
 };

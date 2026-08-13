@@ -64,7 +64,16 @@ import {
     openTutorialModal,
     openExtensionEditorModal,
     openSuperRefactorModal,
-    openCompatibilityModal
+    openCompatibilityModal,
+    openCustomGalleryModal,
+    openAssetsModal,
+    openHelp,
+    openProjectMetadataModal,
+    openDebuggerModal,
+    openPerformanceProfilerModal,
+    openPerformanceBudgetModal,
+    openProjectOutlineModal,
+    openEventTracerModal
 } from '../../reducers/modals';
 
 // IPC for opening extension editor
@@ -175,7 +184,7 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
-    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store
+    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store, AlertTriangle, ListTree, GitGraph
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -319,7 +328,8 @@ class MenuBar extends React.Component {
             workspaceBookmarksCollapsedCategories: [],
             canUndo: true,
             canRedo: true,
-            mistwarpProject: null
+            mistwarpProject: null,
+            variousToolsOpen: false
         };
         this.workspaceBookmarksProjectListener = null;
         this.autosaveCountdownInterval = null;
@@ -371,8 +381,16 @@ class MenuBar extends React.Component {
             'getPlatformInfo',
             'checkCustomExtensions',
             'getCompatibilityIssues',
-            'openCompatibilityModalDialog'
+            'openCompatibilityModalDialog',
+            'handleOpenVariousTools',
+            'handleCloseVariousTools'
         ]);
+    }
+    handleOpenVariousTools () {
+        this.setState({variousToolsOpen: true});
+    }
+    handleCloseVariousTools () {
+        this.setState({variousToolsOpen: false});
     }
     componentDidMount () {
         document.addEventListener('keydown', this.handleKeyPress);
@@ -3894,54 +3912,6 @@ class MenuBar extends React.Component {
                                 <MenuSection>
                                     <MenuItem
                                         onClick={() => {
-                                            this.props.onClickShortcutManagerModal();
-                                            this.props.onRequestCloseTools();
-                                        }}
-                                    >
-                                        <Keyboard />
-                                        <FormattedMessage
-                                            defaultMessage="Keyboard Shortcuts"
-                                            description="Menu bar item for keyboard shortcuts"
-                                            id="tw.menuBar.keyboardShortcuts"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem
-                                        onClick={() => {
-                                            if (window.RWMiniMap && typeof window.RWMiniMap.toggle === 'function') {
-                                                window.RWMiniMap.toggle();
-                                            }
-                                            this.props.onRequestCloseTools();
-                                        }}
-                                    >
-                                        <Map />
-                                        {this.props.locale === 'zh-cn' ? 'Mini Map' : 'Mini Map'}
-                                    </MenuItem>
-                                    <MenuItem
-                                        onClick={() => {
-                                            if (window.RWHealthDashboard && typeof window.RWHealthDashboard.toggle === 'function') {
-                                                window.RWHealthDashboard.toggle();
-                                            }
-                                            this.props.onRequestCloseTools();
-                                        }}
-                                    >
-                                        <Activity />
-                                        {this.props.locale === 'zh-cn' ? '项目健康度仪表盘' : 'Project Health Dashboard'}
-                                    </MenuItem>
-                                    <MenuItem
-                                        onClick={() => {
-                                            if (window.RWLintSystem && typeof window.RWLintSystem.toggle === 'function') {
-                                                window.RWLintSystem.toggle();
-                                            }
-                                            this.props.onRequestCloseTools();
-                                        }}
-                                    >
-                                        <Bug />
-                                        {this.props.locale === 'zh-cn' ? 'Lint 系统' : 'Lint System'}
-                                    </MenuItem>
-                                </MenuSection>
-                                <MenuSection>
-                                    <MenuItem
-                                        onClick={() => {
                                             this.props.onRequestCloseTools();
                                             // Open extension editor window
                                             this.props.dispatch(openExtensionEditorModal());
@@ -3951,6 +3921,180 @@ class MenuBar extends React.Component {
                                         {this.props.locale === 'zh-cn' ? '扩展编辑器' : 'Extension Editor'}
                                     </MenuItem>
                                 </MenuSection>
+                                <MenuLabel
+                                    open={this.state.variousToolsOpen}
+                                    onOpen={this.handleOpenVariousTools}
+                                    onClose={this.handleCloseVariousTools}
+                                >
+                                    <span className={styles.collapsibleLabel}>各种小工具</span>
+                                    <ChevronDown size={8} />
+                                    <MenuBarMenu
+                                        className={classNames(styles.menuBarMenu)}
+                                        open={this.state.variousToolsOpen}
+                                        place={this.props.isRtl ? 'left' : 'right'}
+                                    >
+                                        <MenuSection>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    this.props.onClickCustomGallery();
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <FormattedMessage
+                                                    defaultMessage="Custom Gallery"
+                                                    description="Menu bar item to open the custom gallery"
+                                                    id="tw.menuBar.customGallery"
+                                                />
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    this.props.onClickAssetsModal();
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <FormattedMessage
+                                                    defaultMessage="Assets"
+                                                    description="Menu bar item to open the assets manager"
+                                                    id="tw.menuBar.assets"
+                                                />
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    this.props.onClickProjectMetadata();
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <FormattedMessage
+                                                    defaultMessage="Project Metadata"
+                                                    description="Menu bar item to open project metadata"
+                                                    id="tw.menuBar.projectMetadata"
+                                                />
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    this.props.onClickHelp();
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <FormattedMessage
+                                                    defaultMessage="Help"
+                                                    description="Menu bar item to open the help modal"
+                                                    id="tw.menuBar.help"
+                                                />
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    this.props.onClickDebugger();
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <Bug />
+                                                <FormattedMessage
+                                                    defaultMessage="Debugger"
+                                                    description="Menu bar item to open the debugger modal"
+                                                    id="tw.menuBar.debuggerModal"
+                                                />
+                                            </MenuItem>
+                                        </MenuSection>
+                                        <MenuSection>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    this.props.onClickShortcutManagerModal();
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <Keyboard />
+                                                <FormattedMessage
+                                                    defaultMessage="Keyboard Shortcuts"
+                                                    description="Menu bar item for keyboard shortcuts"
+                                                    id="tw.menuBar.keyboardShortcuts"
+                                                />
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    if (window.RWMiniMap && typeof window.RWMiniMap.toggle === 'function') {
+                                                        window.RWMiniMap.toggle();
+                                                    }
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <Map />
+                                                {this.props.locale === 'zh-cn' ? 'Mini Map' : 'Mini Map'}
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    if (window.RWHealthDashboard && typeof window.RWHealthDashboard.toggle === 'function') {
+                                                        window.RWHealthDashboard.toggle();
+                                                    }
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <Activity />
+                                                {this.props.locale === 'zh-cn' ? '项目健康度仪表盘' : 'Project Health Dashboard'}
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    if (window.RWLintSystem && typeof window.RWLintSystem.toggle === 'function') {
+                                                        window.RWLintSystem.toggle();
+                                                    }
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <Bug />
+                                                {this.props.locale === 'zh-cn' ? 'Lint 系统' : 'Lint System'}
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    this.props.onClickPerformanceProfiler();
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <Activity />
+                                                {this.props.locale === 'zh-cn' ? '性能剖析' : 'Performance Profiler'}
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    this.props.onClickPerformanceBudget();
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <AlertTriangle />
+                                                {this.props.locale === 'zh-cn' ? '性能预算告警' : 'Performance Budget'}
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    this.props.onClickProjectOutline();
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <ListTree />
+                                                {this.props.locale === 'zh-cn' ? '项目大纲' : 'Project Outline'}
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={() => {
+                                                    this.props.onClickEventTracer();
+                                                    this.handleCloseVariousTools();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <GitGraph />
+                                                {this.props.locale === 'zh-cn' ? '事件追踪' : 'Event Tracer'}
+                                            </MenuItem>
+                                        </MenuSection>
+                                    </MenuBarMenu>
+                                </MenuLabel>
                             </MenuBarMenu>
                         </MenuLabel>
                         {!this.props.isPlayerOnly && (
@@ -4225,6 +4369,15 @@ MenuBar.propTypes = {
     onClickPreferencesModal: PropTypes.func,
     onClickSettingsModal: PropTypes.func,
     onClickGitModal: PropTypes.func,
+    onClickCustomGallery: PropTypes.func,
+    onClickAssetsModal: PropTypes.func,
+    onClickHelp: PropTypes.func,
+    onClickProjectMetadata: PropTypes.func,
+    onClickDebugger: PropTypes.func,
+    onClickPerformanceProfiler: PropTypes.func,
+    onClickPerformanceBudget: PropTypes.func,
+    onClickProjectOutline: PropTypes.func,
+    onClickEventTracer: PropTypes.func,
     onClickShowTutorial: PropTypes.func,
     onClickTutorial: PropTypes.func,
     onClickShortcutManagerModal: PropTypes.func,
@@ -4367,6 +4520,15 @@ const mapDispatchToProps = dispatch => ({
         dispatch(closeEditMenu());
         dispatch(openGitModal());
     },
+    onClickCustomGallery: () => dispatch(openCustomGalleryModal()),
+    onClickAssetsModal: () => dispatch(openAssetsModal()),
+    onClickHelp: () => dispatch(openHelp()),
+    onClickProjectMetadata: () => dispatch(openProjectMetadataModal()),
+    onClickDebugger: () => dispatch(openDebuggerModal()),
+    onClickPerformanceProfiler: () => dispatch(openPerformanceProfilerModal()),
+    onClickPerformanceBudget: () => dispatch(openPerformanceBudgetModal()),
+    onClickProjectOutline: () => dispatch(openProjectOutlineModal()),
+    onClickEventTracer: () => dispatch(openEventTracerModal()),
     onClickShowTutorial: () => {
         localStorage.removeItem('mw:has-seen-onboarding');
         dispatch(showOnboarding());

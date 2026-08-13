@@ -12,11 +12,28 @@ addLocaleData(localeData);
 const UPDATE_LOCALES = 'scratch-gui/locales/UPDATE_LOCALES';
 const SELECT_LOCALE = 'scratch-gui/locales/SELECT_LOCALE';
 
+// 将嵌套的翻译对象拍平成点号分隔的扁平键（如 {pen: {categoryName: '画笔'}} → {'pen.categoryName': '画笔'}）。
+// 某些翻译源可能把分类名以嵌套对象形式提供（如 messages.pen），而 Blocks 组件要求 messages 为
+// objectOf(string)，嵌套对象会触发 "messages.pen.categoryName is object" 的 propType 警告。拍平后即可消除。
+const flattenMessages = (obj, prefix = '') => {
+    const result = {};
+    for (const key of Object.keys(obj)) {
+        const value = obj[key];
+        const newKey = prefix ? `${prefix}.${key}` : key;
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            Object.assign(result, flattenMessages(value, newKey));
+        } else {
+            result[newKey] = value;
+        }
+    }
+    return result;
+};
+
 const initialState = {
     isRtl: false,
     locale: 'en',
     messagesByLocale: editorMessages,
-    messages: editorMessages.en
+    messages: flattenMessages(editorMessages.en)
 };
 
 const reducer = function (state, action) {
@@ -27,14 +44,14 @@ const reducer = function (state, action) {
             isRtl: isRtl(action.locale),
             locale: action.locale,
             messagesByLocale: state.messagesByLocale,
-            messages: state.messagesByLocale[action.locale]
+            messages: flattenMessages(state.messagesByLocale[action.locale])
         });
     case UPDATE_LOCALES:
         return Object.assign({}, state, {
             isRtl: state.isRtl,
             locale: state.locale,
             messagesByLocale: action.messagesByLocale,
-            messages: action.messagesByLocale[state.locale]
+            messages: flattenMessages(action.messagesByLocale[state.locale])
         });
     default:
         return state;
@@ -67,7 +84,7 @@ const initLocale = function (currentState, locale) {
                 isRtl: isRtl(locale),
                 locale: locale,
                 messagesByLocale: currentState.messagesByLocale,
-                messages: currentState.messagesByLocale[locale]
+                messages: flattenMessages(currentState.messagesByLocale[locale])
             }
         );
     }

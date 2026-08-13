@@ -1,4 +1,5 @@
 import bindAll from 'lodash.bindall';
+import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 import VM from 'scratch-vm';
@@ -13,8 +14,34 @@ import extensionLibraryContent, {
 import extensionTags from '../lib/libraries/tw-extension-tags';
 import twExtensionTranslations from '../lib/libraries/extensions/tw-extension-translations';
 
-import LibraryComponent from '../components/library/library.jsx';
+import ExtensionLibraryComponent from '../components/tw-extension-library/extension-library.jsx';
 import extensionIcon from '../components/action-menu/icon--sprite.svg';
+
+// 分类状态小圆点颜色（与 tag-button 保持一致：在线=绿、本地/加载中=黄、错误=红）
+const TAG_STATUS_COLORS = {
+    online: '#4CAF50',
+    local: '#FFC107',
+    loading: '#FFC107',
+    error: '#F44336'
+};
+
+// 左侧分类侧边栏的小圆点（绿/黄/红表示分类加载状态）
+const SidebarStatusDot = ({color, isLoading, className}) => (
+    <span
+        className={classNames(className, {'sidebar-loading-dot': isLoading})}
+        style={{
+            display: 'inline-block',
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            marginRight: '0.5rem',
+            flexShrink: 0,
+            background: color,
+            // 柔光环：与外圈颜色一致的半透明描边
+            boxShadow: `0 0 0 2px ${color}40`
+        }}
+    />
+);
 
 const messages = defineMessages({
     extensionTitle: {
@@ -357,16 +384,60 @@ const fetchLibrary = async () => {
         return [];
     };
 
+    // 为 bilup 扩展补充中文翻译（名称/描述），按 extensionId 匹配
+    const bilupZhTranslations = {
+        bilupAccounts: {
+            name: 'Bilup 账户',
+            description: '登录 Bilup 并访问你的账户信息、权限与社交功能。'
+        },
+        bilupEconomy: {
+            name: 'Bilup 经济',
+            description: '管理积分、货币与交易等经济相关功能。'
+        },
+        bilupKeys: {
+            name: 'Bilup 密钥',
+            description: '创建和管理 API 密钥，用于安全地访问服务。'
+        },
+        bilupStatus: {
+            name: 'Bilup 状态',
+            description: '获取在线状态、活动与用户状态信息。'
+        },
+        bilupSocial: {
+            name: 'Bilup 社交',
+            description: '发送消息、关注用户并参与社区互动。'
+        },
+        bilupShop: {
+            name: 'Bilup 商店',
+            description: '浏览商品、下单并管理你的订单。'
+        },
+        bilupGroups: {
+            name: 'Bilup 群组',
+            description: '创建和管理群组，与成员协作。'
+        },
+        bilupFiles: {
+            name: 'Bilup 文件',
+            description: '上传、下载并管理你的文件资源。'
+        }
+    };
+
     bilupExtensions = await fetchWithFallback(
         'bilup',
         'https://extensions.bilup.org/generated-metadata/extensions-v0.json',
         'https://rw-extensions.pages.dev/bilup/extensions-index.json',
-        data => data.extensions.map(extension => ({
-            name: extension.name,
-            nameTranslations: extension.nameTranslations || {},
-            description: extension.description,
-            descriptionTranslations: extension.descriptionTranslations || {},
-            extensionId: extension.id,
+        data => data.extensions.map(extension => {
+            const zh = bilupZhTranslations[extension.id];
+            const nameTranslations = {...(extension.nameTranslations || {})};
+            const descriptionTranslations = {...(extension.descriptionTranslations || {})};
+            if (zh) {
+                nameTranslations['zh-cn'] = zh.name;
+                descriptionTranslations['zh-cn'] = zh.description;
+            }
+            return {
+                name: extension.name,
+                nameTranslations,
+                description: extension.description,
+                descriptionTranslations,
+                extensionId: extension.id,
             extensionURL: `https://extensions.bilup.org/${extension.slug}.js`,
             iconURL: `https://extensions.bilup.org/${extension.image || 'images/unknown.svg'}`,
             tags: ['bilup'],
@@ -395,7 +466,8 @@ const fetchLibrary = async () => {
             })) : null,
             incompatibleWithScratch: true,
             featured: true
-        }))
+            };
+        })
     );
 
     yesshapeExtensions = await fetchWithFallback(
@@ -760,13 +832,15 @@ class ExtensionLibrary extends React.PureComponent {
         super(props);
         bindAll(this, [
             'handleItemSelect',
-            'handleRetryTag'
+            'handleRetryTag',
+            'isLoaded'
         ]);
         this.state = {
             gallery: cachedGallery ? cachedGallery.extensions : null,
             loadStatus: cachedLoadStatus || {},
             galleryError: null,
-            galleryTimedOut: false
+            galleryTimedOut: false,
+            selectedTag: 'all'
         };
         this._mounted = false;
     }
@@ -838,6 +912,9 @@ class ExtensionLibrary extends React.PureComponent {
                 }));
             }
         });
+    }
+    handleSelectTag(tag) {
+        this.setState({ selectedTag: tag ? tag.toLowerCase() : 'all' });
     }
     handleItemSelect(item) {
         if (item.href) {
@@ -911,25 +988,45 @@ class ExtensionLibrary extends React.PureComponent {
             }
         }
 
-        const tagsWithStatus = extensionTags.map(tag => ({
-            ...tag,
-            loadStatus: this.state.loadStatus[tag.tag] || null
-        }));
+        const tagsWithIcons = extensionTags.map(tag => {
+            // rotur（Bilup Accounts）与 scratch 是内置官方分类，始终显示绿色"已加载"小圆点
+            if (tag.tag === 'rotur' || tag.tag === 'scratch') {
+                return {
+                    ...tag,
+                    icon: () => (
+                        <SidebarStatusDot
+                            color={TAG_STATUS_COLORS.online}
+                            isLoading={false}
+                        />
+                    )
+                };
+            }
+            return {
+                ...tag,
+                icon: this.state.loadStatus[tag.tag] ? (() => (
+                    <SidebarStatusDot
+                        color={TAG_STATUS_COLORS[this.state.loadStatus[tag.tag]] || '#888888'}
+                        isLoading={this.state.loadStatus[tag.tag] === 'loading'}
+                    />
+                )) : null
+            };
+        });
 
         return (
-            <LibraryComponent
+            <ExtensionLibraryComponent
                 data={library}
-                filterable
-                persistableKey="extensionId"
-                id="extensionLibrary"
-                tags={tagsWithStatus}
+                isLoaded={this.isLoaded}
+                tags={tagsWithIcons}
                 title={this.props.intl.formatMessage(messages.extensionTitle)}
-                visible={this.props.visible}
                 onItemSelected={this.handleItemSelect}
-                onRetryTag={this.handleRetryTag}
                 onRequestClose={this.props.onRequestClose}
             />
         );
+    }
+
+    isLoaded (item) {
+        return item && item.extensionId && this.props.vm && this.props.vm.extensionManager &&
+            this.props.vm.extensionManager.isExtensionLoaded(item.extensionId);
     }
 }
 

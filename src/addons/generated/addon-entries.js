@@ -116,4 +116,8 @@ export default {
   "project-health-dashboard": () => import(/* webpackChunkName: "addon-entry-project-health-dashboard" */ "../addons/project-health-dashboard/_runtime_entry.js"),
   "lint-system": () => import(/* webpackChunkName: "addon-entry-lint-system" */ "../addons/lint-system/_runtime_entry.js"),
   "script-tabs": () => import(/* webpackChunkName: "addon-entry-script-tabs" */ "../addons/script-tabs/_runtime_entry.js"),
+  "performance-profiler": () => import(/* webpackChunkName: "addon-entry-performance-profiler" */ "../addons/performance-profiler/_runtime_entry.js"),
+  "performance-budget": () => import(/* webpackChunkName: "addon-entry-performance-budget" */ "../addons/performance-budget/_runtime_entry.js"),
+  "project-outline": () => import(/* webpackChunkName: "addon-entry-project-outline" */ "../addons/project-outline/_runtime_entry.js"),
+  "event-tracer": () => import(/* webpackChunkName: "addon-entry-event-tracer" */ "../addons/event-tracer/_runtime_entry.js"),
 };

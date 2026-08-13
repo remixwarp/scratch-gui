@@ -101,7 +101,7 @@ const base = {
                 ]
             }
         }, {
-            test: /\.(jsx?|tsx?)$/,
+            test: /\.(jsx?|tsx?|mjs)$/,
             loader: 'babel-loader',
             include: [
                 path.resolve(__dirname, 'src'),

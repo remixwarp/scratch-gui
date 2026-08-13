@@ -58,6 +58,15 @@ import SuperRefactorModal from '../../containers/super-refactor-modal.jsx';
 import CompatibilityModal from '../../containers/tv-compatibility-modal.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
+import CustomGalleryModal from '../../components/custom-gallery-modal/custom-gallery-modal.jsx';
+import MWAssetsModal from '../../components/mw-assets-modal/assets-modal.jsx';
+import MWHelpModal from '../../components/mw-help-modal/help-modal.jsx';
+import MWProjectMetadataModal from '../../containers/mw-project-metadata-modal.jsx';
+import TWDebugger from '../../containers/tw-debugger.jsx';
+import PerformanceProfilerModal from '../../components/dev-tools/performance-profiler-modal.jsx';
+import PerformanceBudgetModal from '../../components/dev-tools/performance-budget-modal.jsx';
+import ProjectOutlineModal from '../../components/dev-tools/project-outline-modal.jsx';
+import EventTracerModal from '../../components/dev-tools/event-tracer-modal.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
 import Avatar from '../mw-avatar/avatar.jsx';
 import {closeRoturLoginModal, openRoturLoginModal} from '../../reducers/modals.js';
@@ -91,7 +100,25 @@ import {Theme} from '../../lib/themes';
 
 import {setStageSize} from '../../reducers/stage-size';
 import {showOnboarding} from '../../reducers/onboarding';
-import {openGitModal, openAIAgentModal} from '../../reducers/modals.js';
+import {
+    openGitModal,
+    openAIAgentModal,
+    openCustomGalleryModal,
+    openAssetsModal,
+    openHelp,
+    openProjectMetadataModal,
+    openDebuggerModal,
+    closeCustomGalleryModal,
+    closeAssetsModal,
+    closeHelpModal,
+    closeProjectMetadataModal,
+    closeDebuggerModal,
+    MODAL_CUSTOM_GALLERY,
+    MODAL_ASSETS,
+    MODAL_HELP,
+    MODAL_DEBUGGER,
+    MODAL_PROJECT_METADATA
+} from '../../reducers/modals.js';
 import {openWorkspaceBookmarksMenu} from '../../reducers/menus.js';
 import {openCollaborationModal} from '../../reducers/collaboration.js';
 import SettingsStore from '../../addons/settings-store-singleton.js';
@@ -404,6 +431,16 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
+        customGalleryModalVisible,
+        assetsModalVisible,
+        helpModalVisible,
+        helpEntry,
+        projectMetadataModalVisible,
+        debuggerModalVisible,
+        performanceProfilerModalVisible,
+        performanceBudgetModalVisible,
+        projectOutlineModalVisible,
+        eventTracerModalVisible,
         shortcutManagerModalVisible,
         editingTarget,
         vm,
@@ -995,6 +1032,15 @@ const GUIComponent = props => {
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
             {gitModalVisible && <TWGitModal />}
+            {customGalleryModalVisible && <CustomGalleryModal isRtl={isRtl} />}
+            {assetsModalVisible && <MWAssetsModal isRtl={isRtl} />}
+            {helpModalVisible && <MWHelpModal isRtl={isRtl} entryId={helpEntry} />}
+            {projectMetadataModalVisible && <MWProjectMetadataModal isRtl={isRtl} />}
+            {debuggerModalVisible && <TWDebugger isRtl={isRtl} />}
+            {performanceProfilerModalVisible && <PerformanceProfilerModal isRtl={isRtl} vm={vm} />}
+            {performanceBudgetModalVisible && <PerformanceBudgetModal isRtl={isRtl} vm={vm} />}
+            {projectOutlineModalVisible && <ProjectOutlineModal isRtl={isRtl} vm={vm} />}
+            {eventTracerModalVisible && <EventTracerModal isRtl={isRtl} vm={vm} />}
             <AIModal />
             <AIChatModal />
             <AIAgentModal />
@@ -1028,6 +1074,16 @@ const GUIComponent = props => {
         unknownPlatformModalVisible,
         invalidProjectModalVisible,
         gitModalVisible,
+        customGalleryModalVisible,
+        assetsModalVisible,
+        helpModalVisible,
+        helpEntry,
+        projectMetadataModalVisible,
+        debuggerModalVisible,
+        performanceProfilerModalVisible,
+        performanceBudgetModalVisible,
+        projectOutlineModalVisible,
+        eventTracerModalVisible,
         shortcutManagerModalVisible,
         onboardingVisible,
         props.gandiHelpModal,
@@ -1600,6 +1656,16 @@ GUIComponent.propTypes = {
     unknownPlatformModalVisible: PropTypes.bool,
     invalidProjectModalVisible: PropTypes.bool,
     gitModalVisible: PropTypes.bool,
+    customGalleryModalVisible: PropTypes.bool,
+    assetsModalVisible: PropTypes.bool,
+    helpModalVisible: PropTypes.bool,
+    helpEntry: PropTypes.string,
+    projectMetadataModalVisible: PropTypes.bool,
+    debuggerModalVisible: PropTypes.bool,
+    performanceProfilerModalVisible: PropTypes.bool,
+    performanceBudgetModalVisible: PropTypes.bool,
+    projectOutlineModalVisible: PropTypes.bool,
+    eventTracerModalVisible: PropTypes.bool,
     gandiHelpModal: PropTypes.bool,
     // AstraEditor features
     customThemeVisible: PropTypes.bool,
@@ -1648,7 +1714,18 @@ const mapStateToProps = state => ({
     // AstraEditor features
     customThemeVisible: state.scratchGui.modals.customtheme,
     readmeModalVisible: state.scratchGui.modals.readme,
-    roturUsername: state.scratchGui.rotur ? state.scratchGui.rotur.username : null
+    roturUsername: state.scratchGui.rotur ? state.scratchGui.rotur.username : null,
+    // MistWarp feature modals
+    gitModalVisible: state.scratchGui.modals.gitModal,
+    customGalleryModalVisible: state.scratchGui.modals.customGalleryModal,
+    assetsModalVisible: state.scratchGui.modals.assetsModal,
+    helpModalVisible: state.scratchGui.modals.helpModal,
+    projectMetadataModalVisible: state.scratchGui.modals.projectMetadataModal,
+    debuggerModalVisible: state.scratchGui.modals.debuggerModal,
+    performanceProfilerModalVisible: state.scratchGui.modals.performanceProfilerModal,
+    performanceBudgetModalVisible: state.scratchGui.modals.performanceBudgetModal,
+    projectOutlineModalVisible: state.scratchGui.modals.projectOutlineModal,
+    eventTracerModalVisible: state.scratchGui.modals.eventTracerModal
 });
 
 const mapDispatchToProps = dispatch => ({

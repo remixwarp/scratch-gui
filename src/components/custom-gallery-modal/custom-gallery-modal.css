@@ -1,0 +1,86 @@
+.modal-content {
+    max-width: 550px;
+    margin-top: 50px;
+}
+
+.body {
+    background: var(--ui-white);
+    padding: 1.5rem 2.25rem;
+}
+
+.field {
+    margin-bottom: 1rem;
+}
+
+.label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 2px solid var(--ui-tertiary, #ccc);
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--ui-primary, #4d97ff);
+}
+
+.button-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.ok-button,
+.cancel-button {
+    padding: 0.5rem 1rem;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+
+.ok-button {
+    background-color: var(--looks-secondary);
+    color: white;
+}
+
+.ok-button:hover {
+    background-color: color-mix(in srgb, var(--looks-secondary) 75%, black);
+}
+
+.ok-button:active {
+    transform: scale(0.98);
+}
+
+.ok-button:focus,
+.cancel-button:focus {
+    outline: 2px solid var(--ui-primary, #4d97ff);
+    outline-offset: 2px;
+}
+
+.cancel-button {
+    background-color: var(--ui-secondary, #e6e6e6);
+    color: var(--ui-secondary-foreground, #575e75);
+}
+
+.cancel-button:hover {
+    background-color: var(--ui-secondary-hover, #d9d9d9);
+}
+
+.cancel-button:active {
+    transform: scale(0.98);
+}

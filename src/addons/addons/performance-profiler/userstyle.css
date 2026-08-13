@@ -1,0 +1,79 @@
+/* Performance Profiler styles */
+.rw-pp-header {
+    border-bottom: 1px solid var(--ui-black-transparent);
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+}
+.rw-pp-header h2 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+.rw-pp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 8px;
+}
+.rw-pp-table th,
+.rw-pp-table td {
+    border: 1px solid var(--ui-black-transparent);
+    padding: 6px 8px;
+    text-align: left;
+    color: var(--text-primary);
+}
+.rw-pp-table th {
+    background: var(--ui-secondary);
+    font-weight: 600;
+}
+.rw-pp-table tr:nth-child(even) td {
+    background: var(--ui-black-transparent);
+}
+.rw-pp-table code {
+    background: var(--ui-black-transparent);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: var(--code-font, monospace);
+    font-size: 11px;
+}
+.rw-pp-section h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+.rw-pp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 8px;
+}
+.rw-pp-card {
+    background: var(--ui-modal-background);
+    border: 1px solid var(--ui-black-transparent);
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+.rw-pp-card .label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
+}
+.rw-pp-card .value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.rw-pp-section ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+.rw-pp-section li {
+    margin-bottom: 4px;
+}
+.rw-pp-section code {
+    background: var(--ui-black-transparent);
+    padding: 1px 4px;
+    border-radius: 3px;
+}

@@ -36,3 +36,6 @@ npm-*
 
 # for act
 .secrets
+
+# Dev server log
+dev-server.log

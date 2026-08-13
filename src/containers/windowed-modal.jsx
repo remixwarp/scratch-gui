@@ -150,26 +150,29 @@ class WindowedModal extends React.Component {
         if (this.window) {
             return;
         }
-        
-        // Check if a window with this ID already exists
+
         const windowId = this.props.id || 'modal-window';
         this.windowId = windowId;
+
+        // If a previous window with the same id is still registered, destroy it
+        // before creating a new one. Reusing a stale window leaves the modal empty
+        // because its React portal was torn down when the component unmounted.
         const existingWindow = WindowManager.getWindow(windowId);
         if (existingWindow) {
-            this.window = existingWindow;
-            this.contentContainer = this.window.contentElement;
-            this.createdWindow = false;
-            this.forceUpdate(); // Force re-render now that container is available
-            return;
+            try {
+                existingWindow.close();
+            } catch (e) {
+                // Ignore errors from closing an already-closing window
+            }
         }
-        
+
         const {
             id,
             contentLabel,
             className = '',
             fullScreen = false
         } = this.props;
-        
+
         // Determine window size based on content type
         let width = this.props.width || 600;
         let height = this.props.height || 500;
@@ -186,7 +189,7 @@ class WindowedModal extends React.Component {
         }
         
         this.window = WindowManager.createWindow({
-            id: id || 'modal-window',
+            id: windowId,
             title: typeof contentLabel === 'string' ? contentLabel : 'Dialog',
             width,
             height,
@@ -351,23 +354,21 @@ class WindowedModal extends React.Component {
     }
     
     handleWindowClose = () => {
-        this.window = null;
-        this.contentContainer = null;
-        this.createdWindow = false;
-
+        // Notify the parent first so Redux state can be updated while the
+        // window reference is still available for cleanup in componentWillUnmount.
         if (this.props.onRequestClose) {
             this.props.onRequestClose();
         }
+
+        this.contentContainer = null;
+        this.createdWindow = false;
+        this.window = null;
     };
-    
+
     handleWindowMinimize = () => {
-        this.window = null;
         this.contentContainer = null;
         this.createdWindow = false;
-
-        if (this.props.onRequestClose) {
-            this.props.onRequestClose();
-        }
+        this.window = null;
     };
     
     addEventListeners () {

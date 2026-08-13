@@ -16,6 +16,7 @@ const MODAL_SETTINGS = 'settingsModal';
 const MODAL_CUSTOM_EXTENSION = 'customExtensionModal';
 const MODAL_RESTORE_POINTS = 'restorePointModal';
 const MODAL_FONTS = 'fontsModal';
+const MODAL_ASSETS = 'assetsModal';
 const MODAL_UNKNOWN_PLATFORM = 'unknownPlatformModal';
 const MODAL_INVALID_PROJECT = 'invalidProjectModal';
 const MODAL_EXTENSION_MANAGER = 'extensionManagerModal';
@@ -30,6 +31,13 @@ const MODAL_AI_AGENT = 'aiAgentModal';
 const MODAL_BAIDU_AI = 'baiduAIModal';
 const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 const MODAL_WARPTHEME = 'bilmeModal';
+const MODAL_CUSTOM_GALLERY = 'customGalleryModal';
+const MODAL_DEBUGGER = 'debuggerModal';
+const MODAL_HELP = 'helpModal';
+const MODAL_PERFORMANCE_PROFILER = 'performanceProfilerModal';
+const MODAL_PERFORMANCE_BUDGET = 'performanceBudgetModal';
+const MODAL_PROJECT_OUTLINE = 'projectOutlineModal';
+const MODAL_EVENT_TRACER = 'eventTracerModal';
 const MODAL_WARPTHEME_STORE = 'warpthemeModal';
 const MODAL_EXTENSION_EDITOR = 'extensionEditorModal';
 const MODAL_SUPER_REFACTOR = 'superRefactorModal';
@@ -88,6 +96,15 @@ const initialState = {
     [MODAL_COMPATIBILITY]: false,
     [MODAL_ROTUR_LOGIN]: false,
     [MODAL_PROJECT_METADATA]: false,
+    [MODAL_ASSETS]: false,
+    [MODAL_CUSTOM_GALLERY]: false,
+    [MODAL_DEBUGGER]: false,
+    [MODAL_HELP]: false,
+    [MODAL_PERFORMANCE_PROFILER]: false,
+    [MODAL_PERFORMANCE_BUDGET]: false,
+    [MODAL_PROJECT_OUTLINE]: false,
+    [MODAL_EVENT_TRACER]: false,
+    helpEntry: null,
     extensionLoadChoiceData: null,
     videoModalData: null
 };
@@ -106,12 +123,18 @@ const reducer = function (state, action) {
             [action.modal]: false,
             simpleDialogConfig: null,
             extensionLoadChoiceData: action.modal === MODAL_EXTENSION_LOAD_CHOICE ? null : state.extensionLoadChoiceData,
-            videoModalData: action.modal === MODAL_VIDEO ? null : state.videoModalData
+            videoModalData: action.modal === MODAL_VIDEO ? null : state.videoModalData,
+            helpEntry: action.modal === MODAL_HELP ? null : state.helpEntry
         });
     case 'scratch-gui/modals/SHOW_SIMPLE_DIALOG':
         return Object.assign({}, state, {
             [MODAL_SIMPLE_DIALOG]: true,
             simpleDialogConfig: action.dialogConfig
+        });
+    case 'scratch-gui/modals/SET_HELP_MODAL':
+        return Object.assign({}, state, {
+            [MODAL_HELP]: true,
+            helpEntry: action.entryId || null
         });
     default:
         return state;
@@ -417,6 +440,57 @@ const openProjectMetadataModal = function (tab) {
 const closeProjectMetadataModal = function () {
     return closeModal(MODAL_PROJECT_METADATA);
 };
+const openAssetsModal = function () {
+    return openModal(MODAL_ASSETS);
+};
+const closeAssetsModal = function () {
+    return closeModal(MODAL_ASSETS);
+};
+const openCustomGalleryModal = function () {
+    return openModal(MODAL_CUSTOM_GALLERY);
+};
+const closeCustomGalleryModal = function () {
+    return closeModal(MODAL_CUSTOM_GALLERY);
+};
+const openDebuggerModal = function () {
+    return openModal(MODAL_DEBUGGER);
+};
+const closeDebuggerModal = function () {
+    return closeModal(MODAL_DEBUGGER);
+};
+const openPerformanceProfilerModal = function () {
+    return openModal(MODAL_PERFORMANCE_PROFILER);
+};
+const closePerformanceProfilerModal = function () {
+    return closeModal(MODAL_PERFORMANCE_PROFILER);
+};
+const openPerformanceBudgetModal = function () {
+    return openModal(MODAL_PERFORMANCE_BUDGET);
+};
+const closePerformanceBudgetModal = function () {
+    return closeModal(MODAL_PERFORMANCE_BUDGET);
+};
+const openProjectOutlineModal = function () {
+    return openModal(MODAL_PROJECT_OUTLINE);
+};
+const closeProjectOutlineModal = function () {
+    return closeModal(MODAL_PROJECT_OUTLINE);
+};
+const openEventTracerModal = function () {
+    return openModal(MODAL_EVENT_TRACER);
+};
+const closeEventTracerModal = function () {
+    return closeModal(MODAL_EVENT_TRACER);
+};
+const openHelp = function (entryId) {
+    return {
+        type: 'scratch-gui/modals/SET_HELP_MODAL',
+        entryId: entryId
+    };
+};
+const closeHelpModal = function () {
+    return closeModal(MODAL_HELP);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -504,6 +578,22 @@ export {
     closeRoturLoginModal,
     openProjectMetadataModal,
     closeProjectMetadataModal,
+    openAssetsModal,
+    closeAssetsModal,
+    openCustomGalleryModal,
+    closeCustomGalleryModal,
+    openDebuggerModal,
+    closeDebuggerModal,
+    openPerformanceProfilerModal,
+    closePerformanceProfilerModal,
+    openPerformanceBudgetModal,
+    closePerformanceBudgetModal,
+    openProjectOutlineModal,
+    closeProjectOutlineModal,
+    openEventTracerModal,
+    closeEventTracerModal,
+    openHelp,
+    closeHelpModal,
     MODAL_GANDI_HELP,
     MODAL_WARPTHEME,
     MODAL_WARPTHEME_STORE,
