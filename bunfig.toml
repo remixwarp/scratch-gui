@@ -1,4 +1,0 @@
-[install]
-# 禁用依赖缓存，确保每次构建都重新从 GitHub 拉取
-# github:remixwarp/scratch-vm#main 等源依赖的最新代码
-cache = false

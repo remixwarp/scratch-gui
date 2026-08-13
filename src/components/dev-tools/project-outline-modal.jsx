@@ -1,177 +1,258 @@
+import bindAll from 'lodash.bindall';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
-import {connect} from 'react-redux';
 
-import Modal from '../../containers/windowed-modal.jsx';
-import {
-    closeProjectOutlineModal
-} from '../../reducers/modals';
-
+import Box from '../box/box.jsx';
 import styles from './dev-tools.css';
 
 const messages = defineMessages({
     title: {
         defaultMessage: 'Project Outline',
-        description: 'Title of the project outline window',
-        id: 'mw.devtools.outline.title'
+        description: 'Title for the project outline tool',
+        id: 'gui.devTools.projectOutline.title'
     },
-    sprites: {
-        defaultMessage: 'Sprites',
-        description: 'Section header: sprites',
-        id: 'mw.devtools.outline.sprites'
+    subtitle: {
+        defaultMessage: '查看项目结构，点击角色可切换到其脚本编辑。',
+        description: 'Subtitle for the project outline tool',
+        id: 'gui.devTools.projectOutline.subtitle'
     },
     stage: {
-        defaultMessage: 'Stage',
-        description: 'Section header: stage',
-        id: 'mw.devtools.outline.stage'
+        defaultMessage: '舞台',
+        description: 'Stage label',
+        id: 'gui.devTools.projectOutline.stage'
+    },
+    sprites: {
+        defaultMessage: '角色',
+        description: 'Sprites label',
+        id: 'gui.devTools.projectOutline.sprites'
     },
     costumes: {
-        defaultMessage: 'Costumes',
-        description: 'Section header: costumes',
-        id: 'mw.devtools.outline.costumes'
+        defaultMessage: '造型',
+        description: 'Costumes label',
+        id: 'gui.devTools.projectOutline.costumes'
     },
     sounds: {
-        defaultMessage: 'Sounds',
-        description: 'Section header: sounds',
-        id: 'mw.devtools.outline.sounds'
+        defaultMessage: '声音',
+        description: 'Sounds label',
+        id: 'gui.devTools.projectOutline.sounds'
     },
-    broadcasts: {
-        defaultMessage: 'Broadcasts',
-        description: 'Section header: broadcasts',
-        id: 'mw.devtools.outline.broadcasts'
+    variables: {
+        defaultMessage: '变量',
+        description: 'Variables label',
+        id: 'gui.devTools.projectOutline.variables'
+    },
+    lists: {
+        defaultMessage: '列表',
+        description: 'Lists label',
+        id: 'gui.devTools.projectOutline.lists'
+    },
+    extensions: {
+        defaultMessage: '扩展',
+        description: 'Extensions label',
+        id: 'gui.devTools.projectOutline.extensions'
     },
     scripts: {
-        defaultMessage: 'Top-level scripts',
-        description: 'Section header: top level scripts',
-        id: 'mw.devtools.outline.scripts'
+        defaultMessage: '脚本',
+        description: 'Scripts label',
+        id: 'gui.devTools.projectOutline.scripts'
     },
-    empty: {
-        defaultMessage: 'No project loaded.',
-        description: 'Message when no project',
-        id: 'mw.devtools.outline.empty'
+    blocks: {
+        defaultMessage: '积木',
+        description: 'Blocks label',
+        id: 'gui.devTools.projectOutline.blocks'
+    },
+    noProject: {
+        defaultMessage: '当前没有打开的项目。',
+        description: 'No project loaded',
+        id: 'gui.devTools.projectOutline.noProject'
+    },
+    clickToEdit: {
+        defaultMessage: '点击切换到此角色',
+        description: 'Hint to click to edit target',
+        id: 'gui.devTools.projectOutline.clickToEdit'
     }
 });
 
 class ProjectOutlineModal extends React.Component {
-    getOutline () {
-        const vm = this.props.vm;
-        if (!vm || !vm.runtime) {
-            return null;
-        }
-        const runtime = vm.runtime;
-        const targets = runtime.targets || [];
-        const broadcasts = runtime.extensionManager && runtime.extensionManager._editingTarget ?
-            null : null;
-        // Collect broadcasts from all scripts
-        const broadcastSet = {};
-        for (const target of targets) {
-            const blocks = target.blocks;
-            if (!blocks) continue;
-            const allBlocks = blocks._blocks || {};
-            for (const id of Object.keys(allBlocks)) {
-                const block = allBlocks[id];
-                if (block.opcode === 'event_broadcast' || block.opcode === 'event_broadcastandwait') {
-                    const msg = block.inputs && block.inputs.BROADCAST_INPUT &&
-                        block.inputs.BROADCAST_INPUT[1];
-                    if (msg && msg.id) {
-                        const varObj = blocks.getVariable(msg.id);
-                        if (varObj) {
-                            broadcastSet[varObj.id] = varObj.name;
-                        }
-                    }
-                }
-            }
-        }
-        return {targets, broadcasts: Object.values(broadcastSet)};
+    constructor (props) {
+        super(props);
+        bindAll(this, [
+            'handleSelectTarget',
+            'refresh'
+        ]);
+        this.state = {
+            targets: [],
+            editingTargetId: null,
+            projectOpen: false
+        };
     }
+
+    componentDidMount () {
+        this.refresh();
+        const vm = this.props.vm;
+        if (vm) {
+            this._onTargetsUpdate = () => this.refresh();
+            vm.on('TARGETS_UPDATE', this._onTargetsUpdate);
+        }
+        // Periodic refresh so newly-run code (new variables, etc.) shows up.
+        this._interval = window.setInterval(this.refresh, 1500);
+    }
+
+    componentWillUnmount () {
+        const vm = this.props.vm;
+        if (vm && this._onTargetsUpdate) {
+            vm.off('TARGETS_UPDATE', this._onTargetsUpdate);
+        }
+        if (this._interval) {
+            window.clearInterval(this._interval);
+            this._interval = null;
+        }
+    }
+
+    refresh () {
+        const vm = this.props.vm;
+        if (!vm || !vm.runtime) return;
+        let targets = [];
+        try {
+            targets = vm.runtime.targets.map(target => {
+                const variables = Object.values(target.variables || {});
+                const lists = variables.filter(v => v.type === 'list');
+                const plainVars = variables.filter(v => v.type !== 'list');
+                let scripts = [];
+                try {
+                    if (target.blocks && typeof target.blocks.getScripts === 'function') {
+                        scripts = target.blocks.getScripts();
+                    }
+                } catch (e) {
+                    scripts = [];
+                }
+                let blockCount = 0;
+                try {
+                    if (target.blocks && typeof target.blocks._blocks !== 'undefined') {
+                        blockCount = Object.keys(target.blocks._blocks || {}).length;
+                    }
+                } catch (e) {
+                    blockCount = 0;
+                }
+                let extensions = [];
+                try {
+                    extensions = Object.keys(target.extensions || {});
+                } catch (e) {
+                    extensions = [];
+                }
+                return {
+                    id: target.id,
+                    name: target.isStage ? null : target.getName(),
+                    isStage: target.isStage,
+                    costumes: (target.costumes || []).length,
+                    sounds: (target.sounds || []).length,
+                    variables: plainVars.map(v => v.name),
+                    lists: lists.map(v => v.name),
+                    extensions,
+                    scripts: scripts.length,
+                    blocks: blockCount
+                };
+            });
+        } catch (e) {
+            targets = [];
+        }
+        this.setState({
+            targets,
+            editingTargetId: vm.editingTarget ? vm.editingTarget.id : null,
+            projectOpen: true
+        });
+    }
+
+    handleSelectTarget (targetId) {
+        const vm = this.props.vm;
+        if (vm && typeof vm.setEditingTarget === 'function') {
+            vm.setEditingTarget(targetId);
+            this.setState({editingTargetId: targetId});
+        }
+    }
+
     render () {
-        const intl = this.props.intl;
-        const outline = this.getOutline();
-        if (!outline) {
+        const {intl} = this.props;
+        const {targets, editingTargetId, projectOpen} = this.state;
+
+        if (!projectOpen || targets.length === 0) {
             return (
-                <Modal
-                    className={styles.modalContent}
-                    onRequestClose={this.props.onClose}
-                    id="projectOutlineModal"
-                    showClose={false}
-                >
-                    <div className={styles.header}>
-                        <h2 className={styles.title}>{intl.formatMessage(messages.title)}</h2>
-                    </div>
-                    <div className={styles.body}>
-                        <p className={styles.empty}>{intl.formatMessage(messages.empty)}</p>
-                    </div>
-                </Modal>
+                <Box className={styles.devToolsContainer}>
+                    <h2 className={styles.devToolsTitle}>{intl.formatMessage(messages.title)}</h2>
+                    <p className={styles.devToolsSubtitle}>{intl.formatMessage(messages.subtitle)}</p>
+                    <p className={styles.devToolsEmpty}>{intl.formatMessage(messages.noProject)}</p>
+                </Box>
             );
         }
-        const {targets, broadcasts} = outline;
-        const renderTarget = target => (
-            <li className={styles.treeItem} key={target.id}>
-                <strong>{target.getName()}</strong>
-                <span className={styles.value}>{` — ${target.isStage ? intl.formatMessage(messages.stage) : intl.formatMessage(messages.sprites)}`}</span>
-                <ul className={styles.tree}>
-                    <li className={styles.treeItem}>
-                        <span className={styles.sectionTitle}>{intl.formatMessage(messages.costumes)} ({target.getCostumes().length})</span>
-                    </li>
-                    <li className={styles.treeItem}>
-                        <span className={styles.sectionTitle}>{intl.formatMessage(messages.sounds)} ({target.getSounds().length})</span>
-                    </li>
-                    <li className={styles.treeItem}>
-                        <span className={styles.sectionTitle}>{intl.formatMessage(messages.scripts)} ({target.blocks ? Object.keys(target.blocks._blocks || {}).length : 0})</span>
-                    </li>
-                </ul>
-            </li>
-        );
-        return (
-            <Modal
-                className={styles.modalContent}
-                onRequestClose={this.props.onClose}
-                id="projectOutlineModal"
-                showClose={false}
-            >
-                <div className={styles.header}>
-                    <h2 className={styles.title}>{intl.formatMessage(messages.title)}</h2>
-                </div>
-                <div className={styles.body}>
-                    <ul className={styles.treeRoot}>
-                        {targets.map(renderTarget)}
-                    </ul>
-                    <div className={styles.section}>
-                        <h3 className={styles.sectionTitle}>
-                            {intl.formatMessage(messages.broadcasts)} ({broadcasts.length})
-                        </h3>
-                        <ul className={styles.tree}>
-                            {broadcasts.map((name, i) => (
-                                <li
-                                    className={styles.treeItem}
-                                    key={`${name}-${i}`}
-                                >
-                                    {name || '(empty)'}
-                                </li>
-                            ))}
-                        </ul>
+
+        const stage = targets.find(t => t.isStage);
+        const sprites = targets.filter(t => !t.isStage);
+
+        const renderTarget = target => {
+            const isEditing = target.id === editingTargetId;
+            return (
+                <div
+                    key={target.id}
+                    className={`${styles.outlineTarget} ${isEditing ? styles.outlineTargetActive : ''}`}
+                    onClick={() => this.handleSelectTarget(target.id)}
+                    title={intl.formatMessage(messages.clickToEdit)}
+                >
+                    <div className={styles.outlineTargetName}>
+                        {target.isStage ? intl.formatMessage(messages.stage) : target.name}
+                        {isEditing && <span className={styles.outlineEditingTag}>●</span>}
+                    </div>
+                    <div className={styles.outlineTargetStats}>
+                        <span>{intl.formatMessage(messages.scripts)}: {target.scripts}</span>
+                        <span>{intl.formatMessage(messages.blocks)}: {target.blocks}</span>
+                        <span>{intl.formatMessage(messages.costumes)}: {target.costumes}</span>
+                        <span>{intl.formatMessage(messages.sounds)}: {target.sounds}</span>
+                        {target.variables.length > 0 && (
+                            <span>{intl.formatMessage(messages.variables)}: {target.variables.join(', ')}</span>
+                        )}
+                        {target.lists.length > 0 && (
+                            <span>{intl.formatMessage(messages.lists)}: {target.lists.join(', ')}</span>
+                        )}
+                        {target.extensions.length > 0 && (
+                            <span>{intl.formatMessage(messages.extensions)}: {target.extensions.join(', ')}</span>
+                        )}
                     </div>
                 </div>
-            </Modal>
+            );
+        };
+
+        return (
+            <Box className={styles.devToolsContainer}>
+                <h2 className={styles.devToolsTitle}>{intl.formatMessage(messages.title)}</h2>
+                <p className={styles.devToolsSubtitle}>{intl.formatMessage(messages.subtitle)}</p>
+            <div className={styles.outlineSection}>
+                    {stage && renderTarget(stage)}
+                </div>
+                <h4 className={styles.devToolsSectionTitle}>
+                    {intl.formatMessage(messages.sprites)} ({sprites.length})
+                </h4>
+                <div className={styles.outlineSection}>
+                    {sprites.map(renderTarget)}
+                </div>
+            </Box>
         );
     }
 }
 
 ProjectOutlineModal.propTypes = {
     intl: intlShape,
+    onRequestClose: PropTypes.func,
     vm: PropTypes.shape({
-        runtime: PropTypes.object
-    }),
-    onClose: PropTypes.func
+        on: PropTypes.func,
+        off: PropTypes.func,
+        editingTarget: PropTypes.shape({
+            id: PropTypes.string
+        }),
+        setEditingTarget: PropTypes.func,
+        runtime: PropTypes.shape({
+            targets: PropTypes.array
+        })
+    })
 };
 
-const mapStateToProps = () => ({});
-const mapDispatchToProps = dispatch => ({
-    onClose: () => dispatch(closeProjectOutlineModal())
-});
-
-export default injectIntl(connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(ProjectOutlineModal));
+export default injectIntl(ProjectOutlineModal);

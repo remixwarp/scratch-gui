@@ -1,174 +1,348 @@
-.modalContent {
-    width: 720px;
-    max-width: 90vw;
-    height: 560px;
-    max-height: 85vh;
+/* Dev Tools (性能剖析 / 性能预算 / 项目大纲 / 事件追踪) 统一样式 */
+
+.devToolsContainer {
     display: flex;
     flex-direction: column;
+    height: 100%;
+    color: #383d4a;
+    font-size: 13px;
 }
 
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    flex-shrink: 0;
+.devToolsSubtitle {
+    margin: 4px 0 14px;
+    color: #6b7280;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
-.title {
+.devToolsTitle {
     font-size: 16px;
     font-weight: 600;
     margin: 0;
+    color: #383d4a;
 }
 
-.buttons {
+.devToolsSectionTitle {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 16px 0 8px;
+    color: #383d4a;
+}
+
+.devToolsButtonRow {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
-.button {
-    padding: 6px 14px;
+.devToolsPrimaryButton,
+.devToolsSecondaryButton,
+.devToolsDangerButton {
+    padding: 7px 16px;
     border: none;
     border-radius: 6px;
-    background: #4c97ff;
-    color: #fff;
     cursor: pointer;
     font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s ease;
 }
 
-.button:hover {
+.devToolsPrimaryButton {
+    background: #4c97ff;
+    color: #fff;
+}
+.devToolsPrimaryButton:hover {
     background: #3b86ee;
 }
 
-.buttonDanger {
-    padding: 6px 14px;
-    border: none;
-    border-radius: 6px;
-    background: #ff6b6b;
-    color: #fff;
-    cursor: pointer;
-    font-size: 13px;
+.devToolsSecondaryButton {
+    background: #e9edf2;
+    color: #383d4a;
+}
+.devToolsSecondaryButton:hover {
+    background: #dce2ea;
 }
 
-.buttonDanger:hover {
+.devToolsDangerButton {
+    background: #ff6b6b;
+    color: #fff;
+}
+.devToolsDangerButton:hover {
     background: #ee5a5a;
 }
 
-.body {
-    flex: 1;
-    overflow: auto;
-    padding: 12px 16px;
-}
-
-.empty {
-    color: #888;
-    font-size: 13px;
-    padding: 20px 0;
-}
-
-.table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-.table th,
-.table td {
-    text-align: left;
-    padding: 6px 8px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.table th {
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    background: #fff;
-}
-
-.mono {
-    font-family: monospace;
+.devToolsStatusRunning,
+.devToolsStatusIdle {
     font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-left: auto;
+}
+.devToolsStatusRunning {
+    background: #e6f7ec;
+    color: #1a9d54;
+}
+.devToolsStatusIdle {
+    background: #f0f1f3;
+    color: #8a93a3;
 }
 
-.section {
-    margin-bottom: 18px;
-}
-
-.sectionTitle {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 8px;
-}
-
-.tree {
-    list-style: none;
-    margin: 0;
-    padding-left: 16px;
-    font-size: 13px;
-}
-
-.treeItem {
-    padding: 2px 0;
-}
-
-.treeRoot {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    font-size: 13px;
-}
-
-.value {
-    color: #666;
-}
-
-.log {
-    font-family: monospace;
-    font-size: 12px;
-    white-space: pre-wrap;
-    word-break: break-all;
-}
-
-.logEntry {
-    padding: 3px 0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.statGrid {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
+/* 统计卡片网格 */
+.devToolsStatGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
     margin-bottom: 12px;
 }
 
-.statBox {
-    background: rgba(0, 0, 0, 0.04);
-    border-radius: 8px;
-    padding: 10px 14px;
-    min-width: 110px;
+.devToolsStatCard {
+    background: #f4f6f9;
+    border: 1px solid #e6e9ef;
+    border-radius: 10px;
+    padding: 12px 14px;
 }
-
-.statLabel {
+.devToolsStatCard.devToolsMemoryCard {
+    margin-top: 12px;
+}
+.devToolsStatValue {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.devToolsStatLabel {
     font-size: 12px;
-    color: #888;
+    color: #8a93a3;
+    margin-top: 4px;
+}
+.devToolsBudget {
+    font-size: 11px;
+    color: #aab2c0;
+    margin-top: 6px;
 }
 
-.statValue {
-    font-size: 18px;
-    font-weight: 600;
+.devToolsAlertCard {
+    border-color: #ffb4b4;
+    background: #fff2f2;
 }
-
-.warning {
+.devToolsAlertBanner {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #ffe9e9;
     color: #d93025;
+    border-radius: 8px;
     font-weight: 600;
+    font-size: 13px;
 }
 
-.field {
+/* 表格 */
+.devToolsTableWrap {
+    max-height: 200px;
+    overflow: auto;
+    border: 1px solid #e6e9ef;
+    border-radius: 8px;
+}
+.devToolsTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.devToolsTable th,
+.devToolsTable td {
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid #eef1f5;
+}
+.devToolsTable th {
+    position: sticky;
+    top: 0;
+    background: #fafbfc;
+    font-weight: 600;
+    color: #6b7280;
+}
+.devToolsTableNum {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.devToolsMono {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 11px;
+    word-break: break-all;
+}
+
+.devToolsEmpty {
+    color: #9aa3b2;
+    font-size: 12px;
+    padding: 16px 0;
+}
+
+/* 项目大纲 */
+.outlineSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.outlineTarget {
+    border: 1px solid #e6e9ef;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+.outlineTarget:hover {
+    border-color: #4c97ff;
+    background: #f5f9ff;
+}
+.outlineTargetActive {
+    border-color: #4c97ff;
+    background: #eef5ff;
+}
+.outlineTargetName {
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+.outlineEditingTag {
+    color: #1a9d54;
+    font-size: 10px;
+}
+.outlineTargetStats {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* 事件追踪 */
+.eventTracerEvents {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
     margin-bottom: 10px;
-    font-size: 13px;
+}
+.eventTracerChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid #e6e9ef;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 11px;
+    user-select: none;
+}
+.eventTracerChipOn {
+    background: #eef5ff;
+    border-color: #4c97ff;
+}
+.eventTracerChip input {
+    margin: 0;
+}
+.eventTracerCustomRow {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.eventTracerInput {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #d6dbe4;
+    border-radius: 6px;
+    font-size: 12px;
+}
+.eventTracerCounts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+.eventTracerCountBadge {
+    font-size: 11px;
+    padding: 3px 8px;
+    background: #f0f1f3;
+    border-radius: 10px;
+}
+
+/* 日志 */
+.devToolsLogWrap {
+    flex: 1;
+    overflow: auto;
+    background: #1f2430;
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-height: 120px;
+}
+.devToolsLogLine {
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 11px;
+    padding: 2px 0;
+    color: #d8dee9;
+    word-break: break-all;
+}
+.devToolsLogTime {
+    color: #7b8494;
+    margin-right: 6px;
+}
+.devToolsLogSummary {
+    color: #a3be8c;
+}
+
+/* 暗色主题适配 */
+@media (prefers-color-scheme: dark) {
+    .devToolsContainer {
+        color: #e6e9ef;
+    }
+    .devToolsSubtitle,
+    .devToolsStatLabel {
+        color: #9aa3b2;
+    }
+    .devToolsStatCard {
+        background: #2a2f3a;
+        border-color: #353b47;
+    }
+    .devToolsSecondaryButton {
+        background: #353b47;
+        color: #e6e9ef;
+    }
+    .devToolsTableWrap {
+        border-color: #353b47;
+    }
+    .devToolsTable th {
+        background: #23272f;
+        color: #9aa3b2;
+    }
+    .devToolsTable th,
+    .devToolsTable td {
+        border-color: #2f343f;
+    }
+    .outlineTarget {
+        border-color: #353b47;
+        background: #23272f;
+    }
+    .outlineTarget:hover {
+        background: #2a3140;
+    }
+    .outlineTargetActive {
+        background: #243049;
+    }
+    .eventTracerChip {
+        border-color: #353b47;
+        color: #e6e9ef;
+    }
+    .eventTracerChipOn {
+        background: #243049;
+    }
+    .eventTracerInput {
+        background: #23272f;
+        border-color: #353b47;
+        color: #e6e9ef;
+    }
+    .eventTracerCountBadge {
+        background: #2a2f3a;
+        color: #e6e9ef;
+    }
 }

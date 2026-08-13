@@ -1,218 +1,304 @@
 import bindAll from 'lodash.bindall';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
-import {connect} from 'react-redux';
 
-import Modal from '../../containers/windowed-modal.jsx';
-import {
-    closePerformanceBudgetModal
-} from '../../reducers/modals';
-
+import Box from '../box/box.jsx';
 import styles from './dev-tools.css';
 
 const messages = defineMessages({
     title: {
         defaultMessage: 'Performance Budget',
-        description: 'Title of the performance budget window',
-        id: 'mw.devtools.budget.title'
+        description: 'Title for the performance budget tool',
+        id: 'gui.devTools.performanceBudget.title'
     },
-    fps: {
-        defaultMessage: 'FPS',
-        description: 'Frames per second label',
-        id: 'mw.devtools.budget.fps'
-    },
-    memory: {
-        defaultMessage: 'Memory usage',
-        description: 'Memory usage label',
-        id: 'mw.devtools.budget.memory'
-    },
-    thresholdFps: {
-        defaultMessage: 'FPS warning threshold',
-        description: 'Label for FPS threshold input',
-        id: 'mw.devtools.budget.thresholdFps'
-    },
-    thresholdMemory: {
-        defaultMessage: 'Memory warning threshold (MB)',
-        description: 'Label for memory threshold input',
-        id: 'mw.devtools.budget.thresholdMemory'
-    },
-    ok: {
-        defaultMessage: 'Within budget',
-        description: 'Status when within budget',
-        id: 'mw.devtools.budget.ok'
-    },
-    over: {
-        defaultMessage: 'Over budget!',
-        description: 'Status when over budget',
-        id: 'mw.devtools.budget.over'
+    subtitle: {
+        defaultMessage: '监控帧率、帧耗时与内存，超过阈值时高亮告警。',
+        description: 'Subtitle for the performance budget tool',
+        id: 'gui.devTools.performanceBudget.subtitle'
     },
     start: {
         defaultMessage: 'Start',
         description: 'Start monitoring button',
-        id: 'mw.devtools.budget.start'
+        id: 'gui.devTools.performanceBudget.start'
     },
     stop: {
         defaultMessage: 'Stop',
         description: 'Stop monitoring button',
-        id: 'mw.devtools.budget.stop'
+        id: 'gui.devTools.performanceBudget.stop'
+    },
+    running: {
+        defaultMessage: '运行中',
+        description: 'Project is running',
+        id: 'gui.devTools.performanceBudget.running'
+    },
+    stopped: {
+        defaultMessage: '已停止',
+        description: 'Project is stopped',
+        id: 'gui.devTools.performanceBudget.stopped'
+    },
+    fps: {
+        defaultMessage: '帧率 (FPS)',
+        description: 'FPS label',
+        id: 'gui.devTools.performanceBudget.fps'
+    },
+    frameMs: {
+        defaultMessage: '帧耗时 (ms)',
+        description: 'Frame time label',
+        id: 'gui.devTools.performanceBudget.frameMs'
+    },
+    memory: {
+        defaultMessage: '内存占用',
+        description: 'Memory usage label',
+        id: 'gui.devTools.performanceBudget.memory'
+    },
+    peak: {
+        defaultMessage: '峰值',
+        description: 'Peak value label',
+        id: 'gui.devTools.performanceBudget.peak'
+    },
+    budgetFps: {
+        defaultMessage: 'FPS 预算',
+        description: 'FPS budget label',
+        id: 'gui.devTools.performanceBudget.budgetFps'
+    },
+    budgetFrame: {
+        defaultMessage: '帧耗时预算',
+        description: 'Frame time budget label',
+        id: 'gui.devTools.performanceBudget.budgetFrame'
+    },
+    alert: {
+        defaultMessage: '超出预算！',
+        description: 'Budget exceeded alert',
+        id: 'gui.devTools.performanceBudget.alert'
+    },
+    memoryUnsupported: {
+        defaultMessage: '当前浏览器不支持内存监测（请用 Chrome）。',
+        description: 'Memory unsupported note',
+        id: 'gui.devTools.performanceBudget.memoryUnsupported'
     }
 });
+
+const DEFAULT_FPS_BUDGET = 30;
+const DEFAULT_FRAME_BUDGET = 33; // ms (≈30fps)
 
 class PerformanceBudgetModal extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, ['handleTick', 'handleStart', 'handleStop', 'handleFpsChange', 'handleMemoryChange']);
+        bindAll(this, [
+            'handleStart',
+            'handleStop',
+            'tick',
+            'handleRuntimeStart',
+            'handleRuntimeStop'
+        ]);
         this.state = {
-            running: false,
+            monitoring: false,
             fps: 0,
-            memory: 0,
-            thresholdFps: 30,
-            thresholdMemory: 200,
-            over: false
+            frameMs: 0,
+            peakFps: 0,
+            peakFrameMs: 0,
+            memoryMB: null,
+            memorySupported: typeof performance !== 'undefined' && performance.memory,
+            projectRunning: false,
+            fpsBudget: DEFAULT_FPS_BUDGET,
+            frameBudget: DEFAULT_FRAME_BUDGET
         };
-        this._last = 0;
+        this._raf = null;
+        this._lastTs = 0;
         this._frames = 0;
+        this._accumTs = 0;
     }
-    handleTick () {
-        const now = performance.now();
-        this._frames += 1;
-        if (this._last === 0) {
-            this._last = now;
+
+    componentDidMount () {
+        const vm = this.props.vm;
+        if (vm) {
+            vm.on('PROJECT_RUN_START', this.handleRuntimeStart);
+            vm.on('PROJECT_RUN_STOP', this.handleRuntimeStop);
+            try {
+                if (vm.runtime && typeof vm.runtime.isRunning === 'boolean') {
+                    this.setState({projectRunning: vm.runtime.isRunning});
+                }
+            } catch (e) {
+                // ignore
+            }
         }
-        const elapsed = now - this._last;
-        if (elapsed >= 500) {
-            const fps = Math.round((this._frames * 1000) / elapsed);
-            const memory = (performance.memory && performance.memory.usedJSHeapSize) ?
-                performance.memory.usedJSHeapSize / (1024 * 1024) : 0;
-            const over = fps < this.state.thresholdFps ||
-                (this.state.thresholdMemory > 0 && memory > this.state.thresholdMemory);
+    }
+
+    componentWillUnmount () {
+        const vm = this.props.vm;
+        if (vm) {
+            vm.off('PROJECT_RUN_START', this.handleRuntimeStart);
+            vm.off('PROJECT_RUN_STOP', this.handleRuntimeStop);
+        }
+        if (this._raf) {
+            window.cancelAnimationFrame(this._raf);
+            this._raf = null;
+        }
+    }
+
+    handleRuntimeStart () {
+        this.setState({projectRunning: true});
+    }
+
+    handleRuntimeStop () {
+        this.setState({projectRunning: false});
+    }
+
+    handleStart () {
+        this.setState({
+            monitoring: true,
+            fps: 0,
+            frameMs: 0,
+            peakFps: 0,
+            peakFrameMs: 0
+        });
+        this._lastTs = performance.now();
+        this._frames = 0;
+        this._accumTs = 0;
+        this.tick();
+    }
+
+    handleStop () {
+        this.setState({monitoring: false});
+        if (this._raf) {
+            window.cancelAnimationFrame(this._raf);
+            this._raf = null;
+        }
+    }
+
+    tick () {
+        if (!this.state.monitoring) return;
+        const now = performance.now();
+        const delta = now - this._lastTs;
+        this._lastTs = now;
+        this._frames += 1;
+        this._accumTs += delta;
+
+        // Update roughly twice per second.
+        if (this._accumTs >= 500) {
+            const fps = Math.round((this._frames * 1000) / this._accumTs);
+            const frameMs = this._accumTs / this._frames;
+            const peakFps = Math.max(this.state.peakFps, fps);
+            const peakFrameMs = Math.max(this.state.peakFrameMs, frameMs);
+
+            let memoryMB = null;
+            if (performance.memory) {
+                memoryMB = Math.round(performance.memory.usedJSHeapSize / (1024 * 1024));
+            }
+
             this.setState({
                 fps,
-                memory: Math.round(memory * 10) / 10,
-                over
+                frameMs: Math.round(frameMs * 10) / 10,
+                peakFps,
+                peakFrameMs: Math.round(peakFrameMs * 10) / 10,
+                memoryMB
             });
             this._frames = 0;
-            this._last = now;
+            this._accumTs = 0;
         }
-        if (this._mounted && this.state.running) {
-            this._raf = requestAnimationFrame(this.handleTick);
-        }
+        this._raf = window.requestAnimationFrame(this.tick);
     }
-    handleStart () {
-        this._mounted = true;
-        this._last = 0;
-        this._frames = 0;
-        this.setState({running: true});
-        this._raf = requestAnimationFrame(this.handleTick);
-    }
-    handleStop () {
-        this.setState({running: false});
-        if (this._raf) {
-            cancelAnimationFrame(this._raf);
-        }
-    }
-    handleFpsChange (e) {
-        const v = parseInt(e.target.value, 10);
-        this.setState({thresholdFps: isNaN(v) ? 0 : v});
-    }
-    handleMemoryChange (e) {
-        const v = parseInt(e.target.value, 10);
-        this.setState({thresholdMemory: isNaN(v) ? 0 : v});
-    }
-    componentDidMount () {
-        this._mounted = true;
-    }
-    componentWillUnmount () {
-        this._mounted = false;
-        if (this._raf) {
-            cancelAnimationFrame(this._raf);
-        }
-    }
+
     render () {
-        const intl = this.props.intl;
+        const {intl} = this.props;
+        const {
+            monitoring, fps, frameMs, peakFps, peakFrameMs, memoryMB,
+            memorySupported, projectRunning, fpsBudget, frameBudget
+        } = this.state;
+
+        const fpsAlert = fps > 0 && fps < fpsBudget;
+        const frameAlert = frameMs > 0 && frameMs > frameBudget;
+
         return (
-            <Modal
-                className={styles.modalContent}
-                onRequestClose={this.props.onClose}
-                id="performanceBudgetModal"
-                showClose={false}
-            >
-                <div className={styles.header}>
-                    <h2 className={styles.title}>{intl.formatMessage(messages.title)}</h2>
-                    <div className={styles.buttons}>
-                        {this.state.running ? (
-                            <button
-                                className={styles.buttonDanger}
-                                onClick={this.handleStop}
-                            >
-                                {intl.formatMessage(messages.stop)}
-                            </button>
-                        ) : (
-                            <button
-                                className={styles.button}
-                                onClick={this.handleStart}
-                            >
-                                {intl.formatMessage(messages.start)}
-                            </button>
-                        )}
-                    </div>
-                </div>
-                <div className={styles.body}>
-                    <div className={styles.field}>
-                        <label>{intl.formatMessage(messages.thresholdFps)}</label>
-                        <input
-                            type="number"
-                            value={this.state.thresholdFps}
-                            onChange={this.handleFpsChange}
-                            className={styles.button}
-                            style={{width: 70}}
-                        />
-                    </div>
-                    <div className={styles.field}>
-                        <label>{intl.formatMessage(messages.thresholdMemory)}</label>
-                        <input
-                            type="number"
-                            value={this.state.thresholdMemory}
-                            onChange={this.handleMemoryChange}
-                            className={styles.button}
-                            style={{width: 70}}
-                        />
-                    </div>
-                    <div className={styles.statGrid}>
-                        <div className={styles.statBox}>
-                            <div className={styles.statLabel}>{intl.formatMessage(messages.fps)}</div>
-                            <div className={styles.statValue}>{this.state.fps}</div>
-                        </div>
-                        <div className={styles.statBox}>
-                            <div className={styles.statLabel}>{intl.formatMessage(messages.memory)}</div>
-                            <div className={styles.statValue}>{`${this.state.memory} MB`}</div>
-                        </div>
-                    </div>
-                    {this.state.running && (
-                        <p className={this.state.over ? styles.warning : styles.value}>
-                            {this.state.over ?
-                                intl.formatMessage(messages.over) :
-                                intl.formatMessage(messages.ok)}
-                        </p>
+            <Box className={styles.devToolsContainer}>
+                <h2 className={styles.devToolsTitle}>{intl.formatMessage(messages.title)}</h2>
+                <p className={styles.devToolsSubtitle}>{intl.formatMessage(messages.subtitle)}</p>
+
+                <div className={styles.devToolsButtonRow}>
+                    {!monitoring ? (
+                        <button
+                            className={styles.devToolsPrimaryButton}
+                            onClick={this.handleStart}
+                        >
+                            {intl.formatMessage(messages.start)}
+                        </button>
+                    ) : (
+                        <button
+                            className={styles.devToolsDangerButton}
+                            onClick={this.handleStop}
+                        >
+                            {intl.formatMessage(messages.stop)}
+                        </button>
                     )}
+                    <span className={projectRunning ?
+                        styles.devToolsStatusRunning : styles.devToolsStatusIdle}>
+                        {projectRunning ?
+                            intl.formatMessage(messages.running) :
+                            intl.formatMessage(messages.stopped)}
+                    </span>
                 </div>
-            </Modal>
+
+                <div className={styles.devToolsStatGrid}>
+                    <div className={`${styles.devToolsStatCard} ${fpsAlert ? styles.devToolsAlertCard : ''}`}>
+                        <div className={styles.devToolsStatValue}>{fps}</div>
+                        <div className={styles.devToolsStatLabel}>{intl.formatMessage(messages.fps)}</div>
+                        <div className={styles.devToolsBudget}>
+                            {intl.formatMessage(messages.budgetFps)}: ≥ {fpsBudget}
+                        </div>
+                    </div>
+                    <div className={`${styles.devToolsStatCard} ${frameAlert ? styles.devToolsAlertCard : ''}`}>
+                        <div className={styles.devToolsStatValue}>{frameMs}</div>
+                        <div className={styles.devToolsStatLabel}>{intl.formatMessage(messages.frameMs)}</div>
+                        <div className={styles.devToolsBudget}>
+                            {intl.formatMessage(messages.budgetFrame)}: ≤ {frameBudget} ms
+                        </div>
+                    </div>
+                    <div className={styles.devToolsStatCard}>
+                        <div className={styles.devToolsStatValue}>{peakFps}</div>
+                        <div className={styles.devToolsStatLabel}>
+                            {intl.formatMessage(messages.peak)} {intl.formatMessage(messages.fps)}
+                        </div>
+                    </div>
+                    <div className={styles.devToolsStatCard}>
+                        <div className={styles.devToolsStatValue}>{peakFrameMs}</div>
+                        <div className={styles.devToolsStatLabel}>
+                            {intl.formatMessage(messages.peak)} {intl.formatMessage(messages.frameMs)}
+                        </div>
+                    </div>
+                </div>
+
+                {memorySupported ? (
+                    <div className={`${styles.devToolsStatCard} ${styles.devToolsMemoryCard}`}>
+                        <div className={styles.devToolsStatValue}>
+                            {memoryMB !== null ? `${memoryMB} MB` : '—'}
+                        </div>
+                        <div className={styles.devToolsStatLabel}>{intl.formatMessage(messages.memory)}</div>
+                    </div>
+                ) : (
+                    <p className={styles.devToolsEmpty}>{intl.formatMessage(messages.memoryUnsupported)}</p>
+                )}
+
+                {(fpsAlert || frameAlert) && (
+                    <div className={styles.devToolsAlertBanner}>
+                        ⚠ {intl.formatMessage(messages.alert)}
+                    </div>
+                )}
+            </Box>
         );
     }
 }
 
 PerformanceBudgetModal.propTypes = {
     intl: intlShape,
-    onClose: PropTypes.func
+    onRequestClose: PropTypes.func,
+    vm: PropTypes.shape({
+        on: PropTypes.func,
+        off: PropTypes.func,
+        runtime: PropTypes.shape({
+            isRunning: PropTypes.bool
+        })
+    })
 };
 
-const mapStateToProps = () => ({});
-const mapDispatchToProps = dispatch => ({
-    onClose: () => dispatch(closePerformanceBudgetModal())
-});
-
-export default injectIntl(connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(PerformanceBudgetModal));
+export default injectIntl(PerformanceBudgetModal);
