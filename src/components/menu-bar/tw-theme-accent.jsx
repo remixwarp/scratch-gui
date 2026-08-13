@@ -22,10 +22,17 @@ import mcThemeCircle from '../../lib/themes/pixel-presets/MC风格主题_○_pix
 import mcThemeRight from '../../lib/themes/pixel-presets/MC风格主题_→_pixel_theme.json';
 import mcThemeLeft from '../../lib/themes/pixel-presets/MC风格主题_←_pixel_theme.json';
 
+import cysoThemeCircle from '../../lib/themes/pixel-presets/cyso_○_pixel_theme.json';
+import cysoThemeLeft from '../../lib/themes/pixel-presets/cyso_←_pixel_theme.json';
+import cysoThemeN from '../../lib/themes/pixel-presets/cyso_n_pixel_theme.json';
+
 const PIXEL_PRESETS = [
     {id: 'pixel-mc-circle', name: mcThemeCircle.themes[0].name, data: mcThemeCircle},
     {id: 'pixel-mc-right', name: mcThemeRight.themes[0].name, data: mcThemeRight},
-    {id: 'pixel-mc-left', name: mcThemeLeft.themes[0].name, data: mcThemeLeft}
+    {id: 'pixel-mc-left', name: mcThemeLeft.themes[0].name, data: mcThemeLeft},
+    {id: 'pixel-cyso-circle', name: cysoThemeCircle.themes[0].name, data: cysoThemeCircle},
+    {id: 'pixel-cyso-left', name: cysoThemeLeft.themes[0].name, data: cysoThemeLeft},
+    {id: 'pixel-cyso-n', name: cysoThemeN.themes[0].name, data: cysoThemeN}
 ];
 
 // Keep the original accent messages for FormattedMessage component
@@ -57,7 +64,7 @@ const ColorIcon = props => {
             <div
                 className={styles.accentIconOuter}
                 style={{
-                    backgroundColor: '#3c8527',
+                    backgroundColor: accentId.startsWith('pixel-cyso-') ? '#4e8dc1' : '#3c8527',
                     backgroundImage: 'none'
                 }}
             />

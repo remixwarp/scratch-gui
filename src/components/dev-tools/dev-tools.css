@@ -1,348 +1,438 @@
-/* Dev Tools (性能剖析 / 性能预算 / 项目大纲 / 事件追踪) 统一样式 */
+.dev-tools-modal {
+    width: 720px;
+    max-width: 92vw;
+    min-height: 480px;
+}
 
-.devToolsContainer {
+.dev-tools-body {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    color: #383d4a;
-    font-size: 13px;
+    gap: 16px;
+    padding: 8px 4px 4px;
+    max-height: 70vh;
+    overflow-y: auto;
 }
 
-.devToolsSubtitle {
-    margin: 4px 0 14px;
-    color: #6b7280;
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.devToolsTitle {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0;
-    color: #383d4a;
-}
-
-.devToolsSectionTitle {
-    font-size: 13px;
-    font-weight: 600;
-    margin: 16px 0 8px;
-    color: #383d4a;
-}
-
-.devToolsButtonRow {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
-}
-
-.devToolsPrimaryButton,
-.devToolsSecondaryButton,
-.devToolsDangerButton {
-    padding: 7px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: background 0.15s ease;
-}
-
-.devToolsPrimaryButton {
-    background: #4c97ff;
-    color: #fff;
-}
-.devToolsPrimaryButton:hover {
-    background: #3b86ee;
-}
-
-.devToolsSecondaryButton {
-    background: #e9edf2;
-    color: #383d4a;
-}
-.devToolsSecondaryButton:hover {
-    background: #dce2ea;
-}
-
-.devToolsDangerButton {
-    background: #ff6b6b;
-    color: #fff;
-}
-.devToolsDangerButton:hover {
-    background: #ee5a5a;
-}
-
-.devToolsStatusRunning,
-.devToolsStatusIdle {
-    font-size: 12px;
-    padding: 3px 10px;
-    border-radius: 12px;
-    margin-left: auto;
-}
-.devToolsStatusRunning {
-    background: #e6f7ec;
-    color: #1a9d54;
-}
-.devToolsStatusIdle {
-    background: #f0f1f3;
-    color: #8a93a3;
-}
-
-/* 统计卡片网格 */
-.devToolsStatGrid {
+.dev-tools-stats-row {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 12px;
-    margin-bottom: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 10px;
 }
 
-.devToolsStatCard {
-    background: #f4f6f9;
-    border: 1px solid #e6e9ef;
-    border-radius: 10px;
-    padding: 12px 14px;
-}
-.devToolsStatCard.devToolsMemoryCard {
-    margin-top: 12px;
-}
-.devToolsStatValue {
-    font-size: 22px;
-    font-weight: 700;
-    line-height: 1.2;
-}
-.devToolsStatLabel {
-    font-size: 12px;
-    color: #8a93a3;
-    margin-top: 4px;
-}
-.devToolsBudget {
-    font-size: 11px;
-    color: #aab2c0;
-    margin-top: 6px;
-}
-
-.devToolsAlertCard {
-    border-color: #ffb4b4;
-    background: #fff2f2;
-}
-.devToolsAlertBanner {
-    margin-top: 12px;
-    padding: 10px 14px;
-    background: #ffe9e9;
-    color: #d93025;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 13px;
-}
-
-/* 表格 */
-.devToolsTableWrap {
-    max-height: 200px;
-    overflow: auto;
-    border: 1px solid #e6e9ef;
-    border-radius: 8px;
-}
-.devToolsTable {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-}
-.devToolsTable th,
-.devToolsTable td {
-    text-align: left;
-    padding: 6px 10px;
-    border-bottom: 1px solid #eef1f5;
-}
-.devToolsTable th {
-    position: sticky;
-    top: 0;
-    background: #fafbfc;
-    font-weight: 600;
-    color: #6b7280;
-}
-.devToolsTableNum {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-}
-
-.devToolsMono {
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    font-size: 11px;
-    word-break: break-all;
-}
-
-.devToolsEmpty {
-    color: #9aa3b2;
-    font-size: 12px;
-    padding: 16px 0;
-}
-
-/* 项目大纲 */
-.outlineSection {
+.dev-tools-stat-card {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-}
-.outlineTarget {
-    border: 1px solid #e6e9ef;
-    border-radius: 8px;
+    gap: 4px;
     padding: 10px 12px;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-}
-.outlineTarget:hover {
-    border-color: #4c97ff;
-    background: #f5f9ff;
-}
-.outlineTargetActive {
-    border-color: #4c97ff;
-    background: #eef5ff;
-}
-.outlineTargetName {
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.outlineEditingTag {
-    color: #1a9d54;
-    font-size: 10px;
-}
-.outlineTargetStats {
-    margin-top: 6px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 14px;
-    font-size: 12px;
-    color: #6b7280;
+    border-radius: 10px;
+    background: rgba(255, 140, 26, 0.08);
+    border: 1px solid rgba(255, 140, 26, 0.25);
 }
 
-/* 事件追踪 */
-.eventTracerEvents {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 10px;
+.dev-tools-stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.7;
+    color: #fff;
 }
-.eventTracerChip {
+
+.dev-tools-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ff8c1a;
+    line-height: 1.1;
+}
+
+.dev-tools-stat-good {
+    color: #3ddc84;
+}
+
+.dev-tools-stat-warn {
+    color: #ffce54;
+}
+
+.dev-tools-stat-bad {
+    color: #ff5b5b;
+}
+
+.dev-tools-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.dev-tools-status-running,
+.dev-tools-status-stopped {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
-    border: 1px solid #e6e9ef;
-    border-radius: 14px;
-    cursor: pointer;
-    font-size: 11px;
-    user-select: none;
-}
-.eventTracerChipOn {
-    background: #eef5ff;
-    border-color: #4c97ff;
-}
-.eventTracerChip input {
-    margin: 0;
-}
-.eventTracerCustomRow {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-.eventTracerInput {
-    flex: 1;
-    padding: 6px 10px;
-    border: 1px solid #d6dbe4;
-    border-radius: 6px;
-    font-size: 12px;
-}
-.eventTracerCounts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 10px;
-}
-.eventTracerCountBadge {
-    font-size: 11px;
-    padding: 3px 8px;
-    background: #f0f1f3;
-    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
 }
 
-/* 日志 */
-.devToolsLogWrap {
-    flex: 1;
-    overflow: auto;
-    background: #1f2430;
-    border-radius: 8px;
-    padding: 8px 10px;
-    min-height: 120px;
+.dev-tools-status-running::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3ddc84;
+    box-shadow: 0 0 6px #3ddc84;
 }
-.devToolsLogLine {
-    font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 11px;
-    padding: 2px 0;
-    color: #d8dee9;
+
+.dev-tools-status-stopped::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #888;
+}
+
+.dev-tools-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dev-tools-subtitle {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.dev-tools-placeholder {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.6;
+    color: #fff;
+}
+
+.dev-tools-chart {
+    width: 100%;
+    height: 140px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dev-tools-bar-outer {
+    width: 100%;
+    height: 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.dev-tools-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, #ff8c1a, #ffb347);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.dev-tools-bar-inner-bad {
+    height: 100%;
+    background: linear-gradient(90deg, #ff5b5b, #ff8a5b);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.dev-tools-bar-label {
+    font-size: 0.78rem;
+    opacity: 0.8;
+    color: #fff;
+}
+
+.dev-tools-opcode-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dev-tools-opcode-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.dev-tools-opcode-name {
+    font-family: "Source Code Pro", monospace;
+    font-size: 0.82rem;
+    color: #fff;
     word-break: break-all;
 }
-.devToolsLogTime {
-    color: #7b8494;
-    margin-right: 6px;
-}
-.devToolsLogSummary {
-    color: #a3be8c;
+
+.dev-tools-opcode-count {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #ff8c1a;
+    white-space: nowrap;
 }
 
-/* 暗色主题适配 */
-@media (prefers-color-scheme: dark) {
-    .devToolsContainer {
-        color: #e6e9ef;
-    }
-    .devToolsSubtitle,
-    .devToolsStatLabel {
-        color: #9aa3b2;
-    }
-    .devToolsStatCard {
-        background: #2a2f3a;
-        border-color: #353b47;
-    }
-    .devToolsSecondaryButton {
-        background: #353b47;
-        color: #e6e9ef;
-    }
-    .devToolsTableWrap {
-        border-color: #353b47;
-    }
-    .devToolsTable th {
-        background: #23272f;
-        color: #9aa3b2;
-    }
-    .devToolsTable th,
-    .devToolsTable td {
-        border-color: #2f343f;
-    }
-    .outlineTarget {
-        border-color: #353b47;
-        background: #23272f;
-    }
-    .outlineTarget:hover {
-        background: #2a3140;
-    }
-    .outlineTargetActive {
-        background: #243049;
-    }
-    .eventTracerChip {
-        border-color: #353b47;
-        color: #e6e9ef;
-    }
-    .eventTracerChipOn {
-        background: #243049;
-    }
-    .eventTracerInput {
-        background: #23272f;
-        border-color: #353b47;
-        color: #e6e9ef;
-    }
-    .eventTracerCountBadge {
-        background: #2a2f3a;
-        color: #e6e9ef;
-    }
+.dev-tools-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.dev-tools-toolbar-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.dev-tools-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #fff;
+}
+
+.dev-tools-select,
+.dev-tools-input,
+.dev-tools-search {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    color: #fff;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.dev-tools-search {
+    width: 100%;
+}
+
+.dev-tools-input:focus,
+.dev-tools-search:focus,
+.dev-tools-select:focus {
+    border-color: #ff8c1a;
+}
+
+.dev-tools-button {
+    background: rgba(255, 140, 26, 0.18);
+    border: 1px solid rgba(255, 140, 26, 0.4);
+    border-radius: 6px;
+    color: #ffb347;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.dev-tools-button:hover {
+    background: rgba(255, 140, 26, 0.32);
+}
+
+.dev-tools-suffix {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    color: #fff;
+    margin-left: 4px;
+}
+
+.dev-tools-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    color: #fff;
+}
+
+.dev-tools-table th {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    font-weight: 600;
+    opacity: 0.85;
+}
+
+.dev-tools-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    vertical-align: middle;
+}
+
+.dev-tools-row-over td {
+    background: rgba(255, 91, 91, 0.1);
+}
+
+.dev-tools-badge-good {
+    color: #3ddc84;
+    font-weight: 600;
+}
+
+.dev-tools-badge-bad {
+    color: #ff5b5b;
+    font-weight: 600;
+}
+
+.dev-tools-outline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dev-tools-outline-item {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dev-tools-outline-item:hover {
+    background: rgba(255, 140, 26, 0.1);
+}
+
+.dev-tools-outline-selected {
+    border-color: #ff8c1a;
+    background: rgba(255, 140, 26, 0.16);
+}
+
+.dev-tools-outline-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.dev-tools-outline-name {
+    font-weight: 600;
+    color: #fff;
+}
+
+.dev-tools-outline-meta {
+    font-size: 0.78rem;
+    opacity: 0.7;
+    color: #fff;
+}
+
+.dev-tools-outline-sub {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.dev-tools-outline-sub-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.6;
+    color: #fff;
+}
+
+.dev-tools-outline-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.dev-tools-tag {
+    font-size: 0.74rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.dev-tools-filters {
+    display: flex;
+    gap: 6px;
+}
+
+.dev-tools-filter-button {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: #fff;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dev-tools-filter-active {
+    background: rgba(255, 140, 26, 0.25);
+    border-color: #ff8c1a;
+    color: #ffb347;
+}
+
+.dev-tools-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 0 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.dev-tools-custom-row {
+    display: flex;
+    gap: 8px;
+}
+
+.dev-tools-custom-row .dev-tools-input {
+    flex: 1;
+}
+
+.dev-tools-event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.dev-tools-event-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border-left: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.dev-tools-event_started {
+    border-left-color: #3ddc84;
+}
+
+.dev-tools-event_stopped {
+    border-left-color: #ffce54;
+}
+
+.dev-tools-event_errored {
+    border-left-color: #ff5b5b;
+}
+
+.dev-tools-event_custom {
+    border-left-color: #ff8c1a;
+}
+
+.dev-tools-event-time {
+    font-size: 0.74rem;
+    opacity: 0.6;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.dev-tools-event-name {
+    font-family: "Source Code Pro", monospace;
+    font-size: 0.82rem;
+    color: #fff;
+    word-break: break-all;
 }

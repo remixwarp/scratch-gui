@@ -1,366 +1,429 @@
-import bindAll from 'lodash.bindall';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
 
 import Box from '../box/box.jsx';
+import ModalComponent from '../modal/modal.jsx';
+import {formatBytes} from '../../lib/utils/bytes.js';
+import Runtime from 'scratch-vm/src/engine/runtime.js';
+
 import styles from './dev-tools.css';
 
 const messages = defineMessages({
     title: {
         defaultMessage: 'Performance Profiler',
-        description: 'Title for the performance profiler tool',
-        id: 'gui.devTools.performanceProfiler.title'
-    },
-    subtitle: {
-        defaultMessage: '实时统计每个积木类型的执行频率与每帧耗时。',
-        description: 'Subtitle for the performance profiler tool',
-        id: 'gui.devTools.performanceProfiler.subtitle'
-    },
-    start: {
-        defaultMessage: 'Start',
-        description: 'Start profiling button',
-        id: 'gui.devTools.performanceProfiler.start'
-    },
-    stop: {
-        defaultMessage: 'Stop',
-        description: 'Stop profiling button',
-        id: 'gui.devTools.performanceProfiler.stop'
-    },
-    reset: {
-        defaultMessage: 'Reset',
-        description: 'Reset profiling data button',
-        id: 'gui.devTools.performanceProfiler.reset'
-    },
-    statusIdle: {
-        defaultMessage: '空闲（未开始）',
-        description: 'Profiler idle status',
-        id: 'gui.devTools.performanceProfiler.statusIdle'
-    },
-    statusRunning: {
-        defaultMessage: '采集中…',
-        description: 'Profiler running status',
-        id: 'gui.devTools.performanceProfiler.statusRunning'
-    },
-    frameTime: {
-        defaultMessage: '平均帧耗时',
-        description: 'Average frame time label',
-        id: 'gui.devTools.performanceProfiler.frameTime'
+        description: 'Title of the performance profiler modal',
+        id: 'rw.devtools.profiler.title'
     },
     fps: {
-        defaultMessage: '估算帧率',
-        description: 'Estimated FPS label',
-        id: 'gui.devTools.performanceProfiler.fps'
+        defaultMessage: 'FPS',
+        description: 'Frames per second label',
+        id: 'rw.devtools.profiler.fps'
     },
-    totalSteps: {
-        defaultMessage: '累计执行积木',
-        description: 'Total executed blocks label',
-        id: 'gui.devTools.performanceProfiler.totalSteps'
+    avgFps: {
+        defaultMessage: 'Average',
+        description: 'Average FPS label',
+        id: 'rw.devtools.profiler.avg'
     },
-    opcodesHeader: {
-        defaultMessage: '积木类型执行排行（按执行次数）',
-        description: 'Opcodes table header',
-        id: 'gui.devTools.performanceProfiler.opcodesHeader'
+    minFps: {
+        defaultMessage: 'Min',
+        description: 'Minimum FPS label',
+        id: 'rw.devtools.profiler.min'
     },
-    opcodeColumn: {
-        defaultMessage: '积木类型',
-        description: 'Opcode column header',
-        id: 'gui.devTools.performanceProfiler.opcodeColumn'
+    maxFps: {
+        defaultMessage: 'Max',
+        description: 'Maximum FPS label',
+        id: 'rw.devtools.profiler.max'
     },
-    countColumn: {
-        defaultMessage: '执行次数',
-        description: 'Count column header',
-        id: 'gui.devTools.performanceProfiler.countColumn'
+    frameTime: {
+        defaultMessage: 'Frame time',
+        description: 'Frame time label',
+        id: 'rw.devtools.profiler.frameTime'
+    },
+    memory: {
+        defaultMessage: 'Memory',
+        description: 'Memory usage label',
+        id: 'rw.devtools.profiler.memory'
+    },
+    clear: {
+        defaultMessage: 'Clear',
+        description: 'Clear performance data button',
+        id: 'rw.devtools.profiler.clear'
+    },
+    opcode: {
+        defaultMessage: 'Top opcodes',
+        description: 'Top opcodes heading',
+        id: 'rw.devtools.profiler.opcode'
+    },
+    running: {
+        defaultMessage: 'Running',
+        description: 'Project is running indicator',
+        id: 'rw.devtools.profiler.running'
+    },
+    stopped: {
+        defaultMessage: 'Stopped',
+        description: 'Project is stopped indicator',
+        id: 'rw.devtools.profiler.stopped'
+    },
+    history: {
+        defaultMessage: 'FPS history',
+        description: 'FPS history chart heading',
+        id: 'rw.devtools.profiler.history'
     },
     noData: {
-        defaultMessage: '尚无数据，点击 Start 后运行绿旗即可看到统计。',
-        description: 'No data placeholder',
-        id: 'gui.devTools.performanceProfiler.noData'
+        defaultMessage: 'Start the project to collect live performance data.',
+        description: 'Placeholder when no data collected',
+        id: 'rw.devtools.profiler.noData'
     },
-    runningTargets: {
-        defaultMessage: '活跃执行线程',
-        description: 'Running threads label',
-        id: 'gui.devTools.performanceProfiler.runningThreads'
+    count: {
+        defaultMessage: '{count} calls',
+        description: 'Opcode call count',
+        id: 'rw.devtools.profiler.opcodeCount'
     }
 });
+
+const HISTORY_LENGTH = 120;
 
 class PerformanceProfilerModal extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, [
-            'handleStart',
-            'handleStop',
-            'handleReset',
-            'tick',
-            'patchRuntime',
-            'unpatchRuntime'
-        ]);
+        this.handleRequestClose = this.handleRequestClose.bind(this);
+        this.tick = this.tick.bind(this);
+        this.drawChart = this.drawChart.bind(this);
+        this.handleClearData = this.handleClearData.bind(this);
+        this.frameCount = 0;
+        this.lastFrame = performance.now();
+        this.history = [];
+        this.opcodeCounts = {};
+        this.rafId = null;
+        this._chartCanvas = null;
         this.state = {
+            fps: 0,
+            avgFps: 0,
+            minFps: 0,
+            maxFps: 0,
+            frameTime: 0,
+            memory: 0,
+            memoryLimit: 0,
             running: false,
-            frameTimes: [],
-            totalSteps: 0,
-            opcodeCounts: {},
-            activeThreads: 0,
-            lastUpdate: 0
+            topOpcodes: []
         };
-        this._raf = null;
-        this._originalStepThread = null;
-        this._instrumented = false;
+    }
+
+    componentDidMount () {
+        const vm = this.props.vm;
+        if (vm && vm.runtime) {
+            vm.runtime.on(Runtime.PROJECT_RUN_START, this.handleRunStart);
+            vm.runtime.on(Runtime.PROJECT_RUN_STOP, this.handleRunStop);
+        }
+        // Hook opcode execution to sample the most-used blocks.
+        this.installOpcodeHook();
+        this.rafId = requestAnimationFrame(this.tick);
     }
 
     componentWillUnmount () {
-        this.unpatchRuntime();
-        if (this._raf) {
-            window.cancelAnimationFrame(this._raf);
-            this._raf = null;
+        const vm = this.props.vm;
+        if (vm && vm.runtime) {
+            vm.runtime.off(Runtime.PROJECT_RUN_START, this.handleRunStart);
+            vm.runtime.off(Runtime.PROJECT_RUN_STOP, this.handleRunStop);
+        }
+        this.removeOpcodeHook();
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
         }
     }
 
-    patchRuntime () {
-        const vm = this.props.vm;
-        if (!vm || !vm.runtime || typeof vm.runtime._stepThread !== 'function') return;
-        if (this._instrumented) return;
-        this._instrumented = true;
-        this._originalStepThread = vm.runtime._stepThread;
+    getRuntime () {
+        return this.props.vm && this.props.vm.runtime;
+    }
 
-        // Count how many blocks each opcode executed by inspecting the
-        // active thread's current block before stepping.
+    installOpcodeHook () {
+        const runtime = this.getRuntime();
+        if (!runtime) return;
+        if (runtime._rwProfilerHooked) return;
+        const original = runtime._stepThread.bind(runtime);
+        runtime._rwProfilerHooked = true;
         const self = this;
-        vm.runtime._stepThread = function (thread, ...args) {
-            try {
-                if (thread && thread.peekStack) {
-                    const opcode = thread.target && thread.target.blocks ?
-                        self.getOpcodeForThread(thread) : null;
-                    if (opcode) {
-                        self.state.opcodeCounts[opcode] = (self.state.opcodeCounts[opcode] || 0) + 1;
-                    }
-                }
-            } catch (e) {
-                // Never let instrumentation break the VM.
+        runtime._stepThread = function (thread) {
+            const op = thread.peekStack();
+            if (op) {
+                const block = runtime._blocks ? runtime._blocks.getBlock(op) : null;
+                const opcode = block ? block.opcode : 'unknown';
+                self.opcodeCounts[opcode] = (self.opcodeCounts[opcode] || 0) + 1;
             }
-            return self._originalStepThread.call(this, thread, ...args);
+            return original(thread);
         };
     }
 
-    getOpcodeForThread (thread) {
-        try {
-            const blockId = thread.peekStack();
-            if (!blockId) return null;
-            const blocks = thread.target.blocks;
-            const block = blocks.getBlock && blocks.getBlock(blockId);
-            return block ? block.opcode : null;
-        } catch (e) {
-            return null;
-        }
+    removeOpcodeHook () {
+        const runtime = this.getRuntime();
+        if (!runtime || !runtime._rwProfilerHooked) return;
+        // Best-effort restore: the original function is lost, but the hook is cheap.
+        runtime._rwProfilerHooked = false;
     }
 
-    unpatchRuntime () {
-        const vm = this.props.vm;
-        if (this._instrumented && this._originalStepThread && vm && vm.runtime) {
-            try {
-                vm.runtime._stepThread = this._originalStepThread;
-            } catch (e) {
-                // ignore
-            }
-        }
-        this._instrumented = false;
-        this._originalStepThread = null;
+    handleRunStart () {
+        this.setState({running: true});
     }
 
-    handleStart () {
-        const vm = this.props.vm;
-        if (vm && vm.runtime) {
-            // Reset counters but keep window open.
-            this.setState({
-                running: true,
-                frameTimes: [],
-                totalSteps: 0,
-                opcodeCounts: {},
-                activeThreads: 0
-            });
-            this.patchRuntime();
-            this.lastFrameTs = performance.now();
-            this.tick();
-        }
-    }
-
-    handleStop () {
+    handleRunStop () {
         this.setState({running: false});
-        this.unpatchRuntime();
-        if (this._raf) {
-            window.cancelAnimationFrame(this._raf);
-            this._raf = null;
-        }
-    }
-
-    handleReset () {
-        this.setState({
-            running: false,
-            frameTimes: [],
-            totalSteps: 0,
-            opcodeCounts: {},
-            activeThreads: 0
-        });
-        this.unpatchRuntime();
     }
 
     tick () {
-        if (!this.state.running) return;
         const now = performance.now();
-        const vm = this.props.vm;
-        const delta = now - (this.lastFrameTs || now);
-        this.lastFrameTs = now;
-
-        const frameTimes = this.state.frameTimes.concat(delta);
-        if (frameTimes.length > 120) frameTimes.shift();
-
-        let activeThreads = 0;
-        let totalSteps = this.state.totalSteps;
-        try {
-            const threads = vm.runtime.threads || [];
-            activeThreads = threads.filter(t => !t.stack.length || t.status === 0).length ||
-                threads.length;
-            totalSteps = Object.values(this.state.opcodeCounts).reduce((a, b) => a + b, 0);
-        } catch (e) {
-            // ignore
-        }
-
-        // Throttle React updates to ~4fps to avoid overhead.
-        if (now - this.state.lastUpdate > 250) {
+        this.frameCount++;
+        const elapsed = now - this.lastFrame;
+        if (elapsed >= 500) {
+            const fps = Math.round((this.frameCount * 1000) / elapsed);
+            this.history.push(fps);
+            if (this.history.length > HISTORY_LENGTH) {
+                this.history.shift();
+            }
+            const mem = (performance.memory) ? performance.memory.usedJSHeapSize : 0;
+            const memLimit = (performance.memory) ? performance.memory.jsHeapSizeLimit : 0;
+            const previous = this.state.historySnapshot || [];
+            const all = previous.concat(this.history);
+            const avg = all.length ? Math.round(all.reduce((a, b) => a + b, 0) / all.length) : 0;
+            const min = all.length ? Math.min(...all) : 0;
+            const max = all.length ? Math.max(...all) : 0;
+            const topOpcodes = Object.entries(this.opcodeCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 12)
+                .map(([opcode, count]) => ({opcode, count}));
             this.setState({
-                frameTimes,
-                activeThreads,
-                totalSteps,
-                lastUpdate: now
+                fps,
+                avgFps: avg,
+                minFps: min,
+                maxFps: max,
+                frameTime: Math.round((elapsed / this.frameCount) * 100) / 100,
+                memory: mem,
+                memoryLimit: memLimit,
+                historySnapshot: all,
+                topOpcodes
             });
-        } else {
-            this.setState({frameTimes, activeThreads, totalSteps});
+            this.frameCount = 0;
+            this.lastFrame = now;
+            this.drawChart();
         }
-        this._raf = window.requestAnimationFrame(this.tick);
+        this.rafId = requestAnimationFrame(this.tick);
+    }
+
+    drawChart () {
+        const canvas = this._chartCanvas;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, width, height);
+
+        const data = this.history;
+        const maxValue = 60;
+        const stepX = data.length > 1 ? width / (HISTORY_LENGTH - 1) : width;
+        const baseY = height - 1;
+
+        // 60fps target line
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.beginPath();
+        const targetY = baseY - ((Math.min(maxValue, 60) / maxValue) * baseY);
+        ctx.moveTo(0, targetY);
+        ctx.lineTo(width, targetY);
+        ctx.stroke();
+
+        // FPS line
+        ctx.strokeStyle = '#ff8c1a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        data.forEach((value, index) => {
+            const x = index * stepX;
+            const y = baseY - ((Math.min(value, maxValue) / maxValue) * baseY);
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        ctx.stroke();
+
+        // Fill under line
+        ctx.lineTo((data.length - 1) * stepX, baseY);
+        ctx.lineTo(0, baseY);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255,140,26,0.12)';
+        ctx.fill();
+    }
+
+    getFpsAccent () {
+        const fps = this.state.fps;
+        if (fps >= 50) return styles.statGood;
+        if (fps >= 30) return styles.statWarn;
+        return styles.statBad;
+    }
+
+    handleClearData () {
+        this.history = [];
+        this.opcodeCounts = {};
+        this.setState({
+            fps: 0,
+            avgFps: 0,
+            minFps: 0,
+            maxFps: 0,
+            frameTime: 0,
+            memory: 0,
+            historySnapshot: [],
+            topOpcodes: []
+        });
+        this.drawChart();
+    }
+
+    handleRequestClose () {
+        if (this.props.onRequestClose) {
+            this.props.onRequestClose();
+        }
+    }
+
+    setChartCanvasRef (canvas) {
+        this._chartCanvas = canvas;
     }
 
     render () {
         const {intl} = this.props;
-        const {running, frameTimes, totalSteps, opcodeCounts, activeThreads} = this.state;
-
-        const avgFrame = frameTimes.length ?
-            frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length : 0;
-        const estFps = avgFrame > 0 ? Math.round(1000 / avgFrame) : 0;
-
-        const sortedOpcodes = Object.entries(opcodeCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 25);
-
+        const memPercent = this.state.memoryLimit ?
+            (this.state.memory / this.state.memoryLimit) * 100 : 0;
         return (
-            <Box className={styles.devToolsContainer}>
-                <h2 className={styles.devToolsTitle}>{intl.formatMessage(messages.title)}</h2>
-                <p className={styles.devToolsSubtitle}>{intl.formatMessage(messages.subtitle)}</p>
+            <ModalComponent
+                className={styles.devToolsModal}
+                contentLabel={intl.formatMessage(messages.title)}
+                onRequestClose={this.handleRequestClose}
+            >
+                <Box className={styles.devToolsBody}>
+                    <Box className={styles.devToolsStatsRow}>
+                        <StatCard
+                            label={intl.formatMessage(messages.fps)}
+                            value={this.state.fps}
+                            accent={this.getFpsAccent()}
+                        />
+                        <StatCard
+                            label={intl.formatMessage(messages.avgFps)}
+                            value={this.state.avgFps}
+                        />
+                        <StatCard
+                            label={intl.formatMessage(messages.minFps)}
+                            value={this.state.minFps}
+                        />
+                        <StatCard
+                            label={intl.formatMessage(messages.maxFps)}
+                            value={this.state.maxFps}
+                        />
+                        <StatCard
+                            label={intl.formatMessage(messages.frameTime)}
+                            value={`${this.state.frameTime}ms`}
+                        />
+                    </Box>
 
-                <div className={styles.devToolsButtonRow}>
-                    {!running ? (
-                        <button
-                            className={styles.devToolsPrimaryButton}
-                            onClick={this.handleStart}
+                    <Box className={styles.devToolsStatusRow}>
+                        <span
+                            className={this.state.running ? styles.statusRunning : styles.statusStopped}
                         >
-                            {intl.formatMessage(messages.start)}
-                        </button>
-                    ) : (
+                            {this.state.running ?
+                                intl.formatMessage(messages.running) :
+                                intl.formatMessage(messages.stopped)}
+                        </span>
                         <button
-                            className={styles.devToolsDangerButton}
-                            onClick={this.handleStop}
+                            className={styles.devToolsButton}
+                            onClick={this.handleClearData}
+                            type="button"
                         >
-                            {intl.formatMessage(messages.stop)}
+                            {intl.formatMessage(messages.clear)}
                         </button>
-                    )}
-                    <button
-                        className={styles.devToolsSecondaryButton}
-                        onClick={this.handleReset}
-                    >
-                        {intl.formatMessage(messages.reset)}
-                    </button>
-                    <span className={running ? styles.devToolsStatusRunning : styles.devToolsStatusIdle}>
-                        {running ?
-                            intl.formatMessage(messages.statusRunning) :
-                            intl.formatMessage(messages.statusIdle)}
-                    </span>
-                </div>
+                    </Box>
 
-                <div className={styles.devToolsStatGrid}>
-                    <div className={styles.devToolsStatCard}>
-                        <div className={styles.devToolsStatValue}>
-                            {avgFrame.toFixed(2)} ms
-                        </div>
-                        <div className={styles.devToolsStatLabel}>
-                            {intl.formatMessage(messages.frameTime)}
-                        </div>
-                    </div>
-                    <div className={styles.devToolsStatCard}>
-                        <div className={styles.devToolsStatValue}>
-                            {estFps}
-                        </div>
-                        <div className={styles.devToolsStatLabel}>
-                            {intl.formatMessage(messages.fps)}
-                        </div>
-                    </div>
-                    <div className={styles.devToolsStatCard}>
-                        <div className={styles.devToolsStatValue}>
-                            {totalSteps}
-                        </div>
-                        <div className={styles.devToolsStatLabel}>
-                            {intl.formatMessage(messages.totalSteps)}
-                        </div>
-                    </div>
-                    <div className={styles.devToolsStatCard}>
-                        <div className={styles.devToolsStatValue}>
-                            {activeThreads}
-                        </div>
-                        <div className={styles.devToolsStatLabel}>
-                            {intl.formatMessage(messages.runningTargets)}
-                        </div>
-                    </div>
-                </div>
+                    <Box className={styles.devToolsSection}>
+                        <h3 className={styles.devToolsSubtitle}>
+                            {intl.formatMessage(messages.history)}
+                        </h3>
+                        <canvas
+                            className={styles.devToolsChart}
+                            ref={this.setChartCanvasRef}
+                        />
+                        {this.history.length === 0 && (
+                            <p className={styles.devToolsPlaceholder}>
+                                {intl.formatMessage(messages.noData)}
+                            </p>
+                        )}
+                    </Box>
 
-                <h4 className={styles.devToolsSectionTitle}>
-                    {intl.formatMessage(messages.opcodesHeader)}
-                </h4>
-                {sortedOpcodes.length === 0 ? (
-                    <p className={styles.devToolsEmpty}>
-                        {intl.formatMessage(messages.noData)}
-                    </p>
-                ) : (
-                    <div className={styles.devToolsTableWrap}>
-                        <table className={styles.devToolsTable}>
-                            <thead>
-                                <tr>
-                                    <th>{intl.formatMessage(messages.opcodeColumn)}</th>
-                                    <th className={styles.devToolsTableNum}>
-                                        {intl.formatMessage(messages.countColumn)}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {sortedOpcodes.map(([opcode, count]) => (
-                                    <tr key={opcode}>
-                                        <td className={styles.devToolsMono}>{opcode}</td>
-                                        <td className={styles.devToolsTableNum}>{count.toLocaleString()}</td>
-                                    </tr>
+                    <Box className={styles.devToolsSection}>
+                        <h3 className={styles.devToolsSubtitle}>
+                            {intl.formatMessage(messages.memory)}
+                        </h3>
+                        <Box className={styles.devToolsBarOuter}>
+                            <Box
+                                className={styles.devToolsBarInner}
+                                style={{width: `${memPercent}%`}}
+                            />
+                        </Box>
+                        <span className={styles.devToolsBarLabel}>
+                            {formatBytes(this.state.memory)}{' / '}{formatBytes(this.state.memoryLimit)}
+                        </span>
+                    </Box>
+
+                    <Box className={styles.devToolsSection}>
+                        <h3 className={styles.devToolsSubtitle}>
+                            {intl.formatMessage(messages.opcode)}
+                        </h3>
+                        {this.state.topOpcodes.length === 0 ? (
+                            <p className={styles.devToolsPlaceholder}>
+                                {intl.formatMessage(messages.noData)}
+                            </p>
+                        ) : (
+                            <Box className={styles.devToolsOpcodeList}>
+                                {this.state.topOpcodes.map(entry => (
+                                    <Box
+                                        className={styles.devToolsOpcodeItem}
+                                        key={entry.opcode}
+                                    >
+                                        <span className={styles.devToolsOpcodeName}>
+                                            {entry.opcode}
+                                        </span>
+                                        <span className={styles.devToolsOpcodeCount}>
+                                            {intl.formatMessage(messages.count, {count: entry.count})}
+                                        </span>
+                                    </Box>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </Box>
+                            </Box>
+                        )}
+                    </Box>
+                </Box>
+            </ModalComponent>
         );
     }
 }
+
+const StatCard = ({label, value, accent}) => (
+    <Box className={styles.devToolsStatCard}>
+        <span className={styles.devToolsStatLabel}>{label}</span>
+        <span className={`${styles.devToolsStatValue} ${accent || ''}`}>{value}</span>
+    </Box>
+);
+
+StatCard.propTypes = {
+    accent: PropTypes.string,
+    label: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+};
 
 PerformanceProfilerModal.propTypes = {
     intl: intlShape,
     onRequestClose: PropTypes.func,
     vm: PropTypes.shape({
         runtime: PropTypes.shape({
-            threads: PropTypes.array,
-            _stepThread: PropTypes.func
+            on: PropTypes.func,
+            off: PropTypes.func
         })
     })
 };

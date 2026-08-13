@@ -1,315 +1,253 @@
-import bindAll from 'lodash.bindall';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
 
 import Box from '../box/box.jsx';
+import ModalComponent from '../modal/modal.jsx';
+import Runtime from 'scratch-vm/src/engine/runtime.js';
+
 import styles from './dev-tools.css';
 
 const messages = defineMessages({
     title: {
         defaultMessage: 'Event Tracer',
-        description: 'Title for the event tracer tool',
-        id: 'gui.devTools.eventTracer.title'
+        description: 'Title of the event tracer modal',
+        id: 'rw.devtools.tracer.title'
     },
-    subtitle: {
-        defaultMessage: '订阅并查看虚拟机运行时事件。勾选事件以启用监听。',
-        description: 'Subtitle for the event tracer tool',
-        id: 'gui.devTools.eventTracer.subtitle'
+    started: {
+        defaultMessage: 'Started',
+        description: 'Started events filter',
+        id: 'rw.devtools.tracer.started'
     },
-    start: {
-        defaultMessage: 'Start',
-        description: 'Start tracing button',
-        id: 'gui.devTools.eventTracer.start'
+    stopped: {
+        defaultMessage: 'Stopped',
+        description: 'Stopped events filter',
+        id: 'rw.devtools.tracer.stopped'
     },
-    stop: {
-        defaultMessage: 'Stop',
-        description: 'Stop tracing button',
-        id: 'gui.devTools.eventTracer.stop'
+    errored: {
+        defaultMessage: 'Errored',
+        description: 'Errored events filter',
+        id: 'rw.devtools.tracer.errored'
     },
     clear: {
         defaultMessage: 'Clear',
         description: 'Clear log button',
-        id: 'gui.devTools.eventTracer.clear'
+        id: 'rw.devtools.tracer.clear'
     },
-    events: {
-        defaultMessage: '事件',
-        description: 'Events column header',
-        id: 'gui.devTools.eventTracer.events'
+    custom: {
+        defaultMessage: 'Custom event',
+        description: 'Custom event input label',
+        id: 'rw.devtools.tracer.custom'
+    },
+    send: {
+        defaultMessage: 'Send',
+        description: 'Send custom event button',
+        id: 'rw.devtools.tracer.send'
+    },
+    filter: {
+        defaultMessage: 'Filter',
+        description: 'Filter label',
+        id: 'rw.devtools.tracer.filter'
+    },
+    all: {
+        defaultMessage: 'All',
+        description: 'All events filter',
+        id: 'rw.devtools.tracer.all'
+    },
+    empty: {
+        defaultMessage: 'No events captured yet. Start the project or send a custom event.',
+        description: 'Empty tracer placeholder',
+        id: 'rw.devtools.tracer.empty'
     },
     count: {
-        defaultMessage: '次数',
-        description: 'Count column header',
-        id: 'gui.devTools.eventTracer.count'
+        defaultMessage: '{count}', // shown as badge
+        description: 'Event count badge',
+        id: 'rw.devtools.tracer.count'
     },
-    log: {
-        defaultMessage: '实时日志',
-        description: 'Live log section title',
-        id: 'gui.devTools.eventTracer.log'
-    },
-    noLog: {
-        defaultMessage: '暂无事件。勾选上方事件并运行项目即可看到。',
-        description: 'Empty log placeholder',
-        id: 'gui.devTools.eventTracer.noLog'
-    },
-    subscribed: {
-        defaultMessage: '已订阅 {n} 个事件',
-        description: 'Subscribed count',
-        id: 'gui.devTools.eventTracer.subscribed'
-    },
-    customEvent: {
-        defaultMessage: '自定义事件名',
-        description: 'Custom event name placeholder',
-        id: 'gui.devTools.eventTracer.customEvent'
-    },
-    add: {
-        defaultMessage: '添加',
-        description: 'Add custom event button',
-        id: 'gui.devTools.eventTracer.add'
+    at: {
+        defaultMessage: 'at ',
+        description: 'Time prefix',
+        id: 'rw.devtools.tracer.at'
     }
 });
 
-// Real events emitted by scratch-vm / runtime, verified against the source.
-const KNOWN_EVENTS = [
-    'PROJECT_RUN_START',
-    'PROJECT_RUN_STOP',
-    'RUNTIME_STARTED',
-    'TARGETS_UPDATE',
-    'MONITORS_UPDATE',
-    'SCRIPT_GLOW_ON',
-    'SCRIPT_GLOW_OFF',
-    'SAY',
-    'QUESTION',
-    'targetWasCreated',
-    'targetWasRemoved',
-    'HAS_CLOUD_DATA_UPDATE',
-    'LOCALE_CHANGED',
-    'BLOCK_DRAG_END',
-    'BLOCK_DRAG_START'
-];
+const FILTERS = ['all', 'started', 'stopped', 'errored'];
 
 class EventTracerModal extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, [
-            'handleToggleTrace',
-            'handleClear',
-            'handleToggleEvent',
-            'handleAddCustomEvent',
-            'onVmEvent'
-        ]);
+        this.handleRequestClose = this.handleRequestClose.bind(this);
+        this.handleRuntimeEvent = this.handleRuntimeEvent.bind(this);
+        this.handleClearLog = this.handleClearLog.bind(this);
+        this.handleSetFilter = this.handleSetFilter.bind(this);
+        this.handleCustomChange = this.handleCustomChange.bind(this);
+        this.handleCustomKey = this.handleCustomKey.bind(this);
+        this.handleSendCustom = this.handleSendCustom.bind(this);
         this.state = {
-            tracing: false,
-            selected: new Set(KNOWN_EVENTS.slice(0, 6)),
-            customEvents: [],
-            counts: {},
-            log: []
+            events: [],
+            filter: 'all',
+            customValue: ''
         };
-        this._handlers = {};
+        this._customInput = null;
+        this.perTypeCounts = {};
     }
 
-    componentDidUpdate (prevProps, prevState) {
-        // When tracing toggles or selection changes, rebind listeners.
-        if (this.state.tracing !== prevState.tracing ||
-            this.state.selected !== prevState.selected ||
-            this.state.customEvents !== prevState.customEvents) {
-            this.rebind();
+    componentDidMount () {
+        const vm = this.props.vm;
+        if (vm && vm.runtime) {
+            this._listeners = [
+                [Runtime.PROJECT_RUN_START, 'started'],
+                [Runtime.PROJECT_RUN_STOP, 'stopped']
+            ];
+            this._listeners.forEach(([eventName, type]) => {
+                vm.runtime.on(eventName, () => this.handleRuntimeEvent(eventName, type));
+            });
+            if (vm.runtime.on && typeof vm.runtime.on === 'function') {
+                vm.runtime.on('RUNTIME_ERROR', error =>
+                    this.handleRuntimeEvent('RUNTIME_ERROR', 'errored', error));
+            }
+            vm.runtime.on('PROJECT_START', () =>
+                this.handleRuntimeEvent('PROJECT_START', 'started'));
+            vm.runtime.on('PROJECT_STOP_ALL', () =>
+                this.handleRuntimeEvent('PROJECT_STOP_ALL', 'stopped'));
         }
     }
 
     componentWillUnmount () {
-        this.unbindAll();
-    }
-
-    get activeEvents () {
-        return [...this.state.selected, ...this.state.customEvents];
-    }
-
-    rebind () {
-        this.unbindAll();
-        if (!this.state.tracing) return;
         const vm = this.props.vm;
-        if (!vm || typeof vm.on !== 'function') return;
-        for (const event of this.activeEvents) {
-            const handler = (...args) => this.onVmEvent(event, args);
-            this._handlers[event] = handler;
-            vm.on(event, handler);
+        if (vm && vm.runtime && this._listeners) {
+            this._listeners.forEach(([eventName]) => {
+                vm.runtime.off(eventName);
+            });
         }
     }
 
-    unbindAll () {
-        const vm = this.props.vm;
-        if (!vm || typeof vm.off !== 'function') return;
-        for (const event of Object.keys(this._handlers)) {
-            try {
-                vm.off(event, this._handlers[event]);
-            } catch (e) {
-                // ignore
-            }
+    handleRequestClose () {
+        if (this.props.onRequestClose) {
+            this.props.onRequestClose();
         }
-        this._handlers = {};
     }
 
-    onVmEvent (event, args) {
-        this.setState(prev => {
-            const counts = {...prev.counts};
-            counts[event] = (counts[event] || 0) + 1;
-
-            let summary = '';
-            try {
-                if (args.length === 1) {
-                    const a = args[0];
-                    if (a && typeof a === 'object') {
-                        summary = Object.keys(a).slice(0, 3)
-                            .map(k => `${k}=${JSON.stringify(a[k]).slice(0, 40)}`)
-                            .join(', ');
-                    } else {
-                        summary = String(a).slice(0, 60);
-                    }
-                } else if (args.length > 1) {
-                    summary = args.map(a => String(a).slice(0, 30)).join(' | ');
-                }
-            } catch (e) {
-                summary = '';
-            }
-
-            const entry = {
-                id: prev.log.length,
-                event,
-                summary,
-                time: new Date().toLocaleTimeString()
-            };
-            const log = prev.log.concat(entry);
-            if (log.length > 200) log.shift();
-            return {counts, log};
-        });
-    }
-
-    handleToggleTrace () {
-        this.setState(prev => {
-            const tracing = !prev.tracing;
-            if (!tracing) {
-                // Clear counts/log when stopping? Keep log, just stop listening.
-            }
-            return {tracing};
-        }, () => this.rebind());
-    }
-
-    handleClear () {
-        this.setState({counts: {}, log: []});
-    }
-
-    handleToggleEvent (event) {
-        this.setState(prev => {
-            const selected = new Set(prev.selected);
-            if (selected.has(event)) selected.delete(event);
-            else selected.add(event);
-            return {selected};
-        });
-    }
-
-    handleAddCustomEvent () {
-        const value = ((this._customInput && this._customInput.value) || '').trim();
-        if (!value) return;
+    handleRuntimeEvent (name, type) {
+        const time = new Date().toLocaleTimeString();
+        this.perTypeCounts[type] = (this.perTypeCounts[type] || 0) + 1;
         this.setState(prev => ({
-            customEvents: prev.customEvents.includes(value) ?
-                prev.customEvents : [...prev.customEvents, value]
+            events: [
+                ...prev.events,
+                {name, type, time, id: `${name}-${prev.events.length}`}
+            ].slice(-200)
         }));
-        if (this._customInput) this._customInput.value = '';
+    }
+
+    handleClearLog () {
+        this.perTypeCounts = {};
+        this.setState({events: []});
+    }
+
+    handleSetFilter (event) {
+        this.setState({filter: event.currentTarget.dataset.filter});
+    }
+
+    handleCustomChange (e) {
+        this.setState({customValue: e.target.value});
+    }
+
+    handleCustomKey (e) {
+        if (e.key === 'Enter') {
+            this.handleSendCustom();
+        }
+    }
+
+    handleSendCustom () {
+        const value = this.state.customValue.trim();
+        if (!value) return;
+        this.handleRuntimeEvent(value, 'custom');
+        this.setState({customValue: ''});
     }
 
     render () {
         const {intl} = this.props;
-        const {tracing, selected, customEvents, counts, log} = this.state;
-        const allEvents = [...KNOWN_EVENTS, ...customEvents];
+        const {events, filter, customValue} = this.state;
+        const visible = filter === 'all' ?
+            events : events.filter(e => e.type === filter);
 
         return (
-            <Box className={styles.devToolsContainer}>
-                <h2 className={styles.devToolsTitle}>{intl.formatMessage(messages.title)}</h2>
-                <p className={styles.devToolsSubtitle}>{intl.formatMessage(messages.subtitle)}</p>
-
-                <div className={styles.devToolsButtonRow}>
-                    {!tracing ? (
+            <ModalComponent
+                className={styles.devToolsModal}
+                contentLabel={intl.formatMessage(messages.title)}
+                onRequestClose={this.handleRequestClose}
+            >
+                <Box className={styles.devToolsBody}>
+                    <Box className={styles.devToolsToolbar}>
+                        <Box className={styles.devToolsFilters}>
+                            {FILTERS.map(f => (
+                                <button
+                                    className={`${styles.devToolsFilterButton} ${
+                                        filter === f ? styles.devToolsFilterActive : ''}`}
+                                    data-filter={f}
+                                    key={f}
+                                    onClick={this.handleSetFilter}
+                                    type="button"
+                                >
+                                    {intl.formatMessage(messages[f])}
+                                    {f !== 'all' && this.perTypeCounts[f] ?
+                                        <span className={styles.devToolsBadge}>
+                                            {this.perTypeCounts[f]}
+                                        </span> : null}
+                                </button>
+                            ))}
+                        </Box>
                         <button
-                            className={styles.devToolsPrimaryButton}
-                            onClick={this.handleToggleTrace}
+                            className={styles.devToolsButton}
+                            onClick={this.handleClearLog}
+                            type="button"
                         >
-                            {intl.formatMessage(messages.start)}
+                            {intl.formatMessage(messages.clear)}
                         </button>
-                    ) : (
+                    </Box>
+
+                    <Box className={styles.devToolsCustomRow}>
+                        <input
+                            className={styles.devToolsInput}
+                            onChange={this.handleCustomChange}
+                            onKeyDown={this.handleCustomKey}
+                            placeholder={intl.formatMessage(messages.custom)}
+                            type="text"
+                            value={customValue}
+                        />
                         <button
-                            className={styles.devToolsDangerButton}
-                            onClick={this.handleToggleTrace}
+                            className={styles.devToolsButton}
+                            onClick={this.handleSendCustom}
+                            type="button"
                         >
-                            {intl.formatMessage(messages.stop)}
+                            {intl.formatMessage(messages.send)}
                         </button>
-                    )}
-                    <button
-                        className={styles.devToolsSecondaryButton}
-                        onClick={this.handleClear}
-                    >
-                        {intl.formatMessage(messages.clear)}
-                    </button>
-                    <span className={tracing ? styles.devToolsStatusRunning : styles.devToolsStatusIdle}>
-                        {intl.formatMessage(messages.subscribed, {n: this.activeEvents.length})}
-                    </span>
-                </div>
+                    </Box>
 
-                <div className={styles.eventTracerEvents}>
-                    {allEvents.map(event => (
-                        <label
-                            key={event}
-                            className={`${styles.eventTracerChip} ${selected.has(event) ? styles.eventTracerChipOn : ''}`}
-                        >
-                            <input
-                                type="checkbox"
-                                checked={selected.has(event)}
-                                onChange={() => this.handleToggleEvent(event)}
-                            />
-                            <span className={styles.devToolsMono}>{event}</span>
-                        </label>
-                    ))}
-                </div>
-
-                <div className={styles.eventTracerCustomRow}>
-                    <input
-                        ref={c => { this._customInput = c; }}
-                        className={styles.eventTracerInput}
-                        placeholder={intl.formatMessage(messages.customEvent)}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter') this.handleAddCustomEvent();
-                        }}
-                    />
-                    <button
-                        className={styles.devToolsSecondaryButton}
-                        onClick={this.handleAddCustomEvent}
-                    >
-                        {intl.formatMessage(messages.add)}
-                    </button>
-                </div>
-
-                <h4 className={styles.devToolsSectionTitle}>{intl.formatMessage(messages.log)}</h4>
-                <div className={styles.eventTracerCounts}>
-                    {allEvents.filter(e => counts[e]).map(event => (
-                        <span key={event} className={styles.eventTracerCountBadge}>
-                            <span className={styles.devToolsMono}>{event}</span>: {counts[event]}
-                        </span>
-                    ))}
-                </div>
-                <div className={styles.devToolsLogWrap}>
-                    {log.length === 0 ? (
-                        <p className={styles.devToolsEmpty}>{intl.formatMessage(messages.noLog)}</p>
-                    ) : (
-                        log.slice().reverse().map(entry => (
-                            <div key={entry.id} className={styles.devToolsLogLine}>
-                                <span className={styles.devToolsLogTime}>[{entry.time}]</span>
-                                <span className={styles.devToolsMono}>{entry.event}</span>
-                                {entry.summary && <span className={styles.devToolsLogSummary}> — {entry.summary}</span>}
-                            </div>
-                        ))
-                    )}
-                </div>
-            </Box>
+                    <Box className={styles.devToolsEventList}>
+                        {visible.length === 0 ? (
+                            <p className={styles.devToolsPlaceholder}>
+                                {intl.formatMessage(messages.empty)}
+                            </p>
+                        ) : (
+                            visible.map(event => (
+                                <Box
+                                    className={`${styles.devToolsEventItem} ${
+                                        styles[`devToolsEvent_${event.type}`] || ''}`}
+                                    key={event.id}
+                                >
+                                    <span className={styles.devToolsEventTime}>
+                                        {intl.formatMessage(messages.at)}{event.time}
+                                    </span>
+                                    <span className={styles.devToolsEventName}>
+                                        {event.name}
+                                    </span>
+                                </Box>
+                            ))
+                        )}
+                    </Box>
+                </Box>
+            </ModalComponent>
         );
     }
 }
@@ -318,8 +256,10 @@ EventTracerModal.propTypes = {
     intl: intlShape,
     onRequestClose: PropTypes.func,
     vm: PropTypes.shape({
-        on: PropTypes.func,
-        off: PropTypes.func
+        runtime: PropTypes.shape({
+            on: PropTypes.func,
+            off: PropTypes.func
+        })
     })
 };
 

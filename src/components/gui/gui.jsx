@@ -1037,10 +1037,34 @@ const GUIComponent = props => {
             {helpModalVisible && <MWHelpModal isRtl={isRtl} entryId={helpEntry} />}
             {projectMetadataModalVisible && <MWProjectMetadataModal isRtl={isRtl} />}
             {debuggerModalVisible && <TWDebugger isRtl={isRtl} />}
-            {performanceProfilerModalVisible && <PerformanceProfilerModal isRtl={isRtl} vm={vm} />}
-            {performanceBudgetModalVisible && <PerformanceBudgetModal isRtl={isRtl} vm={vm} />}
-            {projectOutlineModalVisible && <ProjectOutlineModal isRtl={isRtl} vm={vm} />}
-            {eventTracerModalVisible && <EventTracerModal isRtl={isRtl} vm={vm} />}
+            {performanceProfilerModalVisible && (
+                <PerformanceProfilerModal
+                    isRtl={isRtl}
+                    onRequestClose={onClosePerformanceProfiler}
+                    vm={vm}
+                />
+            )}
+            {performanceBudgetModalVisible && (
+                <PerformanceBudgetModal
+                    isRtl={isRtl}
+                    onRequestClose={onClosePerformanceBudget}
+                    vm={vm}
+                />
+            )}
+            {projectOutlineModalVisible && (
+                <ProjectOutlineModal
+                    isRtl={isRtl}
+                    onRequestClose={onCloseProjectOutline}
+                    vm={vm}
+                />
+            )}
+            {eventTracerModalVisible && (
+                <EventTracerModal
+                    isRtl={isRtl}
+                    onRequestClose={onCloseEventTracer}
+                    vm={vm}
+                />
+            )}
             <AIModal />
             <AIChatModal />
             <AIAgentModal />
@@ -1732,7 +1756,11 @@ const mapDispatchToProps = dispatch => ({
     dispatch: dispatch,
     onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
     onOpenOnboarding: () => dispatch(showOnboarding()),
-    onOpenReadme: () => dispatch(openReadme())
+    onOpenReadme: () => dispatch(openReadme()),
+    onClosePerformanceProfiler: () => dispatch(closePerformanceProfilerModal()),
+    onClosePerformanceBudget: () => dispatch(closePerformanceBudgetModal()),
+    onCloseProjectOutline: () => dispatch(closeProjectOutlineModal()),
+    onCloseEventTracer: () => dispatch(closeEventTracerModal())
 });
 
 export default injectIntl(connect(

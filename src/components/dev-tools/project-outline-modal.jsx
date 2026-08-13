@@ -1,257 +1,284 @@
-import bindAll from 'lodash.bindall';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
 
 import Box from '../box/box.jsx';
+import ModalComponent from '../modal/modal.jsx';
+
 import styles from './dev-tools.css';
 
 const messages = defineMessages({
     title: {
         defaultMessage: 'Project Outline',
-        description: 'Title for the project outline tool',
-        id: 'gui.devTools.projectOutline.title'
+        description: 'Title of the project outline modal',
+        id: 'rw.devtools.outline.title'
     },
-    subtitle: {
-        defaultMessage: '查看项目结构，点击角色可切换到其脚本编辑。',
-        description: 'Subtitle for the project outline tool',
-        id: 'gui.devTools.projectOutline.subtitle'
+    search: {
+        defaultMessage: 'Search targets, blocks or variables...',
+        description: 'Search placeholder',
+        id: 'rw.devtools.outline.search'
+    },
+    totalSprites: {
+        defaultMessage: 'Sprites',
+        description: 'Total sprites',
+        id: 'rw.devtools.outline.totalSprites'
+    },
+    totalBlocks: {
+        defaultMessage: 'Blocks',
+        description: 'Total blocks',
+        id: 'rw.devtools.outline.totalBlocks'
+    },
+    totalVariables: {
+        defaultMessage: 'Variables',
+        description: 'Total variables',
+        id: 'rw.devtools.outline.totalVariables'
+    },
+    totalLists: {
+        defaultMessage: 'Lists',
+        description: 'Total lists',
+        id: 'rw.devtools.outline.totalLists'
     },
     stage: {
-        defaultMessage: '舞台',
-        description: 'Stage label',
-        id: 'gui.devTools.projectOutline.stage'
-    },
-    sprites: {
-        defaultMessage: '角色',
-        description: 'Sprites label',
-        id: 'gui.devTools.projectOutline.sprites'
-    },
-    costumes: {
-        defaultMessage: '造型',
-        description: 'Costumes label',
-        id: 'gui.devTools.projectOutline.costumes'
-    },
-    sounds: {
-        defaultMessage: '声音',
-        description: 'Sounds label',
-        id: 'gui.devTools.projectOutline.sounds'
-    },
-    variables: {
-        defaultMessage: '变量',
-        description: 'Variables label',
-        id: 'gui.devTools.projectOutline.variables'
-    },
-    lists: {
-        defaultMessage: '列表',
-        description: 'Lists label',
-        id: 'gui.devTools.projectOutline.lists'
-    },
-    extensions: {
-        defaultMessage: '扩展',
-        description: 'Extensions label',
-        id: 'gui.devTools.projectOutline.extensions'
-    },
-    scripts: {
-        defaultMessage: '脚本',
-        description: 'Scripts label',
-        id: 'gui.devTools.projectOutline.scripts'
+        defaultMessage: 'Stage',
+        description: 'Stage target name',
+        id: 'rw.devtools.outline.stage'
     },
     blocks: {
-        defaultMessage: '积木',
-        description: 'Blocks label',
-        id: 'gui.devTools.projectOutline.blocks'
+        defaultMessage: '{count} blocks',
+        description: 'Block count for a target',
+        id: 'rw.devtools.outline.blocks'
     },
-    noProject: {
-        defaultMessage: '当前没有打开的项目。',
-        description: 'No project loaded',
-        id: 'gui.devTools.projectOutline.noProject'
+    noMatch: {
+        defaultMessage: 'No matching items.',
+        description: 'Empty search result',
+        id: 'rw.devtools.outline.noMatch'
     },
-    clickToEdit: {
-        defaultMessage: '点击切换到此角色',
-        description: 'Hint to click to edit target',
-        id: 'gui.devTools.projectOutline.clickToEdit'
+    variables: {
+        defaultMessage: 'Variables',
+        description: 'Variables section heading',
+        id: 'rw.devtools.outline.variablesHeading'
+    },
+    lists: {
+        defaultMessage: 'Lists',
+        description: 'Lists section heading',
+        id: 'rw.devtools.outline.listsHeading'
     }
 });
 
 class ProjectOutlineModal extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, [
-            'handleSelectTarget',
-            'refresh'
-        ]);
+        this.handleRequestClose = this.handleRequestClose.bind(this);
+        this.handleSearchChange = this.handleSearchChange.bind(this);
+        this.handleSelectTarget = this.handleSelectTarget.bind(this);
+        this.collectTargets = this.collectTargets.bind(this);
         this.state = {
             targets: [],
-            editingTargetId: null,
-            projectOpen: false
+            query: '',
+            selectedId: null
         };
     }
 
     componentDidMount () {
-        this.refresh();
-        const vm = this.props.vm;
-        if (vm) {
-            this._onTargetsUpdate = () => this.refresh();
-            vm.on('TARGETS_UPDATE', this._onTargetsUpdate);
-        }
-        // Periodic refresh so newly-run code (new variables, etc.) shows up.
-        this._interval = window.setInterval(this.refresh, 1500);
+        this.collectTargets();
     }
 
-    componentWillUnmount () {
-        const vm = this.props.vm;
-        if (vm && this._onTargetsUpdate) {
-            vm.off('TARGETS_UPDATE', this._onTargetsUpdate);
-        }
-        if (this._interval) {
-            window.clearInterval(this._interval);
-            this._interval = null;
+    componentDidUpdate (prevProps) {
+        if (prevProps.vm !== this.props.vm) {
+            this.collectTargets();
         }
     }
 
-    refresh () {
+    handleRequestClose () {
+        if (this.props.onRequestClose) {
+            this.props.onRequestClose();
+        }
+    }
+
+    handleSearchChange (e) {
+        this.setState({query: e.target.value});
+    }
+
+    handleSelectTarget (event) {
+        const id = event.currentTarget.dataset.id;
+        const vm = this.props.vm;
+        if (!vm) return;
+        const target = vm.runtime.targets.find(t => t.id === id);
+        if (target) {
+            vm.setEditingTarget(id);
+            this.setState({selectedId: id});
+        }
+    }
+
+    collectTargets () {
         const vm = this.props.vm;
         if (!vm || !vm.runtime) return;
-        let targets = [];
-        try {
-            targets = vm.runtime.targets.map(target => {
-                const variables = Object.values(target.variables || {});
-                const lists = variables.filter(v => v.type === 'list');
-                const plainVars = variables.filter(v => v.type !== 'list');
-                let scripts = [];
-                try {
-                    if (target.blocks && typeof target.blocks.getScripts === 'function') {
-                        scripts = target.blocks.getScripts();
-                    }
-                } catch (e) {
-                    scripts = [];
+        const runtime = vm.runtime;
+        const targets = (runtime.targets || []).map(target => {
+            const blocksObj = target.blocks ? target.blocks._blocks : {};
+            const blockCount = Object.keys(blocksObj).length;
+            const variables = [];
+            const lists = [];
+            const vars = target.variables ? target.variables : {};
+            Object.values(vars).forEach(v => {
+                if (Array.isArray(v.value) && v.value.length >= 2 &&
+                    typeof v.value[1] === 'string') {
+                    lists.push(v.name);
+                } else {
+                    variables.push(v.name);
                 }
-                let blockCount = 0;
-                try {
-                    if (target.blocks && typeof target.blocks._blocks !== 'undefined') {
-                        blockCount = Object.keys(target.blocks._blocks || {}).length;
-                    }
-                } catch (e) {
-                    blockCount = 0;
-                }
-                let extensions = [];
-                try {
-                    extensions = Object.keys(target.extensions || {});
-                } catch (e) {
-                    extensions = [];
-                }
-                return {
-                    id: target.id,
-                    name: target.isStage ? null : target.getName(),
-                    isStage: target.isStage,
-                    costumes: (target.costumes || []).length,
-                    sounds: (target.sounds || []).length,
-                    variables: plainVars.map(v => v.name),
-                    lists: lists.map(v => v.name),
-                    extensions,
-                    scripts: scripts.length,
-                    blocks: blockCount
-                };
             });
-        } catch (e) {
-            targets = [];
-        }
-        this.setState({
-            targets,
-            editingTargetId: vm.editingTarget ? vm.editingTarget.id : null,
-            projectOpen: true
+            return {
+                id: target.id,
+                name: target.isStage ?
+                    this.props.intl.formatMessage(messages.stage) :
+                    target.getName(),
+                isStage: !!target.isStage,
+                blocks: blockCount,
+                variables,
+                lists
+            };
         });
-    }
-
-    handleSelectTarget (targetId) {
-        const vm = this.props.vm;
-        if (vm && typeof vm.setEditingTarget === 'function') {
-            vm.setEditingTarget(targetId);
-            this.setState({editingTargetId: targetId});
-        }
+        this.setState({targets});
     }
 
     render () {
         const {intl} = this.props;
-        const {targets, editingTargetId, projectOpen} = this.state;
+        const {targets, query, selectedId} = this.state;
+        const lower = query.toLowerCase();
+        const filtered = targets.filter(t => {
+            if (!lower) return true;
+            if (t.name.toLowerCase().includes(lower)) return true;
+            if (t.variables.some(v => v.toLowerCase().includes(lower))) return true;
+            if (t.lists.some(v => v.toLowerCase().includes(lower))) return true;
+            return false;
+        });
 
-        if (!projectOpen || targets.length === 0) {
-            return (
-                <Box className={styles.devToolsContainer}>
-                    <h2 className={styles.devToolsTitle}>{intl.formatMessage(messages.title)}</h2>
-                    <p className={styles.devToolsSubtitle}>{intl.formatMessage(messages.subtitle)}</p>
-                    <p className={styles.devToolsEmpty}>{intl.formatMessage(messages.noProject)}</p>
-                </Box>
-            );
-        }
-
-        const stage = targets.find(t => t.isStage);
-        const sprites = targets.filter(t => !t.isStage);
-
-        const renderTarget = target => {
-            const isEditing = target.id === editingTargetId;
-            return (
-                <div
-                    key={target.id}
-                    className={`${styles.outlineTarget} ${isEditing ? styles.outlineTargetActive : ''}`}
-                    onClick={() => this.handleSelectTarget(target.id)}
-                    title={intl.formatMessage(messages.clickToEdit)}
-                >
-                    <div className={styles.outlineTargetName}>
-                        {target.isStage ? intl.formatMessage(messages.stage) : target.name}
-                        {isEditing && <span className={styles.outlineEditingTag}>●</span>}
-                    </div>
-                    <div className={styles.outlineTargetStats}>
-                        <span>{intl.formatMessage(messages.scripts)}: {target.scripts}</span>
-                        <span>{intl.formatMessage(messages.blocks)}: {target.blocks}</span>
-                        <span>{intl.formatMessage(messages.costumes)}: {target.costumes}</span>
-                        <span>{intl.formatMessage(messages.sounds)}: {target.sounds}</span>
-                        {target.variables.length > 0 && (
-                            <span>{intl.formatMessage(messages.variables)}: {target.variables.join(', ')}</span>
-                        )}
-                        {target.lists.length > 0 && (
-                            <span>{intl.formatMessage(messages.lists)}: {target.lists.join(', ')}</span>
-                        )}
-                        {target.extensions.length > 0 && (
-                            <span>{intl.formatMessage(messages.extensions)}: {target.extensions.join(', ')}</span>
-                        )}
-                    </div>
-                </div>
-            );
-        };
+        const totalBlocks = targets.reduce((sum, t) => sum + t.blocks, 0);
+        const totalVars = targets.reduce((sum, t) => sum + t.variables.length, 0);
+        const totalLists = targets.reduce((sum, t) => sum + t.lists.length, 0);
+        const spriteCount = targets.filter(t => !t.isStage).length;
 
         return (
-            <Box className={styles.devToolsContainer}>
-                <h2 className={styles.devToolsTitle}>{intl.formatMessage(messages.title)}</h2>
-                <p className={styles.devToolsSubtitle}>{intl.formatMessage(messages.subtitle)}</p>
-            <div className={styles.outlineSection}>
-                    {stage && renderTarget(stage)}
-                </div>
-                <h4 className={styles.devToolsSectionTitle}>
-                    {intl.formatMessage(messages.sprites)} ({sprites.length})
-                </h4>
-                <div className={styles.outlineSection}>
-                    {sprites.map(renderTarget)}
-                </div>
-            </Box>
+            <ModalComponent
+                className={styles.devToolsModal}
+                contentLabel={intl.formatMessage(messages.title)}
+                onRequestClose={this.handleRequestClose}
+            >
+                <Box className={styles.devToolsBody}>
+                    <Box className={styles.devToolsStatsRow}>
+                        <StatCard
+                            label={intl.formatMessage(messages.totalSprites)}
+                            value={spriteCount}
+                        />
+                        <StatCard
+                            label={intl.formatMessage(messages.totalBlocks)}
+                            value={totalBlocks}
+                        />
+                        <StatCard
+                            label={intl.formatMessage(messages.totalVariables)}
+                            value={totalVars}
+                        />
+                        <StatCard
+                            label={intl.formatMessage(messages.totalLists)}
+                            value={totalLists}
+                        />
+                    </Box>
+
+                    <input
+                        className={styles.devToolsSearch}
+                        onChange={this.handleSearchChange}
+                        placeholder={intl.formatMessage(messages.search)}
+                        type="text"
+                        value={query}
+                    />
+
+                    <Box className={styles.devToolsOutlineList}>
+                        {filtered.length === 0 ? (
+                            <p className={styles.devToolsPlaceholder}>
+                                {intl.formatMessage(messages.noMatch)}
+                            </p>
+                        ) : (
+                            filtered.map(target => (
+                                <Box
+                                    className={`${styles.devToolsOutlineItem} ${
+                                        selectedId === target.id ? styles.devToolsOutlineSelected : ''}`}
+                                    data-id={target.id}
+                                    key={target.id}
+                                    onClick={this.handleSelectTarget}
+                                >
+                                    <Box className={styles.devToolsOutlineItemHead}>
+                                        <span className={styles.devToolsOutlineName}>
+                                            {target.name}
+                                        </span>
+                                        <span className={styles.devToolsOutlineMeta}>
+                                            {intl.formatMessage(messages.blocks, {count: target.blocks})}
+                                        </span>
+                                    </Box>
+                                    {target.variables.length > 0 && (
+                                        <Box className={styles.devToolsOutlineSub}>
+                                            <span className={styles.devToolsOutlineSubTitle}>
+                                                {intl.formatMessage(messages.variables)}
+                                            </span>
+                                            <span className={styles.devToolsOutlineTags}>
+                                                {target.variables.map(v => (
+                                                    <span
+                                                        className={styles.devToolsTag}
+                                                        key={v}
+                                                    >
+                                                        {v}
+                                                    </span>
+                                                ))}
+                                            </span>
+                                        </Box>
+                                    )}
+                                    {target.lists.length > 0 && (
+                                        <Box className={styles.devToolsOutlineSub}>
+                                            <span className={styles.devToolsOutlineSubTitle}>
+                                                {intl.formatMessage(messages.lists)}
+                                            </span>
+                                            <span className={styles.devToolsOutlineTags}>
+                                                {target.lists.map(v => (
+                                                    <span
+                                                        className={styles.devToolsTag}
+                                                        key={v}
+                                                    >
+                                                        {v}
+                                                    </span>
+                                                ))}
+                                            </span>
+                                        </Box>
+                                    )}
+                                </Box>
+                            ))
+                        )}
+                    </Box>
+                </Box>
+            </ModalComponent>
         );
     }
 }
+
+const StatCard = ({label, value}) => (
+    <Box className={styles.devToolsStatCard}>
+        <span className={styles.devToolsStatLabel}>{label}</span>
+        <span className={styles.devToolsStatValue}>{value}</span>
+    </Box>
+);
+
+StatCard.propTypes = {
+    label: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+};
 
 ProjectOutlineModal.propTypes = {
     intl: intlShape,
     onRequestClose: PropTypes.func,
     vm: PropTypes.shape({
-        on: PropTypes.func,
-        off: PropTypes.func,
-        editingTarget: PropTypes.shape({
-            id: PropTypes.string
-        }),
-        setEditingTarget: PropTypes.func,
         runtime: PropTypes.shape({
             targets: PropTypes.array
-        })
+        }),
+        setEditingTarget: PropTypes.func
     })
 };
 
