@@ -275,6 +275,8 @@ class CollaborationService {
 
     wrapVMLoadProject () {
         if (!this.vm || !this.vm.loadProject) return;
+        if (this._vmLoadProjectWrapped) return;
+        this._vmLoadProjectWrapped = true;
 
         const originalLoadProject = this.vm.loadProject.bind(this.vm);
         const service = this;
@@ -284,7 +286,15 @@ class CollaborationService {
         }
 
         this.vm.loadProject = function (input) {
+            // 快速路径：未连接协作且非同步加载，直接走原方法
+            // 避免 99% 场景下（单人编辑）的协作逻辑开销
             const isSyncLoad = service.isSyncOperation || service.isApplyingRemoteChange;
+            if (!service.isConnected && !isSyncLoad) {
+                service.lastLoadTime = Date.now();
+                return originalLoadProject(input);
+            }
+
+            // 以下为协作场景才执行的逻辑
             const now = Date.now();
             const timeSinceLastLoad = now - service.lastLoadTime;
 
@@ -309,23 +319,25 @@ class CollaborationService {
                 service.isLoadingProject = true;
             }
 
-            if (service.isHost && service.isConnected && !isSyncLoad && service.connections.size > 0) {
+            const hasConnections = service.isHost && service.connections.size > 0;
+            if (service.isHost && service.isConnected && !isSyncLoad && hasConnections) {
                 service.sendMessage('host-loading-start', {timestamp: Date.now()});
             }
 
+            const shouldTrackProgress = service.isHost && service.isConnected && !isSyncLoad;
             const progressHandler = (finished, total) => {
-                if (service.isHost && service.isConnected && total > 0) {
+                if (total > 0) {
                     const progress = Math.round((finished / total) * 100);
                     service.sendMessage('host-loading-progress', {progress, finished, total});
                 }
             };
 
-            if (service.isHost && service.isConnected && !isSyncLoad) {
+            if (shouldTrackProgress) {
                 service.vm.on('ASSET_PROGRESS', progressHandler);
             }
 
             return originalLoadProject(input).then(() => {
-                if (service.isHost && service.isConnected && !isSyncLoad) {
+                if (shouldTrackProgress) {
                     service.vm.off('ASSET_PROGRESS', progressHandler);
                 }
 
@@ -335,7 +347,7 @@ class CollaborationService {
                         service.scheduledSyncTimeout = null;
                     }
 
-                    if (service.connections.size > 0) {
+                    if (hasConnections) {
                         service.sendMessage('host-loading-complete', {timestamp: Date.now()});
 
                         const shouldScheduleSync = service._syncRequestedOnApproval === false;

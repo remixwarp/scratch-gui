@@ -143,57 +143,71 @@ class PerformanceBudgetModal extends React.Component {
         this.state = {
             thresholds: {...PRESETS.balanced},
             usage: {},
-            preset: 'balanced'
+            preset: 'balanced',
+            _mountError: false
         };
     }
 
     componentDidMount () {
-        this.collectUsage();
+        try {
+            this.collectUsage();
+        } catch (e) {
+            console.error('[PerformanceBudget] mount failed:', e);
+            this.setState({_mountError: true});
+        }
     }
 
     componentDidUpdate (prevProps) {
-        if (prevProps.vm !== this.props.vm) {
-            this.collectUsage();
+        try {
+            if (prevProps.vm !== this.props.vm) {
+                this.collectUsage();
+            }
+        } catch (e) {
+            console.error('[PerformanceBudget] update failed:', e);
         }
     }
 
     collectUsage () {
-        const vm = this.props.vm;
-        if (!vm || !vm.runtime) return;
-        const runtime = vm.runtime;
-        const targets = runtime.targets ? runtime.targets.filter(t => !t.isStage) : [];
-        let blocks = 0;
-        let scripts = 0;
-        let variables = 0;
-        let lists = 0;
-        const allTargets = runtime.targets || [];
-        allTargets.forEach(target => {
-            const blocksObj = target.blocks ? target.blocks._blocks : {};
-            const blockCount = Object.keys(blocksObj).length;
-            blocks += blockCount;
-            scripts += Object.values(blocksObj)
-                .filter(b => b.topLevel).length;
-            const vars = target.variables ? target.variables : {};
-            Object.values(vars).forEach(v => {
-                if (Array.isArray(v.value) && v.value.length >= 2 &&
-                    (typeof v.value[1] === 'string')) {
-                    lists += 1;
-                } else {
-                    variables += 1;
+        try {
+            const vm = this.props.vm;
+            if (!vm || !vm.runtime) return;
+            const runtime = vm.runtime;
+            const targets = runtime.targets ? runtime.targets.filter(t => !t.isStage) : [];
+            let blocks = 0;
+            let scripts = 0;
+            let variables = 0;
+            let lists = 0;
+            const allTargets = runtime.targets || [];
+            allTargets.forEach(target => {
+                const blocksObj = target.blocks ? target.blocks._blocks : {};
+                const blockCount = Object.keys(blocksObj).length;
+                blocks += blockCount;
+                scripts += Object.values(blocksObj)
+                    .filter(b => b.topLevel).length;
+                const vars = target.variables ? target.variables : {};
+                Object.values(vars).forEach(v => {
+                    if (Array.isArray(v.value) && v.value.length >= 2 &&
+                        (typeof v.value[1] === 'string')) {
+                        lists += 1;
+                    } else {
+                        variables += 1;
+                    }
+                });
+            });
+            const memory = (performance && performance.memory) ? performance.memory.usedJSHeapSize : 0;
+            this.setState({
+                usage: {
+                    blocks,
+                    scripts,
+                    sprites: targets.length,
+                    variables,
+                    lists,
+                    memory
                 }
             });
-        });
-        const memory = (performance.memory) ? performance.memory.usedJSHeapSize : 0;
-        this.setState({
-            usage: {
-                blocks,
-                scripts,
-                sprites: targets.length,
-                variables,
-                lists,
-                memory
-            }
-        });
+        } catch (e) {
+            console.error('[PerformanceBudget] collectUsage failed:', e);
+        }
     }
 
     handleRequestClose () {
@@ -269,8 +283,12 @@ class PerformanceBudgetModal extends React.Component {
 
     render () {
         const {intl} = this.props;
-        const {thresholds, usage, preset} = this.state;
-        return (
+        try {
+            if (this.state._mountError) {
+                return this._renderErrorFallback();
+            }
+            const {thresholds, usage, preset} = this.state;
+            return (
             <ModalComponent
                 className={styles.devToolsModal}
                 contentLabel={intl.formatMessage(messages.title)}
@@ -394,6 +412,36 @@ class PerformanceBudgetModal extends React.Component {
                             })}
                         </tbody>
                     </table>
+                </Box>
+            </ModalComponent>
+            );
+        } catch (e) {
+            console.error('[PerformanceBudget] render failed:', e);
+            return this._renderErrorFallback();
+        }
+    }
+
+    _renderErrorFallback () {
+        const {intl, onRequestClose} = this.props;
+        const close = () => {
+            try { onRequestClose && onRequestClose(); } catch (_e) { /* ignore */ }
+        };
+        return (
+            <ModalComponent
+                className={styles.devToolsModal}
+                contentLabel={intl ? intl.formatMessage(messages.title) : 'Performance Budget'}
+                onRequestClose={close}
+            >
+                <Box className={styles.devToolsBody}>
+                    <p style={{color: '#f66', margin: '12px 0'}}>
+                        性能预算面板加载失败，请关闭后重试。
+                    </p>
+                    <button
+                        onClick={close}
+                        style={{padding: '8px 16px', border: '1px solid #ccc', borderRadius: 4, cursor: 'pointer'}}
+                    >
+                        关闭
+                    </button>
                 </Box>
             </ModalComponent>
         );

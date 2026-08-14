@@ -63,10 +63,6 @@ import MWAssetsModal from '../../components/mw-assets-modal/assets-modal.jsx';
 import MWHelpModal from '../../components/mw-help-modal/help-modal.jsx';
 import MWProjectMetadataModal from '../../containers/mw-project-metadata-modal.jsx';
 import TWDebugger from '../../containers/tw-debugger.jsx';
-import PerformanceProfilerModal from '../../components/dev-tools/performance-profiler-modal.jsx';
-import PerformanceBudgetModal from '../../components/dev-tools/performance-budget-modal.jsx';
-import ProjectOutlineModal from '../../components/dev-tools/project-outline-modal.jsx';
-import EventTracerModal from '../../components/dev-tools/event-tracer-modal.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
 import Avatar from '../mw-avatar/avatar.jsx';
 import {closeRoturLoginModal, openRoturLoginModal} from '../../reducers/modals.js';
@@ -437,10 +433,6 @@ const GUIComponent = props => {
         helpEntry,
         projectMetadataModalVisible,
         debuggerModalVisible,
-        performanceProfilerModalVisible,
-        performanceBudgetModalVisible,
-        projectOutlineModalVisible,
-        eventTracerModalVisible,
         shortcutManagerModalVisible,
         editingTarget,
         vm,
@@ -1037,34 +1029,6 @@ const GUIComponent = props => {
             {helpModalVisible && <MWHelpModal isRtl={isRtl} entryId={helpEntry} />}
             {projectMetadataModalVisible && <MWProjectMetadataModal isRtl={isRtl} />}
             {debuggerModalVisible && <TWDebugger isRtl={isRtl} />}
-            {performanceProfilerModalVisible && (
-                <PerformanceProfilerModal
-                    isRtl={isRtl}
-                    onRequestClose={onClosePerformanceProfiler}
-                    vm={vm}
-                />
-            )}
-            {performanceBudgetModalVisible && (
-                <PerformanceBudgetModal
-                    isRtl={isRtl}
-                    onRequestClose={onClosePerformanceBudget}
-                    vm={vm}
-                />
-            )}
-            {projectOutlineModalVisible && (
-                <ProjectOutlineModal
-                    isRtl={isRtl}
-                    onRequestClose={onCloseProjectOutline}
-                    vm={vm}
-                />
-            )}
-            {eventTracerModalVisible && (
-                <EventTracerModal
-                    isRtl={isRtl}
-                    onRequestClose={onCloseEventTracer}
-                    vm={vm}
-                />
-            )}
             <AIModal />
             <AIChatModal />
             <AIAgentModal />
@@ -1104,10 +1068,6 @@ const GUIComponent = props => {
         helpEntry,
         projectMetadataModalVisible,
         debuggerModalVisible,
-        performanceProfilerModalVisible,
-        performanceBudgetModalVisible,
-        projectOutlineModalVisible,
-        eventTracerModalVisible,
         shortcutManagerModalVisible,
         onboardingVisible,
         props.gandiHelpModal,
@@ -1686,10 +1646,6 @@ GUIComponent.propTypes = {
     helpEntry: PropTypes.string,
     projectMetadataModalVisible: PropTypes.bool,
     debuggerModalVisible: PropTypes.bool,
-    performanceProfilerModalVisible: PropTypes.bool,
-    performanceBudgetModalVisible: PropTypes.bool,
-    projectOutlineModalVisible: PropTypes.bool,
-    eventTracerModalVisible: PropTypes.bool,
     gandiHelpModal: PropTypes.bool,
     // AstraEditor features
     customThemeVisible: PropTypes.bool,
@@ -1745,22 +1701,14 @@ const mapStateToProps = state => ({
     assetsModalVisible: state.scratchGui.modals.assetsModal,
     helpModalVisible: state.scratchGui.modals.helpModal,
     projectMetadataModalVisible: state.scratchGui.modals.projectMetadataModal,
-    debuggerModalVisible: state.scratchGui.modals.debuggerModal,
-    performanceProfilerModalVisible: state.scratchGui.modals.performanceProfilerModal,
-    performanceBudgetModalVisible: state.scratchGui.modals.performanceBudgetModal,
-    projectOutlineModalVisible: state.scratchGui.modals.projectOutlineModal,
-    eventTracerModalVisible: state.scratchGui.modals.eventTracerModal
+    debuggerModalVisible: state.scratchGui.modals.debuggerModal
 });
 
 const mapDispatchToProps = dispatch => ({
     dispatch: dispatch,
     onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
     onOpenOnboarding: () => dispatch(showOnboarding()),
-    onOpenReadme: () => dispatch(openReadme()),
-    onClosePerformanceProfiler: () => dispatch(closePerformanceProfilerModal()),
-    onClosePerformanceBudget: () => dispatch(closePerformanceBudgetModal()),
-    onCloseProjectOutline: () => dispatch(closeProjectOutlineModal()),
-    onCloseEventTracer: () => dispatch(closeEventTracerModal())
+    onOpenReadme: () => dispatch(openReadme())
 });
 
 export default injectIntl(connect(

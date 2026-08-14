@@ -69,11 +69,7 @@ import {
     openAssetsModal,
     openHelp,
     openProjectMetadataModal,
-    openDebuggerModal,
-    openPerformanceProfilerModal,
-    openPerformanceBudgetModal,
-    openProjectOutlineModal,
-    openEventTracerModal
+    openDebuggerModal
 } from '../../reducers/modals';
 
 // IPC for opening extension editor
@@ -184,7 +180,7 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
-    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store, AlertTriangle, ListTree, GitGraph
+    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -4052,46 +4048,6 @@ class MenuBar extends React.Component {
                                                 <Bug />
                                                 {this.props.locale === 'zh-cn' ? 'Lint 系统' : 'Lint System'}
                                             </MenuItem>
-                                            <MenuItem
-                                                onClick={() => {
-                                                    this.props.onClickPerformanceProfiler();
-                                                    this.handleCloseVariousTools();
-                                                    this.props.onRequestCloseTools();
-                                                }}
-                                            >
-                                                <Activity />
-                                                {this.props.locale === 'zh-cn' ? '性能剖析' : 'Performance Profiler'}
-                                            </MenuItem>
-                                            <MenuItem
-                                                onClick={() => {
-                                                    this.props.onClickPerformanceBudget();
-                                                    this.handleCloseVariousTools();
-                                                    this.props.onRequestCloseTools();
-                                                }}
-                                            >
-                                                <AlertTriangle />
-                                                {this.props.locale === 'zh-cn' ? '性能预算告警' : 'Performance Budget'}
-                                            </MenuItem>
-                                            <MenuItem
-                                                onClick={() => {
-                                                    this.props.onClickProjectOutline();
-                                                    this.handleCloseVariousTools();
-                                                    this.props.onRequestCloseTools();
-                                                }}
-                                            >
-                                                <ListTree />
-                                                {this.props.locale === 'zh-cn' ? '项目大纲' : 'Project Outline'}
-                                            </MenuItem>
-                                            <MenuItem
-                                                onClick={() => {
-                                                    this.props.onClickEventTracer();
-                                                    this.handleCloseVariousTools();
-                                                    this.props.onRequestCloseTools();
-                                                }}
-                                            >
-                                                <GitGraph />
-                                                {this.props.locale === 'zh-cn' ? '事件追踪' : 'Event Tracer'}
-                                            </MenuItem>
                                         </MenuSection>
                                     </MenuBarMenu>
                                 </MenuLabel>
@@ -4374,10 +4330,6 @@ MenuBar.propTypes = {
     onClickHelp: PropTypes.func,
     onClickProjectMetadata: PropTypes.func,
     onClickDebugger: PropTypes.func,
-    onClickPerformanceProfiler: PropTypes.func,
-    onClickPerformanceBudget: PropTypes.func,
-    onClickProjectOutline: PropTypes.func,
-    onClickEventTracer: PropTypes.func,
     onClickShowTutorial: PropTypes.func,
     onClickTutorial: PropTypes.func,
     onClickShortcutManagerModal: PropTypes.func,
@@ -4525,10 +4477,6 @@ const mapDispatchToProps = dispatch => ({
     onClickHelp: () => dispatch(openHelp()),
     onClickProjectMetadata: () => dispatch(openProjectMetadataModal()),
     onClickDebugger: () => dispatch(openDebuggerModal()),
-    onClickPerformanceProfiler: () => dispatch(openPerformanceProfilerModal()),
-    onClickPerformanceBudget: () => dispatch(openPerformanceBudgetModal()),
-    onClickProjectOutline: () => dispatch(openProjectOutlineModal()),
-    onClickEventTracer: () => dispatch(openEventTracerModal()),
     onClickShowTutorial: () => {
         localStorage.removeItem('mw:has-seen-onboarding');
         dispatch(showOnboarding());

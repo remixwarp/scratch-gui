@@ -87,7 +87,7 @@ const RoturAccount = props => {
                 open={props.menuOpen}
                 place={props.isRtl ? 'right' : 'left'}
             >
-                <MenuItemContainer onClick={go(`/users/${encodeURIComponent(props.username)}`)}>
+                <MenuItemContainer onClick={() => window.open(`https://com.bilup.org/users/${encodeURIComponent(props.username)}`, '_blank')}>
                     <User />
                     <FormattedMessage {...messages.profile} />
                 </MenuItemContainer>

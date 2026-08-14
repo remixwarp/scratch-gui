@@ -55,7 +55,7 @@ const mapStateToProps = state => {
         classroomId: user ? user.classroomId || '' : '',
         isEducator: (state.session && state.session.permissions && state.session.permissions.educator) || false,
         isStudent: (state.session && state.session.permissions && state.session.permissions.student) || false,
-        profileUrl: user ? (`/users/${user.username}`) : '',
+        profileUrl: user ? (`https://com.bilup.org/users/${user.username}`) : '',
         thumbnailUrl: user ? (user.thumbnailUrl || user.avatar || null) : null,
         username: user ? (user.username || user.displayName || '') : ''
     };

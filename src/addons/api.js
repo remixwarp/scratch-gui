@@ -36,42 +36,83 @@ const escapeHTML = str => str.replace(/([<>'"&])/g, (_, l) => `&#${l.charCodeAt(
 const kebabCaseToCamelCase = str => str.replace(/-([a-z])/g, g => g[1].toUpperCase());
 
 let _scratchClassNames = null;
+let _scratchClassNamesWarm = false;
+
+// 在浏览器空闲时预生成样式类缓存，避免首次调用 scratchClass() 时阻塞用户交互
+// 用一个"预热"标记，空闲时先算出来，真的要用时直接拿结果
+const scheduleIdle = typeof requestIdleCallback !== 'undefined'
+    ? requestIdleCallback
+    : cb => setTimeout(cb, 100);
+scheduleIdle(() => {
+    if (typeof document !== 'undefined' && document.styleSheets && !_scratchClassNamesWarm) {
+        try {
+            getScratchClassNames();
+        } catch (_e) {
+            // ignore
+        }
+    }
+}, {timeout: 10000});
+
 const getScratchClassNames = () => {
     if (_scratchClassNames) {
         return _scratchClassNames;
     }
-    const cssRules = Array.from(document.styleSheets)
-        // Ignore some scratch-paint stylesheets
-        .filter(styleSheet => (
-            !(
-                styleSheet.ownerNode.textContent.startsWith(
-                    '/* DO NOT EDIT\n@todo This file is copied from GUI and should be pulled out into a shared library.'
-                ) &&
-                (
-                    styleSheet.ownerNode.textContent.includes('input_input-form') ||
-                    styleSheet.ownerNode.textContent.includes('label_input-group_')
-                )
-            )
-        ))
-        .map(e => {
-            try {
-                return [...e.cssRules];
-            } catch (_e) {
-                return [];
+    _scratchClassNamesWarm = true;
+
+    const styleSheets = document.styleSheets;
+    const len = styleSheets ? styleSheets.length : 0;
+    const cssRules = [];
+    // 用普通 for 循环代替 Array.from + filter + map + flat 链式
+    // 减少中间数组和 GC 压力，对于大样式表集合差异明显
+    for (let i = 0; i < len; i++) {
+        const styleSheet = styleSheets[i];
+        const ownerNode = styleSheet.ownerNode;
+        // Ignore some scratch-paint stylesheets (快路径先检查 tagName，避免读 textContent)
+        if (ownerNode && ownerNode.tagName === 'STYLE') {
+            const text = ownerNode.textContent;
+            if (text && text.startsWith(
+                '/* DO NOT EDIT\n@todo This file is copied from GUI and should be pulled out into a shared library.'
+            ) && (
+                text.includes('input_input-form') ||
+                text.includes('label_input-group_')
+            )) {
+                continue;
             }
-        })
-        .flat();
-    const classes = cssRules
-        .map(e => e.selectorText)
-        .filter(e => e)
-        .map(e => e.match(/(([\w-]+?)_([\w-]+)_([\w\d-]+))/g))
-        .filter(e => e)
-        .flat();
-    _scratchClassNames = [...new Set(classes)];
+        }
+        try {
+            const rules = styleSheet.cssRules;
+            if (rules) {
+                const rLen = rules.length;
+                for (let j = 0; j < rLen; j++) {
+                    cssRules.push(rules[j]);
+                }
+            }
+        } catch (_e) {
+            // ignore - cross-origin stylesheets
+        }
+    }
+
+    const classSet = new Set();
+    const regex = /(([\w-]+?)_([\w-]+)_([\w\d-]+))/g;
+    const rLen = cssRules.length;
+    for (let i = 0; i < rLen; i++) {
+        const selectorText = cssRules[i].selectorText;
+        if (!selectorText) continue;
+        let match;
+        while ((match = regex.exec(selectorText)) !== null) {
+            classSet.add(match[0]);
+        }
+    }
+    _scratchClassNames = Array.from(classSet);
+
     const observer = new MutationObserver(mutationList => {
-        for (const mutation of mutationList) {
-            for (const node of mutation.addedNodes) {
-                if (node.tagName === 'STYLE') {
+        const mLen = mutationList.length;
+        for (let m = 0; m < mLen; m++) {
+            const mutation = mutationList[m];
+            const nodes = mutation.addedNodes;
+            const nLen = nodes ? nodes.length : 0;
+            for (let n = 0; n < nLen; n++) {
+                if (nodes[n].tagName === 'STYLE') {
                     _scratchClassNames = null;
                     observer.disconnect();
                     return;
@@ -79,9 +120,9 @@ const getScratchClassNames = () => {
             }
         }
     });
-    observer.observe(document.head, {
-        childList: true
-    });
+    if (document && document.head) {
+        observer.observe(document.head, {childList: true});
+    }
     return _scratchClassNames;
 };
 

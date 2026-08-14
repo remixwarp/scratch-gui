@@ -65,7 +65,7 @@ const AccountNavComponent = ({
             place={isRtl ? 'right' : 'left'}
             onRequestClose={onClose}
         >
-            <MenuItemContainer href={profileUrl}>
+            <MenuItemContainer onClick={() => window.open(profileUrl, '_blank')}>
                 <FormattedMessage
                     defaultMessage="Profile"
                     description="Text to link to my user profile, in the account navigation menu"

@@ -86,92 +86,137 @@ class EventTracerModal extends React.Component {
         this.state = {
             events: [],
             filter: 'all',
-            customValue: ''
+            customValue: '',
+            _mountError: false
         };
         this._customInput = null;
         this.perTypeCounts = {};
     }
 
     componentDidMount () {
-        const vm = this.props.vm;
-        if (vm && vm.runtime) {
-            this._listeners = [
-                [Runtime.PROJECT_RUN_START, 'started'],
-                [Runtime.PROJECT_RUN_STOP, 'stopped']
-            ];
-            this._listeners.forEach(([eventName, type]) => {
-                vm.runtime.on(eventName, () => this.handleRuntimeEvent(eventName, type));
-            });
-            if (vm.runtime.on && typeof vm.runtime.on === 'function') {
-                vm.runtime.on('RUNTIME_ERROR', error =>
-                    this.handleRuntimeEvent('RUNTIME_ERROR', 'errored', error));
+        try {
+            const vm = this.props.vm;
+            if (vm && vm.runtime && typeof vm.runtime.on === 'function') {
+                // 记录所有注册过的事件，卸载时统一移除，避免内存泄漏
+                this._listeners = [
+                    [Runtime.PROJECT_RUN_START, 'started'],
+                    [Runtime.PROJECT_RUN_STOP, 'stopped'],
+                    ['RUNTIME_ERROR', 'errored'],
+                    ['PROJECT_START', 'started'],
+                    ['PROJECT_STOP_ALL', 'stopped']
+                ];
+                this._listeners.forEach(([eventName, type]) => {
+                    vm.runtime.on(eventName, payload =>
+                        this.handleRuntimeEvent(eventName, type, payload));
+                });
             }
-            vm.runtime.on('PROJECT_START', () =>
-                this.handleRuntimeEvent('PROJECT_START', 'started'));
-            vm.runtime.on('PROJECT_STOP_ALL', () =>
-                this.handleRuntimeEvent('PROJECT_STOP_ALL', 'stopped'));
+        } catch (e) {
+            console.error('[EventTracer] mount failed:', e);
+            this.setState({_mountError: true});
         }
     }
 
     componentWillUnmount () {
-        const vm = this.props.vm;
-        if (vm && vm.runtime && this._listeners) {
-            this._listeners.forEach(([eventName]) => {
-                vm.runtime.off(eventName);
-            });
+        try {
+            const vm = this.props.vm;
+            if (vm && vm.runtime && typeof vm.runtime.off === 'function' && this._listeners) {
+                this._listeners.forEach(([eventName]) => {
+                    vm.runtime.off(eventName);
+                });
+                this._listeners = null;
+            }
+        } catch (e) {
+            console.error('[EventTracer] unmount failed:', e);
         }
     }
 
     handleRequestClose () {
-        if (this.props.onRequestClose) {
-            this.props.onRequestClose();
+        try {
+            if (this.props.onRequestClose) {
+                this.props.onRequestClose();
+            }
+        } catch (e) {
+            console.error('[EventTracer] close failed:', e);
         }
     }
 
     handleRuntimeEvent (name, type) {
-        const time = new Date().toLocaleTimeString();
-        this.perTypeCounts[type] = (this.perTypeCounts[type] || 0) + 1;
-        this.setState(prev => ({
-            events: [
-                ...prev.events,
-                {name, type, time, id: `${name}-${prev.events.length}`}
-            ].slice(-200)
-        }));
+        try {
+            const time = new Date().toLocaleTimeString();
+            this.perTypeCounts[type] = (this.perTypeCounts[type] || 0) + 1;
+            this.setState(prev => ({
+                events: [
+                    ...prev.events,
+                    {name, type, time, id: `${name}-${prev.events.length}`}
+                ].slice(-200)
+            }));
+        } catch (e) {
+            console.error('[EventTracer] handle event failed:', e);
+        }
     }
 
     handleClearLog () {
-        this.perTypeCounts = {};
-        this.setState({events: []});
+        try {
+            this.perTypeCounts = {};
+            this.setState({events: []});
+        } catch (e) {
+            console.error('[EventTracer] clear log failed:', e);
+        }
     }
 
     handleSetFilter (event) {
-        this.setState({filter: event.currentTarget.dataset.filter});
+        try {
+            const filter = event && event.currentTarget && event.currentTarget.dataset && event.currentTarget.dataset.filter;
+            if (filter != null) {
+                this.setState({filter});
+            }
+        } catch (e) {
+            console.error('[EventTracer] set filter failed:', e);
+        }
     }
 
     handleCustomChange (e) {
-        this.setState({customValue: e.target.value});
+        try {
+            const value = e && e.target ? e.target.value : '';
+            this.setState({customValue: value});
+        } catch (e) {
+            console.error('[EventTracer] custom change failed:', e);
+        }
     }
 
     handleCustomKey (e) {
-        if (e.key === 'Enter') {
-            this.handleSendCustom();
+        try {
+            if (e && e.key === 'Enter') {
+                this.handleSendCustom();
+            }
+        } catch (err) {
+            console.error('[EventTracer] custom key failed:', err);
         }
     }
 
     handleSendCustom () {
-        const value = this.state.customValue.trim();
-        if (!value) return;
-        this.handleRuntimeEvent(value, 'custom');
-        this.setState({customValue: ''});
+        try {
+            const value = (this.state.customValue || '').trim();
+            if (!value) return;
+            this.handleRuntimeEvent(value, 'custom');
+            this.setState({customValue: ''});
+        } catch (e) {
+            console.error('[EventTracer] send custom failed:', e);
+        }
     }
 
     render () {
         const {intl} = this.props;
-        const {events, filter, customValue} = this.state;
-        const visible = filter === 'all' ?
-            events : events.filter(e => e.type === filter);
+        try {
+            if (this.state._mountError) {
+                return this._renderErrorFallback();
+            }
+            const {events, filter, customValue} = this.state;
+            const eventList = events || [];
+            const visible = filter === 'all' ?
+                eventList : eventList.filter(e => e && e.type === filter);
 
-        return (
+            return (
             <ModalComponent
                 className={styles.devToolsModal}
                 contentLabel={intl.formatMessage(messages.title)}
@@ -246,6 +291,36 @@ class EventTracerModal extends React.Component {
                             ))
                         )}
                     </Box>
+                </Box>
+            </ModalComponent>
+            );
+        } catch (e) {
+            console.error('[EventTracer] render failed:', e);
+            return this._renderErrorFallback();
+        }
+    }
+
+    _renderErrorFallback () {
+        const {intl, onRequestClose} = this.props;
+        const close = () => {
+            try { onRequestClose && onRequestClose(); } catch (_e) { /* ignore */ }
+        };
+        return (
+            <ModalComponent
+                className={styles.devToolsModal}
+                contentLabel={intl && intl.formatMessage ? intl.formatMessage(messages.title) : 'Event Tracer'}
+                onRequestClose={close}
+            >
+                <Box className={styles.devToolsBody}>
+                    <p style={{color: '#f66', margin: '12px 0'}}>
+                        事件追踪器加载失败，请关闭后重试。
+                    </p>
+                    <button
+                        onClick={close}
+                        style={{padding: '8px 16px', border: '1px solid #ccc', borderRadius: 4, cursor: 'pointer'}}
+                    >
+                        关闭
+                    </button>
                 </Box>
             </ModalComponent>
         );

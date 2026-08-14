@@ -106,30 +106,41 @@ class PerformanceProfilerModal extends React.Component {
             memory: 0,
             memoryLimit: 0,
             running: false,
-            topOpcodes: []
+            topOpcodes: [],
+            _mountError: false
         };
     }
 
     componentDidMount () {
-        const vm = this.props.vm;
-        if (vm && vm.runtime) {
-            vm.runtime.on(Runtime.PROJECT_RUN_START, this.handleRunStart);
-            vm.runtime.on(Runtime.PROJECT_RUN_STOP, this.handleRunStop);
+        try {
+            const vm = this.props.vm;
+            if (vm && vm.runtime && typeof vm.runtime.on === 'function') {
+                vm.runtime.on(Runtime.PROJECT_RUN_START, this.handleRunStart);
+                vm.runtime.on(Runtime.PROJECT_RUN_STOP, this.handleRunStop);
+            }
+            // Hook opcode execution to sample the most-used blocks.
+            this.installOpcodeHook();
+            this.rafId = requestAnimationFrame(this.tick);
+        } catch (e) {
+            console.error('[PerformanceProfiler] mount failed:', e);
+            this.setState({_mountError: true});
         }
-        // Hook opcode execution to sample the most-used blocks.
-        this.installOpcodeHook();
-        this.rafId = requestAnimationFrame(this.tick);
     }
 
     componentWillUnmount () {
-        const vm = this.props.vm;
-        if (vm && vm.runtime) {
-            vm.runtime.off(Runtime.PROJECT_RUN_START, this.handleRunStart);
-            vm.runtime.off(Runtime.PROJECT_RUN_STOP, this.handleRunStop);
-        }
-        this.removeOpcodeHook();
-        if (this.rafId) {
-            cancelAnimationFrame(this.rafId);
+        try {
+            const vm = this.props.vm;
+            if (vm && vm.runtime && typeof vm.runtime.off === 'function') {
+                vm.runtime.off(Runtime.PROJECT_RUN_START, this.handleRunStart);
+                vm.runtime.off(Runtime.PROJECT_RUN_STOP, this.handleRunStop);
+            }
+            this.removeOpcodeHook();
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId);
+                this.rafId = null;
+            }
+        } catch (e) {
+            console.error('[PerformanceProfiler] unmount failed:', e);
         }
     }
 
@@ -140,16 +151,30 @@ class PerformanceProfilerModal extends React.Component {
     installOpcodeHook () {
         const runtime = this.getRuntime();
         if (!runtime) return;
+        // 严格的空值保护：sequencer、stepThread 任一个不存在就跳过，
+        // 避免因为 VM 内部 API 变更导致组件挂载就崩溃。
+        const sequencer = runtime.sequencer;
+        if (!sequencer) return;
+        if (typeof sequencer.stepThread !== 'function') return;
         if (runtime._rwProfilerHooked) return;
-        const original = runtime._stepThread.bind(runtime);
+
+        const original = sequencer.stepThread.bind(sequencer);
         runtime._rwProfilerHooked = true;
+        runtime._rwProfilerOriginalStepThread = original;
         const self = this;
-        runtime._stepThread = function (thread) {
-            const op = thread.peekStack();
-            if (op) {
-                const block = runtime._blocks ? runtime._blocks.getBlock(op) : null;
-                const opcode = block ? block.opcode : 'unknown';
-                self.opcodeCounts[opcode] = (self.opcodeCounts[opcode] || 0) + 1;
+
+        sequencer.stepThread = function (thread) {
+            try {
+                const op = typeof thread.peekStack === 'function' ? thread.peekStack() : null;
+                if (op) {
+                    const block = runtime._blocks && typeof runtime._blocks.getBlock === 'function'
+                        ? runtime._blocks.getBlock(op)
+                        : null;
+                    const opcode = block ? block.opcode : 'unknown';
+                    self.opcodeCounts[opcode] = (self.opcodeCounts[opcode] || 0) + 1;
+                }
+            } catch (_e) {
+                // ignore - profiler 采样失败不应影响正常运行
             }
             return original(thread);
         };
@@ -158,8 +183,16 @@ class PerformanceProfilerModal extends React.Component {
     removeOpcodeHook () {
         const runtime = this.getRuntime();
         if (!runtime || !runtime._rwProfilerHooked) return;
-        // Best-effort restore: the original function is lost, but the hook is cheap.
+        const sequencer = runtime.sequencer;
+        if (sequencer && runtime._rwProfilerOriginalStepThread) {
+            try {
+                sequencer.stepThread = runtime._rwProfilerOriginalStepThread;
+            } catch (_e) {
+                // ignore
+            }
+        }
         runtime._rwProfilerHooked = false;
+        runtime._rwProfilerOriginalStepThread = null;
     }
 
     handleRunStart () {
@@ -292,9 +325,13 @@ class PerformanceProfilerModal extends React.Component {
 
     render () {
         const {intl} = this.props;
-        const memPercent = this.state.memoryLimit ?
-            (this.state.memory / this.state.memoryLimit) * 100 : 0;
-        return (
+        try {
+            if (this.state._mountError) {
+                return this._renderErrorFallback();
+            }
+            const memPercent = this.state.memoryLimit ?
+                (this.state.memory / this.state.memoryLimit) * 100 : 0;
+            return (
             <ModalComponent
                 className={styles.devToolsModal}
                 contentLabel={intl.formatMessage(messages.title)}
@@ -398,6 +435,36 @@ class PerformanceProfilerModal extends React.Component {
                             </Box>
                         )}
                     </Box>
+                </Box>
+            </ModalComponent>
+            );
+        } catch (e) {
+            console.error('[PerformanceProfiler] render failed:', e);
+            return this._renderErrorFallback();
+        }
+    }
+
+    _renderErrorFallback () {
+        const {intl, onRequestClose} = this.props;
+        const close = () => {
+            try { onRequestClose && onRequestClose(); } catch (_e) { /* ignore */ }
+        };
+        return (
+            <ModalComponent
+                className={styles.devToolsModal}
+                contentLabel={intl ? intl.formatMessage(messages.title) : 'Performance Profiler'}
+                onRequestClose={close}
+            >
+                <Box className={styles.devToolsBody}>
+                    <p style={{color: '#f66', margin: '12px 0'}}>
+                        性能剖析器加载失败，请关闭后重试。
+                    </p>
+                    <button
+                        onClick={close}
+                        style={{padding: '8px 16px', border: '1px solid #ccc', borderRadius: 4, cursor: 'pointer'}}
+                    >
+                        关闭
+                    </button>
                 </Box>
             </ModalComponent>
         );

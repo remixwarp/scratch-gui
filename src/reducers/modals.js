@@ -34,10 +34,6 @@ const MODAL_WARPTHEME = 'bilmeModal';
 const MODAL_CUSTOM_GALLERY = 'customGalleryModal';
 const MODAL_DEBUGGER = 'debuggerModal';
 const MODAL_HELP = 'helpModal';
-const MODAL_PERFORMANCE_PROFILER = 'performanceProfilerModal';
-const MODAL_PERFORMANCE_BUDGET = 'performanceBudgetModal';
-const MODAL_PROJECT_OUTLINE = 'projectOutlineModal';
-const MODAL_EVENT_TRACER = 'eventTracerModal';
 const MODAL_WARPTHEME_STORE = 'warpthemeModal';
 const MODAL_EXTENSION_EDITOR = 'extensionEditorModal';
 const MODAL_SUPER_REFACTOR = 'superRefactorModal';
@@ -100,10 +96,6 @@ const initialState = {
     [MODAL_CUSTOM_GALLERY]: false,
     [MODAL_DEBUGGER]: false,
     [MODAL_HELP]: false,
-    [MODAL_PERFORMANCE_PROFILER]: false,
-    [MODAL_PERFORMANCE_BUDGET]: false,
-    [MODAL_PROJECT_OUTLINE]: false,
-    [MODAL_EVENT_TRACER]: false,
     helpEntry: null,
     extensionLoadChoiceData: null,
     videoModalData: null
@@ -458,30 +450,6 @@ const openDebuggerModal = function () {
 const closeDebuggerModal = function () {
     return closeModal(MODAL_DEBUGGER);
 };
-const openPerformanceProfilerModal = function () {
-    return openModal(MODAL_PERFORMANCE_PROFILER);
-};
-const closePerformanceProfilerModal = function () {
-    return closeModal(MODAL_PERFORMANCE_PROFILER);
-};
-const openPerformanceBudgetModal = function () {
-    return openModal(MODAL_PERFORMANCE_BUDGET);
-};
-const closePerformanceBudgetModal = function () {
-    return closeModal(MODAL_PERFORMANCE_BUDGET);
-};
-const openProjectOutlineModal = function () {
-    return openModal(MODAL_PROJECT_OUTLINE);
-};
-const closeProjectOutlineModal = function () {
-    return closeModal(MODAL_PROJECT_OUTLINE);
-};
-const openEventTracerModal = function () {
-    return openModal(MODAL_EVENT_TRACER);
-};
-const closeEventTracerModal = function () {
-    return closeModal(MODAL_EVENT_TRACER);
-};
 const openHelp = function (entryId) {
     return {
         type: 'scratch-gui/modals/SET_HELP_MODAL',
@@ -584,14 +552,6 @@ export {
     closeCustomGalleryModal,
     openDebuggerModal,
     closeDebuggerModal,
-    openPerformanceProfilerModal,
-    closePerformanceProfilerModal,
-    openPerformanceBudgetModal,
-    closePerformanceBudgetModal,
-    openProjectOutlineModal,
-    closeProjectOutlineModal,
-    openEventTracerModal,
-    closeEventTracerModal,
     openHelp,
     closeHelpModal,
     MODAL_GANDI_HELP,

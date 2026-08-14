@@ -87,11 +87,22 @@ const vmManagerHOC = function (WrappedComponent) {
             };
 
             const originalLoadProject = vm.loadProject;
-            vm.loadProject = async data => {
-                // tw: 提取 git.json 在后台异步进行（JSZip 只读解析，不修改数据），
-                // 避免在 originalLoadProject 之前串行完整解压一遍项目文件，
-                // 大项目可显著减少加载等待时间。
-                const gitJsonPromise = (async () => {
+            vm.loadProject = async (data, opts = {}) => {
+                // 先执行项目加载（最优先级），git.json 提取放到后面空闲时处理
+                // 避免两个 JSZip.loadAsync 并行竞争 CPU/内存，大项目显著提升加载速度
+                const result = await originalLoadProject.call(vm, data);
+
+                // 调用方显式跳过 git 导入时直接返回
+                if (opts && opts.skipGitImport) {
+                    return result;
+                }
+
+                // 在浏览器空闲时异步提取和导入 git.json，不阻塞项目加载完成信号
+                const scheduleIdle = typeof requestIdleCallback !== 'undefined'
+                    ? requestIdleCallback
+                    : cb => setTimeout(cb, 0);
+
+                scheduleIdle(async () => {
                     try {
                         let buffer = null;
                         if (data instanceof ArrayBuffer) {
@@ -109,25 +120,16 @@ const vmManagerHOC = function (WrappedComponent) {
                             const zip = await JSZip.loadAsync(buffer);
                             const file = zip.file('git.json');
                             if (file) {
-                                return file.async('string');
+                                const gitJson = await file.async('string');
+                                if (gitJson) {
+                                    await BrowserGit.importRepoFromGitJsonString(gitJson);
+                                }
                             }
                         }
                     } catch (e) {
                         // ignore
                     }
-                    return null;
-                })();
-
-                const result = await originalLoadProject.call(vm, data);
-
-                const gitJson = await gitJsonPromise;
-                if (gitJson) {
-                    try {
-                        await BrowserGit.importRepoFromGitJsonString(gitJson);
-                    } catch (e) {
-                        // ignore
-                    }
-                }
+                }, {timeout: 5000});
 
                 return result;
             };
@@ -138,21 +140,29 @@ const vmManagerHOC = function (WrappedComponent) {
             this.props.vm.quit();
             return this.props.vm.loadProject(this.props.projectData)
                 .then(() => {
+                    // 立即发送加载完成信号（不包 setTimeout），尽快把 UI 从 Loading 切换到显示
                     this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
-                    // Wrap in a setTimeout because skin loading in
-                    // the renderer can be async.
-                    setTimeout(() => this.props.onSetProjectUnchanged());
 
-                    // If the vm is not running, call draw on the renderer manually
-                    // This draws the state of the loaded project with no blocks running
-                    // which closely matches the 2.0 behavior, except for monitors–
-                    // 2.0 runs monitors and shows updates (e.g. timer monitor)
-                    // before the VM starts running other hat blocks.
-                    if (!this.props.isStarted) {
-                        // Wrap in a setTimeout because skin loading in
-                        // the renderer can be async.
-                        setTimeout(() => this.props.vm.renderer.draw());
-                    }
+                    // 合并异步回调：原来有 2 个独立的 setTimeout(0)，
+                    // 每个都会单独推迟到下一次事件循环，累计延迟用户可感知的
+                    // 加载时间。统一用一个 microtask + 一个可选 requestAnimationFrame
+                    Promise.resolve().then(() => {
+                        this.props.onSetProjectUnchanged();
+                        // If the vm is not running, call draw on the renderer manually
+                        // This draws the state of the loaded project with no blocks running
+                        // which closely matches the 2.0 behavior, except for monitors–
+                        // 2.0 runs monitors and shows updates (e.g. timer monitor)
+                        // before the VM starts running other hat blocks.
+                        if (!this.props.isStarted && this.props.vm.renderer) {
+                            // 皮肤加载通常为异步，但 requestAnimationFrame 比 setTimeout
+                            // 更精准地在下一次重绘前执行，避免额外的帧等待
+                            if (typeof requestAnimationFrame !== 'undefined') {
+                                requestAnimationFrame(() => this.props.vm.renderer.draw());
+                            } else {
+                                this.props.vm.renderer.draw();
+                            }
+                        }
+                    });
                 })
                 .catch(e => {
                     this.props.onError(e);

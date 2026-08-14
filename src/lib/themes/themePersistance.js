@@ -177,8 +177,9 @@ const persistTheme = theme => {
  * Apply a theme to the GUI pipeline and persist settings.
  * This centralizes application so loading and manual changes behave the same.
  * @param {Theme} theme the theme
+ * @param {boolean} delayPersist 是否延迟持久化到 localStorage（初始化加载时用）
  */
-const applyTheme = theme => {
+const applyTheme = (theme, delayPersist = false) => {
     try {
         applyGuiColors(theme);
     } catch (e) {
@@ -186,11 +187,31 @@ const applyTheme = theme => {
         console.error('Failed to apply GUI colors for theme:', e);
     }
 
-    persistTheme(theme);
+    // 初始化加载阶段：先让项目尽快加载，持久化在空闲时执行
+    // 避免 localStorage 写入 + JSON 序列化阻塞启动关键路径
+    if (delayPersist) {
+        const scheduleIdle = typeof requestIdleCallback !== 'undefined'
+            ? requestIdleCallback
+            : cb => setTimeout(cb, 0);
+        scheduleIdle(() => persistTheme(theme), {timeout: 3000});
+    } else {
+        persistTheme(theme);
+    }
 };
 
+// 模块加载时只应用 CSS 颜色变量（避免闪烁），持久化延迟到浏览器空闲
+// 减少启动关键路径上的同步开销（localStorage 读写、JSON 序列化等）
 try {
-    applyTheme(detectTheme());
+    const initialTheme = detectTheme();
+    try {
+        applyGuiColors(initialTheme);
+    } catch (e) {
+        console.error('Failed to apply GUI colors for theme:', e);
+    }
+    const scheduleIdle = typeof requestIdleCallback !== 'undefined'
+        ? requestIdleCallback
+        : cb => setTimeout(cb, 0);
+    scheduleIdle(() => persistTheme(initialTheme), {timeout: 3000});
 } catch (e) {
     console.error('Failed to apply theme:', e);
 }
