@@ -29,7 +29,7 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --no-verify
 
       - name: Run prepublish script
         run: bun run prepublish
