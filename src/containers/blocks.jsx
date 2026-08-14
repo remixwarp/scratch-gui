@@ -477,6 +477,15 @@ class Blocks extends React.Component {
 
         gentlyRequestPersistentStorage();
 
+        // 拆分模式：若本工作区锁定到一个角色/背景，但当前显示的目标还不是它
+        // （例如锁定目标不是全局编辑目标，尚未加载过），则加载其自身积木 XML，
+        // 保证两列分别显示各自角色，互不影响。
+        if (this.props.workspaceTargetId && this.props.isVisible && this.workspace) {
+            if (this._loadedTargetId !== this.props.workspaceTargetId) {
+                this.loadLockedTargetWorkspace();
+            }
+        }
+
         // Defer attaching hover listeners until ScratchBlocks has finished injecting its DOM.
         setTimeout(() => {
             if (!this.unmounted) this.attachPaletteHoverListeners();
@@ -1223,8 +1232,13 @@ class Blocks extends React.Component {
 
         const categoryId = this.workspace.toolbox_.getSelectedCategoryId();
         const offset = this.workspace.toolbox_.getCategoryScrollOffset();
-        this.workspace.updateToolbox(this.props.toolboxXML);
-        this._renderedToolboxXML = this.props.toolboxXML;
+        // 拆分模式：每个工作区有自己的锁定目标，工具盒必须由自身
+        // getToolboxXML() 根据 workspaceTargetId 生成，而非使用全局
+        // Redux 状态 this.props.toolboxXML，否则左右两列会互相覆盖。
+        const toolboxXML = this.props.workspaceTargetId ?
+            this.getToolboxXML() : this.props.toolboxXML;
+        this.workspace.updateToolbox(toolboxXML);
+        this._renderedToolboxXML = toolboxXML;
 
         // In order to catch any changes that mutate the toolbox during "normal runtime"
         // (variable changes/etc), re-enable toolbox refresh.
@@ -1254,7 +1268,22 @@ class Blocks extends React.Component {
     }
 
     attachVM () {
-        this.workspace.addChangeListener(this.props.vm.blockListener);
+        // 拆分模式：本工作区锁定到某个角色/背景时，积木必须创建到锁定目标上，
+        // 而非全局编辑目标（vm.editingTarget），否则背景积木会错误地落到角色里。
+        if (this.props.workspaceTargetId) {
+            this._lockedBlockListener = (e) => {
+                const originalTarget = this.props.vm.editingTarget;
+                const lockedTarget = this.props.vm.runtime.getTargetById(this.props.workspaceTargetId);
+                if (lockedTarget) {
+                    this.props.vm.editingTarget = lockedTarget;
+                }
+                this.props.vm.blockListener(e);
+                this.props.vm.editingTarget = originalTarget;
+            };
+            this.workspace.addChangeListener(this._lockedBlockListener);
+        } else {
+            this.workspace.addChangeListener(this.props.vm.blockListener);
+        }
         this.flyoutWorkspace = this.workspace
             .getFlyout()
             .getWorkspace();
@@ -1305,15 +1334,22 @@ class Blocks extends React.Component {
     }
 
     onTargetsUpdate () {
-        if (this.props.vm.editingTarget && this.workspace.getFlyout()) {
+        // 拆分模式：使用锁定目标而非全局编辑目标，确保工具箱中的 x/y 值正确
+        const target = this.props.workspaceTargetId ?
+            this.props.vm.runtime.getTargetById(this.props.workspaceTargetId) :
+            this.props.vm.editingTarget;
+        if (target && this.workspace.getFlyout()) {
             ['glide', 'move', 'set'].forEach(prefix => {
-                this.updateToolboxBlockValue(`${prefix}x`, Math.round(this.props.vm.editingTarget.x).toString());
-                this.updateToolboxBlockValue(`${prefix}y`, Math.round(this.props.vm.editingTarget.y).toString());
+                this.updateToolboxBlockValue(`${prefix}x`, Math.round(target.x).toString());
+                this.updateToolboxBlockValue(`${prefix}y`, Math.round(target.y).toString());
             });
         }
     }
     onWorkspaceMetricsChange () {
-        const target = this.props.vm.editingTarget;
+        // 拆分模式：使用锁定目标而非全局编辑目标，保存各自独立的工作区位置
+        const target = this.props.workspaceTargetId ?
+            this.props.vm.runtime.getTargetById(this.props.workspaceTargetId) :
+            this.props.vm.editingTarget;
         if (target && target.id) {
             this.props.updateMetrics({
                 targetID: target.id,

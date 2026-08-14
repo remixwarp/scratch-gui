@@ -44,7 +44,6 @@
   background: rgba(255, 102, 128, 0.15);
 }
 .addBtn {
-  margin-left: auto;
   padding: 4px 10px;
   background: transparent;
   border: 1px dashed var(--ui-tertiary, rgba(0,0,0,0.15));
@@ -52,6 +51,15 @@
   cursor: pointer;
   color: var(--text-primary, inherit);
   font-weight: bold;
+}
+
+/* 工具栏右侧按钮组 */
+.toolbarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 .addBtn:hover {
   background: rgba(76, 151, 255, 0.1);
@@ -238,4 +246,337 @@
 .contextMenuLabel {
   flex: 1 1 auto;
   white-space: nowrap;
+}
+
+/* ============ 拆分按钮 ============ */
+.splitBtn {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--ui-tertiary, rgba(0,0,0,0.15));
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-primary, inherit);
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.splitBtn:hover {
+  background: rgba(76, 151, 255, 0.08);
+  border-color: #4C97FF;
+  color: #4C97FF;
+}
+
+/* 冲突状态：按钮变为红色警告图标 */
+.splitBtnConflict {
+  border-color: #ff6680;
+  color: #ff6680;
+  background: rgba(255, 102, 128, 0.12);
+}
+.splitBtnConflict:hover {
+  background: rgba(255, 102, 128, 0.18);
+  border-color: #ff4757;
+  color: #ff4757;
+}
+
+/* SVG 图标：跟随文字颜色，带动画旋转 */
+.splitBtnIcon {
+  display: block;
+  fill: currentColor;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.splitBtnIconRotate90 {
+  transform: rotate(90deg);
+}
+
+.splitBtnIconRotate180 {
+  transform: rotate(180deg);
+}
+
+/* ============ 冲突提示横条 ============ */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--error-light, #ffe0e0);
+  border-bottom: 1px solid var(--error-transparent, rgba(255, 70, 70, 0.2));
+  color: var(--error-text, #c62828);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  flex-shrink: 0;
+  animation: toastSlideIn 0.2s ease-out;
+}
+
+.toastIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ff6680;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.toastText {
+  flex: 1;
+}
+
+.toastClose {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--error-text, #c62828);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.12s, background 0.12s;
+}
+.toastClose:hover {
+  opacity: 1;
+  background: rgba(255, 70, 70, 0.15);
+}
+
+@keyframes toastSlideIn {
+  from {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    max-height: 40px;
+    opacity: 1;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
+/* 拆分模式标签 */
+.splitModeLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.7));
+  font-weight: 500;
+  padding: 0 4px;
+}
+
+/* 拆分模式角色小标签 */
+.splitModeTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--ui-tertiary, rgba(0,0,0,0.06));
+  border: 1px solid var(--ui-tertiary, rgba(0,0,0,0.12));
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary, inherit);
+  white-space: nowrap;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 交换按钮 */
+.swapBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-primary, inherit);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+.swapBtn:hover {
+  background: rgba(76, 151, 255, 0.08);
+  color: #4C97FF;
+  border-color: rgba(76, 151, 255, 0.2);
+}
+
+.swapBtnIcon {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* ============ 拆分模式容器：双列布局 ============ */
+.splitContainer {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+/* 拆分列 */
+.splitColumn {
+  flex: 1 1 50%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 列头：包含左右标签和角色选择器 */
+.splitColumnHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--ui-secondary, rgba(245, 245, 245, 1));
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+  flex-shrink: 0;
+}
+
+.splitColumnLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.7));
+  white-space: nowrap;
+}
+
+/* 列内角色选择器 */
+.splitTargetSelector {
+  position: relative;
+  flex: 1;
+}
+
+.splitTargetBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--text-primary, inherit);
+  font-size: 12px;
+  transition: background 0.12s;
+}
+.splitTargetBtn:hover {
+  background: rgba(76, 151, 255, 0.08);
+}
+
+.splitTargetName {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 角色下拉菜单（拆分模式） */
+.splitTargetMenu {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  min-width: 160px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: var(--ui-primary, #fff);
+  border: 1px solid var(--ui-tertiary, rgba(0,0,0,0.15));
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.splitTargetMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-primary, #575e75);
+  cursor: pointer;
+  user-select: none;
+}
+.splitTargetMenuItem:hover {
+  background: rgba(76, 151, 255, 0.08);
+  color: #4C97FF;
+}
+.splitTargetMenuItemSelected {
+  background: rgba(76, 151, 255, 0.12);
+  color: #4C97FF;
+  font-weight: 600;
+}
+.splitTargetMenuItemIcon {
+  display: inline-block;
+  min-width: 28px;
+  font-size: 11px;
+  color: var(--text-primary-transparent, rgba(87, 94, 117, 0.7));
+}
+.splitTargetMenuItemLabel {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 拆分列内的积木盒容器 */
+.splitBlocksWrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 拆分列之间的分隔线 */
+.splitDivider {
+  width: 4px;
+  flex-shrink: 0;
+  background: var(--ui-secondary, rgba(245, 245, 245, 1));
+  border-left: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+  border-right: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+  cursor: col-resize;
+}
+
+/* 上下拆分模式：容器竖排 */
+.splitContainerVertical {
+  flex-direction: column !important;
+}
+
+/* 上下拆分模式：分隔线横向 */
+.splitDividerVertical {
+  height: 4px;
+  width: auto !important;
+  cursor: row-resize;
+  border-left: none;
+  border-right: none;
+  border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+}
+
+/* 上下拆分模式：每列占 50% 高度 */
+.splitContainerVertical .splitColumn {
+  flex: 1 1 50%;
+  min-height: 0;
+  flex-direction: column;
 }
