@@ -19,6 +19,7 @@ import {BLOCKS_DEFAULT_SCALE, STAGE_DISPLAY_SIZES} from '../lib/constants/layout
 import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
 import DragConstants from '../lib/constants/drag-constants';
 import SettingsStore from '../addons/settings-store-singleton';
+import {getVanillaPalette, VANILLA_PALETTE_CHANGED} from '../lib/mw-vanilla-palette';
 import defineDynamicBlock from '../lib/utils/define-dynamic-block';
 import {Theme} from '../lib/themes';
 import {injectExtensionBlockTheme, injectExtensionCategoryTheme} from '../lib/themes/blockHelpers';
@@ -148,7 +149,8 @@ class Blocks extends React.Component {
             'handleProjectRunStart',
             'handleProjectRunStop',
             'handleDocumentCopy',
-            'handleDocumentPaste'
+            'handleDocumentPaste',
+            'handleVanillaPaletteChanged'
         ]);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
@@ -206,6 +208,7 @@ class Blocks extends React.Component {
     }
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
+        window.addEventListener(VANILLA_PALETTE_CHANGED, this.handleVanillaPaletteChanged);
 
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
 
@@ -619,6 +622,7 @@ class Blocks extends React.Component {
     }
     componentWillUnmount () {
         SettingsStore.removeEventListener('setting-changed', this.handleAddonSettingChanged);
+        window.removeEventListener(VANILLA_PALETTE_CHANGED, this.handleVanillaPaletteChanged);
         this.detachPaletteHoverListeners();
         this.detachVM();
         this.unmounted = true;
@@ -873,6 +877,13 @@ class Blocks extends React.Component {
         window.removeEventListener('pointercancel', this.handlePaletteResizePointerUp);
         window.removeEventListener('mousemove', this.handlePaletteResizePointerMove);
         window.removeEventListener('mouseup', this.handlePaletteResizePointerUp);
+    }
+
+    handleVanillaPaletteChanged () {
+        const toolboxXML = this.getToolboxXML();
+        if (toolboxXML) {
+            this.props.updateToolboxState(toolboxXML);
+        }
     }
 
     handleAddonSettingChanged (e) {

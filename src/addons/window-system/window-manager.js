@@ -97,14 +97,14 @@ const style = document.createElement('style');
 style.textContent = css;
 document.head.appendChild(style);
 
-const WINDOW_Z_INDEX_BASE = 8000;
-const WINDOW_Z_INDEX_MAX = 8999;
+const WINDOW_Z_INDEX_BASE = 9700;
+const WINDOW_Z_INDEX_MAX = 9799;
 let nextZIndex = WINDOW_Z_INDEX_BASE;
 
 // Some UI overlays (like the project loader) sit above the normal window range.
 // This tier is for specific windows that must remain interactable above those overlays.
 // Keep below the context menu layer (see src/css/z-index.css).
-const WINDOW_ON_TOP_Z_INDEX_BASE = 9600;
+const WINDOW_ON_TOP_Z_INDEX_BASE = 9800;
 const WINDOW_ON_TOP_Z_INDEX_MAX = 9999;
 let nextOnTopZIndex = WINDOW_ON_TOP_Z_INDEX_BASE;
 let windowCount = 0;
@@ -198,6 +198,7 @@ class AddonWindow {
         this.isVisible = false;
         this.isMinimized = false;
         this.isMaximized = false;
+        this.isDestroying = false;
         this.zIndex = this.alwaysOnTop ? ++nextOnTopZIndex : ++nextZIndex;
         
         this.onClose = options.onClose || (() => {});
@@ -766,10 +767,30 @@ class AddonWindow {
         this.element.style.display = 'flex';
         this.element.style.pointerEvents = 'auto';
 
+        // A show() while the window is maximized can happen after the
+        // maximize/restore animation was interrupted (its _animTimer was
+        // cleared above). End any residual transform and re-assert the
+        // maximized layout so the window still fills the whole screen.
+        if (this.isMaximized) {
+            this._finishMaximizeRestoreAnimation();
+            // Re-apply the fullscreen overrides, including clearing any external
+            // CSS max-width/max-height/margin, so the maximized window always
+            // fills the whole screen.
+            this.element.style.maxWidth = 'none';
+            this.element.style.maxHeight = 'none';
+            this.element.style.margin = '0';
+            this.element.style.left = '0px';
+            this.element.style.top = '0px';
+            this.element.style.width = '100vw';
+            this.element.style.height = '100vh';
+        }
+
         if (!wasVisible) {
             this.bringToFront();
             if (WindowManager.getAnimationsEnabled()) {
-                // Set initial hidden state
+                // Set initial hidden state. Only transform + opacity are animated,
+                // which are compositor-friendly and do not trigger layout on old devices.
+                this.element.style.willChange = 'transform, opacity';
                 this.element.style.opacity = '0';
                 this.element.style.transform = 'scale(0.92)';
                 this.element.style.transition = 'opacity 0.2s ease-out, transform 0.2s ease-out';
@@ -786,6 +807,7 @@ class AddonWindow {
                     this._animTimer = null;
                     if (this.element && this.element.style) {
                         this.element.style.transition = 'none';
+                        this.element.style.willChange = '';
                     }
                 }, 220);
             }
@@ -820,7 +842,8 @@ class AddonWindow {
         this.element.style.transition = 'none';
         // eslint-disable-next-line no-unused-expressions
         this.element.offsetHeight;
-        // Now set the animated transition
+        // Now set the animated transition (transform + opacity only, compositor-friendly)
+        this.element.style.willChange = 'transform, opacity';
         this.element.style.transition = 'opacity 0.18s ease-in, transform 0.18s ease-in';
         // eslint-disable-next-line no-unused-expressions
         this.element.offsetHeight;
@@ -832,6 +855,7 @@ class AddonWindow {
             if (this.element && this.element.style) {
                 this.element.style.display = 'none';
                 this.element.style.transition = 'none';
+                this.element.style.willChange = '';
             }
         }, 200);
 
@@ -839,11 +863,31 @@ class AddonWindow {
     }
     
     destroy (callOnClose = true) {
+        // A destroy is already in progress: the closing animation is playing
+        // and the element will be removed when it finishes. This second call
+        // usually comes from a componentWillUnmount that the owner's onClose
+        // callback triggered synchronously. Bail out so the pending animation
+        // isn't cancelled and the element isn't removed instantly.
+        if (this.isDestroying) {
+            return this;
+        }
+
         // Cancel any pending animation timer
         if (this._animTimer) {
             clearTimeout(this._animTimer);
             this._animTimer = null;
         }
+
+        // Ask the window's owner whether closing is allowed. If the owner
+        // vetoes the close (returns false), abort the destroy entirely so the
+        // window stays visible and can be opened again later. The onClose
+        // callback is already invoked here, so it must NOT be invoked again
+        // after the closing animation.
+        if (callOnClose && this.onClose() === false) {
+            return this;
+        }
+
+        this.isDestroying = true;
 
         const needsAnimation = WindowManager.getAnimationsEnabled() && this.isVisible;
 
@@ -861,6 +905,7 @@ class AddonWindow {
             this.element.style.transition = 'none';
             // eslint-disable-next-line no-unused-expressions
             this.element.offsetHeight;
+            this.element.style.willChange = 'transform, opacity';
             this.element.style.transition = 'opacity 0.18s ease-in, transform 0.18s ease-in';
             // eslint-disable-next-line no-unused-expressions
             this.element.offsetHeight;
@@ -868,30 +913,24 @@ class AddonWindow {
             this.element.style.transform = 'scale(0.92)';
 
             const element = this.element;
-            const shouldCallOnClose = callOnClose;
             this._animTimer = setTimeout(() => {
                 this._animTimer = null;
                 if (element && element.parentNode) {
                     if (element.style) {
                         element.style.display = 'none';
                         element.style.transition = 'none';
+                        element.style.willChange = '';
                     }
                     element.parentNode.removeChild(element);
                 }
-                // Call onClose after animation completes so React content
-                // stays visible during the closing animation
-                if (shouldCallOnClose) {
-                    this.onClose();
-                }
+                // onClose was already consulted (and called) at the top of
+                // this method, so it must not be called again here.
             }, 200);
         } else {
             // No animation — immediate cleanup
             this.isVisible = false;
             this.element.style.display = 'none';
             this.element.style.transition = 'none';
-            if (callOnClose) {
-                this.onClose();
-            }
             if (this.element && this.element.parentNode) {
                 this.element.parentNode.removeChild(this.element);
             }
@@ -901,7 +940,84 @@ class AddonWindow {
     close () {
         this.destroy(true);
     }
-    
+
+    abortAnimation (enabled) {
+        if (!this.element || !this.element.style) return;
+        if (this._animTimer) {
+            clearTimeout(this._animTimer);
+            this._animTimer = null;
+        }
+        // End any in-flight maximize/restore transform animation
+        this._finishMaximizeRestoreAnimation();
+        if (enabled) {
+            // Animations re-enabled: just clear any leftover intermediate styles
+            this.element.style.transition = 'none';
+            return;
+        }
+        if (this.isDestroying) {
+            // A destroy (element removal) was in progress — finish it now so
+            // the element doesn't leak in the DOM.
+            this.isVisible = false;
+            this.element.style.display = 'none';
+            this.element.style.transition = 'none';
+            this.element.style.willChange = '';
+            if (this.element.parentNode) {
+                this.element.parentNode.removeChild(this.element);
+            }
+            return;
+        }
+        // Animations disabled: jump to the final state immediately
+        if (!this.isVisible) {
+            // A hide/destroy fade-out was in progress (or the window is hidden)
+            this.element.style.display = 'none';
+        }
+        this.element.style.opacity = '1';
+        this.element.style.transform = '';
+        this.element.style.pointerEvents = '';
+        this.element.style.willChange = '';
+        this.element.style.transition = 'none';
+    }
+
+    /**
+     * Animate the window between two rectangles using a pure transform
+     * (translate + scale), which runs on the compositor thread and does NOT
+     * trigger layout/reflow. This keeps the running Scratch project smooth
+     * even on old devices while the maximize/restore animation plays.
+     *
+     * The element's layout geometry is set to `toRect` (the target), and a
+     * transform is applied that visually maps `toRect` onto `fromRect` (the
+     * start), then animated back to identity.
+     *
+     * @param {object} fromRect start visual rect {x, y, width, height}
+     * @param {object} toRect actual layout rect the element will occupy
+     */
+    _animateMaximizeRestore (fromRect, toRect) {
+        const sx = fromRect.width / toRect.width;
+        const sy = fromRect.height / toRect.height;
+        const tx = fromRect.x - toRect.x;
+        const ty = fromRect.y - toRect.y;
+
+        this.element.style.transformOrigin = '0 0';
+        this.element.style.willChange = 'transform';
+        this.element.style.transition = 'none';
+        this.element.style.transform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
+        // Force browser to apply the starting state before enabling the transition
+        // eslint-disable-next-line no-unused-expressions
+        this.element.offsetHeight;
+        this.element.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1)';
+        this.element.style.transform = 'translate(0, 0) scale(1, 1)';
+    }
+
+    _finishMaximizeRestoreAnimation () {
+        this._animTimer = null;
+        if (this.element && this.element.style) {
+            this.element.style.transition = 'none';
+            this.element.style.willChange = '';
+            this.element.style.transformOrigin = '';
+            this.element.style.transform = '';
+        }
+    }
+
     minimize () {
         if (this.destroyOnMinimize) {
             this.onMinimize();
@@ -917,22 +1033,45 @@ class AddonWindow {
     }
     
     restore () {
+        // Cancel any pending animation timer, like show()/hide()/destroy() do,
+        // so an interrupted maximize/restore animation cannot leave a stale
+        // transform that makes the window look like it is not filling the screen.
+        if (this._animTimer) {
+            clearTimeout(this._animTimer);
+            this._animTimer = null;
+        }
+        this._finishMaximizeRestoreAnimation();
+
+        // Let external CSS size/margin constraints (e.g. a modal's .modal-content
+        // rule with max-width/max-height) apply again, so the window returns to
+        // the same appearance it had before it was maximized.
+        this.element.style.maxWidth = '';
+        this.element.style.maxHeight = '';
+        this.element.style.margin = '';
+
         if (this.isMaximized) {
             this.isMaximized = false;
             if (this.savedState) {
+                const saved = this.savedState;
+                this.x = saved.x;
+                this.y = saved.y;
+                this.width = saved.width;
+                this.height = saved.height;
                 if (WindowManager.getAnimationsEnabled()) {
-                    this.element.style.transition = 'left 0.25s ease-in, top 0.25s ease-in, width 0.25s ease-in, height 0.25s ease-in';
-                }
-                this.x = this.savedState.x;
-                this.y = this.savedState.y;
-                this.width = this.savedState.width;
-                this.height = this.savedState.height;
-                this.element.style.left = `${this.x}px`;
-                this.element.style.top = `${this.y}px`;
-                this.element.style.width = `${this.width}px`;
-                this.element.style.height = `${this.height}px`;
-                if (WindowManager.getAnimationsEnabled()) {
-                    setTimeout(() => { this.element.style.transition = 'none'; }, 250);
+                    // Visual start is the fullscreen rect, target is the saved rect.
+                    const from = {x: 0, y: 0, width: window.innerWidth, height: window.innerHeight};
+                    const to = {x: saved.x, y: saved.y, width: saved.width, height: saved.height};
+                    this.element.style.left = `${saved.x}px`;
+                    this.element.style.top = `${saved.y}px`;
+                    this.element.style.width = `${saved.width}px`;
+                    this.element.style.height = `${saved.height}px`;
+                    this._animateMaximizeRestore(from, to);
+                    this._animTimer = setTimeout(() => this._finishMaximizeRestoreAnimation(), 260);
+                } else {
+                    this.element.style.left = `${saved.x}px`;
+                    this.element.style.top = `${saved.y}px`;
+                    this.element.style.width = `${saved.width}px`;
+                    this.element.style.height = `${saved.height}px`;
                 }
             }
             this.updateMaximizeButton();
@@ -949,7 +1088,16 @@ class AddonWindow {
     
     maximize () {
         if (this.isMaximized) return this;
-        
+
+        // Cancel any pending animation timer and clear a stale transform, same
+        // as restore(). This guarantees the window ends up at the fullscreen
+        // rect even if a previous animation was interrupted.
+        if (this._animTimer) {
+            clearTimeout(this._animTimer);
+            this._animTimer = null;
+        }
+        this._finishMaximizeRestoreAnimation();
+
         // Save current state
         this.savedState = {
             x: this.x,
@@ -957,24 +1105,39 @@ class AddonWindow {
             width: this.width,
             height: this.height
         };
-        
-        if (WindowManager.getAnimationsEnabled()) {
-            this.element.style.transition = 'left 0.25s ease-out, top 0.25s ease-out, width 0.25s ease-out, height 0.25s ease-out';
-        }
 
-        this.isMaximized = true;
-        this.x = 0;
-        this.y = 0;
-        this.width = window.innerWidth;
-        this.height = window.innerHeight;
-        
-        this.element.style.left = '0px';
-        this.element.style.top = '0px';
-        this.element.style.width = '100vw';
-        this.element.style.height = '100vh';
-        
+        // Override any external CSS size/margin constraints on the window element
+        // (e.g. a modal's .modal-content rule with max-width/max-height). Without
+        // this, setting width/height to 100vw/100vh alone cannot fill the screen.
+        this.element.style.maxWidth = 'none';
+        this.element.style.maxHeight = 'none';
+        this.element.style.margin = '0';
+
         if (WindowManager.getAnimationsEnabled()) {
-            setTimeout(() => { this.element.style.transition = 'none'; }, 250);
+            // Visual start is the saved rect, target is fullscreen.
+            const from = {x: this.x, y: this.y, width: this.width, height: this.height};
+            const to = {x: 0, y: 0, width: window.innerWidth, height: window.innerHeight};
+            this.isMaximized = true;
+            this.x = 0;
+            this.y = 0;
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            this.element.style.left = '0px';
+            this.element.style.top = '0px';
+            this.element.style.width = '100vw';
+            this.element.style.height = '100vh';
+            this._animateMaximizeRestore(from, to);
+            this._animTimer = setTimeout(() => this._finishMaximizeRestoreAnimation(), 260);
+        } else {
+            this.isMaximized = true;
+            this.x = 0;
+            this.y = 0;
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            this.element.style.left = '0px';
+            this.element.style.top = '0px';
+            this.element.style.width = '100vw';
+            this.element.style.height = '100vh';
         }
 
         this.updateMaximizeButton();
@@ -1325,6 +1488,23 @@ class NativeAddonWindow {
 const WindowManager = {
     getAnimationsEnabled () {
         return localStorage.getItem('mw:window-animation') !== 'false';
+    },
+
+    setAnimationsEnabled (enabled) {
+        try {
+            localStorage.setItem('mw:window-animation', enabled);
+        } catch (err) {
+            // ignore
+        }
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mw:window-animation-change', {detail: {enabled}}));
+        }
+        // Immediately apply the new setting to all open windows
+        for (const win of activeWindows.values()) {
+            if (win && typeof win.abortAnimation === 'function') {
+                win.abortAnimation(enabled);
+            }
+        }
     },
     
     createWindow (options = {}) {

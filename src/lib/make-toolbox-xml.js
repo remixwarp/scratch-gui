@@ -1,5 +1,6 @@
 import LazyScratchBlocks from './tw-lazy-scratch-blocks';
 import {defaultBlockColors} from './themes';
+import {getVanillaPalette} from './mw-vanilla-palette';
 
 const categorySeparator = '<sep gap="36"/>';
 
@@ -13,7 +14,7 @@ const translate = (id, english) => {
 };
 
 /* eslint-disable no-unused-vars */
-const motion = function (isInitialSetup, isStage, targetId, colors) {
+const motion = function (isInitialSetup, isStage, targetId, colors, vanilla) {
     const stageSelected = translate(
         'MOTION_STAGE_SELECTED',
         'Stage selected: no motion blocks'
@@ -144,6 +145,7 @@ const motion = function (isInitialSetup, isStage, targetId, colors) {
         <block id="${targetId}_yposition" type="motion_yposition"/>
         <block id="${targetId}_direction" type="motion_direction"/>
         ${blockSeparator}
+        ${vanilla ? '' : `
         <label text="${translate("UNSUPPORT_TW_1","Blocks below do not support TurboWarp")}"></label>
         <label text="${translate("UNSUPPORT_TW_2","And we highly discourage using them")}"></label>
         <label text="${translate("UNSUPPORT_TW_3","They're keeping here only for compatibility with MistWarp")}"></label>
@@ -180,7 +182,9 @@ const motion = function (isInitialSetup, isStage, targetId, colors) {
                     <field name="NUM">0</field>
                 </shadow>
             </value>
-        </block>`}
+        </block>
+        `}
+        `}
         ${categorySeparator}
     </category>
     `;
@@ -198,7 +202,7 @@ const xmlEscape = function (unsafe) {
     });
 };
 
-const looks = function (isInitialSetup, isStage, targetId, costumeName, backdropName, colors) {
+const looks = function (isInitialSetup, isStage, targetId, costumeName, backdropName, colors, vanilla) {
     const hello = translate('LOOKS_HELLO', 'Hello!');
     const hmm = translate('LOOKS_HMM', 'Hmm...');
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
@@ -330,11 +334,13 @@ const looks = function (isInitialSetup, isStage, targetId, costumeName, backdrop
             <block id="${targetId}_costumenumbername" type="looks_costumenumbername"/>
             <block id="backdropnumbername" type="looks_backdropnumbername"/>
             <block id="${targetId}_size" type="looks_size"/>
+            ${vanilla ? '' : `
             ${blockSeparator}
             <label text="${translate("UNSUPPORT_TW_1","Blocks below do not support TurboWarp")}"></label>
             <label text="${translate("UNSUPPORT_TW_2","And we highly discourage using them")}"></label>
             <label text="${translate("UNSUPPORT_TW_3","They're keeping here only for compatibility with MistWarp")}"></label>
             <block id="${targetId}_costumes" type="looks_costumes"/>
+            `}
         `}
         ${categorySeparator}
     </category>
@@ -437,7 +443,7 @@ const events = function (isInitialSetup, isStage, targetId, colors) {
     `;
 };
 
-const control = function (isInitialSetup, isStage, targetId, colors) {
+const control = function (isInitialSetup, isStage, targetId, colors, vanilla) {
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
     return `
     <category
@@ -492,6 +498,7 @@ const control = function (isInitialSetup, isStage, targetId, colors) {
             </block>
             <block type="control_delete_this_clone"/>
         `}
+        ${vanilla ? '' : `
         ${blockSeparator}
         ${blockSeparator}
         <label text="${translate("UNSUPPORT_TW_1","Blocks below do not support TurboWarp")}"></label>
@@ -521,12 +528,13 @@ const control = function (isInitialSetup, isStage, targetId, colors) {
         <block type="control_default" id="control_default"></block>
         <block type="control_break" id="control_break"></block>
         <block type="control_continue" id="control_continue"></block>
+        `}
         ${categorySeparator}
     </category>
     `;
 };
 
-const sensing = function (isInitialSetup, isStage, targetId, colors) {
+const sensing = function (isInitialSetup, isStage, targetId, colors, vanilla) {
     const name = translate('SENSING_ASK_TEXT', 'What\'s your name?');
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
     return `
@@ -607,7 +615,7 @@ const sensing = function (isInitialSetup, isStage, targetId, colors) {
     `;
 };
 
-const operators = function (isInitialSetup, isStage, targetId, colors) {
+const operators = function (isInitialSetup, isStage, targetId, colors, vanilla) {
     const apple = translate('OPERATORS_JOIN_APPLE', 'apple');
     const banana = translate('OPERATORS_JOIN_BANANA', 'banana');
     const letter = translate('OPERATORS_LETTEROF_APPLE', 'a');
@@ -795,11 +803,13 @@ const operators = function (isInitialSetup, isStage, targetId, colors) {
             </value>
         </block>
         ${blockSeparator}
+        ${vanilla ? '' : `
         <label text="${translate("UNSUPPORT_TW_1","Blocks below do not support TurboWarp")}"></label>
         <label text="${translate("UNSUPPORT_TW_2","And we highly discourage using them")}"></label>
         <label text="${translate("UNSUPPORT_TW_3","They're keeping here only for compatibility with MistWarp")}"></label>
         <block type="operator_pi" id="operator_pi"></block>
         <block type="operator_newline" id="operator_newline"></block>
+        `}
         ${categorySeparator}
     </category>
     `;
@@ -860,6 +870,7 @@ const xmlClose = '</xml>';
 const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categoriesXML = [],
     costumeName = '', backdropName = '', soundName = '', colors = defaultBlockColors) {
     isStage = isInitialSetup || isStage;
+    const vanilla = getVanillaPalette();
     const gap = [categorySeparator];
 
     costumeName = xmlEscape(costumeName);
@@ -876,14 +887,14 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         }
         // return `undefined`
     };
-    const motionXML = moveCategory('motion') || motion(isInitialSetup, isStage, targetId, colors.motion);
+    const motionXML = moveCategory('motion') || motion(isInitialSetup, isStage, targetId, colors.motion, vanilla);
     const looksXML = moveCategory('looks') ||
-        looks(isInitialSetup, isStage, targetId, costumeName, backdropName, colors.looks);
+        looks(isInitialSetup, isStage, targetId, costumeName, backdropName, colors.looks, vanilla);
     const soundXML = moveCategory('sound') || sound(isInitialSetup, isStage, targetId, soundName, colors.sounds);
     const eventsXML = moveCategory('event') || events(isInitialSetup, isStage, targetId, colors.event);
-    const controlXML = moveCategory('control') || control(isInitialSetup, isStage, targetId, colors.control);
-    const sensingXML = moveCategory('sensing') || sensing(isInitialSetup, isStage, targetId, colors.sensing);
-    const operatorsXML = moveCategory('operators') || operators(isInitialSetup, isStage, targetId, colors.operators);
+    const controlXML = moveCategory('control') || control(isInitialSetup, isStage, targetId, colors.control, vanilla);
+    const sensingXML = moveCategory('sensing') || sensing(isInitialSetup, isStage, targetId, colors.sensing, vanilla);
+    const operatorsXML = moveCategory('operators') || operators(isInitialSetup, isStage, targetId, colors.operators, vanilla);
     const variablesXML = moveCategory('data') || variables(isInitialSetup, isStage, targetId, colors.data);
     const myBlocksXML = moveCategory('procedures') || myBlocks(isInitialSetup, isStage, targetId, colors.more);
 

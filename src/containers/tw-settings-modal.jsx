@@ -9,7 +9,9 @@ import {defaultStageSize} from '../reducers/custom-stage-size';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
 import {getStyleSetting, setStyleSetting} from '../lib/mw-style-settings';
 import {getAppearanceSetting, setAppearanceSetting} from '../lib/mw-appearance-settings';
+import {getVanillaPalette, setVanillaPalette} from '../lib/mw-vanilla-palette';
 import {getHideOperatorArrows, setHideOperatorArrows} from '../lib/mw-operator-arrows';
+import WindowManager from '../addons/window-system/window-manager.js';
 
 const messages = defineMessages({
     newFramerate: {
@@ -44,6 +46,10 @@ class UsernameModal extends React.Component {
             tabStyle: getStyleSetting('tab-style'),
             tabLooks: getStyleSetting('tab-looks'),
             windowStyle: getStyleSetting('window-style'),
+            windowAnimation: localStorage.getItem('mw:window-animation') !== 'false',
+            enableStageResize: localStorage.getItem('mw:enable-stage-resize') !== 'false',
+            unclipPalette: getAppearanceSetting('unclip-palette'),
+            vanillaPalette: getVanillaPalette(),
             squareStageCorners: getAppearanceSetting('square-stage-corners'),
             hideExtensionButton: getAppearanceSetting('hide-extension-button'),
             hideOperatorArrows: getHideOperatorArrows(),
@@ -86,7 +92,11 @@ class UsernameModal extends React.Component {
             'handleHideExtensionButtonChange',
             'handleHideOperatorArrowsChange',
             'handleHideDeleteButtonChange',
-            'handleHideBackpackChange'
+            'handleHideBackpackChange',
+            'handleWindowAnimationChange',
+            'handleEnableStageResizeChange',
+            'handleUnclipPaletteChange',
+            'handleVanillaPaletteChange'
         ]);
     }
 
@@ -133,6 +143,34 @@ class UsernameModal extends React.Component {
         const value = e.target.checked;
         this.setState({hideBackpack: value});
         setAppearanceSetting('hide-backpack', value);
+    }
+
+    handleWindowAnimationChange (e) {
+        const enabled = e.target.checked;
+        this.setState({windowAnimation: enabled});
+        WindowManager.setAnimationsEnabled(enabled);
+    }
+
+    handleEnableStageResizeChange (e) {
+        this.setState({enableStageResize: e.target.checked});
+        try {
+            localStorage.setItem('mw:enable-stage-resize', e.target.checked);
+        } catch (err) {
+            // ignore
+        }
+        location.reload();
+    }
+
+    handleUnclipPaletteChange (e) {
+        this.setState({unclipPalette: e.target.checked});
+        setAppearanceSetting('unclip-palette', e.target.checked);
+        location.reload();
+    }
+
+    handleVanillaPaletteChange (e) {
+        this.setState({vanillaPalette: e.target.checked});
+        setVanillaPalette(e.target.checked);
+        location.reload();
     }
 
     handleFramerateChange (e) {
@@ -439,6 +477,14 @@ class UsernameModal extends React.Component {
                 onHideDeleteButtonChange={this.handleHideDeleteButtonChange}
                 hideBackpack={this.state.hideBackpack}
                 onHideBackpackChange={this.handleHideBackpackChange}
+                windowAnimation={this.state.windowAnimation}
+                onWindowAnimationChange={this.handleWindowAnimationChange}
+                enableStageResize={this.state.enableStageResize}
+                onEnableStageResizeChange={this.handleEnableStageResizeChange}
+                unclipPalette={this.state.unclipPalette}
+                onUnclipPaletteChange={this.handleUnclipPaletteChange}
+                vanillaPalette={this.state.vanillaPalette}
+                onVanillaPaletteChange={this.handleVanillaPaletteChange}
                 theme={this.props.theme}
                 {...props}
             />

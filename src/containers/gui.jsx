@@ -83,6 +83,14 @@ const setProjectIdMetadata = projectId => {
 };
 
 class GUI extends React.Component {
+    constructor (props) {
+        super(props);
+        this.state = {
+            enableStageResize: localStorage.getItem('mw:enable-stage-resize') !== 'false'
+        };
+        this.handleStorageChange = this.handleStorageChange.bind(this);
+    }
+
     componentDidMount () {
         setIsScratchDesktop(this.props.isScratchDesktop);
         this.props.onStorageInit(storage);
@@ -91,7 +99,7 @@ class GUI extends React.Component {
 
         rwcBridge.init();
 
-
+        window.addEventListener('storage', this.handleStorageChange);
 
         initializeShortcuts(
             {
@@ -209,6 +217,7 @@ class GUI extends React.Component {
         return (
             <GUIComponent
                 loading={fetchingProject || isLoading || loadingStateVisible}
+                enableStageResize={this.state.enableStageResize}
                 {...componentProps}
             >
                 {children}
@@ -216,7 +225,17 @@ class GUI extends React.Component {
         );
     }
 
+    handleStorageChange () {
+        try {
+            const newValue = localStorage.getItem('mw:enable-stage-resize') === 'true';
+            this.setState({enableStageResize: newValue});
+        } catch (e) {
+            // ignore
+        }
+    }
+
     componentWillUnmount () {
+        window.removeEventListener('storage', this.handleStorageChange);
         collaborationService.getInstance()?.disconnect();
     }
 }

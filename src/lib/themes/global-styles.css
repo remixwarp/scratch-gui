@@ -139,3 +139,24 @@
 :global(.blocklyScrollbarBackground) {
     stroke: var(--editorTheme3-scrollbar) !important;
 }
+
+/* Disable window animations */
+.no-window-animation {
+    --animation-duration: 0s !important;
+}
+
+.no-window-animation :global(.menu) {
+    transition: none !important;
+}
+
+.no-window-animation :global(.submenu) {
+    transition: none !important;
+}
+
+.no-window-animation :global(.stage) {
+    transition: none !important;
+}
+
+.no-window-animation :global(.stage-overlays) {
+    transition: none !important;
+}

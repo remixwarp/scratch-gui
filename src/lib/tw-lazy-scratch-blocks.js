@@ -1,3 +1,5 @@
+import {getVanillaPalette} from './mw-vanilla-palette';
+
 let _ScratchBlocks = null;
 
 const isLoaded = () => !!_ScratchBlocks;
@@ -16,6 +18,23 @@ const load = () => {
     return import(/* webpackChunkName: "sb" */ 'scratch-blocks')
         .then(m => {
             _ScratchBlocks = m.default;
+
+            try {
+                const operatorUtils = _ScratchBlocks.ScratchBlocks && _ScratchBlocks.ScratchBlocks.OperatorUtils;
+                if (operatorUtils) {
+                    operatorUtils.arrowsHidden = localStorage.getItem('mw:hide-operator-arrows') === 'true';
+                }
+            } catch (e) {
+                // ignore
+            }
+
+            const Procedures = _ScratchBlocks.Procedures;
+            if (Procedures && typeof Procedures.flyoutCategory === 'function') {
+                const originalFlyoutCategory = Procedures.flyoutCategory;
+                Procedures.flyoutCategory = workspace => originalFlyoutCategory(workspace).filter(node => !(
+                    getVanillaPalette() && node.getAttribute('type') === 'procedures_return'
+                ));
+            }
 
             const FlyoutProto = _ScratchBlocks.Flyout && _ScratchBlocks.Flyout.prototype;
             if (FlyoutProto) {

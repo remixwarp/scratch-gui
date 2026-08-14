@@ -16,16 +16,24 @@ const APPEARANCE_SETTINGS = [
     {
         id: 'hide-backpack',
         css: '[class^="backpack_backpack-container"]{display:none;}'
+    },
+    {
+        id: 'unclip-palette',
+        default: true,
+        css: '.injectionDiv:has(> .blocklyToolboxDiv:hover, > svg.blocklyFlyout:not(.sa-flyoutClose):hover)' +
+            ' > svg.blocklyFlyout:not(.sa-flyoutClose){overflow:visible;}' +
+            '.injectionDiv > svg.blocklyFlyout:not(.sa-flyoutClose):hover{overflow:visible;}'
     }
 ];
 
 const storageKey = id => `mw:${id}`;
 
 const getAppearanceSetting = id => {
+    const setting = APPEARANCE_SETTINGS.find(s => s.id === id);
     try {
         return localStorage.getItem(storageKey(id)) === 'true';
     } catch (err) {
-        return false;
+        return setting && setting.default ? setting.default : false;
     }
 };
 

@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
-import React, {useCallback, useEffect, useRef, useState, useMemo, Suspense} from 'react';
+import React, {useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo, Suspense} from 'react';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
@@ -270,6 +270,9 @@ const AUTO_SMALL_STAGE_INNER_WIDTH = Math.round(FIXED_WIDTH);
 const AUTO_RESTORE_STAGE_INNER_WIDTH = Math.round(FIXED_WIDTH * 0.875);
 const MIN_EDITOR_PANE_WIDTH = 598;
 const MIN_TARGET_PANE_HEIGHT = 180;
+const HIDE_STAGE_DRAG_SLOP = 80;
+const STAGE_RESIZER_WIDTH = 6;
+const MIN_STAGE_PANEL_WIDTH = (FIXED_WIDTH * 0.5) + 18;
 
 const cachedStyleValues = new WeakMap();
 
@@ -321,6 +324,13 @@ const GUIComponent = props => {
             return stored ? JSON.parse(stored).EnableStatusBar : false;
         } catch (e) {
             return false;
+        }
+    });
+    const [windowAnimation, setWindowAnimation] = useState(() => {
+        try {
+            return localStorage.getItem('mw:window-animation') !== 'false';
+        } catch (e) {
+            return true;
         }
     });
     
@@ -485,6 +495,31 @@ const GUIComponent = props => {
         
         return () => clearTimeout(timer);
     }, []);
+    
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'mw:window-animation') {
+                setWindowAnimation(e.newValue !== 'false');
+            }
+        };
+        const handleAnimationToggle = (e) => {
+            setWindowAnimation(e.detail.enabled);
+        };
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('mw:window-animation-change', handleAnimationToggle);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('mw:window-animation-change', handleAnimationToggle);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (windowAnimation) {
+            document.documentElement.classList.remove('no-window-animation');
+        } else {
+            document.documentElement.classList.add('no-window-animation');
+        }
+    }, [windowAnimation]);
     
     // Handle drag and drop for SB3 files
     const handleDragOver = useCallback(e => {
@@ -744,15 +779,63 @@ const GUIComponent = props => {
         }
     }, []);
 
+    const [enableStageResize, setEnableStageResize] = useState(() => {
+        if (props.enableStageResize !== undefined) {
+            return props.enableStageResize;
+        }
+        try {
+            return localStorage.getItem('mw:enable-stage-resize') !== 'false';
+        } catch (e) {
+            return true;
+        }
+    });
+
+    useEffect(() => {
+        if (props.enableStageResize !== undefined) {
+            setEnableStageResize(props.enableStageResize);
+        }
+    }, [props.enableStageResize]);
+
+    useEffect(() => {
+        const handleStorageChange = () => {
+            try {
+                const newValue = localStorage.getItem('mw:enable-stage-resize') === 'true';
+                if (props.enableStageResize === undefined) {
+                    setEnableStageResize(newValue);
+                }
+            } catch (e) {
+                // ignore
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, [props.enableStageResize]);
+
     const editorWrapperRef = useRef(null);
     const stageAndTargetWrapperRef = useRef(null);
     const stageResizeRafRef = useRef(null);
+    const resizeAfterTransitionRafRef = useRef(null);
     const measureRafRef = useRef(null);
+    const syncingModeRef = useRef(false);
+    const isFullScreenRef = useRef(props.isFullScreen);
+    isFullScreenRef.current = props.isFullScreen;
+    const prevStageSizeModeRef = useRef(null);
+    const lastSyncedWidthRef = useRef(null);
+    const skipNextMeasureRef = useRef(false);
+    const lastNonSmallStageSizeModeRef = useRef(STAGE_SIZE_MODES.large);
     const autoSmallStageRequestedRef = useRef(false);
     const autoSmallStageActiveRef = useRef(false);
-    const lastNonSmallStageSizeModeRef = useRef(STAGE_SIZE_MODES.large);
     const [stagePanelWidth, setStagePanelWidth] = useState(null);
     const [stageContainerWidth, setStageContainerWidth] = useState(null);
+    const [isNarrowLayout, setIsNarrowLayout] = useState(false);
+    const [stageCanvasMaxHeight, setStageCanvasMaxHeight] = useState(null);
+
+    const isStageHidden = props.stageSizeMode === STAGE_SIZE_MODES.hidden && !props.isFullScreen;
+    const preferredPanelWidthRef = useRef(null);
+    const isStageHiddenRef = useRef(isStageHidden);
+    isStageHiddenRef.current = isStageHidden;
+    const isShortLayoutRef = useRef(false);
+    const autoHiddenRef = useRef(false);
 
     const getStageBorderExtraWidth = useCallback(containerEl => {
         if (!containerEl || typeof window === 'undefined') return 0;
@@ -763,12 +846,29 @@ const GUIComponent = props => {
         return getCachedBorderWidth(stageEl);
     }, []);
 
+    const handleStagePanelResizeDoubleClick = useCallback(() => {
+        preferredPanelWidthRef.current = null;
+        setStagePanelWidth(null);
+        setStageContainerWidth(null);
+        if (isStageHiddenRef.current && typeof props.onSetStageSize === 'function') {
+            props.onSetStageSize(STAGE_SIZE_MODES.full);
+        }
+    }, [props.onSetStageSize]);
+
     const measureStageContainerWidth = useCallback(() => {
+        if (!enableStageResize) return;
+        if (isFullScreenRef.current) return;
         if (measureRafRef.current) return;
+        if (skipNextMeasureRef.current) {
+            skipNextMeasureRef.current = false;
+            return;
+        }
         
         measureRafRef.current = requestAnimationFrame(() => {
             measureRafRef.current = null;
             
+            if (isFullScreenRef.current) return;
+
             const el = stageAndTargetWrapperRef.current;
             if (!el) return;
 
@@ -792,10 +892,11 @@ const GUIComponent = props => {
                 return innerWidth;
             });
         });
-    }, [getStageBorderExtraWidth]);
+    }, [getStageBorderExtraWidth, enableStageResize]);
 
     const lastResizeWidthRef = useRef(null);
     useEffect(() => {
+        if (!enableStageResize) return;
         if (typeof stageContainerWidth !== 'number') return;
 
         const rounded = Math.round(stageContainerWidth);
@@ -808,7 +909,86 @@ const GUIComponent = props => {
             stageResizeRafRef.current = null;
             window.dispatchEvent(new Event('resize'));
         });
-    }, [stageContainerWidth]);
+    }, [stageContainerWidth, enableStageResize]);
+
+    const setStageWidth = useCallback(contentWidth => {
+        skipNextMeasureRef.current = true;
+        if (contentWidth === null) {
+            setStagePanelWidth(null);
+            setStageContainerWidth(null);
+            return;
+        }
+        const el = stageAndTargetWrapperRef.current;
+        let paddingLeft = 8;
+        let paddingRight = 8;
+        let borderExtra = 2;
+        if (el) {
+            const computedStyle = window.getComputedStyle(el);
+            paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
+            paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
+            borderExtra = getStageBorderExtraWidth(el);
+        }
+        let outerWidth = contentWidth + 2 + paddingLeft + paddingRight + borderExtra;
+        const editorEl = editorWrapperRef.current;
+        const containerEl = editorEl ? editorEl.parentElement : null;
+        const containerWidth = containerEl ?
+            containerEl.getBoundingClientRect().width :
+            window.innerWidth;
+        const maxOuterWidth = containerWidth - MIN_EDITOR_PANE_WIDTH - 6;
+        if (Number.isFinite(maxOuterWidth) && maxOuterWidth > 0) {
+            outerWidth = Math.min(outerWidth, maxOuterWidth);
+        }
+        setStagePanelWidth(outerWidth);
+        setStageContainerWidth(contentWidth + 2);
+    }, [getStageBorderExtraWidth]);
+
+    useLayoutEffect(() => {
+        if (!enableStageResize) return;
+        if (prevStageSizeModeRef.current === null) {
+            prevStageSizeModeRef.current = props.stageSizeRequestId;
+            return;
+        }
+        if (prevStageSizeModeRef.current === props.stageSizeRequestId) return;
+        prevStageSizeModeRef.current = props.stageSizeRequestId;
+        if (props.isFullScreen) return;
+        if (syncingModeRef.current) {
+            syncingModeRef.current = false;
+            return;
+        }
+        if (props.stageSizeMode === STAGE_SIZE_MODES.hidden) return;
+        if (props.stageSizeMode === STAGE_SIZE_MODES.small) {
+            setStageWidth(FIXED_WIDTH * 0.5);
+        } else if (props.stageSizeMode === STAGE_SIZE_MODES.large) {
+            setStageWidth(FIXED_WIDTH);
+        } else {
+            setStageWidth(null);
+        }
+    }, [props.stageSizeMode, props.stageSizeRequestId, props.isFullScreen, setStageWidth, enableStageResize]);
+
+    useEffect(() => {
+        if (!enableStageResize) return;
+        if (stageContainerWidth === lastSyncedWidthRef.current) return;
+        lastSyncedWidthRef.current = stageContainerWidth;
+
+        if (props.isFullScreen) return;
+        if (props.stageSizeMode === STAGE_SIZE_MODES.hidden) return;
+        if (typeof stageContainerWidth !== 'number') return;
+        if (typeof props.onSetStageSize !== 'function') return;
+
+        const smallThreshold = Math.min(
+            AUTO_SMALL_STAGE_INNER_WIDTH,
+            (props.customStageSize && props.customStageSize.width) || FIXED_WIDTH
+        );
+        const isSmall = stageContainerWidth < smallThreshold;
+
+        if (isSmall && props.stageSizeMode !== STAGE_SIZE_MODES.small) {
+            syncingModeRef.current = true;
+            props.onSetStageSize(STAGE_SIZE_MODES.small);
+        } else if (!isSmall && props.stageSizeMode === STAGE_SIZE_MODES.small) {
+            syncingModeRef.current = true;
+            props.onSetStageSize(STAGE_SIZE_MODES.full);
+        }
+    }, [stageContainerWidth, props.isFullScreen, props.onSetStageSize, props.stageSizeMode, props.customStageSize, enableStageResize]);
 
     useEffect(() => {
         if (props.isFullScreen) return;
@@ -855,8 +1035,194 @@ const GUIComponent = props => {
                 measureRafRef.current = null;
             }
         };
-    }, [measureStageContainerWidth]);
-    
+    }, [measureStageContainerWidth, enableStageResize]);
+
+    useEffect(() => {
+        if (!enableStageResize) return;
+        const el = stageAndTargetWrapperRef.current;
+        if (!el) return;
+
+        const handleTransitionEnd = e => {
+            if (e.target !== el) return;
+            const prop = e.propertyName;
+            if (prop !== 'width' && prop !== 'flex-basis') return;
+            if (resizeAfterTransitionRafRef.current) {
+                cancelAnimationFrame(resizeAfterTransitionRafRef.current);
+            }
+            resizeAfterTransitionRafRef.current = requestAnimationFrame(() => {
+                resizeAfterTransitionRafRef.current = null;
+                window.dispatchEvent(new Event('resize'));
+            });
+        };
+
+        el.addEventListener('transitionend', handleTransitionEnd);
+        return () => {
+            el.removeEventListener('transitionend', handleTransitionEnd);
+            if (resizeAfterTransitionRafRef.current) {
+                cancelAnimationFrame(resizeAfterTransitionRafRef.current);
+                resizeAfterTransitionRafRef.current = null;
+            }
+        };
+    }, [enableStageResize]);
+
+    const handleStagePanelResizePointerDown = useCallback(e => {
+        if (!enableStageResize) return;
+        if (typeof e.button !== 'undefined' && e.button !== 0) return;
+        e.preventDefault();
+
+        const el = stageAndTargetWrapperRef.current;
+        if (!el) return;
+
+        el.style.transition = 'none';
+
+        const editorEl = editorWrapperRef.current;
+        const startRect = el.getBoundingClientRect();
+        const computedStyle = window.getComputedStyle(el);
+        const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
+        const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
+        const borderExtra = getStageBorderExtraWidth(el);
+        const editorRect = editorEl ? editorEl.getBoundingClientRect() : null;
+        const startX = (typeof e.clientX === 'number') ? e.clientX : 0;
+        const startWidth = startRect.width;
+        const startInnerWidth = Math.max(0, startWidth - paddingLeft - paddingRight - borderExtra);
+
+        setStageContainerWidth(Math.round(startInnerWidth));
+
+        if (e.currentTarget &&
+            typeof e.currentTarget.setPointerCapture === 'function' &&
+            typeof e.pointerId === 'number') {
+            try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+            } catch (err) {
+                // ignore
+            }
+        }
+
+        const minWidth = Math.max(0, (FIXED_WIDTH * 0.5) + paddingLeft + paddingRight + borderExtra);
+
+        const containerEl = editorEl ? editorEl.parentElement : null;
+        const containerRect = containerEl ? containerEl.getBoundingClientRect() : null;
+        const containerWidth = (containerRect && Number.isFinite(containerRect.width)) ?
+            containerRect.width :
+            window.innerWidth;
+        const resizerRect = (e.currentTarget && typeof e.currentTarget.getBoundingClientRect === 'function') ?
+            e.currentTarget.getBoundingClientRect() : null;
+        const resizerWidth = (resizerRect && Number.isFinite(resizerRect.width)) ? resizerRect.width : 6;
+
+        const maxWidthByEditor = Math.max(minWidth, containerWidth - MIN_EDITOR_PANE_WIDTH - resizerWidth);
+
+        let stageWrapperEl = el.querySelector('[class*="stage-wrapper_stage-wrapper"]');
+        if (!stageWrapperEl) {
+            const candidates = Array.from(el.querySelectorAll('[class*="stage-wrapper"]'));
+            stageWrapperEl = candidates.find(candidate => candidate.querySelector('[class*="stage-header"]'));
+        }
+        const stageCanvasEl = stageWrapperEl ? stageWrapperEl.querySelector('[class*="stage_stage"]') : null;
+
+        const stageWrapperRect = stageWrapperEl ? stageWrapperEl.getBoundingClientRect() : null;
+        const stageCanvasRect = stageCanvasEl ? stageCanvasEl.getBoundingClientRect() : null;
+        const stageOverheadHeight = (stageWrapperRect && stageCanvasRect && stageCanvasRect.height > 0) ?
+            Math.max(0, stageWrapperRect.height - stageCanvasRect.height) :
+            88;
+
+        const panelHeight = startRect.height > 0 ?
+            startRect.height :
+            ((editorRect && editorRect.height > 0) ? editorRect.height : window.innerHeight);
+
+        const maxStageCanvasHeight = Math.max(
+            0,
+            panelHeight - MIN_TARGET_PANE_HEIGHT - stageOverheadHeight
+        );
+
+        const customSize = props.customStageSize;
+        const widthPerHeight = (customSize && customSize.height > 0) ?
+            (customSize.width / customSize.height) :
+            (4 / 3);
+        const maxInnerWidthByHeight = (maxStageCanvasHeight * widthPerHeight) + 2;
+        const maxWidthByHeight = Math.max(
+            minWidth,
+            maxInnerWidthByHeight + paddingLeft + paddingRight + borderExtra
+        );
+
+        const maxWidth = Math.min(maxWidthByEditor, maxWidthByHeight);
+
+        const stageIsLeft = editorRect ? (startRect.left < editorRect.left) : false;
+        const directionFactor = stageIsLeft ? 1 : -1;
+
+        let moveRaf = null;
+        const onMove = ev => {
+            if (moveRaf) return;
+            
+            moveRaf = requestAnimationFrame(() => {
+                moveRaf = null;
+                
+                const x = (typeof ev.clientX === 'number') ? ev.clientX : 0;
+                const dx = x - startX;
+                const rawWidth = startWidth + (dx * directionFactor);
+
+                if (typeof props.onSetStageSize === 'function') {
+                    if (rawWidth < minWidth - HIDE_STAGE_DRAG_SLOP) {
+                        if (!isStageHiddenRef.current) {
+                            isStageHiddenRef.current = true;
+                            syncingModeRef.current = true;
+                            props.onSetStageSize(STAGE_SIZE_MODES.hidden);
+                        }
+                        return;
+                    }
+                    if (isStageHiddenRef.current) {
+                        isStageHiddenRef.current = false;
+                        autoHiddenRef.current = false;
+                        syncingModeRef.current = true;
+                        props.onSetStageSize(STAGE_SIZE_MODES.small);
+                    }
+                }
+
+                const nextWidth = Math.min(maxWidth, Math.max(minWidth, rawWidth));
+                const nextInnerWidth = Math.max(0, nextWidth - paddingLeft - paddingRight - borderExtra);
+                preferredPanelWidthRef.current = nextWidth;
+
+                setStagePanelWidth(nextWidth);
+                setStageContainerWidth(prev => {
+                    if (typeof prev === 'number' && Math.abs(prev - nextInnerWidth) < 0.5) {
+                        return prev;
+                    }
+                    return nextInnerWidth;
+                });
+            });
+        };
+
+        const onUp = () => {
+            if (moveRaf) {
+                cancelAnimationFrame(moveRaf);
+                moveRaf = null;
+            }
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+
+            el.style.transition = '';
+            measureStageContainerWidth();
+
+            if (resizeAfterTransitionRafRef.current) {
+                cancelAnimationFrame(resizeAfterTransitionRafRef.current);
+            }
+            resizeAfterTransitionRafRef.current = requestAnimationFrame(() => {
+                resizeAfterTransitionRafRef.current = null;
+                window.dispatchEvent(new Event('resize'));
+            });
+        };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+    }, [
+        getStageBorderExtraWidth,
+        measureStageContainerWidth,
+        props.customStageSize,
+        enableStageResize
+    ]);
+
     const updateCanShowReadme = () => {
         if (!vm || !vm.editingTarget || !vm.editingTarget.comments) {
             setCanShowReadme(false);
@@ -1241,8 +1607,7 @@ const GUIComponent = props => {
                 />
                 <Box className={styles.bodyWrapper}>
                     <Box className={styles.flexWrapper} style={AESettings.get('EnableMobileLayout') ? {
-                        flexDirection: 'column',
-                        alignItems: 'stretch'
+                        flexDirection: 'column'
                     } : {}}>
                         <Box
                             className={classNames(styles.editorWrapper, {
@@ -1485,9 +1850,18 @@ const GUIComponent = props => {
                         </Box>
 
                         <Box
+                            className={styles.stagePaneResizer}
+                            onPointerDown={enableStageResize ? handleStagePanelResizePointerDown : undefined}
+                            onDoubleClick={enableStageResize ? handleStagePanelResizeDoubleClick : undefined}
+                            role="separator"
+                            aria-orientation="vertical"
+                            tabIndex={-1}
+                        />
+
+                        <Box
                             className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}
                             ref={stageAndTargetWrapperRef}
-                            style={stagePanelStyle}
+                            style={enableStageResize ? stagePanelStyle : undefined}
                         >
                             <StageWrapper
                                 isFullScreen={isFullScreen}
@@ -1566,6 +1940,7 @@ GUIComponent.propTypes = {
         width: PropTypes.number,
         height: PropTypes.number
     }),
+    enableStageResize: PropTypes.bool,
     enableCommunity: PropTypes.bool,
     extensionLibraryVisible: PropTypes.bool,
     intl: intlShape.isRequired,

@@ -74,7 +74,6 @@ const SpriteSelectorComponent = function (props) {
         selectedSprite = {};
         spriteInfoDisabled = true;
     }
-    const isMobileLayout = AESettings.get('EnableMobileLayout') || false;
     const spriteListEl = (
         <SpriteList
             editingTarget={editingTarget}
@@ -124,7 +123,6 @@ const SpriteSelectorComponent = function (props) {
     return (
         <Box
             className={styles.spriteSelector}
-            style={isMobileLayout ? {position: 'static'} : {}}
             {...componentProps}
         >
 
@@ -147,20 +145,8 @@ const SpriteSelectorComponent = function (props) {
                 onChangeY={onChangeSpriteY}
             />
 
-            {/* 移动端布局：按钮在前，角色列表紧跟其后 */}
-            {isMobileLayout ? (
-                <>
-                    <div className={styles.mobileActionMenu}>
-                        {actionMenuEl}
-                    </div>
-                    {spriteListEl}
-                </>
-            ) : (
-                <>
-                    {spriteListEl}
-                    {actionMenuEl}
-                </>
-            )}
+            {spriteListEl}
+            {actionMenuEl}
         </Box>
     );
 };

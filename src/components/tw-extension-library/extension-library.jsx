@@ -38,7 +38,8 @@ const sources = [
     ['scratch', 'Scratch'],
     ['tw', 'TurboWarp'],
     ['mistium', 'Mistium'],
-    ['rotur', 'Bilup Accounts']
+    ['rotur', 'Bilup Accounts'],
+    ['cy-scr-ext-hub', 'CY ScrExt Hub']
 ];
 
 const labelOf = (tag, intl) => (
@@ -264,7 +265,7 @@ class TWExtensionLibrary extends React.Component {
         const top = visible.filter(item => topExtensionIds.has(item.extensionId));
         const sourceOf = item => item.source ||
             (item.tags.includes('rotur') ? 'rotur' : item.tags.includes('mistium') ? 'mistium' :
-                item.tags.includes('tw') ? 'tw' : 'scratch');
+        item.tags.includes('tw') ? 'tw' : item.tags.includes('cy-scr-ext-hub') ? 'cy-scr-ext-hub' : 'scratch');
         const sections = sources.map(([source, sourceTitle]) => ({
             title: sourceTitle,
             items: visible.filter(item =>

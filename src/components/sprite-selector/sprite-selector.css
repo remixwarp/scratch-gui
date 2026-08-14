@@ -126,23 +126,4 @@
     filter: opacity(15%) brightness(0%);
 }
 
-/* 移动端布局：添加按钮改为正常文档流，角色列表紧跟其后 */
-.mobileActionMenu {
-    position: static;
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-    padding: 0.5rem 1rem;
-    box-sizing: border-box;
-}
 
-.mobileActionMenu :global(.action-menu) {
-    position: static !important;
-}
-
-/* 移动端布局：让滚动区域高度自适应，而非 calc(100% - sprite-info) */
-.sprite-selector[style*="position: static"] .scroll-wrapper {
-    height: auto !important;
-    max-height: 240px;
-    overflow-y: auto;
-}

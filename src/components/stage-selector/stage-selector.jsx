@@ -10,7 +10,6 @@ import {isRtl} from '@remixwarp/scratch-l10n';
 
 import backdropIcon from '../action-menu/icon--backdrop.svg';
 import {Upload, Paintbrush, Sparkles, Search} from 'lucide-react';
-import {AESettings} from '../../lib/settings.js';
 
 const messages = defineMessages({
     addBackdropFromLibrary: {
@@ -56,7 +55,6 @@ const StageSelector = props => {
         onEmptyBackdropClick,
         ...componentProps
     } = props;
-    const isMobileLayout = AESettings.get('EnableMobileLayout') || false;
     const headerEl = (
         <div className={styles.header}>
             <div className={styles.headerTitle}>
@@ -129,28 +127,13 @@ const StageSelector = props => {
             onClick={onClick}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
-            style={isMobileLayout ? {position: 'static'} : {}}
             {...componentProps}
         >
             {headerEl}
-            {/* 移动端布局：按钮在前，背景图紧跟其后 */}
-            {isMobileLayout ? (
-                <>
-                    <div className={styles.mobileActionMenu}>
-                        {actionMenuEl}
-                    </div>
-                    {backdropImgEl}
-                    {labelEl}
-                    {countEl}
-                </>
-            ) : (
-                <>
-                    {backdropImgEl}
-                    {labelEl}
-                    {countEl}
-                    {actionMenuEl}
-                </>
-            )}
+            {backdropImgEl}
+            {labelEl}
+            {countEl}
+            {actionMenuEl}
         </Box>
     );
 };

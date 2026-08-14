@@ -1271,6 +1271,54 @@ const settingDefinitions = {
             description: 'Hat block comment reminder setting help',
             id: 'tw.settingsModal.hatBlockCommentReminderHelp'
         }
+    },
+    windowAnimation: {
+        label: {
+            defaultMessage: '窗口动画',
+            description: 'Enable window open/close animation',
+            id: 'mw.settingsModal.windowAnimation'
+        },
+        help: {
+            defaultMessage: '启用打开或关闭窗口时的淡入淡出和缩放动画效果。',
+            description: 'Window Animation setting help',
+            id: 'mw.settingsModal.windowAnimationHelp'
+        }
+    },
+    enableStageResize: {
+        label: {
+            defaultMessage: '启用舞台调整大小',
+            description: 'Enable stage resize',
+            id: 'mw.settingsModal.enableStageResize'
+        },
+        help: {
+            defaultMessage: '启用舞台调整大小功能，允许您拖动调整舞台面板的大小。(需要刷新)',
+            description: 'Enable stage resize help',
+            id: 'mw.settingsModal.enableStageResizeHelp'
+        }
+    },
+    vanillaPalette: {
+        label: {
+            defaultMessage: '仅显示 Scratch 兼容积木',
+            description: 'Hide non-Scratch blocks',
+            id: 'mw.settingsModal.vanillaPalette'
+        },
+        help: {
+            defaultMessage: '隐藏 Scratch 官方无法运行的积木，如返回值积木、switch/case 积木、额外的字符串积木以及整个资源分类。可扩展的运算符仍然可见，因为它们以 Scratch 兼容的方式保存。',
+            description: 'Vanilla palette setting help',
+            id: 'mw.settingsModal.vanillaPaletteHelp'
+        }
+    },
+    unclipPalette: {
+        label: {
+            defaultMessage: '解除积木面板裁剪',
+            description: 'Unclip block palette',
+            id: 'mw.settingsModal.unclipPalette'
+        },
+        help: {
+            defaultMessage: '当鼠标悬停在积木面板上时，超出面板宽度的积木会溢出边缘而不是被裁剪。',
+            description: 'Unclip palette setting help',
+            id: 'mw.settingsModal.unclipPaletteHelp'
+        }
     }
 };
 
@@ -1304,6 +1352,10 @@ const CaseSensitiveLists = createBooleanSetting('CaseSensitiveLists', settingDef
 const RealLayerIndexes = createBooleanSetting('RealLayerIndexes', settingDefinitions.realLayerIndexes);
 const SuperRefactor = createBooleanSetting('SuperRefactor', settingDefinitions.superRefactor);
 const MultiWorkspaces = createBooleanSetting('MultiWorkspaces', settingDefinitions.multiWorkspaces);
+const WindowAnimation = createBooleanSetting('WindowAnimation', settingDefinitions.windowAnimation);
+const EnableStageResize = createBooleanSetting('EnableStageResize', settingDefinitions.enableStageResize);
+const VanillaPalette = createBooleanSetting('VanillaPalette', settingDefinitions.vanillaPalette);
+const UnclipPalette = createBooleanSetting('UnclipPalette', settingDefinitions.unclipPalette);
 const HatBlockCommentReminder = props => (
     <Setting
         active={props.value}
@@ -2262,6 +2314,20 @@ const pageConfigurations = {
                             onChange: props.onSquareStageCornersChange,
                             intl: props.intl
                         })
+                    },
+                    {
+                        component: WindowAnimation,
+                        props: props => ({
+                            value: props.windowAnimation,
+                            onChange: props.onWindowAnimationChange
+                        })
+                    },
+                    {
+                        component: EnableStageResize,
+                        props: props => ({
+                            value: props.enableStageResize,
+                            onChange: props.onEnableStageResizeChange
+                        })
                     }
                 ]
             },
@@ -2282,6 +2348,20 @@ const pageConfigurations = {
                             value: props.hideOperatorArrows,
                             onChange: props.onHideOperatorArrowsChange,
                             intl: props.intl
+                        })
+                    },
+                    {
+                        component: UnclipPalette,
+                        props: props => ({
+                            value: props.unclipPalette,
+                            onChange: props.onUnclipPaletteChange
+                        })
+                    },
+                    {
+                        component: VanillaPalette,
+                        props: props => ({
+                            value: props.vanillaPalette,
+                            onChange: props.onVanillaPaletteChange
                         })
                     }
                 ]
@@ -3133,6 +3213,14 @@ SettingsModalComponent.propTypes = {
     onHatReminderReset: PropTypes.func,
     cloudVariableServer: PropTypes.string,
     onCloudVariableServerChange: PropTypes.func,
+    windowAnimation: PropTypes.bool,
+    onWindowAnimationChange: PropTypes.func,
+    enableStageResize: PropTypes.bool,
+    onEnableStageResizeChange: PropTypes.func,
+    unclipPalette: PropTypes.bool,
+    onUnclipPaletteChange: PropTypes.func,
+    vanillaPalette: PropTypes.bool,
+    onVanillaPaletteChange: PropTypes.func,
     squareStageCorners: PropTypes.bool,
     onSquareStageCornersChange: PropTypes.func,
     hideExtensionButton: PropTypes.bool,

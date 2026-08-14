@@ -48,7 +48,9 @@ class AIPanel extends React.PureComponent {
             activeTab: 'chat', // chat, costume, control
             // 造型生成状态
             generatedSVG: null, // 存储生成的SVG代码
-            generatedImageUrl: null // 存储生成的图片URL（密钥已迁移到 Worker 端）
+            generatedImageUrl: null, // 存储生成的图片URL（密钥已迁移到 Worker 端）
+            // 人机验证
+            captchaToken: null // null = 未验证, string = 验证通过的 token
         };
         this.handleChange = this.handleChange.bind(this);
         this.handleSend = this.handleSend.bind(this);
@@ -57,6 +59,7 @@ class AIPanel extends React.PureComponent {
         this.handleTabChange = this.handleTabChange.bind(this);
         this.handleAddCostume = this.handleAddCostume.bind(this);
         this.handleAddGeneratedImage = this.handleAddGeneratedImage.bind(this);
+        this.handleCaptchaSolve = this.handleCaptchaSolve.bind(this);
         this.messagesEnd = React.createRef();
         this.inputRef = React.createRef();
     }
@@ -95,7 +98,16 @@ class AIPanel extends React.PureComponent {
         if (this.inputRef && this.inputRef.current) {
             this.inputRef.current.focus();
         }
+        // 动态加载 CAPTCHA 脚本
+        const script = document.createElement('script');
+        script.src = 'https://captcha.gurl.eu.org/cap.min.js';
+        script.async = true;
+        document.body.appendChild(script);
         // API 密钥已迁移到 Worker 端，浏览器侧不再需要读取密钥。
+    }
+
+    handleCaptchaSolve (e) {
+        this.setState({captchaToken: e.detail.token});
     }
 
     handleChange (e) {
@@ -103,9 +115,15 @@ class AIPanel extends React.PureComponent {
     }
 
     handleSend () {
-        const {input} = this.state;
+        const {input, captchaToken} = this.state;
         const {type} = this.props;
         if (!input) return;
+
+        // 人机验证检查
+        if (!captchaToken) {
+            this.setState({error: '请先完成人机验证'});
+            return;
+        }
 
         recordAIConversation(input);
 
@@ -2254,6 +2272,31 @@ ${JSON.stringify(projectData, null, 2)}
         this.setState({activeTab: tab});
     }
 
+    renderCaptchaWidget () {
+        if (this.state.captchaToken) {
+            return (
+                <div className={styles.captchaVerified}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>已验证</span>
+                </div>
+            );
+        }
+        return (
+            <cap-widget
+                ref={el => {
+                    if (el && !this._captchaInit) {
+                        this._captchaInit = true;
+                        el.addEventListener('solve', this.handleCaptchaSolve);
+                    }
+                }}
+                data-cap-api-endpoint="https://captcha.gurl.eu.org/api/"
+                className={styles.captchaWidget}
+            />
+        );
+    }
+
     render () {
         const {type} = this.props;
         const isAgent = type === 'agent';
@@ -2339,13 +2382,14 @@ ${JSON.stringify(projectData, null, 2)}
                                 value={this.state.input} 
                                 onChange={this.handleChange} 
                                 placeholder="聊聊你的代码..."
-                                disabled={this.state.loading}
+                                disabled={this.state.loading || !this.state.captchaToken}
                             />
                             <div className={styles.actions}>
+                                {this.renderCaptchaWidget()}
                                 <Button 
                                     onClick={this.handleSend} 
                                     className={styles.sendButton} 
-                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === ''}
+                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === '' || !this.state.captchaToken}
                                 >
                                     发送
                                 </Button>
@@ -2391,13 +2435,14 @@ ${JSON.stringify(projectData, null, 2)}
                                 value={this.state.input} 
                                 onChange={this.handleChange} 
                                 placeholder="描述你想要的造型..."
-                                disabled={this.state.loading}
+                                disabled={this.state.loading || !this.state.captchaToken}
                             />
                             <div className={styles.actions}>
+                                {this.renderCaptchaWidget()}
                                 <Button 
                                     onClick={this.handleSend} 
                                     className={styles.sendButton} 
-                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === ''}
+                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === '' || !this.state.captchaToken}
                                 >
                                     发送
                                 </Button>
@@ -2479,13 +2524,14 @@ ${JSON.stringify(projectData, null, 2)}
                                 value={this.state.input} 
                                 onChange={this.handleChange} 
                                 placeholder="例如：保存项目、切换到造型编辑器、运行项目..."
-                                disabled={this.state.loading}
+                                disabled={this.state.loading || !this.state.captchaToken}
                             />
                             <div className={styles.actions}>
+                                {this.renderCaptchaWidget()}
                                 <Button 
                                     onClick={this.handleSend} 
                                     className={styles.sendButton} 
-                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === ''}
+                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === '' || !this.state.captchaToken}
                                 >
                                     发送
                                 </Button>
@@ -2533,13 +2579,14 @@ ${JSON.stringify(projectData, null, 2)}
                                 value={this.state.input} 
                                 onChange={this.handleChange} 
                                 placeholder={placeholder}
-                                disabled={this.state.loading}
+                                disabled={this.state.loading || !this.state.captchaToken}
                             />
                             <div className={styles.actions}>
+                                {this.renderCaptchaWidget()}
                                 <Button 
                                     onClick={this.handleSend} 
                                     className={styles.sendButton} 
-                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === ''}
+                                    disabled={this.state.loading || !this.state.input || this.state.input.trim() === '' || !this.state.captchaToken}
                                 >
                                     发送
                                 </Button>

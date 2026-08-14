@@ -9,5 +9,6 @@ export default [
     {tag: 'penguinmod', intlLabel: 'PenguinMod'},
     {tag: '02engine', intlLabel: '02Engine'},
     {tag: 'ow', intlLabel: 'OpenWarp'},
-    {tag: 'bilup', intlLabel: 'Bilup'}
+    {tag: 'bilup', intlLabel: 'Bilup'},
+    {tag: 'cy-scr-ext-hub', intlLabel: 'CY ScrExt Hub'}
 ];
