@@ -231,13 +231,25 @@
     white-space: nowrap;
 }
 
+/* Separator line between accent sections */
 .menu-separator {
     height: 1px;
     background: $ui-black-transparent;
     margin: 0.25rem 0;
 }
 
-/* Accent submenu grid layout */
+/* Accent submenu separator that spans the full grid width */
+.accent-section-separator {
+    grid-column: 1 / -1;
+    height: 0.5px;
+    background: var(--ui-black-transparent, rgba(0, 0, 0, 0.06));
+    margin: 1px 0;
+    padding: 0;
+    width: 100%;
+    border: none;
+    display: block;
+    list-style: none;
+}
 .accent-submenu {
     padding: 0;
     /* Keep the theme palette inside the viewport. The submenu container
@@ -247,13 +259,36 @@
     max-height: calc(100dvh - 5rem);
 }
 
+/* Section headers inside the accent submenu */
+.accent-section-header {
+    grid-column: 1 / -1;
+    display: flex;
+    padding: 2px 0 1px 0.5rem;
+    font-size: 0.55rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--text-primary, #575e75);
+    cursor: default;
+    user-select: none;
+    white-space: nowrap;
+    text-align: left;
+    justify-content: flex-start;
+    border: none;
+    background: none;
+    width: 100%;
+    min-height: auto;
+    margin: 0;
+    flex-direction: row;
+}
+
 .accent-submenu > ul {
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
+    grid-template-columns: repeat(15, 1fr);
     gap: 0.5rem;
     padding: 0.5rem;
     margin: 0;
-    min-width: 592px;
+    min-width: 720px;
     max-width: none;
     max-height: calc(100vh - 5rem);
     max-height: calc(100dvh - 5rem);
