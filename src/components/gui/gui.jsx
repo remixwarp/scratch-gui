@@ -1890,6 +1890,7 @@ const GUIComponent = props => {
                             visible={extensionLibraryVisible}
                             onRequestClose={onRequestCloseExtensionLibrary}
                             onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                            onOpenCustomGalleryModal={openCustomGalleryModal}
                             onEnableProcedureReturns={handleEnableProcedureReturns}
                             onActivateBlocksTab={() => {}}
                             onCategorySelected={handleCategorySelected}
