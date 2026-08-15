@@ -180,6 +180,9 @@ const Footer = () => (
                             id="tw.footer.donate"
                         />
                     </a>
+                    <a href="rw.html">
+                        {'开发群聊天记录'}
+                    </a>
                 </div>
                 <div className={styles.footerSection}>
                     <a href="https://packager.02engine.org/">
