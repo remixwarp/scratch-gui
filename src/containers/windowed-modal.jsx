@@ -32,19 +32,16 @@ class WindowedModal extends React.Component {
     }
     
     componentDidMount () {
-        // Always create window, visibility will be handled separately
+        if (this.props.visible === false) {
+            return;
+        }
         this.createWindow();
         // Add a history event only if it's not currently for our modal. This
         // avoids polluting the history with many entries. We only need one.
         this.pushHistory(this.id, (history.state === null || history.state !== this.id));
-        
-        // Handle initial visibility
+
         if (this.window) {
-            if (this.props.visible === false) {
-                this.window.hide();
-            } else {
-                this.window.show();
-            }
+            this.window.show();
         }
 
         this.resizeToContentIfNeeded();
@@ -59,7 +56,9 @@ class WindowedModal extends React.Component {
                 this.pushHistory(this.id, (history.state === null || history.state !== this.id));
             } else if (!this.props.visible && this.window) {
                 // Modal should be hidden but window exists - hide it
-                this.window.hide();
+                if (!this.window.isDestroying) {
+                    this.window.hide();
+                }
                 return;
             }
         }
@@ -67,7 +66,13 @@ class WindowedModal extends React.Component {
         // Show/hide window based on visibility
         if (this.window) {
             if (this.props.visible === false) {
-                this.window.hide();
+                // If the window is already being destroyed (its close button
+                // was clicked), the closing animation is in progress and the
+                // element will be removed by the window system — don't hide it
+                // again here or we'd cancel that removal.
+                if (!this.window.isDestroying) {
+                    this.window.hide();
+                }
             } else {
                 this.window.show();
             }
@@ -88,7 +93,9 @@ class WindowedModal extends React.Component {
             this.blocklyWidgetRepositionRaf_ = null;
         }
         if (this.window && this.createdWindow) {
-            this.window.close();
+            if (!this.window.isDestroying) {
+                this.window.hide();
+            }
         }
     }
 

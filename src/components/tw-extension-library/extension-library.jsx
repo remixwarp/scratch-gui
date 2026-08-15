@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
-import {CheckCircle, Search} from 'lucide-react';
+import {CheckCircle, Search, Trash2} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import {
@@ -29,18 +29,31 @@ const messages = defineMessages({
         id: 'gui.extensionLibrary.categories',
         defaultMessage: 'Extensions',
         description: 'Header for the extension category sidebar'
+    },
+    emptyStateLoading: {
+        id: 'tw.extensionLibrary.emptyLoading',
+        defaultMessage: 'Loading extensions...',
+        description: 'Shown in the extension list while the selected source is loading'
+    },
+    emptyStateError: {
+        id: 'tw.extensionLibrary.emptyError',
+        defaultMessage: 'Failed to load this extension gallery.',
+        description: 'Shown in the extension list when the selected source failed to load'
+    },
+    emptyStateIdle: {
+        id: 'tw.extensionLibrary.emptyIdle',
+        defaultMessage: 'This gallery has no extensions yet.',
+        description: 'Shown in the extension list when the selected source has no extensions'
+    },
+    emptyStateEmpty: {
+        id: 'tw.extensionLibrary.emptySearch',
+        defaultMessage: 'No matching extensions.',
+        description: 'Shown in the extension list when the current filter matches nothing'
     }
 });
 
 const ALL = 'all';
-const topExtensionIds = new Set(['tw', 'custom_extension', 'gallery']);
-const sources = [
-    ['scratch', 'Scratch'],
-    ['tw', 'TurboWarp'],
-    ['mistium', 'Mistium'],
-    ['rotur', 'Bilup Accounts'],
-    ['cy-scr-ext-hub', 'CY ScrExt Hub']
-];
+const topExtensionIds = new Set(['tw', 'custom_extension', 'custom_extension_gallery', 'gallery']);
 
 const labelOf = (tag, intl) => (
     typeof tag.intlLabel === 'string' ? tag.intlLabel : intl.formatMessage(tag.intlLabel)
@@ -49,14 +62,43 @@ const labelOf = (tag, intl) => (
 // A real, loadable extension (not a divider or gallery-status card).
 const isExtension = item => item && typeof item === 'object' && (item.extensionId || item.href);
 
-const TagItem = ({tag, label, selected, onSelect, icon}) => {
+const tagStatusClass = {
+    loaded: styles.tagStatusDotLoaded, // 绿色：加载成功（网络源）
+    loading: styles.tagStatusDotLoading, // 黄色：正在加载
+    error: styles.tagStatusDotError, // 红色：加载失败
+    local: styles.tagStatusDotLocal, // 蓝色：加载成功（桌面端本地）
+    idle: styles.tagStatusDotIdle // 灰色：尚未获取到状态
+};
+
+const TagItem = ({tag, label, selected, onSelect, status, removable, onRemove}) => {
     const handleClick = React.useCallback(() => onSelect(tag), [onSelect, tag]);
+    const handleRemove = React.useCallback(e => {
+        e.stopPropagation();
+        if (onRemove) {
+            onRemove(tag);
+        }
+    }, [onRemove, tag]);
+    // 非"全部"分类始终渲染圆点（idle 为灰色占位），保证加载中不闪烁/位移
+    const statusDot = status ? (
+        <span className={classNames(styles.tagStatusDot, tagStatusClass[status])} />
+    ) : null;
+    const removeButton = removable ? (
+        <button
+            className={styles.tagRemoveButton}
+            onClick={handleRemove}
+            title="Remove this gallery"
+            type="button"
+        >
+            <Trash2 size={14} />
+        </button>
+    ) : null;
     return (
         <ModalSidebarItem
             label={label}
             selected={selected}
             onClick={handleClick}
-            icon={icon}
+            statusDot={statusDot}
+            trailingAction={removeButton}
         />
     );
 };
@@ -66,7 +108,9 @@ TagItem.propTypes = {
     label: PropTypes.node.isRequired,
     selected: PropTypes.bool,
     onSelect: PropTypes.func.isRequired,
-    icon: PropTypes.elementType
+    status: PropTypes.string,
+    removable: PropTypes.bool,
+    onRemove: PropTypes.func
 };
 
 const ExtensionSection = ({children, title}) => (
@@ -85,6 +129,14 @@ const ExtensionCard = ({item, onSelect, isLoaded}) => {
     const handleClick = React.useCallback(() => onSelect(item), [onSelect, item]);
     const icon = item.iconURL || item.rawURL;
     const loaded = isLoaded ? isLoaded(item) : false;
+    const loadedCheck = loaded ? (
+        <span
+            className={styles.cardLoadedCheck}
+            title="Loaded"
+        >
+            <CheckCircle size={16} />
+        </span>
+    ) : null;
     const content = (
         <React.Fragment>
             {icon ? (
@@ -180,6 +232,7 @@ const ExtensionCard = ({item, onSelect, isLoaded}) => {
         ) : null;
     return (
         <div className={classNames(styles.card, {[styles.cardDisabled]: item.disabled})}>
+            {loadedCheck}
             {item.href ? (
                 <a
                     className={styles.cardSelect}
@@ -199,16 +252,6 @@ const ExtensionCard = ({item, onSelect, isLoaded}) => {
                     {content}
                 </button>
             )}
-            {loaded ? (
-                <div className={styles.cardAdded}>
-                    <CheckCircle size={14} />
-                    <FormattedMessage
-                        defaultMessage="Added"
-                        description="Badge on an extension card that has already been added"
-                        id="gui.extensionLibrary.added"
-                    />
-                </div>
-            ) : null}
             {info}
         </div>
     );
@@ -230,6 +273,7 @@ class TWExtensionLibrary extends React.Component {
         };
         this.handleQuery = this.handleQuery.bind(this);
         this.handleSelectTag = this.handleSelectTag.bind(this);
+        this.handleRemoveTag = this.handleRemoveTag.bind(this);
     }
 
     handleQuery (e) {
@@ -238,6 +282,16 @@ class TWExtensionLibrary extends React.Component {
 
     handleSelectTag (tag) {
         this.setState({selectedTag: tag});
+    }
+
+    handleRemoveTag (tag) {
+        if (typeof this.props.onRemoveCustomSource === 'function') {
+            this.props.onRemoveCustomSource(tag);
+        }
+        // 删除的正是当前选中的标签时，回到"全部"避免内容区空白
+        if (this.state.selectedTag === tag) {
+            this.setState({selectedTag: ALL});
+        }
     }
 
     matchesTag (item) {
@@ -257,7 +311,7 @@ class TWExtensionLibrary extends React.Component {
     }
 
     render () {
-        const {intl, tags, title, onRequestClose, onItemSelected, isLoaded} = this.props;
+        const {intl, tags, title, onRequestClose, onItemSelected, isLoaded, getSourceStatus, removableTags} = this.props;
         const data = this.props.data || [];
         const divider = data.indexOf('---');
         const builtIn = data.slice(0, divider === -1 ? data.length : divider).filter(isExtension);
@@ -269,6 +323,13 @@ class TWExtensionLibrary extends React.Component {
         const sourceOf = item => item.source ||
             (item.tags.includes('rotur') ? 'rotur' : item.tags.includes('mistium') ? 'mistium' :
         item.tags.includes('tw') ? 'tw' : item.tags.includes('cy-scr-ext-hub') ? 'cy-scr-ext-hub' : 'scratch');
+        const sources = this.props.sources || [
+            ['scratch', 'Scratch'],
+            ['tw', 'TurboWarp'],
+            ['mistium', 'Mistium'],
+            ['rotur', 'Bilup Accounts'],
+            ['cy-scr-ext-hub', 'CY ScrExt Hub']
+        ];
         const sections = sources.map(([source, sourceTitle]) => ({
             title: sourceTitle,
             items: visible.filter(item =>
@@ -277,6 +338,23 @@ class TWExtensionLibrary extends React.Component {
         })).filter(section => section.items.length);
         const showSections = this.state.selectedTag === ALL && !this.state.query.trim() &&
             (top.length || sections.length > 1);
+
+        // 内容区无匹配项时的状态提示：加载中 / 加载失败 / 空库 / 无搜索结果
+        const emptyState = () => {
+            if (this.state.query.trim()) {
+                return <FormattedMessage {...messages.emptyStateEmpty} />;
+            }
+            if (this.state.selectedTag !== ALL && getSourceStatus) {
+                const status = getSourceStatus(this.state.selectedTag);
+                if (status === 'loading') {
+                    return <FormattedMessage {...messages.emptyStateLoading} />;
+                }
+                if (status === 'error') {
+                    return <FormattedMessage {...messages.emptyStateError} />;
+                }
+            }
+            return <FormattedMessage {...messages.emptyStateIdle} />;
+        };
 
         const sidebarTags = [{tag: ALL, intlLabel: intl.formatMessage(messages.all)}, ...tags];
 
@@ -306,6 +384,9 @@ class TWExtensionLibrary extends React.Component {
                                     selected={this.state.selectedTag === tag.tag}
                                     onSelect={this.handleSelectTag}
                                     icon={tag.icon}
+                                    status={tag.tag !== ALL && getSourceStatus ? getSourceStatus(tag.tag) : null}
+                                    removable={removableTags && removableTags.includes(tag.tag)}
+                                    onRemove={this.handleRemoveTag}
                                 />
                             ))}
                         </ModalSidebarGroup>
@@ -356,7 +437,7 @@ class TWExtensionLibrary extends React.Component {
                                         </ExtensionSection>
                                     ))}
                                 </React.Fragment>
-                            ) : (
+                            ) : visible.length ? (
                                 <div className={styles.grid}>
                                     {visible.map((item, index) => (
                                         <ExtensionCard
@@ -366,6 +447,10 @@ class TWExtensionLibrary extends React.Component {
                                             isLoaded={isLoaded}
                                         />
                                     ))}
+                                </div>
+                            ) : (
+                                <div className={styles.emptyState}>
+                                    {emptyState()}
                                 </div>
                             )}
                         </div>
@@ -384,7 +469,11 @@ TWExtensionLibrary.propTypes = {
     title: PropTypes.string,
     onItemSelected: PropTypes.func.isRequired,
     onRequestClose: PropTypes.func,
-    isLoaded: PropTypes.func
+    onRemoveCustomSource: PropTypes.func,
+    isLoaded: PropTypes.func,
+    getSourceStatus: PropTypes.func,
+    removableTags: PropTypes.arrayOf(PropTypes.string),
+    sources: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.string))
 };
 
 export default injectIntl(TWExtensionLibrary);

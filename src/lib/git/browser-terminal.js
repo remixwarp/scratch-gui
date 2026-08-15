@@ -423,6 +423,181 @@ const createInfoCommand = () => defineCommand('info', async () => {
     return {stdout: `${lines.join('\n')}\n`, stderr: '', exitCode: 0};
 });
 
+const LS_HELP = `ls: list directory contents (Windows dir style)
+
+Usage: ls [OPTION]... [FILE]...
+  -a            do not ignore entries starting with .
+  -A            like -a, but do not list . and ..
+  -d            list directories themselves, not their contents
+  -f            do not sort
+  -F            append indicator (/, @) to entries
+  -h            human-readable sizes
+  -l, -1        long / single-column listing (default)
+  -r            reverse order while sorting
+  -S            sort by file size, largest first
+  -t            sort by modification time, newest first
+`;
+
+const createLsCommand = () => defineCommand('ls', async (args, ctx) => {
+    const fs = ctx.fs;
+    const cwd = ctx.cwd;
+
+    const pad = n => String(n).padStart(2, '0');
+    const formatDate = date => (
+        `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())}  ${pad(date.getHours())}:${pad(date.getMinutes())}`
+    );
+    const formatHumanSize = bytes => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    let showAll = false;
+    let almostAll = false;
+    let directoryOnly = false;
+    let reverse = false;
+    let sortBySize = false;
+    let sortByTime = false;
+    let classify = false;
+    let humanReadable = false;
+    let noSort = false;
+    const paths = [];
+    let literal = false;
+
+    for (const arg of args) {
+        if (literal) {
+            paths.push(arg);
+        } else if (arg === '--') {
+            literal = true;
+        } else if (arg === '--help') {
+            return {stdout: LS_HELP, stderr: '', exitCode: 0};
+        } else if (arg.startsWith('-') && arg !== '-') {
+            for (const flag of arg.slice(1)) {
+                switch (flag) {
+                    case 'a': showAll = true; break;
+                    case 'A': almostAll = true; break;
+                    case 'd': directoryOnly = true; break;
+                    case 'f': noSort = true; break;
+                    case 'F': classify = true; break;
+                    case 'h': humanReadable = true; break;
+                    case 'l':
+                    case '1': break;
+                    case 'r': reverse = true; break;
+                    case 'S': sortBySize = true; break;
+                    case 't': sortByTime = true; break;
+                    default:
+                        return {stdout: '', stderr: `ls: invalid option -- '${flag}'\n`, exitCode: 2};
+                }
+            }
+        } else {
+            paths.push(arg);
+        }
+    }
+
+    const targets = paths.length ? paths : ['.'];
+    const out = [];
+    const errors = [];
+
+    const row = item => {
+        const sizeField = item.isDirectory ?
+            '<DIR>'.padEnd(13) :
+            (humanReadable ? formatHumanSize(item.size) : item.size.toLocaleString('en-US')).padStart(13);
+        const suffix = classify ?
+            (item.isDirectory ? '/' : (item.isSymbolicLink ? '@' : '')) : '';
+        return `${formatDate(item.mtime)}  ${sizeField}  ${item.name}${suffix}`;
+    };
+
+    for (const target of targets) {
+        const absolute = fs.resolvePath(cwd, target);
+        let stat;
+        try {
+            stat = await fs.stat(absolute);
+        } catch (e) {
+            errors.push(`ls: cannot access '${target}': ${e.message || e}`);
+            continue;
+        }
+
+        if (!stat.isDirectory || directoryOnly) {
+            if (targets.length > 1) out.push('', `${absolute}:`, '');
+            out.push(row({
+                name: target,
+                isDirectory: stat.isDirectory,
+                isSymbolicLink: stat.isSymbolicLink,
+                size: stat.size,
+                mtime: stat.mtime
+            }));
+            continue;
+        }
+
+        let dirents;
+        try {
+            dirents = fs.readdirWithFileTypes ?
+                await fs.readdirWithFileTypes(absolute) :
+                (await fs.readdir(absolute)).map(name => ({
+                    name,
+                    isFile: false,
+                    isDirectory: false,
+                    isSymbolicLink: false
+                }));
+        } catch (e) {
+            errors.push(`ls: cannot open directory '${target}': ${e.message || e}`);
+            continue;
+        }
+
+        const items = dirents
+            .filter(entry => showAll || almostAll || !entry.name.startsWith('.'))
+            .map(entry => ({
+                name: entry.name,
+                isDirectory: entry.isDirectory,
+                isSymbolicLink: entry.isSymbolicLink,
+                size: 0,
+                mtime: new Date(0)
+            }));
+        for (const item of items) {
+            try {
+                const s = await fs.stat(fs.resolvePath(absolute, item.name));
+                item.size = s.size;
+                item.mtime = s.mtime;
+            } catch (e) {
+                // Keep the defaults when an entry disappears mid-listing.
+            }
+        }
+
+        if (!noSort) {
+            const byName = (a, b) => a.name.localeCompare(b.name);
+            if (sortBySize) items.sort((a, b) => (b.size - a.size) || byName(a, b));
+            else if (sortByTime) items.sort((a, b) => ((b.mtime - a.mtime) || byName(a, b)));
+            else items.sort(byName);
+            if (reverse) items.reverse();
+        }
+
+        if (targets.length > 1) out.push('', `${absolute}:`, '');
+        else out.push(`Directory of ${absolute}`, '');
+        for (const item of items) out.push(row(item));
+
+        const fileCount = items.filter(i => !i.isDirectory).length;
+        const dirCount = items.length - fileCount;
+        const totalSize = items.filter(i => !i.isDirectory).reduce((sum, i) => sum + i.size, 0);
+        const sizeText = humanReadable ? formatHumanSize(totalSize) : totalSize.toLocaleString('en-US');
+        out.push(
+            '',
+            `     ${fileCount} File(s)      ${sizeText}${humanReadable ? '' : ' bytes'}`,
+            `     ${dirCount} Dir(s)`
+        );
+    }
+
+    return {
+        stdout: out.length ? `${out.join('\n')}\n` : '',
+        stderr: errors.length ? `${errors.join('\n')}\n` : '',
+        exitCode: errors.length ? 2 : 0
+    };
+});
+
+// Windows-style shorthand for mkdir.
+const createMdCommand = () => defineCommand('md', async (args, ctx) => (
+    ctx.exec('mkdir', {cwd: ctx.cwd, args})
+));
+
 const runBrowserCommand = async (command, cwd = REPO_DIR) => {
     // just-bash's builtin help lists bash builtins it does not implement, and it wins over
     // customCommands, so answer help ourselves before the line reaches the shell.
@@ -438,7 +613,7 @@ const runBrowserCommand = async (command, cwd = REPO_DIR) => {
     const bash = new Bash({
         cwd,
         files,
-        customCommands: [createGitCommand(state), createInfoCommand()]
+        customCommands: [createGitCommand(state), createInfoCommand(), createLsCommand(), createMdCommand()]
     });
     const result = await bash.exec(command);
     const changed = state.usedGit ? state.worktreeChanged : await syncWorkspace(files, bash);

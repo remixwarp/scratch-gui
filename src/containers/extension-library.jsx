@@ -14,6 +14,7 @@ import extensionLibraryContent, {
 import extensionTags from '../lib/libraries/tw-extension-tags';
 import twExtensionTranslations from '../lib/libraries/extensions/tw-extension-translations';
 import {getVanillaPalette} from '../lib/mw-vanilla-palette';
+import {manuallyTrustExtension} from './tw-security-manager.jsx';
 
 import LibraryComponent from '../components/tw-extension-library/extension-library.jsx';
 import extensionIcon from '../components/action-menu/icon--sprite.svg';
@@ -206,289 +207,43 @@ const fetchWithTimeout = (url, timeoutMs) => {
 
 const fetchLibrary = async () => {
     const emptyBanner = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAACXBIWXMAAAsTAAALEwEAmpwYAAADGWlDQ1BQaG90b3Nob3AgSUNDIHByb2ZpbGUAAHjaY2BgnuDo4uTKJMDAUFBUUuQe5BgZERmlwH6egY2BmYGBgYGBITG5uMAxIMCHgYGBIS8/L5UBA3y7xsDIwMDAcFnX0cXJlYE0wJpcUFTCwMBwgIGBwSgltTiZgYHhCwMDQ3p5SUEJAwNjDAMDg0hSdkEJAwNjAQMDg0h2SJAzAwNjCwMDE09JakUJAwMDg3N+QWVRZnpGiYKhpaWlgmNKflKqQnBlcUlqbrGCZ15yflFBflFiSWoKAwMD1A4GBgYGXpf8EgX3xMw8BUNTVQYqg4jIKAX08EGIIUByaVEZhMXIwMDAIMCgxeDHUMmwiuEBozRjFOM8xqdMhkwNTJeYNZgbme+y2LDMY2VmzWa9yubEtoldhX0mhwBHJycrZzMXM1cbNzf3RB4pnqW8xryH+IL5nvFXCwgJrBZ0E3wk1CisKHxYJF2UV3SrWJw4p/hWiRRJYcmjUhXSutJPZObIhsoJyp2V71HwUeRVvKA0RTlKRUnltepWtUZ1Pw1Zjbea+7QmaqfqWOsK6b7SO6I/36DGMMrI0ljS+LfJPdPDZivM+y0qLBOtfKwtbFRtRexY7L7aP3e47XjB6ZjzXpetruvdVrov9VjkudBrgfdCn8W+y/xW+a8P2Bq4N+hY8PmQW6HPwr5EMEUKRilFG8e4xUbF5cW3JMxO3Jx0Nvl5KlOaXLpNRlRmVdas7D059/KY8tULfAqLi2YXHy55WyZR7lJRWDmv6mz131q9uvj6SQ3HGn83G7Skt85ru94h2Ond1d59uJehz76/bsK+if8nO05pnXpiOu+M4JmzZj2aozW3ZN6+BVwLwxYtXvxxqcOyCcsfrjRe1br65lrddU3rb2402NSx+cFWq21Tt3/Y6btr1R6Oven7jh9QP9h56PURv6Obj4ufqD355LT3mS3nZM+3X/h0Ke7yqasW15bdEL3ZeuvrnfS7N+/7PDjwyPTx6qeKz2a+EHzZ9Zr5Td3bn+9LP3z6VPD53de8b+9+5P/88Lv4z7d/Vf//AwAqvx2K829RWwAAACBjSFJNAAB6JQAAgIMAAPn/AACA6QAAdTAAAOpgAAA6mAAAF2+SX8VGAAAAEUlEQVR42mL4zwAAAAD//wMAAgEBAJlUum0AAAAASUVORK5CYII=";
+    const allExtensions = [];
+    const sourceStatuses = {};
 
-    let twExtensions = [];
-    let mistiumExtensions = [];
-    let sharkpoolsExtensions = [];
-    let penguinmodExtensions = [];
-    let remixwarpExtensions = [];
-    let astraExtensions = [];
-    let engineExtensions = [];
-    let yesshapeExtensions = [];
-    let bilupExtensions = [];
+    const report = () => {
+        const customExtensions = (cachedGallery || [])
+            .filter(item => item.source && item.source.indexOf('custom_') === 0);
+        cachedGallery = [...allExtensions, ...customExtensions];
+        cachedSourceStatuses = { ...cachedSourceStatuses, ...sourceStatuses };
+        notifyListeners();
+    };
 
-    const loadStatus = {};
-
-    try {
-        const twRes = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
-        if (!twRes.ok) {
-            console.warn(`TurboWarp extensions: HTTP status ${twRes.status}`);
-        } else {
-            const twData = await twRes.json();
-            twExtensions = twData.extensions.map(extension => ({
-                name: extension.name,
-                nameTranslations: extension.nameTranslations || {},
-                description: extension.description,
-                descriptionTranslations: extension.descriptionTranslations || {},
-                extensionId: extension.id,
-                extensionURL: `https://extensions.turbowarp.org/${extension.slug}.js`,
-                iconURL: `https://extensions.turbowarp.org/${extension.image || 'images/unknown.svg'}`,
-                tags: ['tw'],
-                credits: [
-                    ...(extension.by || []),
-                    ...(extension.original || [])
-                ].map(credit => {
-                    if (credit.link) {
-                        return (
-                            <a
-                                href={credit.link}
-                                target="_blank"
-                                rel="noreferrer"
-                                key={credit.name}
-                            >
-                                {credit.name}
-                            </a>
-                        );
-                    }
-                    return credit.name;
-                }),
-                docsURI: extension.docs ? `https://extensions.turbowarp.org/${extension.slug}` : null,
-                samples: extension.samples ? extension.samples.map(sample => ({
-                    href: `${process.env.ROOT}editor?project_url=https://extensions.turbowarp.org/samples/${encodeURIComponent(sample)}.sb3`,
-                    text: sample
-                })) : null,
-                incompatibleWithScratch: true,
-                featured: true
-            }));
-            loadStatus['tw'] = 'online';
+    const fetchAndAdd = async (sourceName, fetchFn) => {
+        sourceStatuses[sourceName] = 'loading';
+        report();
+        try {
+            const extensions = await fetchFn();
+            allExtensions.push(...extensions);
+            sourceStatuses[sourceName] = 'loaded';
+        } catch (error) {
+            console.warn(`Failed to load ${sourceName} extensions:`, error);
+            sourceStatuses[sourceName] = 'error';
         }
-    } catch (error) {
-        console.warn('Failed to load TurboWarp extensions:', error);
-    }
+        report();
+    };
 
-    try {
-        const mistiumRes = await fetch('https://rw-extensions.pages.dev/mistium/extensions-index.json');
-        if (!mistiumRes.ok) {
-            console.warn(`Mistium extensions: HTTP status ${mistiumRes.status}`);
-        } else {
-            const mistiumData = await mistiumRes.json();
-            mistiumExtensions = mistiumData.extensions
-                .map(extension => ({
-                    name: extension.name,
-                    nameTranslations: extension.nameTranslations || {},
-                    description: extension.description,
-                    descriptionTranslations: extension.descriptionTranslations || {},
-                    extensionId: extension.extensionId,
-                    extensionURL: extension.extensionURL,
-                    iconURL: extension.iconURL || emptyBanner,
-                    tags: ['mistium'],
-                    credits: (extension.credits || []).map(credit => typeof credit === 'object' && credit.name ? credit.name : credit),
-                    docsURI: null,
-                    samples: null,
-                    incompatibleWithScratch: true,
-                    featured: extension.featured
-                }));
-            loadStatus['mistium'] = 'online';
-        }
-    } catch (error) {
-        console.warn('Failed to load Mistium extensions:', error);
-    }
+    const fetchWithTimeout = (url, timeoutMs) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timeoutId));
+    };
 
-    try {
-        const sharkpoolsRes = await fetch('https://sharkpools-extensions.vercel.app/Gallery%20Files/Extension-Keys.json');
-        if (!sharkpoolsRes.ok) {
-            console.warn(`SharkPool extensions: HTTP status ${sharkpoolsRes.status}`);
-            loadStatus['sharkpools'] = 'error';
-        } else {
-            const sharkpoolsData = await sharkpoolsRes.json();
-
-            const rawExtensions = sharkpoolsData.extensions;
-            let normalizedExtensions = [];
-
-            if (Array.isArray(rawExtensions)) {
-                normalizedExtensions = rawExtensions;
-            } else if (rawExtensions && typeof rawExtensions === 'object') {
-                normalizedExtensions = Object.entries(rawExtensions).map(
-                    ([key, value]) => ({
-                        id: value.id ?? key,
-                        name: value.name ?? key,
-                        ...value
-                    })
-                );
-            } else {
-                console.warn('[SharkPools] Invalid extensions format:', rawExtensions);
-                normalizedExtensions = [];
-            }
-
-            console.log('[SharkPools] Normalized extensions:', normalizedExtensions);
-
-            sharkpoolsExtensions = normalizedExtensions
-                .filter(ext => !ext.isDeprecated)
-                .map(extension => ({
-                    name: extension.name,
-                    nameTranslations: extension.nameTranslations || {},
-                    description: extension.description || extension.desc,
-                    descriptionTranslations: extension.descriptionTranslations || {},
-                    extensionId: extension.id,
-                    extensionURL: `https://sharkpools-extensions.vercel.app/extension-code/${extension.url}`,
-                    iconURL: extension.banner ? `https://sharkpools-extensions.vercel.app/extension-thumbs/${extension.banner}` : emptyBanner,
-                    tags: ['sharkpools'],
-                    credits: [
-                        ...(extension.by || []),
-                        ...(extension.original || (extension.creator ? [{ name: extension.creator }] : []))
-                    ].map(credit => {
-                        if (credit.link) {
-                            return (
-                                <a
-                                    href={credit.link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    key={credit.name}
-                                >
-                                    {credit.name}
-                                </a>
-                            );
-                        }
-                        return credit.name;
-                    }),
-                    docsURI: null,
-                    samples: null,
-                    incompatibleWithScratch: true,
-                    featured: true
-                }));
-            loadStatus['sharkpools'] = 'online';
-        }
-    } catch (error) {
-        console.warn('Failed to load SharkPools extensions:', error);
-        loadStatus['sharkpools'] = 'error';
-    }
-
-    try {
-        const penguinmodRes = await fetch('https://rw-extensions.pages.dev/penguinmod/extensions-index.json');
-        if (!penguinmodRes.ok) {
-            console.warn(`PenguinMod extensions: HTTP status ${penguinmodRes.status}`);
-            // 尝试备用源（raw GitHub）
-            const fallbackRes = await fetch('https://raw.githubusercontent.com/remixwarp/extensions/main/penguinmod/extensions-index.json');
-            if (!fallbackRes.ok) {
-                console.warn(`PenguinMod extensions: fallback also failed, HTTP ${fallbackRes.status}`);
-                loadStatus['penguinmod'] = 'error';
-            } else {
-                const fallbackData = await fallbackRes.json();
-                const rawExts = fallbackData.extensions || fallbackData;
-                if (!Array.isArray(rawExts) || rawExts.length === 0) {
-                    console.warn('PenguinMod extensions: empty or invalid fallback data');
-                    loadStatus['penguinmod'] = 'error';
-                } else {
-                    penguinmodExtensions = rawExts.map(extension => ({
-                        name: extension.name,
-                        nameTranslations: extension.nameTranslations || {},
-                        description: extension.description,
-                        descriptionTranslations: extension.descriptionTranslations || {},
-                        extensionId: extension.extensionId,
-                        extensionURL: extension.onlineURL || extension.extensionURL,
-                        iconURL: extension.iconURL,
-                        tags: ['penguinmod'],
-                        credits: Array.isArray(extension.credits)
-                            ? extension.credits.map(c => (typeof c === 'string' ? c : c.name))
-                            : [],
-                        docsURI: null,
-                        samples: null,
-                        incompatibleWithScratch: true,
-                        featured: true
-                    }));
-                    loadStatus['penguinmod'] = 'local';
-                }
-            }
-        } else {
-            const penguinmodData = await penguinmodRes.json();
-            const rawExts = penguinmodData.extensions || penguinmodData;
-            if (!Array.isArray(rawExts) || rawExts.length === 0) {
-                console.warn('PenguinMod extensions: empty or invalid data from primary source');
-                loadStatus['penguinmod'] = 'error';
-            } else {
-                penguinmodExtensions = rawExts.map(extension => ({
-                    name: extension.name,
-                    nameTranslations: extension.nameTranslations || {},
-                    description: extension.description,
-                    descriptionTranslations: extension.descriptionTranslations || {},
-                    extensionId: extension.extensionId,
-                    extensionURL: extension.onlineURL || extension.extensionURL,
-                    iconURL: extension.iconURL,
-                    tags: ['penguinmod'],
-                    credits: Array.isArray(extension.credits)
-                        ? extension.credits.map(c => (typeof c === 'string' ? c : c.name))
-                        : [],
-                    docsURI: null,
-                    samples: null,
-                    incompatibleWithScratch: true,
-                    featured: true
-                }));
-                loadStatus['penguinmod'] = 'online';
-            }
-        }
-    } catch (error) {
-        console.warn('Failed to load PenguinMod extensions:', error);
-        loadStatus['penguinmod'] = 'error';
-    }
-
-    try {
-        const remixwarpRes = await fetch('https://rw-extensions.pages.dev/remixwarp/extensions-index.json');
-        if (!remixwarpRes.ok) {
-            console.warn(`RemixWarp extensions: HTTP status ${remixwarpRes.status}`);
-        } else {
-            const remixwarpData = await remixwarpRes.json();
-            remixwarpExtensions = remixwarpData.extensions.map(extension => ({
-                name: extension.name,
-                nameTranslations: extension.nameTranslations || {},
-                description: extension.description,
-                descriptionTranslations: extension.descriptionTranslations || {},
-                extensionId: extension.extensionId,
-                extensionURL: extension.extensionURL,
-                iconURL: extension.iconURL,
-                tags: extension.tags || ['remixwarp'],
-                credits: (extension.credits || []).map(credit => {
-                    if (typeof credit === 'object' && credit.name) {
-                        const link = credit.link || credit.url;
-                        if (link) {
-                            return (
-                                <a
-                                    href={link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    key={credit.name}
-                                >
-                                    {credit.name}
-                                </a>
-                            );
-                        }
-                        return credit.name;
-                    }
-                    return credit;
-                }),
-                docsURI: extension.docsURI || null,
-                samples: extension.samples ? extension.samples.map(sample => ({
-                    href: `https://remixwarp.pages.dev/editor.html?project_url=${sample.href.startsWith('http') ? sample.href : 'https://remixwarp.pages.dev' + sample.href}`,
-                    text: sample.text
-                })) : null,
-                incompatibleWithScratch: extension.incompatibleWithScratch || true,
-                featured: extension.featured || true
-            }));
-            loadStatus['remixwarp'] = 'online';
-        }
-    } catch (error) {
-        console.warn('Failed to load RemixWarp extensions:', error);
-    }
-
+    // fetchWithFallback: 依次尝试官方源和备用源，失败返回 []
     const fetchWithFallback = async (tag, officialUrl, localUrl, transformFn) => {
-        // 标记为加载中
-        loadStatus[tag] = 'loading';
-
-        // 先尝试官方源，5秒超时
         try {
             const officialRes = await fetchWithTimeout(officialUrl, 5000);
             if (officialRes.ok) {
                 const data = await officialRes.json();
-                loadStatus[tag] = 'online';
                 return transformFn(data);
             }
             console.warn(`${tag} extensions: HTTP status ${officialRes.status}, trying fallback...`);
@@ -499,13 +254,10 @@ const fetchLibrary = async () => {
                 console.warn(`Failed to load ${tag} extensions from official:`, error);
             }
         }
-
-        // 官方源失败，尝试备用源，15秒超时
         try {
             const localRes = await fetchWithTimeout(localUrl, 15000);
             if (localRes.ok) {
                 const data = await localRes.json();
-                loadStatus[tag] = 'local';
                 return transformFn(data);
             }
             console.warn(`${tag} extensions: HTTP status ${localRes.status} from fallback`);
@@ -516,8 +268,6 @@ const fetchLibrary = async () => {
                 console.warn(`Failed to load ${tag} extensions from fallback:`, error);
             }
         }
-
-        loadStatus[tag] = 'error';
         return [];
     };
 
@@ -557,277 +307,537 @@ const fetchLibrary = async () => {
         }
     };
 
-    bilupExtensions = await fetchWithFallback(
-        'bilup',
-        'https://extensions.bilup.org/generated-metadata/extensions-v0.json',
-        'https://rw-extensions.pages.dev/bilup/extensions-index.json',
-        data => data.extensions.map(extension => {
-            const zh = bilupZhTranslations[extension.id];
-            const nameTranslations = {...(extension.nameTranslations || {})};
-            const descriptionTranslations = {...(extension.descriptionTranslations || {})};
-            if (zh) {
-                nameTranslations['zh-cn'] = zh.name;
-                descriptionTranslations['zh-cn'] = zh.description;
+    // 并行加载所有扩展源，每个源加载完成后立即更新
+    await Promise.all([
+        fetchAndAdd('tw', async () => {
+            try {
+                const twRes = await fetch('https://extensions.turbowarp.org/generated-metadata/extensions-v0.json');
+                if (!twRes.ok) {
+                    console.warn(`TurboWarp extensions: HTTP status ${twRes.status}`);
+                    return [];
+                }
+                const twData = await twRes.json();
+                return twData.extensions.map(extension => ({
+                    name: extension.name,
+                    nameTranslations: extension.nameTranslations || {},
+                    description: extension.description,
+                    descriptionTranslations: extension.descriptionTranslations || {},
+                    extensionId: extension.id,
+                    extensionURL: `https://extensions.turbowarp.org/${extension.slug}.js`,
+                    iconURL: `https://extensions.turbowarp.org/${extension.image || 'images/unknown.svg'}`,
+                    tags: ['tw'],
+                    credits: [
+                        ...(extension.by || []),
+                        ...(extension.original || [])
+                    ].map(credit => {
+                        if (credit.link) {
+                            return (
+                                <a
+                                    href={credit.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    key={credit.name}
+                                >
+                                    {credit.name}
+                                </a>
+                            );
+                        }
+                        return credit.name;
+                    }),
+                    docsURI: extension.docs ? `https://extensions.turbowarp.org/${extension.slug}` : null,
+                    samples: extension.samples ? extension.samples.map(sample => ({
+                        href: `${process.env.ROOT}editor?project_url=https://extensions.turbowarp.org/samples/${encodeURIComponent(sample)}.sb3`,
+                        text: sample
+                    })) : null,
+                    incompatibleWithScratch: true,
+                    featured: true
+                }));
+            } catch (error) {
+                console.warn('Failed to load TurboWarp extensions:', error);
+                return [];
             }
-            return {
-                name: extension.name,
-                nameTranslations,
-                description: extension.description,
-                descriptionTranslations,
-                extensionId: extension.id,
-            extensionURL: `https://extensions.bilup.org/${extension.slug}.js`,
-            iconURL: `https://extensions.bilup.org/${extension.image || 'images/unknown.svg'}`,
-            tags: ['bilup'],
-            credits: [
-                ...(extension.by || []),
-                ...(extension.original || [])
-            ].map(credit => {
-                if (credit.link) {
-                    return (
-                        <a
-                            href={credit.link}
-                            target="_blank"
-                            rel="noreferrer"
-                            key={credit.name}
-                        >
-                            {credit.name}
-                        </a>
-                    );
+        }),
+        fetchAndAdd('mistium', async () => {
+            try {
+                const mistiumRes = await fetch('https://rw-extensions.pages.dev/mistium/extensions-index.json');
+                if (!mistiumRes.ok) {
+                    console.warn(`Mistium extensions: HTTP status ${mistiumRes.status}`);
+                    return [];
                 }
-                return credit.name;
-            }),
-            docsURI: extension.docs ? `https://extensions.bilup.org/${extension.slug}` : null,
-            samples: extension.samples ? extension.samples.map(sample => ({
-                href: `${process.env.ROOT}editor?project_url=https://extensions.bilup.org/samples/${encodeURIComponent(sample)}.sb3`,
-                text: sample
-            })) : null,
-            incompatibleWithScratch: true,
-            featured: true
-            };
-        })
-    );
-
-    yesshapeExtensions = await fetchWithFallback(
-        'ow',
-        'https://openwarp-extensions.pages.dev/generated-metadata/extensions-v0.json',
-        'https://rw-extensions.pages.dev/yesshape/extensions-index.json',
-        data => data.extensions.map(extension => ({
-            name: extension.name,
-            nameTranslations: extension.nameTranslations || {},
-            description: extension.description,
-            descriptionTranslations: extension.descriptionTranslations || {},
-            extensionId: extension.id,
-            extensionURL: `https://openwarp-extensions.pages.dev/${extension.slug}.js`,
-            iconURL: `https://openwarp-extensions.pages.dev/${extension.image || 'images/unknown.svg'}`,
-            tags: ['ow'],
-            credits: [
-                ...(extension.by || []),
-                ...(extension.original || [])
-            ].map(credit => {
-                if (credit.link) {
-                    return (
-                        <a
-                            href={credit.link}
-                            target="_blank"
-                            rel="noreferrer"
-                            key={credit.name}
-                        >
-                            {credit.name}
-                        </a>
-                    );
+                const mistiumData = await mistiumRes.json();
+                return mistiumData.extensions
+                    .map(extension => ({
+                        name: extension.name,
+                        nameTranslations: extension.nameTranslations || {},
+                        description: extension.description,
+                        descriptionTranslations: extension.descriptionTranslations || {},
+                        extensionId: extension.extensionId,
+                        extensionURL: extension.extensionURL,
+                        iconURL: extension.iconURL || emptyBanner,
+                        tags: ['mistium'],
+                        credits: (extension.credits || []).map(credit => typeof credit === 'object' && credit.name ? credit.name : credit),
+                        docsURI: null,
+                        samples: null,
+                        incompatibleWithScratch: true,
+                        featured: extension.featured
+                    }));
+            } catch (error) {
+                console.warn('Failed to load Mistium extensions:', error);
+                return [];
+            }
+        }),
+        fetchAndAdd('sharkpools', async () => {
+            try {
+                const sharkpoolsRes = await fetch('https://sharkpools-extensions.vercel.app/Gallery%20Files/Extension-Keys.json');
+                if (!sharkpoolsRes.ok) {
+                    console.warn(`SharkPool extensions: HTTP status ${sharkpoolsRes.status}`);
+                    return [];
                 }
-                return credit.name;
-            }),
-            docsURI: extension.docs ? `https://openwarp-extensions.pages.dev/${extension.slug}` : null,
-            samples: extension.samples ? extension.samples.map(sample => ({
-                href: `${process.env.ROOT}editor?project_url=https://openwarp-extensions.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
-                text: sample
-            })) : null,
-            incompatibleWithScratch: true,
-            featured: true
-        }))
-    );
-
-    astraExtensions = await fetchWithFallback(
-        'ae',
-        'https://editors.astras.top/extensions/generated-metadata/extensions-v0.json',
-        'https://rw-extensions.pages.dev/astraeditor/extensions-index.json',
-        data => data.extensions.map(extension => ({
-            name: extension.name,
-            nameTranslations: extension.nameTranslations || {},
-            description: extension.description,
-            descriptionTranslations: extension.descriptionTranslations || {},
-            extensionId: extension.id,
-            extensionURL: `https://editors.astras.top/extensions/${extension.slug}.js`,
-            iconURL: `https://editors.astras.top/extensions/${extension.image || 'images/unknown.svg'}`,
-            tags: ['ae'],
-            credits: [
-                ...(extension.by || []),
-                ...(extension.original || [])
-            ].map(credit => {
-                if (credit.link) {
-                    return (
-                        <a
-                            href={credit.link}
-                            target="_blank"
-                            rel="noreferrer"
-                            key={credit.name}
-                        >
-                            {credit.name}
-                        </a>
+                const sharkpoolsData = await sharkpoolsRes.json();
+                const rawExtensions = sharkpoolsData.extensions;
+                let normalizedExtensions = [];
+                if (Array.isArray(rawExtensions)) {
+                    normalizedExtensions = rawExtensions;
+                } else if (rawExtensions && typeof rawExtensions === 'object') {
+                    normalizedExtensions = Object.entries(rawExtensions).map(
+                        ([key, value]) => ({ id: value.id ?? key, name: value.name ?? key, ...value })
                     );
+                } else {
+                    console.warn('[SharkPools] Invalid extensions format:', rawExtensions);
+                    return [];
                 }
-                return credit.name;
-            }),
-            docsURI: extension.docs ? `https://editors.astras.top/extensions/${extension.slug}` : null,
-            samples: extension.samples ? extension.samples.map(sample => ({
-                href: `${process.env.ROOT}editor?project_url=https://editors.astras.top/extensions/samples/${encodeURIComponent(sample)}.sb3`,
-                text: sample
-            })) : null,
-            incompatibleWithScratch: true,
-            featured: true
-        }))
-    );
-
-    engineExtensions = await fetchWithFallback(
-        '02engine',
-        'https://raw.githubusercontent.com/DDguan2010/extensions/main/generated-metadata/extensions-v0.json',
-        'https://rw-extensions.pages.dev/02engine/02engine-extensions/extensions.json',
-        data => data.extensions.map(extension => ({
-            name: extension.name,
-            nameTranslations: extension.nameTranslations || {},
-            description: extension.description,
-            descriptionTranslations: extension.descriptionTranslations || {},
-            extensionId: extension.id,
-            extensionURL: `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.slug}.js`,
-            iconURL: extension.image
-                ? `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.image}`
-                : `https://rw-extensions.pages.dev/02engine/02engine-extensions/image/${encodeURIComponent(extension.image || '')}`,
-            tags: ['02engine'],
-            credits: (extension.by || []).map(credit => {
-                if (credit.link) {
-                    return (
-                        <a
-                            href={credit.link}
-                            target="_blank"
-                            rel="noreferrer"
-                            key={credit.name}
-                        >
-                            {credit.name}
-                        </a>
-                    );
-                }
-                return credit.name;
-            }),
-            docsURI: extension.docs
-                ? `https://raw.githubusercontent.com/DDguan2010/extensions/main/doc/${encodeURIComponent(extension.slug)}/index.html`
-                : null,
-            samples: extension.samples ? extension.samples.map(sample => {
-                const sampleUrl = `https://rw-extensions.pages.dev/02engine/02engine-extensions/samples/${encodeURIComponent(sample)}.sb3`;
-                return {
-                    href: `${process.env.ROOT}editor?project_url=${sampleUrl}`,
-                    text: sample
-                };
-            }) : null,
-            incompatibleWithScratch: true,
-            featured: true
-        }))
-    );
-
-    let cyScrExtHubExtensions = [];
-    cyScrExtHubExtensions = await fetchWithFallback(
-        'cy-scr-ext-hub',
-        'https://raw.githubusercontent.com/cy-studio-001/CYScrExtHub/main/extensions.json',
-        'https://rw-extensions.pages.dev/cy-scr-ext-hub/extensions-index.json',
-        data => {
-            const extensions = (data.extensions || data);
-            // 检测数据格式：GitHub 原始格式有 is_cyso 和 download_url，本地镜像有 extensionId
-            const isGitHubRaw = extensions.length > 0 && ('is_cyso' in extensions[0] || 'download_url' in extensions[0]);
-
-            if (isGitHubRaw) {
-                // GitHub 原始格式：过滤 is_cyso，转换 download_url/cover_url
-                return extensions
-                    .filter(ext => !ext.is_cyso)
-                    .map(ext => ({
-                        name: ext.name,
-                        description: ext.description,
-                        extensionId: 'cyse_' + ext.id,
-                        extensionURL: ext.download_url,
-                        iconURL: ext.cover_url || emptyBanner,
-                        tags: ['cy-scr-ext-hub'],
-                        credits: ext.author_name ? [ext.author_name] : [],
+                return normalizedExtensions
+                    .filter(ext => !ext.isDeprecated)
+                    .map(extension => ({
+                        name: extension.name,
+                        nameTranslations: extension.nameTranslations || {},
+                        description: extension.description || extension.desc,
+                        descriptionTranslations: extension.descriptionTranslations || {},
+                        extensionId: extension.id,
+                        extensionURL: `https://sharkpools-extensions.vercel.app/extension-code/${extension.url}`,
+                        iconURL: extension.banner ? `https://sharkpools-extensions.vercel.app/extension-thumbs/${extension.banner}` : emptyBanner,
+                        tags: ['sharkpools'],
+                        credits: [
+                            ...(extension.by || []),
+                            ...(extension.original || (extension.creator ? [{ name: extension.creator }] : []))
+                        ].map(credit => {
+                            if (credit.link) {
+                                return (
+                                    <a
+                                        href={credit.link}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        key={credit.name}
+                                    >
+                                        {credit.name}
+                                    </a>
+                                );
+                            }
+                            return credit.name;
+                        }),
+                        docsURI: null,
+                        samples: null,
                         incompatibleWithScratch: true,
                         featured: true
                     }));
+            } catch (error) {
+                console.warn('Failed to load SharkPools extensions:', error);
+                return [];
             }
-
-            // 本地镜像格式：直接使用 extensionURL/iconURL/extensionId
-            return extensions.map(ext => ({
-                name: ext.name,
-                description: ext.description,
-                extensionId: ext.extensionId || ext.id,
-                extensionURL: ext.extensionURL,
-                iconURL: ext.iconURL || emptyBanner,
-                tags: ['cy-scr-ext-hub'],
-                credits: (ext.credits || []).map(credit => {
-                    if (typeof credit === 'object' && credit.name) {
-                        const link = credit.link || credit.url;
-                        if (link) {
-                            return React.createElement('a', { href: link, target: '_blank', rel: 'noreferrer', key: credit.name }, credit.name);
+        }),
+        fetchAndAdd('penguinmod', async () => {
+            try {
+                const penguinmodRes = await fetch('https://rw-extensions.pages.dev/penguinmod/extensions-index.json');
+                if (!penguinmodRes.ok) {
+                    console.warn(`PenguinMod extensions: HTTP status ${penguinmodRes.status}`);
+                    const fallbackRes = await fetch('https://raw.githubusercontent.com/remixwarp/extensions/main/penguinmod/extensions-index.json');
+                    if (!fallbackRes.ok) {
+                        console.warn(`PenguinMod extensions: fallback also failed, HTTP ${fallbackRes.status}`);
+                        return [];
+                    }
+                    const fallbackData = await fallbackRes.json();
+                    const rawExts = fallbackData.extensions || fallbackData;
+                    if (!Array.isArray(rawExts) || rawExts.length === 0) {
+                        console.warn('PenguinMod extensions: empty or invalid fallback data');
+                        return [];
+                    }
+                    return rawExts.map(extension => ({
+                        name: extension.name,
+                        nameTranslations: extension.nameTranslations || {},
+                        description: extension.description,
+                        descriptionTranslations: extension.descriptionTranslations || {},
+                        extensionId: extension.extensionId,
+                        extensionURL: extension.onlineURL || extension.extensionURL,
+                        iconURL: extension.iconURL,
+                        tags: ['penguinmod'],
+                        credits: Array.isArray(extension.credits)
+                            ? extension.credits.map(c => (typeof c === 'string' ? c : c.name))
+                            : [],
+                        docsURI: null,
+                        samples: null,
+                        incompatibleWithScratch: true,
+                        featured: true
+                    }));
+                }
+                const penguinmodData = await penguinmodRes.json();
+                const rawExts = penguinmodData.extensions || penguinmodData;
+                if (!Array.isArray(rawExts) || rawExts.length === 0) {
+                    console.warn('PenguinMod extensions: empty or invalid data from primary source');
+                    return [];
+                }
+                return rawExts.map(extension => ({
+                    name: extension.name,
+                    nameTranslations: extension.nameTranslations || {},
+                    description: extension.description,
+                    descriptionTranslations: extension.descriptionTranslations || {},
+                    extensionId: extension.extensionId,
+                    extensionURL: extension.onlineURL || extension.extensionURL,
+                    iconURL: extension.iconURL,
+                    tags: ['penguinmod'],
+                    credits: Array.isArray(extension.credits)
+                        ? extension.credits.map(c => (typeof c === 'string' ? c : c.name))
+                        : [],
+                    docsURI: null,
+                    samples: null,
+                    incompatibleWithScratch: true,
+                    featured: true
+                }));
+            } catch (error) {
+                console.warn('Failed to load PenguinMod extensions:', error);
+                return [];
+            }
+        }),
+        fetchAndAdd('remixwarp', async () => {
+            try {
+                const remixwarpRes = await fetch('https://rw-extensions.pages.dev/remixwarp/extensions-index.json');
+                if (!remixwarpRes.ok) {
+                    console.warn(`RemixWarp extensions: HTTP status ${remixwarpRes.status}`);
+                    return [];
+                }
+                const remixwarpData = await remixwarpRes.json();
+                return remixwarpData.extensions.map(extension => ({
+                    name: extension.name,
+                    nameTranslations: extension.nameTranslations || {},
+                    description: extension.description,
+                    descriptionTranslations: extension.descriptionTranslations || {},
+                    extensionId: extension.extensionId,
+                    extensionURL: extension.extensionURL,
+                    iconURL: extension.iconURL,
+                    tags: extension.tags || ['remixwarp'],
+                    credits: (extension.credits || []).map(credit => {
+                        if (typeof credit === 'object' && credit.name) {
+                            const link = credit.link || credit.url;
+                            if (link) {
+                                return (
+                                    <a
+                                        href={link}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        key={credit.name}
+                                    >
+                                        {credit.name}
+                                    </a>
+                                );
+                            }
+                            return credit.name;
+                        }
+                        return credit;
+                    }),
+                    docsURI: extension.docsURI || null,
+                    samples: extension.samples ? extension.samples.map(sample => ({
+                        href: `https://remixwarp.pages.dev/editor.html?project_url=${sample.href.startsWith('http') ? sample.href : 'https://remixwarp.pages.dev' + sample.href}`,
+                        text: sample.text
+                    })) : null,
+                    incompatibleWithScratch: extension.incompatibleWithScratch || true,
+                    featured: extension.featured || true
+                }));
+            } catch (error) {
+                console.warn('Failed to load RemixWarp extensions:', error);
+                return [];
+            }
+        }),
+        fetchAndAdd('ae', async () => {
+            return await fetchWithFallback(
+                'ae',
+                'https://editors.astras.top/extensions/generated-metadata/extensions-v0.json',
+                'https://rw-extensions.pages.dev/astraeditor/extensions-index.json',
+                data => data.extensions.map(extension => ({
+                    name: extension.name,
+                    nameTranslations: extension.nameTranslations || {},
+                    description: extension.description,
+                    descriptionTranslations: extension.descriptionTranslations || {},
+                    extensionId: extension.id,
+                    extensionURL: `https://editors.astras.top/extensions/${extension.slug}.js`,
+                    iconURL: `https://editors.astras.top/extensions/${extension.image || 'images/unknown.svg'}`,
+                    tags: ['ae'],
+                    credits: [
+                        ...(extension.by || []),
+                        ...(extension.original || [])
+                    ].map(credit => {
+                        if (credit.link) {
+                            return (
+                                <a
+                                    href={credit.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    key={credit.name}
+                                >
+                                    {credit.name}
+                                </a>
+                            );
                         }
                         return credit.name;
+                    }),
+                    docsURI: extension.docs ? `https://editors.astras.top/extensions/${extension.slug}` : null,
+                    samples: extension.samples ? extension.samples.map(sample => ({
+                        href: `${process.env.ROOT}editor?project_url=https://editors.astras.top/extensions/samples/${encodeURIComponent(sample)}.sb3`,
+                        text: sample
+                    })) : null,
+                    incompatibleWithScratch: true,
+                    featured: true
+                }))
+            );
+        }),
+        fetchAndAdd('02engine', async () => {
+            return await fetchWithFallback(
+                '02engine',
+                'https://raw.githubusercontent.com/DDguan2010/extensions/main/generated-metadata/extensions-v0.json',
+                'https://rw-extensions.pages.dev/02engine/02engine-extensions/extensions.json',
+                data => data.extensions.map(extension => ({
+                    name: extension.name,
+                    nameTranslations: extension.nameTranslations || {},
+                    description: extension.description,
+                    descriptionTranslations: extension.descriptionTranslations || {},
+                    extensionId: extension.id,
+                    extensionURL: `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.slug}.js`,
+                    iconURL: extension.image
+                        ? `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.image}`
+                        : `https://rw-extensions.pages.dev/02engine/02engine-extensions/image/${encodeURIComponent(extension.image || '')}`,
+                    tags: ['02engine'],
+                    credits: (extension.by || []).map(credit => {
+                        if (credit.link) {
+                            return (
+                                <a
+                                    href={credit.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    key={credit.name}
+                                >
+                                    {credit.name}
+                                </a>
+                            );
+                        }
+                        return credit.name;
+                    }),
+                    docsURI: extension.docs
+                        ? `https://raw.githubusercontent.com/DDguan2010/extensions/main/doc/${encodeURIComponent(extension.slug)}/index.html`
+                        : null,
+                    samples: extension.samples ? extension.samples.map(sample => {
+                        const sampleUrl = `https://rw-extensions.pages.dev/02engine/02engine-extensions/samples/${encodeURIComponent(sample)}.sb3`;
+                        return {
+                            href: `${process.env.ROOT}editor?project_url=${sampleUrl}`,
+                            text: sample
+                        };
+                    }) : null,
+                    incompatibleWithScratch: true,
+                    featured: true
+                }))
+            );
+        }),
+        fetchAndAdd('ow', async () => {
+            return await fetchWithFallback(
+                'ow',
+                'https://openwarp-extensions.pages.dev/generated-metadata/extensions-v0.json',
+                'https://rw-extensions.pages.dev/yesshape/extensions-index.json',
+                data => data.extensions.map(extension => ({
+                    name: extension.name,
+                    nameTranslations: extension.nameTranslations || {},
+                    description: extension.description,
+                    descriptionTranslations: extension.descriptionTranslations || {},
+                    extensionId: extension.id,
+                    extensionURL: `https://openwarp-extensions.pages.dev/${extension.slug}.js`,
+                    iconURL: `https://openwarp-extensions.pages.dev/${extension.image || 'images/unknown.svg'}`,
+                    tags: ['ow'],
+                    credits: [
+                        ...(extension.by || []),
+                        ...(extension.original || [])
+                    ].map(credit => {
+                        if (credit.link) {
+                            return (
+                                <a
+                                    href={credit.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    key={credit.name}
+                                >
+                                    {credit.name}
+                                </a>
+                            );
+                        }
+                        return credit.name;
+                    }),
+                    docsURI: extension.docs ? `https://openwarp-extensions.pages.dev/${extension.slug}` : null,
+                    samples: extension.samples ? extension.samples.map(sample => ({
+                        href: `${process.env.ROOT}editor?project_url=https://openwarp-extensions.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
+                        text: sample
+                    })) : null,
+                    incompatibleWithScratch: true,
+                    featured: true
+                }))
+            );
+        }),
+        fetchAndAdd('bilup', async () => {
+            return await fetchWithFallback(
+                'bilup',
+                'https://extensions.bilup.org/generated-metadata/extensions-v0.json',
+                'https://rw-extensions.pages.dev/bilup/extensions-index.json',
+                data => data.extensions.map(extension => {
+                    const zh = bilupZhTranslations[extension.id];
+                    const nameTranslations = { ...(extension.nameTranslations || {}) };
+                    const descriptionTranslations = { ...(extension.descriptionTranslations || {}) };
+                    if (zh) {
+                        nameTranslations['zh-cn'] = zh.name;
+                        descriptionTranslations['zh-cn'] = zh.description;
                     }
-                    return credit;
-                }),
-                incompatibleWithScratch: true,
-                featured: true
-            }));
-        }
-    );
+                    return {
+                        name: extension.name,
+                        nameTranslations,
+                        description: extension.description,
+                        descriptionTranslations,
+                        extensionId: extension.id,
+                        extensionURL: `https://extensions.bilup.org/${extension.slug}.js`,
+                        iconURL: `https://extensions.bilup.org/${extension.image || 'images/unknown.svg'}`,
+                        tags: ['bilup'],
+                        credits: [
+                            ...(extension.by || []),
+                            ...(extension.original || [])
+                        ].map(credit => {
+                            if (credit.link) {
+                                return (
+                                    <a
+                                        href={credit.link}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        key={credit.name}
+                                    >
+                                        {credit.name}
+                                    </a>
+                                );
+                            }
+                            return credit.name;
+                        }),
+                        docsURI: extension.docs ? `https://extensions.bilup.org/${extension.slug}` : null,
+                        samples: extension.samples ? extension.samples.map(sample => ({
+                            href: `${process.env.ROOT}editor?project_url=https://extensions.bilup.org/samples/${encodeURIComponent(sample)}.sb3`,
+                            text: sample
+                        })) : null,
+                        incompatibleWithScratch: true,
+                        featured: true
+                    };
+                })
+            );
+        }),
+        fetchAndAdd('cy-scr-ext-hub', async () => {
+            return await fetchWithFallback(
+                'cy-scr-ext-hub',
+                'https://raw.githubusercontent.com/cy-studio-001/CYScrExtHub/main/extensions.json',
+                'https://rw-extensions.pages.dev/cy-scr-ext-hub/extensions-index.json',
+                data => {
+                    const extensions = (data.extensions || data);
+                    const isGitHubRaw = extensions.length > 0 && ('is_cyso' in extensions[0] || 'download_url' in extensions[0]);
+                    if (isGitHubRaw) {
+                        return extensions
+                            .filter(ext => !ext.is_cyso)
+                            .map(ext => ({
+                                name: ext.name,
+                                description: ext.description,
+                                extensionId: 'cyse_' + ext.id,
+                                extensionURL: ext.download_url,
+                                iconURL: ext.cover_url || emptyBanner,
+                                tags: ['cy-scr-ext-hub'],
+                                credits: ext.author_name ? [ext.author_name] : [],
+                                incompatibleWithScratch: true,
+                                featured: true
+                            }));
+                    }
+                    return extensions.map(ext => ({
+                        name: ext.name,
+                        description: ext.description,
+                        extensionId: ext.extensionId || ext.id,
+                        extensionURL: ext.extensionURL,
+                        iconURL: ext.iconURL || emptyBanner,
+                        tags: ['cy-scr-ext-hub'],
+                        credits: (ext.credits || []).map(credit => {
+                            if (typeof credit === 'object' && credit.name) {
+                                const link = credit.link || credit.url;
+                                if (link) {
+                                    return React.createElement('a', { href: link, target: '_blank', rel: 'noreferrer', key: credit.name }, credit.name);
+                                }
+                                return credit.name;
+                            }
+                            return credit;
+                        }),
+                        incompatibleWithScratch: true,
+                        featured: true
+                    }));
+                }
+            );
+        })
+    ]);
 
-    cachedLoadStatus = loadStatus;
+    cachedLoadStatus = { ...sourceStatuses };
 
-    // 注册各扩展库的刷新函数
+    // 注册各扩展库的刷新函数（适配新模式）
     retryFetchers['bilup'] = async () => {
         const result = await fetchWithFallback(
             'bilup',
             'https://extensions.bilup.org/generated-metadata/extensions-v0.json',
             'https://rw-extensions.pages.dev/bilup/extensions-index.json',
-            data => data.extensions.map(extension => ({
-                name: extension.name,
-                nameTranslations: extension.nameTranslations || {},
-                description: extension.description,
-                descriptionTranslations: extension.descriptionTranslations || {},
-                extensionId: extension.id,
-                extensionURL: `https://extensions.bilup.org/${extension.slug}.js`,
-                iconURL: `https://extensions.bilup.org/${extension.image || 'images/unknown.svg'}`,
-                tags: ['bilup'],
-                credits: [
-                    ...(extension.by || []),
-                    ...(extension.original || [])
-                ].map(credit => {
-                    if (credit.link) {
-                        return React.createElement('a', { href: credit.link, target: '_blank', rel: 'noreferrer', key: credit.name }, credit.name);
-                    }
-                    return credit.name;
-                }),
-                docsURI: extension.docs ? `https://extensions.bilup.org/${extension.slug}` : null,
-                samples: extension.samples ? extension.samples.map(sample => ({
-                    href: `${process.env.ROOT}editor?project_url=https://extensions.bilup.org/samples/${encodeURIComponent(sample)}.sb3`,
-                    text: sample
-                })) : null,
-                incompatibleWithScratch: true,
-                featured: true
-            }))
+            data => data.extensions.map(extension => {
+                const zh = bilupZhTranslations[extension.id];
+                const nameTranslations = { ...(extension.nameTranslations || {}) };
+                const descriptionTranslations = { ...(extension.descriptionTranslations || {}) };
+                if (zh) {
+                    nameTranslations['zh-cn'] = zh.name;
+                    descriptionTranslations['zh-cn'] = zh.description;
+                }
+                return {
+                    name: extension.name,
+                    nameTranslations,
+                    description: extension.description,
+                    descriptionTranslations,
+                    extensionId: extension.id,
+                    extensionURL: `https://extensions.bilup.org/${extension.slug}.js`,
+                    iconURL: `https://extensions.bilup.org/${extension.image || 'images/unknown.svg'}`,
+                    tags: ['bilup'],
+                    credits: [
+                        ...(extension.by || []),
+                        ...(extension.original || [])
+                    ].map(credit => {
+                        if (credit.link) {
+                            return React.createElement('a', { href: credit.link, target: '_blank', rel: 'noreferrer', key: credit.name }, credit.name);
+                        }
+                        return credit.name;
+                    }),
+                    docsURI: extension.docs ? `https://extensions.bilup.org/${extension.slug}` : null,
+                    samples: extension.samples ? extension.samples.map(sample => ({
+                        href: `${process.env.ROOT}editor?project_url=https://extensions.bilup.org/samples/${encodeURIComponent(sample)}.sb3`,
+                        text: sample
+                    })) : null,
+                    incompatibleWithScratch: true,
+                    featured: true
+                };
+            })
         );
         if (cachedGallery) {
-            cachedGallery.extensions = dedupeFetchedExtensions([
-                ...cachedGallery.extensions.filter(e => !(e.tags || []).includes('bilup')),
+            cachedGallery = dedupeFetchedExtensions([
+                ...cachedGallery.filter(e => !(e.tags || []).includes('bilup')),
                 ...result
             ]);
         }
-        cachedLoadStatus = { ...cachedLoadStatus, bilup: loadStatus['bilup'] };
-        return cachedLoadStatus;
+        cachedSourceStatuses = { ...cachedSourceStatuses, bilup: 'loaded' };
+        notifyListeners();
+        return cachedSourceStatuses;
     };
 
     retryFetchers['ow'] = async () => {
@@ -863,13 +873,14 @@ const fetchLibrary = async () => {
             }))
         );
         if (cachedGallery) {
-            cachedGallery.extensions = dedupeFetchedExtensions([
-                ...cachedGallery.extensions.filter(e => !(e.tags || []).includes('ow')),
+            cachedGallery = dedupeFetchedExtensions([
+                ...cachedGallery.filter(e => !(e.tags || []).includes('ow')),
                 ...result
             ]);
         }
-        cachedLoadStatus = { ...cachedLoadStatus, ow: loadStatus['ow'] };
-        return cachedLoadStatus;
+        cachedSourceStatuses = { ...cachedSourceStatuses, ow: 'loaded' };
+        notifyListeners();
+        return cachedSourceStatuses;
     };
 
     retryFetchers['ae'] = async () => {
@@ -905,13 +916,14 @@ const fetchLibrary = async () => {
             }))
         );
         if (cachedGallery) {
-            cachedGallery.extensions = dedupeFetchedExtensions([
-                ...cachedGallery.extensions.filter(e => !(e.tags || []).includes('ae')),
+            cachedGallery = dedupeFetchedExtensions([
+                ...cachedGallery.filter(e => !(e.tags || []).includes('ae')),
                 ...result
             ]);
         }
-        cachedLoadStatus = { ...cachedLoadStatus, ae: loadStatus['ae'] };
-        return cachedLoadStatus;
+        cachedSourceStatuses = { ...cachedSourceStatuses, ae: 'loaded' };
+        notifyListeners();
+        return cachedSourceStatuses;
     };
 
     retryFetchers['02engine'] = async () => {
@@ -951,13 +963,14 @@ const fetchLibrary = async () => {
             }))
         );
         if (cachedGallery) {
-            cachedGallery.extensions = dedupeFetchedExtensions([
-                ...cachedGallery.extensions.filter(e => !(e.tags || []).includes('02engine')),
+            cachedGallery = dedupeFetchedExtensions([
+                ...cachedGallery.filter(e => !(e.tags || []).includes('02engine')),
                 ...result
             ]);
         }
-        cachedLoadStatus = { ...cachedLoadStatus, '02engine': loadStatus['02engine'] };
-        return cachedLoadStatus;
+        cachedSourceStatuses = { ...cachedSourceStatuses, '02engine': 'loaded' };
+        notifyListeners();
+        return cachedSourceStatuses;
     };
 
     retryFetchers['cy-scr-ext-hub'] = async () => {
@@ -1006,30 +1019,17 @@ const fetchLibrary = async () => {
             }
         );
         if (cachedGallery) {
-            cachedGallery.extensions = dedupeFetchedExtensions([
-                ...cachedGallery.extensions.filter(e => !(e.tags || []).includes('cy-scr-ext-hub')),
+            cachedGallery = dedupeFetchedExtensions([
+                ...cachedGallery.filter(e => !(e.tags || []).includes('cy-scr-ext-hub')),
                 ...result
             ]);
         }
-        cachedLoadStatus = { ...cachedLoadStatus, 'cy-scr-ext-hub': loadStatus['cy-scr-ext-hub'] };
-        return cachedLoadStatus;
+        cachedSourceStatuses = { ...cachedSourceStatuses, 'cy-scr-ext-hub': 'loaded' };
+        notifyListeners();
+        return cachedSourceStatuses;
     };
 
-    return {
-        extensions: dedupeFetchedExtensions([
-            ...twExtensions,
-            ...mistiumExtensions,
-            ...sharkpoolsExtensions,
-            ...penguinmodExtensions,
-            ...remixwarpExtensions,
-            ...astraExtensions,
-            ...engineExtensions,
-            ...yesshapeExtensions,
-            ...bilupExtensions,
-            ...cyScrExtHubExtensions
-        ]),
-        loadStatus
-    };
+    return allExtensions;
 };
 
 const mergeExtensionTags = (existingTags, newTags) => Array.from(
@@ -1067,8 +1067,9 @@ const dedupeFetchedExtensions = extensions => {
 };
 
 export {
-    mergeExtensionTags,
-    dedupeFetchedExtensions
+    addCustomSource,
+    removeCustomSource,
+    updateGallery
 };
 
 class ExtensionLibrary extends React.PureComponent {
@@ -1076,92 +1077,84 @@ class ExtensionLibrary extends React.PureComponent {
         super(props);
         bindAll(this, [
             'handleItemSelect',
-            'handleRetryTag',
-            'isLoaded'
+            'getSourceStatus'
         ]);
         this.state = {
-            gallery: cachedGallery ? cachedGallery.extensions : null,
-            loadStatus: cachedLoadStatus || {},
+            gallery: cachedGallery,
             galleryError: null,
             galleryTimedOut: false,
-            selectedTag: 'all'
+            sourceStatuses: cachedSourceStatuses,
+            customSources: cachedCustomSources
         };
-        this._mounted = false;
     }
-    componentDidMount() {
-        this._mounted = true;
-        if (!this.state.gallery) {
-            // 初始化所有标签为加载中状态（黄点闪烁）
-            const initialLoadStatus = {};
-            extensionTags.forEach(tag => {
-                initialLoadStatus[tag.tag] = 'loading';
-            });
-            this.setState({ loadStatus: initialLoadStatus });
 
+    componentDidMount() {
+        // 接收模块级快照广播：添加自定义库 / fetchLibrary 进度都会触发
+        this.unsubscribeGalleryUpdate = addGalleryUpdateListener(payload => {
+            this.setState({
+                gallery: payload.gallery,
+                sourceStatuses: payload.sourceStatuses,
+                customSources: payload.customSources
+            });
+        });
+
+        // 加载/卸载扩展时同步刷新"已加载"对勾
+        this.handleExtensionChange = () => this.forceUpdate();
+        const vm = this.props.vm;
+        if (vm && typeof vm.on === 'function') {
+            vm.on('EXTENSION_ADDED', this.handleExtensionChange);
+            vm.on('EXTENSION_REMOVED', this.handleExtensionChange);
+        }
+
+        // 首次打开时拉取网络源；已注册的自定义库独立加载（互不阻塞）
+        if (!this.state.gallery) {
             const timeout = setTimeout(() => {
-                if (this._mounted) {
-                    this.setState({
-                        galleryTimedOut: true
-                    });
-                }
+                this.setState({
+                    galleryTimedOut: true
+                });
             }, 750);
 
             fetchLibrary()
-                .then(result => {
-                    if (this._mounted) {
-                        cachedGallery = result;
-                        cachedLoadStatus = result.loadStatus;
-                        this.setState({
-                            gallery: result.extensions,
-                            loadStatus: result.loadStatus
-                        });
-                    }
-                    clearTimeout(timeout);
-                })
+                .then(() => clearTimeout(timeout))
                 .catch(error => {
                     log.error(error);
-                    if (this._mounted) {
-                        this.setState({
-                            galleryError: error
-                        });
-                    }
+                    this.setState({
+                        galleryError: error
+                    });
                     clearTimeout(timeout);
                 });
+
+            cachedCustomSources.forEach(source => {
+                if (!cachedSourceStatuses[source.id]) {
+                    fetchCustomSource(source.id).catch(error => log.error(error));
+                }
+            });
         }
     }
+
     componentWillUnmount() {
-        this._mounted = false;
+        if (this.unsubscribeGalleryUpdate) {
+            this.unsubscribeGalleryUpdate();
+        }
+        const vm = this.props.vm;
+        if (vm && typeof vm.off === 'function') {
+            vm.off('EXTENSION_ADDED', this.handleExtensionChange);
+            vm.off('EXTENSION_REMOVED', this.handleExtensionChange);
+        }
     }
-    handleRetryTag(tag) {
-        const fetcher = retryFetchers[tag];
-        if (!fetcher || !this._mounted) return;
 
-        // 先设置为加载中状态（黄点闪烁）
-        this.setState(prevState => ({
-            loadStatus: { ...prevState.loadStatus, [tag]: 'loading' }
-        }));
+    getSourceStatus(tag) {
+        // 内置本地数据始终可用（桌面端本地加载成功 → 蓝色）
+        if (tag === 'scratch' || tag === 'rotur') {
+            return 'local';
+        }
+        // 无状态时返回 'idle' 作为占位
+        return this.state.sourceStatuses[tag] || 'idle';
+    }
 
-        fetcher().then(newLoadStatus => {
-            if (this._mounted && cachedGallery) {
-                this.setState({
-                    gallery: cachedGallery.extensions,
-                    loadStatus: newLoadStatus
-                });
-            }
-        }).catch(error => {
-            log.error(`Failed to retry ${tag} extensions:`, error);
-            if (this._mounted) {
-                this.setState(prevState => ({
-                    loadStatus: { ...prevState.loadStatus, [tag]: 'error' }
-                }));
-            }
-        });
-    }
-    handleSelectTag(tag) {
-        this.setState({ selectedTag: tag ? tag.toLowerCase() : 'all' });
-    }
     handleItemSelect(item) {
         if (item.href) {
+            window.open(item.href, '_blank', 'noopener,noreferrer');
             return;
         }
 
@@ -1169,6 +1162,13 @@ class ExtensionLibrary extends React.PureComponent {
 
         if (extensionId === 'custom_extension') {
             this.props.onOpenCustomExtensionModal();
+            return;
+        }
+
+        if (extensionId === 'custom_extension_gallery') {
+            if (this.props.onOpenCustomGalleryModal) {
+                this.props.onOpenCustomGalleryModal();
+            }
             return;
         }
 
@@ -1191,6 +1191,11 @@ class ExtensionLibrary extends React.PureComponent {
 
         const url = item.extensionURL ? item.extensionURL : extensionId;
         if (!item.disabled) {
+            // 自定义拓展库开启"非沙盒运行"时，加载扩展前确保其 URL 被信任
+            const customSource = cachedCustomSources.find(cs => cs.id === item.source);
+            if (customSource && customSource.unsandboxed && url) {
+                manuallyTrustExtension(url);
+            }
             if (this.props.vm.extensionManager.isExtensionLoaded(extensionId)) {
                 if (typeof this.props.onCategorySelected === 'function') {
                     this.props.onCategorySelected(extensionId);
@@ -1198,11 +1203,13 @@ class ExtensionLibrary extends React.PureComponent {
             } else {
                 this.props.vm.extensionManager.loadExtensionURL(url)
                     .then(() => {
+                        this.forceUpdate();
                         if (typeof this.props.onCategorySelected === 'function') {
                             this.props.onCategorySelected(extensionId);
                         }
                     })
                     .catch(err => {
+                        this.forceUpdate();
                         log.error(err);
                         // eslint-disable-next-line no-alert
                         alert(err);
@@ -1210,67 +1217,75 @@ class ExtensionLibrary extends React.PureComponent {
             }
         }
     }
+
     render() {
+        const vanilla = getVanillaPalette();
         let library = null;
-        if (this.state.gallery || this.state.galleryError || this.state.galleryTimedOut) {
+        if (vanilla || this.state.gallery || this.state.galleryError || this.state.galleryTimedOut) {
             const locale = this.props.intl.locale;
             library = extensionLibraryContent
-                .map(i => translateStaticItem(i, locale))
+                .filter(extension => !vanilla || (extension.tags.includes('scratch') && !extension.extensionURL))
                 .map(toLibraryItem);
-            library.push('---');
-            if (this.state.gallery) {
-                library.push(toLibraryItem(galleryMore));
-                library.push(
-                    ...this.state.gallery
-                        .map(i => translateGalleryItem(i, locale))
-                        .map(toLibraryItem)
-                );
-            } else if (this.state.galleryError) {
-                library.push(toLibraryItem(galleryError));
-            } else {
-                library.push(toLibraryItem(galleryLoading));
+            if (!vanilla) {
+                library.push('---');
+                if (this.state.gallery) {
+                    library.push(toLibraryItem(galleryMore));
+                    library.push(
+                        ...this.state.gallery
+                            .filter(i => i.extensionId !== 'faceSensing')
+                            .map(i => translateGalleryItem(i, locale))
+                            .map(toLibraryItem)
+                    );
+                } else if (this.state.galleryError) {
+                    library.push(toLibraryItem(galleryError));
+                } else {
+                    library.push(toLibraryItem(galleryLoading));
+                }
             }
         }
 
-        const tagsWithIcons = extensionTags.map(tag => {
-            // rotur（Bilup Accounts）与 scratch 是内置官方分类，始终显示绿色"已加载"小圆点
-            if (tag.tag === 'rotur' || tag.tag === 'scratch') {
-                return {
-                    ...tag,
-                    icon: () => (
-                        <SidebarStatusDot
-                            color={TAG_STATUS_COLORS.online}
-                            isLoading={false}
-                        />
-                    )
-                };
+        const vm = this.props.vm;
+        const isLoaded = item => {
+            if (!vm || !vm.extensionManager || !item || !item.extensionId) {
+                return false;
             }
-            return {
-                ...tag,
-                icon: this.state.loadStatus[tag.tag] ? (() => (
-                    <SidebarStatusDot
-                        color={TAG_STATUS_COLORS[this.state.loadStatus[tag.tag]] || '#888888'}
-                        isLoading={this.state.loadStatus[tag.tag] === 'loading'}
-                    />
-                )) : null
-            };
-        });
+            return vm.extensionManager.isExtensionLoaded(item.extensionId);
+        };
+
+        // 已注册的自定义扩展库像内置源一样出现在左侧栏与分组中
+        const customTags = this.state.customSources.map(source => ({
+            tag: source.id,
+            intlLabel: source.name
+        }));
+        const tags = [...extensionTags, ...customTags];
+        const sources = [
+            ['scratch', 'Scratch'],
+            ['tw', 'TurboWarp'],
+            ['mistium', 'Mistium'],
+            ['rotur', 'Bilup Accounts'],
+            ...this.state.customSources.map(source => [source.id, source.name])
+        ];
+        // 可删除（自定义）的标签 id 集合，用于侧边栏渲染删除按钮
+        const removableTags = this.state.customSources.map(source => source.id);
 
         return (
             <LibraryComponent
                 data={library}
-                isLoaded={this.isLoaded}
-                tags={tagsWithIcons}
+                filterable
+                persistableKey="extensionId"
+                id="extensionLibrary"
+                tags={tags}
+                sources={sources}
                 title={this.props.intl.formatMessage(messages.extensionTitle)}
+                visible={this.props.visible}
                 onItemSelected={this.handleItemSelect}
                 onRequestClose={this.props.onRequestClose}
+                isLoaded={isLoaded}
+                getSourceStatus={this.getSourceStatus}
+                removableTags={removableTags}
+                onRemoveCustomSource={removeCustomSource}
             />
         );
-    }
-
-    isLoaded (item) {
-        return item && item.extensionId && this.props.vm && this.props.vm.extensionManager &&
-            this.props.vm.extensionManager.isExtensionLoaded(item.extensionId);
     }
 }
 
@@ -1280,6 +1295,7 @@ ExtensionLibrary.propTypes = {
     onCategorySelected: PropTypes.func,
     onEnableProcedureReturns: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
+    onOpenCustomGalleryModal: PropTypes.func,
     onRequestClose: PropTypes.func,
     visible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired // eslint-disable-line react/no-unused-prop-types

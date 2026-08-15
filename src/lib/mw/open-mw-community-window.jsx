@@ -54,8 +54,14 @@ const openMistWarpCommunityWindow = ({id, title, initialPath, element, width = 9
         minWidth: 480,
         minHeight: 400,
         onClose: () => {
-            ReactDOM.unmountComponentAtNode(container);
-            openWindows.delete(id);
+            // Delay the content cleanup until the window's closing animation
+            // has played out, so the page stays visible while it fades out.
+            // (The window element itself is removed by window-manager after
+            // the animation finishes.)
+            setTimeout(() => {
+                ReactDOM.unmountComponentAtNode(container);
+                openWindows.delete(id);
+            }, 220);
         }
     });
 

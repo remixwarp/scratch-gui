@@ -42,6 +42,7 @@ const RoturConsentModal = props => {
     const groups = groupScopes(data.scopes || [], categoryLabel);
     const intl = useIntl();
     const notNow = intl.formatMessage({id: 'mw.roturConsent.notNow', defaultMessage: 'Not now'});
+    const payment = type === 'confirm' && data.confirmation && data.confirmation.type === 'payment';
     if (type === 'share') {
         return (
             <Modal
@@ -113,30 +114,53 @@ const RoturConsentModal = props => {
             <Box className={styles.body}>
                 {type === 'confirm' ? (
                     <React.Fragment>
-                        <h2>
-                            {intl.formatMessage({
-                                id: 'mw.roturConsent.confirmTitle',
-                                defaultMessage: 'Confirm Bilup Accounts action'
-                            })}
-                        </h2>
-                        <p>
-                            {intl.formatMessage({
-                                id: 'mw.roturConsent.confirmBody',
-                                defaultMessage: 'This project wants to '
-                            })}
-                            <b>{data.label}</b>
-                            {data.username ? (
-                                ` as @${data.username}.`
-                            ) : (
-                                intl.formatMessage({id: 'mw.roturConsent.period', defaultMessage: '.'})
-                            )}
-                        </p>
-                        <p>
-                            {intl.formatMessage({
-                                id: 'mw.roturConsent.confirmTrust',
-                                defaultMessage: 'Only allow this if you trust the project.'
-                            })}
-                        </p>
+                        {payment ? (
+                            <React.Fragment>
+                                <h2>
+                                    {intl.formatMessage({
+                                        id: 'mw.roturConsent.paymentTitle',
+                                        defaultMessage: 'Confirm payment'
+                                    })}
+                                </h2>
+                                <p>
+                                    {intl.formatMessage({
+                                        id: 'mw.roturConsent.paymentBody',
+                                        defaultMessage: 'Allow payment of {amount} credits to '
+                                    }, {
+                                        amount: data.confirmation.amount
+                                    })}
+                                    <b>{`@${data.confirmation.recipient}`}</b>
+                                    {'?'}
+                                </p>
+                            </React.Fragment>
+                        ) : (
+                            <React.Fragment>
+                                <h2>
+                                    {intl.formatMessage({
+                                        id: 'mw.roturConsent.confirmTitle',
+                                        defaultMessage: 'Confirm Bilup Accounts action'
+                                    })}
+                                </h2>
+                                <p>
+                                    {intl.formatMessage({
+                                        id: 'mw.roturConsent.confirmBody',
+                                        defaultMessage: 'This project wants to '
+                                    })}
+                                    <b>{data.label}</b>
+                                    {data.username ? (
+                                        ` as @${data.username}.`
+                                    ) : (
+                                        intl.formatMessage({id: 'mw.roturConsent.period', defaultMessage: '.'})
+                                    )}
+                                </p>
+                                <p>
+                                    {intl.formatMessage({
+                                        id: 'mw.roturConsent.confirmTrust',
+                                        defaultMessage: 'Only allow this if you trust the project.'
+                                    })}
+                                </p>
+                            </React.Fragment>
+                        )}
                     </React.Fragment>
                 ) : (
                     <React.Fragment>
@@ -197,7 +221,9 @@ const RoturConsentModal = props => {
                         onClick={props.onAllowed}
                     >
                         {type === 'confirm' ?
-                            intl.formatMessage({id: 'mw.roturConsent.allow', defaultMessage: 'Allow'}) :
+                            (payment ?
+                                intl.formatMessage({id: 'mw.roturConsent.allowPayment', defaultMessage: 'Allow payment'}) :
+                                intl.formatMessage({id: 'mw.roturConsent.allow', defaultMessage: 'Allow'})) :
                             intl.formatMessage({id: 'mw.roturConsent.connect', defaultMessage: 'Connect'})}
                     </button>
                 </Box>

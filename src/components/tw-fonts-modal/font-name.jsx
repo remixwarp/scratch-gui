@@ -53,12 +53,17 @@ class FontName extends React.Component {
         // Chrome-only API
         if (typeof queryLocalFonts === 'function') {
             // eslint-disable-next-line no-undef
-            queryLocalFonts().then(fonts => {
-                const uniqueFamilies = [...new Set(fonts.map(i => i.family))];
-                this.setState({
-                    localFonts: uniqueFamilies
+            queryLocalFonts()
+                .then(fonts => {
+                    const uniqueFamilies = [...new Set(fonts.map(i => i.family))];
+                    this.setState({
+                        localFonts: uniqueFamilies
+                    });
+                })
+                .catch(() => {
+                    // Permission denied or API unavailable in this context;
+                    // simply leave the system font suggestions empty.
                 });
-            });
         }
     }
 

@@ -76,6 +76,7 @@
 }
 
 .card {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -127,6 +128,71 @@
     border-color: $ui-black-transparent;
     box-shadow: none;
     transform: none;
+}
+
+.empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    padding: 2rem;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.tag-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tag-remove-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: color-mix(in srgb, $text-primary 45%, transparent);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    opacity: 0.35;
+}
+
+.tag-remove-button:hover {
+    background: color-mix(in srgb, $error-primary 12%, transparent);
+    color: $error-primary;
+    opacity: 1;
+}
+
+.tag-status-dot-idle {
+    background: #9e9e9e;
+    box-shadow: 0 0 0 2px #9e9e9e40;
+}
+
+.tag-status-dot-loaded {
+    background: #4caf50;
+    box-shadow: 0 0 0 2px #4caf5040;
+}
+
+.tag-status-dot-local {
+    background: #2196f3;
+    box-shadow: 0 0 0 2px #2196f340;
+}
+
+.tag-status-dot-loading {
+    background: #ffc107;
+    box-shadow: 0 0 0 2px #ffc10740;
+}
+
+.tag-status-dot-error {
+    background: #f44336;
+    box-shadow: 0 0 0 2px #f4433640;
 }
 
 .card-icon {
@@ -186,18 +252,20 @@
     text-decoration: underline;
 }
 
-.card-added {
+.card-loaded-check {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 1;
     display: flex;
     align-items: center;
-    gap: 6px;
-    align-self: flex-start;
-    margin: 0 14px 12px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: color-mix(in srgb, $looks-secondary 15%, transparent);
-    color: $looks-secondary;
-    font-size: 0.75rem;
-    font-weight: 600;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: $ui-primary;
+    box-shadow: 0 1px 4px color-mix(in srgb, $ui-black-transparent 40%, transparent);
+    color: #4caf50;
 }
 
 /* 移动端响应式布局 */
