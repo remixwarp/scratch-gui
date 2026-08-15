@@ -12,6 +12,15 @@
     min-width: 240px;
     overflow: visible;
     border: 2px solid transparent;
+    opacity: 0;
+    transform-origin: top left;
+    transform: scale(0.9) translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.menuOpen {
+    opacity: 1;
+    transform: scale(1) translateY(0);
 }
 
 .menu:not(.submenu)::before {
@@ -56,6 +65,7 @@
     margin: 0;
     font-weight: bold;
     position: relative;
+    transition: background-color 0.15s ease;
 }
 
 .menu-item img {
@@ -101,13 +111,17 @@
 }
 
 .submenu {
-    display: none;
     position: absolute;
     top: -1px;
     min-width: 186px;
     height: max-content;
     overflow: hidden;
     border-radius: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform-origin: top left;
+    transform: scale(0.9);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
 }
 
 .submenu.right {
@@ -128,11 +142,15 @@
 }
 
 .menu-item.expanded>.submenu {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
 }
 
 .menu:not(.mobileModeMenu) .menu-item:not(.expanded):hover>.submenu {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
 }
 
 .menu.mobileModeMenu .menu-item:not(.expanded):hover>.submenu {

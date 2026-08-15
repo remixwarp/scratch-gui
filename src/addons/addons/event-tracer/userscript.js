@@ -38,12 +38,14 @@ export default async function ({ addon, msg, console }) {
         return origGreenFlag();
     };
 
-    // Hook clone creation
-    const origCreateClone = runtime.createClone.bind(runtime);
-    runtime.createClone = function (targetId, ...args) {
-        recordEvent('createClone', { targetId });
-        return origCreateClone(targetId, ...args);
-    };
+    // Hook clone creation (createClone may not exist on all versions)
+    if (typeof runtime.createClone === 'function') {
+        const origCreateClone = runtime.createClone.bind(runtime);
+        runtime.createClone = function (targetId, ...args) {
+            recordEvent('createClone', { targetId });
+            return origCreateClone(targetId, ...args);
+        };
+    }
 
     function createWindow() {
         const win = WindowManager.createWindow({

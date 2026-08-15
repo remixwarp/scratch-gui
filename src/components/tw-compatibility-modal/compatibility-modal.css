@@ -133,23 +133,6 @@
     font-weight: 500;
 }
 
-.kitten4Warning {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    background-color: rgba(255, 193, 7, 0.1);
-    border: 1px solid rgba(255, 193, 7, 0.25);
-    border-radius: 0.5rem;
-    margin-bottom: 1.25rem;
-    color: #ffc107;
-    font-size: 0.875rem;
-}
-
-.warningIconSmall {
-    flex-shrink: 0;
-}
-
 .issuesContainer {
     margin-bottom: 1.25rem;
 }

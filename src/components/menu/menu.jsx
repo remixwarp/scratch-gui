@@ -52,7 +52,8 @@ const MenuComponent = ({
     className = '',
     children,
     componentRef,
-    place = 'right'
+    place = 'right',
+    isOpen = false
 }) => {
     const mobileMode = isMobileMode();
     const [expandedIndex, setExpandedIndex] = useState(null);
@@ -85,7 +86,8 @@ const MenuComponent = ({
                     {
                         [styles.left]: place === 'left',
                         [styles.right]: place === 'right',
-                        [styles.mobileModeMenu]: mobileMode
+                        [styles.mobileModeMenu]: mobileMode,
+                        [styles.menuOpen]: isOpen
                     }
                 )}
                 ref={componentRef}
@@ -101,7 +103,8 @@ MenuComponent.propTypes = {
     children: PropTypes.node,
     className: PropTypes.string,
     componentRef: PropTypes.func,
-    place: PropTypes.oneOf(['left', 'right'])
+    place: PropTypes.oneOf(['left', 'right']),
+    isOpen: PropTypes.bool
 };
 
 const Submenu = ({children, className, place, ...props}) => (

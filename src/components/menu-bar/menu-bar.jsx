@@ -485,8 +485,7 @@ class MenuBar extends React.Component {
             '02Engine': { name: '02Engine', url: 'https://02engine.02studio.xyz/' },
             'AstraEditor': { name: 'AstraEditor', url: 'https://editors.astras.top/' },
             'Bilup': { name: 'Bilup', url: 'https://com.bilup.org/' },
-            'Gandi': { name: 'Gandi', url: 'https://getgandi.com/' },
-            'Kitten4': { name: 'Kitten4', url: 'https://www.codemao.cn/' }
+            'Gandi': { name: 'Gandi', url: 'https://getgandi.com/' }
         };
         return platforms[agentName] || { name: agentName.toLowerCase(), url: '' };
     }
@@ -497,21 +496,6 @@ class MenuBar extends React.Component {
                 const projectFiles = this.props.vm.saveProjectSb3DontZip();
                 const jsonData = projectFiles['project.json'];
                 const projectJson = JSON.parse(new TextDecoder().decode(jsonData));
-
-                if (agentName === 'Kitten4') {
-                    console.log('=== Kitten4 Conversion Debug ===');
-                    console.log('Project targets:', projectJson.targets ? projectJson.targets.length : 0);
-                    if (projectJson.targets && projectJson.targets[1]) {
-                        const target = projectJson.targets[1];
-                        console.log('Target name:', target.name);
-                        console.log('Blocks count:', Object.keys(target.blocks || {}).length);
-                        for (const [blockId, block] of Object.entries(target.blocks || {})) {
-                            console.log('Block', blockId, '- opcode:', block.opcode, '- inputs:', JSON.stringify(block.inputs));
-                        }
-                    }
-                    await this.convertToKitten4Format(projectJson, projectFiles);
-                    return;
-                }
 
                 if (!projectJson.meta) {
                     projectJson.meta = {};
@@ -1868,19 +1852,6 @@ class MenuBar extends React.Component {
                     severity: 'warning',
                     message: `舞台尺寸 (${stageWidth}x${stageHeight}) 与Scratch默认尺寸 (480x360) 不同`,
                     details: '在Scratch中舞台尺寸将被重置为默认值'
-                });
-            }
-        }
-
-        // Kitten4 extension detection - block all projects with extensions
-        if (targetPlatform === 'Kitten4') {
-            const hasExtensions = this.detectAnyExtensions();
-            if (hasExtensions) {
-                issues.push({
-                    type: 'extension',
-                    severity: 'error',
-                    message: '该项目包含扩展，不予转换',
-                    details: ''
                 });
             }
         }

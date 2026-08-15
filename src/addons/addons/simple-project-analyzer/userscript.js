@@ -343,20 +343,17 @@ export default async function ({ addon, msg, safeMsg, console }) {
     }
 
     getExtensionNameFromId(extensionId) {
-      const defaultExtensionNames = {
-        'music': 'Music',
-        'pen': 'Pen',
-        'videoSensing': 'Video Sensing',
-        'text2speech': 'Text to Speech',
-        'translate': 'Translate',
-        'makeymakey': 'Makey Makey',
-        'microbit': 'micro:bit',
-        'ev3': 'LEGO EV3',
-        'wedo2': 'LEGO WeDo 2.0',
-        'boost': 'LEGO BOOST'
-      };
-      
-      return defaultExtensionNames[extensionId] || extensionId;
+      // 驼峰转连字符，匹配 addons-l10n 中的翻译键(如 videoSensing -> video-sensing)
+      const key = `extension-${String(extensionId)
+        .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+        .toLowerCase()}`;
+      const translated = msg(key);
+      // 没有对应翻译时 msg 会返回 "simple-project-analyzer/extension-xxx" 原始 key，
+      // 此时才回退使用扩展 id
+      if (translated && !translated.startsWith('simple-project-analyzer/')) {
+        return translated;
+      }
+      return extensionId;
     }
 
     analyzeExtensions(analysis, projectData) {

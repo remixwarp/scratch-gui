@@ -57,8 +57,7 @@ const platforms = [
     {id: '02Engine', name: '02Engine', url: 'https://02engine.02studio.xyz/', extension: '.sb3'},
     {id: 'AstraEditor', name: 'AstraEditor', url: 'https://editors.astras.top/', extension: '.sb3'},
     {id: 'Bilup', name: 'Bilup', url: 'https://com.bilup.org/', extension: '.sb3'},
-    {id: 'Gandi', name: 'Gandi', url: 'https://getgandi.com/', extension: '.sb3'},
-    {id: 'Kitten4', name: 'Kitten4', url: 'https://www.codemao.cn/', extension: '.bcm4'}
+    {id: 'Gandi', name: 'Gandi', url: 'https://getgandi.com/', extension: '.sb3'}
 ];
 
 class CompatibilityModal extends React.Component {
@@ -185,13 +184,6 @@ class CompatibilityModal extends React.Component {
                                 <span className={styles.linkText}>{selectedPlatformInfo.name}</span>
                             </a>
                         </div>
-                    </div>
-                )}
-
-                {selectedPlatform === 'Kitten4' && (
-                    <div className={styles.kitten4Warning}>
-                        <AlertTriangle size={16} className={styles.warningIconSmall} />
-                        <span>测试版：不稳定，不要过度依赖此工具</span>
                     </div>
                 )}
 

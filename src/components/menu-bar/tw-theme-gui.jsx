@@ -46,7 +46,7 @@ ThemeMenuItem.propTypes = {
     id: PropTypes.string,
     isSelected: PropTypes.bool,
     onClick: PropTypes.func,
-    name: PropTypes.string
+    name: PropTypes.object
 };
 
 const GuiThemeMenu = ({

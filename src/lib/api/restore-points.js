@@ -414,7 +414,9 @@ const createRestorePoint = (
 
             /** @type {Metadata} */
             const metadata = {
-                title,
+                // Normalize blank titles (e.g. the initial ' ' project title)
+                // so they never end up stored as whitespace-only strings.
+                title: (typeof title === 'string' && title.trim()) ? title.trim() : '?',
                 created: Math.round(Date.now() / 1000),
                 type,
                 projectSize: jsonData.byteLength,
@@ -500,7 +502,7 @@ const exportRestorePoint = async id => {
         const request = metadataStore.get(id);
         request.onsuccess = () => {
             if (request.result) {
-                resolve(request.result);
+                resolve(parseMetadata(request.result));
             } else {
                 reject(new Error(`Restore point metadata ${id} does not exist`));
             }
