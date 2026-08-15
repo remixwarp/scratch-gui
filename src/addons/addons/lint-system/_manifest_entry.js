@@ -7,6 +7,6 @@ const manifest = {
     userstyles: [{url: 'userstyle.css'}],
     info: [{text: '实时检查代码规范问题，在积木上显示高亮标记，提供 Quick Fix 和重构建议。', id: 'ls-usage'}],
     tags: ['editor', 'lint', 'remixwarp', 'new'],
-    enabledByDefault: true
+    enabledByDefault: false
 };
 export default manifest;

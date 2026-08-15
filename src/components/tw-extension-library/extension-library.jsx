@@ -147,7 +147,10 @@ const ExtensionCard = ({item, onSelect, isLoaded}) => {
                         {' '}
                         {item.credits.map((credit, index) => (
                             <React.Fragment key={index}>
-                                {credit}{index < item.credits.length - 1 ? ', ' : null}
+                                {typeof credit === 'object' && credit !== null && !React.isValidElement(credit)
+                                    ? (credit.name || JSON.stringify(credit))
+                                    : credit
+                                }{index < item.credits.length - 1 ? ', ' : null}
                             </React.Fragment>
                         ))}
                     </span>

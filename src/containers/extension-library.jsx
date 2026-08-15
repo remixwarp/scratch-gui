@@ -755,7 +755,7 @@ const fetchLibrary = async () => {
                         extensionURL: ext.download_url,
                         iconURL: ext.cover_url || emptyBanner,
                         tags: ['cy-scr-ext-hub'],
-                        credits: ext.author_name ? [{ name: ext.author_name }] : [],
+                        credits: ext.author_name ? [ext.author_name] : [],
                         incompatibleWithScratch: true,
                         featured: true
                     }));
@@ -978,7 +978,7 @@ const fetchLibrary = async () => {
                             extensionURL: ext.download_url,
                             iconURL: ext.cover_url || emptyBanner,
                             tags: ['cy-scr-ext-hub'],
-                            credits: ext.author_name ? [{ name: ext.author_name }] : [],
+                            credits: ext.author_name ? [ext.author_name] : [],
                             incompatibleWithScratch: true,
                             featured: true
                         }));

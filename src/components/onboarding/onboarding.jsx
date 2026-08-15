@@ -291,6 +291,11 @@ class OnboardingTutorial extends Component {
     }
 
     openWindow () {
+        // 如果用户已经关闭过教程，不再重新打开
+        if (localStorage.getItem('mw:has-seen-onboarding') === 'true') {
+            return;
+        }
+
         if (this.onboardingWindow) {
             try {
                 this.onboardingWindow.show();
@@ -440,6 +445,7 @@ class OnboardingTutorial extends Component {
     }
 
     handleClose = () => {
+        localStorage.setItem('mw:has-seen-onboarding', 'true');
         this.props.onClose();
     };
 
