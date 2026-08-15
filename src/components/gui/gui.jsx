@@ -58,7 +58,7 @@ import SuperRefactorModal from '../../containers/super-refactor-modal.jsx';
 import CompatibilityModal from '../../containers/tv-compatibility-modal.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
-import CustomGalleryModal from '../../components/custom-gallery-modal/custom-gallery-modal.jsx';
+import CustomGalleryModal from '../../containers/custom-gallery-modal.jsx';
 import MWAssetsModal from '../../components/mw-assets-modal/assets-modal.jsx';
 import MWHelpModal from '../../components/mw-help-modal/help-modal.jsx';
 import MWProjectMetadataModal from '../../containers/mw-project-metadata-modal.jsx';
@@ -99,12 +99,10 @@ import {showOnboarding} from '../../reducers/onboarding';
 import {
     openGitModal,
     openAIAgentModal,
-    openCustomGalleryModal,
     openAssetsModal,
     openHelp,
     openProjectMetadataModal,
     openDebuggerModal,
-    closeCustomGalleryModal,
     closeAssetsModal,
     closeHelpModal,
     closeProjectMetadataModal,
@@ -401,6 +399,7 @@ const GUIComponent = props => {
         onClickLogo,
         onExtensionButtonClick,
         onOpenCustomExtensionModal,
+        onOpenCustomGalleryModal,
         onProjectTelemetryEvent,
         onRequestCloseBackdropLibrary,
         onRequestCloseCostumeLibrary,
@@ -1390,7 +1389,7 @@ const GUIComponent = props => {
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
             {gitModalVisible && <TWGitModal />}
-            {customGalleryModalVisible && <CustomGalleryModal isRtl={isRtl} />}
+            {customGalleryModalVisible && <CustomGalleryModal />}
             {assetsModalVisible && <MWAssetsModal isRtl={isRtl} />}
             {helpModalVisible && <MWHelpModal isRtl={isRtl} entryId={helpEntry} />}
             {projectMetadataModalVisible && <MWProjectMetadataModal isRtl={isRtl} />}
@@ -1890,7 +1889,7 @@ const GUIComponent = props => {
                             visible={extensionLibraryVisible}
                             onRequestClose={onRequestCloseExtensionLibrary}
                             onOpenCustomExtensionModal={onOpenCustomExtensionModal}
-                            onOpenCustomGalleryModal={openCustomGalleryModal}
+                            onOpenCustomGalleryModal={onOpenCustomGalleryModal}
                             onEnableProcedureReturns={handleEnableProcedureReturns}
                             onActivateBlocksTab={() => {}}
                             onCategorySelected={handleCategorySelected}
@@ -1967,6 +1966,7 @@ GUIComponent.propTypes = {
     onCloseAccountNav: PropTypes.func,
     onExtensionButtonClick: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
+    onOpenCustomGalleryModal: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenExtensionLibrary: PropTypes.func,
     onOpenExtensionManagerModal: PropTypes.func,

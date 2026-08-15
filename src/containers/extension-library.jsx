@@ -365,6 +365,10 @@ const fetchLibrary = async () => {
                     return [];
                 }
                 const mistiumData = await mistiumRes.json();
+                const fixMistiumIcon = (url) => (url || '').replace(
+                    'https://rw-extensions.pages.dev/mistium/',
+                    'https://extensions.mistium.com/'
+                );
                 return mistiumData.extensions
                     .map(extension => ({
                         name: extension.name,
@@ -373,7 +377,7 @@ const fetchLibrary = async () => {
                         descriptionTranslations: extension.descriptionTranslations || {},
                         extensionId: extension.extensionId,
                         extensionURL: extension.extensionURL,
-                        iconURL: extension.iconURL || emptyBanner,
+                        iconURL: fixMistiumIcon(extension.iconURL) || emptyBanner,
                         tags: ['mistium'],
                         credits: (extension.credits || []).map(credit => typeof credit === 'object' && credit.name ? credit.name : credit),
                         docsURI: null,
@@ -383,65 +387,6 @@ const fetchLibrary = async () => {
                     }));
             } catch (error) {
                 console.warn('Failed to load Mistium extensions:', error);
-                return [];
-            }
-        }),
-        fetchAndAdd('sharkpools', async () => {
-            try {
-                const sharkpoolsRes = await fetch('https://sharkpools-extensions.vercel.app/Gallery%20Files/Extension-Keys.json');
-                if (!sharkpoolsRes.ok) {
-                    console.warn(`SharkPool extensions: HTTP status ${sharkpoolsRes.status}`);
-                    return [];
-                }
-                const sharkpoolsData = await sharkpoolsRes.json();
-                const rawExtensions = sharkpoolsData.extensions;
-                let normalizedExtensions = [];
-                if (Array.isArray(rawExtensions)) {
-                    normalizedExtensions = rawExtensions;
-                } else if (rawExtensions && typeof rawExtensions === 'object') {
-                    normalizedExtensions = Object.entries(rawExtensions).map(
-                        ([key, value]) => ({ id: value.id ?? key, name: value.name ?? key, ...value })
-                    );
-                } else {
-                    console.warn('[SharkPools] Invalid extensions format:', rawExtensions);
-                    return [];
-                }
-                return normalizedExtensions
-                    .filter(ext => !ext.isDeprecated)
-                    .map(extension => ({
-                        name: extension.name,
-                        nameTranslations: extension.nameTranslations || {},
-                        description: extension.description || extension.desc,
-                        descriptionTranslations: extension.descriptionTranslations || {},
-                        extensionId: extension.id,
-                        extensionURL: `https://sharkpools-extensions.vercel.app/extension-code/${extension.url}`,
-                        iconURL: extension.banner ? `https://sharkpools-extensions.vercel.app/extension-thumbs/${extension.banner}` : emptyBanner,
-                        tags: ['sharkpools'],
-                        credits: [
-                            ...(extension.by || []),
-                            ...(extension.original || (extension.creator ? [{ name: extension.creator }] : []))
-                        ].map(credit => {
-                            if (credit.link) {
-                                return (
-                                    <a
-                                        href={credit.link}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        key={credit.name}
-                                    >
-                                        {credit.name}
-                                    </a>
-                                );
-                            }
-                            return credit.name;
-                        }),
-                        docsURI: null,
-                        samples: null,
-                        incompatibleWithScratch: true,
-                        featured: true
-                    }));
-            } catch (error) {
-                console.warn('Failed to load SharkPools extensions:', error);
                 return [];
             }
         }),
@@ -461,6 +406,10 @@ const fetchLibrary = async () => {
                         console.warn('PenguinMod extensions: empty or invalid fallback data');
                         return [];
                     }
+                    const fixIconUrl = (url) => (url || '').replace(
+                        'https://rw-extensions.pages.dev/penguinmod/',
+                        'https://extensions.penguinmod.com/extensions/'
+                    );
                     return rawExts.map(extension => ({
                         name: extension.name,
                         nameTranslations: extension.nameTranslations || {},
@@ -468,7 +417,7 @@ const fetchLibrary = async () => {
                         descriptionTranslations: extension.descriptionTranslations || {},
                         extensionId: extension.extensionId,
                         extensionURL: extension.onlineURL || extension.extensionURL,
-                        iconURL: extension.iconURL,
+                        iconURL: fixIconUrl(extension.iconURL),
                         tags: ['penguinmod'],
                         credits: Array.isArray(extension.credits)
                             ? extension.credits.map(c => (typeof c === 'string' ? c : c.name))
@@ -485,6 +434,10 @@ const fetchLibrary = async () => {
                     console.warn('PenguinMod extensions: empty or invalid data from primary source');
                     return [];
                 }
+                const fixIconUrl = (url) => (url || '').replace(
+                    'https://rw-extensions.pages.dev/penguinmod/',
+                    'https://extensions.penguinmod.com/extensions/'
+                );
                 return rawExts.map(extension => ({
                     name: extension.name,
                     nameTranslations: extension.nameTranslations || {},
@@ -492,7 +445,7 @@ const fetchLibrary = async () => {
                     descriptionTranslations: extension.descriptionTranslations || {},
                     extensionId: extension.extensionId,
                     extensionURL: extension.onlineURL || extension.extensionURL,
-                    iconURL: extension.iconURL,
+                    iconURL: fixIconUrl(extension.iconURL),
                     tags: ['penguinmod'],
                     credits: Array.isArray(extension.credits)
                         ? extension.credits.map(c => (typeof c === 'string' ? c : c.name))
@@ -601,18 +554,18 @@ const fetchLibrary = async () => {
         fetchAndAdd('02engine', async () => {
             return await fetchWithFallback(
                 '02engine',
-                'https://raw.githubusercontent.com/DDguan2010/extensions/main/generated-metadata/extensions-v0.json',
                 'https://rw-extensions.pages.dev/02engine/02engine-extensions/extensions.json',
+                'https://raw.githubusercontent.com/DDguan2010/extensions/main/generated-metadata/extensions-v0.json',
                 data => data.extensions.map(extension => ({
                     name: extension.name,
                     nameTranslations: extension.nameTranslations || {},
                     description: extension.description,
                     descriptionTranslations: extension.descriptionTranslations || {},
                     extensionId: extension.id,
-                    extensionURL: `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.slug}.js`,
+                    extensionURL: `https://rw-extensions.pages.dev/02engine/02engine-extensions/extension/${extension.slug}.js`,
                     iconURL: extension.image
-                        ? `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.image}`
-                        : `https://rw-extensions.pages.dev/02engine/02engine-extensions/image/${encodeURIComponent(extension.image || '')}`,
+                        ? `https://rw-extensions.pages.dev/02engine/02engine-extensions/image/${encodeURIComponent(extension.image)}`
+                        : `https://raw.githubusercontent.com/DDguan2010/extensions/main/${extension.image || ''}`,
                     tags: ['02engine'],
                     credits: (extension.by || []).map(credit => {
                         if (credit.link) {
@@ -630,7 +583,7 @@ const fetchLibrary = async () => {
                         return credit.name;
                     }),
                     docsURI: extension.docs
-                        ? `https://raw.githubusercontent.com/DDguan2010/extensions/main/doc/${encodeURIComponent(extension.slug)}/index.html`
+                        ? `https://rw-extensions.pages.dev/02engine/02engine-extensions/doc/${encodeURIComponent(extension.slug)}/index.html`
                         : null,
                     samples: extension.samples ? extension.samples.map(sample => {
                         const sampleUrl = `https://rw-extensions.pages.dev/02engine/02engine-extensions/samples/${encodeURIComponent(sample)}.sb3`;

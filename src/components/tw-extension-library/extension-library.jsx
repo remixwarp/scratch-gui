@@ -145,6 +145,7 @@ const ExtensionCard = ({item, onSelect, isLoaded}) => {
                     src={icon}
                     alt=""
                     draggable={false}
+                    crossOrigin="anonymous"
                 />
             ) : <div className={styles.cardIcon} />}
             {item.insetIconURL ? (
@@ -153,6 +154,7 @@ const ExtensionCard = ({item, onSelect, isLoaded}) => {
                     src={item.insetIconURL}
                     alt=""
                     draggable={false}
+                    crossOrigin="anonymous"
                 />
             ) : null}
             <div className={styles.cardText}>
