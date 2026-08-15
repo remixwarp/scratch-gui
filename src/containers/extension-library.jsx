@@ -365,10 +365,6 @@ const fetchLibrary = async () => {
                     return [];
                 }
                 const mistiumData = await mistiumRes.json();
-                const fixMistiumIcon = (url) => (url || '').replace(
-                    'https://rw-extensions.pages.dev/mistium/',
-                    'https://extensions.mistium.com/'
-                );
                 return mistiumData.extensions
                     .map(extension => ({
                         name: extension.name,
@@ -377,7 +373,7 @@ const fetchLibrary = async () => {
                         descriptionTranslations: extension.descriptionTranslations || {},
                         extensionId: extension.extensionId,
                         extensionURL: extension.extensionURL,
-                        iconURL: fixMistiumIcon(extension.iconURL) || emptyBanner,
+                        iconURL: extension.iconURL || emptyBanner,
                         tags: ['mistium'],
                         credits: (extension.credits || []).map(credit => typeof credit === 'object' && credit.name ? credit.name : credit),
                         docsURI: null,
@@ -406,10 +402,6 @@ const fetchLibrary = async () => {
                         console.warn('PenguinMod extensions: empty or invalid fallback data');
                         return [];
                     }
-                    const fixIconUrl = (url) => (url || '').replace(
-                        'https://rw-extensions.pages.dev/penguinmod/',
-                        'https://extensions.penguinmod.com/extensions/'
-                    );
                     return rawExts.map(extension => ({
                         name: extension.name,
                         nameTranslations: extension.nameTranslations || {},
@@ -417,7 +409,7 @@ const fetchLibrary = async () => {
                         descriptionTranslations: extension.descriptionTranslations || {},
                         extensionId: extension.extensionId,
                         extensionURL: extension.onlineURL || extension.extensionURL,
-                        iconURL: fixIconUrl(extension.iconURL),
+                        iconURL: extension.iconURL,
                         tags: ['penguinmod'],
                         credits: Array.isArray(extension.credits)
                             ? extension.credits.map(c => (typeof c === 'string' ? c : c.name))
@@ -434,10 +426,6 @@ const fetchLibrary = async () => {
                     console.warn('PenguinMod extensions: empty or invalid data from primary source');
                     return [];
                 }
-                const fixIconUrl = (url) => (url || '').replace(
-                    'https://rw-extensions.pages.dev/penguinmod/',
-                    'https://extensions.penguinmod.com/extensions/'
-                );
                 return rawExts.map(extension => ({
                     name: extension.name,
                     nameTranslations: extension.nameTranslations || {},
@@ -445,7 +433,7 @@ const fetchLibrary = async () => {
                     descriptionTranslations: extension.descriptionTranslations || {},
                     extensionId: extension.extensionId,
                     extensionURL: extension.onlineURL || extension.extensionURL,
-                    iconURL: fixIconUrl(extension.iconURL),
+                    iconURL: extension.iconURL,
                     tags: ['penguinmod'],
                     credits: Array.isArray(extension.credits)
                         ? extension.credits.map(c => (typeof c === 'string' ? c : c.name))
