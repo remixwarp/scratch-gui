@@ -166,10 +166,12 @@ export default function (vm) {
         return [['', '']];
     };
 
-    ScratchBlocks.Blocks.assets_menu.init = function () {
-        const json = jsonForMenuBlock('ASSET', assetsMenu, assetsColors, []);
-        this.jsonInit(json);
-    };
+    if (ScratchBlocks.Blocks.assets_menu) {
+        ScratchBlocks.Blocks.assets_menu.init = function () {
+            const json = jsonForMenuBlock('ASSET', assetsMenu, assetsColors, []);
+            this.jsonInit(json);
+        };
+    }
 
     ScratchBlocks.Blocks.sound_sounds_menu.init = function () {
         const json = jsonForMenuBlock('SOUND_MENU', soundsMenu, soundColors, []);
