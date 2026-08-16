@@ -31,7 +31,8 @@ import {
     closeExtensionLibrary,
     openSoundRecorder,
     openConnectionModal,
-    openCustomExtensionModal
+    openCustomExtensionModal,
+    openAssetsModal
 } from '../reducers/modals';
 import {activateCustomProcedures, deactivateCustomProcedures} from '../reducers/custom-procedures';
 import {setConnectionModalExtensionId} from '../reducers/connection-modal';
@@ -392,6 +393,9 @@ class Blocks extends React.Component {
         toolboxWorkspace.registerButtonCallback('MAKE_A_PROCEDURE', procButtonCallback);
         toolboxWorkspace.registerButtonCallback('EXTENSION_CALLBACK', block => {
             this.props.vm.handleExtensionButtonPress(block.callbackData_);
+        });
+        toolboxWorkspace.registerButtonCallback('OPEN_ASSETS_MODAL', () => {
+            this.props.onOpenAssetsModal();
         });
         toolboxWorkspace.registerButtonCallback('OPEN_EXTENSION_DOCS', block => {
             const docsURI = block.callbackData_;
@@ -2165,6 +2169,7 @@ const mapDispatchToProps = dispatch => ({
         console.log('onActivateBlocksTab called');
         dispatch(activateTab(BLOCKS_TAB_INDEX));
     },
+    onOpenAssetsModal: () => dispatch(openAssetsModal()),
     updateToolboxState: toolboxXML => {
         dispatch(updateToolbox(toolboxXML));
     },

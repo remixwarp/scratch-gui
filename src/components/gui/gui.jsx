@@ -59,7 +59,7 @@ import CompatibilityModal from '../../containers/tv-compatibility-modal.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
 import CustomGalleryModal from '../../containers/custom-gallery-modal.jsx';
-import MWAssetsModal from '../../components/mw-assets-modal/assets-modal.jsx';
+import MWAssetsModal from '../../containers/mw-assets-modal.jsx';
 import MWHelpModal from '../../components/mw-help-modal/help-modal.jsx';
 import MWProjectMetadataModal from '../../containers/mw-project-metadata-modal.jsx';
 import TWDebugger from '../../containers/tw-debugger.jsx';

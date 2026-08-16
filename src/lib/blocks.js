@@ -156,6 +156,21 @@ export default function (vm) {
 
     const eventColors = ScratchBlocks.Colours.event;
 
+    const assetsColors = ScratchBlocks.Colours.assets;
+
+    const assetsMenu = function () {
+        const assetManager = vm.runtime && vm.runtime.assetManager;
+        if (assetManager && assetManager.assets && assetManager.assets.length > 0) {
+            return assetManager.assets.map(entry => [entry.name, entry.name]);
+        }
+        return [['', '']];
+    };
+
+    ScratchBlocks.Blocks.assets_menu.init = function () {
+        const json = jsonForMenuBlock('ASSET', assetsMenu, assetsColors, []);
+        this.jsonInit(json);
+    };
+
     ScratchBlocks.Blocks.sound_sounds_menu.init = function () {
         const json = jsonForMenuBlock('SOUND_MENU', soundsMenu, soundColors, []);
         this.jsonInit(json);
