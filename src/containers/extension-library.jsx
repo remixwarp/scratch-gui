@@ -1187,10 +1187,18 @@ class ExtensionLibrary extends React.PureComponent {
 
         const vm = this.props.vm;
         const isLoaded = item => {
-            if (!vm || !vm.extensionManager || !item || !item.extensionId) {
+            if (!vm || !vm.extensionManager || !item) {
                 return false;
             }
-            return vm.extensionManager.isExtensionLoaded(item.extensionId);
+            // 先按 extensionId 检查（内置扩展和 ID 匹配的扩展）
+            if (item.extensionId && vm.extensionManager.isExtensionLoaded(item.extensionId)) {
+                return true;
+            }
+            // 再按 extensionURL 检查（部分外部扩展的 ID 可能不匹配其自身 getInfo().id）
+            if (item.extensionURL && vm.extensionManager.isExtensionURLLoaded(item.extensionURL)) {
+                return true;
+            }
+            return false;
         };
 
         // 已注册的自定义扩展库像内置源一样出现在左侧栏与分组中
