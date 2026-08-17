@@ -79,6 +79,18 @@ const blockColors = {
         tertiary: '#24827F',
         quaternary: '#1B615F'
     },
+    strings: {
+        primary: '#00A6A6',
+        secondary: '#009292',
+        tertiary: '#007A7A',
+        quaternary: '#007A7A'
+    },
+    assets: {
+        primary: '#6E7A8A',
+        secondary: '#5E6977',
+        tertiary: '#4F5866',
+        quaternary: '#4F5866'
+    },
     text: '#FFFFFF',
     blackText: '#575E75',
     textFieldText: '#575E75',

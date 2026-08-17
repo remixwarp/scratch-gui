@@ -81,6 +81,18 @@ const blockColors = {
         tertiary: '#29b2a2',
         quaternary: '#9ee2db'
     },
+    strings: {
+        primary: '#66D4D4',
+        secondary: '#A3E6E6',
+        tertiary: '#007A7A',
+        quaternary: '#CCF2F2'
+    },
+    assets: {
+        primary: '#A4B0BF',
+        secondary: '#C8D0DB',
+        tertiary: '#4F5866',
+        quaternary: '#E0E5EB'
+    },
     text: '#000000',
     textFieldText: '#000000', // Text inside of inputs e.g. 90 in [point in direction (90)]
     toolboxText: '#000000', // Toolbox text, color picker text (used to be #575E75)

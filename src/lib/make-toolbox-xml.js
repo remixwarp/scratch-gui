@@ -610,6 +610,9 @@ const sensing = function (isInitialSetup, isStage, targetId, colors, vanilla) {
         ${blockSeparator}
         <block type="sensing_online"/>
         <block type="sensing_username"/>
+        ${blockSeparator}
+        <block type="sensing_stagewidth" id="sensing_stagewidth"/>
+        <block type="sensing_stageheight" id="sensing_stageheight"/>
         ${categorySeparator}
     </category>
     `;
@@ -729,6 +732,96 @@ const operators = function (isInitialSetup, isStage, targetId, colors, vanilla) 
         <block type="operator_or"/>
         <block type="operator_not"/>
         ${blockSeparator}
+        <block type="operator_mod">
+            <value name="NUM1">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+            <value name="NUM2">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+        </block>
+        <block type="operator_round">
+            <value name="NUM">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+        </block>
+        ${blockSeparator}
+        <block type="operator_min">
+            <value name="NUM1">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+            <value name="NUM2">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+        </block>
+        <block type="operator_max">
+            <value name="NUM1">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+            <value name="NUM2">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+        </block>
+        <block type="operator_clamp">
+            <value name="NUM">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+            <value name="MIN">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+            <value name="MAX">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+        </block>
+        ${blockSeparator}
+        <block type="operator_mathop">
+            <value name="NUM">
+                <shadow type="math_number">
+                    <field name="NUM"/>
+                </shadow>
+            </value>
+        </block>
+        ${blockSeparator}
+        ${vanilla ? '' : `
+        <label text="${translate("UNSUPPORT_TW_1","Blocks below do not support TurboWarp")}"></label>
+        <label text="${translate("UNSUPPORT_TW_2","And we highly discourage using them")}"></label>
+        <label text="${translate("UNSUPPORT_TW_3","They're keeping here only for compatibility with MistWarp")}"></label>
+        <block type="operator_pi" id="operator_pi"></block>
+        `}
+        ${categorySeparator}
+    </category>
+    `;
+};
+
+const strings = function (isInitialSetup, isStage, targetId, colors, vanilla) {
+    const apple = translate('OPERATORS_JOIN_APPLE', 'apple');
+    const letter = translate('OPERATORS_LETTEROF_APPLE', 'a');
+    return `
+    <category
+        name="%{BKY_CATEGORY_STRINGS}"
+        id="strings"
+        colour="${colors.primary}"
+        secondaryColour="${colors.tertiary}">
         ${isInitialSetup ? '' : `
             <block type="operator_join">
                 <value name="STRING1">
@@ -738,7 +831,7 @@ const operators = function (isInitialSetup, isStage, targetId, colors, vanilla) 
                 </value>
                 <value name="STRING2">
                     <shadow type="text">
-                        <field name="TEXT">${banana}</field>
+                        <field name="TEXT">${apple}</field>
                     </shadow>
                 </value>
             </block>
@@ -775,41 +868,150 @@ const operators = function (isInitialSetup, isStage, targetId, colors, vanilla) 
             </block>
         `}
         ${blockSeparator}
-        <block type="operator_mod">
-            <value name="NUM1">
-                <shadow type="math_number">
-                    <field name="NUM"/>
+        <block type="operator_letters_of">
+            <value name="LETTER1">
+                <shadow type="math_whole_number">
+                    <field name="NUM">1</field>
                 </shadow>
             </value>
-            <value name="NUM2">
-                <shadow type="math_number">
-                    <field name="NUM"/>
+            <value name="LETTER2">
+                <shadow type="math_whole_number">
+                    <field name="NUM">3</field>
+                </shadow>
+            </value>
+            <value name="STRING">
+                <shadow type="text">
+                    <field name="TEXT">${apple}</field>
                 </shadow>
             </value>
         </block>
-        <block type="operator_round">
-            <value name="NUM">
-                <shadow type="math_number">
-                    <field name="NUM"/>
+        <block type="operator_index_of">
+            <value name="SUBSTRING">
+                <shadow type="text">
+                    <field name="TEXT">${letter}</field>
+                </shadow>
+            </value>
+            <value name="STRING">
+                <shadow type="text">
+                    <field name="TEXT">${apple}</field>
                 </shadow>
             </value>
         </block>
         ${blockSeparator}
-        <block type="operator_mathop">
-            <value name="NUM">
-                <shadow type="math_number">
-                    <field name="NUM"/>
+        <block type="operator_replace">
+            <value name="SUBSTRING">
+                <shadow type="text">
+                    <field name="TEXT">${letter}</field>
+                </shadow>
+            </value>
+            <value name="STRING">
+                <shadow type="text">
+                    <field name="TEXT">${apple}</field>
+                </shadow>
+            </value>
+            <value name="REPLACE">
+                <shadow type="text">
+                    <field name="TEXT">${letter}</field>
+                </shadow>
+            </value>
+        </block>
+        <block type="operator_repeat">
+            <value name="STRING">
+                <shadow type="text">
+                    <field name="TEXT">${apple}</field>
+                </shadow>
+            </value>
+            <value name="REPEAT">
+                <shadow type="math_whole_number">
+                    <field name="NUM">3</field>
                 </shadow>
             </value>
         </block>
         ${blockSeparator}
-        ${vanilla ? '' : `
-        <label text="${translate("UNSUPPORT_TW_1","Blocks below do not support TurboWarp")}"></label>
-        <label text="${translate("UNSUPPORT_TW_2","And we highly discourage using them")}"></label>
-        <label text="${translate("UNSUPPORT_TW_3","They're keeping here only for compatibility with MistWarp")}"></label>
-        <block type="operator_pi" id="operator_pi"></block>
-        <block type="operator_newline" id="operator_newline"></block>
-        `}
+        <block type="operator_change_case">
+            <value name="STRING">
+                <shadow type="text">
+                    <field name="TEXT">${apple}</field>
+                </shadow>
+            </value>
+        </block>
+        <block type="operator_trim">
+            <value name="STRING">
+                <shadow type="text">
+                    <field name="TEXT">${apple}</field>
+                </shadow>
+            </value>
+        </block>
+        <block type="operator_newline" id="operator_newline"/>
+        ${categorySeparator}
+    </category>
+    `;
+};
+
+const assets = function (isInitialSetup, isStage, targetId, colors) {
+    return `
+    <category
+        name="%{BKY_CATEGORY_ASSETS}"
+        id="assets"
+        colour="${colors.primary}"
+        secondaryColour="${colors.tertiary}">
+        <block type="assets_load">
+            <value name="ASSET">
+                <shadow type="assets_menu"/>
+            </value>
+        </block>
+        <block type="assets_unload">
+            <value name="ASSET">
+                <shadow type="assets_menu"/>
+            </value>
+        </block>
+        <block type="assets_unloadall"/>
+        ${blockSeparator}
+        <block type="assets_get">
+            <value name="ASSET">
+                <shadow type="assets_menu"/>
+            </value>
+        </block>
+        <block type="assets_byte">
+            <value name="INDEX">
+                <shadow type="math_whole_number">
+                    <field name="NUM">1</field>
+                </shadow>
+            </value>
+            <value name="ASSET">
+                <shadow type="assets_menu"/>
+            </value>
+        </block>
+        <block type="assets_check">
+            <value name="ASSET">
+                <shadow type="assets_menu"/>
+            </value>
+        </block>
+        ${blockSeparator}
+        <block type="assets_set">
+            <value name="ASSET">
+                <shadow type="assets_menu"/>
+            </value>
+            <value name="VALUE">
+                <shadow type="text">
+                    <field name="TEXT"/>
+                </shadow>
+            </value>
+        </block>
+        <block type="assets_delete">
+            <value name="ASSET">
+                <shadow type="assets_menu"/>
+            </value>
+        </block>
+        ${blockSeparator}
+        <block type="assets_allnames"/>
+        <block type="assets_infolder">
+            <value name="FOLDER">
+                <shadow type="text">
+                    <field name="TEXT"/>
+                </shadow>
+            </value>
+        </block>
         ${categorySeparator}
     </category>
     `;
@@ -895,6 +1097,8 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
     const controlXML = moveCategory('control') || control(isInitialSetup, isStage, targetId, colors.control, vanilla);
     const sensingXML = moveCategory('sensing') || sensing(isInitialSetup, isStage, targetId, colors.sensing, vanilla);
     const operatorsXML = moveCategory('operators') || operators(isInitialSetup, isStage, targetId, colors.operators, vanilla);
+    const stringsXML = moveCategory('strings') || strings(isInitialSetup, isStage, targetId, colors.strings, vanilla);
+    const assetsXML = moveCategory('assets') || assets(isInitialSetup, isStage, targetId, colors.assets);
     const variablesXML = moveCategory('data') || variables(isInitialSetup, isStage, targetId, colors.data);
     const myBlocksXML = moveCategory('procedures') || myBlocks(isInitialSetup, isStage, targetId, colors.more);
 
@@ -914,6 +1118,8 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         controlXML, gap,
         sensingXML, gap,
         operatorsXML, gap,
+        stringsXML, gap,
+        assetsXML, gap,
         variablesXML, gap,
         myBlocksXML
     ];
