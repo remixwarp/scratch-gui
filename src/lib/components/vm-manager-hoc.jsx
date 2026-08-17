@@ -44,7 +44,6 @@ const vmManagerHOC = function (WrappedComponent) {
             if (!this.props.vm.initialized) {
                 window.vm = this.props.vm;
 
-                this.installGitProjectFileHooks();
                 try {
                     this.audioEngine = new AudioEngine();
                     this.props.vm.attachAudioEngine(this.audioEngine);
@@ -72,67 +71,6 @@ const vmManagerHOC = function (WrappedComponent) {
             if (!this.props.isPlayerOnly && !this.props.isStarted) {
                 this.props.vm.start();
             }
-        }
-
-        installGitProjectFileHooks () {
-            const vm = this.props.vm;
-            if (vm._mwGit_hooksInstalled) return;
-            vm._mwGit_hooksInstalled = true;
-
-            const originalSaveProjectZip = vm._saveProjectZip;
-            vm._saveProjectZip = (options = {}) => {
-                const zip = originalSaveProjectZip.call(vm, options);
-                zip.file('git.json', JSON.stringify(BrowserGit.exportRepoToGitJsonStringSync()));
-                return zip;
-            };
-
-            const originalLoadProject = vm.loadProject;
-            vm.loadProject = async (data, opts = {}) => {
-                // 先执行项目加载（最优先级），git.json 提取放到后面空闲时处理
-                // 避免两个 JSZip.loadAsync 并行竞争 CPU/内存，大项目显著提升加载速度
-                const result = await originalLoadProject.call(vm, data);
-
-                // 调用方显式跳过 git 导入时直接返回
-                if (opts && opts.skipGitImport) {
-                    return result;
-                }
-
-                // 在浏览器空闲时异步提取和导入 git.json，不阻塞项目加载完成信号
-                const scheduleIdle = typeof requestIdleCallback !== 'undefined'
-                    ? requestIdleCallback
-                    : cb => setTimeout(cb, 0);
-
-                scheduleIdle(async () => {
-                    try {
-                        let buffer = null;
-                        if (data instanceof ArrayBuffer) {
-                            buffer = data;
-                        } else if (ArrayBuffer.isView(data)) {
-                            buffer = data.buffer.slice(
-                                data.byteOffset,
-                                data.byteOffset + data.byteLength
-                            );
-                        } else if (typeof Blob !== 'undefined' && data instanceof Blob) {
-                            buffer = await data.arrayBuffer();
-                        }
-
-                        if (buffer) {
-                            const zip = await JSZip.loadAsync(buffer);
-                            const file = zip.file('git.json');
-                            if (file) {
-                                const gitJson = await file.async('string');
-                                if (gitJson) {
-                                    await BrowserGit.importRepoFromGitJsonString(gitJson);
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        // ignore
-                    }
-                }, {timeout: 5000});
-
-                return result;
-            };
         }
 
         loadProject () {

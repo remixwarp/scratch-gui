@@ -1,3 +1,7 @@
+[class*="sprite-selector_"] {
+    padding-bottom: 32px;
+}
+
 .sa-project-size-display {
     position: absolute;
     bottom: 0;

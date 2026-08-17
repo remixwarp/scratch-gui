@@ -146,14 +146,19 @@ const reducer = function (state, action) {
             state.loadingState === LoadingState.LOADING_VM_NEW_DEFAULT) {
             return Object.assign({}, state, {
                 loadingState: LoadingState.SHOWING_WITHOUT_ID,
-                projectId: defaultProjectId
+                projectId: defaultProjectId,
+                // 大作品已加载进 VM，原始项目数据（可能是几十 MB 的 ArrayBuffer）
+                // 不再需要，立即释放以降低老设备内存峰值，避免后续 OOM 崩溃。
+                projectData: null
             });
         }
         return state;
     case DONE_LOADING_VM_WITH_ID:
         if (state.loadingState === LoadingState.LOADING_VM_WITH_ID) {
             return Object.assign({}, state, {
-                loadingState: LoadingState.SHOWING_WITH_ID
+                loadingState: LoadingState.SHOWING_WITH_ID,
+                // 释放原始项目数据（见 DONE_LOADING_VM_WITHOUT_ID 注释）
+                projectData: null
             });
         }
         return state;

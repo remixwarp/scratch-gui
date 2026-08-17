@@ -51,35 +51,43 @@ const patchBlockly = () => {
     const BlockSvg = ScratchBlocks.BlockSvg;
     const oldUpdateColour = BlockSvg.prototype.updateColour;
     BlockSvg.prototype.updateColour = function (...args) {
-        if (!this.isInsertionMarker() && this.type === 'procedures_call') {
-            const block = this.procCode_ && vm && vm.runtime.getAddonBlock(this.procCode_);
-            if (block) {
-                const theme = window.ReduxStore &&
-                    window.ReduxStore.getState().scratchGui.theme.theme;
-                const colors = theme && theme.getBlockColors().addons;
-                if (colors) {
-                    this.colour_ = colors.primary;
-                    this.colourSecondary_ = colors.secondary;
-                    this.colourTertiary_ = colors.tertiary;
-                    this.colourQuaternary_ = colors.quaternary;
+        try {
+            if (!this.isInsertionMarker() && this.type === 'procedures_call') {
+                const block = this.procCode_ && vm && vm.runtime.getAddonBlock(this.procCode_);
+                if (block) {
+                    const theme = window.ReduxStore &&
+                        window.ReduxStore.getState().scratchGui.theme.theme;
+                    const colors = theme && theme.getBlockColors().addons;
+                    if (colors) {
+                        this.colour_ = colors.primary;
+                        this.colourSecondary_ = colors.secondary;
+                        this.colourTertiary_ = colors.tertiary;
+                        this.colourQuaternary_ = colors.quaternary;
+                    }
+                    this.customContextMenu = null;
                 }
-                this.customContextMenu = null;
             }
+            return oldUpdateColour.call(this, ...args);
+        } catch (e) {
+            return oldUpdateColour.call(this, ...args);
         }
-        return oldUpdateColour.call(this, ...args);
     };
 
     const originalCreateAllInputs = ScratchBlocks.Blocks.procedures_call.createAllInputs_;
     ScratchBlocks.Blocks.procedures_call.createAllInputs_ = function (...args) {
-        const block = this.procCode_ && vm && vm.runtime.getAddonBlock(this.procCode_);
-        if (block && block.displayName) {
-            const originalProcCode = this.procCode_;
-            this.procCode_ = block.displayName;
-            const ret = originalCreateAllInputs.call(this, ...args);
-            this.procCode_ = originalProcCode;
-            return ret;
+        try {
+            const block = this.procCode_ && vm && vm.runtime.getAddonBlock(this.procCode_);
+            if (block && block.displayName) {
+                const originalProcCode = this.procCode_;
+                this.procCode_ = block.displayName;
+                const ret = originalCreateAllInputs.call(this, ...args);
+                this.procCode_ = originalProcCode;
+                return ret;
+            }
+            return originalCreateAllInputs.call(this, ...args);
+        } catch (e) {
+            return originalCreateAllInputs.call(this, ...args);
         }
-        return originalCreateAllInputs.call(this, ...args);
     };
 
     if (vm && vm.editingTarget) {

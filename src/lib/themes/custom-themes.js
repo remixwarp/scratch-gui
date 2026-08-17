@@ -917,7 +917,11 @@ class CustomThemeManager {
             if (e.name === 'QuotaExceededError') {
                 const currentData = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
                 if (currentData) {
-                    localStorage.setItem(`${CUSTOM_THEMES_STORAGE_KEY}_backup`, currentData);
+                    try {
+                        localStorage.setItem(`${CUSTOM_THEMES_STORAGE_KEY}_backup`, currentData);
+                    } catch (backupErr) {
+                        // 隐私模式等环境下 localStorage 可能不可用
+                    }
                 }
                 throw new Error('Storage quota exceeded - try deleting some themes');
             }

@@ -120,6 +120,7 @@ const Submenu = ({children, className, place, ...props}) => (
     >
         <MenuComponent
             place={place}
+            isOpen={true}
             {...props}
         >
             {children}
@@ -173,19 +174,12 @@ const MenuItem = ({
             } else {
                 setExpandedIndex(null);
             }
-            if (onClick) {
-                onClick(e);
-            }
-        } else {
-            // Custom components (e.g., Redux-managed like TWBlocksThemeMenu, LanguageMenu, etc.)
-            // Only stop propagation for leaf items (no submenu) to prevent unwanted parent behavior.
-            // For items with submenu, let the event bubble naturally.
-            if (!hasSubmenu) {
-                e.stopPropagation();
-            }
-            if (onClick) {
-                onClick(e);
-            }
+        }
+        // Always call onClick if provided, regardless of _menuIndex.
+        // This allows Redux-managed components (TWBlocksThemeMenu, LanguageMenu, etc.)
+        // to dispatch their Redux actions when clicked.
+        if (onClick) {
+            onClick(e);
         }
     };
 

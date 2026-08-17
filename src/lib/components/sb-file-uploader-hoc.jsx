@@ -240,7 +240,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         // fileToUpload reference, so those objects can be garbage collected
         removeFileObjects () {
             if (this.inputElement) {
-                this.inputElement.value = null;
+                this.inputElement.value = '';
                 document.body.removeChild(this.inputElement);
             }
             this.inputElement = null;

@@ -26,9 +26,18 @@ class UsernameModal extends React.Component {
         super(props);
 
         // 处理多工作区默认值
-        const multiWorkspacesStored = localStorage.getItem('mw:multi-workspaces');
+        let multiWorkspacesStored = null;
+        try {
+            multiWorkspacesStored = localStorage.getItem('mw:multi-workspaces');
+        } catch (e) {
+            // localStorage 可能在隐私模式/WebView 中不可用
+        }
         if (multiWorkspacesStored === null) {
-            localStorage.setItem('mw:multi-workspaces', 'true');
+            try {
+                localStorage.setItem('mw:multi-workspaces', 'true');
+            } catch (e) {
+                // localStorage 不可用
+            }
         }
 
         this.state = {
