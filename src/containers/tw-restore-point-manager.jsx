@@ -16,6 +16,7 @@ import downloadBlob from '../lib/utils/download-blob.js';
 
 const SAVE_DELAY = 250;
 const MINIMUM_SAVE_TIME = 1000;
+const MAX_SAVE_DURATION_BEFORE_COOLDOWN = 2000; // If a save takes > 2s, apply cooldown
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -82,6 +83,8 @@ class TWRestorePointManager extends React.Component {
             pushingToCloud: false
         };
         this.timeout = null;
+        this._lastSaveDuration = 0;
+        this._saveCooldownUntil = 0;
     }
 
     componentDidMount () {
@@ -247,6 +250,12 @@ class TWRestorePointManager extends React.Component {
         if (this.timeout || this.state.interval < 0) {
             return;
         }
+        // If the last save was slow (large project), apply a cooldown so the
+        // editor doesn't stutter from rapid consecutive saves.
+        const now = Date.now();
+        if (now < this._saveCooldownUntil) {
+            return;
+        }
         this.timeout = setTimeout(() => {
             this.createRestorePoint(RestorePointAPI.TYPE_AUTOMATIC).then(() => {
                 this.timeout = null;
@@ -269,6 +278,7 @@ class TWRestorePointManager extends React.Component {
         }
 
         this.props.onStartCreatingRestorePoint();
+        const startedAt = Date.now();
         return Promise.all([
             // Wait a little bit before saving so UI can update before saving, which can cause stutter
             sleep(SAVE_DELAY)
@@ -280,6 +290,14 @@ class TWRestorePointManager extends React.Component {
             sleep(MINIMUM_SAVE_TIME)
         ])
             .then(() => {
+                const elapsed = Date.now() - startedAt;
+                this._lastSaveDuration = elapsed;
+                // If the last save took longer than the threshold (large
+                // project), apply a cooldown equal to the save duration so
+                // the editor doesn't stutter from rapid consecutive saves.
+                if (elapsed > MAX_SAVE_DURATION_BEFORE_COOLDOWN) {
+                    this._saveCooldownUntil = Date.now() + elapsed;
+                }
                 this.props.onFinishCreatingRestorePoint();
                 if (this.props.isModalVisible) {
                     this.refreshState();

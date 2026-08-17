@@ -25,9 +25,28 @@ import {
 import {openProjectThemePrompt} from '../../reducers/mw-project-theme';
 import {setCustomStageSize} from '../../reducers/custom-stage-size';
 import {openUnknownPlatformModal} from '../../reducers/modals';
+import {getIsLoading} from '../../reducers/project-state';
 import {recordStageSize} from '../achievements.js';
 import implementGuiAPI from '../api/extension-gui';
 import {BLOCKS_TAB_INDEX} from '../../reducers/editor-tab';
+
+// Debounce utility: coalesces rapid calls into a single execution at the end
+// of the burst, with an optional leading-edge call.
+const debounce = (fn, delay) => {
+    let timer = null;
+    let leading = true;
+    return (...args) => {
+        if (leading) {
+            leading = false;
+            fn(...args);
+        }
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            leading = true;
+            fn(...args);
+        }, delay);
+    };
+};
 
 let compileErrorCounter = 0;
 
@@ -198,11 +217,16 @@ const vmListenerHOC = function (WrappedComponent) {
             });
         }
         handleProjectChanged () {
+            if (this.props.isLoadingProject) return;
             if (this.props.shouldUpdateProjectChanged && !this.props.projectChanged) {
                 this.props.onProjectChanged();
             }
         }
         handleTargetsUpdate (data) {
+            // During project loading the VM fires many targetsUpdate events.
+            // Skip them to avoid flooding Redux with intermediate states that
+            // will be immediately overwritten.
+            if (this.props.isLoadingProject) return;
             if (this.props.shouldUpdateTargets) {
                 this.props.onTargetsUpdate(data);
             }
@@ -253,6 +277,7 @@ const vmListenerHOC = function (WrappedComponent) {
             const {
                 /* eslint-disable no-unused-vars */
                 attachKeyboardEvents,
+                isLoadingProject,
                 isEditorObscured,
                 isEditorUsable,
                 projectChanged,
@@ -293,6 +318,7 @@ const vmListenerHOC = function (WrappedComponent) {
     }
     VMListener.propTypes = {
         attachKeyboardEvents: PropTypes.bool,
+        isLoadingProject: PropTypes.bool,
         isEditorObscured: PropTypes.bool.isRequired,
         isEditorUsable: PropTypes.bool.isRequired,
         onBlockDragUpdate: PropTypes.func.isRequired,
@@ -334,6 +360,7 @@ const vmListenerHOC = function (WrappedComponent) {
     };
     const mapStateToProps = state => ({
         hasCloudVariables: state.scratchGui.tw.hasCloudVariables,
+        isLoadingProject: getIsLoading(state.scratchGui.projectState.loadingState),
         isEditorObscured: (
             !state.scratchGui.mode.isPlayerOnly &&
             state.scratchGui.mode.isFullScreen
@@ -354,13 +381,29 @@ const vmListenerHOC = function (WrappedComponent) {
         username: state.session && state.session.session && state.session.session.user ?
             state.session.session.user.username : state.scratchGui.tw ? state.scratchGui.tw.username : ''
     });
+    let debouncedMonitorsUpdate = null;
+    let debouncedTargetsUpdate = null;
     const mapDispatchToProps = dispatch => ({
-        onTargetsUpdate: data => {
-            dispatch(updateTargets(data.targetList, data.editingTarget));
-        },
-        onMonitorsUpdate: monitorList => {
-            dispatch(updateMonitors(monitorList));
-        },
+        onTargetsUpdate: (() => {
+            if (!debouncedTargetsUpdate) {
+                debouncedTargetsUpdate = debounce(data => {
+                    dispatch(updateTargets(data.targetList, data.editingTarget));
+                }, 50);
+            }
+            return debouncedTargetsUpdate;
+        })(),
+        // Monitors update every frame when the VM is running. For large
+        // projects with many monitors this can easily overwhelm the React
+        // render cycle on low-end devices. Debounce to at most one dispatch
+        // per 50 ms so the UI stays responsive.
+        onMonitorsUpdate: (() => {
+            if (!debouncedMonitorsUpdate) {
+                debouncedMonitorsUpdate = debounce(monitorList => {
+                    dispatch(updateMonitors(monitorList));
+                }, 50);
+            }
+            return debouncedMonitorsUpdate;
+        })(),
         onBlockDragUpdate: areBlocksOverGui => {
             dispatch(updateBlockDrag(areBlocksOverGui));
         },

@@ -18,12 +18,16 @@ const SET_CLOUD_HOST = 'tw/SET_CLOUD_HOST';
 const SET_PLATFORM_MISMATCH_DETAILS = 'tw/SET_PLATFORM_MISMATCH_DETAILS';
 const SET_PROJECT_ERROR = 'tw/SET_PROJECT_ERROR';
 
+import {isLowEndDevice} from '../lib/utils/device-performance.js';
+
 export const initialState = {
     framerate: 30,
     interpolation: false,
     cloud: true,
     username: '',
-    highQualityPen: false,
+    // Enable high-quality pen rendering by default on capable devices;
+    // keep it off on low-end hardware to avoid GPU stutter.
+    highQualityPen: !isLowEndDevice(),
     compilerOptions: {
         enabled: true,
         warpTimer: false

@@ -39,6 +39,7 @@ const vmManagerHOC = function (WrappedComponent) {
             bindAll(this, [
                 'loadProject'
             ]);
+            this._loadingPromise = null;
         }
         componentDidMount () {
             if (!this.props.vm.initialized) {
@@ -73,11 +74,31 @@ const vmManagerHOC = function (WrappedComponent) {
             }
         }
 
+        componentWillUnmount () {
+            // Mark any in-flight load as cancelled so its .then() callbacks
+            // do not dispatch to an unmounted component.
+            this._loadingPromise = null;
+        }
+
         loadProject () {
+            // Guard against concurrent loads: if a previous load is still in
+            // flight, quit the VM first (which cancels its work) and then let
+            // the new load proceed. The old promise is discarded so its
+            // callbacks won't fire on a stale VM state.
+            if (this._loadingPromise) {
+                this.props.vm.quit();
+            }
+
             // tw: stop when loading new project
             this.props.vm.quit();
-            return this.props.vm.loadProject(this.props.projectData)
+            const promise = this.props.vm.loadProject(this.props.projectData)
                 .then(() => {
+                    // If a newer load has started (or the component unmounted),
+                    // discard this result — the VM is already in a different state.
+                    if (this._loadingPromise !== promise) {
+                        return;
+                    }
+
                     // 立即发送加载完成信号（不包 setTimeout），尽快把 UI 从 Loading 切换到显示
                     this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
 
@@ -85,6 +106,7 @@ const vmManagerHOC = function (WrappedComponent) {
                     // 每个都会单独推迟到下一次事件循环，累计延迟用户可感知的
                     // 加载时间。统一用一个 microtask + 一个可选 requestAnimationFrame
                     Promise.resolve().then(() => {
+                        if (this._loadingPromise !== promise) return;
                         this.props.onSetProjectUnchanged();
                         // If the vm is not running, call draw on the renderer manually
                         // This draws the state of the loaded project with no blocks running
@@ -101,10 +123,15 @@ const vmManagerHOC = function (WrappedComponent) {
                             }
                         }
                     });
+                    this._loadingPromise = null;
                 })
                 .catch(e => {
+                    if (this._loadingPromise !== promise) return;
                     this.props.onError(e);
+                    this._loadingPromise = null;
                 });
+            this._loadingPromise = promise;
+            return promise;
         }
         render () {
             const {

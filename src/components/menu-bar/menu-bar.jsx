@@ -4187,13 +4187,17 @@ class MenuBar extends React.Component {
                         />
                     </span>
                     <span data-mw-item="about">{aboutButton}</span>
-                    <MwEditorNav />
-                    <span className={styles.roturAccountSlot}>
-                        <RoturAccount
-                            closeFileMenu={this.props.onRequestCloseFile}
-                            openRoturLoginModal={this.props.openRoturLoginModal}
-                        />
-                    </span>
+                    {!this.props.isPlayerOnly && this.props.roturUsername && (
+                        <MwEditorNav />
+                    )}
+                    {!this.props.isPlayerOnly && (
+                        <span className={styles.roturAccountSlot}>
+                            <RoturAccount
+                                closeFileMenu={this.props.onRequestCloseFile}
+                                openRoturLoginModal={this.props.openRoturLoginModal}
+                            />
+                        </span>
+                    )}
                 </div>
             </Box>
         );
@@ -4249,6 +4253,7 @@ MenuBar.propTypes = {
     handleSaveProject: PropTypes.func,
     intl: intlShape,
     isPlayerOnly: PropTypes.bool,
+    roturUsername: PropTypes.string,
     isRtl: PropTypes.bool,
     isShared: PropTypes.bool,
     isShowingProject: PropTypes.bool,
@@ -4399,7 +4404,8 @@ const mapStateToProps = (state, ownProps) => {
         mode1990: isTimeTravel1990(state),
         mode2020: isTimeTravel2020(state),
         modeNow: isTimeTravelNow(state),
-        superRefactor: localStorage.getItem('mw:super-refactor') === 'true'
+        superRefactor: localStorage.getItem('mw:super-refactor') === 'true',
+        roturUsername: state.scratchGui.rotur ? state.scratchGui.rotur.username : null
     };
 };
 

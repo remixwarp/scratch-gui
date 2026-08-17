@@ -312,6 +312,22 @@ module.exports = [
                         chunks: 'all',
                         priority: -20,
                         reuseExistingChunk: true
+                    },
+                    // Monaco editor and xterm are heavy dependencies that are
+                    // only used in specific panels (git modal, terminal, JSON
+                    // editor). Split them out so they don't inflate the shared
+                    // vendors chunk and are only downloaded when needed.
+                    monacoEditor: {
+                        test: /node_modules[\\/]monaco-editor[\\/]/,
+                        name: 'monaco-editor',
+                        priority: 20,
+                        reuseExistingChunk: true
+                    },
+                    xterm: {
+                        test: /node_modules[\\/](?:@xterm|xterm)[\\/]/,
+                        name: 'xterm',
+                        priority: 20,
+                        reuseExistingChunk: true
                     }
                 }
             },

@@ -35,14 +35,9 @@ import DragLayer from '../../containers/drag-layer.jsx';
 import ConnectionModal from '../../containers/connection-modal.jsx';
 import CollaborationContainer from '../../containers/collaboration-container.jsx';
 import CollabLoader from '../collab-loader/collab-loader.jsx';
-import TelemetryModal from '../telemetry-modal/telemetry-modal.jsx';
-import TWUsernameModal from '../../containers/tw-username-modal.jsx';
-import TWSettingsModal from '../../containers/tw-settings-modal.jsx';
 import TWSecurityManager from '../../containers/tw-security-manager.jsx';
-import TWCustomExtensionModal from '../../containers/tw-custom-extension-modal.jsx';
 import TWExtensionLoadChoiceModal from '../../containers/tw-extension-load-choice-modal.jsx';
 import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
-import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
 import TWGitModal from '../../containers/mw-git-modal.jsx';
@@ -59,10 +54,7 @@ import CompatibilityModal from '../../containers/tv-compatibility-modal.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
 import CustomGalleryModal from '../../containers/custom-gallery-modal.jsx';
-import MWAssetsModal from '../../containers/mw-assets-modal.jsx';
 import MWHelpModal from '../../components/mw-help-modal/help-modal.jsx';
-import MWProjectMetadataModal from '../../containers/mw-project-metadata-modal.jsx';
-import TWDebugger from '../../containers/tw-debugger.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
 import Avatar from '../mw-avatar/avatar.jsx';
 import {closeRoturLoginModal, openRoturLoginModal} from '../../reducers/modals.js';
@@ -79,6 +71,18 @@ import AEReadMe from '../../containers/ae-readme.jsx'
 import { loadData } from '../ae-readme/ae-readme.jsx'
 import CustomThemeModal from '../../containers/tw-custom-theme-modal.jsx';
 import { openReadme } from '../../reducers/modals.js';
+
+// Heavy modal / panel components that are not shown on the initial editor
+// load. Lazy-loading them removes their code (and transitive dependencies)
+// from the main bundle, shrinking the first-paint JavaScript payload.
+const TWSettingsModal = React.lazy(() => import('../../containers/tw-settings-modal.jsx'));
+const TWCustomExtensionModal = React.lazy(() => import('../../containers/tw-custom-extension-modal.jsx'));
+const TWFontsModal = React.lazy(() => import('../../containers/tw-fonts-modal.jsx'));
+const MWAssetsModal = React.lazy(() => import('../../containers/mw-assets-modal.jsx'));
+const MWProjectMetadataModal = React.lazy(() => import('../../containers/mw-project-metadata-modal.jsx'));
+const TWDebugger = React.lazy(() => import('../../containers/tw-debugger.jsx'));
+const TWUsernameModal = React.lazy(() => import('../../containers/tw-username-modal.jsx'));
+const TelemetryModal = React.lazy(() => import('../telemetry-modal/telemetry-modal.jsx'));
 
 const Settings = new AESettings();
 import AddonHooks from '../../addons/hooks.js';
@@ -1368,14 +1372,24 @@ const GUIComponent = props => {
             <MWExtensionManagerModal />
             <MWProjectThemeModal />
             <ShortcutManager visible={shortcutManagerModalVisible} />
-            {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
-            {settingsModalVisible && (
-                <TWSettingsModal
-                    isRtl={isRtl}
-                    visible={settingsModalVisible}
-                />
+            {usernameModalVisible && (
+                <React.Suspense fallback={null}>
+                    <TWUsernameModal visible={usernameModalVisible} />
+                </React.Suspense>
             )}
-            {customExtensionModalVisible && <TWCustomExtensionModal />}
+            {settingsModalVisible && (
+                <React.Suspense fallback={null}>
+                    <TWSettingsModal
+                        isRtl={isRtl}
+                        visible={settingsModalVisible}
+                    />
+                </React.Suspense>
+            )}
+            {customExtensionModalVisible && (
+                <React.Suspense fallback={null}>
+                    <TWCustomExtensionModal />
+                </React.Suspense>
+            )}
             {extensionLoadChoiceModalVisible && extensionLoadChoiceData && (
                 <TWExtensionLoadChoiceModal
                     extensionId={extensionLoadChoiceData.extensionId}
@@ -1385,15 +1399,31 @@ const GUIComponent = props => {
                     onCategorySelected={handleCategorySelected}
                 />
             )}
-            {fontsModalVisible && <TWFontsModal />}
+            {fontsModalVisible && (
+                <React.Suspense fallback={null}>
+                    <TWFontsModal />
+                </React.Suspense>
+            )}
             {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
             {gitModalVisible && <TWGitModal />}
             {customGalleryModalVisible && <CustomGalleryModal />}
-            {assetsModalVisible && <MWAssetsModal isRtl={isRtl} />}
+            {assetsModalVisible && (
+                <React.Suspense fallback={null}>
+                    <MWAssetsModal isRtl={isRtl} />
+                </React.Suspense>
+            )}
             {helpModalVisible && <MWHelpModal isRtl={isRtl} entryId={helpEntry} />}
-            {projectMetadataModalVisible && <MWProjectMetadataModal isRtl={isRtl} />}
-            {debuggerModalVisible && <TWDebugger isRtl={isRtl} />}
+            {projectMetadataModalVisible && (
+                <React.Suspense fallback={null}>
+                    <MWProjectMetadataModal isRtl={isRtl} />
+                </React.Suspense>
+            )}
+            {debuggerModalVisible && (
+                <React.Suspense fallback={null}>
+                    <TWDebugger isRtl={isRtl} />
+                </React.Suspense>
+            )}
             <AIModal />
             <AIChatModal />
             <AIAgentModal />
@@ -1499,15 +1529,17 @@ const GUIComponent = props => {
             >
                 {alwaysEnabledModals}
                 {telemetryModalVisible ? (
-                    <TelemetryModal
-                        isRtl={isRtl}
-                        isTelemetryEnabled={isTelemetryEnabled}
-                        onCancel={onTelemetryModalCancel}
-                        onOptIn={onTelemetryModalOptIn}
-                        onOptOut={onTelemetryModalOptOut}
-                        onRequestClose={onRequestCloseTelemetryModal}
-                        onShowPrivacyPolicy={onShowPrivacyPolicy}
-                    />
+                    <React.Suspense fallback={null}>
+                        <TelemetryModal
+                            isRtl={isRtl}
+                            isTelemetryEnabled={isTelemetryEnabled}
+                            onCancel={onTelemetryModalCancel}
+                            onOptIn={onTelemetryModalOptIn}
+                            onOptOut={onTelemetryModalOptOut}
+                            onRequestClose={onRequestCloseTelemetryModal}
+                            onShowPrivacyPolicy={onShowPrivacyPolicy}
+                        />
+                    </React.Suspense>
                 ) : null}
                 {loading ? (
                     <Loader isFullScreen />

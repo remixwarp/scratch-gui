@@ -499,16 +499,39 @@ class VMApplier extends OpApplier {
         switch (type) {
         case OP.SPRITE_ADD: {
             if (runtime.getTargetById(payload.targetId)) return; // replay
-            const json = JSON.parse(JSON.stringify(payload.spriteJson));
+            let json;
+            try {
+                json = JSON.parse(JSON.stringify(payload.spriteJson));
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                console.warn('[Collab] Dropping SPRITE_ADD op: malformed spriteJson payload', e);
+                return;
+            }
+            // Fail fast on structurally invalid sprite data before touching the VM,
+            // otherwise addSprite can mutate targets halfway and desync the room.
+            if (!json || typeof json !== 'object' ||
+                ('costumes' in json && !Array.isArray(json.costumes)) ||
+                ('sounds' in json && !Array.isArray(json.sounds))) {
+                // eslint-disable-next-line no-console
+                console.warn('[Collab] Dropping SPRITE_ADD op: invalid sprite structure');
+                return;
+            }
             this._attachAssets(json.costumes || []);
             this._attachAssets(json.sounds || []);
+
+            // addSprite selects the sprite it created, which would yank
+            // every peer's editor onto someone else's new sprite.
+            const previousEditingTarget = vm.editingTarget ? vm.editingTarget.id : null;
+            const before = new Set(runtime.targets.map(t => t.id));
             await vm.addSprite(json);
+            const newTarget = runtime.targets.find(t => !before.has(t.id));
             // Adopt the originator's target id so every peer addresses
             // this sprite identically from now on.
-            const newTarget = vm.editingTarget;
-            if (newTarget && !runtime.getTargetById(payload.targetId)) {
-                newTarget.id = payload.targetId;
+            if (newTarget) newTarget.id = payload.targetId;
+            if (previousEditingTarget && runtime.getTargetById(previousEditingTarget)) {
+                vm.setEditingTarget(previousEditingTarget);
             }
+            vm.emitTargetsUpdate(false);
             return;
         }
         case OP.SPRITE_DELETE: {
@@ -706,10 +729,12 @@ class VMApplier extends OpApplier {
         });
     }
 
+    // Costumes/sounds in a serialized sprite key their asset as `md5ext`,
+    // not the runtime's `md5`.
     _attachAssets (items) {
         items.forEach(item => {
-            if (!item.md5) return;
-            const asset = createStorageAsset(this.vm, item.md5);
+            if (!item.md5ext) return;
+            const asset = createStorageAsset(this.vm, item.md5ext);
             if (asset) {
                 item.asset = asset;
                 item.assetId = asset.assetId;

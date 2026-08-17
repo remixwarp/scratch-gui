@@ -30,13 +30,12 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => Promise.all(
-            cacheNames.forEach(cacheName => {
-                if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+            cacheNames
+                .filter(cacheName => cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE)
+                .map(cacheName => {
                     console.log('Deleting old cache:', cacheName);
                     return caches.delete(cacheName);
-                }
-                return null;
-            })
+                })
         ))
             .then(() => self.clients.claim())
     );
