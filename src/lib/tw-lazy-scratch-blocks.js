@@ -15,7 +15,7 @@ const load = () => {
     if (_ScratchBlocks) {
         return Promise.resolve();
     }
-    return import(/* webpackChunkName: "sb" */ 'scratch-blocks')
+    return import(/* webpackChunkName: "sb" */ '@remixwarp/scratch-blocks')
         .then(m => {
             _ScratchBlocks = m.default;
 

@@ -1,4 +1,4 @@
-import ScratchBlocks from 'scratch-blocks';
+import ScratchBlocks from '@remixwarp/scratch-blocks';
 
 /**
  * Main function for the addon.
