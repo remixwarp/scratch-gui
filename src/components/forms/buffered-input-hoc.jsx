@@ -29,7 +29,7 @@ export default function (Input) {
         handleFlush () {
             const isNumeric = typeof this.props.value === 'number';
             const validatesNumeric = isNumeric ? !isNaN(this.state.value) : true;
-            if (this.state.value !== null && validatesNumeric) {
+            if (this.state.value !== null && validatesNumeric && this.props.onSubmit) {
                 this.props.onSubmit(isNumeric ? Number(this.state.value) : this.state.value);
             }
             this.setState({value: null});
@@ -52,7 +52,7 @@ export default function (Input) {
     }
 
     BufferedInput.propTypes = {
-        onSubmit: PropTypes.func.isRequired,
+        onSubmit: PropTypes.func,
         value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
     };
 

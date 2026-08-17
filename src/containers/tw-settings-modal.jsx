@@ -4,6 +4,7 @@ import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import bindAll from 'lodash.bindall';
 import {connect} from 'react-redux';
 import {closeSettingsModal} from '../reducers/modals';
+import {setCloudHost} from '../reducers/tw';
 import SettingsModalComponent from '../components/tw-settings-modal/settings-modal.jsx';
 import {defaultStageSize} from '../reducers/custom-stage-size';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
@@ -105,7 +106,8 @@ class UsernameModal extends React.Component {
             'handleWindowAnimationChange',
             'handleEnableStageResizeChange',
             'handleUnclipPaletteChange',
-            'handleVanillaPaletteChange'
+            'handleVanillaPaletteChange',
+            'handleCloudVariableServerChange'
         ]);
     }
 
@@ -224,6 +226,9 @@ class UsernameModal extends React.Component {
         this.props.vm.setCompilerOptions({
             enabled: !e.target.checked
         });
+    }
+    handleCloudVariableServerChange (value) {
+        this.props.dispatch(setCloudHost(value));
     }
     handleCaseSensitiveListsChange (e) {
         this.props.vm.setRuntimeOptions({
@@ -438,6 +443,8 @@ class UsernameModal extends React.Component {
                 onStageWidthChange={this.handleStageWidthChange}
                 onStageHeightChange={this.handleStageHeightChange}
                 onDisableCompilerChange={this.handleDisableCompilerChange}
+                onCloudVariableServerChange={this.handleCloudVariableServerChange}
+                cloudVariableServer={this.props.cloudVariableServer}
                 onCaseSensitiveListsChange={this.handleCaseSensitiveListsChange}
                 onRealLayerIndexesChange={this.handleRealLayerIndexesChange}
                 stageWidth={this.props.customStageSize.width}
@@ -543,6 +550,8 @@ const mapStateToProps = state => ({
     removeFencing: !state.scratchGui.tw.runtimeOptions.fencing,
     removeLimits: !state.scratchGui.tw.runtimeOptions.miscLimits,
     warpTimer: state.scratchGui.tw.compilerOptions.warpTimer,
+    disableCompiler: !state.scratchGui.tw.compilerOptions.enabled,
+    cloudVariableServer: state.scratchGui.tw.cloudHost,
     customStageSize: state.scratchGui.customStageSize,
     // Handle possible undefined value for caseSensitiveLists
     caseSensitiveLists: !!state.scratchGui.tw.runtimeOptions.caseSensitiveLists,
@@ -551,7 +560,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    onClose: () => dispatch(closeSettingsModal())
+    onClose: () => dispatch(closeSettingsModal()),
+    dispatch
 });
 
 export default injectIntl(connect(

@@ -9,6 +9,10 @@ import WindowManager from '../addons/window-system/window-manager';
 import Box from '../components/box/box.jsx';
 import './windowed-modal.css';
 
+// 移动端 UA 检测：匹配常见手机/平板浏览器标识
+const isMobileUA = () => typeof navigator !== 'undefined' &&
+    /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Silk/i.test(navigator.userAgent);
+
 class WindowedModal extends React.Component {
     constructor (props) {
         super(props);
@@ -28,11 +32,17 @@ class WindowedModal extends React.Component {
         this.createdWindow = false;
         this.windowId = this.props.id || 'modal-window';
         this.blocklyWidgetRepositionRaf_ = null;
+        this.isMobile = isMobileUA();
         this.addEventListeners();
     }
     
     componentDidMount () {
         if (this.props.visible === false) {
+            return;
+        }
+        // 移动端直接渲染内联全屏模态，不创建浮动窗口
+        if (this.isMobile) {
+            this.forceUpdate();
             return;
         }
         this.createWindow();
@@ -48,6 +58,10 @@ class WindowedModal extends React.Component {
     }
     
     componentDidUpdate (prevProps) {
+        // 移动端：可见性由 render() 方法处理，无需窗口操作
+        if (this.isMobile) {
+            return;
+        }
         // Handle visibility changes
         if (this.props.visible !== prevProps.visible) {
             if (this.props.visible && !this.window) {
@@ -88,6 +102,10 @@ class WindowedModal extends React.Component {
 
     componentWillUnmount () {
         this.removeEventListeners();
+        // 移动端没有浮动窗口，无需清理
+        if (this.isMobile) {
+            return;
+        }
         if (this.blocklyWidgetRepositionRaf_) {
             window.cancelAnimationFrame(this.blocklyWidgetRepositionRaf_);
             this.blocklyWidgetRepositionRaf_ = null;
@@ -400,7 +418,54 @@ class WindowedModal extends React.Component {
         history.replaceState(state, this.id, null);
     }
     
+    renderInlineMobile () {
+        const {
+            children,
+            onRequestClose,
+            locale,
+            messages,
+            store
+        } = this.props;
+
+        const content = React.createElement(
+            'div',
+            {
+                className: 'windowed-modal-mobile-overlay',
+                onClick: e => {
+                    // 点击背景（非内容区域）关闭模态
+                    if (e.target === e.currentTarget && onRequestClose) {
+                        onRequestClose();
+                    }
+                }
+            },
+            React.createElement(
+                'div',
+                {
+                    className: 'windowed-modal-mobile-container'
+                },
+                children
+            )
+        );
+
+        return React.createElement(
+            Provider,
+            {store},
+            React.createElement(
+                IntlProvider,
+                {
+                    locale: locale || 'en',
+                    messages: messages || {}
+                },
+                content
+            )
+        );
+    }
+
     render () {
+        // 移动端：使用内联全屏模态渲染
+        if (this.isMobile && this.props.visible !== false) {
+            return this.renderInlineMobile();
+        }
         // Always try to render content if we have a container
         if (this.contentContainer) {
             return this.renderContent();

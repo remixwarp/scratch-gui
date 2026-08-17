@@ -7,4 +7,36 @@
     overscroll-behavior: contain;
 }
 
+/* 移动端内联全屏模态样式 */
+.windowed-modal-mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    background-color: var(--ui-modal-overlay, rgba(0, 0, 0, 0.5));
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.windowed-modal-mobile-container {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    background: var(--ui-secondary, #f8f8f8);
+    color: var(--ui-foreground, #000);
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
 

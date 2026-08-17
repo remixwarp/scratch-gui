@@ -10,6 +10,7 @@ const BlocksComponent = props => {
         containerRef,
         dragOver,
         gridVisible,
+        onOpenAssetsModal,
         paletteResizingEnabled,
         onPaletteResizePointerDown,
         paletteWidth,

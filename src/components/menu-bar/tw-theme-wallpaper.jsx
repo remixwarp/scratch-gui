@@ -323,8 +323,7 @@ WallpaperInputForm.propTypes = {
     currentGridVisible: PropTypes.bool
 };
 
-const WallpaperMenu = injectIntl(({
-    intl,
+const WallpaperMenu = ({
     isOpen,
     isRtl,
     onChangeTheme,
@@ -450,10 +449,9 @@ const WallpaperMenu = injectIntl(({
             </Submenu>
         </MenuItem>
     );
-});
+};
 
 WallpaperMenu.propTypes = {
-    intl: intlShape.isRequired,
     isOpen: PropTypes.bool,
     isRtl: PropTypes.bool,
     onChangeTheme: PropTypes.func,

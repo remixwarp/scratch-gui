@@ -463,6 +463,8 @@ const GUIComponent = props => {
         // Props that should not be passed to Box
         gandiHelpModal,
         onOpenInvalidProjectModal,
+        enableStageResize: _enableStageResize,
+        onOpenAssetsModal,
         ...componentProps
     } = omit(props, 'dispatch');
     
