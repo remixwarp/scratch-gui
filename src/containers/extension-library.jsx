@@ -1085,6 +1085,10 @@ class ExtensionLibrary extends React.PureComponent {
     }
 
     getSourceStatus(tag) {
+        // 扩展实验广场是内嵌 iframe，没有远程加载状态
+        if (tag === 'experiment-plaza') {
+            return null;
+        }
         // 内置本地数据始终可用（桌面端本地加载成功 → 蓝色）
         if (tag === 'scratch' || tag === 'rotur') {
             return 'local';
@@ -1093,9 +1097,10 @@ class ExtensionLibrary extends React.PureComponent {
         return this.state.sourceStatuses[tag] || 'idle';
     }
 
-    handleItemSelect(item) {
+    handleItemSelect(item, callback) {
         if (item.href) {
             window.open(item.href, '_blank', 'noopener,noreferrer');
+            if (callback) callback(true, null);
             return;
         }
 
@@ -1103,6 +1108,7 @@ class ExtensionLibrary extends React.PureComponent {
 
         if (extensionId === 'custom_extension') {
             this.props.onOpenCustomExtensionModal();
+            if (callback) callback(true, null);
             return;
         }
 
@@ -1110,6 +1116,7 @@ class ExtensionLibrary extends React.PureComponent {
             if (this.props.onOpenCustomGalleryModal) {
                 this.props.onOpenCustomGalleryModal();
             }
+            if (callback) callback(true, null);
             return;
         }
 
@@ -1117,22 +1124,18 @@ class ExtensionLibrary extends React.PureComponent {
             if (this.props.onEnableProcedureReturns) {
                 this.props.onEnableProcedureReturns();
             }
-
-            // Switch to blocks tab after enabling returns
             if (typeof this.props.onActivateBlocksTab === 'function') {
                 this.props.onActivateBlocksTab();
             }
-
-            // Switch to My Blocks category after enabling returns (correct ID is "more")
             if (typeof this.props.onCategorySelected === 'function') {
                 this.props.onCategorySelected('more');
             }
+            if (callback) callback(true, null);
             return;
         }
 
         const url = item.extensionURL ? item.extensionURL : extensionId;
         if (!item.disabled) {
-            // 自定义拓展库开启"非沙盒运行"时，加载扩展前确保其 URL 被信任
             const customSource = cachedCustomSources.find(cs => cs.id === item.source);
             if (customSource && customSource.unsandboxed && url) {
                 manuallyTrustExtension(url);
@@ -1141,6 +1144,7 @@ class ExtensionLibrary extends React.PureComponent {
                 if (typeof this.props.onCategorySelected === 'function') {
                     this.props.onCategorySelected(extensionId);
                 }
+                if (callback) callback(true, null);
             } else {
                 this.props.vm.extensionManager.loadExtensionURL(url)
                     .then(() => {
@@ -1148,14 +1152,18 @@ class ExtensionLibrary extends React.PureComponent {
                         if (typeof this.props.onCategorySelected === 'function') {
                             this.props.onCategorySelected(extensionId);
                         }
+                        if (callback) callback(true, null);
                     })
                     .catch(err => {
                         this.forceUpdate();
                         log.error(err);
                         // eslint-disable-next-line no-alert
                         alert(err);
+                        if (callback) callback(false, err);
                     });
             }
+        } else if (callback) {
+            callback(false, new Error('Extension is disabled'));
         }
     }
 

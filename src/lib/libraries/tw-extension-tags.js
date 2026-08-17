@@ -9,5 +9,6 @@ export default [
     {tag: '02engine', intlLabel: '02Engine'},
     {tag: 'ow', intlLabel: 'OpenWarp'},
     {tag: 'bilup', intlLabel: 'Bilup'},
-    {tag: 'cy-scr-ext-hub', intlLabel: 'CY ScrExt Hub'}
+    {tag: 'cy-scr-ext-hub', intlLabel: 'CY ScrExt Hub'},
+    {tag: 'experiment-plaza', intlLabel: '扩展实验广场'}
 ];

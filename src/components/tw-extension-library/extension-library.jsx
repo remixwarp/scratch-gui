@@ -53,6 +53,8 @@ const messages = defineMessages({
 });
 
 const ALL = 'all';
+const EXPERIMENT_PLAZA_TAG = 'experiment-plaza';
+const EXPERIMENT_PLAZA_URL = 'https://rw-c.pages.dev/experiment-plaza/';
 const topExtensionIds = new Set(['tw', 'custom_extension', 'custom_extension_gallery', 'gallery']);
 
 const labelOf = (tag, intl) => (
@@ -271,11 +273,101 @@ class TWExtensionLibrary extends React.Component {
         super(props);
         this.state = {
             selectedTag: ALL,
-            query: ''
+            query: '',
+            plazaStatus: 'loading' // 'loading'=黄色, 'local'=蓝色(已就绪), 'error'=红色
         };
         this.handleQuery = this.handleQuery.bind(this);
         this.handleSelectTag = this.handleSelectTag.bind(this);
         this.handleRemoveTag = this.handleRemoveTag.bind(this);
+        this.handlePlazaMessage = this.handlePlazaMessage.bind(this);
+        this.iframeRef = React.createRef();
+    }
+
+    componentDidMount () {
+        window.addEventListener('message', this.handlePlazaMessage);
+        // 扩展实验广场 iframe 在 15 秒内未就绪则标记为错误
+        this.plazaTimeout = setTimeout(() => {
+            this.setState(prev => ({
+                plazaStatus: prev.plazaStatus === 'loading' ? 'error' : prev.plazaStatus
+            }));
+        }, 15000);
+    }
+
+    componentWillUnmount () {
+        window.removeEventListener('message', this.handlePlazaMessage);
+        if (this.plazaTimeout) {
+            clearTimeout(this.plazaTimeout);
+        }
+    }
+
+    handlePlazaMessage (e) {
+        // 只处理来自扩展实验广场 iframe 的消息
+        if (!e.data || e.data.channel !== 'rwc-experiment-plaza') return;
+        const { type, data } = e.data;
+
+        switch (type) {
+            case 'plazaReady':
+                // 扩展实验广场 iframe 就绪 → 蓝色
+                this.setState({plazaStatus: 'local'});
+                break;
+            case 'loadExtension':
+                // 扩展实验广场请求加载扩展
+                if (data && data.extensionURL && typeof this.props.onItemSelected === 'function') {
+                    const item = {
+                        extensionId: data.extensionId || data.name,
+                        extensionURL: data.extensionURL,
+                        name: data.name || 'Unknown Extension',
+                        source: EXPERIMENT_PLAZA_TAG
+                    };
+                    const iframe = this.iframeRef.current;
+                    // 传入回调，加载完成后通知实验广场 iframe
+                    this.props.onItemSelected(item, (success, error) => {
+                        if (iframe && iframe.contentWindow && !iframe.contentWindow.closed) {
+                            iframe.contentWindow.postMessage({
+                                channel: 'rwc-experiment-plaza',
+                                type: 'extensionLoaded',
+                                data: { extensionId: item.extensionId, success, error }
+                            }, '*');
+                        }
+                    });
+                }
+                break;
+            case 'forwardGithubRead':
+                // 转发扩展实验广场的 GitHub API 读取请求（通过编辑器避免 CORS）
+                if (data && data.path) {
+                    this.forwardGithubRequest(data.path, e.source, data.requestId);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    async forwardGithubRequest (path, sourceWindow, requestId) {
+        try {
+            const res = await fetch(`https://api.github.com/repos/remixwarp/rwc${path}`, {
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
+            });
+            if (!res.ok) {
+                throw new Error(`GitHub API ${res.status}`);
+            }
+            const result = await res.json();
+            if (sourceWindow && !sourceWindow.closed) {
+                sourceWindow.postMessage({
+                    channel: 'rwc-experiment-plaza',
+                    type: 'forwardGithubResponse',
+                    data: { requestId, result }
+                }, '*');
+            }
+        } catch (error) {
+            if (sourceWindow && !sourceWindow.closed) {
+                sourceWindow.postMessage({
+                    channel: 'rwc-experiment-plaza',
+                    type: 'forwardGithubResponse',
+                    data: { requestId, error: error.message }
+                }, '*');
+            }
+        }
     }
 
     handleQuery (e) {
@@ -297,8 +389,8 @@ class TWExtensionLibrary extends React.Component {
     }
 
     matchesTag (item) {
-        if (this.state.selectedTag === ALL) {
-            return true;
+        if (this.state.selectedTag === ALL || this.state.selectedTag === EXPERIMENT_PLAZA_TAG) {
+            return false;
         }
         return Array.isArray(item.tags) && item.tags.includes(this.state.selectedTag);
     }
@@ -386,7 +478,7 @@ class TWExtensionLibrary extends React.Component {
                                     selected={this.state.selectedTag === tag.tag}
                                     onSelect={this.handleSelectTag}
                                     icon={tag.icon}
-                                    status={tag.tag !== ALL && getSourceStatus ? getSourceStatus(tag.tag) : null}
+                                    status={tag.tag === EXPERIMENT_PLAZA_TAG ? this.state.plazaStatus : (tag.tag !== ALL && getSourceStatus ? getSourceStatus(tag.tag) : null)}
                                     removable={removableTags && removableTags.includes(tag.tag)}
                                     onRemove={this.handleRemoveTag}
                                 />
@@ -394,26 +486,64 @@ class TWExtensionLibrary extends React.Component {
                         </ModalSidebarGroup>
                     </ModalSidebar>
 
-                    <div className={styles.content}>
-                        <div className={styles.searchRow}>
-                            <Search
-                                className={styles.searchIcon}
-                                size={18}
-                            />
-                            <input
-                                className={styles.search}
-                                placeholder={intl.formatMessage(messages.search)}
-                                value={this.state.query}
-                                onChange={this.handleQuery}
-                                autoFocus
-                            />
-                        </div>
-                        <div className={styles.scroll}>
-                            {showSections ? (
-                                <React.Fragment>
-                                    {top.length ? (
+                    <div className={styles.content} style={{position: 'relative'}}>
+                        <iframe
+                            ref={this.iframeRef}
+                            className={styles.plazaIframe}
+                            src={EXPERIMENT_PLAZA_URL}
+                            title="扩展实验广场"
+                            allow="clipboard-read; clipboard-write"
+                            style={{display: this.state.selectedTag === EXPERIMENT_PLAZA_TAG ? 'block' : 'none'}}
+                        />
+                        {this.state.selectedTag !== EXPERIMENT_PLAZA_TAG ? (
+                            <React.Fragment>
+                                <div className={styles.searchRow}>
+                                    <Search
+                                        className={styles.searchIcon}
+                                        size={18}
+                                    />
+                                    <input
+                                        className={styles.search}
+                                        placeholder={intl.formatMessage(messages.search)}
+                                        value={this.state.query}
+                                        onChange={this.handleQuery}
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className={styles.scroll}>
+                                    {showSections ? (
+                                        <React.Fragment>
+                                            {top.length ? (
+                                                <div className={styles.grid}>
+                                                    {top.map((item, index) => (
+                                                        <ExtensionCard
+                                                            key={`${item.extensionId || 'link'}-${index}`}
+                                                            item={item}
+                                                            onSelect={onItemSelected}
+                                                            isLoaded={isLoaded}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            ) : null}
+                                            {sections.map(section => (
+                                                <ExtensionSection
+                                                    key={section.title}
+                                                    title={section.title}
+                                                >
+                                                    {section.items.map((item, index) => (
+                                                        <ExtensionCard
+                                                            key={`${item.extensionId || 'link'}-${index}`}
+                                                            item={item}
+                                                            onSelect={onItemSelected}
+                                                            isLoaded={isLoaded}
+                                                        />
+                                                    ))}
+                                                </ExtensionSection>
+                                            ))}
+                                        </React.Fragment>
+                                    ) : visible.length ? (
                                         <div className={styles.grid}>
-                                            {top.map((item, index) => (
+                                            {visible.map((item, index) => (
                                                 <ExtensionCard
                                                     key={`${item.extensionId || 'link'}-${index}`}
                                                     item={item}
@@ -422,40 +552,14 @@ class TWExtensionLibrary extends React.Component {
                                                 />
                                             ))}
                                         </div>
-                                    ) : null}
-                                    {sections.map(section => (
-                                        <ExtensionSection
-                                            key={section.title}
-                                            title={section.title}
-                                        >
-                                            {section.items.map((item, index) => (
-                                                <ExtensionCard
-                                                    key={`${item.extensionId || 'link'}-${index}`}
-                                                    item={item}
-                                                    onSelect={onItemSelected}
-                                                    isLoaded={isLoaded}
-                                                />
-                                            ))}
-                                        </ExtensionSection>
-                                    ))}
-                                </React.Fragment>
-                            ) : visible.length ? (
-                                <div className={styles.grid}>
-                                    {visible.map((item, index) => (
-                                        <ExtensionCard
-                                            key={`${item.extensionId || 'link'}-${index}`}
-                                            item={item}
-                                            onSelect={onItemSelected}
-                                            isLoaded={isLoaded}
-                                        />
-                                    ))}
+                                    ) : (
+                                        <div className={styles.emptyState}>
+                                            {emptyState()}
+                                        </div>
+                                    )}
                                 </div>
-                            ) : (
-                                <div className={styles.emptyState}>
-                                    {emptyState()}
-                                </div>
-                            )}
-                        </div>
+                            </React.Fragment>
+                        )}
                     </div>
                 </ModalSidebarLayout>
             </Modal>
