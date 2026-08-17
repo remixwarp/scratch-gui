@@ -389,7 +389,10 @@ class TWExtensionLibrary extends React.Component {
     }
 
     matchesTag (item) {
-        if (this.state.selectedTag === ALL || this.state.selectedTag === EXPERIMENT_PLAZA_TAG) {
+        if (this.state.selectedTag === ALL) {
+            return true;
+        }
+        if (this.state.selectedTag === EXPERIMENT_PLAZA_TAG) {
             return false;
         }
         return Array.isArray(item.tags) && item.tags.includes(this.state.selectedTag);
