@@ -201,10 +201,12 @@ const AccentThemeMenu = ({
             intl.locale.startsWith('cmn') ||
             intl.locale.startsWith('yue'));
     return (
-    <MenuItem expanded={isOpen}>
+    <MenuItem
+        expanded={isOpen}
+        onClick={onOpen}
+    >
         <div
             className={styles.option}
-            onClick={onOpen}
         >
             <ColorIcon id={theme.accent} />
             <span className={styles.submenuLabel}>

@@ -1824,10 +1824,12 @@ class CustomThemeMenu extends React.Component {
         // `ReactDOM.render` so they stay open when this menu unmounts.
 
         return (
-            <MenuItem expanded={isOpen}>
+            <MenuItem
+                expanded={isOpen}
+                onClick={onOpen}
+            >
                 <div
                     className={styles.option}
-                    onClick={onOpen}
                 >
                     <Palette className={styles.icon} />
                     <span className={styles.submenuLabel}>

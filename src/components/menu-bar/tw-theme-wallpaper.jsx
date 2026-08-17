@@ -402,10 +402,12 @@ const WallpaperMenu = injectIntl(({
     };
 
     return (
-        <MenuItem expanded={isOpen}>
+        <MenuItem
+            expanded={isOpen}
+            onClick={onOpen}
+        >
             <div
                 className={styles.option}
-                onClick={onOpen}
             >
                 <Wallpaper className={styles.icon} />
                 <span className={styles.submenuLabel}>

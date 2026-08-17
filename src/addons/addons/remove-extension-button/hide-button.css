@@ -1,3 +1,4 @@
-[class*="extension-button-container"] {
+/* 只隐藏添加扩展按钮，不隐藏管理素材按钮 */
+.extension-button-container:not([data-category="assets"]) {
   display: none !important;
 }

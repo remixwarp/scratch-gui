@@ -30,7 +30,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 src/lib/default-project/dango.svg is based on [Twemoji](https://twemoji.twitter.com/) and is licensed under CC BY 4.0 https://creativecommons.org/licenses/by/4.0/
 
-
 ## 如果你看不懂英文，也不想用翻译，也不想看复杂连篇，并且对你没有太多帮助的文字的话，请把目光移到此处。
 ## 适合中国宝宝看的运行项目解释
 

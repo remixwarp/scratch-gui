@@ -93,10 +93,12 @@ const BlocksThemeMenu = ({
     onOpenMenu,
     theme
 }) => (
-    <MenuItem expanded={isOpen}>
+    <MenuItem
+        expanded={isOpen}
+        onClick={onOpenMenu}
+    >
         <div
             className={styles.option}
-            onClick={onOpenMenu}
         >
             <ThemeIcon id={theme.blocks} />
             <span className={styles.submenuLabel}>

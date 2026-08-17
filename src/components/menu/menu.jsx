@@ -143,35 +143,49 @@ const MenuItem = ({
     _expandedIndex
 }) => {
     const mobileMode = isMobileMode();
-    const {setExpandedIndex} = useContext(MenuContext);
+    const {expandedIndex, setExpandedIndex} = useContext(MenuContext);
+    const menuItemIdRef = useRef(++menuItemCounter);
+
+    // Determine the effective index for this item (use _menuIndex if provided, otherwise use local counter)
+    const effectiveIndex = _menuIndex !== undefined ? _menuIndex : menuItemIdRef.current;
 
     // Check whether this item has a submenu (expandable) child
     const hasSubmenu = React.Children.toArray(children).some(
         child => React.isValidElement(child) && child.type === Submenu
     );
 
-    const isExpanded = mobileMode && _menuIndex !== undefined
-        ? _expandedIndex === _menuIndex
+    // When _menuIndex is NOT provided, this MenuItem is rendered inside a custom component
+    // (e.g., TWBlocksThemeMenu) that manages its own expanded state (e.g., via Redux).
+    // In that case, use the external initialExpanded prop directly.
+    // When _menuIndex IS provided, use context-based expansion.
+    const isExpanded = _menuIndex !== undefined
+        ? _expandedIndex !== undefined
+            ? _expandedIndex === effectiveIndex
+            : expandedIndex === effectiveIndex
         : initialExpanded;
 
     const handleClick = (e) => {
-        if (mobileMode && _menuIndex !== undefined) {
+        if (_menuIndex !== undefined) {
+            // Managed by parent MenuComponent's index system
             if (hasSubmenu) {
-                // Toggle submenu expansion via context
-                setExpandedIndex(_expandedIndex === _menuIndex ? null : _menuIndex);
+                setExpandedIndex(expandedIndex === effectiveIndex ? null : effectiveIndex);
+                e.stopPropagation();
             } else {
-                // Close any open submenu in this menu
                 setExpandedIndex(null);
             }
             if (onClick) {
                 onClick(e);
             }
-            e.stopPropagation();
-            return;
-        }
-        e.stopPropagation();
-        if (onClick) {
-            onClick(e);
+        } else {
+            // Custom components (e.g., Redux-managed like TWBlocksThemeMenu, LanguageMenu, etc.)
+            // Only stop propagation for leaf items (no submenu) to prevent unwanted parent behavior.
+            // For items with submenu, let the event bubble naturally.
+            if (!hasSubmenu) {
+                e.stopPropagation();
+            }
+            if (onClick) {
+                onClick(e);
+            }
         }
     };
 

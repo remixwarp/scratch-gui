@@ -74,10 +74,12 @@ const MenubarAlignMenu = ({
         isSelected: theme.menuBarAlign === id,
         onClick: () => onChangeMenuBarAlign(theme.set('menuBarAlign', id))
     }));
-    return (<MenuItem expanded={isOpen}>
+    return (<MenuItem
+        expanded={isOpen}
+        onClick={onOpen}
+    >
         <div
             className={styles.option}
-            onClick={onOpen}
         >
             <AlignIcon id={theme.menuBarAlign} />
             <span className={styles.submenuLabel}>

@@ -109,10 +109,12 @@ class FontsThemeMenu extends React.Component {
         const history = [...existingHistory].reverse();
 
         return (
-            <MenuItem expanded={isOpen}>
+            <MenuItem
+                expanded={isOpen}
+                onClick={onOpen}
+            >
                 <div
                     className={styles.option}
-                    onClick={onOpen}
                 >
                     <BookType className={styles.icon} />
                     <span className={styles.submenuLabel}>

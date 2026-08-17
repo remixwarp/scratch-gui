@@ -56,10 +56,12 @@ const GuiThemeMenu = ({
     onOpen,
     theme
 }) => (
-    <MenuItem expanded={isOpen}>
+    <MenuItem
+        expanded={isOpen}
+        onClick={onOpen}
+    >
         <div
             className={styles.option}
-            onClick={onOpen}
         >
             <ThemeIcon id={theme.gui} />
             <span className={styles.submenuLabel}>

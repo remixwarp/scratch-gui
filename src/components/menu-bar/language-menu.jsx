@@ -352,10 +352,10 @@ class LanguageMenu extends React.PureComponent {
         return (
             <MenuItem
                 expanded={this.props.menuOpen}
+                onClick={this.props.onRequestOpen}
             >
                 <div
                     className={styles.option}
-                    onClick={this.props.onRequestOpen}
                     onMouseOver={this.handleMouseOver}
                 >
                     <Globe className={styles.icon} />
