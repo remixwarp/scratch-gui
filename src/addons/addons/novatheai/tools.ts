@@ -4689,12 +4689,164 @@ export class AITools {
         ...this._compactBlockHelp(info),
       };
     } catch (error) {
+      // 尝试通过 searchBlocks 找到相关积木
+      const searchResults = this.searchBlocks({ query: opcode, maxResults: 8, includeExamples: true });
+      const suggestions = searchResults.matches || [];
+
+      // 构建友好提示，引导 AI 使用正确的积木
+      let helpText = `Scratch 中没有找到积木 "${opcode}"。`;
+      if (suggestions.length > 0) {
+        helpText += ` 以下是一些相关积木，请使用 searchBlocks 或 getBlockHelp 查询具体用法：\n`;
+        for (const match of suggestions.slice(0, 5)) {
+          helpText += `- ${match.opcode}: ${match.text || ""}\n`;
+        }
+      } else {
+        // 无搜索结果时，尝试按分类提供常见积木建议
+        const categoryHints = this._getCategoryFallbackHints(opcode);
+        if (categoryHints) {
+          helpText += `\n${categoryHints}`;
+        } else {
+          helpText += ` 请使用 searchBlocks 搜索正确的积木名称。`;
+        }
+      }
+
       return {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to read block help.",
-        suggestions: this.searchBlocks({ query: opcode, maxResults: 8, includeExamples: true }).matches,
+        success: true,
+        opcode: opcode,
+        text: helpText,
+        type: "unknown",
+        blockType: "unknown",
+        fields: {},
+        inputs: {},
+        substacks: [],
+        menus: {},
+        notes: ["The requested opcode was not found in Scratch. Use the suggestions above to find the correct block."],
+        suggestions: suggestions,
       };
     }
+  }
+
+  _getCategoryFallbackHints(opcode: string): string | null {
+    const lower = opcode.toLowerCase();
+
+    // 运动类
+    if (/move|motion|mov|步|位置/.test(lower)) {
+      return `如需移动积木，请尝试：
+- motion_movesteps: 移动指定步数
+- motion_gotoxy: 移到指定坐标
+- motion_glidesecstoxy: 在指定时间内滑行到坐标
+- motion_changexby / motion_changeyby: 改变 x/y 坐标
+- motion_setx / motion_sety: 设置 x/y 坐标
+- motion_pointindirection: 面向指定方向
+- motion_pointtowards: 面向鼠标或角色`;
+    }
+
+    // 控制类
+    if (/control|wait|repeat|if |else|stop|clone|when/.test(lower)) {
+      return `如需控制类积木，请尝试：
+- control_wait: 等待指定秒数
+- control_repeat: 重复执行指定次数
+- control_forever: 重复执行
+- control_if: 如果条件成立
+- control_if_else: 如果条件成立否则
+- control_repeat_until: 重复执行直到条件成立
+- control_wait_until: 等待直到条件成立
+- control_start_as_clone: 当作为克隆体启动
+- control_create_clone_of: 克隆指定角色
+- control_stop: 停止脚本`;
+    }
+
+    // 外观类
+    if (/looks|say|think|show|hide|costume|backdrop|size|effect|layer/.test(lower)) {
+      return `如需外观类积木，请尝试：
+- looks_say: 说话
+- looks_think: 思考
+- looks_show / looks_hide: 显示/隐藏
+- looks_switchcostumeto: 切换造型
+- looks_switchbackdropto: 切换背景
+- looks_changesizeby / looks_setsizeto: 改变/设置大小
+- looks_changeeffectby / looks_seteffectto: 改变/设置特效
+- looks_gotofrontback: 移到最前面/最后面`;
+    }
+
+    // 声音类
+    if (/sound|play|volume|音符|乐器/.test(lower)) {
+      return `如需声音类积木，请尝试：
+- sound_play: 播放声音
+- sound_playuntildone: 播放声音等待播完
+- sound_stopallsounds: 停止所有声音
+- sound_changevolumeby / sound_setvolumeto: 改变/设置音量
+- sound_changeeffectby / sound_seteffectto: 改变/设置音效`;
+    }
+
+    // 事件类
+    if (/event|broadcast|message|when|key|click/.test(lower)) {
+      return `如需事件类积木，请尝试：
+- event_whenflagclicked: 当绿旗被点击
+- event_whenkeypressed: 当按下指定键
+- event_whenthisspriteclicked: 当角色被点击
+- event_whenbroadcastreceived: 当接收到广播
+- event_broadcast: 广播消息
+- event_broadcastandwait: 广播消息并等待`;
+    }
+
+    // 侦测类
+    if (/sensing|touch|distance|ask|key|mouse|timer|username/.test(lower)) {
+      return `如需侦测类积木，请尝试：
+- sensing_touchingobject: 碰到指定对象
+- sensing_touchingcolor: 碰到指定颜色
+- sensing_distanceto: 到指定对象的距离
+- sensing_askandwait: 询问并等待
+- sensing_keypressed: 按下指定键
+- sensing_mousedown: 按下鼠标
+- sensing_mousex / sensing_mousey: 鼠标坐标
+- sensing_timer: 计时器
+- sensing_username: 用户名`;
+    }
+
+    // 运算类
+    if (/operator|add|plus|minus|math|random|运算|[+\-*/%]/.test(lower)) {
+      return `如需运算类积木，请尝试：
+- operator_add: 加法
+- operator_subtract: 减法
+- operator_multiply: 乘法
+- operator_divide: 除法
+- operator_random: 取随机数
+- operator_lt / operator_equals / operator_gt: 比较运算
+- operator_and / operator_or / operator_not: 逻辑运算
+- operator_join: 连接字符串
+- operator_mod: 取余
+- operator_round: 四舍五入`;
+    }
+
+    // 变量类
+    if (/variable|var|data|list|变量|列表/.test(lower)) {
+      return `如需变量/列表积木，请尝试：
+- data_setvariableto: 设置变量
+- data_changevariableby: 增加变量
+- data_variable: 读取变量
+- data_addtolist: 向列表添加项目
+- data_deleteoflist: 删除列表指定项目
+- data_insertatlist: 在列表指定位置插入
+- data_replaceitemoflist: 替换列表项目
+- data_itemoflist: 读取列表项目
+- data_lengthoflist: 列表长度
+- data_listcontainsitem: 列表包含项目`;
+    }
+
+    // 画笔类
+    if (/pen|pen|画笔|图章/.test(lower)) {
+      return `如需画笔类积木，请先安装画笔扩展：
+使用 searchExtensions 搜索 "pen"，然后使用 installExtension 安装。
+安装后可用：
+- pen_clear: 清空画笔
+- pen_stamp: 图章
+- pen_down / pen_up: 落笔/抬笔
+- pen_setpencolortocolor: 设置画笔颜色
+- pen_changepensizeby / pen_setpensizeto: 改变/设置画笔大小`;
+    }
+
+    return null;
   }
 
   getAllPrimitiveBlocks() {
