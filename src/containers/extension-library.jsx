@@ -681,8 +681,8 @@ const fetchLibrary = async () => {
         fetchAndAdd('cy-scr-ext-hub', async () => {
             return await fetchWithFallback(
                 'cy-scr-ext-hub',
-                'https://raw.githubusercontent.com/cy-studio-001/CYScrExtHub/main/extensions.json',
                 'https://rw-extensions.pages.dev/cy-scr-ext-hub/extensions-index.json',
+                'https://raw.githubusercontent.com/cy-studio-001/CYScrExtHub/main/extensions.json',
                 data => {
                     const extensions = (data.extensions || data);
                     const isGitHubRaw = extensions.length > 0 && ('is_cyso' in extensions[0] || 'download_url' in extensions[0]);
@@ -917,8 +917,8 @@ const fetchLibrary = async () => {
     retryFetchers['cy-scr-ext-hub'] = async () => {
         const result = await fetchWithFallback(
             'cy-scr-ext-hub',
-            'https://raw.githubusercontent.com/cy-studio-001/CYScrExtHub/main/extensions.json',
             'https://rw-extensions.pages.dev/cy-scr-ext-hub/extensions-index.json',
+            'https://raw.githubusercontent.com/cy-studio-001/CYScrExtHub/main/extensions.json',
             data => {
                 const extensions = (data.extensions || data);
                 const isGitHubRaw = extensions.length > 0 && ('is_cyso' in extensions[0] || 'download_url' in extensions[0]);

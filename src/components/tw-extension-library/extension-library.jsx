@@ -495,7 +495,7 @@ class TWExtensionLibrary extends React.Component {
                             allow="clipboard-read; clipboard-write"
                             style={{display: this.state.selectedTag === EXPERIMENT_PLAZA_TAG ? 'block' : 'none'}}
                         />
-                        {this.state.selectedTag !== EXPERIMENT_PLAZA_TAG ? (
+                        {this.state.selectedTag !== EXPERIMENT_PLAZA_TAG && (
                             <React.Fragment>
                                 <div className={styles.searchRow}>
                                     <Search
