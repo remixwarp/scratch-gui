@@ -1,7 +1,8 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
+import {defineMessages, FormattedMessage} from 'react-intl';
+import {useIntl} from '../../lib/tw-use-intl.jsx';
 import {connect} from 'react-redux';
 
 import ChevronDown from './ChevronDown.jsx';
@@ -92,7 +93,8 @@ WallpaperMenuItem.propTypes = {
     onRemove: PropTypes.func
 };
 
-const WallpaperInputForm = injectIntl(({intl, onSubmit, onOpacityChange, onDarknessChange, onGridVisibilityChange, currentOpacity, currentDarkness, currentGridVisible}) => {
+const WallpaperInputForm = ({onSubmit, onOpacityChange, onDarknessChange, onGridVisibilityChange, currentOpacity, currentDarkness, currentGridVisible}) => {
+    const intl = useIntl();
     const [url, setUrl] = React.useState('');
     const [opacity, setOpacity] = React.useState(currentOpacity);
     const [darkness, setDarkness] = React.useState(currentDarkness);
@@ -310,10 +312,9 @@ const WallpaperInputForm = injectIntl(({intl, onSubmit, onOpacityChange, onDarkn
             </div>
         </div>
     );
-});
+};
 
 WallpaperInputForm.propTypes = {
-    intl: intlShape.isRequired,
     onSubmit: PropTypes.func,
     onOpacityChange: PropTypes.func,
     onDarknessChange: PropTypes.func,
