@@ -357,6 +357,11 @@ const executeCallbackAction = shortcut => {
                 callbacks.toggleBackpack();
             }
             break;
+        case 'toggleCommandPalette':
+            if (callbacks.toggleCommandPalette) {
+                callbacks.toggleCommandPalette();
+            }
+            break;
         case 'toggleStageSize':
             if (callbacks.toggleStageSize) {
                 callbacks.toggleStageSize();

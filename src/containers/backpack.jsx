@@ -395,6 +395,8 @@ class Backpack extends React.Component {
     handleResizePointerDown (e) {
         if (!e) return;
         if (!this.state.expanded) return;
+        if (this.resizeSession) return;
+        if (typeof e.button !== 'undefined' && e.button !== 0) return;
         if (typeof e.preventDefault === 'function') e.preventDefault();
 
         this.resizeSession = {
@@ -402,9 +404,23 @@ class Backpack extends React.Component {
             startHeight: this.state.height
         };
 
+        // 捕获指针，防止拖动中断（不支持 PointerEvent 的环境会被跳过）
+        if (e.currentTarget &&
+            typeof e.currentTarget.setPointerCapture === 'function' &&
+            typeof e.pointerId === 'number') {
+            try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+            } catch (err) {
+                // ignore
+            }
+        }
+
+        // 同时监听 mouse 事件，兼容不支持 PointerEvent 的环境
         window.addEventListener('pointermove', this.handleResizePointerMove);
         window.addEventListener('pointerup', this.handleResizePointerUp);
         window.addEventListener('pointercancel', this.handleResizePointerUp);
+        window.addEventListener('mousemove', this.handleResizePointerMove);
+        window.addEventListener('mouseup', this.handleResizePointerUp);
     }
 
     handleResizePointerMove (e) {
@@ -425,6 +441,8 @@ class Backpack extends React.Component {
         window.removeEventListener('pointermove', this.handleResizePointerMove);
         window.removeEventListener('pointerup', this.handleResizePointerUp);
         window.removeEventListener('pointercancel', this.handleResizePointerUp);
+        window.removeEventListener('mousemove', this.handleResizePointerMove);
+        window.removeEventListener('mouseup', this.handleResizePointerUp);
 
         try {
             localStorage.setItem('mw:backpackHeight', String(this.state.height));

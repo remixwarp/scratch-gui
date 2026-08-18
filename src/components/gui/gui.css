@@ -110,23 +110,20 @@
     flex-direction: column !important;
     height: 100% !important;
     background-color: $ui-tertiary;
+    /* 活动栏宽度，底部登录/头像与设置按钮固定在最下方 */
+    width: 41px;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding: 10px 0 126px;
 }
 
 .vscodeList {
     flex-direction: row !important;
     display: flex;
     height: 100%;
-}
-
-.tab-list.vscode {
-    height: 100% !important;
-    width: 41px;
-    flex-direction: column !important;
-    align-items: center;
-    justify-content: flex-start;
-    border-bottom: none;
-    background-color: $ui-tertiary;
-    padding: 10px 0;
 }
 
 .vscode .tab {
@@ -227,10 +224,19 @@
     transform: none;
 }
 
-/* VS Code 活动栏底部弹性占位：把登录/头像和高级设置按钮推到最下方 */
-.activity-bar-bottom-push {
-    flex: 1 1 auto;
-    min-height: 8px;
+/* VS Code 活动栏底部固定栏：登录/头像 + 高级设置按钮，始终吸附在最下方 */
+.activity-bar-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0 10px;
+    box-sizing: border-box;
+    background-color: $ui-tertiary;
 }
 /* VS Code 活动栏登录/头像与高级设置之间的固定间距 */
 .activity-bar-bottom-gap {
@@ -257,6 +263,19 @@
     object-fit: cover;
     border-radius: 50%;
     display: block;
+}
+
+/* VS Code 布局：书包面板只覆盖积木区，不盖住左侧活动栏（41px） */
+.vscode-backpack-host {
+    position: absolute;
+    top: 0;
+    left: 41px;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+.vscode-backpack-host > * {
+    pointer-events: auto;
 }
 
 /* VS Code Layout: Find bar as floating overlay */
@@ -507,7 +526,7 @@
     width: 3.75rem;
     height: 3.25rem;
     position: absolute;
-    bottom: 0;
+    bottom: 2.4375rem;
     left: 0;
     right: 0;
     z-index: $z-index-extension-button;

@@ -118,8 +118,10 @@ import {
     MODAL_PROJECT_METADATA
 } from '../../reducers/modals.js';
 import {openWorkspaceBookmarksMenu} from '../../reducers/menus.js';
+import MWCommandPalette from '../../containers/mw-command-palette.jsx';
 import {openCollaborationModal} from '../../reducers/collaboration.js';
 import SettingsStore from '../../addons/settings-store-singleton.js';
+import {getVisibleOrderedIds as getActivityBarVisibleIds} from '../../lib/mw-activity-bar-layout.js';
 import {GitBranch, ListTodo, Handshake, Trophy, Bookmark, PackagePlus, Sparkles, Settings as SettingsIcon, Puzzle, LogIn} from 'lucide-react';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
@@ -312,6 +314,13 @@ const GUIComponent = props => {
     });
     
     const [vscodeLayout, setVSCodeLayout] = useState(initialVSCodeLayout);
+    // 活动栏按钮配置变化时触发重渲染（开关/顺序）
+    const [_activityBarVersion, setActivityBarVersion] = useState(0);
+    useEffect(() => {
+        const onChange = () => setActivityBarVersion(v => v + 1);
+        window.addEventListener('mw-activity-bar-changed', onChange);
+        return () => window.removeEventListener('mw-activity-bar-changed', onChange);
+    }, []);
     const [enableBlockCounter, setEnableBlockCounter] = useState(() => {
         try {
             const stored = localStorage.getItem('AESettings');
@@ -1333,6 +1342,7 @@ const GUIComponent = props => {
         callbacks.toggleBackpack = () => props.dispatch && props.dispatch({type: 'scratch-gui/backpack/TOGGLE_BACKPACK'});
         callbacks.toggleStageSize = () => props.dispatch && props.dispatch({type: 'scratch-gui/stage-size/TOGGLE_STAGE_SIZE'});
         callbacks.setFullScreen = (isFullScreen) => props.dispatch && props.dispatch({type: 'scratch-gui/mode/SET_FULL_SCREEN', isFullScreen});
+        callbacks.toggleCommandPalette = () => window.dispatchEvent(new Event('rw-command-palette-toggle'));
         
         // Initialize shortcuts with dispatch, vm, and callbacks
         initShortcuts(dispatchWrapper, vm, callbacks);
@@ -1492,6 +1502,61 @@ const GUIComponent = props => {
         };
     }, [stagePanelWidth]);
 
+    // 活动栏工具按钮定义（顺序/显示由高级设置中的活动栏配置控制）
+    const activityBarDefs = {
+        addonSettings: {
+            title: intl.formatMessage({defaultMessage: '插件设置', id: 'tw.addonSettings.title'}),
+            onClick: onClickAddonSettings,
+            icon: <Puzzle size={20} />
+        },
+        addExtension: {
+            title: intl.formatMessage(messages.addExtension),
+            onClick: onExtensionButtonClick,
+            icon: <PackagePlus size={20} />
+        },
+        collaboration: {
+            title: intl.formatMessage({defaultMessage: 'Live Collaboration', id: 'tw.menuBar.collaboration'}),
+            onClick: () => props.dispatch(openCollaborationModal()),
+            icon: <Handshake size={20} />
+        },
+        todo: {
+            condition: SettingsStore.getAddonEnabled('todo-list'),
+            title: intl.formatMessage({defaultMessage: 'Todo', id: 'gui.menuBar.todo'}),
+            onClick: () => window.dispatchEvent(new Event('rw-todo-open')),
+            icon: <ListTodo size={20} />
+        },
+        git: {
+            title: intl.formatMessage({defaultMessage: 'Git', id: 'mw.menuBar.git'}),
+            onClick: () => props.dispatch(openGitModal()),
+            icon: <GitBranch size={20} />
+        },
+        bookmarks: {
+            title: intl.formatMessage({defaultMessage: 'Bookmarks', id: 'tw.workspaceBookmarks.menuLabel'}),
+            onClick: () => props.dispatch(openWorkspaceBookmarksMenu()),
+            icon: <Bookmark size={20} />
+        },
+        aiAgent: {
+            title: intl.formatMessage({defaultMessage: 'AI Agent', id: 'gui.menuBar.aiAgent'}),
+            onClick: () => props.dispatch(openAIAgentModal()),
+            icon: <Sparkles size={20} />
+        },
+        achievements: {
+            condition: isAchievementsEnabled(),
+            title: locale === 'zh-cn' ? '成就' : 'Achievements',
+            onClick: () => window.dispatchEvent(new Event('rw-achievements-open')),
+            icon: <Trophy size={20} />
+        }
+    };
+
+    // 依据设置中的顺序/开关过滤出要渲染的活动栏按钮
+    const activityBarItems = getActivityBarVisibleIds()
+        .map(id => ({id, def: activityBarDefs[id]}))
+        .filter(item => item.def && item.def.condition !== false)
+        .map((item, i, arr) => ({
+            ...item,
+            separatorAfter: item.id === 'addExtension' && i < arr.length - 1
+        }));
+
     return (<MediaQuery minWidth={unconstrainedWidth}>{isUnconstrained => {
         const stageSize = resolveStageSize(stageSizeMode, isUnconstrained);
 
@@ -1530,6 +1595,7 @@ const GUIComponent = props => {
                 {...componentProps}
             >
                 {alwaysEnabledModals}
+                <MWCommandPalette />
                 {telemetryModalVisible ? (
                     <React.Suspense fallback={null}>
                         <TelemetryModal
@@ -1735,93 +1801,45 @@ const GUIComponent = props => {
                                     {vscodeLayout && (
                                         <>
                                             <div className={styles.activityBarSeparator} />
-                                            <button
-                                                className={styles.activityBarButton}
-                                                title={intl.formatMessage({defaultMessage: '插件设置', id: 'tw.addonSettings.title'})}
-                                                onClick={onClickAddonSettings}
-                                            >
-                                                <Puzzle size={20} />
-                                            </button>
-                                            <button
-                                                className={styles.activityBarButton}
-                                                title={intl.formatMessage(messages.addExtension)}
-                                                onClick={onExtensionButtonClick}
-                                            >
-                                                <PackagePlus size={20} />
-                                            </button>
-                                            <div className={styles.activityBarSeparator} />
-                                            <button
-                                                className={styles.activityBarButton}
-                                                title={intl.formatMessage({defaultMessage: 'Live Collaboration', id: 'tw.menuBar.collaboration'})}
-                                                onClick={() => props.dispatch(openCollaborationModal())}
-                                            >
-                                                <Handshake size={20} />
-                                            </button>
-                                            {SettingsStore.getAddonEnabled('todo-list') && (
+                                            {activityBarItems.map(item => (
+                                                <React.Fragment key={item.id}>
+                                                    <button
+                                                        className={styles.activityBarButton}
+                                                        title={item.def.title}
+                                                        onClick={item.def.onClick}
+                                                    >
+                                                        {item.def.icon}
+                                                    </button>
+                                                    {item.separatorAfter && <div className={styles.activityBarSeparator} />}
+                                                </React.Fragment>
+                                            ))}
+                                            <div className={styles.activityBarBottom}>
+                                                {roturUsername ? (
+                                                    <button
+                                                        className={classNames(styles.activityBarButton, styles.activityBarAvatarButton)}
+                                                        title={roturUsername}
+                                                        onClick={() => props.dispatch && props.dispatch(openAccountMenu())}
+                                                    >
+                                                        <Avatar username={roturUsername} size={28} />
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        className={styles.activityBarButton}
+                                                        title={intl.formatMessage({defaultMessage: '登录', id: 'tw.login.button'})}
+                                                        onClick={() => props.dispatch && props.dispatch(openRoturLoginModal())}
+                                                    >
+                                                        <LogIn size={20} />
+                                                    </button>
+                                                )}
+                                                <div className={styles.activityBarBottomGap} />
                                                 <button
                                                     className={styles.activityBarButton}
-                                                    title={intl.formatMessage({defaultMessage: 'Todo', id: 'gui.menuBar.todo'})}
-                                                    onClick={() => window.dispatchEvent(new Event('rw-todo-open'))}
+                                                    title={intl.formatMessage({defaultMessage: '高级设置', id: 'gui.menuBar.settings'})}
+                                                    onClick={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'settingsModal'})}
                                                 >
-                                                    <ListTodo size={20} />
+                                                    <SettingsIcon size={20} />
                                                 </button>
-                                            )}
-                                            <button
-                                                className={styles.activityBarButton}
-                                                title={intl.formatMessage({defaultMessage: 'Git', id: 'mw.menuBar.git'})}
-                                                onClick={() => props.dispatch(openGitModal())}
-                                            >
-                                                <GitBranch size={20} />
-                                            </button>
-                                            <button
-                                                className={styles.activityBarButton}
-                                                title={intl.formatMessage({defaultMessage: 'Bookmarks', id: 'tw.workspaceBookmarks.menuLabel'})}
-                                                onClick={() => props.dispatch(openWorkspaceBookmarksMenu())}
-                                            >
-                                                <Bookmark size={20} />
-                                            </button>
-                                            <button
-                                                className={styles.activityBarButton}
-                                                title={intl.formatMessage({defaultMessage: 'AI Agent', id: 'gui.menuBar.aiAgent'})}
-                                                onClick={() => props.dispatch(openAIAgentModal())}
-                                            >
-                                                <Sparkles size={20} />
-                                            </button>
-                                            {isAchievementsEnabled() && (
-                                                <button
-                                                    className={styles.activityBarButton}
-                                                    title={locale === 'zh-cn' ? '成就' : 'Achievements'}
-                                                    onClick={() => window.dispatchEvent(new Event('rw-achievements-open'))}
-                                                >
-                                                    <Trophy size={20} />
-                                                </button>
-                                            )}
-                                            <div className={styles.activityBarBottomPush} />
-                                            {roturUsername ? (
-                                                <button
-                                                    className={classNames(styles.activityBarButton, styles.activityBarAvatarButton)}
-                                                    title={roturUsername}
-                                                    onClick={() => props.dispatch && props.dispatch(openAccountMenu())}
-                                                >
-                                                    <Avatar username={roturUsername} size={28} />
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    className={styles.activityBarButton}
-                                                    title={intl.formatMessage({defaultMessage: '登录', id: 'tw.login.button'})}
-                                                    onClick={() => props.dispatch && props.dispatch(openRoturLoginModal())}
-                                                >
-                                                    <LogIn size={20} />
-                                                </button>
-                                            )}
-                                            <div className={styles.activityBarBottomGap} />
-                                            <button
-                                                className={styles.activityBarButton}
-                                                title={intl.formatMessage({defaultMessage: '高级设置', id: 'gui.menuBar.settings'})}
-                                                onClick={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'settingsModal'})}
-                                            >
-                                                <SettingsIcon size={20} />
-                                            </button>
+                                            </div>
                                         </>
                                     )}
                                 </TabList>
@@ -1878,7 +1896,13 @@ const GUIComponent = props => {
                                 </TabPanel>
                             </Tabs>
                             {backpackVisible ? (
-                                <Backpack host={backpackHost} />
+                                vscodeLayout ? (
+                                    <Box className={styles.vscodeBackpackHost}>
+                                        <Backpack host={backpackHost} />
+                                    </Box>
+                                ) : (
+                                    <Backpack host={backpackHost} />
+                                )
                             ) : null}
                         </Box>
 

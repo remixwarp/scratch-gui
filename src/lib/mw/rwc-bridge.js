@@ -1,5 +1,6 @@
 import settingsStore from '../../addons/settings-store-singleton';
 import storage from '../persistence/storage';
+import AddonHooks from '../../addons/hooks.js';
 
 const CHANNEL_NAME = 'rwc-config-plaza';
 const GH_PROXY_PREFIX = 'https://gh-proxy.org/';
@@ -487,12 +488,616 @@ function handleExperimentPlazaMessage(e) {
     }
 }
 
+// ===== Material Plaza Bridge =====
+// Mirrors the backpack's drag detection approach:
+// - Blocks: listen for BLOCK_DRAG_UPDATE + BLOCK_DRAG_END on the VM
+// - Sprites/Costumes/Sounds: subscribe to Redux assetDrag state (like DropAreaHOC)
+// - Pointer tracking: use both pointermove + mousemove (like backpack's handleGlobalPointerMove)
+const MATERIAL_CHANNEL = 'rwc-material-plaza';
+let materialPlazaSource = null;
+let captureActive = false;
+let dropZoneEl = null;
+let dropZoneStylesEl = null;
+let unsubscribeStore = null;
+let pointerX = 0;
+let pointerY = 0;
+let blockDragOutsideWorkspace = false;
+
+function trackPointer(e) {
+    pointerX = e.clientX;
+    pointerY = e.clientY;
+}
+
+function isPointerOverDropZone() {
+    if (!dropZoneEl) return false;
+    const rect = dropZoneEl.getBoundingClientRect();
+    return pointerX >= rect.left && pointerX <= rect.right &&
+           pointerY >= rect.top && pointerY <= rect.bottom;
+}
+
+function handleMaterialPlazaMessage(e) {
+    if (!e.data || e.data.channel !== MATERIAL_CHANNEL) return;
+    const { type, data } = e.data;
+
+    switch (type) {
+        case 'plazaReady':
+            materialPlazaSource = e.source;
+            const editorLocale = localStorage.getItem('tw:language') || 'zh-cn';
+            const msg = {
+                channel: MATERIAL_CHANNEL,
+                type: 'editorLocale',
+                data: { locale: editorLocale }
+            };
+            if (e.source && !e.source.closed) {
+                e.source.postMessage(msg, '*');
+            }
+            break;
+        case 'requestCapture':
+            showMaterialDropZone();
+            break;
+        case 'cancelCapture':
+            hideMaterialDropZone();
+            break;
+        case 'applyMaterial':
+            applyMaterialToEditor(data);
+            break;
+        case 'getTargetList':
+            getTargetListForMaterial(e);
+            break;
+        // 转发素材广场的 GitHub API 读取请求（匿名，避免 CORS 预检）
+        case 'forwardGithubRead':
+            handleMaterialGithubRead(e);
+            break;
+    }
+}
+
+async function handleMaterialGithubRead(e) {
+    const { data } = e.data;
+    if (!data || !data.path) return;
+    const { requestId, path } = data;
+
+    const reply = (payload) => {
+        const msg = {
+            channel: MATERIAL_CHANNEL,
+            type: 'forwardGithubReadResult',
+            data: { requestId, ...payload }
+        };
+        if (e.source && !e.source.closed) {
+            e.source.postMessage(msg, '*');
+        }
+    };
+
+    try {
+        // 匿名请求（无 Authorization header），不触发 CORS 预检
+        const res = await fetch(`${RWC_API_BASE}${path}`, {
+            headers: { 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (!res.ok) {
+            throw new Error(`GitHub API ${res.status}`);
+        }
+        const result = await res.json();
+        reply({ result });
+    } catch (err) {
+        reply({ error: err.message });
+    }
+}
+
+function getVM() {
+    try {
+        return AddonHooks.appStateStore.getState().scratchGui.vm;
+    } catch (e) {
+        return null;
+    }
+}
+
+function sendToMaterialPlaza(message) {
+    if (materialPlazaSource && !materialPlazaSource.closed) {
+        materialPlazaSource.postMessage(message, '*');
+    }
+}
+
+function showMaterialDropZone() {
+    if (dropZoneEl) return;
+    captureActive = true;
+    blockDragOutsideWorkspace = false;
+
+    // Track pointer like backpack's handleGlobalPointerMove
+    document.addEventListener('pointermove', trackPointer);
+    document.addEventListener('mousemove', trackPointer);
+
+    // Create drop zone styles
+    dropZoneStylesEl = document.createElement('style');
+    dropZoneStylesEl.textContent = `
+        #material-plaza-drop-zone {
+            position: fixed;
+            inset: 0;
+            z-index: 99998;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: mpFadeIn 0.2s ease;
+        }
+        #material-plaza-drop-zone .mp-drop-inner {
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(6px);
+            border: 3px dashed #4caf50;
+            border-radius: 20px;
+            padding: 48px 64px;
+            text-align: center;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            box-shadow: 0 24px 48px rgba(0,0,0,0.3);
+            transition: transform 0.2s, border-color 0.2s;
+            max-width: 420px;
+        }
+        #material-plaza-drop-zone .mp-drop-inner.mp-hover {
+            transform: scale(1.05);
+            border-color: #66bb6a;
+            background: rgba(0,0,0,0.65);
+        }
+        #material-plaza-drop-zone .mp-drop-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 16px;
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid rgba(76, 175, 80, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #material-plaza-drop-zone .mp-drop-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        #material-plaza-drop-zone .mp-drop-subtitle {
+            font-size: 13px;
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+        #material-plaza-drop-zone .mp-drop-close {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            transition: background 0.15s;
+        }
+        #material-plaza-drop-zone .mp-drop-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        @keyframes mpFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    `;
+    document.head.appendChild(dropZoneStylesEl);
+
+    // Create drop zone element
+    dropZoneEl = document.createElement('div');
+    dropZoneEl.id = 'material-plaza-drop-zone';
+    dropZoneEl.innerHTML = `
+        <button class="mp-drop-close" id="mp-drop-close-btn">&times;</button>
+        <div class="mp-drop-inner" id="mp-drop-inner">
+            <div class="mp-drop-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+            </div>
+            <div class="mp-drop-title">拖拽素材到此处</div>
+            <div class="mp-drop-subtitle">从编辑器拖拽积木、角色、造型或声音到此处<br/>即可上传到素材广场</div>
+        </div>
+    `;
+    document.body.appendChild(dropZoneEl);
+
+    // Close button
+    const closeBtn = dropZoneEl.querySelector('#mp-drop-close-btn');
+    closeBtn.addEventListener('click', () => {
+        sendToMaterialPlaza({
+            channel: MATERIAL_CHANNEL,
+            type: 'captureCancelled'
+        });
+        hideMaterialDropZone();
+    });
+
+    // Hover effect on drop inner
+    const dropInner = dropZoneEl.querySelector('#mp-drop-inner');
+    const updateHover = () => {
+        if (dropZoneEl && dropInner) {
+            dropInner.classList.toggle('mp-hover', isPointerOverDropZone());
+        }
+    };
+    document.addEventListener('pointermove', updateHover);
+    document.addEventListener('mousemove', updateHover);
+
+    // Subscribe to block drag events on VM (like backpack does)
+    const vm = getVM();
+    if (vm) {
+        vm.addListener('BLOCK_DRAG_UPDATE', handleBlockDragUpdateForMaterial);
+        vm.addListener('BLOCK_DRAG_END', handleBlockDragEndForMaterial);
+    }
+
+    // Subscribe to Redux store for sprite/costume/sound drags (like DropAreaHOC)
+    if (AddonHooks.appStateStore) {
+        let prevDragState = null;
+        unsubscribeStore = AddonHooks.appStateStore.subscribe(() => {
+            try {
+                const state = AddonHooks.appStateStore.getState();
+                const dragState = state.scratchGui && state.scratchGui.assetDrag;
+                if (!dragState) return;
+
+                // Detect drag end: was dragging and now not dragging
+                if (prevDragState && prevDragState.dragging && !dragState.dragging) {
+                    if (captureActive && prevDragState.dragType) {
+                        // Check if pointer is over the drop zone (like DropAreaHOC checks currentOffset)
+                        if (isPointerOverDropZone()) {
+                            handleAssetDragEnd(prevDragState);
+                        }
+                    }
+                }
+                prevDragState = dragState ? { ...dragState } : null;
+            } catch (e) {
+                // ignore
+            }
+        });
+    }
+}
+
+function hideMaterialDropZone() {
+    captureActive = false;
+    blockDragOutsideWorkspace = false;
+    document.removeEventListener('pointermove', trackPointer);
+    document.removeEventListener('mousemove', trackPointer);
+
+    if (dropZoneEl) {
+        dropZoneEl.remove();
+        dropZoneEl = null;
+    }
+    if (dropZoneStylesEl) {
+        dropZoneStylesEl.remove();
+        dropZoneStylesEl = null;
+    }
+
+    const vm = getVM();
+    if (vm) {
+        vm.removeListener('BLOCK_DRAG_UPDATE', handleBlockDragUpdateForMaterial);
+        vm.removeListener('BLOCK_DRAG_END', handleBlockDragEndForMaterial);
+    }
+
+    if (unsubscribeStore) {
+        unsubscribeStore();
+        unsubscribeStore = null;
+    }
+}
+
+// Like backpack's handleBlockDragUpdate: track when blocks are outside the workspace
+function handleBlockDragUpdateForMaterial(isOutsideWorkspace) {
+    blockDragOutsideWorkspace = isOutsideWorkspace;
+}
+
+// Like backpack's handleBlockDragEnd: capture blocks dropped on the drop zone
+function handleBlockDragEndForMaterial(blocks, topBlockId) {
+    if (!captureActive) return;
+
+    // Check if pointer is over the drop zone (same as backpack's isPointerOverDropArea)
+    if (!isPointerOverDropZone()) return;
+
+    const vm = getVM();
+    if (!vm) return;
+
+    const blockObjects = vm.exportStandaloneBlocks(blocks);
+    const payload = { blockObjects, topBlockId };
+
+    // Generate thumbnail using block-to-image
+    import('../backpack/block-to-image').then(mod => {
+        const blockToImage = mod.default;
+        return blockToImage(topBlockId);
+    }).then(dataUrl => {
+        sendToMaterialPlaza({
+            channel: MATERIAL_CHANNEL,
+            type: 'capturedMaterial',
+            data: {
+                type: 'script',
+                name: 'code',
+                mime: 'application/json',
+                body: btoa(JSON.stringify(blockObjects)),
+                thumbnail: dataUrl || '',
+                payload: payload
+            }
+        });
+        hideMaterialDropZone();
+    }).catch(() => {
+        sendToMaterialPlaza({
+            channel: MATERIAL_CHANNEL,
+            type: 'capturedMaterial',
+            data: {
+                type: 'script',
+                name: 'code',
+                mime: 'application/json',
+                body: btoa(JSON.stringify(blockObjects)),
+                thumbnail: '',
+                payload: payload
+            }
+        });
+        hideMaterialDropZone();
+    });
+}
+
+async function handleAssetDragEnd(dragState) {
+    if (!captureActive) return;
+    const vm = getVM();
+    if (!vm) return;
+
+    const dragType = dragState.dragType;
+    const payload = dragState.payload;
+
+    let materialData = null;
+
+    try {
+        if (dragType === 'SPRITE') {
+            // Capture sprite
+            const spriteId = payload.id;
+            const zippedSprite = await vm.exportSprite(spriteId, 'base64');
+            const target = vm.runtime.getTargetById(spriteId);
+            const spriteName = target ? target.sprite.name : 'sprite';
+            const costumeDataUrl = target ? target.sprite.costumes[target.currentCostume].asset.encodeDataURI() : '';
+
+            materialData = {
+                type: 'sprite',
+                name: spriteName,
+                mime: 'application/zip',
+                body: zippedSprite,
+                thumbnail: costumeDataUrl || ''
+            };
+        } else if (dragType === 'COSTUME') {
+            // Capture costume
+            const costume = payload.asset;
+            const assetDataUrl = vm.getExportedCostumeBase64(costume);
+            const dataFormat = costume.dataFormat;
+            let mime = 'image/svg+xml';
+            if (dataFormat === 'png') mime = 'image/png';
+            else if (dataFormat === 'jpg') mime = 'image/jpeg';
+
+            materialData = {
+                type: 'costume',
+                name: costume.name,
+                mime: mime,
+                body: assetDataUrl,
+                thumbnail: assetDataUrl || ''
+            };
+        } else if (dragType === 'SOUND') {
+            // Capture sound
+            const sound = payload.asset;
+            const assetDataUrl = sound.asset.encodeDataURI();
+            const dataFormat = sound.dataFormat;
+            let mime = 'audio/x-wav';
+            if (dataFormat === 'mp3') mime = 'audio/mp3';
+
+            materialData = {
+                type: 'sound',
+                name: sound.name,
+                mime: mime,
+                body: assetDataUrl.replace(/^data:[^;]+;base64,/, ''),
+                thumbnail: '' // Sound uses default thumbnail
+            };
+        }
+    } catch (e) {
+        console.error('[RWC] Failed to capture material:', e);
+        return;
+    }
+
+    if (materialData) {
+        sendToMaterialPlaza({
+            channel: MATERIAL_CHANNEL,
+            type: 'capturedMaterial',
+            data: {
+                ...materialData,
+                payload: payload
+            }
+        });
+        hideMaterialDropZone();
+    }
+}
+
+function getTargetListForMaterial(e) {
+    const vm = getVM();
+    if (!vm || !vm.runtime) return;
+    const { requestId } = (e.data && e.data.data) || {};
+
+    const targets = vm.runtime.targets.map(function (t) {
+        return {
+            id: t.id,
+            name: t.getName(),
+            isStage: t.isStage,
+            // 获取第一个造型作为缩略图
+            costumes: (t.getCostumes() || []).map(function (c) {
+                return {
+                    name: c.name,
+                    assetId: c.assetId,
+                    dataFormat: c.dataFormat
+                };
+            }),
+            costumeCount: (t.getCostumes() || []).length,
+            soundCount: (t.getSounds() || []).length
+        };
+    });
+
+    const msg = {
+        channel: MATERIAL_CHANNEL,
+        type: 'targetListResult',
+        data: { requestId: requestId, targets: targets }
+    };
+    if (e.source && !e.source.closed) {
+        e.source.postMessage(msg, '*');
+    }
+}
+
+async function applyMaterialToEditor(data) {
+    if (!data) return;
+    const vm = getVM();
+    if (!vm) return;
+
+    const { type, body, mime, payload, targetId } = data;
+
+    try {
+        switch (type) {
+            case 'script':
+                if (payload && payload.blockObjects) {
+                    // Place blocks in workspace
+                    const blockObjects = payload.blockObjects;
+                    const blocks = blockObjects && blockObjects.blocks;
+                    if (blocks) {
+                        const topBlockId = blocks.find(b => b.topLevel && !b.parent);
+                        if (topBlockId) {
+                            await vm.emit('BLOCKS_NEED_ADDED', null, blockObjects);
+                        }
+                    }
+                } else if (body) {
+                    // Try to parse body as JSON block objects
+                    try {
+                        const blockObjects = JSON.parse(atob(body));
+                        await vm.emit('BLOCKS_NEED_ADDED', null, blockObjects);
+                    } catch (e) {
+                        console.error('[RWC] Failed to parse script body:', e);
+                    }
+                }
+                break;
+
+            case 'sprite':
+                // Add sprite from base64 zip
+                if (body) {
+                    const binaryStr = atob(body);
+                    const bytes = new Uint8Array(binaryStr.length);
+                    for (let i = 0; i < binaryStr.length; i++) {
+                        bytes[i] = binaryStr.charCodeAt(i);
+                    }
+                    await vm.addSprite(bytes.buffer);
+                }
+                break;
+
+            case 'costume':
+                // Add costume to specified target (or current target if not specified)
+                if (body && mime) {
+                    // Derive data format from mime
+                    let dataFormat = 'svg';
+                    if (mime === 'image/png') dataFormat = 'png';
+                    else if (mime === 'image/jpeg') dataFormat = 'jpg';
+
+                    // Create a costume object from the data
+                    const md5 = md5FromBody(body);
+                    const costumeObject = {
+                        name: data.name || 'Material',
+                        dataFormat: dataFormat,
+                        assetId: md5,
+                        md5: md5 + '.' + dataFormat,
+                        rotationCenterX: 0,
+                        rotationCenterY: 0,
+                        bitmapResolution: 1
+                    };
+
+                    // Store the asset
+                    const assetType = dataFormat === 'svg' ?
+                        storage.AssetType.ImageVector :
+                        storage.AssetType.ImageBitmap;
+                    const bodyBytes = base64ToBytes(body);
+                    await storage.builtinHelper._store(
+                        assetType,
+                        dataFormat,
+                        bodyBytes,
+                        md5
+                    );
+
+                    // Add to target (use targetId if provided)
+                    await vm.addCostume(costumeObject.md5, costumeObject, targetId || null);
+                }
+                break;
+
+            case 'sound':
+                // Add sound to specified target (or current target if not specified)
+                if (body) {
+                    let dataFormat = 'wav';
+                    // 修复 MIME 类型检查：audio/mpeg 是 mp3 的标准 MIME
+                    if (mime === 'audio/mpeg' || mime === 'audio/mp3') dataFormat = 'mp3';
+
+                    const md5 = md5FromBody(body);
+                    const soundObject = {
+                        name: data.name || 'Material',
+                        dataFormat: dataFormat,
+                        assetId: md5,
+                        md5: md5 + '.' + dataFormat,
+                        format: dataFormat,
+                        rate: 44100,
+                        sampleCount: 0
+                    };
+
+                    // Store the asset data
+                    await storage.builtinHelper._store(
+                        storage.AssetType.Sound,
+                        dataFormat,
+                        base64ToBytes(body),
+                        md5
+                    );
+
+                    // Add to target (use targetId if provided)
+                    await vm.addSound(soundObject, targetId || null);
+                }
+                break;
+        }
+
+        sendToMaterialPlaza({
+            channel: MATERIAL_CHANNEL,
+            type: 'applyResult',
+            data: { success: true }
+        });
+    } catch (e) {
+        console.error('[RWC] Failed to apply material:', e);
+        sendToMaterialPlaza({
+            channel: MATERIAL_CHANNEL,
+            type: 'applyResult',
+            data: { success: false, error: e.message }
+        });
+    }
+}
+
+function md5FromBody(body) {
+    try {
+        const md5 = require('js-md5');
+        return md5(base64ToBytes(body));
+    } catch (e) {
+        return 'material_' + Date.now();
+    }
+}
+
+function base64ToBytes(base64) {
+    const binaryStr = atob(base64);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+    }
+    return bytes;
+}
+
 function initBridge() {
     if (bridgeInitialized) return;
     bridgeInitialized = true;
 
     window.addEventListener('message', handleMessage);
     window.addEventListener('message', handleExperimentPlazaMessage);
+    window.addEventListener('message', handleMaterialPlazaMessage);
     console.log('[RWC] Bridge initialized');
 
     setTimeout(checkRwcUrlParam, 500);

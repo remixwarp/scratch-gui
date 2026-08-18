@@ -45,6 +45,7 @@ import {getCurrentUser, isLoggedIn} from '../../lib/community/api.js';
 import {saveToBilup as saveProjectToBilup} from '../../lib/mw/smart-save.js';
 import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
 import openConfigPlazaWindow from '../../lib/mw/open-config-plaza-window.js';
+import openMaterialPlazaWindow from '../../lib/mw/open-material-plaza-window.js';
 import {getBilupAction} from '../../lib/community/publish.js';
 import communityEnabled from '../../lib/community/enabled.js';
 import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
@@ -180,7 +181,7 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
-    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store
+    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store, Backpack, Terminal
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -2072,6 +2073,10 @@ class MenuBar extends React.Component {
         openConfigPlazaWindow();
         this.props.onRequestCloseFile();
     };
+    handleClickMaterialPlaza = () => {
+        openMaterialPlazaWindow();
+        this.props.onRequestCloseFile();
+    };
     handleClickSeeCommunity (waitForUpdate) {
         if (this.props.shouldSaveBeforeTransition()) {
             this.props.autoUpdateProject(); // save before transitioning to project page
@@ -3386,6 +3391,18 @@ class MenuBar extends React.Component {
                                             </Submenu>
                                         </MenuItem>
                                     </MenuSection>
+                                    <MenuSection>
+                                        <MenuItem onClick={this.handleClickMaterialPlaza}>
+                                            <svg width="20" height="20" viewBox="0,0,22.62854,23.85627" version="1.1" xmlns="http://www.w3.org/2000/svg" style={{verticalAlign:'middle'}}>
+                                                <g transform="translate(-228.28592,-168.07187)">
+                                                    <g fill="none" stroke="currentColor" stroke-width="2" stroke-miterlimit="10">
+                                                        <path d="M247.53476,182.01817c0.98179,0 1.78917,0.80806 1.77529,1.79019v5.34584c-0.00009,0.47063 -0.18715,0.92193 -0.52003,1.25462c-0.33288,0.33269 -0.78429,0.51949 -1.25492,0.51931h-5.356c-0.47065,-0.00045 -0.92184,-0.18791 -1.25422,-0.52113c-0.33239,-0.33321 -0.51873,-0.78486 -0.51802,-1.25551v-5.35939c0.00009,-0.47063 0.18715,-0.92193 0.52003,-1.25462c0.33288,-0.33269 0.78429,-0.51949 1.25492,-0.51931h5.35296M236.41416,182.01817c0.98179,0 1.77529,0.80806 1.77529,1.79019v5.34618c-0.00009,0.47065 -0.18721,0.92198 -0.52017,1.25462c-0.33296,0.33264 -0.78446,0.51933 -1.25512,0.51897h-5.356c-0.47065,-0.00045 -0.92184,-0.18791 -1.25422,-0.52113c-0.33239,-0.33321 -0.51873,-0.78486 -0.51802,-1.25551v-5.35939c0.00009,-0.47063 0.18715,-0.92193 0.52003,-1.25462c0.33288,-0.33269 0.78429,-0.51949 1.25492,-0.51931h5.3533M250.18775,173.37894c0.69633,0.69228 0.70253,1.81705 0.01389,2.51697l-0.52493,0.52493l-3.26847,3.2705l-0.01287,0.01287c-0.69443,0.68718 -1.81441,0.68142 -2.50173,-0.01287l-0.52493,-0.52493l-2.74319,-2.74557l-0.52493,-0.52493c-0.33571,-0.33274 -0.52456,-0.78581 -0.52456,-1.25848c0,-0.47267 0.18885,-0.92575 0.52456,-1.25848l3.26813,-3.25729l0.52493,-0.52527l0.01287,-0.01287c0.69443,-0.68718 1.81441,-0.68142 2.50173,0.01287l3.77918,3.78222M236.41416,170.88944h0.01151c0.98147,0.00745 1.7711,0.80906 1.76377,1.79053v5.34686c-0.00018,0.47063 -0.18733,0.9219 -0.52027,1.25452c-0.33294,0.33262 -0.78439,0.51934 -1.25502,0.51907h-5.356c-0.47066,-0.00063 -0.92179,-0.1882 -1.25415,-0.52145c-0.33236,-0.33325 -0.51872,-0.78488 -0.51809,-1.25553v-5.35871c-0.00027,-0.47086 0.18664,-0.92252 0.51955,-1.2555c0.33292,-0.33298 0.78454,-0.51997 1.2554,-0.51979h5.3533" stroke-linecap="butt" stroke-linejoin="miter"/>
+                                                    </g>
+                                                </g>
+                                            </svg>
+                                            {this.props.locale === 'zh-cn' ? '素材广场' : 'Material Plaza'}
+                                        </MenuItem>
+                                    </MenuSection>
                                     {this.getAutosaveEnabled() && (
                                         <MenuSection>
                                             <MenuItem onClick={this.handleToggleAutosave}>
@@ -3711,6 +3728,20 @@ class MenuBar extends React.Component {
                                 place={this.props.isRtl ? 'left' : 'right'}
                             >
                                 <MenuSection>
+                                    <MenuItem
+                                        onClick={() => {
+                                            window.dispatchEvent(new Event('rw-command-palette-toggle'));
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                        shortcut={formatShortcutDisplay('Ctrl+K')}
+                                    >
+                                        <Terminal />
+                                        <FormattedMessage
+                                            defaultMessage="Command Palette"
+                                            description="Menu bar item to open the command palette"
+                                            id="mw.menuBar.commandPalette"
+                                        />
+                                    </MenuItem>
                                     <MenuItem
                                         onClick={() => {
                                             this.props.onClickGitModal();

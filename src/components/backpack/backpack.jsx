@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
@@ -9,6 +9,26 @@ import styles from './backpack.css';
 
 // TODO make sprite selector item not require onClick
 const noop = () => {};
+
+// 用原生 DOM 事件绑定拖动把手，确保任何环境（含不支持 PointerEvent 时）都能响应
+const ResizeHandle = ({expanded, onResizePointerDown}) => {
+    const handleRef = useRef(null);
+    useEffect(() => {
+        if (!expanded || !handleRef.current || typeof onResizePointerDown !== 'function') return;
+        const el = handleRef.current;
+        const onDown = e => onResizePointerDown(e);
+        el.addEventListener('mousedown', onDown);
+        return () => el.removeEventListener('mousedown', onDown);
+    }, [expanded, onResizePointerDown]);
+    return (
+        <div
+            ref={handleRef}
+            className={styles.resizeHandle}
+            onPointerDown={onResizePointerDown}
+            onMouseDown={onResizePointerDown}
+        />
+    );
+};
 
 const dragTypeMap = { // Keys correspond with backpack-server item types
     costume: DragConstants.BACKPACK_COSTUME,
@@ -108,13 +128,13 @@ const Backpack = ({
     onFolderMouseEnter,
     onFolderMouseLeave
 }) => (
-    <div className={styles.backpackContainer}>
-        {expanded ? (
-            <div
-                className={styles.resizeHandle}
-                onPointerDown={onResizePointerDown}
-            />
-        ) : null}
+<div className={styles.backpackContainer}>
+            {expanded ? (
+                <ResizeHandle
+                    expanded={expanded}
+                    onResizePointerDown={onResizePointerDown}
+                />
+            ) : null}
         <div
             className={styles.backpackHeader}
             onClick={onToggle}

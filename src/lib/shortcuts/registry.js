@@ -307,6 +307,16 @@ export const getDefaultShortcuts = () => [
         action: 'openAIAgentModal',
         params: [],
         label: 'Open AI Agent'
+    },
+    {
+        id: 'commandPalette',
+        key: 'Ctrl+K',
+        defaultKey: 'Ctrl+K',
+        category: SHORTCUT_CATEGORIES.VIEW,
+        actionType: 'callback',
+        action: 'toggleCommandPalette',
+        params: [],
+        label: 'Command Palette'
     }
 ];
 

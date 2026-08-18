@@ -28,6 +28,7 @@ import {STYLE_GROUPS, setStyleSetting} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
 import SettingsStore from '../../addons/settings-store-singleton.js';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
+import ActivityBarLayoutSetting from './activity-bar-layout.jsx';
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
     setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
 import {DEFINITIONS as VARIABLE_MANAGER_SETTINGS, getSetting as getVariableManagerSetting,
@@ -37,7 +38,7 @@ import {
     getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
 } from '../../lib/git/config.js';
 
-import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, Bug, GitBranch, Variable, Upload, Search, PanelsTopLeft} from 'lucide-react';
+import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, PanelLeft, Bug, GitBranch, Variable, Upload, Search, PanelsTopLeft} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -105,6 +106,11 @@ const messages = defineMessages({
         defaultMessage: '菜单栏',
         description: 'Settings modal section',
         id: 'tw.settingsModal.menuBar'
+    },
+    headerActivityBar: {
+        defaultMessage: '活动栏',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.activityBar'
     },
     headerDebugger: {
         defaultMessage: '调试器',
@@ -2440,6 +2446,21 @@ const pageConfigurations = {
             }
         ]
     },
+    activityBar: {
+        sections: [
+            {
+                headerMessage: 'headerActivityBar',
+                settings: [
+                    {
+                        component: ActivityBarLayoutSetting,
+                        props: () => ({}),
+                        // 仅在启用 VS Code 布局时显示
+                        condition: () => !!AESettings.get('EnableVSCodeLayout')
+                    }
+                ]
+            }
+        ]
+    },
     debugger: {
         sections: [
             {
@@ -2525,6 +2546,10 @@ const StylesPage = props => (<PageRenderer
 />);
 const MenuBarPage = props => (<PageRenderer
     config={pageConfigurations.menuBar}
+    {...props}
+/>);
+const ActivityBarPage = props => (<PageRenderer
+    config={pageConfigurations.activityBar}
     {...props}
 />);
 const LayoutPage = props => (<PageRenderer
@@ -2801,6 +2826,8 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <StylesPage {...handlers} />;
     case 'menuBar':
         return <MenuBarPage {...handlers} />;
+    case 'activityBar':
+        return <ActivityBarPage {...handlers} />;
     case 'debugger':
         return <DebuggerPage {...handlers} />;
     case 'versionControl':
@@ -2856,6 +2883,8 @@ const SETTINGS_SEARCH_INDEX = [
     {label: '自定义主题', keywords: '自定义主题 custom theme 颜色 配色', category: 'styles'},
     // 菜单栏
     {label: '菜单栏布局', keywords: '菜单栏布局 menu bar layout 位置', category: 'menuBar'},
+    // 活动栏
+    {label: '活动栏', keywords: '活动栏 activity bar vscode 按钮 顺序', category: 'activityBar'},
     // 版本控制
     {label: 'Git 作者', keywords: 'git 作者 author 名字 邮箱', category: 'versionControl'},
     {label: '默认分支', keywords: '默认分支 default branch git 分支', category: 'versionControl'},
@@ -3034,7 +3063,12 @@ class SettingsModalComponent extends React.Component {
                         id: 'menuBar',
                         label: intl.formatMessage({id: 'mw.settings.menuBar', defaultMessage: '菜单栏'}),
                         icon: PanelTop
-                    }
+                    },
+                    ...(AESettings.get('EnableVSCodeLayout') ? [{
+                        id: 'activityBar',
+                        label: intl.formatMessage({id: 'mw.settings.activityBar', defaultMessage: '活动栏'}),
+                        icon: PanelLeft
+                    }] : [])
                 ]
             },
             {

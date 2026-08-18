@@ -9,6 +9,9 @@ import Button from '../components/button/button.jsx';
 import VM from 'scratch-vm';
 import './super-refactor-modal.css';
 
+// 超过该字节数的文件不做逐 token 语法高亮与逐行行号渲染，避免打开卡顿
+const LARGE_CONTENT_THRESHOLD = 150000;
+
 class SuperRefactorModalContainer extends React.Component {
     constructor (props) {
         super(props);
@@ -56,6 +59,15 @@ class SuperRefactorModalContainer extends React.Component {
     }
 
     componentDidUpdate (prevProps) {
+        // 每次打开时重置为旧版编辑器，避免 Monaco 状态跨打开残留
+        if (prevProps.visible === false && this.props.visible === true) {
+            this.setState({
+                useMonacoEditor: false,
+                monacoIframeReady: false,
+                wordWrap: true
+            });
+        }
+
         if (prevProps.theme !== this.props.theme) {
             this.applyThemeToWindow();
         }
@@ -149,6 +161,7 @@ class SuperRefactorModalContainer extends React.Component {
         const projectJson = this.props.vm.toJSON();
         if (projectJson) {
             files.push({
+                id: 'project.json',
                 name: 'project.json',
                 type: 'json',
                 content: projectJson,
@@ -202,6 +215,7 @@ class SuperRefactorModalContainer extends React.Component {
                     }
                     
                     files.push({
+                        id: `target:${target.id}:costume:${costumeIndex}:asset:${costume.asset.id}`,
                         name: fileName,
                         type: type,
                         content: content,
@@ -224,6 +238,7 @@ class SuperRefactorModalContainer extends React.Component {
                         : `${targetName}/sounds/${sound.name}.${ext}`;
                     
                     files.push({
+                        id: `target:${target.id}:sound:${soundIndex}:asset:${sound.asset.id}`,
                         name: fileName,
                         type: 'sound',
                         content: sound.asset.data,
@@ -388,6 +403,9 @@ class SuperRefactorModalContainer extends React.Component {
     }
 
     formatJSON (jsonString) {
+        if (typeof jsonString !== 'string') return jsonString;
+        // vm.toJSON() 输出的已经是格式化 JSON，直接复用，避免大项目重复 parse/stringify
+        if (/\n\s{2}/.test(jsonString)) return jsonString;
         try {
             const parsed = JSON.parse(jsonString);
             return JSON.stringify(parsed, null, 2);
@@ -407,7 +425,14 @@ class SuperRefactorModalContainer extends React.Component {
 
     highlightSyntax (code, type) {
         if (!code) return '';
-        
+        // 大文件跳过高亮，避免生成大量 span 节点导致界面卡顿
+        if (code.length > LARGE_CONTENT_THRESHOLD) {
+            return String(code)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
         const vsCodeColors = {
             background: '#1e1e1e',
             foreground: '#cccccc',
@@ -557,6 +582,10 @@ class SuperRefactorModalContainer extends React.Component {
     }
 
     getLineNumbers (code) {
+        // 大文件只生成一个占位，避免每行一个 div 导致 DOM 爆炸
+        if ((code || '').length > LARGE_CONTENT_THRESHOLD) {
+            return '<div style="padding: 0 10px; text-align: right; color: #666; font-size: 13px; line-height: 1.5;">…</div>';
+        }
         const lines = (code || '').split('\n').length;
         let numbers = '';
         for (let i = 1; i <= lines; i++) {
@@ -567,14 +596,20 @@ class SuperRefactorModalContainer extends React.Component {
 
     selectFile (index) {
         const {filteredFiles} = this.state;
-        const selectedFileName = filteredFiles[index].name;
+        const selected = filteredFiles[index];
+        if (!selected || !selected.id) return;
+
+        // 用唯一 id 匹配，避免重名文件（多角色同名/同名造型）时选错
+        const selectedId = selected.id;
 
         const files = this.state.files.map((file, i) => ({
             ...file,
-            selected: file.name === selectedFileName
+            selected: file.id === selectedId
         }));
 
-        const fullIndex = files.findIndex(f => f.name === selectedFileName);
+        const fullIndex = files.findIndex(f => f.id === selectedId);
+        if (fullIndex === -1) return;
+
         let content = files[fullIndex].content;
 
         // 如果是JSON文件，自动格式化显示
@@ -734,6 +769,8 @@ class SuperRefactorModalContainer extends React.Component {
         const currentFileObj = files[currentFile];
         const currentFileName = currentFileObj ? currentFileObj.name : '';
         const currentFileType = currentFileObj ? currentFileObj.type : '';
+        // 大文件使用纯文本编辑器，避免高亮/行号 DOM 过多导致卡顿
+        const largeContent = typeof content === 'string' && content.length > LARGE_CONTENT_THRESHOLD;
 
         // 判断是否为深色主题
         const isDarkTheme = theme && typeof theme.isDark === 'function' ? theme.isDark() : false;
@@ -888,8 +925,7 @@ class SuperRefactorModalContainer extends React.Component {
                                     </div>
                                 ) : (
                                     filteredFiles.map((file, index) => {
-                                        const fullIndex = files.findIndex(f => f.name === file.name);
-                                        const isSelected = fullIndex === currentFile;
+                                        const isSelected = !!(currentFileObj && file.id === currentFileObj.id);
 
                                         return (
                                             <div
@@ -1027,6 +1063,31 @@ class SuperRefactorModalContainer extends React.Component {
                                             }}
                                             frameBorder="0"
                                         />
+                                    ) : largeContent ? (
+                                        <textarea
+                                            value={content}
+                                            onChange={this.handleFileChange}
+                                            onKeyDown={this.handleEditorKeyDown}
+                                            spellCheck="false"
+                                            style={{
+                                                flex: 1,
+                                                width: '100%',
+                                                boxSizing: 'border-box',
+                                                padding: '15px',
+                                                fontFamily: "Consolas, 'Courier New', monospace",
+                                                fontSize: '13px',
+                                                lineHeight: '1.5',
+                                                resize: 'none',
+                                                outline: 'none',
+                                                border: `1px solid ${colors.border}`,
+                                                borderRadius: '0 0 4px 4px',
+                                                background: colors.inputBg,
+                                                color: colors.text,
+                                                whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+                                                wordWrap: wordWrap ? 'break-word' : 'normal',
+                                                overflow: 'auto'
+                                            }}
+                                        />
                                     ) : (
                                         <div style={{
                                             flex: 1,
@@ -1140,6 +1201,31 @@ class SuperRefactorModalContainer extends React.Component {
                                             pointerEvents: 'auto'
                                         }}
                                         frameBorder="0"
+                                    />
+                                ) : largeContent ? (
+                                    <textarea
+                                        value={content}
+                                        onChange={this.handleFileChange}
+                                        onKeyDown={this.handleEditorKeyDown}
+                                        spellCheck="false"
+                                        style={{
+                                            flex: 1,
+                                            width: '100%',
+                                            boxSizing: 'border-box',
+                                            padding: '15px',
+                                            fontFamily: "Consolas, 'Courier New', monospace",
+                                            fontSize: '13px',
+                                            lineHeight: '1.5',
+                                            resize: 'none',
+                                            outline: 'none',
+                                            border: `1px solid ${colors.border}`,
+                                            borderRadius: '0 0 4px 4px',
+                                            background: colors.inputBg,
+                                            color: colors.text,
+                                            whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+                                            wordWrap: wordWrap ? 'break-word' : 'normal',
+                                            overflow: 'auto'
+                                        }}
                                     />
                                 ) : (
                                     <div style={{

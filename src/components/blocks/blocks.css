@@ -66,13 +66,6 @@
     box-sizing: content-box;
     height: 100% !important;
     top: 0;
-
-    /*
-        For now, the layout cannot support scrollbars in the category menu.
-        The line below works for Edge, the `::-webkit-scrollbar` line
-        below that is for webkit browsers. It isn't possible to do the
-        same for Firefox, so a different solution may be needed for them.
-    */
     -ms-overflow-style: none;
 }
 
@@ -82,8 +75,16 @@
     border-radius: 0 0 10px 10px;
 }
 
-.blocks :global(.blocklyToolboxDiv::-webkit-scrollbar) {
-    display: none;
+.blocks :global(.scratchCategoryMenu) {
+    box-sizing: border-box;
+    padding-bottom: 5.6875rem;
+    overflow-y: auto;
+}
+
+@media only screen and (max-width: 900px) {
+    .blocks :global(.scratchCategoryMenu) {
+        padding-bottom: 8.9375rem;
+    }
 }
 
 .blocks :global(.blocklyFlyout) {

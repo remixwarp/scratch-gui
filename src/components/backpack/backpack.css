@@ -2,17 +2,31 @@
 @import "../../css/colors.css";
 
 .backpack-container {
-    flex-shrink: 1;
-    position: relative;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
     display: flex;
     flex-direction: column;
+    background: $ui-white;
+    border-top: 1px solid $ui-tertiary;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .resize-handle {
-    height: 0.5rem;
+    height: 0.75rem;
     cursor: ns-resize;
     background: $ui-white;
+    border-bottom: 1px solid $ui-tertiary;
     touch-action: none;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+    background: $ui-secondary;
 }
 
 .backpack-header {
