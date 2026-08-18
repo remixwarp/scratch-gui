@@ -127,7 +127,8 @@
     "tw.customTheme.introduction": "You can customize the theme colors for the interface. Enter your preferred color below and click 'Apply' to update your theme.",
     "tw.customTheme.maincolor": "Theme Color",
     "tw.customTheme.maincolor.introduction": "Choose the color you like, and other colors will be automatically filled in",
-    "tw.customTheme.apply": "Apply"
+    "tw.customTheme.apply": "Apply",
+    "mw.menuBar.commandPalette": "Command Palette"
   },
   "zh-geng": {
     "gui.backpack.searchPlaceholder": "搜索书包...",
@@ -1102,6 +1103,7 @@
     "tw.collaboration.error.iceConnectionFailed": "ICE 连接在 {attempts} 次尝试后失败。这可能是网络问题。",
     "tw.collaboration.error.unknown": "连接失败：{error}",
     "mw.menuBar.git": "Git 仓库",
+    "mw.menuBar.commandPalette": "命令面板",
     "tw.packager.title": "打包器",
     "gui.menuBar.tools": "工具",
     "UNSUPPORT_TW_1": "以下积木不支持 TurboWarp",
