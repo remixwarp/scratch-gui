@@ -398,6 +398,95 @@ class PixelUtils {
         }
         return pattern;
     }
+
+    /**
+     * Convert pixelData to a downloadable PNG Blob
+     * @param {Array} pixelData - 2D array of pixel colors
+     * @param {number} pixelSize - Size of each pixel in output image
+     * @returns {Blob} PNG Blob
+     */
+    static pixelDataToBlob(pixelData, pixelSize = 2) {
+        const dataUrl = this.createPixelBackground(pixelData, pixelSize);
+        const byteString = atob(dataUrl.split(',')[1]);
+        const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], {type: mimeString});
+    }
+
+    /**
+     * Convert an image (dataURL) to pixelData 2D array
+     * Crops center portion to match target aspect ratio, then scales to target grid dimensions
+     * @param {string} imageSource - dataURL of the image
+     * @param {number} targetWidth - target grid width in pixels
+     * @param {number} targetHeight - target grid height in pixels
+     * @returns {Promise<Array>} 2D array of pixel colors
+     */
+    static imageToPixelData(imageSource, targetWidth = 900, targetHeight = 24) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Calculate crop region to center the image
+                const sourceAspect = img.width / img.height;
+                const targetAspect = targetWidth / targetHeight;
+
+                let sx, sy, sw, sh;
+                if (sourceAspect > targetAspect) {
+                    // Source is wider - crop left/right
+                    sh = img.height;
+                    sw = img.height * targetAspect;
+                    sx = (img.width - sw) / 2;
+                    sy = 0;
+                } else {
+                    // Source is taller - crop top/bottom
+                    sw = img.width;
+                    sh = img.width / targetAspect;
+                    sx = 0;
+                    sy = (img.height - sh) / 2;
+                }
+
+                // Draw cropped and scaled image
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+
+                // Extract pixel data
+                const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+                const data = imageData.data;
+                const pixelData = [];
+
+                for (let y = 0; y < targetHeight; y++) {
+                    const row = [];
+                    for (let x = 0; x < targetWidth; x++) {
+                        const index = (y * targetWidth + x) * 4;
+                        const r = data[index];
+                        const g = data[index + 1];
+                        const b = data[index + 2];
+                        const a = data[index + 3];
+
+                        if (a > 128) {
+                            const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+                            row.push(hex);
+                        } else {
+                            row.push(null);
+                        }
+                    }
+                    pixelData.push(row);
+                }
+
+                resolve(pixelData);
+            };
+            img.onerror = reject;
+            img.src = imageSource;
+        });
+    }
 }
 
 /**
@@ -579,9 +668,12 @@ class CustomTheme extends Theme {
         
         // Check if it's a pixel theme
         if (this.customAccent && this.customAccent.pixelData) {
+            const pixelSize = this.customAccent.pixelSize || 2;
+            const pixelData = this.customAccent.pixelData;
             accentExport = {
-                pixelData: this.customAccent.pixelData,
-                pixelSize: this.customAccent.pixelSize || 2,
+                pixelData: pixelData,
+                pixelImage: PixelUtils.createPixelBackground(pixelData, pixelSize),
+                pixelSize: pixelSize,
                 primaryColor: (this.customAccent.guiColors &&
                     this.customAccent.guiColors['motion-primary']) || '#ff6b6b',
                 guiColors: this.customAccent.guiColors,

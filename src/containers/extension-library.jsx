@@ -1030,8 +1030,11 @@ class ExtensionLibrary extends React.PureComponent {
     }
 
     componentDidMount() {
+        this._isMounted = true;
+
         // 接收模块级快照广播：添加自定义库 / fetchLibrary 进度都会触发
         this.unsubscribeGalleryUpdate = addGalleryUpdateListener(payload => {
+            if (!this._isMounted) return;
             this.setState({
                 gallery: payload.gallery,
                 sourceStatuses: payload.sourceStatuses,
@@ -1040,7 +1043,10 @@ class ExtensionLibrary extends React.PureComponent {
         });
 
         // 加载/卸载扩展时同步刷新"已加载"对勾
-        this.handleExtensionChange = () => this.forceUpdate();
+        this.handleExtensionChange = () => {
+            if (!this._isMounted) return;
+            this.forceUpdate();
+        };
         const vm = this.props.vm;
         if (vm && typeof vm.on === 'function') {
             vm.on('EXTENSION_ADDED', this.handleExtensionChange);
@@ -1049,20 +1055,24 @@ class ExtensionLibrary extends React.PureComponent {
 
         // 首次打开时拉取网络源；已注册的自定义库独立加载（互不阻塞）
         if (!this.state.gallery) {
-            const timeout = setTimeout(() => {
+            this._galleryTimeout = setTimeout(() => {
+                if (!this._isMounted) return;
                 this.setState({
                     galleryTimedOut: true
                 });
             }, 750);
 
             fetchLibrary()
-                .then(() => clearTimeout(timeout))
+                .then(() => {
+                    clearTimeout(this._galleryTimeout);
+                })
                 .catch(error => {
                     log.error(error);
+                    if (!this._isMounted) return;
                     this.setState({
                         galleryError: error
                     });
-                    clearTimeout(timeout);
+                    clearTimeout(this._galleryTimeout);
                 });
 
             cachedCustomSources.forEach(source => {
@@ -1074,6 +1084,8 @@ class ExtensionLibrary extends React.PureComponent {
     }
 
     componentWillUnmount() {
+        this._isMounted = false;
+        clearTimeout(this._galleryTimeout);
         if (this.unsubscribeGalleryUpdate) {
             this.unsubscribeGalleryUpdate();
         }

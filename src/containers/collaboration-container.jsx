@@ -7,6 +7,7 @@ import {defineMessages, injectIntl} from 'react-intl';
 import CollaborationModal from '../components/collaboration-modal/collaboration-modal.jsx';
 import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
+import {unlockAchievement} from '../lib/achievements.js';
 
 const messages = defineMessages({
     chatPlaceholder: {
@@ -213,6 +214,7 @@ class CollaborationContainer extends Component {
             this.props.onSetConnected(true);
             this.props.onSetRoomId(roomId);
             this.props.onSetRoomPrivacy(privacy);
+            unlockAchievement('collaboration-room');
             this.updateUsersList();
 
             // Try to attach to workspace if it exists
@@ -404,6 +406,7 @@ class CollaborationContainer extends Component {
 
         // Now we're actually connected and can show the connected UI
         this.props.onSetConnected(true);
+        unlockAchievement('collaboration-room');
 
         // Sync username with collaboration service
         const serviceUsername = this.collaborationService.username;

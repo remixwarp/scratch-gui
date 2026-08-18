@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, {useState, useEffect, useMemo} from 'react';
+import React, {useState, useEffect, useMemo, useRef} from 'react';
 import ReactDOM from 'react-dom';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {Search, Heart, Download, ExternalLink} from 'lucide-react';
@@ -286,24 +286,39 @@ const WarpthemeModal = props => {
     const [colorFilter, setColorFilter] = useState('all');
     const [popupPosition, setPopupPosition] = useState({top: 0, left: 0, visible: false, theme: null, isDarkTheme: false});
 
+    const isMounted = useRef(true);
+
     useEffect(() => {
+        isMounted.current = true;
+
         const fetchThemes = async () => {
+            if (!isMounted.current) return;
             setLoading(true);
             setError(null);
             try {
                 const response = await fetch('https://warptheme.mistium.com/api/themes');
                 if (!response.ok) throw new Error('Failed to fetch themes');
                 const data = await response.json();
-                setThemes(data.themes || []);
+                if (isMounted.current) {
+                    setThemes(data.themes || []);
+                }
             } catch (err) {
                 console.error('Error fetching themes:', err);
-                setError(err.message);
+                if (isMounted.current) {
+                    setError(err.message);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted.current) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchThemes();
+
+        return () => {
+            isMounted.current = false;
+        };
     }, []);
 
     const filteredThemes = useMemo(() => {

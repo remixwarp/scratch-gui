@@ -227,7 +227,12 @@ class Blocks extends React.Component {
             pastePairs: 0,
             recentCopyAt: 0,
             undoTimes: [],
-            commentCreatedAt: new Map()
+            commentCreatedAt: new Map(),
+            renameCounts: new Map(),
+            searchQuery: '',
+            searchStartTime: 0,
+            editorLoadTime: Date.now(),
+            defaultSpriteDeleted: false
         };
 
     }
@@ -506,6 +511,11 @@ class Blocks extends React.Component {
                 unlockAchievement('buddhist-developer');
             }
         }, 10 * 60 * 1000);
+
+        // instant-default-delete: 编辑器加载后 3 秒内删除默认角色
+        this.instantDefaultDeleteTimer = setTimeout(() => {
+            this.achievementState.editorLoadTime = null; // 过期
+        }, 3000);
 
         if (typeof this.props.vm.postUndo === 'function') {
             this.originalPostUndo = this.props.vm.postUndo;
@@ -1524,6 +1534,9 @@ class Blocks extends React.Component {
         }
         if (type === 'CREATE') {
             this.achievementState.hasAddedBlock = true;
+            // costume-master: 切换或编辑角色造型 - 检测是否添加了造型或声音积木
+            // Blockly 的 CREATE 事件通常针对积木，这里不直接监听造型编辑
+            // 造型编辑的检测需要在其他地方处理
         }
         if (type === 'DELETE') {
             const oldXml = event.oldXml;
@@ -1531,6 +1544,29 @@ class Blocks extends React.Component {
                 oldXml.getElementsByTagName('block').length : 0;
             if (deletedBlocks > 20) {
                 unlockAchievement('now-good');
+            }
+            // instant-default-delete: 编辑器加载后 3 秒内删除默认角色
+            if (this.achievementState.editorLoadTime &&
+                !this.achievementState.defaultSpriteDeleted &&
+                event.targetId) {
+                const target = this.props.vm.runtime.getTargetById(event.targetId);
+                if (target && !target.isStage && target.isOriginal === true) {
+                    this.achievementState.defaultSpriteDeleted = true;
+                    unlockAchievement('instant-default-delete');
+                }
+            }
+        }
+        // naming-obsession: 重命名资源
+        if (type === 'RENAME' || type === 'CHANGE') {
+            const element = event.element || event.blockId;
+            if (element) {
+                const count = (this.achievementState.renameCounts.get(element) || 0) + 1;
+                this.achievementState.renameCounts.set(element, count);
+                // 检查是否有 5 个不同资源被重命名
+                const renamedResources = new Set(this.achievementState.renameCounts.keys());
+                if (renamedResources.size >= 5) {
+                    unlockAchievement('naming-obsession');
+                }
             }
         }
         if (type === 'MOVE' && !this.achievementState.isProjectRunning && event.blockId) {

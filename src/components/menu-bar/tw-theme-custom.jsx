@@ -1972,23 +1972,39 @@ class CustomThemeMenu extends React.Component {
 
     handleExportSingleTheme = async theme => {
         try {
-            const exportData = {
-                version: '2.0',
-                timestamp: Date.now(),
-                themes: [theme.export()],
-                platform: 'Bilup'
-            };
-            const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-                type: 'application/json'
-            });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${theme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-theme.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            if (theme.customAccent && theme.customAccent.pixelData) {
+                // 像素主题 - 导出为PNG图片
+                const pixelData = theme.customAccent.pixelData;
+                const pixelSize = theme.customAccent.pixelSize || 2;
+                const blob = PixelUtils.pixelDataToBlob(pixelData, pixelSize);
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${theme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-pixel-theme.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } else {
+                // 普通主题 - 导出为JSON
+                const exportData = {
+                    version: '2.0',
+                    timestamp: Date.now(),
+                    themes: [theme.export()],
+                    platform: 'Bilup'
+                };
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+                    type: 'application/json'
+                });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${theme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-theme.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
         } catch (error) {
             await showAlert(this.props.intl.formatMessage({
                 defaultMessage: 'Failed to export theme: {errorMessage}',
@@ -2002,71 +2018,123 @@ class CustomThemeMenu extends React.Component {
         const file = event.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        this._activeFileReader = reader;
-        reader.onload = async e => {
-            try {
-                const data = JSON.parse(e.target.result);
-                const results = customThemeManager.importThemes(data, false);
-                
-                let message = this.props.intl.formatMessage({
-                    defaultMessage: 'Import complete!\n',
-                    description: 'Message when theme import completes successfully',
-                    id: 'tw.customThemes.import.success.importComplete'
-                });
-                message += this.props.intl.formatMessage({
-                    defaultMessage: 'Imported: {imported} themes\n',
-                    description: 'Message when theme import completes successfully',
-                    id: 'tw.customThemes.import.success.importedThemes'
-                }, {imported: results.imported});
-                if (results.skipped > 0) {
-                    message += this.props.intl.formatMessage({
-                        defaultMessage: 'Skipped: {skipped} themes (already exist)\n',
-                        description: 'Message when some themes are skipped due to existing duplicates',
-                        id: 'tw.customThemes.import.error.themeAlreadyExists'
-                    }, {skipped: results.skipped});
-                }
-                if (results.errors.length > 0) {
-                    message += this.props.intl.formatMessage({
-                        defaultMessage: 'Errors: {errorsCount}\n{errorMessages}',
-                        description: 'Error message when theme import fails',
-                        id: 'tw.customThemes.import.error.themeImportFailed'
-                    }, {errorsCount: results.errors.length, errorMessages: results.errors.join('\n')});
-                }
-                
-                await showAlert(message);
-                
-                // 应用导入的第一个主题
-                if (results.imported > 0) {
+        if (file.type.startsWith('image/')) {
+            // 图片文件 - 导入为像素主题
+            const reader = new FileReader();
+            this._activeFileReader = reader;
+            reader.onload = async e => {
+                try {
+                    const pixelData = await PixelUtils.imageToPixelData(e.target.result);
+                    const themeName = file.name.replace(/\.[^.]+$/, '') || 'Imported Pixel Theme';
+                    customThemeManager.createPixelTheme(
+                        themeName,
+                        `Imported from ${file.name}`,
+                        pixelData,
+                        '#ff6b6b',
+                        {pixelSize: 2}
+                    );
+                    await showAlert(this.props.intl.formatMessage({
+                        defaultMessage: 'Image "{fileName}" imported as pixel theme "{themeName}"',
+                        description: 'Message when image is imported as pixel theme',
+                        id: 'tw.customThemes.import.imageImported'
+                    }, {fileName: file.name, themeName: themeName}));
+
+                    // 应用新创建的主题
                     const updatedThemes = customThemeManager.getAllThemes();
-                    // 找到最新导入的主题（通常是最后一个）
                     const latestTheme = updatedThemes[updatedThemes.length - 1];
                     if (latestTheme) {
                         this.props.onChangeTheme(latestTheme);
                     }
+
+                    this.safeSetState({
+                        customThemes: customThemeManager.getAllThemes()
+                    });
+                } catch (error) {
+                    await showAlert(this.props.intl.formatMessage({
+                        defaultMessage: 'Failed to import image: {errorMessage}',
+                        description: 'Error message when image import fails',
+                        id: 'tw.customThemes.error.imageImportFailed'
+                    }, {errorMessage: error.message}));
+                } finally {
+                    if (this._activeFileReader === reader) {
+                        this._activeFileReader = null;
+                    }
                 }
-                
-                this.safeSetState({
-                    customThemes: customThemeManager.getAllThemes()
-                });
-            } catch (error) {
-                await showAlert(this.props.intl.formatMessage({
-                    defaultMessage: 'Failed to import themes: {errorMessage}',
-                    description: 'Error message when theme import fails',
-                    id: 'tw.customThemes.error.themeImportFailed'
-                }, {errorMessage: error.message}));
-            } finally {
+            };
+            reader.onerror = () => {
                 if (this._activeFileReader === reader) {
                     this._activeFileReader = null;
                 }
-            }
-        };
-        reader.onerror = () => {
-            if (this._activeFileReader === reader) {
-                this._activeFileReader = null;
-            }
-        };
-        reader.readAsText(file);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // JSON文件 - 导入主题
+            const reader = new FileReader();
+            this._activeFileReader = reader;
+            reader.onload = async e => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const results = customThemeManager.importThemes(data, false);
+                    
+                    let message = this.props.intl.formatMessage({
+                        defaultMessage: 'Import complete!\n',
+                        description: 'Message when theme import completes successfully',
+                        id: 'tw.customThemes.import.success.importComplete'
+                    });
+                    message += this.props.intl.formatMessage({
+                        defaultMessage: 'Imported: {imported} themes\n',
+                        description: 'Message when theme import completes successfully',
+                        id: 'tw.customThemes.import.success.importedThemes'
+                    }, {imported: results.imported});
+                    if (results.skipped > 0) {
+                        message += this.props.intl.formatMessage({
+                            defaultMessage: 'Skipped: {skipped} themes (already exist)\n',
+                            description: 'Message when some themes are skipped due to existing duplicates',
+                            id: 'tw.customThemes.import.error.themeAlreadyExists'
+                        }, {skipped: results.skipped});
+                    }
+                    if (results.errors.length > 0) {
+                        message += this.props.intl.formatMessage({
+                            defaultMessage: 'Errors: {errorsCount}\n{errorMessages}',
+                            description: 'Error message when theme import fails',
+                            id: 'tw.customThemes.import.error.themeImportFailed'
+                        }, {errorsCount: results.errors.length, errorMessages: results.errors.join('\n')});
+                    }
+                    
+                    await showAlert(message);
+                    
+                    // 应用导入的第一个主题
+                    if (results.imported > 0) {
+                        const updatedThemes = customThemeManager.getAllThemes();
+                        // 找到最新导入的主题（通常是最后一个）
+                        const latestTheme = updatedThemes[updatedThemes.length - 1];
+                        if (latestTheme) {
+                            this.props.onChangeTheme(latestTheme);
+                        }
+                    }
+                    
+                    this.safeSetState({
+                        customThemes: customThemeManager.getAllThemes()
+                    });
+                } catch (error) {
+                    await showAlert(this.props.intl.formatMessage({
+                        defaultMessage: 'Failed to import themes: {errorMessage}',
+                        description: 'Error message when theme import fails',
+                        id: 'tw.customThemes.error.themeImportFailed'
+                    }, {errorMessage: error.message}));
+                } finally {
+                    if (this._activeFileReader === reader) {
+                        this._activeFileReader = null;
+                    }
+                }
+            };
+            reader.onerror = () => {
+                if (this._activeFileReader === reader) {
+                    this._activeFileReader = null;
+                }
+            };
+            reader.readAsText(file);
+        }
         
         // Reset file input
         event.target.value = '';
@@ -2348,7 +2416,7 @@ class CustomThemeMenu extends React.Component {
                 <input
                     ref={this.fileInputRef}
                     type="file"
-                    accept=".json"
+                    accept=".json,.png,.jpg,.jpeg,.gif,.webp"
                     style={{display: 'none'}}
                     onChange={this.handleImportFile}
                 />

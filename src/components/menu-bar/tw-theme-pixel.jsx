@@ -96,6 +96,7 @@ const PixelEditorApp = injectIntl(props => {
     const [imageColumn, setImageColumn] = React.useState(0);
     const [selectedPosition, setSelectedPosition] = React.useState('left');
     const [hasClearedCanvas, setHasClearedCanvas] = React.useState(false);
+    const [showExportDialog, setShowExportDialog] = React.useState(false);
 
     // 添加滚动事件监听器
     React.useEffect(() => {
@@ -305,6 +306,157 @@ const PixelEditorApp = injectIntl(props => {
 
     return (
         <div className={styles.pixelEditorContainer}>
+            {showExportDialog && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 10000
+                }}>
+                    <div style={{
+                        background: 'white',
+                        padding: '24px',
+                        borderRadius: '8px',
+                        maxWidth: '420px',
+                        width: '100%'
+                    }}>
+                        <h3 style={{marginTop: 0, marginBottom: '20px', fontSize: '16px', color: '#333'}}>
+                            <FormattedMessage
+                                defaultMessage="选择导出格式"
+                                id="tw.customThemes.pixelCreator.exportFormat"
+                            />
+                        </h3>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px'}}>
+                            <button
+                                type="button"
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start',
+                                    padding: '16px',
+                                    border: '2px solid #e0e0e0',
+                                    borderRadius: '8px',
+                                    background: '#fafafa',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'border-color 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = '#4c97ff'}
+                                onMouseLeave={e => e.currentTarget.style.borderColor = '#e0e0e0'}
+                                onClick={() => {
+                                    setShowExportDialog(false);
+                                    // 导出为PNG
+                                    const blob = PixelUtils.pixelDataToBlob(pixelData, 2);
+                                    const url = URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `${name.replace(/\s+/g, '_')}_pixel_theme.png`;
+                                    link.click();
+                                    URL.revokeObjectURL(url);
+                                }}
+                            >
+                                <span style={{fontSize: '14px', fontWeight: 600, marginBottom: '4px', color: '#333'}}>
+                                    <FormattedMessage
+                                        defaultMessage="PNG 图片"
+                                        id="tw.customThemes.pixelCreator.exportPNG"
+                                    />
+                                </span>
+                                <span style={{fontSize: '12px', color: '#888'}}>
+                                    <FormattedMessage
+                                        defaultMessage="像素感可能会有偏差"
+                                        id="tw.customThemes.pixelCreator.exportPNGDescription"
+                                    />
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start',
+                                    padding: '16px',
+                                    border: '2px solid #e0e0e0',
+                                    borderRadius: '8px',
+                                    background: '#fafafa',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'border-color 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = '#4c97ff'}
+                                onMouseLeave={e => e.currentTarget.style.borderColor = '#e0e0e0'}
+                                onClick={() => {
+                                    setShowExportDialog(false);
+                                    // 导出为JSON
+                                    const pixelAccent = PixelUtils.createPixelAccent(pixelData, primaryColor, {pixelSize: 2});
+                                    const themeData = {
+                                        uuid: `custom-theme-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                                        createdAt: new Date().toISOString(),
+                                        name,
+                                        description,
+                                        author: 'User',
+                                        accent: {
+                                            pixelData: pixelData,
+                                            pixelSize: 2,
+                                            primaryColor: primaryColor,
+                                            guiColors: pixelAccent.guiColors,
+                                            blockColors: pixelAccent.blockColors
+                                        },
+                                        gui: 'light',
+                                        blocks: 'three',
+                                        menuBarAlign: 'left',
+                                        wallpaper: null,
+                                        fonts: null
+                                    };
+                                    const exportData = {
+                                        version: '2.0',
+                                        platform: 'Bilup',
+                                        timestamp: Date.now(),
+                                        themes: [themeData]
+                                    };
+                                    const dataStr = JSON.stringify(exportData);
+                                    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                                    const url = URL.createObjectURL(dataBlob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `${name.replace(/\s+/g, '_')}_pixel_theme.json`;
+                                    link.click();
+                                    URL.revokeObjectURL(url);
+                                }}
+                            >
+                                <span style={{fontSize: '14px', fontWeight: 600, marginBottom: '4px', color: '#333'}}>
+                                    <FormattedMessage
+                                        defaultMessage="JSON 文件"
+                                        id="tw.customThemes.pixelCreator.exportJSON"
+                                    />
+                                </span>
+                                <span style={{fontSize: '12px', color: '#888'}}>
+                                    <FormattedMessage
+                                        defaultMessage="类似文本文件，没有压缩算法"
+                                        id="tw.customThemes.pixelCreator.exportJSONDescription"
+                                    />
+                                </span>
+                            </button>
+                        </div>
+                        <button
+                            type="button"
+                            className={styles.paletteBtn}
+                            onClick={() => setShowExportDialog(false)}
+                            style={{width: '100%', color: '#333'}}
+                        >
+                            <FormattedMessage
+                                defaultMessage="Cancel"
+                                id="tw.customThemes.pixelCreator.exportDialogCancel"
+                            />
+                        </button>
+                    </div>
+                </div>
+            )}
             {showImagePreview && (
                 <div style={{
                     position: 'fixed',
@@ -773,44 +925,7 @@ const PixelEditorApp = injectIntl(props => {
                             showAlert('请输入主题名称');
                             return;
                         }
-
-                        const pixelAccent = PixelUtils.createPixelAccent(pixelData, primaryColor, {pixelSize: 2});
-
-                        const themeData = {
-                            uuid: `custom-theme-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                            createdAt: new Date().toISOString(),
-                            name,
-                            description,
-                            author: 'User',
-                            accent: {
-                                pixelData: pixelData,
-                                pixelSize: 2,
-                                primaryColor: primaryColor,
-                                guiColors: pixelAccent.guiColors,
-                                blockColors: pixelAccent.blockColors
-                            },
-                            gui: 'light',
-                            blocks: 'three',
-                            menuBarAlign: 'left',
-                            wallpaper: null,
-                            fonts: null
-                        };
-
-                        const exportData = {
-                            version: '2.0',
-                            platform: 'Bilup',
-                            timestamp: Date.now(),
-                            themes: [themeData]
-                        };
-
-                        const dataStr = JSON.stringify(exportData);
-                        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                        const url = URL.createObjectURL(dataBlob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `${name.replace(/\s+/g, '_')}_pixel_theme.json`;
-                        link.click();
-                        URL.revokeObjectURL(url);
+                        setShowExportDialog(true);
                     }}
                 >
                     <FormattedMessage

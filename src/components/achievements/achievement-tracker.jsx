@@ -94,11 +94,30 @@ const getField = (block, fieldName) => {
     return Array.isArray(field) ? field[0] : field && field.value;
 };
 
+const getTargetCostumeCount = target => (
+    Array.isArray(target && target.costumes) ? target.costumes.length : 0
+);
+
+const isCoordinateBlock = block => (
+    block && (block.opcode === 'motion_gotoxy' || block.opcode === 'motion_setx' ||
+        block.opcode === 'motion_sety')
+);
+
+const hasThreeDecimalValue = (block, blockMap, inputName) => {
+    const value = String(getLiteral(block, inputName, blockMap) || '');
+    const match = value.match(/\.(\d+)/);
+    return Boolean(match && match[1].length >= 3);
+};
+
 const inputUsesOpcode = (block, blockMap, predicate) => Object.values(block.inputs || {})
     .some(input => {
         const child = input && blockMap[input.block];
         return child && predicate(child);
     });
+
+const inputUsesMouseSensing = (block, blockMap) => inputUsesOpcode(block, blockMap, child => (
+    child.opcode === 'sensing_mousex' || child.opcode === 'sensing_mousey'
+));
 
 const hasAncestor = (block, blockMap, predicate) => {
     let current = block;
@@ -191,6 +210,44 @@ const scanProject = runtime => {
     if (getVariableAndListCount(targets) >= 20) unlockAchievement('global-variable-network');
     if (maxDepth > 5) unlockAchievement('nested-hell');
     if (sayBlockCount >= 15) unlockAchievement('scratcher');
+
+    /*
+     * 资源数量类成就：造型/背景数量可直接从保存的 target 数据中验证。
+     * 舞台的 costumes 即背景，普通角色的 costumes 即造型。
+     */
+    if (targets.some(target => !target.isStage && getTargetCostumeCount(target) >= 3)) {
+        unlockAchievement('costume-master');
+    }
+    if (targets.some(target => target.isStage && getTargetCostumeCount(target) >= 2)) {
+        unlockAchievement('backdrop-switch');
+    }
+    if (targets.some(target => (
+        Object.values((target && target.variables) || {})
+            .some(variable => variable && variable.type === '' && variable.isMonitored === true)
+    ))) {
+        unlockAchievement('variables-intro');
+    }
+
+    /*
+     * 坐标相关成就：坐标为鼠标感知输入，或数值精确到小数点后三位。
+     * 逐 target 遍历以保留积木与 blockMap 的对应关系。
+     */
+    const hasMouseFollower = targets.some(target => {
+        const blockMap = getBlockMap(target);
+        return getBlocks(target).some(block => (
+            isCoordinateBlock(block) && inputUsesMouseSensing(block, blockMap)
+        ));
+    });
+    if (hasMouseFollower) unlockAchievement('mouse-follower');
+
+    const hasPreciseCoordinate = targets.some(target => {
+        const blockMap = getBlockMap(target);
+        return getBlocks(target).some(block => isCoordinateBlock(block) && (
+            hasThreeDecimalValue(block, blockMap, 'X') ||
+            hasThreeDecimalValue(block, blockMap, 'Y')
+        ));
+    });
+    if (hasPreciseCoordinate) unlockAchievement('pixel-tweak');
 
     /*
      * “同一自制积木被 10 个角色使用”是项目结构事实。proccode 是 Scratch

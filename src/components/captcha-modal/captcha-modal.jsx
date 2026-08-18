@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
 import SlidePuzzleCaptcha from '../slide-puzzle-captcha/slide-puzzle-captcha.jsx';
+import {unlockAchievement} from '../../lib/achievements.js';
 
 import styles from './captcha-modal.css';
 
@@ -14,15 +15,21 @@ class CaptchaModal extends Component {
         this.state = {
             captchaKey: 0
         };
+        this.failCount = 0;
     }
     
     handleVerify = () => {
+        this.failCount = 0;
         setTimeout(() => {
             this.props.onVerify && this.props.onVerify();
         }, 500);
     }
     
     handleFail = () => {
+        this.failCount += 1;
+        if (this.failCount >= 3) {
+            unlockAchievement('captcha-human');
+        }
         this.setState(prev => ({captchaKey: prev.captchaKey + 1}));
     }
     

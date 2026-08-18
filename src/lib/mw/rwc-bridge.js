@@ -329,6 +329,13 @@ function handleMessage(e) {
                 type: 'editorThemeInfo',
                 data: { theme: themeInfo, accent: themeInfo.accent }
             });
+            // Send current locale to plaza
+            const editorLocale = localStorage.getItem('tw:language') || 'zh-cn';
+            sendToPlaza({
+                channel: CHANNEL_NAME,
+                type: 'editorLocale',
+                data: { locale: editorLocale }
+            });
             break;
 
         case 'requestThemeInfo': {
@@ -336,6 +343,15 @@ function handleMessage(e) {
             reply({
                 type: 'editorThemeInfo',
                 data: { theme: themeInfo, accent: themeInfo.accent }
+            });
+            break;
+        }
+
+        case 'requestLocale': {
+            const locale = localStorage.getItem('tw:language') || 'zh-cn';
+            reply({
+                type: 'editorLocale',
+                data: { locale: locale }
             });
             break;
         }
@@ -446,11 +462,37 @@ function handleMessage(e) {
     }
 }
 
+// ===== Experiment Plaza Bridge =====
+const EXP_CHANNEL = 'rwc-experiment-plaza';
+let expPlazaSource = null;
+
+function handleExperimentPlazaMessage(e) {
+    if (!e.data || e.data.channel !== EXP_CHANNEL) return;
+    const { type, data } = e.data;
+
+    switch (type) {
+        case 'plazaReady':
+            expPlazaSource = e.source;
+            // Send current locale to experiment plaza
+            const editorLocale = localStorage.getItem('tw:language') || 'zh-cn';
+            const msg = {
+                channel: EXP_CHANNEL,
+                type: 'editorLocale',
+                data: { locale: editorLocale }
+            };
+            if (e.source && !e.source.closed) {
+                e.source.postMessage(msg, '*');
+            }
+            break;
+    }
+}
+
 function initBridge() {
     if (bridgeInitialized) return;
     bridgeInitialized = true;
 
     window.addEventListener('message', handleMessage);
+    window.addEventListener('message', handleExperimentPlazaMessage);
     console.log('[RWC] Bridge initialized');
 
     setTimeout(checkRwcUrlParam, 500);

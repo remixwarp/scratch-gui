@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
 import styles from './slider-captcha.css';
+import {unlockAchievement} from '../../lib/achievements.js';
 
 class SliderCaptcha extends Component {
     constructor (props) {
@@ -15,6 +16,7 @@ class SliderCaptcha extends Component {
         };
         this.startX = 0;
         this.startProgress = 0;
+        this.failCount = 0;
     }
 
     componentWillUnmount () {
@@ -62,12 +64,17 @@ class SliderCaptcha extends Component {
         this.removePointerListeners();
         this.setState({ dragging: false }, () => {
             if (this.state.progress >= 0.98) {
+                this.failCount = 0;
                 this.setState({ verified: true, progress: 1 }, () => {
                     if (this.props.onVerify) {
                         this.props.onVerify();
                     }
                 });
             } else {
+                this.failCount += 1;
+                if (this.failCount >= 3) {
+                    unlockAchievement('captcha-human');
+                }
                 if (this.props.onFail) {
                     this.props.onFail();
                 }

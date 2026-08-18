@@ -2195,7 +2195,12 @@ const pageConfigurations = {
                         component: EnableAchievements,
                         props: () => ({
                             value: isAchievementsEnabled(),
-                            onChange: e => setAchievementsEnabled(e.target.checked)
+                            onChange: e => {
+                                setAchievementsEnabled(e.target.checked);
+                                if (e.target.checked) {
+                                    setTimeout(() => location.reload(), 300);
+                                }
+                            }
                         })
                     },
                     {

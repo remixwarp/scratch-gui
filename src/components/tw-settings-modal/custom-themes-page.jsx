@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import Box from '../box/box.jsx';
 import Input from '../forms/input.jsx';
 import {Theme} from '../../lib/themes/index.js';
-import {customThemeManager, CustomTheme, GradientUtils} from '../../lib/themes/custom-themes.js';
+import {customThemeManager, CustomTheme, GradientUtils, PixelUtils} from '../../lib/themes/custom-themes.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import {openWarpThemeModal, closeSettingsModal} from '../../reducers/modals.js';
@@ -229,12 +229,28 @@ class UnconnectedCustomThemesPage extends React.Component {
 
     handleExportSingleTheme = async theme => {
         try {
-            this.downloadJSON({
-                version: '2.0',
-                timestamp: Date.now(),
-                themes: [theme.export()],
-                platform: 'MistWarp'
-            }, `${theme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-theme.json`);
+            if (theme.customAccent && theme.customAccent.pixelData) {
+                // 像素主题 - 导出为PNG图片
+                const pixelData = theme.customAccent.pixelData;
+                const pixelSize = theme.customAccent.pixelSize || 2;
+                const blob = PixelUtils.pixelDataToBlob(pixelData, pixelSize);
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${theme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-pixel-theme.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } else {
+                // 普通主题 - 导出为JSON
+                this.downloadJSON({
+                    version: '2.0',
+                    timestamp: Date.now(),
+                    themes: [theme.export()],
+                    platform: 'MistWarp'
+                }, `${theme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-theme.json`);
+            }
         } catch (error) {
             await showAlert(`Failed to export theme: ${error.message}`);
         }
@@ -244,26 +260,50 @@ class UnconnectedCustomThemesPage extends React.Component {
         const file = event.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = async e => {
-            try {
-                const data = JSON.parse(e.target.result);
-                const results = customThemeManager.importThemes(data, false);
+        if (file.type.startsWith('image/')) {
+            // 图片文件 - 导入为像素主题
+            const reader = new FileReader();
+            reader.onload = async e => {
+                try {
+                    const pixelData = await PixelUtils.imageToPixelData(e.target.result);
+                    const themeName = file.name.replace(/\.[^.]+$/, '') || 'Imported Pixel Theme';
+                    // 直接创建像素主题
+                    customThemeManager.createPixelTheme(
+                        themeName,
+                        `Imported from ${file.name}`,
+                        pixelData,
+                        '#ff6b6b',
+                        {pixelSize: 2}
+                    );
+                    await showAlert(`图片 "${file.name}" 已成功导入为像素主题 "${themeName}"`);
+                } catch (error) {
+                    await showAlert(`Failed to import image: ${error.message}`);
+                }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // JSON文件 - 导入主题
+            const reader = new FileReader();
+            reader.onload = async e => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const results = customThemeManager.importThemes(data, false);
 
-                let message = `Import complete!\n`;
-                message += `Imported: ${results.imported} themes\n`;
-                if (results.skipped > 0) {
-                    message += `Skipped: ${results.skipped} themes (already exist)\n`;
+                    let message = `Import complete!\n`;
+                    message += `Imported: ${results.imported} themes\n`;
+                    if (results.skipped > 0) {
+                        message += `Skipped: ${results.skipped} themes (already exist)\n`;
+                    }
+                    if (results.errors.length > 0) {
+                        message += `Errors: ${results.errors.length}\n${results.errors.join('\n')}`;
+                    }
+                    await showAlert(message);
+                } catch (error) {
+                    await showAlert(`Failed to import themes: ${error.message}`);
                 }
-                if (results.errors.length > 0) {
-                    message += `Errors: ${results.errors.length}\n${results.errors.join('\n')}`;
-                }
-                await showAlert(message);
-            } catch (error) {
-                await showAlert(`Failed to import themes: ${error.message}`);
-            }
-        };
-        reader.readAsText(file);
+            };
+            reader.readAsText(file);
+        }
         event.target.value = '';
     };
 
@@ -495,7 +535,7 @@ class UnconnectedCustomThemesPage extends React.Component {
                 <input
                     ref={this.fileInputRef}
                     type="file"
-                    accept=".json"
+                    accept=".json,.png,.jpg,.jpeg,.gif,.webp"
                     style={{display: 'none'}}
                     onChange={this.handleImportFile}
                 />

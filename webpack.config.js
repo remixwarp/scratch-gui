@@ -37,6 +37,8 @@ const base = {
         disableHostCheck: true,
         compress: true,
         port: process.env.PORT || 8601,
+        // 减少 WDS 断连机率
+        sockPath: '/__ws',
         // allows ROUTING_STYLE=wildcard to work properly
         historyApiFallback: {
             rewrites: [
