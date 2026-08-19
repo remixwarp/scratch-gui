@@ -76,7 +76,14 @@ const base = {
             // Pin it to the hoisted CJS minimatch@3 (already used by glob/babel/eslint),
             // whose API is a superset of what just-bash needs (minimatch()).
             'minimatch': require.resolve('minimatch'),
-            '@remixwarp/scratch-l10n': path.resolve(__dirname, 'node_modules/@remixwarp/scratch-l10n')
+            '@remixwarp/scratch-l10n': path.resolve(__dirname, 'node_modules/@remixwarp/scratch-l10n'),
+            // 直接 alias 到 fork 包的源码入口（与 cyso 项目一致）。
+            // 这些 fork 从 git 分发、不含预构建 dist，webpack 4 无法解析其 main；
+            // babel-loader 的 include 规则已覆盖 scratch-*/src，源码入口可被直接编译。
+            'scratch-blocks$': path.resolve(__dirname, 'node_modules/@remixwarp/scratch-blocks/shim/vertical.js'),
+            'scratch-render$': path.resolve(__dirname, 'node_modules/scratch-render/src/index.js'),
+            'scratch-audio$': path.resolve(__dirname, 'node_modules/scratch-audio/src/index.js'),
+            'scratch-paint$': path.resolve(__dirname, 'node_modules/scratch-paint/src/index.js')
         }
     },
     node: {

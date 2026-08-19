@@ -38,7 +38,7 @@ import {
     getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
 } from '../../lib/git/config.js';
 
-import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, PanelLeft, Bug, GitBranch, Variable, Upload, Search, PanelsTopLeft} from 'lucide-react';
+import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, PanelLeft, Bug, GitBranch, Variable, Upload, Search, PanelsTopLeft, Plus, X} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -415,6 +415,51 @@ const messages = defineMessages({
         defaultMessage: '输入角色名称',
         description: 'Custom default sprite name placeholder',
         id: 'tw.settingsModal.customdefaultspritenameplaceholder'
+    },
+    defaultvariable: {
+        defaultMessage: '默认变量（需刷新）',
+        description: 'Default variables setting label',
+        id: 'tw.settingsModal.defaultvariable'
+    },
+    defaultvariablehelp: {
+        defaultMessage: '开启后，新项目舞台上会自动创建下方配置的默认变量；关闭则不创建任何默认变量。修改后需刷新编辑器，仅对新建项目生效。',
+        description: 'Default variables setting help',
+        id: 'tw.settingsModal.defaultvariablehelp'
+    },
+    defaultvariablename: {
+        defaultMessage: '变量名称',
+        description: 'Default variable name input label',
+        id: 'tw.settingsModal.defaultvariablename'
+    },
+    defaultvariablenameplaceholder: {
+        defaultMessage: '我的变量',
+        description: 'Default variable name placeholder',
+        id: 'tw.settingsModal.defaultvariablenameplaceholder'
+    },
+    defaultvariablevalue: {
+        defaultMessage: '变量值',
+        description: 'Default variable value input label',
+        id: 'tw.settingsModal.defaultvariablevalue'
+    },
+    defaultvariablevalueplaceholder: {
+        defaultMessage: '0',
+        description: 'Default variable value placeholder',
+        id: 'tw.settingsModal.defaultvariablevalueplaceholder'
+    },
+    defaultvariableadd: {
+        defaultMessage: '添加变量',
+        description: 'Button to add another default variable',
+        id: 'tw.settingsModal.defaultvariableadd'
+    },
+    defaultvariableremove: {
+        defaultMessage: '删除该变量',
+        description: 'Button to remove a default variable',
+        id: 'tw.settingsModal.defaultvariableremove'
+    },
+    defaultvariablehint: {
+        defaultMessage: '每个变量一行，可自定义变量名称与初始值。',
+        description: 'Hint text above the default variable list',
+        id: 'tw.settingsModal.defaultvariablehint'
     }
 });
 
@@ -1111,6 +1156,147 @@ class CustomDefaultSprite extends React.Component {
     }
 }
 CustomDefaultSprite.propTypes = {
+    intl: intlShape
+};
+
+// 默认变量：开关 + 可增删的变量列表（每行：变量名称 + 变量值）
+class DefaultVariableSetting extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, [
+            'handleToggle',
+            'handleAdd',
+            'handleRemove',
+            'handleNameSubmit',
+            'handleValueSubmit',
+            'persist'
+        ]);
+        const settings = AESettings.getAll();
+        const enabled = settings.EnableDefaultVariables !== false;
+        let variables = Array.isArray(settings.DefaultVariables) ?
+            settings.DefaultVariables.map(item => ({
+                name: item && typeof item.name !== 'undefined' ? String(item.name) : '',
+                value: item && typeof item.value !== 'undefined' ? String(item.value) : '0'
+            })) : [];
+        // 从未配置过且开关开启时，展示一行经典的"我的变量"
+        if (enabled && variables.length === 0) {
+            variables = [{name: '', value: '0'}];
+        }
+        this.state = {enabled, variables};
+        // 同步持有最新列表，避免连续操作（改名后立刻点添加）因异步 setState 丢数据
+        this.latestVariables = variables;
+    }
+    persist (enabled) {
+        try {
+            AESettings.set('EnableDefaultVariables', enabled === undefined ? this.state.enabled : enabled);
+            AESettings.set('DefaultVariables', this.latestVariables.map(v => ({
+                name: v.name,
+                value: v.value
+            })));
+        } catch (e) {
+            // ignore
+        }
+        notifySettingsChange();
+    }
+    handleToggle (e) {
+        const enabled = e.target.checked;
+        // 打开开关且列表为空时，先补一行默认变量
+        if (enabled && this.latestVariables.length === 0) {
+            this.latestVariables = [{name: '', value: '0'}];
+        }
+        this.setState({enabled});
+        this.persist(enabled);
+    }
+    handleAdd () {
+        this.latestVariables = [...this.latestVariables, {name: '', value: '0'}];
+        this.setState({variables: this.latestVariables});
+        this.persist();
+    }
+    handleRemove (index) {
+        this.latestVariables = this.latestVariables.filter((_, i) => i !== index);
+        this.setState({variables: this.latestVariables});
+        this.persist();
+    }
+    handleNameSubmit (index, value) {
+        this.latestVariables = this.latestVariables.map((v, i) => (
+            i === index ? {...v, name: value} : v
+        ));
+        this.setState({variables: this.latestVariables});
+        this.persist();
+    }
+    handleValueSubmit (index, value) {
+        this.latestVariables = this.latestVariables.map((v, i) => (
+            i === index ? {...v, value: value} : v
+        ));
+        this.setState({variables: this.latestVariables});
+        this.persist();
+    }
+    render () {
+        const {enabled, variables} = this.state;
+        return (
+            <Setting
+                active={enabled}
+                primary={
+                    <label className={styles.label}>
+                        <FancyCheckbox
+                            className={styles.checkbox}
+                            checked={enabled}
+                            onChange={this.handleToggle}
+                        />
+                        <FormattedMessage {...messages.defaultvariable} />
+                    </label>
+                }
+                help={
+                    <FormattedMessage {...messages.defaultvariablehelp} />
+                }
+                secondary={
+                    <div className={styles.customSpriteSecondary}>
+                        {enabled && (
+                            <React.Fragment>
+                                <div className={styles.customSpriteHint}>
+                                    <FormattedMessage {...messages.defaultvariablehint} />
+                                </div>
+                                <button
+                                    className={classNames(styles.button, styles.defaultVariableAdd)}
+                                    onClick={this.handleAdd}
+                                    type="button"
+                                >
+                                    <Plus size={14} />
+                                    <FormattedMessage {...messages.defaultvariableadd} />
+                                </button>
+                                {variables.map((variable, index) => (
+                                    <div key={index} className={styles.customSpriteRow}>
+                                        <BufferedInput
+                                            className={styles.customSpriteNameInput}
+                                            value={variable.name}
+                                            placeholder={this.props.intl.formatMessage(messages.defaultvariablenameplaceholder)}
+                                            onSubmit={value => this.handleNameSubmit(index, value)}
+                                        />
+                                        <BufferedInput
+                                            className={styles.defaultVariableValueInput}
+                                            value={variable.value}
+                                            placeholder={this.props.intl.formatMessage(messages.defaultvariablevalueplaceholder)}
+                                            onSubmit={value => this.handleValueSubmit(index, value)}
+                                        />
+                                        <button
+                                            className={styles.defaultVariableRemove}
+                                            title={this.props.intl.formatMessage(messages.defaultvariableremove)}
+                                            onClick={() => this.handleRemove(index)}
+                                            type="button"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </React.Fragment>
+                        )}
+                    </div>
+                }
+            />
+        );
+    }
+}
+DefaultVariableSetting.propTypes = {
     intl: intlShape
 };
 
@@ -2211,6 +2397,10 @@ const pageConfigurations = {
                     },
                     {
                         component: CustomDefaultSprite,
+                        props: () => ({})
+                    },
+                    {
+                        component: DefaultVariableSetting,
                         props: () => ({})
                     }
                 ]

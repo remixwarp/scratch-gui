@@ -10,7 +10,11 @@ const DEFAULT_SETTINGS = {
     enableAutoUpdateCheck: false,
     EnableBlockCounter: false,
     EnableDynamicStageBackground: false,
-    EnableStatusBar: false
+    EnableStatusBar: false,
+    // 默认变量：开关（关闭则不创建任何默认变量）+ 变量列表 [{name, value}]
+    // 列表为空且开关开启时，回退到经典行为：创建一个"我的变量"
+    EnableDefaultVariables: true,
+    DefaultVariables: []
 };
 
 export class AESettings {

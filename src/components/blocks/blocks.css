@@ -66,7 +66,16 @@
     box-sizing: content-box;
     height: 100% !important;
     top: 0;
+
+    /*
+        For now, the layout cannot support scrollbars in the category menu.
+        Keep the menu scrollable (wheel/touch) but hide the native scrollbar:
+        on a ~60px strip it eats layout width and visually covers the palette.
+        `-ms-overflow-style` covers Edge Legacy, `scrollbar-width` Firefox,
+        and the `::-webkit-scrollbar` rules below cover Chrome/Edge/Safari.
+    */
     -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 [dir="rtl"] .blocks :global(.blocklyToolboxDiv) {
@@ -75,10 +84,16 @@
     border-radius: 0 0 10px 10px;
 }
 
+.blocks :global(.blocklyToolboxDiv::-webkit-scrollbar),
+.blocks :global(.scratchCategoryMenu::-webkit-scrollbar) {
+    display: none;
+}
+
 .blocks :global(.scratchCategoryMenu) {
     box-sizing: border-box;
     padding-bottom: 5.6875rem;
     overflow-y: auto;
+    scrollbar-width: none;
 }
 
 @media only screen and (max-width: 900px) {

@@ -1,5 +1,6 @@
 import {defineMessages} from 'react-intl';
 import sharedMessages from '../constants/shared-messages';
+import {AESettings} from '../settings.js';
 
 let messages = defineMessages({
     variable: {
@@ -10,6 +11,45 @@ let messages = defineMessages({
 });
 
 messages = { ...messages, ...sharedMessages };
+
+// 将用户输入的变量值归一化：数字字符串转数字，其余保留原值
+const normalizeVariableValue = rawValue => {
+    if (typeof rawValue === 'number') return rawValue;
+    if (typeof rawValue === 'string' && rawValue.trim() !== '' && !isNaN(Number(rawValue))) {
+        return Number(rawValue);
+    }
+    return rawValue;
+};
+
+// 读取高级设置中的默认变量配置（开关 + 变量列表 [{name, value}]），生成默认变量对象
+const buildDefaultVariables = translator => {
+    const settings = AESettings.getAll();
+    // 关闭开关 → 不创建任何默认变量
+    if (settings.EnableDefaultVariables === false) {
+        return {};
+    }
+    // 用户配置过变量列表 → 按列表生成
+    if (Array.isArray(settings.DefaultVariables)) {
+        const variables = {};
+        settings.DefaultVariables.forEach((item, i) => {
+            const baseName = translator(messages.variable);
+            const rawName = item && item.name ? String(item.name).trim() : '';
+            const name = rawName || (i === 0 ? baseName : `${baseName}${i + 1}`);
+            // 第一个变量沿用原始 id，避免破坏既有引用；其余变量使用带索引的唯一 id
+            const id = i === 0 ?
+                '`jEk@4|i[#Fk?(8x)AV.-my variable' :
+                `\`jEk@4|i[#Fk?(8x)AV.-default-variable-${i}`;
+            const value = item && typeof item.value !== 'undefined' ?
+                normalizeVariableValue(item.value) : 0;
+            variables[id] = [name, value];
+        });
+        return variables;
+    }
+    // 从未配置过 → 保持经典行为：创建一个"我的变量"
+    return {
+        '`jEk@4|i[#Fk?(8x)AV.-my variable': [translator(messages.variable), 0]
+    };
+};
 
 // use the default message if a translation function is not passed
 const defaultTranslator = msgObj => {
@@ -35,12 +75,7 @@ const projectData = translateFunction => {
             {
                 isStage: true,
                 name: 'Stage',
-                variables: {
-                    '`jEk@4|i[#Fk?(8x)AV.-my variable': [
-                        translator(messages.variable),
-                        0
-                    ]
-                },
+                variables: buildDefaultVariables(translator),
                 lists: {},
                 broadcasts: {},
                 blocks: {},
