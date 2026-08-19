@@ -317,6 +317,26 @@ export const getDefaultShortcuts = () => [
         action: 'toggleCommandPalette',
         params: [],
         label: 'Command Palette'
+    },
+    {
+        id: 'showProblems',
+        key: 'Ctrl+Shift+M',
+        defaultKey: 'Ctrl+Shift+M',
+        category: SHORTCUT_CATEGORIES.VIEW,
+        actionType: 'callback',
+        action: 'toggleProblems',
+        params: [],
+        label: 'Toggle Problems Panel'
+    },
+    {
+        id: 'showConsole',
+        key: 'Ctrl+Shift+Y',
+        defaultKey: 'Ctrl+Shift+Y',
+        category: SHORTCUT_CATEGORIES.VIEW,
+        actionType: 'callback',
+        action: 'toggleConsole',
+        params: [],
+        label: 'Toggle Console Panel'
     }
 ];
 

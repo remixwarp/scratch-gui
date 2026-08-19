@@ -18,9 +18,13 @@ import {
     Puzzle,
     RotateCcw,
     Info,
-    FileText
+    FileText,
+    CircleAlert,
+    Terminal,
+    PanelTopClose
 } from 'lucide-react';
 import {AESettings} from './settings.js';
+import {togglePanelViaEvent} from './mw-panels-store.js';
 import {
     openAssetsModal,
     openProjectMetadataModal,
@@ -98,6 +102,36 @@ export const getCommands = () => [
             AESettings.set('EnableStatusBar', !AESettings.get('EnableStatusBar'));
             window.location.reload();
         }
+    },
+    {
+        id: 'showProblems',
+        label: 'Toggle Problems Panel',
+        labelZh: '开关问题面板',
+        descZh: '打开或关闭底部的问题面板，显示编译错误与运行时错误',
+        keywords: 'problems 问题 面板 panel 错误 error 编译 诊断',
+        category: 'view',
+        icon: CircleAlert,
+        run: () => togglePanelViaEvent('problems')
+    },
+    {
+        id: 'showConsole',
+        label: 'Toggle Console Panel',
+        labelZh: '开关控制台面板',
+        descZh: '打开或关闭底部的控制台面板，显示 console 输出与运行日志',
+        keywords: 'console 控制台 面板 panel 日志 log 输出 终端',
+        category: 'view',
+        icon: Terminal,
+        run: () => togglePanelViaEvent('console')
+    },
+    {
+        id: 'closePanels',
+        label: 'Close Panel',
+        labelZh: '关闭底部面板',
+        descZh: '关闭当前打开的底部面板',
+        keywords: 'close 关闭 面板 panel 隐藏 hide',
+        category: 'view',
+        icon: PanelTopClose,
+        run: () => togglePanelViaEvent()
     },
     {
         id: 'reloadEditor',

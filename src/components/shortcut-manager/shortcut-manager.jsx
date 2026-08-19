@@ -230,6 +230,16 @@ const messages = defineMessages({
         defaultMessage: 'Command Palette',
         description: 'Shortcut label',
         id: 'shortcut.commandPalette'
+    },
+    showProblems: {
+        defaultMessage: 'Toggle Problems Panel',
+        description: 'Shortcut label',
+        id: 'shortcut.problems'
+    },
+    showConsole: {
+        defaultMessage: 'Toggle Console Panel',
+        description: 'Shortcut label',
+        id: 'shortcut.console'
     }
 });
 
@@ -307,6 +317,8 @@ class ShortcutManager extends React.Component {
             'copy': messages.copy,
             'paste': messages.paste,
             'cut': messages.cut,
+            'showProblems': messages.showProblems,
+            'showConsole': messages.showConsole,
             'closeWindow': messages.closeWindow,
             'aiChat': messages.aiChat,
             'aiAgent': messages.aiAgent,

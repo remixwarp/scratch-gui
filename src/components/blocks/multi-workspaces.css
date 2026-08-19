@@ -66,6 +66,67 @@
   border-color: #4C97FF;
   color: #4C97FF;
 }
+/* 作品问题/控制台按钮（多工作区栏，位于添加按钮左侧） */
+.problemsBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--ui-tertiary, rgba(0,0,0,0.15));
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-primary, inherit);
+}
+.problemsBtn:hover {
+  background: var(--ui-tertiary, rgba(0, 0, 0, 0.06));
+  border-color: var(--motion-primary, #4C97FF);
+  color: var(--motion-primary, #4C97FF);
+}
+.problemsBtnActive {
+  background: var(--motion-primary, #4C97FF);
+  border-color: var(--motion-primary, #4C97FF);
+  color: var(--ui-white, #ffffff);
+}
+.problemsBtnActive:hover {
+  background: var(--motion-primary, #4C97FF);
+  border-color: var(--motion-primary, #4C97FF);
+  color: var(--ui-white, #ffffff);
+}
+.problemsBtnIcon {
+  flex-shrink: 0;
+  fill: currentColor;
+}
+.problemsBtnHasBadge {
+  border-color: var(--control-primary, #ffab00);
+  color: var(--control-primary, #ffab00);
+}
+.problemsBtnHasBadge.problemsBtnActive {
+  background: var(--control-primary, #ffab00);
+  border-color: var(--control-primary, #ffab00);
+  color: #fff;
+}
+.problemsBadge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--control-primary, #ffab00);
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
 /* 单工作区模式容器 */
 .blocksContainer {
   flex: 1 1 auto;

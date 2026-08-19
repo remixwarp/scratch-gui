@@ -219,6 +219,21 @@
     color: $text-primary;
 }
 
+/* VS Code 活动栏按钮激活态（面板打开时高亮） */
+.activity-bar-button-active {
+    background-color: $ui-white;
+    box-shadow: inset 3px 0px 0px 0px $looks-secondary;
+}
+
+.activity-bar-button-active svg {
+    filter: none;
+    color: $looks-secondary;
+}
+
+.activity-bar-button-active:hover svg {
+    color: $looks-secondary;
+}
+
 [dir="rtl"] .activity-bar-button svg {
     margin: 0 !important;
     transform: none;

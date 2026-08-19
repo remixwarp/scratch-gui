@@ -100,6 +100,7 @@ import {Theme} from '../../lib/themes';
 
 import {setStageSize} from '../../reducers/stage-size';
 import {showOnboarding} from '../../reducers/onboarding';
+import {COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
 import {
     openGitModal,
     openAIAgentModal,
@@ -122,7 +123,22 @@ import MWCommandPalette from '../../containers/mw-command-palette.jsx';
 import {openCollaborationModal} from '../../reducers/collaboration.js';
 import SettingsStore from '../../addons/settings-store-singleton.js';
 import {getVisibleOrderedIds as getActivityBarVisibleIds} from '../../lib/mw-activity-bar-layout.js';
-import {GitBranch, ListTodo, Handshake, Trophy, Bookmark, PackagePlus, Sparkles, Settings as SettingsIcon, Puzzle, LogIn} from 'lucide-react';
+import {loadPanelState, savePanelState, setPanelStateEvent} from '../../lib/mw-panels-store.js';
+import MWPanelBarContainer from '../../containers/mw-panel-bar.jsx';
+import {
+    GitBranch,
+    ListTodo,
+    Handshake,
+    Trophy,
+    Bookmark,
+    PackagePlus,
+    Sparkles,
+    Settings as SettingsIcon,
+    Puzzle,
+    LogIn,
+    CircleAlert,
+    Terminal
+} from 'lucide-react';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
@@ -314,6 +330,28 @@ const GUIComponent = props => {
     });
     
     const [vscodeLayout, setVSCodeLayout] = useState(initialVSCodeLayout);
+    // 底部面板栏状态（问题/控制台）—— 显隐、当前面板、高度持久化
+    const [panelState, setPanelState] = useState(loadPanelState);
+    useEffect(() => {
+        savePanelState(panelState);
+        setPanelStateEvent(panelState);
+    }, [panelState]);
+    useEffect(() => {
+        const handlePanelToggle = e => {
+            const panel = e.detail && e.detail.panel;
+            setPanelState(prev => {
+                if (!panel) {
+                    return {...prev, visible: false};
+                }
+                if (prev.visible && prev.active === panel) {
+                    return {...prev, visible: false};
+                }
+                return {...prev, visible: true, active: panel};
+            });
+        };
+        window.addEventListener('mw-panel-toggle', handlePanelToggle);
+        return () => window.removeEventListener('mw-panel-toggle', handlePanelToggle);
+    }, []);
     // 活动栏按钮配置变化时触发重渲染（开关/顺序）
     const [_activityBarVersion, setActivityBarVersion] = useState(0);
     useEffect(() => {
@@ -1343,6 +1381,12 @@ const GUIComponent = props => {
         callbacks.toggleStageSize = () => props.dispatch && props.dispatch({type: 'scratch-gui/stage-size/TOGGLE_STAGE_SIZE'});
         callbacks.setFullScreen = (isFullScreen) => props.dispatch && props.dispatch({type: 'scratch-gui/mode/SET_FULL_SCREEN', isFullScreen});
         callbacks.toggleCommandPalette = () => window.dispatchEvent(new Event('rw-command-palette-toggle'));
+        callbacks.toggleProblems = () => window.dispatchEvent(new CustomEvent('mw-panel-toggle', {
+            detail: {panel: 'problems'}
+        }));
+        callbacks.toggleConsole = () => window.dispatchEvent(new CustomEvent('mw-panel-toggle', {
+            detail: {panel: 'console'}
+        }));
         
         // Initialize shortcuts with dispatch, vm, and callbacks
         initShortcuts(dispatchWrapper, vm, callbacks);
@@ -1503,6 +1547,23 @@ const GUIComponent = props => {
     }, [stagePanelWidth]);
 
     // 活动栏工具按钮定义（顺序/显示由高级设置中的活动栏配置控制）
+    const handlePanelToggle = panel => {
+        setPanelState(prev => {
+            if (prev.visible && prev.active === panel) {
+                return {...prev, visible: false};
+            }
+            return {...prev, visible: true, active: panel};
+        });
+    };
+    const handlePanelSelect = panel => {
+        setPanelState(prev => ({...prev, visible: true, active: panel}));
+    };
+    const handlePanelClose = () => {
+        setPanelState(prev => ({...prev, visible: false}));
+    };
+    const handlePanelResize = height => {
+        setPanelState(prev => ({...prev, height: Math.max(100, Math.min(600, height))}));
+    };
     const activityBarDefs = {
         addonSettings: {
             title: intl.formatMessage({defaultMessage: '插件设置', id: 'tw.addonSettings.title'}),
@@ -1545,6 +1606,18 @@ const GUIComponent = props => {
             title: locale === 'zh-cn' ? '成就' : 'Achievements',
             onClick: () => window.dispatchEvent(new Event('rw-achievements-open')),
             icon: <Trophy size={20} />
+        },
+        problems: {
+            title: intl.formatMessage({defaultMessage: '问题', id: 'mw.panel.problems'}),
+            onClick: () => handlePanelToggle('problems'),
+            icon: <CircleAlert size={20} />,
+            active: panelState.visible && panelState.active === 'problems'
+        },
+        console: {
+            title: intl.formatMessage({defaultMessage: '控制台', id: 'mw.panel.console'}),
+            onClick: () => handlePanelToggle('console'),
+            icon: <Terminal size={20} />,
+            active: panelState.visible && panelState.active === 'console'
         }
     };
 
@@ -1554,6 +1627,7 @@ const GUIComponent = props => {
         .filter(item => item.def && item.def.condition !== false)
         .map((item, i, arr) => ({
             ...item,
+            active: !!item.def.active,
             separatorAfter: item.id === 'addExtension' && i < arr.length - 1
         }));
 
@@ -1804,7 +1878,9 @@ const GUIComponent = props => {
                                             {activityBarItems.map(item => (
                                                 <React.Fragment key={item.id}>
                                                     <button
-                                                        className={styles.activityBarButton}
+                                                        className={classNames(styles.activityBarButton, {
+                                                            [styles.activityBarButtonActive]: item.active
+                                                        })}
                                                         title={item.def.title}
                                                         onClick={item.def.onClick}
                                                     >
@@ -1895,7 +1971,7 @@ const GUIComponent = props => {
                                     {soundsTabVisible ? <SoundTab vm={vm} /> : null}
                                 </TabPanel>
                             </Tabs>
-                            {backpackVisible ? (
+                            {backpackVisible && activeTabIndex !== COSTUMES_TAB_INDEX && activeTabIndex !== SOUNDS_TAB_INDEX ? (
                                 vscodeLayout ? (
                                     <Box className={styles.vscodeBackpackHost}>
                                         <Backpack host={backpackHost} />
@@ -1904,6 +1980,18 @@ const GUIComponent = props => {
                                     <Backpack host={backpackHost} />
                                 )
                             ) : null}
+                            {panelState.visible && (
+                                <MWPanelBarContainer
+                                    visible={panelState.visible}
+                                    active={panelState.active}
+                                    height={panelState.height}
+                                    locale={locale}
+                                    vscodeLayout={vscodeLayout}
+                                    onSelect={handlePanelSelect}
+                                    onClose={handlePanelClose}
+                                    onResize={handlePanelResize}
+                                />
+                            )}
                         </Box>
 
                         <Box

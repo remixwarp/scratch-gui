@@ -1,0 +1,260 @@
+/* 底部面板栏（问题 / 控制台）—— 使用主题变量，随深色/浅色主题自动适配 */
+.panel-bar {
+    /* 面板主文字色：深色模式下为纯白，浅色模式下为主题深色文字 */
+    --panel-fg: light-dark(var(--text-primary, #40475c), #ffffff);
+    /* 次要文字：深色模式下为稍浅一点的白色（未选中），浅色模式下为主题透明文字 */
+    --panel-fg-muted: light-dark(var(--text-primary-transparent, hsla(225, 15%, 30%, 0.75)), rgba(255, 255, 255, 0.72));
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--ui-secondary, #1e1e1e);
+    color: var(--panel-fg, #ffffff);
+    border-top: 1px solid var(--ui-black-transparent, #3c3c3c);
+    box-sizing: border-box;
+    min-height: 100px;
+    overflow: hidden;
+    font-size: 12px;
+}
+
+/* 处于 VS Code 布局（有左侧活动栏）时，面板从活动栏右侧开始 */
+.panel-bar-activity {
+    left: 41px;
+}
+
+/* 顶部拖拽调整高度的把手 */
+.resize-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    cursor: ns-resize;
+    z-index: 10;
+}
+
+/* 面板标签栏 */
+.panel-tabs {
+    display: flex;
+    align-items: center;
+    background-color: var(--ui-tertiary, #252526);
+    border-bottom: 1px solid var(--ui-black-transparent, #1e1e1e);
+    flex: 0 0 auto;
+    padding: 0 8px;
+    height: 32px;
+    box-sizing: border-box;
+}
+
+.panel-tab {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 32px;
+    padding: 0 10px;
+    border: none;
+    background: transparent;
+    color: var(--panel-fg-muted, rgba(255, 255, 255, 0.75));
+    font-size: 11px;
+    cursor: pointer;
+    border-right: 1px solid var(--ui-black-transparent, #1e1e1e);
+}
+
+.panel-tab:hover {
+    color: var(--panel-fg, #ffffff);
+}
+
+.panel-tab svg {
+    width: 14px;
+    height: 14px;
+    color: var(--panel-fg-muted, rgba(255, 255, 255, 0.75));
+}
+
+.panel-tab:hover svg {
+    color: var(--panel-fg, #ffffff);
+}
+
+.panel-tab-active {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 32px;
+    padding: 0 10px;
+    border: none;
+    background: transparent;
+    color: var(--panel-fg, #ffffff);
+    font-size: 11px;
+    cursor: pointer;
+    border-right: 1px solid var(--ui-black-transparent, #1e1e1e);
+    border-top: 1px solid var(--motion-primary, #007acc);
+}
+
+.panel-tab-active svg {
+    width: 14px;
+    height: 14px;
+    color: var(--panel-fg, #ffffff);
+}
+
+.panel-tab-label {
+    white-space: nowrap;
+}
+
+.panel-tab-badge {
+    background-color: var(--motion-primary, #007acc);
+    color: var(--ui-white, #ffffff);
+    border-radius: 8px;
+    padding: 0 6px;
+    font-size: 10px;
+    line-height: 14px;
+}
+
+.panel-actions {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 2px;
+}
+
+.panel-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--panel-fg-muted, rgba(255, 255, 255, 0.75));
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.panel-action:hover {
+    background-color: var(--ui-black-transparent, #3c3c3c);
+    color: var(--panel-fg, #ffffff);
+}
+
+/* 面板内容区 */
+.panel-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    background-color: var(--ui-secondary, #1e1e1e);
+}
+
+.panel-empty {
+    padding: 14px;
+    color: var(--panel-fg-muted, rgba(255, 255, 255, 0.75));
+    font-style: italic;
+}
+
+/* 问题列表 */
+.problem-list {
+    padding: 4px 0;
+}
+
+.problem-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 4px 14px;
+    border: none;
+    background: transparent;
+    color: var(--panel-fg, #ffffff);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.problem-item:hover {
+    background-color: var(--ui-black-transparent, #2a2d2e);
+}
+
+.problem-mark {
+    flex: 0 0 auto;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.problem-mark[data-severity="error"] {
+    color: var(--error-primary, #f48771);
+}
+
+.problem-mark[data-severity="warning"] {
+    color: var(--control-primary, #cca700);
+}
+
+.problem-mark[data-severity="info"] {
+    color: var(--motion-primary, #75beff);
+}
+
+.problem-message {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.problem-source {
+    flex: 0 0 auto;
+    color: var(--panel-fg-muted, rgba(255, 255, 255, 0.75));
+    font-size: 11px;
+}
+
+/* 控制台 */
+.console-list {
+    padding: 4px 0;
+    font-family: Consolas, "Courier New", monospace;
+}
+
+.console-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 2px 14px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.console-time {
+    flex: 0 0 auto;
+    color: var(--panel-fg-muted, rgba(255, 255, 255, 0.75));
+}
+
+.console-level {
+    flex: 0 0 auto;
+    width: 46px;
+    font-weight: bold;
+}
+
+.console-level[data-level="error"] {
+    color: var(--error-primary, #f48771);
+}
+
+.console-level[data-level="warn"] {
+    color: var(--control-primary, #cca700);
+}
+
+.console-level[data-level="info"] {
+    color: var(--motion-primary, #75beff);
+}
+
+.console-level[data-level="debug"] {
+    color: var(--motion-primary, #75beff);
+}
+
+.console-text {
+    flex: 1 1 auto;
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+.console-text[data-level="error"] {
+    color: var(--error-primary, #f48771);
+}
+
+.console-text[data-level="warn"] {
+    color: var(--control-primary, #d7ba7d);
+}
