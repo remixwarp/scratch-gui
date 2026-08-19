@@ -1,4 +1,6 @@
-[class*="sprite-selector_"] {
+/* 为角色滚动区域底部预留显示条高度的内边距，
+   否则角色列表最下面的角色名称会被底部的显示条遮挡 */
+[class^="sprite-selector_scroll-wrapper_"] {
     padding-bottom: 32px;
 }
 
