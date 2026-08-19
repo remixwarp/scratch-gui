@@ -1,7 +1,7 @@
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {injectIntl, intlShape, defineMessages} from 'react-intl';
+import {injectIntl, intlShape} from 'react-intl';
 
 import LibraryItemComponent from '../components/library-item/library-item.jsx';
 
@@ -138,6 +138,8 @@ class LibraryItem extends React.PureComponent {
                 id={this.props.id}
                 insetIconURL={this.props.insetIconURL}
                 internetConnectionRequired={this.props.internetConnectionRequired}
+                isBackdrop={this.props.isBackdrop}
+                isSound={this.props.isSound}
                 isPlaying={this.props.isPlaying}
                 name={this.props.name}
                 credits={this.props.credits}
@@ -181,9 +183,10 @@ LibraryItem.propTypes = {
         })
     ),
     id: PropTypes.number.isRequired,
-    incompatibleWithScratch: PropTypes.bool,
     insetIconURL: PropTypes.string,
     internetConnectionRequired: PropTypes.bool,
+    isBackdrop: PropTypes.bool,
+    isSound: PropTypes.bool,
     isPlaying: PropTypes.bool,
     name: PropTypes.oneOfType([
         PropTypes.string,

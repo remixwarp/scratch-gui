@@ -48,6 +48,7 @@ class CostumeLibrary extends React.PureComponent {
         return (
             <LibraryComponent
                 data={this.state.data.then ? null : this.state.data}
+                filterable
                 id="costumeLibrary"
                 tags={spriteTags}
                 title={this.props.intl.formatMessage(messages.libraryTitle)}

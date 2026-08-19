@@ -101,6 +101,7 @@ import {Theme} from '../../lib/themes';
 import {setStageSize} from '../../reducers/stage-size';
 import {showOnboarding} from '../../reducers/onboarding';
 import {COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
+import CommandPalette from '../command-palette/command-palette.jsx';
 import {
     openGitModal,
     openAIAgentModal,
@@ -330,6 +331,13 @@ const GUIComponent = props => {
     });
     
     const [vscodeLayout, setVSCodeLayout] = useState(initialVSCodeLayout);
+    // 命令面板开关状态
+    const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+    useEffect(() => {
+        const handleToggle = () => setCommandPaletteOpen(prev => !prev);
+        window.addEventListener('rw-command-palette-toggle', handleToggle);
+        return () => window.removeEventListener('rw-command-palette-toggle', handleToggle);
+    }, []);
     // 底部面板栏状态（问题/控制台）—— 显隐、当前面板、高度持久化
     const [panelState, setPanelState] = useState(loadPanelState);
     useEffect(() => {
@@ -1420,6 +1428,13 @@ const GUIComponent = props => {
         <React.Fragment>
             <RoturSession />
             {!isEmbedded && <RoturExtensionHost />}
+            {commandPaletteOpen ? (
+                <CommandPalette
+                    vm={vm}
+                    dispatch={props.dispatch}
+                    onClose={() => setCommandPaletteOpen(false)}
+                />
+            ) : null}
             <AchievementTracker vm={vm} />
             <Achievements />
             <NotificationsProvider />
@@ -1527,7 +1542,8 @@ const GUIComponent = props => {
         roturLoginModalVisible,
         onRequestCloseRoturLogin,
         isEmbedded,
-        vm
+        vm,
+        commandPaletteOpen
     ]);
 
     const minDimensions = useMemo(() => ({

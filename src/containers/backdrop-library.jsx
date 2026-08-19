@@ -49,6 +49,7 @@ class BackdropLibrary extends React.Component {
         return (
             <LibraryComponent
                 data={this.state.data.then ? null : this.state.data}
+                filterable
                 id="backdropLibrary"
                 tags={backdropTags}
                 title={this.props.intl.formatMessage(messages.libraryTitle)}

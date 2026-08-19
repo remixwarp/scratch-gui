@@ -69,7 +69,8 @@ const ModalSidebarItem = ({
     selected,
     statusDot,
     title,
-    trailingAction
+    trailingAction,
+    ...rest
 }) => {
     const content = (
         <React.Fragment>
@@ -100,6 +101,7 @@ const ModalSidebarItem = ({
                     onClick={onClick}
                     title={title || label}
                     type="button"
+                    {...rest}
                 >
                     {content}
                 </button>
@@ -113,6 +115,7 @@ const ModalSidebarItem = ({
             onClick={onClick}
             title={title || label}
             type="button"
+            {...rest}
         >
             {content}
         </button>

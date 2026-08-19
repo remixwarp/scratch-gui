@@ -202,6 +202,7 @@ class SoundLibrary extends React.PureComponent {
             <LibraryComponent
                 showPlayButton
                 data={this.state.data}
+                filterable
                 id="soundLibrary"
                 setStopHandler={this.setStopHandler}
                 tags={soundTags}

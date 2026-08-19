@@ -39,6 +39,7 @@ export const loadPanelState = () => {
                 state.active = DEFAULT_STATE.active;
             }
             state.height = Math.max(100, Math.min(600, Number(state.height) || DEFAULT_STATE.height));
+            state.visible = false;
             return state;
         }
     } catch (e) {
