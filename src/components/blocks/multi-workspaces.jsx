@@ -6,8 +6,6 @@ import {defineMessages, injectIntl} from 'react-intl';
 import Blocks from '../../containers/blocks.jsx';
 import {
     togglePanelViaEvent,
-    getProblemCount,
-    PROBLEM_COUNT_EVENT,
     PANEL_STATE_EVENT,
     getPanelState
 } from '../../lib/mw-panels-store.js';
@@ -18,16 +16,6 @@ const messages = defineMessages({
         id: 'mw.panel.buttonTitle',
         defaultMessage: '项目问题与运行控制台',
         description: 'Toolbar button title for opening the problems/runtime console panel'
-    },
-    problemsCount: {
-        id: 'mw.panel.buttonProblemsCount',
-        defaultMessage: '发现 {count} 个问题',
-        description: 'Toolbar button subtitle showing the number of problems found'
-    },
-    problemsNone: {
-        id: 'mw.panel.buttonProblemsNone',
-        defaultMessage: '未发现问题',
-        description: 'Toolbar button subtitle when no problems are found'
     }
 });
 
@@ -196,15 +184,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
         return () => document.removeEventListener('mousedown', handler);
     }, [splitDropdown]);
 
-    // ========== 作品问题数量（多工作区栏上的徽标） ==========
-    const [problemCount, setProblemCountState] = useState(() => getProblemCount());
-    useEffect(() => {
-        const handler = (e) => {
-            setProblemCountState(e.detail);
-        };
-        window.addEventListener(PROBLEM_COUNT_EVENT, handler);
-        return () => window.removeEventListener(PROBLEM_COUNT_EVENT, handler);
-    }, []);
+    // ========== 作品问题面板开关状态 ==========
     const [panelOpen, setPanelOpen] = useState(() => {
         const state = getPanelState();
         return Boolean(state && state.visible);
@@ -568,20 +548,14 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                     {/* 作品问题/控制台按钮：位于添加按钮左侧一个位置 */}
                     <button
                         className={classNames(styles.problemsBtn, {
-                            [styles.problemsBtnHasBadge]: problemCount > 0,
                             [styles.problemsBtnActive]: panelOpen
                         })}
                         onClick={toggleProblemsPanel}
-                        title={`${intl.formatMessage(messages.problemsTitle)}（${problemCount > 0 ?
-                            intl.formatMessage(messages.problemsCount, {count: problemCount}) :
-                            intl.formatMessage(messages.problemsNone)}）`}
+                        title={intl.formatMessage(messages.problemsTitle)}
                     >
                         <svg className={styles.problemsBtnIcon} viewBox="0 0 1024 1024" width="15" height="15" xmlns="http://www.w3.org/2000/svg">
                             <path d="M512 64C264.96 64 64 264.96 64 512s200.96 448 448 448 448-200.96 448-448S759.04 64 512 64zM556.8 768h-89.6v-89.6h89.6V768zM556.8 595.2h-89.6V256h89.6v339.2z" />
                         </svg>
-                        {problemCount > 0 ? (
-                            <span className={styles.problemsBadge}>{problemCount > 99 ? '99+' : problemCount}</span>
-                        ) : null}
                     </button>
                     {splitMode === null && canAddMoreWorkspaces() ? (
                         <button

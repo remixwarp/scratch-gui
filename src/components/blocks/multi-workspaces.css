@@ -100,33 +100,6 @@
   flex-shrink: 0;
   fill: currentColor;
 }
-.problemsBtnHasBadge {
-  border-color: var(--control-primary, #ffab00);
-  color: var(--control-primary, #ffab00);
-}
-.problemsBtnHasBadge.problemsBtnActive {
-  background: var(--control-primary, #ffab00);
-  border-color: var(--control-primary, #ffab00);
-  color: #fff;
-}
-.problemsBadge {
-  position: absolute;
-  top: -6px;
-  right: -8px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--control-primary, #ffab00);
-  color: #fff;
-  font-size: 10px;
-  font-weight: bold;
-  line-height: 1;
-  border-radius: 8px;
-  box-sizing: border-box;
-}
 /* 单工作区模式容器 */
 .blocksContainer {
   flex: 1 1 auto;
