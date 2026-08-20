@@ -24,8 +24,8 @@ import {
 } from '../../reducers/tw';
 import {openProjectThemePrompt} from '../../reducers/mw-project-theme';
 import {setCustomStageSize} from '../../reducers/custom-stage-size';
-import {openUnknownPlatformModal} from '../../reducers/modals';
 import {getIsLoading} from '../../reducers/project-state';
+import {KNOWN_COMPATIBLE_PLATFORMS} from '../../components/tw-unknown-platform-modal/unknown-platform-modal.jsx';
 import {recordStageSize} from '../achievements.js';
 import implementGuiAPI from '../api/extension-gui';
 import {BLOCKS_TAB_INDEX} from '../../reducers/editor-tab';
@@ -420,8 +420,22 @@ const vmListenerHOC = function (WrappedComponent) {
         onInterpolationChanged: interpolation => dispatch(setInterpolationState(interpolation)),
         onCompilerOptionsChanged: options => dispatch(setCompilerOptionsState(options)),
         onPlatformMismatch: (platform, callback) => {
+            // Platforms that are mostly compatible with this editor (Scratch,
+            // TurboWarp, 02Engine, AstraEditor, Bilup, Gandi) should load and
+            // run without issues. For those we just continue silently — no
+            // "made with another platform" prompt at all.
+            // For genuinely unknown/incompatible platforms we still do NOT show
+            // a blocking prompt. Instead we record the platform so it can be
+            // surfaced only inside the load-failure error UI (tw-invalid-project
+            // modal) if the project actually fails to load.
+            const isKnownCompatible = platform && KNOWN_COMPATIBLE_PLATFORMS.includes(platform.name);
+            if (isKnownCompatible) {
+                if (typeof callback === 'function') {
+                    callback();
+                }
+                return;
+            }
             dispatch(setPlatformMismatchDetails(platform, callback));
-            dispatch(openUnknownPlatformModal());
         },
         onRuntimeOptionsChanged: options => dispatch(setRuntimeOptionsState(options)),
         onStageSizeChanged: (width, height) => {

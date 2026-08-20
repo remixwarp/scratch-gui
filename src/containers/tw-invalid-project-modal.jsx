@@ -15,7 +15,11 @@ TWInvalidProjectModal.propTypes = {
 };
 
 const mapStateToProps = state => ({
-    error: state.scratchGui.tw.projectError
+    error: state.scratchGui.tw.projectError,
+    // Only set when the project was made on an incompatible (non-whitelisted)
+    // platform. Compatible platforms are handled silently and never recorded,
+    // so this is exactly the set we want to surface in the failure message.
+    platform: state.scratchGui.tw.platformMismatchDetails.platform
 });
 
 const mapDispatchToProps = dispatch => ({

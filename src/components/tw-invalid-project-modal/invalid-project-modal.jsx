@@ -30,6 +30,16 @@ const isZipCorruptionWithSignatureIntact = error => (
 
 const isJSONValidationError = error => errorMatches(error, /validationError/);
 
+const platformToString = platform => {
+    if (!platform) {
+        return '';
+    }
+    if (platform.name && platform.url) {
+        return `${platform.name} (${platform.url})`;
+    }
+    return platform.name || platform.url || '';
+};
+
 const InvalidProjectModal = props => (
     <Modal
         className={styles.modalContent}
@@ -46,6 +56,21 @@ const InvalidProjectModal = props => (
                     id="tw.invalidProject.error"
                 />
             </p>
+
+            {props.platform ? (
+                <p>
+                    <FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="This project was made using a different platform: {platform}. Compatibility with this editor is not guaranteed, which may be related to the error above."
+                        // eslint-disable-next-line max-len
+                        description="Shown in the load-failure modal when the project came from an incompatible platform."
+                        id="tw.invalidProject.platformNote"
+                        values={{
+                            platform: platformToString(props.platform)
+                        }}
+                    />
+                </p>
+            ) : null}
 
             <textarea
                 className={styles.error}
@@ -137,7 +162,13 @@ InvalidProjectModal.propTypes = {
     intl: intlShape,
     onClose: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
-    error: PropTypes.any
+    error: PropTypes.any,
+    // Set only when the project came from an incompatible (non-whitelisted)
+    // platform. Shape: {name: string, url?: string} | undefined
+    platform: PropTypes.shape({
+        name: PropTypes.string,
+        url: PropTypes.string
+    })
 };
 
 export default injectIntl(InvalidProjectModal);

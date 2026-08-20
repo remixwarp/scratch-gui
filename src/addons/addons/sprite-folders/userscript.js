@@ -205,13 +205,12 @@ export default async ({ addon, console, msg }) => {
                 } catch (e) {
                 }
 
-                // Fallback to asset URL
+                // Fallback to asset URL (matches scratch-gui storage.getAssetGetConfig)
                 if (costume.asset.assetId) {
-                    const url = `https://rw-asset.pages.dev/asset/internalapi/asset/${costume.asset.assetId}.${costume.dataFormat || 'png'}/get/`;
-                    return url;
+                    return `https://rw-asset.pages.dev/asset/${costume.asset.assetId}.${costume.dataFormat || 'png'}`;
                 }
                 if (costume.md5ext) {
-                    return `https://rw-asset.pages.dev/asset/internalapi/asset/${costume.md5ext}/get/`;
+                    return `https://rw-asset.pages.dev/asset/${costume.md5ext}`;
                 }
             }
         }
@@ -252,7 +251,7 @@ export default async ({ addon, console, msg }) => {
                         icon.src = dataUri;
                     }
                 }).catch(() => {
-                    const url = `https://rw-asset.pages.dev/asset/internalapi/asset/${costume.asset.assetId}.${costume.dataFormat || 'png'}/get/`;
+                    const url = `https://rw-asset.pages.dev/asset/${costume.asset.assetId}.${costume.dataFormat || 'png'}`;
                     if (icon.parentNode) {
                         icon.src = url;
                     }

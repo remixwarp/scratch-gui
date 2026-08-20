@@ -27,9 +27,13 @@ const platformToString = platform => {
     return '(?)';
 };
 
+// Platforms that are considered mostly compatible with this editor. Projects
+// made on these platforms should load and run fine, so we never show the
+// "made with another platform" prompt for them.
+export const KNOWN_COMPATIBLE_PLATFORMS = ['Scratch', 'TurboWarp', '02Engine', 'AstraEditor', 'Bilup', 'Gandi'];
+
 const UnknownPlatformModal = props => {
-    const knownCompatiblePlatforms = ['Scratch', 'TurboWarp', '02Engine', 'AstraEditor', 'Bilup', 'Gandi'];
-    const isKnownPlatform = props.platform && knownCompatiblePlatforms.includes(props.platform.name);
+    const isKnownPlatform = props.platform && KNOWN_COMPATIBLE_PLATFORMS.includes(props.platform.name);
 
     return (
     <Modal
