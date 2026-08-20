@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, {useState, useEffect, useMemo} from 'react';
+import React, {useState, useEffect, useMemo, useRef} from 'react';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
 import {Search, Heart, Download, ExternalLink} from 'lucide-react';
 
@@ -272,23 +272,44 @@ const [popupPosition, setPopupPosition] = useState({top: 0, left: 0, visible: fa
 
     // Fetch themes from Bilme API
     useEffect(() => {
+        let isMounted = true;
         const fetchThemes = async () => {
             setLoading(true);
             setError(null);
             try {
                 const response = await fetch('https://theme.bilup.org/api/themes');
-                if (!response.ok) throw new Error('Failed to fetch themes');
-                const data = await response.json();
-                setThemes(data.themes || []);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch themes: ${response.status}`);
+                }
+                const contentType = response.headers.get('content-type') || '';
+                const text = await response.text();
+                // 服务端异常时可能返回 200 + HTML 页面（<!doctype html>），
+                // 直接 JSON.parse 会抛 SyntaxError 导致整个编辑器崩溃。
+                // 先校验 content-type，再手动解析，失败时优雅降级而不是崩溃。
+                if (!contentType.includes('application/json') && !text.trim().startsWith('{')) {
+                    throw new Error('Invalid JSON response from theme API');
+                }
+                const data = JSON.parse(text);
+                if (isMounted) {
+                    setThemes(Array.isArray(data.themes) ? data.themes : []);
+                }
             } catch (err) {
                 console.error('Error fetching themes:', err);
-                setError(err.message);
+                if (isMounted) {
+                    setThemes([]);
+                    setError(err.message);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchThemes();
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     // Filter and sort themes
