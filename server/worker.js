@@ -132,6 +132,14 @@ async function handleRequest (request) {
         return jsonResponse({ status: 'ok', timestamp: new Date().toISOString() });
     }
 
+    // Same-origin proxy for the WarpTheme API. The upstream
+    // (warptheme.mistium.com) does not send CORS headers, so direct browser
+    // fetches fail with a cross-origin error. This token-free route proxies
+    // the request server-side and returns permissive CORS headers.
+    if (path.startsWith('/api/warptheme/')) {
+        return proxyWarpTheme(request, url);
+    }
+
     if (!checkRequestToken(request)) {
         return jsonResponse({ error: 'Invalid request token' }, 403);
     }
@@ -212,6 +220,26 @@ async function handleChallenge (request) {
         ttl,
         serverTime: Math.floor(Date.now() / 1000)
     });
+}
+
+async function proxyWarpTheme (request, url) {
+    const upstreamPath = url.pathname.slice('/api/warptheme/'.length);
+    const target = `https://warptheme.mistium.com/${upstreamPath}${url.search}`;
+    try {
+        const upstreamResp = await fetch(target, {
+            method: request.method,
+            headers: { 'Accept': 'application/json' }
+        });
+        const outHeaders = new Headers();
+        outHeaders.set('Content-Type', upstreamResp.headers.get('Content-Type') || 'application/json');
+        outHeaders.set('Access-Control-Allow-Origin', '*');
+        return new Response(upstreamResp.body, {
+            status: upstreamResp.status,
+            headers: outHeaders
+        });
+    } catch (err) {
+        return jsonResponse({ error: '无法连接到 WarpTheme 服务' }, 502);
+    }
 }
 
 async function proxyToAI (request, url) {

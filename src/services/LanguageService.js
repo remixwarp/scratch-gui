@@ -133,17 +133,40 @@ class LanguageService {
         const allData = {};
         const localesToLoad = ['zh-cn', 'en'];
 
+        // Keys used by newer UI (e.g. the 02Agent menu item and the
+        // VSCode-style activity bar) that are missing from the upstream
+        // scratch-l10n catalog. Define them here so React Intl does not log
+        // "Missing message" warnings and the UI shows proper localized text.
+        const FALLBACK_MESSAGES = {
+            'zh-cn': {
+                'gui.menuBar.02agent': '02Agent',
+                'mw.settings.activityBar': '活动栏'
+            },
+            'en': {
+                'gui.menuBar.02agent': '02Agent',
+                'mw.settings.activityBar': 'Activity Bar'
+            }
+        };
+
         localesToLoad.forEach(locale => {
             const catalog = editorMessages[locale];
-            if (!catalog) {
-                return;
-            }
             if (!allData[locale]) {
                 allData[locale] = {};
             }
-            Object.keys(catalog).forEach(key => {
-                allData[locale][key] = catalog[key];
-            });
+            if (catalog) {
+                Object.keys(catalog).forEach(key => {
+                    allData[locale][key] = catalog[key];
+                });
+            }
+            // Apply fallbacks for any keys missing from the upstream catalog.
+            const fallbacks = FALLBACK_MESSAGES[locale];
+            if (fallbacks) {
+                Object.keys(fallbacks).forEach(key => {
+                    if (!allData[locale][key]) {
+                        allData[locale][key] = fallbacks[key];
+                    }
+                });
+            }
         });
 
         return allData;

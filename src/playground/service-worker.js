@@ -121,6 +121,11 @@ self.addEventListener('fetch', event => {
     } else if (url.pathname.endsWith('.sb3') || url.pathname.includes('projects')) {
         // Network first for project files, but cache for offline
         event.respondWith(networkFirst(request));
+    } else if (url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === '') {
+        // HTML entry points must always come from the network first so new
+        // deploys (which reference fresh content-hashed chunks) are picked up
+        // immediately. Falls back to cache when offline.
+        event.respondWith(networkFirst(request));
     } else {
         // Stale while revalidate for everything else
         event.respondWith(staleWhileRevalidate(request));

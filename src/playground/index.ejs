@@ -19,6 +19,14 @@
     <!-- Cloudflare Turnstile -->
     <link rel="preconnect" href="https://challenges.cloudflare.com">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
+    <!-- Preconnect to the asset/project hosts used when loading projects from
+         other platforms so the cross-origin handshake happens early instead
+         of blocking the first project fetch. -->
+    <link rel="preconnect" href="https://scratch.mit.edu" crossorigin>
+    <link rel="preconnect" href="https://assets.scratch.mit.edu" crossorigin>
+    <link rel="preconnect" href="https://cdn.projects.scratch.mit.edu" crossorigin>
+    <link rel="dns-prefetch" href="https://scratch.mit.edu">
+    <link rel="dns-prefetch" href="https://assets.scratch.mit.edu">
     <style>
       .splash-screen {
         position: absolute;

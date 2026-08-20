@@ -363,6 +363,17 @@ module.exports = [
                         chunks: 'initial',
                         priority: -10
                     },
+                    // React + its ecosystem changes very rarely, so isolate it into
+                    // its own long-cacheable chunk. This shrinks the shared vendors
+                    // chunk and lets the browser fetch React in parallel with the
+                    // app code, cutting editor first-paint time.
+                    'react-vendor': {
+                        test: /[\\/]node_modules[\\/](react|react-dom|react-redux|redux|prop-types|scheduler|react-intl|intl-messageformat|@formatjs)[\\/]/,
+                        name: 'react-vendor',
+                        chunks: 'all',
+                        priority: 40,
+                        reuseExistingChunk: true
+                    },
                     common: {
                         name: 'common',
                         minChunks: 2,
@@ -427,6 +438,14 @@ module.exports = [
                 }
             },
             runtimeChunk: 'single',
+            // 'hashed' module ids (webpack 4 equivalent of deterministic) keep
+            // module ids stable across builds, so a deploy that only touches one
+            // feature does NOT invalidate the giant vendors/engine chunks.
+            // Returning visitors reuse their cache instead of re-downloading.
+            moduleIds: 'hashed',
+            // Mark unused exports so Terser's `unused` pass can drop dead code
+            // (shakes out a meaningful amount from scratch-vm and other libs).
+            usedExports: process.env.NODE_ENV === 'production',
             minimize: process.env.NODE_ENV === 'production',
             minimizer: process.env.NODE_ENV === 'production' ? [
                 new (require('terser-webpack-plugin').default || require('terser-webpack-plugin'))({
@@ -523,6 +542,17 @@ module.exports = [
                     {
                         from: 'asset',
                         to: 'asset',
+                        noErrorOnMissing: true
+                    }
+                ]
+            }),
+            // Ship the Cloudflare Pages _headers so the deployed (remote) build
+            // gets immutable caching for hashed chunks and no-cache for HTML.
+            new CopyWebpackPlugin({
+                patterns: [
+                    {
+                        from: 'src/_headers',
+                        to: '_headers',
                         noErrorOnMissing: true
                     }
                 ]

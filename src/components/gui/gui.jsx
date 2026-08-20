@@ -38,22 +38,22 @@ import CollabLoader from '../collab-loader/collab-loader.jsx';
 import TWSecurityManager from '../../containers/tw-security-manager.jsx';
 import TWExtensionLoadChoiceModal from '../../containers/tw-extension-load-choice-modal.jsx';
 import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
-import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
-import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
-import TWGitModal from '../../containers/mw-git-modal.jsx';
-import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
-import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
+const TWUnknownPlatformModal = React.lazy(() => import('../../containers/tw-unknown-platform-modal.jsx'));
+const TWInvalidProjectModal = React.lazy(() => import('../../containers/tw-invalid-project-modal.jsx'));
+const TWGitModal = React.lazy(() => import('../../containers/mw-git-modal.jsx'));
+const MWExtensionManagerModal = React.lazy(() => import('../../containers/mw-extension-manager-modal.jsx'));
+const MWProjectThemeModal = React.lazy(() => import('../../containers/mw-project-theme-modal.jsx'));
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import AIModal from '../../containers/ai-modal.jsx';
 import AIChatModal from '../../containers/ai-chat-modal.jsx';
 import AIAgentModal from '../../containers/ai-agent-modal.jsx';
 import BaiduAIModal from '../../containers/baidu-ai-modal.jsx';
 import ExtensionEditorModal from '../../containers/extension-editor-modal.jsx';
-import SuperRefactorModal from '../../containers/super-refactor-modal.jsx';
-import CompatibilityModal from '../../containers/tv-compatibility-modal.jsx';
+const SuperRefactorModal = React.lazy(() => import('../../containers/super-refactor-modal.jsx'));
+const CompatibilityModal = React.lazy(() => import('../../containers/tv-compatibility-modal.jsx'));
 import RoturSession from '../../containers/rotur-session.jsx';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
-import CustomGalleryModal from '../../containers/custom-gallery-modal.jsx';
+const CustomGalleryModal = React.lazy(() => import('../../containers/custom-gallery-modal.jsx'));
 import MWHelpModal from '../../components/mw-help-modal/help-modal.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
 import Avatar from '../mw-avatar/avatar.jsx';
@@ -61,15 +61,15 @@ import {closeRoturLoginModal, openRoturLoginModal} from '../../reducers/modals.j
 import {openAccountMenu} from '../../reducers/menus.js';
 
 import SimpleDialog from '../../containers/simple-dialog.jsx';
-import TutorialModal from '../../containers/tutorial-modal.jsx';
-import VideoModal from '../../containers/video-modal.jsx';
-import UpdateLogModal from '../../containers/update-log-modal.jsx';
-import BilmeModal from '../../containers/bl-bilme-modal.jsx';
-import WarpthemeModal from '../../containers/warptheme-modal.jsx';
+const TutorialModal = React.lazy(() => import('../../containers/tutorial-modal.jsx'));
+const VideoModal = React.lazy(() => import('../../containers/video-modal.jsx'));
+const UpdateLogModal = React.lazy(() => import('../../containers/update-log-modal.jsx'));
+const BilmeModal = React.lazy(() => import('../../containers/bl-bilme-modal.jsx'));
+const WarpthemeModal = React.lazy(() => import('../../containers/warptheme-modal.jsx'));
 import GandiHelp from '../gandi-help/gandi-help.jsx';
 import AEReadMe from '../../containers/ae-readme.jsx'
 import { loadData } from '../ae-readme/ae-readme.jsx'
-import CustomThemeModal from '../../containers/tw-custom-theme-modal.jsx';
+const CustomThemeModal = React.lazy(() => import('../../containers/tw-custom-theme-modal.jsx'));
 import { openReadme } from '../../reducers/modals.js';
 
 // Heavy modal / panel components that are not shown on the initial editor
@@ -1425,6 +1425,7 @@ const GUIComponent = props => {
     ), [customStageSize.width]);
 
     const alwaysEnabledModals = useMemo(() => (
+        <React.Suspense fallback={null}>
         <React.Fragment>
             <RoturSession />
             {!isEmbedded && <RoturExtensionHost />}
@@ -1516,6 +1517,7 @@ const GUIComponent = props => {
                 <RoturLoginModal onRequestClose={onRequestCloseRoturLogin} />
             )}
         </React.Fragment>
+        </React.Suspense>
     ), [
         securityManager,
         usernameModalVisible,

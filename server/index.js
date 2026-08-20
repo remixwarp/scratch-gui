@@ -66,6 +66,27 @@ app.post('/api/verify-turnstile', async (req, res) => {
     }
 });
 
+// Same-origin proxy for the WarpTheme API (warptheme.mistium.com).
+// The upstream does not send CORS headers, so a direct browser fetch fails
+// with a cross-origin error. Routing through this same-origin endpoint
+// avoids the CORS problem entirely and keeps the theme gallery working.
+const WARPTHEME_HOST = 'https://warptheme.mistium.com';
+
+app.get('/api/warptheme/*', async (req, res) => {
+    try {
+        const upstreamPath = req.params[0] || '';
+        const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+        const upstreamUrl = `${WARPTHEME_HOST}/${upstreamPath}${query}`;
+        const upstreamResp = await fetch(upstreamUrl, { headers: { 'Accept': 'application/json' } });
+        const body = await upstreamResp.text();
+        res.set('Content-Type', upstreamResp.headers.get('content-type') || 'application/json');
+        res.status(upstreamResp.status).send(body);
+    } catch (error) {
+        console.error('WarpTheme proxy error:', error);
+        res.status(502).json({ error: '无法连接到 WarpTheme 服务' });
+    }
+});
+
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });

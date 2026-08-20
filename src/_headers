@@ -1,0 +1,37 @@
+# Cloudflare Pages _headers
+# These rules apply to the deployed (remote) build automatically.
+# Hashed assets are content-addressed (e.g. /js/gleba4/...) so they are
+# immutable: caching them forever means returning visitors never re-download.
+
+# All JavaScript bundles (content-hashed). Safe to cache for a year.
+/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Precompressed variants are served by Cloudflare when the client supports them.
+/js/*.br
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Encoding: br
+/js/*.gz
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Encoding: gzip
+
+# Static assets (images, fonts, blocks-media, addons-l10n) are also hashed/immutable.
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The service worker must NEVER be cached, otherwise updates never ship.
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# HTML entry points reference content hashes that change every deploy, so they
+# must always be revalidated (not cached blindly).
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+/editor.html
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# JSON library / manifest files change rarely but should be revalidated.
+/*.webmanifest
+  Cache-Control: public, max-age=3600, must-revalidate

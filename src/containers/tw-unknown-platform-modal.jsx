@@ -12,22 +12,19 @@ class TWUnknownPlatformModal extends React.Component {
             'handleClose'
         ]);
         this.state = {
-            canClose: false
+            canClose: true
         };
-    }
-
-    componentDidMount () {
-        // Make it harder to accidentally dismiss without reading
-        setTimeout(() => {
-            this.setState({
-                canClose: true
-            });
-        }, 1000);
     }
 
     handleClose () {
         if (this.state.canClose) {
-            this.props.callback();
+            // The platform-mismatch callback is supplied by the VM and may be
+            // undefined in some code paths (e.g. projects loaded without a
+            // continue handler). Guard it so a missing callback can never
+            // throw and block the modal from closing.
+            if (typeof this.props.callback === 'function') {
+                this.props.callback();
+            }
             this.props.onClose();
         }
     }

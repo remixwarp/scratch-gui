@@ -126,12 +126,34 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                         return r.arrayBuffer();
                     })
                     .then(buffer => ({data: buffer}));
+            } else if (projectId === '0') {
+                // Default project is bundled; no network request needed.
+                assetPromise = storage.load(storage.AssetType.Project, projectId, storage.DataFormat.JSON);
             } else {
-                // TW: Temporary hack for project tokens
-                assetPromise = fetchProjectToken(projectId)
-                    .then(token => {
-                        storage.setProjectToken(token);
-                        return storage.load(storage.AssetType.Project, projectId, storage.DataFormat.JSON);
+                // Public Scratch projects do NOT require a token to download.
+                // The previous code waited for a cross-origin metadata round-trip
+                // (fetchProjectMeta -> trampoline.turbowarp.org) BEFORE starting the
+                // actual project download, adding a full extra network latency to
+                // every project load. We now start the download immediately and only
+                // fall back to fetching a token (for unshared projects) if the
+                // no-token download fails with an auth error.
+                storage.setProjectToken(null);
+                assetPromise = storage.load(storage.AssetType.Project, projectId, storage.DataFormat.JSON)
+                    .catch(err => {
+                        const needsToken = err && (
+                            `${err}`.includes('403') ||
+                            `${err}`.includes('401') ||
+                            `${err}`.includes('token') ||
+                            `${err}`.includes('unshared')
+                        );
+                        if (!needsToken) {
+                            throw err;
+                        }
+                        return fetchProjectToken(projectId)
+                            .then(token => {
+                                storage.setProjectToken(token);
+                                return storage.load(storage.AssetType.Project, projectId, storage.DataFormat.JSON);
+                            });
                     });
             }
 

@@ -71,8 +71,9 @@ const mapDispatchToProps = dispatch => ({
             dispatch(closeWarpthemeModal());
             
             // 尝试使用导出API获取完整的像素主题数据（不使用平台参数）
+            // 通过同源代理 /api/warptheme/* 避免跨域 CORS 失败
             const response = await fetch(
-                `https://warptheme.mistium.com/api/theme/export?uuid=${theme.uuid}`
+                `/api/warptheme/api/theme/export?uuid=${theme.uuid}`
             );
             
             if (!response.ok) {

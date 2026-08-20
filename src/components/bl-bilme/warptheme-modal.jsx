@@ -296,16 +296,30 @@ const WarpthemeModal = props => {
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch('https://warptheme.mistium.com/api/themes');
-                if (!response.ok) throw new Error('Failed to fetch themes');
-                const data = await response.json();
+                // Use the same-origin proxy (server/worker /api/warptheme/*) so we
+                // don't hit a CORS failure against warptheme.mistium.com.
+                const response = await fetch('/api/warptheme/api/themes');
+                if (!response.ok) throw new Error(`主题服务返回 ${response.status}`);
+                // The upstream may return HTML/error pages on failure; only parse
+                // when we actually got JSON to avoid a hard SyntaxError crash.
+                const contentType = response.headers.get('content-type') || '';
+                const text = await response.text();
+                let data = {themes: []};
+                if (contentType.includes('application/json') || text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                    data = JSON.parse(text);
+                } else {
+                    throw new Error('主题服务返回了非 JSON 内容');
+                }
                 if (isMounted.current) {
                     setThemes(data.themes || []);
                 }
             } catch (err) {
-                console.error('Error fetching themes:', err);
+                // Degrade gracefully: show an empty gallery with a friendly
+                // message instead of crashing the modal.
+                console.warn('WarpTheme 主题加载失败：', err.message);
                 if (isMounted.current) {
-                    setError(err.message);
+                    setThemes([]);
+                    setError(err.message || '主题加载失败');
                 }
             } finally {
                 if (isMounted.current) {
@@ -368,7 +382,7 @@ const WarpthemeModal = props => {
     const handleDownloadTheme = async theme => {
         try {
             const response = await fetch(
-                `https://warptheme.mistium.com/api/theme/export?uuid=${theme.uuid}&platform=remixwarp`
+                `/api/warptheme/api/theme/export?uuid=${theme.uuid}&platform=remixwarp`
             );
             
             if (!response.ok) {

@@ -13,7 +13,7 @@
   "scripts": {
     "prepare": "node scripts/prepublish.mjs",
     "postinstall": "node scripts/patch-shader-manager.mjs",
-    "build": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist && NODE_ENV=production webpack --colors --bail",
+    "build": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist && NODE_ENV=production webpack --colors --bail && node scripts/build-compression.js",
     "deploy": "NODE_ENV=production npm run build && touch build/.nojekyll && gh-pages -t -d build -m \"Build for $(git log --pretty=format:%H -n1)\"",
     "prepublish": "node scripts/prepublish.mjs",
     "prune": "./prune-gh-pages.sh",
@@ -115,7 +115,7 @@
     "@remixwarp/scratch-blocks": "https://github.com/remixwarp/scratch-blocks/archive/e45232eb.tar.gz",
     "scratch-paint": "github:Bilup/scratch-paint#develop",
     "scratch-render": "https://github.com/bilup/scratch-render",
-    "scratch-vm": "github:remixwarp/scratch-vm#f26e06e",
+    "scratch-vm": "github:remixwarp/scratch-vm#99617d7",
     "style-loader": "^0.23.0",
     "text-encoding": "0.7.0",
     "to-style": "1.3.3",
