@@ -1,0 +1,85 @@
+.page {
+    max-width: var(--maxw, 720px);
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+
+.title {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 16px;
+    color: var(--mw-text, #eeeeee);
+}
+
+.status {
+    color: var(--text-dim, #a0a0a0);
+}
+
+.onlineStatus {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: var(--text-dim, #a0a0a0);
+}
+
+.card {
+    background: var(--bg-card, #1e1e1e);
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.15));
+    border-radius: var(--radius-sm, 12px);
+    padding: 8px 0;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-soft, rgba(0, 0, 0, 0.1));
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.rowLabel {
+    font-size: 15px;
+    color: var(--mw-text, #eeeeee);
+}
+
+.toggle {
+    flex-shrink: 0;
+    width: 44px;
+    height: 26px;
+    border-radius: 13px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    background: var(--text-faint, #8a8a8a);
+    padding: 0;
+    transition: background 0.2s ease;
+}
+
+.toggle[data-on='true'] {
+    background: var(--accent, #8b5cf6);
+}
+
+.toggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.toggleKnob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    transition: left 0.2s ease;
+}
+
+.toggle[data-on='true'] .toggleKnob {
+    left: 21px;
+}
