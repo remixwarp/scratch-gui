@@ -470,6 +470,13 @@ const projectError = error => ({
     error: error
 });
 
+// Used when loading fails in a non-fatal way (e.g. a cross-origin project_url
+// that could not be fetched). Resets the loading state so the editor stops
+// showing a loading spinner without crashing.
+const returnToShowProject = () => ({
+    type: RETURN_TO_SHOWING
+});
+
 const setProjectId = id => ({
     type: SET_PROJECT_ID,
     projectId: id
@@ -541,6 +548,7 @@ export {
     remixProject,
     requestNewProject,
     requestProjectUpload,
+    returnToShowProject,
     saveProjectAsCopy,
     setProjectId
 };

@@ -41,12 +41,12 @@ import AccountNav from '../../containers/account-nav.jsx';
 import LoginDropdown from './login-dropdown.jsx';
 import RoturAccount from './mw-rotur-account.jsx';
 import MwEditorNav from './mw-editor-nav.jsx';
-import {getCurrentUser, isLoggedIn} from '../../lib/community/api.js';
+import {isLoggedIn} from '../../lib/rotur/client.js';
 import {saveToBilup as saveProjectToBilup} from '../../lib/mw/smart-save.js';
 import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
 import openConfigPlazaWindow from '../../lib/mw/open-config-plaza-window.js';
 import openMaterialPlazaWindow from '../../lib/mw/open-material-plaza-window.js';
-import {getBilupAction} from '../../lib/community/publish.js';
+import {getMistWarpAction} from '../../lib/community/publish.js';
 import communityEnabled from '../../lib/community/enabled.js';
 import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
 
@@ -2039,7 +2039,7 @@ class MenuBar extends React.Component {
         openMistWarpShareWindow({
             vm: this.props.vm,
             initialTitle: this.props.projectTitle,
-            action: getBilupAction(this.state.mistwarpProject, this.props.projectChanged),
+            action: getMistWarpAction(this.state.mistwarpProject, this.props.projectChanged),
             onPublished: result => {
                 this.setState({mistwarpProject: {id: result.id, isOwner: true, shared: !!result.shared}});
                 this.props.onProjectUnchanged();

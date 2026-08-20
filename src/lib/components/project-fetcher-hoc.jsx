@@ -13,6 +13,7 @@ import {
     getIsShowingProject,
     onFetchedProjectData,
     projectError,
+    returnToShowProject,
     setProjectId,
     defaultProjectId
 } from '../../reducers/project-state.js';
@@ -20,6 +21,8 @@ import {
     activateTab,
     BLOCKS_TAB_INDEX
 } from '../../reducers/editor-tab.js';
+import {setProjectError} from '../../reducers/tw.js';
+import {openInvalidProjectModal} from '../../reducers/modals.js';
 
 import log from '../utils/log.js';
 import storage from '../persistence/storage.js';
@@ -49,6 +52,78 @@ const fetchProjectToken = async projectId => {
         log.error(e);
         throw new Error('Cannot access project token. Project is probably unshared. See https://docs.turbowarp.org/unshared-projects');
     }
+};
+
+// Public CORS proxies. When embedding loads a project from a URL whose server
+// does not send an Access-Control-Allow-Origin header, fetch() throws a
+// "TypeError: Failed to fetch" which previously took the whole editor down.
+// Routing cross-origin requests through a proxy makes embedding work without
+// requiring the upstream server to be modified.
+//
+// Precedence for cross-origin urls:
+//   1. Our own same-origin proxy (/api/project-proxy on Cloudflare Workers) —
+//      most reliable and private.
+//   2. A public CORS proxy (corsproxy.io) — fallback when the own proxy is
+//      not deployed on this host.
+//   3. Direct request — in case the upstream already sends CORS headers.
+const OWN_PROXY_PATH = '/api/project-proxy';
+const PUBLIC_PROXY_URL = 'https://corsproxy.io/?url=';
+
+const buildOwnProxyUrl = projectUrl => {
+    try {
+        const u = new URL(OWN_PROXY_PATH, window.location.origin);
+        u.searchParams.set('url', projectUrl);
+        return u.toString();
+    } catch (e) {
+        return null;
+    }
+};
+
+// Only proxy cross-origin http(s) requests. Same-origin, data: and already-
+// proxied URLs are fetched directly.
+const isCrossOriginHttpUrl = url => {
+    if (!url) return false;
+    try {
+        const target = new URL(url);
+        if (!['http:', 'https:'].includes(target.protocol)) return false;
+        const current = new URL(window.location.href);
+        return target.origin !== current.origin;
+    } catch (e) {
+        return false;
+    }
+};
+
+// Attempt to fetch a project from the given url. Cross-origin urls are tried
+// through our own proxy, then a public proxy, then directly.
+const fetchProjectBuffer = async projectUrl => {
+    if (!isCrossOriginHttpUrl(projectUrl)) {
+        // Same-origin or non-http(s): fetch directly.
+        const r = await fetch(projectUrl);
+        if (!r.ok) {
+            throw new Error(`Request returned status ${r.status}`);
+        }
+        return r.arrayBuffer();
+    }
+
+    const ownProxyUrl = buildOwnProxyUrl(projectUrl);
+    const attempts = [];
+    if (ownProxyUrl) attempts.push(ownProxyUrl);
+    attempts.push(`${PUBLIC_PROXY_URL}${encodeURIComponent(projectUrl)}`);
+    attempts.push(projectUrl);
+
+    let lastError = null;
+    for (const url of attempts) {
+        try {
+            const r = await fetch(url);
+            if (!r.ok) {
+                throw new Error(`Request returned status ${r.status}`);
+            }
+            return await r.arrayBuffer();
+        } catch (e) {
+            lastError = e;
+        }
+    }
+    throw lastError || new Error('Could not fetch project');
 };
 
 /* Higher Order Component to provide behavior for loading projects by id. If
@@ -131,13 +206,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 ) {
                     projectUrl = `https://${projectUrl}`;
                 }
-                assetPromise = fetch(projectUrl)
-                    .then(r => {
-                        if (!r.ok) {
-                            throw new Error(`Request returned status ${r.status}`);
-                        }
-                        return r.arrayBuffer();
-                    })
+                assetPromise = fetchProjectBuffer(projectUrl)
                     .then(buffer => ({data: buffer}));
             } else if (projectId === '0') {
                 // Default project is bundled; no network request needed.
@@ -181,8 +250,18 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                     }
                 })
                 .catch(err => {
-                    this.props.onError(err);
-                    log.error(err);
+                    if (projectUrl) {
+                        // Loading a project from an external URL failed (e.g. the
+                        // server did not allow CORS). Show a friendly modal instead
+                        // of throwing inside render() which would crash the editor.
+                        this.props.onReturnToShow();
+                        this.props.onSetProjectError(err);
+                        this.props.onOpenInvalidProjectModal();
+                        log.error(err);
+                    } else {
+                        this.props.onError(err);
+                        log.error(err);
+                    }
                 });
         }
         render () {
@@ -224,7 +303,10 @@ const ProjectFetcherHOC = function (WrappedComponent) {
         onActivateTab: PropTypes.func,
         onError: PropTypes.func,
         onFetchedProjectData: PropTypes.func,
+        onOpenInvalidProjectModal: PropTypes.func,
         onProjectUnchanged: PropTypes.func,
+        onReturnToShow: PropTypes.func,
+        onSetProjectError: PropTypes.func,
         projectHost: PropTypes.string,
         projectToken: PropTypes.string,
         projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -252,7 +334,10 @@ const ProjectFetcherHOC = function (WrappedComponent) {
         onFetchedProjectData: (projectData, loadingState) =>
             dispatch(onFetchedProjectData(projectData, loadingState)),
         setProjectId: projectId => dispatch(setProjectId(projectId)),
-        onProjectUnchanged: () => dispatch(setProjectUnchanged())
+        onProjectUnchanged: () => dispatch(setProjectUnchanged()),
+        onOpenInvalidProjectModal: () => dispatch(openInvalidProjectModal()),
+        onReturnToShow: () => dispatch(returnToShowProject()),
+        onSetProjectError: error => dispatch(setProjectError(error))
     });
     // Allow incoming props to override redux-provided props. Used to mock in tests.
     const mergeProps = (stateProps, dispatchProps, ownProps) => Object.assign(

@@ -140,6 +140,15 @@ async function handleRequest (request) {
         return proxyWarpTheme(request, url);
     }
 
+    // Same-origin CORS proxy used to load external SB3 projects when embedding
+    // the editor (e.g. ?project_url=https://forum.example.com/foo.sb3). Many
+    // upstream servers do not send Access-Control-Allow-Origin, which would
+    // otherwise make the browser throw "TypeError: Failed to fetch". Proxying
+    // server-side bypasses the browser CORS restriction entirely.
+    if (path === '/api/project-proxy' || path === '/project-proxy') {
+        return proxyProject(request, url);
+    }
+
     if (!checkRequestToken(request)) {
         return jsonResponse({ error: 'Invalid request token' }, 403);
     }
@@ -239,6 +248,61 @@ async function proxyWarpTheme (request, url) {
         });
     } catch (err) {
         return jsonResponse({ error: '无法连接到 WarpTheme 服务' }, 502);
+    }
+}
+
+// Same-origin proxy for loading external SB3 projects. Reads the target URL
+// from the ?url= query parameter, fetches it server-side (not subject to the
+// browser's CORS policy) and relays the binary body back with permissive CORS
+// headers so the editor can consume it as an ArrayBuffer.
+async function proxyProject (request, url) {
+    const target = url.searchParams.get('url');
+    if (!target) {
+        return jsonResponse({ error: 'Missing "url" parameter' }, 400);
+    }
+
+    let upstream;
+    try {
+        upstream = new URL(target);
+    } catch (_) {
+        return jsonResponse({ error: 'Invalid "url" parameter' }, 400);
+    }
+
+    // Only allow http(s) upstreams to avoid SSRF against internal services.
+    if (!/^https?:$/.test(upstream.protocol)) {
+        return jsonResponse({ error: 'Only http(s) upstreams are allowed' }, 400);
+    }
+    // Reject obviously local/internal hosts.
+    if (upstream.hostname === 'localhost' ||
+        upstream.hostname === '127.0.0.1' ||
+        upstream.hostname === '[::1]' ||
+        upstream.hostname === '0.0.0.0') {
+        return jsonResponse({ error: 'Local/internal targets are not allowed' }, 400);
+    }
+
+    const timeoutMs = 30000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const upstreamResp = await fetch(upstream.toString(), {
+            method: 'GET',
+            signal: controller.signal,
+            redirect: 'follow'
+        });
+        clearTimeout(timer);
+
+        const outHeaders = new Headers();
+        outHeaders.set('Access-Control-Allow-Origin', '*');
+        outHeaders.set('Access-Control-Allow-Methods', 'GET,OPTIONS');
+        outHeaders.set('Content-Type',
+            upstreamResp.headers.get('Content-Type') || 'application/octet-stream');
+        return new Response(upstreamResp.body, {
+            status: upstreamResp.status,
+            headers: outHeaders
+        });
+    } catch (err) {
+        clearTimeout(timer);
+        return jsonResponse({ error: '无法连接到目标服务器' }, 502);
     }
 }
 

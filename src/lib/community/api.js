@@ -1,6 +1,7 @@
 import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
+import {isLoggedIn, fetchCurrentUser, login} from '../rotur/client.js';
 
 const API_BASE = 'https://api.bilup.org/api';
 
@@ -357,7 +358,33 @@ const takeProjectHandoff = id => {
     }
 };
 
+/**
+ * Synchronously return the currently logged-in Bilup user, or null.
+ * Delegates to the rotur (Bilup Accounts) system.
+ * @returns {object|null}
+ */
+const getCurrentUser = () => {
+    if (!isLoggedIn()) return null;
+    try {
+        const raw = sessionStorage.getItem('mw:rotur-restore');
+        if (!raw) return null;
+        const {user} = JSON.parse(raw);
+        return user || null;
+    } catch (_) {
+        return null;
+    }
+};
+
+/**
+ * Start the Bilup Accounts login flow to switch to a different account.
+ */
+const switchAccount = async () => {
+    await login();
+};
+
 export {
+    getCurrentUser,
+    switchAccount,
     loadSession,
     stashProjectHandoff,
     takeProjectHandoff,
