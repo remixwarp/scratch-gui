@@ -48,7 +48,10 @@ const scheduleIdle = (fn, timeout = 4000) => {
 
 const isEditorLink = href => {
     if (typeof href !== 'string') return false;
-    return /^\/editor([?#/]|$)/.test(href) || /(^|\/)editor\.html([?#/]|$)/.test(href);
+    // Match both SPA routing (/editor) and standalone pages (editor.html).
+    return /^\/editor([?#/]|$)/.test(href) ||
+        /(^|\/)editor\.html([?#/]|$)/.test(href) ||
+        /[?&]route=\/?editor([?#/]|$)/.test(href);
 };
 
 const onPointerTarget = event => {

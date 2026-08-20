@@ -25,6 +25,54 @@ const htmlWebpackPluginCommon = {
     APP_NAME
 };
 
+const {getHtmlWebpackPluginHooks} = require('html-webpack-plugin/lib/hooks');
+
+// Inject the editor entry's JS chunk list into the non-editor pages
+// (e.g. the project/player page) via window.MW_EDITOR_CHUNKS. Those pages
+// prefetch the editor's heavy bundles while the user is still looking at a
+// project, so the first navigation into the editor no longer blocks on a
+// huge download. This mirrors the optimization bilup-gui uses on its
+// community homepage, adapted for scratch-gui's player/editor entry split.
+class EditorChunkPrefetchPlugin {
+    apply (compiler) {
+        compiler.hooks.compilation.tap('EditorChunkPrefetchPlugin', compilation => {
+            // afterTemplateExecution runs before html-webpack-plugin injects its
+            // own <script> tags, so our window.MW_EDITOR_CHUNKS definition is
+            // guaranteed to run before the editor bundle.
+            getHtmlWebpackPluginHooks(compilation).afterTemplateExecution.tapAsync(
+                'EditorChunkPrefetchPlugin',
+                (data, callback) => {
+                    const chunks = data.plugin.options.chunks;
+                    // Only prefetch from non-editor pages (player/index,
+                    // fullscreen, embed, addon-settings, credits). The editor
+                    // page itself does not need to prefetch its own chunks.
+                    if (Array.isArray(chunks) && chunks.includes('editor')) {
+                        return callback();
+                    }
+                    const entrypoint = compilation.entrypoints.get('editor');
+                    if (!entrypoint) {
+                        return callback();
+                    }
+                    const scripts = [];
+                    for (const chunk of entrypoint.chunks) {
+                        for (const file of chunk.files || []) {
+                            if (/\.js$/.test(file)) {
+                                scripts.push(`${root}${file}`);
+                            }
+                        }
+                    }
+                    if (scripts.length === 0) {
+                        return callback();
+                    }
+                    const tag = `<script>window.MW_EDITOR_CHUNKS=${JSON.stringify(scripts)};</script>`;
+                    data.html = data.html.replace('</body>', `${tag}</body>`);
+                    callback();
+                }
+            );
+        });
+    }
+}
+
 // When this changes, the path for all JS files will change, bypassing any HTTP caches
 const CACHE_EPOCH = 'gleba4';
 
@@ -307,7 +355,7 @@ module.exports = [
                 chunks: 'all',
                 minChunks: 2,
                 minSize: 50000,
-                maxInitialRequests: 5,
+                maxInitialRequests: 12,
                 cacheGroups: {
                     vendors: {
                         test: /[\\/]node_modules[\\/]/,
@@ -320,6 +368,44 @@ module.exports = [
                         minChunks: 2,
                         chunks: 'all',
                         priority: -20,
+                        reuseExistingChunk: true
+                    },
+                    // Split the heavy Scratch engine (VM, renderer, audio, svg,
+                    // storage, parser) into its own chunk so it can be downloaded
+                    // and cached independently instead of being squashed into one
+                    // giant vendors bundle. This is the single biggest win for
+                    // both editor and project loading.
+                    'scratch-engine': {
+                        test: /[\\/]node_modules[\\/](scratch-vm|scratch-render|scratch-audio|scratch-svg-renderer|scratch-storage|scratch-parser)[\\/]/,
+                        name: 'scratch-engine',
+                        chunks: 'all',
+                        priority: 30,
+                        reuseExistingChunk: true
+                    },
+                    // Scratch-blocks is by far the heaviest dependency. @remixwarp's
+                    // fork is aliased in, so match both the plain and scoped names.
+                    'scratch-blocks': {
+                        test: /[\\/]node_modules[\\/](?:@remixwarp[\\/])?scratch-blocks[\\/]/,
+                        name: 'scratch-blocks',
+                        chunks: 'all',
+                        priority: 30,
+                        reuseExistingChunk: true
+                    },
+                    // Scratch-paint (the costume editor's underlying library).
+                    'scratch-paint': {
+                        test: /[\\/]node_modules[\\/]scratch-paint[\\/]/,
+                        name: 'scratch-paint',
+                        chunks: 'all',
+                        priority: 30,
+                        reuseExistingChunk: true
+                    },
+                    // Git panel libraries: only needed when the user opens the
+                    // git modal, so keep them out of the shared vendors chunk.
+                    'git-libs': {
+                        test: /[\\/]node_modules[\\/](jszip|diskfile|filestore|git.*|isomorphic-git|pako|@isomorphic-git)[\\/]/,
+                        name: 'git-libs',
+                        chunks: 'all',
+                        priority: 25,
                         reuseExistingChunk: true
                     },
                     // Monaco editor and xterm are heavy dependencies that are
@@ -440,7 +526,10 @@ module.exports = [
                         noErrorOnMissing: true
                     }
                 ]
-            })
+            }),
+            // Prefetch the editor's heavy chunks on the project/player pages so
+            // navigating into the editor is instant.
+            new EditorChunkPrefetchPlugin()
         ])
     })
 ].concat(

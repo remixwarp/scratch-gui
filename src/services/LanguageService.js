@@ -122,28 +122,30 @@ class LanguageService {
      * @returns {Object} 所有翻译数据
      */
     loadAllTranslationFiles() {
+        // editorMessages is the bundled, pre-translated message catalog from
+        // @remixwarp/scratch-l10n/locales/editor-msgs, shaped as
+        // { [locale]: { [messageKey]: translatedString } }.
+        // Previously this method tried to require per-category JSON files
+        // (@remixwarp/scratch-l10n/editor/<category>/<locale>.json) which do
+        // not exist in the package, causing every load to fail and fall back
+        // to missing translations. We now read straight from the bundled
+        // catalog so translations resolve correctly and synchronously.
         const allData = {};
-        const categories = ['interface', 'blocks', 'extensions', 'paint-editor'];
-        
-        categories.forEach(category => {
-            try {
-                const zhCnData = require(`@remixwarp/scratch-l10n/editor/${category}/zh-cn.json`);
-                const enData = require(`@remixwarp/scratch-l10n/editor/${category}/en.json`);
-                
-                if (!allData['zh-cn']) allData['zh-cn'] = {};
-                if (!allData['en']) allData['en'] = {};
-                
-                Object.keys(zhCnData).forEach(key => {
-                    allData['zh-cn'][key] = zhCnData[key];
-                });
-                Object.keys(enData).forEach(key => {
-                    allData['en'][key] = enData[key];
-                });
-            } catch (e) {
-                console.error(`Failed to load ${category} localization files:`, e);
+        const localesToLoad = ['zh-cn', 'en'];
+
+        localesToLoad.forEach(locale => {
+            const catalog = editorMessages[locale];
+            if (!catalog) {
+                return;
             }
+            if (!allData[locale]) {
+                allData[locale] = {};
+            }
+            Object.keys(catalog).forEach(key => {
+                allData[locale][key] = catalog[key];
+            });
         });
-        
+
         return allData;
     }
 

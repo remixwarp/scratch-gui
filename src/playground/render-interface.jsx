@@ -41,6 +41,7 @@ import CloudVariableBadge from '../containers/tw-cloud-variable-badge.jsx';
 import { isBrowserSupported } from '../lib/utils/tw-environment-support-prober';
 import AddonChannels from '../addons/channels';
 import { loadServiceWorker } from './load-service-worker';
+import { initPrefetch } from '../community/prefetch-editor.js';
 import runAddons from '../addons/entry';
 import { APP_NAME, FEEDBACK_URL, GITHUB_URL } from '../lib/constants/brand.js';
 import { AESettings } from '../lib/settings.js';
@@ -301,6 +302,12 @@ class Interface extends React.Component {
         if (urlParams.has('mobile-full')) {
             settings.set('EnableMobileLayout', true);
             settings.set('EnableMobileTouchDrag', true);
+        }
+
+        // While the project/player page is open, prefetch the editor's heavy
+        // JS bundles in the background so navigating into the editor is fast.
+        if (this.props.isPlayerOnly) {
+            initPrefetch();
         }
     }
     componentDidUpdate(prevProps) {
