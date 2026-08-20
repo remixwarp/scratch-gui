@@ -98,45 +98,47 @@ class GUI extends React.Component {
         this.props.onVmInit(this.props.vm);
         setProjectIdMetadata(this.props.projectId);
 
-        rwcBridge.init();
-
-        window.addEventListener('storage', this.handleStorageChange);
-
-        initializeShortcuts(
-            {
-                requestNewProject: this.props.requestNewProject,
-                manualUpdateProject: this.props.manualUpdateProject,
-                saveProjectAsCopy: this.props.saveProjectAsCopy,
-                openSettingsModal: this.props.openSettingsModal,
-                openSpriteLibrary: this.props.openSpriteLibrary,
-                openCostumeLibrary: this.props.openCostumeLibrary,
-                openSoundLibrary: this.props.openSoundLibrary,
-                openExtensionLibrary: this.props.onOpenExtensionLibrary,
-                openExtensionManagerModal: this.props.openExtensionManagerModal,
-                openRestorePointModal: this.props.openRestorePointModal,
-                activateTab: this.props.activateTab
-            },
-            this.props.vm,
-            {
-                saveSmart: () => smartSave({
-                    vm: this.props.vm,
-                    title: this.props.projectTitle,
-                    onSaved: this.props.onProjectUnchanged
-                }),
-                loadFromComputer: this.props.onStartSelectingFileUpload,
-                openPackager: this.props.onClickPackager,
-                toggleStageSize: () => {
-                    this.props.onSetStageSize(
-                        this.props.stageSizeMode === STAGE_SIZE_MODES.large 
-                            ? STAGE_SIZE_MODES.small 
-                            : STAGE_SIZE_MODES.large
-                    );
+        // 延迟非关键初始化：rwcBridge、快捷键、storage 事件监听
+        // 这些不影响项目加载，推迟到浏览器空闲时或首次渲染后执行
+        this._deferredInit = setTimeout(() => {
+            rwcBridge.init();
+            window.addEventListener('storage', this.handleStorageChange);
+            initializeShortcuts(
+                {
+                    requestNewProject: this.props.requestNewProject,
+                    manualUpdateProject: this.props.manualUpdateProject,
+                    saveProjectAsCopy: this.props.saveProjectAsCopy,
+                    openSettingsModal: this.props.openSettingsModal,
+                    openSpriteLibrary: this.props.openSpriteLibrary,
+                    openCostumeLibrary: this.props.openCostumeLibrary,
+                    openSoundLibrary: this.props.openSoundLibrary,
+                    openExtensionLibrary: this.props.onOpenExtensionLibrary,
+                    openExtensionManagerModal: this.props.openExtensionManagerModal,
+                    openRestorePointModal: this.props.openRestorePointModal,
+                    activateTab: this.props.activateTab
                 },
-                setFullScreen: () => {
-                    this.props.onSetFullScreen(!this.props.isFullScreen);
+                this.props.vm,
+                {
+                    saveSmart: () => smartSave({
+                        vm: this.props.vm,
+                        title: this.props.projectTitle,
+                        onSaved: this.props.onProjectUnchanged
+                    }),
+                    loadFromComputer: this.props.onStartSelectingFileUpload,
+                    openPackager: this.props.onClickPackager,
+                    toggleStageSize: () => {
+                        this.props.onSetStageSize(
+                            this.props.stageSizeMode === STAGE_SIZE_MODES.large 
+                                ? STAGE_SIZE_MODES.small 
+                                : STAGE_SIZE_MODES.large
+                        );
+                    },
+                    setFullScreen: () => {
+                        this.props.onSetFullScreen(!this.props.isFullScreen);
+                    }
                 }
-            }
-        );
+            );
+        }, 0);
     }
     componentDidUpdate (prevProps) {
         if (window.location.search.includes('testError=1') && !prevProps.invalidProjectModalVisible) {
@@ -236,6 +238,9 @@ class GUI extends React.Component {
     }
 
     componentWillUnmount () {
+        if (this._deferredInit) {
+            clearTimeout(this._deferredInit);
+        }
         window.removeEventListener('storage', this.handleStorageChange);
         collaborationService.getInstance()?.disconnect();
     }

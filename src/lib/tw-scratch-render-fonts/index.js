@@ -113,7 +113,11 @@ const waitForFontsToLoad = () => {
 const loadFonts = () => fetchFonts()
     .then(() => {
         addFontsToDocument();
-        return waitForFontsToLoad();
+        // 不再等待 document.fonts.load() - CSS @font-face 注入后，
+        // 浏览器会自动懒加载字体。跳过等待让项目加载提前数百毫秒。
+        // 当 blocks 首次渲染时，字体已经加载完毕或正在加载中，
+        // 用户几乎感知不到字体切换。
+        return Promise.resolve();
     })
     .catch(err => {
         log.error(err);

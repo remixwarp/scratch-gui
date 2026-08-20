@@ -57,20 +57,14 @@ const vmManagerHOC = function (WrappedComponent) {
                 this.props.vm.initialized = true;
                 this.props.vm.setLocale(this.props.locale, this.props.messages);
             }
-            if (!this.props.isPlayerOnly && !this.props.isStarted) {
-                this.props.vm.start();
-            }
+            // 不再立即启动 VM 运行时：项目还未加载，此时启动线程/sequencer
+            // 毫无意义。将 start() 推迟到 loadProject() 成功后执行。
         }
         componentDidUpdate (prevProps) {
-            // if project is in loading state, AND fonts are loaded,
-            // and they weren't both that way until now... load project!
-            if (this.props.isLoadingWithId && this.props.fontsLoaded &&
-                (!prevProps.isLoadingWithId || !prevProps.fontsLoaded)) {
+            // 加载项目：不再等待字体加载完成。项目数据加载到 VM 只需要 JSON 解析，
+            // 字体仅在 blocks 渲染时才需要，无需串行等待。
+            if (this.props.isLoadingWithId && !prevProps.isLoadingWithId) {
                 this.loadProject();
-            }
-            // Start the VM if entering editor mode with an unstarted vm
-            if (!this.props.isPlayerOnly && !this.props.isStarted) {
-                this.props.vm.start();
             }
         }
 
@@ -101,6 +95,11 @@ const vmManagerHOC = function (WrappedComponent) {
 
                     // 立即发送加载完成信号（不包 setTimeout），尽快把 UI 从 Loading 切换到显示
                     this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
+
+                    // 项目加载完成后才启动 VM: 避免加载完成前调度空序列
+                    if (!this.props.isPlayerOnly && !this.props.isStarted) {
+                        this.props.vm.start();
+                    }
 
                     // 合并异步回调：原来有 2 个独立的 setTimeout(0)，
                     // 每个都会单独推迟到下一次事件循环，累计延迟用户可感知的

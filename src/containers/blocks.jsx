@@ -1608,13 +1608,12 @@ class Blocks extends React.Component {
     }
     onVisualReport (data) {
         if (!workspaceIsAlive(this)) return;
-        if (!this.workspace.getBlockById(data.id)) return;
+        // 拆分模式：使用 getBlockById 确保只处理当前工作区存在的积木
+        const block = this.workspace.getBlockById(data.id);
+        if (!block) return;
         this.workspace.reportValue(data.id, data.value, data.fullValue);
     }
     getToolboxXML () {
-        // Use try/catch because this requires digging pretty deep into the VM
-        // Code inside intentionally ignores several error situations (no stage, etc.)
-        // Because they would get caught by this try/catch
         try {
             const runtime = this.props.vm.runtime;
             // 拆分模式下，若该侧工作区已锁定到某个角色/背景，则工具箱使用该锁定目标，
@@ -1685,7 +1684,9 @@ class Blocks extends React.Component {
         // Remove and reattach the workspace listener (but allow flyout events)
         if (!workspaceIsAlive(this)) return;
         this.cancelDeferredWorkspaceLoad();
+        if (!this.props.workspaceTargetId) {
         this.workspace.removeChangeListener(this.props.vm.blockListener);
+        }
 
         // The VM hands over blocks as plain descriptions to avoid the cost of
         // serializing every block to XML and parsing it back into a DOM. Use
@@ -1771,7 +1772,9 @@ class Blocks extends React.Component {
             }
         }
         if (!workspaceIsAlive(this)) return; // workspace may have been disposed during fallback load
+        if (!this.props.workspaceTargetId) {
         this.workspace.addChangeListener(this.props.vm.blockListener);
+        }
 
         if (this.props.vm.editingTarget && this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
             const {scrollX, scrollY, scale} = this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id];
@@ -1822,7 +1825,11 @@ class Blocks extends React.Component {
         xml = `<xml xmlns="http://www.w3.org/1999/xhtml">${xml}</xml>`;
         const toolboxXML = this.getToolboxXML();
         if (toolboxXML) this.props.updateToolboxState(toolboxXML);
-        this.workspace.removeChangeListener(this.props.vm.blockListener);
+        // 拆分模式：_lockedBlockListener 已包裹 vm.blockListener，不额外添加
+        const hasLockedListener = !!this.props.workspaceTargetId;
+        if (!hasLockedListener) {
+            this.workspace.removeChangeListener(this.props.vm.blockListener);
+        }
         try {
             const dom = this.ScratchBlocks.Xml.textToDom(xml);
             this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
@@ -1830,7 +1837,9 @@ class Blocks extends React.Component {
             if (error.message) error.message = `Locked Workspace Update Error: ${error.message}`;
             log.error(error);
         }
-        this.workspace.addChangeListener(this.props.vm.blockListener);
+        if (!hasLockedListener) {
+            this.workspace.addChangeListener(this.props.vm.blockListener);
+        }
         this._loadedTargetId = lockedId;
         this.workspace.clearUndo();
     }
@@ -2448,3 +2457,4 @@ export default injectIntl(errorBoundaryHOC('Blocks')(
         mapDispatchToProps
     )(LoadScratchBlocksHOC(Blocks))
 ));
+

@@ -13,7 +13,8 @@ import {
     getIsShowingProject,
     onFetchedProjectData,
     projectError,
-    setProjectId
+    setProjectId,
+    defaultProjectId
 } from '../../reducers/project-state.js';
 import {
     activateTab,
@@ -76,6 +77,13 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 typeof props.projectId !== 'undefined'
             ) {
                 this.props.setProjectId(props.projectId.toString());
+                // 在构造函数中立即开始获取项目数据，无需等待 componentDidUpdate。
+                // 这样 projectFetcher 的第一次渲染还未完成时，网络请求就已经发出，
+                // 节省一个完整的 React 渲染周期（约 10-50ms）。
+                const id = props.projectId.toString();
+                const loadingState = (id === '0') ? LoadingState.FETCHING_NEW_DEFAULT : LoadingState.FETCHING_WITH_ID;
+                this._fetchStarted = true;
+                this.fetchProject(id, loadingState);
             }
         }
         componentDidUpdate (prevProps) {
@@ -89,6 +97,11 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 storage.setAssetHost(this.props.assetHost);
             }
             if (this.props.isFetchingWithId && !prevProps.isFetchingWithId) {
+                // 如果构造函数已启动获取，跳过（避免重复请求）
+                if (this._fetchStarted) {
+                    this._fetchStarted = false;
+                    return;
+                }
                 this.fetchProject(this.props.reduxProjectId, this.props.loadingState);
             }
             if (this.props.isShowingProject && !prevProps.isShowingProject) {
