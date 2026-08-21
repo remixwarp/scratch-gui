@@ -96,6 +96,53 @@ const base = {
                 {from: /^\/\d+\/embed\/?$/, to: '/embed.html'},
                 {from: /^\/addons\/?$/, to: '/addons.html'}
             ]
+        },
+        // Same-origin project proxy for local development. Mirrors the
+        // production Pages Function at functions/api/project-proxy.js; without
+        // this the dev server would answer /api/project-proxy with index.html
+        // (200), which the editor would mistake for a valid project and crash
+        // with "JSON.parse: unexpected character '<'".
+        before(app) {
+            const BLOCKED_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0', '[::1]']);
+            app.get('/api/project-proxy', async (req, res) => {
+                const target = req.query.url;
+                if (!target) {
+                    res.status(400).json({error: 'Missing "url" parameter'});
+                    return;
+                }
+                let upstream;
+                try {
+                    upstream = new URL(target);
+                } catch (_) {
+                    res.status(400).json({error: 'Invalid "url" parameter'});
+                    return;
+                }
+                if (!/^https?:$/.test(upstream.protocol)) {
+                    res.status(400).json({error: 'Only http(s) upstreams are allowed'});
+                    return;
+                }
+                if (BLOCKED_HOSTS.has(upstream.hostname)) {
+                    res.status(400).json({error: 'Local/internal targets are not allowed'});
+                    return;
+                }
+                try {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 30000);
+                    const upstreamResp = await fetch(upstream.toString(), {
+                        method: 'GET',
+                        signal: controller.signal,
+                        redirect: 'follow'
+                    });
+                    clearTimeout(timer);
+                    res.set('Access-Control-Allow-Origin', '*');
+                    res.set('Content-Type',
+                        upstreamResp.headers.get('Content-Type') || 'application/octet-stream');
+                    const buffer = await upstreamResp.arrayBuffer();
+                    res.status(upstreamResp.status).send(Buffer.from(buffer));
+                } catch (err) {
+                    res.status(502).json({error: 'Failed to fetch the requested project'});
+                }
+            });
         }
     },
     output: {

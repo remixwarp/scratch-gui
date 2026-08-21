@@ -87,6 +87,49 @@ app.get('/api/warptheme/*', async (req, res) => {
     }
 });
 
+// Same-origin proxy for loading external SB3 projects (?url=https://...).
+// Mirrors functions/api/project-proxy.js (Pages Function) and the dev server
+// middleware in webpack.config.js, so `npm run server` behaves like the
+// production deployment. A missing route must never return index.html, or the
+// editor would treat it as a valid project and crash with
+// "JSON.parse: unexpected character '<'".
+const BLOCKED_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0', '[::1]']);
+
+app.get('/api/project-proxy', async (req, res) => {
+    const target = req.query.url;
+    if (!target) {
+        return res.status(400).json({ error: 'Missing "url" parameter' });
+    }
+    let upstream;
+    try {
+        upstream = new URL(target);
+    } catch (_) {
+        return res.status(400).json({ error: 'Invalid "url" parameter' });
+    }
+    if (!/^https?:$/.test(upstream.protocol)) {
+        return res.status(400).json({ error: 'Only http(s) upstreams are allowed' });
+    }
+    if (BLOCKED_HOSTS.has(upstream.hostname)) {
+        return res.status(400).json({ error: 'Local/internal targets are not allowed' });
+    }
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 30000);
+        const upstreamResp = await fetch(upstream.toString(), {
+            method: 'GET',
+            signal: controller.signal,
+            redirect: 'follow'
+        });
+        clearTimeout(timer);
+        res.set('Content-Type', upstreamResp.headers.get('content-type') || 'application/octet-stream');
+        const buffer = Buffer.from(await upstreamResp.arrayBuffer());
+        res.status(upstreamResp.status).send(buffer);
+    } catch (error) {
+        console.error('Project proxy error:', error);
+        res.status(502).json({ error: '无法连接到目标服务器' });
+    }
+});
+
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });

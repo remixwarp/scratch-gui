@@ -93,8 +93,32 @@ const isCrossOriginHttpUrl = url => {
     }
 };
 
+// True when a response body is clearly HTML rather than project data. Some
+// hosts reply with 200 + their index.html when a route is missing (the dev
+// server's historyApiFallback, or a Pages site that has not deployed the
+// /api/project-proxy function). Feeding that HTML into the project loader
+// crashes the editor with "JSON.parse: unexpected character '<'", so we
+// detect it here and move on to the next proxy attempt instead.
+const looksLikeHtml = (contentType, buffer) => {
+    if (contentType && contentType.includes('text/html')) {
+        return true;
+    }
+    if (buffer && buffer.byteLength > 0) {
+        // '<' as the first byte is a strong signal of an HTML document
+        // (e.g. "<!doctype html>" or "<html>"). Real project data is either a
+        // ZIP archive (PK\x03\x04), raw JSON ('{'), or a binary sprite/sb.
+        const head = new Uint8Array(buffer.slice(0, Math.min(buffer.byteLength, 8)));
+        if (head[0] === 0x3C) { // '<'
+            return true;
+        }
+    }
+    return false;
+};
+
 // Attempt to fetch a project from the given url. Cross-origin urls are tried
-// through our own proxy, then a public proxy, then directly.
+// through our own proxy, then a public proxy, then directly. Any attempt that
+// returns HTML (e.g. a 200 error page) is treated as a failure so it can never
+// reach the project loader.
 const fetchProjectBuffer = async projectUrl => {
     if (!isCrossOriginHttpUrl(projectUrl)) {
         // Same-origin or non-http(s): fetch directly.
@@ -102,7 +126,11 @@ const fetchProjectBuffer = async projectUrl => {
         if (!r.ok) {
             throw new Error(`Request returned status ${r.status}`);
         }
-        return r.arrayBuffer();
+        const buffer = await r.arrayBuffer();
+        if (looksLikeHtml(r.headers.get('content-type'), buffer)) {
+            throw new Error(`Request returned HTML instead of project data (${projectUrl})`);
+        }
+        return buffer;
     }
 
     const ownProxyUrl = buildOwnProxyUrl(projectUrl);
@@ -118,7 +146,11 @@ const fetchProjectBuffer = async projectUrl => {
             if (!r.ok) {
                 throw new Error(`Request returned status ${r.status}`);
             }
-            return await r.arrayBuffer();
+            const buffer = await r.arrayBuffer();
+            if (looksLikeHtml(r.headers.get('content-type'), buffer)) {
+                throw new Error(`Request returned HTML instead of project data (${url})`);
+            }
+            return buffer;
         } catch (e) {
             lastError = e;
         }

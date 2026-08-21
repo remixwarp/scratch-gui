@@ -2,11 +2,9 @@ name = "remixwarp-turnstile-verifier"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
-# 生产环境路由配置
-# 这会将 remixwarp.pages.dev/api/* 路由到 Worker
-routes = [
-  { pattern = "remixwarp.pages.dev/api/*", zone_name = "remixwarp.pages.dev" }
-]
+# 注意：remixwarp.pages.dev 是 Pages 免费子域名，无法绑定 Worker 路由，
+# 因此这里不配置 routes，Worker 会部署到 *.workers.dev 域名。
+# 项目代理 /api/project-proxy 请使用 Pages Function（functions/api/project-proxy.js）。
 
 # 环境变量配置
 # 注意：实际的 secret key 应该通过 wrangler secret put 命令添加
