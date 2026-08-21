@@ -46,7 +46,6 @@ const MODAL_README = 'readme';
 const MODAL_PREVIEW_EXT = 'previewExt';
 const MODAL_AE_FEATURES = 'aeFeaturesModal';
 const MODAL_COMPATIBILITY = 'compatibilityModal';
-const MODAL_ROTUR_LOGIN = 'roturLoginModal';
 const MODAL_PROJECT_METADATA = 'projectMetadataModal';
 
 const initialState = {
@@ -90,7 +89,6 @@ const initialState = {
     [MODAL_PREVIEW_EXT]: false,
     [MODAL_AE_FEATURES]: false,
     [MODAL_COMPATIBILITY]: false,
-    [MODAL_ROTUR_LOGIN]: false,
     [MODAL_PROJECT_METADATA]: false,
     [MODAL_ASSETS]: false,
     [MODAL_CUSTOM_GALLERY]: false,
@@ -416,12 +414,6 @@ const openCompatibilityModal = function () {
 const closeCompatibilityModal = function () {
     return closeModal(MODAL_COMPATIBILITY);
 };
-const openRoturLoginModal = function () {
-    return openModal(MODAL_ROTUR_LOGIN);
-};
-const closeRoturLoginModal = function () {
-    return closeModal(MODAL_ROTUR_LOGIN);
-};
 const openProjectMetadataModal = function (tab) {
     return {
         type: OPEN_MODAL,
@@ -542,8 +534,6 @@ export {
     closeAeFeaturesModal,
     openCompatibilityModal,
     closeCompatibilityModal,
-    openRoturLoginModal,
-    closeRoturLoginModal,
     openProjectMetadataModal,
     closeProjectMetadataModal,
     openAssetsModal,
@@ -560,6 +550,5 @@ export {
     MODAL_EXTENSION_EDITOR,
     MODAL_SUPER_REFACTOR,
     MODAL_BAIDU_AI,
-    MODAL_COMPATIBILITY,
-    MODAL_ROTUR_LOGIN
+    MODAL_COMPATIBILITY
 };

@@ -55,10 +55,6 @@ import RoturSession from '../../containers/rotur-session.jsx';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
 const CustomGalleryModal = React.lazy(() => import('../../containers/custom-gallery-modal.jsx'));
 import MWHelpModal from '../../components/mw-help-modal/help-modal.jsx';
-import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
-import Avatar from '../mw-avatar/avatar.jsx';
-import {closeRoturLoginModal, openRoturLoginModal} from '../../reducers/modals.js';
-import {openAccountMenu} from '../../reducers/menus.js';
 
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 const TutorialModal = React.lazy(() => import('../../containers/tutorial-modal.jsx'));
@@ -136,7 +132,6 @@ import {
     Sparkles,
     Settings as SettingsIcon,
     Puzzle,
-    LogIn,
     CircleAlert,
     Terminal
 } from 'lucide-react';
@@ -392,7 +387,6 @@ const GUIComponent = props => {
     });
     
     const {
-        accountNavOpen,
         activeTabIndex,
         alertsVisible,
         authorId,
@@ -437,12 +431,7 @@ const GUIComponent = props => {
         locale,
         logo,
         renderLogin,
-        roturLoginModalVisible,
-        roturUsername,
-        onRequestCloseRoturLogin,
         onClickAbout,
-        onClickAccountNav,
-        onCloseAccountNav,
         onClickAddonSettings,
         onClickDesktopSettings,
         onClickNewWindow,
@@ -1513,9 +1502,6 @@ const GUIComponent = props => {
             {props.gandiHelpModal && <GandiHelp onClose={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/CLOSE_MODAL', modal: 'gandiHelpModal'})} />}
             {customThemeVisible && <CustomThemeModal />}
             {readmeModalVisible && <AEReadMe />}
-            {roturLoginModalVisible && (
-                <RoturLoginModal onRequestClose={onRequestCloseRoturLogin} />
-            )}
         </React.Fragment>
         </React.Suspense>
     ), [
@@ -1541,8 +1527,6 @@ const GUIComponent = props => {
         props.gandiHelpModal,
         customThemeVisible,
         readmeModalVisible,
-        roturLoginModalVisible,
-        onRequestCloseRoturLogin,
         isEmbedded,
         vm,
         commandPaletteOpen
@@ -1751,7 +1735,6 @@ const GUIComponent = props => {
                     />
                 ) : null}
                 <MenuBar
-                    accountNavOpen={accountNavOpen}
                     authorId={authorId}
                     authorThumbnailUrl={authorThumbnailUrl}
                     authorUsername={authorUsername}
@@ -1779,13 +1762,11 @@ const GUIComponent = props => {
                     showOpenFilePicker={showOpenFilePicker}
                     showSaveFilePicker={showSaveFilePicker}
                     onClickAbout={onClickAbout}
-                    onClickAccountNav={onClickAccountNav}
                     onClickAddonSettings={onClickAddonSettings}
                     onClickDesktopSettings={onClickDesktopSettings}
                     onClickNewWindow={onClickNewWindow}
                     onClickPackager={onClickPackager}
                     onClickLogo={onClickLogo}
-                    onCloseAccountNav={onCloseAccountNav}
                     onLogOut={onLogOut}
                     onOpenExtensionLibrary={onOpenExtensionLibrary}
                     onOpenExtensionManagerModal={onOpenExtensionManagerModal}
@@ -1908,23 +1889,6 @@ const GUIComponent = props => {
                                                 </React.Fragment>
                                             ))}
                                             <div className={styles.activityBarBottom}>
-                                                {roturUsername ? (
-                                                    <button
-                                                        className={classNames(styles.activityBarButton, styles.activityBarAvatarButton)}
-                                                        title={roturUsername}
-                                                        onClick={() => props.dispatch && props.dispatch(openAccountMenu())}
-                                                    >
-                                                        <Avatar username={roturUsername} size={28} />
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        className={styles.activityBarButton}
-                                                        title={intl.formatMessage({defaultMessage: '登录', id: 'tw.login.button'})}
-                                                        onClick={() => props.dispatch && props.dispatch(openRoturLoginModal())}
-                                                    >
-                                                        <LogIn size={20} />
-                                                    </button>
-                                                )}
                                                 <div className={styles.activityBarBottomGap} />
                                                 <button
                                                     className={styles.activityBarButton}
@@ -2074,7 +2038,6 @@ const GUIComponent = props => {
 };
 
 GUIComponent.propTypes = {
-    accountNavOpen: PropTypes.bool,
     activeTabIndex: PropTypes.number,
     authorId: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
     authorThumbnailUrl: PropTypes.string,
@@ -2121,13 +2084,11 @@ GUIComponent.propTypes = {
     onActivateCostumesTab: PropTypes.func,
     onActivateSoundsTab: PropTypes.func,
     onActivateTab: PropTypes.func,
-    onClickAccountNav: PropTypes.func,
     onClickAddonSettings: PropTypes.func,
     onClickDesktopSettings: PropTypes.func,
     onClickPackager: PropTypes.func,
     onClickNewWindow: PropTypes.func,
     onClickLogo: PropTypes.func,
-    onCloseAccountNav: PropTypes.func,
     onExtensionButtonClick: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
     onOpenCustomGalleryModal: PropTypes.func,
@@ -2152,8 +2113,6 @@ GUIComponent.propTypes = {
     onSetStageSize: PropTypes.func,
     onSetFullScreen: PropTypes.func,
     renderLogin: PropTypes.func,
-    roturLoginModalVisible: PropTypes.bool,
-    onRequestCloseRoturLogin: PropTypes.func,
     securityManager: PropTypes.shape({}),
     showComingSoon: PropTypes.bool,
     showOpenFilePicker: PropTypes.func,
@@ -2234,7 +2193,6 @@ const mapStateToProps = state => ({
     // AstraEditor features
     customThemeVisible: state.scratchGui.modals.customtheme,
     readmeModalVisible: state.scratchGui.modals.readme,
-    roturUsername: state.scratchGui.rotur ? state.scratchGui.rotur.username : null,
     // MistWarp feature modals
     gitModalVisible: state.scratchGui.modals.gitModal,
     customGalleryModalVisible: state.scratchGui.modals.customGalleryModal,

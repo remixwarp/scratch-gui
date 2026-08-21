@@ -141,7 +141,7 @@ const normalizeCustomExtension = (extension, source, index) => {
         extensionId: id,
         extensionURL: safeResolveURL(js, baseURL) ||
             safeResolveURL(extension.slug ? `${extension.slug}.js` : null, baseURL),
-        iconURL: image ? safeResolveURL(image, baseURL) : 'https://extensions.bilup.org/images/unknown.svg',
+        iconURL: image ? safeResolveURL(image, baseURL) : '',
         tags: [source.id],
         source: source.id,
         credits: extension.credits || [],
@@ -269,42 +269,6 @@ const fetchLibrary = async () => {
             }
         }
         return [];
-    };
-
-    // 为 bilup 扩展补充中文翻译（名称/描述），按 extensionId 匹配
-    const bilupZhTranslations = {
-        bilupAccounts: {
-            name: 'Bilup 账户',
-            description: '登录 Bilup 并访问你的账户信息、权限与社交功能。'
-        },
-        bilupEconomy: {
-            name: 'Bilup 经济',
-            description: '管理积分、货币与交易等经济相关功能。'
-        },
-        bilupKeys: {
-            name: 'Bilup 密钥',
-            description: '创建和管理 API 密钥，用于安全地访问服务。'
-        },
-        bilupStatus: {
-            name: 'Bilup 状态',
-            description: '获取在线状态、活动与用户状态信息。'
-        },
-        bilupSocial: {
-            name: 'Bilup 社交',
-            description: '发送消息、关注用户并参与社区互动。'
-        },
-        bilupShop: {
-            name: 'Bilup 商店',
-            description: '浏览商品、下单并管理你的订单。'
-        },
-        bilupGroups: {
-            name: 'Bilup 群组',
-            description: '创建和管理群组，与成员协作。'
-        },
-        bilupFiles: {
-            name: 'Bilup 文件',
-            description: '上传、下载并管理你的文件资源。'
-        }
     };
 
     // 并行加载所有扩展源，每个源加载完成后立即更新
@@ -627,57 +591,6 @@ const fetchLibrary = async () => {
                 }))
             );
         }),
-        fetchAndAdd('bilup', async () => {
-            return await fetchWithFallback(
-                'bilup',
-                'https://extensions.bilup.org/generated-metadata/extensions-v0.json',
-                'https://rw-extensions.pages.dev/bilup/extensions-index.json',
-                data => data.extensions.map(extension => {
-                    const zh = bilupZhTranslations[extension.id];
-                    const nameTranslations = { ...(extension.nameTranslations || {}) };
-                    const descriptionTranslations = { ...(extension.descriptionTranslations || {}) };
-                    if (zh) {
-                        nameTranslations['zh-cn'] = zh.name;
-                        descriptionTranslations['zh-cn'] = zh.description;
-                    }
-                    return {
-                        name: extension.name,
-                        nameTranslations,
-                        description: extension.description,
-                        descriptionTranslations,
-                        extensionId: extension.id,
-                        extensionURL: `https://extensions.bilup.org/${extension.slug}.js`,
-                        iconURL: `https://extensions.bilup.org/${extension.image || 'images/unknown.svg'}`,
-                        tags: ['bilup'],
-                        credits: [
-                            ...(extension.by || []),
-                            ...(extension.original || [])
-                        ].map(credit => {
-                            if (credit.link) {
-                                return (
-                                    <a
-                                        href={credit.link}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        key={credit.name}
-                                    >
-                                        {credit.name}
-                                    </a>
-                                );
-                            }
-                            return credit.name;
-                        }),
-                        docsURI: extension.docs ? `https://extensions.bilup.org/${extension.slug}` : null,
-                        samples: extension.samples ? extension.samples.map(sample => ({
-                            href: `${process.env.ROOT}editor?project_url=https://extensions.bilup.org/samples/${encodeURIComponent(sample)}.sb3`,
-                            text: sample
-                        })) : null,
-                        incompatibleWithScratch: true,
-                        featured: true
-                    };
-                })
-            );
-        }),
         fetchAndAdd('cy-scr-ext-hub', async () => {
             return await fetchWithFallback(
                 'cy-scr-ext-hub',
@@ -729,58 +642,6 @@ const fetchLibrary = async () => {
     cachedLoadStatus = { ...sourceStatuses };
 
     // 注册各扩展库的刷新函数（适配新模式）
-    retryFetchers['bilup'] = async () => {
-        const result = await fetchWithFallback(
-            'bilup',
-            'https://extensions.bilup.org/generated-metadata/extensions-v0.json',
-            'https://rw-extensions.pages.dev/bilup/extensions-index.json',
-            data => data.extensions.map(extension => {
-                const zh = bilupZhTranslations[extension.id];
-                const nameTranslations = { ...(extension.nameTranslations || {}) };
-                const descriptionTranslations = { ...(extension.descriptionTranslations || {}) };
-                if (zh) {
-                    nameTranslations['zh-cn'] = zh.name;
-                    descriptionTranslations['zh-cn'] = zh.description;
-                }
-                return {
-                    name: extension.name,
-                    nameTranslations,
-                    description: extension.description,
-                    descriptionTranslations,
-                    extensionId: extension.id,
-                    extensionURL: `https://extensions.bilup.org/${extension.slug}.js`,
-                    iconURL: `https://extensions.bilup.org/${extension.image || 'images/unknown.svg'}`,
-                    tags: ['bilup'],
-                    credits: [
-                        ...(extension.by || []),
-                        ...(extension.original || [])
-                    ].map(credit => {
-                        if (credit.link) {
-                            return React.createElement('a', { href: credit.link, target: '_blank', rel: 'noreferrer', key: credit.name }, credit.name);
-                        }
-                        return credit.name;
-                    }),
-                    docsURI: extension.docs ? `https://extensions.bilup.org/${extension.slug}` : null,
-                    samples: extension.samples ? extension.samples.map(sample => ({
-                        href: `${process.env.ROOT}editor?project_url=https://extensions.bilup.org/samples/${encodeURIComponent(sample)}.sb3`,
-                        text: sample
-                    })) : null,
-                    incompatibleWithScratch: true,
-                    featured: true
-                };
-            })
-        );
-        if (cachedGallery) {
-            cachedGallery = dedupeFetchedExtensions([
-                ...cachedGallery.filter(e => !(e.tags || []).includes('bilup')),
-                ...result
-            ]);
-        }
-        cachedSourceStatuses = { ...cachedSourceStatuses, bilup: 'loaded' };
-        notifyListeners();
-        return cachedSourceStatuses;
-    };
-
     retryFetchers['ow'] = async () => {
         const result = await fetchWithFallback(
             'ow',
@@ -1102,7 +963,7 @@ class ExtensionLibrary extends React.PureComponent {
             return null;
         }
         // 内置本地数据始终可用（桌面端本地加载成功 → 蓝色）
-        if (tag === 'scratch' || tag === 'rotur') {
+        if (tag === 'scratch') {
             return 'local';
         }
         // 无状态时返回 'idle' 作为占位
@@ -1231,7 +1092,6 @@ class ExtensionLibrary extends React.PureComponent {
             ['scratch', 'Scratch'],
             ['tw', 'TurboWarp'],
             ['mistium', 'Mistium'],
-            ['rotur', 'Bilup Accounts'],
             ...this.state.customSources.map(source => [source.id, source.name])
         ];
         // 可删除（自定义）的标签 id 集合，用于侧边栏渲染删除按钮

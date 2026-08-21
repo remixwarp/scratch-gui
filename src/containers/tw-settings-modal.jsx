@@ -356,6 +356,7 @@ class UsernameModal extends React.Component {
             // ignore
         }
     }
+
     handleHatBlockCommentReminderChange (e) {
         this.setState({hatBlockCommentReminder: e.target.checked});
         try {

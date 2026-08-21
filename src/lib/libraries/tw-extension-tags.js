@@ -4,7 +4,6 @@ export default [
     {tag: 'remixwarp', intlLabel: 'RemixWarp'},
     {tag: 'ae', intlLabel: 'AstraEditor'},
     {tag: 'mistium', intlLabel: 'Mistium'},
-    {tag: 'rotur', intlLabel: 'Bilup Accounts'},
     {tag: 'penguinmod', intlLabel: 'PenguinMod'},
     {tag: '02engine', intlLabel: '02Engine'},
     {tag: 'ow', intlLabel: 'OpenWarp'},

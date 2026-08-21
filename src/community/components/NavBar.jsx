@@ -9,7 +9,6 @@ import logo from '../assets/bilup-logo.svg';
 import Avatar from './Avatar.jsx';
 import setFaviconBadge from '../faviconBadge';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
-import {RoturAccount} from '../../components/menu-bar/mw-rotur-account.jsx';
 import styles from './NavBar.module.css';
 
 const NavBar = () => {
@@ -26,6 +25,7 @@ const NavBar = () => {
     const [openReports, setOpenReports] = useState(0);
     const navigate = useNavigate();
     const searchRef = useRef(null);
+    const accountRef = useRef(null);
 
     useEffect(() => {
         if (!user) {
@@ -96,6 +96,9 @@ const NavBar = () => {
         const close = event => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
                 setSuggestionsOpen(false);
+            }
+            if (accountRef.current && !accountRef.current.contains(event.target)) {
+                setAccountOpen(false);
             }
         };
         document.addEventListener('mousedown', close);
@@ -317,15 +320,50 @@ const NavBar = () => {
                                     <span className={styles.bellBadge}>{unread > 9 ? '9+' : unread}</span>
                                 ) : null}
                             </Link>
-                            <RoturAccount
-                                username={user.username}
-                                menuOpen={accountOpen}
-                                showEditorItems={false}
-                                onOpenMenu={() => setAccountOpen(true)}
-                                onCloseMenu={() => setAccountOpen(false)}
-                                onOpenLogin={doLogin}
-                                onLogout={logout}
-                            />
+                            <div
+                                className={styles.accountMenu}
+                                ref={accountRef}
+                            >
+                                <button
+                                    type="button"
+                                    className={styles.accountButton}
+                                    onClick={() => setAccountOpen(open => !open)}
+                                    title={intl.formatMessage({id: 'mw.community.nav.account', defaultMessage: 'Account'})}
+                                    aria-label={intl.formatMessage({id: 'mw.community.nav.account', defaultMessage: 'Account'})}
+                                    aria-expanded={accountOpen}
+                                >
+                                    <Avatar
+                                        username={user.username}
+                                        size={26}
+                                    />
+                                </button>
+                                {accountOpen ? (
+                                    <div className={styles.accountDropdown}>
+                                        <Link
+                                            to={`/users/${user.username}`}
+                                            className={styles.accountItem}
+                                            onClick={() => setAccountOpen(false)}
+                                        >
+                                            <FormattedMessage
+                                                defaultMessage="My profile"
+                                                description="NavBar dropdown link to the user's profile"
+                                                id="mw.community.nav.myProfile"
+                                            />
+                                        </Link>
+                                        <button
+                                            type="button"
+                                            className={styles.accountItem}
+                                            onClick={logout}
+                                        >
+                                            <FormattedMessage
+                                                defaultMessage="Sign out"
+                                                description="NavBar dropdown sign out action"
+                                                id="mw.community.nav.signOut"
+                                            />
+                                        </button>
+                                    </div>
+                                ) : null}
+                            </div>
                         </>
                     ) : loading ? null : (
                         <button

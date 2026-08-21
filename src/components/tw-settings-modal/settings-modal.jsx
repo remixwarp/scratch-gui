@@ -1511,7 +1511,7 @@ const settingDefinitions = {
             description: 'Unclip palette setting help',
             id: 'mw.settingsModal.unclipPaletteHelp'
         }
-    }
+    },
 };
 
 const createBooleanSetting = (key, definition) => {
@@ -1548,6 +1548,7 @@ const WindowAnimation = createBooleanSetting('WindowAnimation', settingDefinitio
 const EnableStageResize = createBooleanSetting('EnableStageResize', settingDefinitions.enableStageResize);
 const VanillaPalette = createBooleanSetting('VanillaPalette', settingDefinitions.vanillaPalette);
 const UnclipPalette = createBooleanSetting('UnclipPalette', settingDefinitions.unclipPalette);
+
 const HatBlockCommentReminder = props => (
     <Setting
         active={props.value}

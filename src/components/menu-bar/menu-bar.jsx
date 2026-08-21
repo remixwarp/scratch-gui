@@ -37,17 +37,8 @@ import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
 import TWNews from './tw-news.jsx';
 import CollaborationContainer from '../../containers/collaboration-container.jsx';
-import AccountNav from '../../containers/account-nav.jsx';
-import LoginDropdown from './login-dropdown.jsx';
-import RoturAccount from './mw-rotur-account.jsx';
-import MwEditorNav from './mw-editor-nav.jsx';
-import {isLoggedIn} from '../../lib/rotur/client.js';
-import {saveToBilup as saveProjectToBilup} from '../../lib/mw/smart-save.js';
-import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
 import openConfigPlazaWindow from '../../lib/mw/open-config-plaza-window.js';
 import openMaterialPlazaWindow from '../../lib/mw/open-material-plaza-window.js';
-import {getMistWarpAction} from '../../lib/community/publish.js';
-import communityEnabled from '../../lib/community/enabled.js';
 import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
@@ -325,7 +316,6 @@ class MenuBar extends React.Component {
             workspaceBookmarksCollapsedCategories: [],
             canUndo: true,
             canRedo: true,
-            mistwarpProject: null,
             variousToolsOpen: false
         };
         this.workspaceBookmarksProjectListener = null;
@@ -339,8 +329,6 @@ class MenuBar extends React.Component {
             'handleClickRemix',
             'handleClickSave',
             'handleClickSaveAsCopy',
-            'handleClickSaveToBilup',
-            'handleClickSeeBilupPage',
             'handleClickPackager',
             'handleClickDesktopSettings',
             'handleClickRestorePoints',
@@ -1971,20 +1959,6 @@ class MenuBar extends React.Component {
         this.props.onRequestCloseFile();
     }
 
-    handleOpenBilupLoginModal () {
-        this.setState({bilupLoginModalOpen: true});
-        if (this.props.onRequestCloseAccount) {
-            this.props.onRequestCloseAccount();
-        }
-        if (this.props.onCloseAccountNav) {
-            this.props.onCloseAccountNav();
-        }
-    }
-
-    handleCloseBilupLoginModal () {
-        this.setState({bilupLoginModalOpen: false});
-    }
-
     handleClickNew () {
         // if the project is dirty, and user owns the project, we will autosave.
         // but if they are not logged in and can't save, user should consider
@@ -2021,36 +1995,6 @@ class MenuBar extends React.Component {
             unlockAchievement('late-night-coding');
         }
         this.props.onRequestCloseFile();
-    }
-    handleClickSaveToBilup () {
-        this.props.onRequestCloseFile();
-        if (!communityEnabled) {
-            this.showAlert(
-                'Bilup',
-                'Cloud community features are disabled.'
-            );
-            return;
-        }
-        if (!isLoggedIn()) {
-            // 未登录则打开登录提示框
-            this.handleOpenBilupLoginModal();
-            return;
-        }
-        openMistWarpShareWindow({
-            vm: this.props.vm,
-            initialTitle: this.props.projectTitle,
-            action: getMistWarpAction(this.state.mistwarpProject, this.props.projectChanged),
-            onPublished: result => {
-                this.setState({mistwarpProject: {id: result.id, isOwner: true, shared: !!result.shared}});
-                this.props.onProjectUnchanged();
-            }
-        });
-    }
-    handleClickSeeBilupPage () {
-        this.props.onRequestCloseFile();
-        if (this.state.mistwarpProject) {
-            window.location.href = `https://editor.bilup.org/project/${this.state.mistwarpProject.id}`;
-        }
     }
     handleClickPackager () {
         this.props.onClickPackager();
@@ -3235,25 +3179,6 @@ class MenuBar extends React.Component {
                                             )}
                                         </MenuSection>
                                     )}
-                                    {communityEnabled && (
-                                        <MenuSection>
-                                            <MenuItem
-                                                isRtl={this.props.isRtl}
-                                                onClick={this.handleClickSaveToBilup}
-                                            >
-                                                <Cloud
-                                                    width={20}
-                                                    height={20}
-                                                    size={20}
-                                                />
-                                                <FormattedMessage
-                                                    defaultMessage="Save to Bilup"
-                                                    description="Menu bar item to save the project to Bilup"
-                                                    id="gui.menuBar.saveToBilup"
-                                                />
-                                            </MenuItem>
-                                        </MenuSection>
-                                    )}
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.props.onStartSelectingFileUpload}
@@ -4218,17 +4143,6 @@ class MenuBar extends React.Component {
                         />
                     </span>
                     <span data-mw-item="about">{aboutButton}</span>
-                    {!this.props.isPlayerOnly && this.props.roturUsername && (
-                        <MwEditorNav />
-                    )}
-                    {!this.props.isPlayerOnly && (
-                        <span className={styles.roturAccountSlot}>
-                            <RoturAccount
-                                closeFileMenu={this.props.onRequestCloseFile}
-                                openRoturLoginModal={this.props.openRoturLoginModal}
-                            />
-                        </span>
-                    )}
                 </div>
             </Box>
         );
@@ -4284,7 +4198,6 @@ MenuBar.propTypes = {
     handleSaveProject: PropTypes.func,
     intl: intlShape,
     isPlayerOnly: PropTypes.bool,
-    roturUsername: PropTypes.string,
     isRtl: PropTypes.bool,
     isShared: PropTypes.bool,
     isShowingProject: PropTypes.bool,
@@ -4435,8 +4348,7 @@ const mapStateToProps = (state, ownProps) => {
         mode1990: isTimeTravel1990(state),
         mode2020: isTimeTravel2020(state),
         modeNow: isTimeTravelNow(state),
-        superRefactor: localStorage.getItem('mw:super-refactor') === 'true',
-        roturUsername: state.scratchGui.rotur ? state.scratchGui.rotur.username : null
+        superRefactor: localStorage.getItem('mw:super-refactor') === 'true'
     };
 };
 

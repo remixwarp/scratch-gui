@@ -83,12 +83,6 @@
   right: 0.4rem;
 }
 
-[class*="account-nav_user-info"] [class*="account-nav_avatar"] {
-  width: 1.5rem;
-  height: 1.5rem;
-  margin-inline-start: 0.25rem;
-}
-
 /* Sprites area */
 [class^="sprite-info_sprite-info_"] {
   padding: 0.5rem;

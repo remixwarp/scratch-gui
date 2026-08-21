@@ -25,7 +25,7 @@ import {
     setRoturError,
     clearRoturUser
 } from '../reducers/rotur.js';
-import {closeModal} from '../reducers/modals.js';
+
 import {setTheme} from '../reducers/theme.js';
 import {detectTheme, applyTheme} from '../lib/themes/themePersistance.js';
 import {customThemeManager} from '../lib/themes/custom-themes.js';
@@ -233,7 +233,6 @@ class RoturSession extends React.Component {
     async handleLogin () {
         try {
             const user = await identityLogin();
-            this.props.onCloseLoginModal();
             return user;
         } catch (error) {
             const message = error && error.message ? error.message : String(error);
@@ -271,7 +270,6 @@ RoturSession.propTypes = {
     onSetUsernameOverride: PropTypes.func.isRequired,
     onSetError: PropTypes.func.isRequired,
     onClear: PropTypes.func.isRequired,
-    onCloseLoginModal: PropTypes.func.isRequired,
     onSetTheme: PropTypes.func.isRequired,
     roturUsername: PropTypes.string
 };
@@ -293,7 +291,6 @@ const mapDispatchToProps = dispatch => ({
     onSetUsernameOverride: username => dispatch(setRoturUsernameOverride(username)),
     onSetError: error => dispatch(setRoturError(error)),
     onClear: () => dispatch(clearRoturUser()),
-    onCloseLoginModal: () => dispatch(closeModal('roturLoginModal')),
     onSetTheme: theme => dispatch(setTheme(theme))
 });
 

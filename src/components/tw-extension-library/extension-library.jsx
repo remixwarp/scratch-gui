@@ -418,13 +418,12 @@ class TWExtensionLibrary extends React.Component {
         const visible = items.filter(matches);
         const top = visible.filter(item => topExtensionIds.has(item.extensionId));
         const sourceOf = item => item.source ||
-            (item.tags.includes('rotur') ? 'rotur' : item.tags.includes('mistium') ? 'mistium' :
+            (item.tags.includes('mistium') ? 'mistium' :
         item.tags.includes('tw') ? 'tw' : item.tags.includes('cy-scr-ext-hub') ? 'cy-scr-ext-hub' : 'scratch');
         const sources = this.props.sources || [
             ['scratch', 'Scratch'],
             ['tw', 'TurboWarp'],
             ['mistium', 'Mistium'],
-            ['rotur', 'Bilup Accounts'],
             ['cy-scr-ext-hub', 'CY ScrExt Hub']
         ];
         const sections = sources.map(([source, sourceTitle]) => ({

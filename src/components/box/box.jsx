@@ -68,7 +68,6 @@ const Box = React.forwardRef((props, forwardedRef) => {
         vm: _vm,
         onRuntimeOptionsChanged: _onRuntimeOptionsChanged,
         projectTitle: _projectTitle,
-        openRoturLoginModal: _openRoturLoginModal,
         pId: _pId,
         ...componentProps
     } = props;
