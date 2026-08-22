@@ -222,6 +222,7 @@
   "zh-cn": {
     "mw.tree.explorer": "资源管理器",
     "mw.panel.terminal": "终端",
+    "gui.menuBar.02agent": "02Agent",
     "gui.backpack.searchPlaceholder": "搜索书包...",
     "gui.backpack.createFolder": "创建文件夹",
     "gui.backpack.showWorkspace": "显示工作区",
