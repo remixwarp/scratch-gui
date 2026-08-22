@@ -5,6 +5,36 @@ import {
     formatActivityStatus
 } from './settings.js';
 
+// 屏蔽 accounts.bilup.org 的 status/ws 在线状态 WebSocket。
+// 该后端当前不可用，否则 accounts-sdk 会无限重连并在控制台刷屏。
+// 这里从底层拦截，使 SDK 不会建立真实连接，也不会重复报错。
+if (typeof window !== 'undefined' && window.WebSocket) {
+    const RealWebSocket = window.WebSocket;
+    const BLOCK_HOST = 'api.accounts.bilup.org';
+    const BLOCK_PATH = '/status/ws';
+    /* eslint-disable no-unused-vars */
+    window.WebSocket = function (url, ...rest) {
+        if (typeof url === 'string' && url.includes(BLOCK_HOST) && url.includes(BLOCK_PATH)) {
+            const dummy = Object.create(EventTarget.prototype);
+            const instance = Object.assign(dummy, {
+                onopen: null,
+                onmessage: null,
+                onerror: null,
+                onclose: null,
+                readyState: 3,
+                send () {},
+                close () {}
+            });
+            setTimeout(() => {
+                if (instance.onclose) instance.onclose();
+            }, 0);
+            return instance;
+        }
+        return new RealWebSocket(url, ...rest);
+    };
+    /* eslint-enable no-unused-vars */
+}
+
 const TOKEN_KEY = 'mw:rotur-token';
 const REQUIRED_PERMISSIONS = [
     ...resolvePermissions([
