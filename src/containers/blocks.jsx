@@ -2272,6 +2272,7 @@ class Blocks extends React.Component {
             vm,
             isRtl,
             isVisible,
+            workspaceTargetId,
             onActivateColorPicker,
             onOpenConnectionModal,
             onOpenSoundRecorder,

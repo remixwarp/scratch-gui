@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import Modal from '../../containers/windowed-modal.jsx';
 import {AESettings} from '../../lib/settings.js';
+import settingsStore from '../../addons/settings-store-singleton.js';
 import {applyLayout} from '../tw-settings-modal/settings-modal.jsx';
 import {
     ACHIEVEMENTS,
@@ -28,9 +29,14 @@ const messages = defineMessages({
         id: 'achievements.welcomeTitle'
     },
     welcomeSubtitle: {
-        defaultMessage: 'Choose your editor experience to decide whether achievements are enabled by default.',
+        defaultMessage: 'Choose your editor experience to decide whether achievements, the tutorial, and similar features are enabled by default.',
         description: 'Welcome subtitle',
         id: 'achievements.welcomeSubtitle'
+    },
+    importConfig: {
+        defaultMessage: 'Import All Config',
+        description: 'Import all config link on welcome screen',
+        id: 'achievements.importConfig'
     },
     scratchBeginner: {
         defaultMessage: 'Scratch Beginner',
@@ -313,6 +319,13 @@ const Achievements = ({intl}) => {
                         aria-label={intl.formatMessage(messages.welcomeTitle)}
                         className={styles.choicePanel}
                     >
+                        <button
+                            type="button"
+                            className={styles.importConfigLink}
+                            onClick={handleImportConfig}
+                        >
+                            {intl.formatMessage(messages.importConfig)}
+                        </button>
                         <h2>{intl.formatMessage(messages.welcomeTitle)}</h2>
                         <p>{intl.formatMessage(messages.welcomeSubtitle)}</p>
                         <div className={styles.choiceActions}>
@@ -564,6 +577,64 @@ const Achievements = ({intl}) => {
 
 Achievements.propTypes = {
     intl: intlShape.isRequired
+};
+
+const handleImportConfig = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.rwc';
+    input.onchange = async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        try {
+            const {default: JSZip} = await import('@turbowarp/jszip');
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const zip = new JSZip();
+                    const content = await zip.loadAsync(event.target.result);
+                    const settingsFile = content.file('settings.json');
+                    if (!settingsFile) throw new Error('设置文件不存在或格式错误');
+                    const settingsData = JSON.parse(await settingsFile.async('text'));
+                    if (!confirm('确定要导入配置吗？这将覆盖您当前的设置。')) return;
+                    // 导入插件设置
+                    if (settingsData.addonSettings) {
+                        try {
+                            settingsStore.import(settingsData.addonSettings);
+                        } catch (err) {
+                            console.error('导入插件设置失败:', err);
+                        }
+                    }
+                    // 导入全部 localStorage 设置
+                    if (settingsData.localStorageSettings) {
+                        for (const [key, value] of Object.entries(settingsData.localStorageSettings)) {
+                            if (key === 'tw:addons') continue;
+                            localStorage.setItem(key, value);
+                        }
+                    }
+                    // 兼容字段
+                    if (settingsData.themeSettings) localStorage.setItem('tw:theme', settingsData.themeSettings);
+                    if (settingsData.shortcuts) localStorage.setItem('tw:shortcuts', settingsData.shortcuts);
+                    if (settingsData.language) localStorage.setItem('tw:language', settingsData.language);
+                    if (settingsData.workspaceBookmarks) {
+                        try {
+                            localStorage.setItem('mw:workspaceBookmarks', JSON.stringify(settingsData.workspaceBookmarks));
+                        } catch (err) { /* ignore */ }
+                    }
+                    alert('设置已成功导入，即将刷新页面以应用更改。');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } catch (error) {
+                    alert('导入设置失败：' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        } catch (error) {
+            alert('读取设置文件失败：' + error.message);
+        }
+    };
+    input.click();
 };
 
 export default injectIntl(Achievements);

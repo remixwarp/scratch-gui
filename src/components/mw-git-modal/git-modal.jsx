@@ -110,7 +110,9 @@ class GitModalComponent extends React.Component {
 
     handleNavigate (view) {
         this.setState({currentView: view});
-        this.props.onClearDiff();
+        if (typeof this.props.onClearDiff === 'function') {
+            this.props.onClearDiff();
+        }
     }
 
     renderNotInitialized () {

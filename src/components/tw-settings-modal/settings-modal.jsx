@@ -376,6 +376,16 @@ const messages = defineMessages({
         description: 'EnableStatusBar help',
         id: 'tw.settingsModal.enablestatusbarhelp'
     },
+    enablecommandpalette: {
+        defaultMessage: '启用命令面板',
+        description: 'EnableCommandPalette label',
+        id: 'tw.settingsModal.enablecommandpalette'
+    },
+    enablecommandpalettehelp: {
+        defaultMessage: '在“工具”菜单中提供命令面板入口（快捷键 Ctrl+K），关闭后将无法启动命令面板。',
+        description: 'EnableCommandPalette help',
+        id: 'tw.settingsModal.enablecommandpalettehelp'
+    },
     customdefaultsprite: {
         defaultMessage: '自定义默认角色（需刷新）',
         description: 'Custom default sprite label',
@@ -945,6 +955,22 @@ const EnableStatusBar = props => (
         help={
             <FormattedMessage
                 {...messages.enablestatusbarhelp}
+            />
+        }
+    />
+);
+
+const EnableCommandPalette = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                {...messages.enablecommandpalette}
+            />
+        }
+        help={
+            <FormattedMessage
+                {...messages.enablecommandpalettehelp}
             />
         }
     />
@@ -2382,6 +2408,13 @@ const pageConfigurations = {
                         props: props => ({
                             value: AEsettings.get('EnableStatusBar') || false,
                             onChange: (e) => { AEsettings.set("EnableStatusBar", e.target.checked); notifySettingsChange(); }
+                        })
+                    },
+                    {
+                        component: EnableCommandPalette,
+                        props: props => ({
+                            value: AEsettings.get('enableCommandPalette') !== false,
+                            onChange: (e) => { AEsettings.set("enableCommandPalette", e.target.checked); notifySettingsChange(); location.reload(); }
                         })
                     },
                     {

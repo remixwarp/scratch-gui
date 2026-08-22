@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import {injectIntl} from 'react-intl';
 import classNames from 'classnames';
 import {
     ChevronDown,
@@ -40,7 +41,7 @@ const LeafRow = ({icon: Icon, name, selected, onClick, depth, badge}) => (
 );
 
 LeafRow.propTypes = {
-    icon: PropTypes.func,
+    icon: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
     name: PropTypes.string,
     selected: PropTypes.bool,
     onClick: PropTypes.func,
@@ -83,7 +84,7 @@ class ResourceGroup extends React.Component {
 
 ResourceGroup.propTypes = {
     label: PropTypes.string,
-    icon: PropTypes.func,
+    icon: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
     count: PropTypes.number,
     children: PropTypes.node,
     depth: PropTypes.number,
@@ -329,4 +330,4 @@ WorkspaceTree.propTypes = {
     intl: PropTypes.object
 };
 
-export default WorkspaceTree;
+export default injectIntl(WorkspaceTree);

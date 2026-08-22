@@ -119,6 +119,25 @@
     color: $ui-modal-foreground;
     padding: 1.5rem;
     width: min(34rem, calc(100vw - 2rem));
+    position: relative;
+}
+
+.import-config-link {
+    background: none;
+    border: none;
+    color: $looks-secondary;
+    cursor: pointer;
+    font-size: .8rem;
+    padding: 0;
+    position: absolute;
+    right: 1.25rem;
+    top: 1.25rem;
+    text-decoration: underline;
+    transition: color 0.15s ease;
+}
+
+.import-config-link:hover {
+    color: $text-primary;
 }
 
 .choice-panel h2,

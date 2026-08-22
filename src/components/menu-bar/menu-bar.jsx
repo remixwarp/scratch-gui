@@ -133,6 +133,7 @@ import {
 import {setFileHandle} from '../../reducers/tw.js';
 import JSZip from '@turbowarp/jszip';
 import settingsStore from '../../addons/settings-store-singleton.js';
+import {AESettings} from '../../lib/settings.js';
 import {
     setAutosaveEnabled,
     setAutosaveInterval,
@@ -2536,35 +2537,17 @@ class MenuBar extends React.Component {
                 };
             }
 
-            // 收集所有 localStorage 设置
+            // 收集所有 localStorage 设置（导出浏览器中保存的全部配置，确保不遗漏任何高级设置项）
             const localStorageSettings = {};
-            // 应用相关的 localStorage 键前缀，用于完整导出所有配置
-            const appKeyPrefixes = [
-                'tw:',
-                'mw:',
-                'rw:',
-                'remixwarp_',
-                'astras_',
-                'sa-',
-                'ADDONS_',
-                'AESettings',
-                '02agent_',
-                'novatheai_',
-                'bilup_',
-                'nova_'
-            ];
 
-            console.log('开始收集localStorage设置');
-            // 遍历所有 localStorage 键，收集匹配应用前缀的键
+            console.log('开始收集localStorage设置（全部）');
+            // 遍历所有 localStorage 键，完整导出浏览器中保存的所有内容
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (!key) continue;
-                const isAppKey = appKeyPrefixes.some(prefix => key.startsWith(prefix));
-                if (isAppKey) {
-                    const value = localStorage.getItem(key);
-                    if (value !== null) {
-                        localStorageSettings[key] = value;
-                    }
+                const value = localStorage.getItem(key);
+                if (value !== null) {
+                    localStorageSettings[key] = value;
                 }
             }
             console.log('localStorage设置收集完成，共', Object.keys(localStorageSettings).length, '项');
@@ -2753,15 +2736,19 @@ class MenuBar extends React.Component {
                             }
                         }
 
-                        // 显示成功消息并提示刷新
+                        // 显示成功消息并自动刷新以应用全部设置
                         console.log('设置导入完成');
-                        this.showAlert('成功', '设置已成功导入。请刷新页面以应用更改。');
+                        this.showAlert('成功', '设置已成功导入，即将刷新页面以应用所有更改。');
                         // 导入后立即刷新自定义快捷键（含导出中包含的 tw:shortcuts），无需刷新即可生效
                         try {
                             applyCustomShortcuts();
                         } catch (e) {
                             console.warn('应用导入的快捷键失败:', e);
                         }
+                        // 自动刷新页面，确保所有高级设置（AESettings 等）全部生效
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
                     } catch (error) {
                         console.error('Error importing settings:', error);
                         let errorMessage = '导入设置失败';
@@ -2805,6 +2792,36 @@ class MenuBar extends React.Component {
         }
         return this.props.autosaveEnabled;
     }
+    handleResetAllConfig = () => {
+        // 第一次警告确认
+        if (!confirm('警告：此操作将删除浏览器中缓存的所有配置（包括设置、快捷键、书签等），且无法恢复。确定要继续吗？')) {
+            return;
+        }
+        // 第二次最终警告确认
+        if (!confirm('最终警告：所有本地配置将被永久删除，编辑器将恢复到初始状态。是否确认删除？')) {
+            return;
+        }
+        try {
+            // 清空浏览器中保存的全部 localStorage
+            localStorage.clear();
+            // 尝试清除插件设置存储（若提供独立清理方法）
+            try {
+                if (settingsStore && typeof settingsStore.clear === 'function') {
+                    settingsStore.clear();
+                }
+            } catch (storeError) {
+                console.warn('清除插件设置存储失败（可忽略）:', storeError);
+            }
+        } catch (error) {
+            console.error('清除配置失败:', error);
+            this.showAlert('错误', '清除配置失败：' + error.message);
+            return;
+        }
+        this.showAlert('完成', '所有配置已删除，即将刷新页面以恢复初始状态。');
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
+    };
     getAutosaveTimeRemaining () {
         return this.state.autosaveTimeRemaining;
     }
@@ -3321,6 +3338,9 @@ class MenuBar extends React.Component {
                                                     <Store size={20} />
                                                     {this.props.locale === 'zh-cn' ? '配置广场' : 'Config Plaza'}
                                                 </MenuItem>
+                                                <MenuItem onClick={this.handleResetAllConfig}>
+                                                    {this.props.locale === 'zh-cn' ? '重置全部配置' : 'Reset All Config'}
+                                                </MenuItem>
                                             </Submenu>
                                         </MenuItem>
                                     </MenuSection>
@@ -3677,6 +3697,7 @@ class MenuBar extends React.Component {
                                     </MenuItem>
                                 </MenuSection>
                                 <MenuSection>
+                                    {AESettings.get('enableCommandPalette') !== false && (
                                     <MenuItem
                                         onClick={() => {
                                             window.dispatchEvent(new Event('rw-command-palette-toggle'));
@@ -3691,6 +3712,7 @@ class MenuBar extends React.Component {
                                             id="mw.menuBar.commandPalette"
                                         />
                                     </MenuItem>
+                                    )}
                                     <MenuItem
                                         onClick={() => {
                                             this.props.onClickGitModal();
