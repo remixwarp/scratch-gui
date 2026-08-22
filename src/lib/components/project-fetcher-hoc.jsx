@@ -307,6 +307,8 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 onError: onErrorProp,
                 onFetchedProjectData: onFetchedProjectDataProp,
                 onProjectUnchanged,
+                onReturnToShow,
+                onSetProjectError,
                 projectHost,
                 projectId,
                 reduxProjectId,

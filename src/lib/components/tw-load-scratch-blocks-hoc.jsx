@@ -8,6 +8,7 @@ const LoadScratchBlocksHOC = function (WrappedComponent) {
     class LoadScratchBlocks extends React.Component {
         constructor (props) {
             super(props);
+            this._isMounted = true;
             this.state = {
                 loaded: LazyScratchBlocks.isLoaded(),
                 error: null
@@ -15,17 +16,24 @@ const LoadScratchBlocksHOC = function (WrappedComponent) {
             if (!this.state.loaded) {
                 LazyScratchBlocks.load()
                     .then(() => {
-                        this.setState({
-                            loaded: true
-                        });
+                        if (this._isMounted) {
+                            this.setState({
+                                loaded: true
+                            });
+                        }
                     })
                     .catch(e => {
                         log.error(e);
-                        this.setState({
-                            error: e
-                        });
+                        if (this._isMounted) {
+                            this.setState({
+                                error: e
+                            });
+                        }
                     });
             }
+        }
+        componentWillUnmount () {
+            this._isMounted = false;
         }
         handleReload () {
             location.reload();

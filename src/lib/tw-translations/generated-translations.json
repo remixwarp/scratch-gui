@@ -220,6 +220,8 @@
     "tw.login.button": "登入"
   },
   "zh-cn": {
+    "mw.tree.explorer": "资源管理器",
+    "mw.panel.terminal": "终端",
     "gui.backpack.searchPlaceholder": "搜索书包...",
     "gui.backpack.createFolder": "创建文件夹",
     "gui.backpack.showWorkspace": "显示工作区",
