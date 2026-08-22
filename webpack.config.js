@@ -143,6 +143,32 @@ const base = {
                     res.status(502).json({error: 'Failed to fetch the requested project'});
                 }
             });
+
+            // WarpTheme 主题商店代理：将 /api/warptheme/* 转发到主题服务，
+            // 否则 dev server 会把请求当作 SPA 路由返回 index.html（非 JSON 内容）。
+            app.all('/api/warptheme/*', async (req, res) => {
+                const suffix = req.params[0] || '';
+                const path = suffix.startsWith('/') ? suffix : `/${suffix}`;
+                const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+                const targetUrl = `https://warptheme.mistium.com${path}${query}`;
+                try {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 30000);
+                    const upstreamResp = await fetch(targetUrl, {
+                        method: req.method,
+                        headers: {'Accept': 'application/json'},
+                        signal: controller.signal,
+                        redirect: 'follow'
+                    });
+                    clearTimeout(timer);
+                    res.set('Access-Control-Allow-Origin', '*');
+                    res.set('Content-Type', upstreamResp.headers.get('Content-Type') || 'application/json');
+                    const buffer = await upstreamResp.arrayBuffer();
+                    res.status(upstreamResp.status).send(Buffer.from(buffer));
+                } catch (err) {
+                    res.status(502).json({error: '主题服务暂时不可用'});
+                }
+            });
         }
     },
     output: {
