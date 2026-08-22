@@ -103,6 +103,39 @@
     overflow-y: auto;
 }
 
+.contentHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.contentTitle {
+    font-size: 0.9375rem;
+    font-weight: bold;
+    color: $text-primary;
+}
+
+.resetButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 12px;
+    color: $text-primary;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+}
+
+.resetButton:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
 .noResults {
     display: flex;
     flex-direction: column;
@@ -137,6 +170,102 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+/* 录制中行高亮 */
+.recording .shortcutItem {
+    border: 2px solid #4c97ff;
+    box-shadow: 0 0 0 2px rgba(76, 151, 255, 0.25);
+}
+
+/* 录制提示覆盖层 */
+.recordingOverlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.recordingBox {
+    background: $ui-tertiary;
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    border-radius: 10px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.recordingIcon {
+    color: #4c97ff;
+    margin-bottom: 12px;
+}
+
+.recordingText {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    margin: 0 0 8px;
+    color: $text-primary;
+}
+
+.recordingKeys {
+    font-size: 1.125rem;
+    font-weight: bold;
+    line-height: 1.5;
+    margin: 0 0 8px;
+    color: #4c97ff;
+    letter-spacing: 1px;
+}
+
+.recordingHint {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    margin: 0 0 18px;
+    color: $text-primary;
+    opacity: 0.6;
+}
+
+.recordingActions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.recordingSave {
+    background: #4c97ff;
+    border: 1px solid #4c97ff;
+    color: #fff;
+    border-radius: 6px;
+    padding: 6px 18px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+}
+
+.recordingSave:hover:not(:disabled) {
+    background: #3b86ee;
+}
+
+.recordingSave:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.recordingCancel {
+    background: transparent;
+    border: 1px solid rgba(128, 128, 128, 0.4);
+    color: #ccc;
+    border-radius: 6px;
+    padding: 6px 18px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+}
+
+.recordingCancel:hover {
+    border-color: #888;
+    color: #fff;
 }
 
 .shortcutItem {
@@ -351,4 +480,59 @@
 
 .doneButton {
     min-width: 80px;
+}
+
+.resetOverlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.resetBox {
+    background: $ui-secondary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 10px;
+    padding: 24px;
+    width: 360px;
+    max-width: 90%;
+    text-align: center;
+}
+
+.resetTitle {
+    font-size: 1.0625rem;
+    font-weight: bold;
+    margin: 0 0 10px;
+    color: $text-primary;
+}
+
+.resetDesc {
+    font-size: 0.8125rem;
+    opacity: 0.7;
+    margin: 0 0 20px;
+    color: $text-primary;
+}
+
+.resetActions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.resetConfirmButton {
+    background: $looks-secondary;
+    color: $ui-primary;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-weight: bold;
+}
+
+.resetConfirmButton:hover {
+    background: $looks-secondary-dark;
 }

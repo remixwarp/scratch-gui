@@ -490,17 +490,50 @@ const EditorGroup = ({
         const options = {
             automaticLayout: true,
             fontFamily: CODE_FONT,
-            fontLigatures: false,
+            fontLigatures: true,
             fontSize: 13,
-            minimap: {enabled: false},
+            // 面包屑：顶部显示当前文件路径 / 符号层级，点击可快速跳转
+            breadcrumbs: {enabled: true, showFileKind: true, showSymbol: true},
+            // 吸顶滚动（sticky scroll）：滚动时固定显示当前作用域标题
+            stickyScroll: {enabled: true},
+            // 缩进参考线，长代码块层次更清晰
+            guides: {indentation: true, highlightActiveIndentation: true},
+            // 小地图 + 缩放/折叠/滚动条预览，看齐专业 IDE
+            minimap: {enabled: true, renderCharacters: true, maxColumn: 120},
+            // 代码折叠（区域 + 高阶符号）
+            folding: true,
+            foldingHighlight: true,
+            showFoldingControls: 'always',
+            // 滚轮缩放字号（Ctrl/⌘ + 滚轮）
+            mouseWheelZoom: true,
+            smoothScrolling: true,
+            cursorBlinking: 'smooth',
+            cursorSmoothCaretAnimation: 'on',
+            renderLineHighlight: 'all',
+            // 行号右侧的 CodeLens（引用/定义等提示）
             padding: {top: 8},
             scrollBeyondLastLine: false,
-            tabSize: 2
+            tabSize: 2,
+            // 鼠标悬停显示符号文档/快速修复
+            hover: {enabled: true, delay: 200},
+            // 黏贴板多光标、列选择
+            multiCursorModifier: 'ctrlCmd',
+            columnSelection: true,
+            // 大文件轻量渲染，避免卡顿
+            largeFileOptimizations: true,
+            // 滚动条美化
+            scrollbar: {
+                verticalScrollbarSize: 12,
+                horizontalScrollbarSize: 12,
+                useShadows: false
+            }
         };
         const instance = diffMode ?
             monaco.editor.createDiffEditor(element.current, {...options, renderSideBySide: false}) :
             monaco.editor.create(element.current, {...options, model: null});
         const code = diffMode ? instance.getModifiedEditor() : instance;
+        // 确保 breadcrumbs / folding 等子编辑器专属选项在 diff 模式下也生效
+        code.updateOptions(options);
         editor.current = instance;
         onRegisterEditor(groupId, code);
         const cursorListener = code.onDidChangeCursorPosition(event => {

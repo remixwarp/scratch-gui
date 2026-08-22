@@ -25,6 +25,7 @@ const MODAL_PREFERENCES = 'preferencesModal';
 const MODAL_SIMPLE_DIALOG = 'simpleDialog';
 const MODAL_ONBOARDING = 'onboardingModal';
 const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
+const MODAL_ROADMAP = 'roadmapModal';
 const MODAL_AI = 'aiModal';
 const MODAL_AI_CHAT = 'aiChatModal';
 const MODAL_AI_AGENT = 'aiAgentModal';
@@ -72,6 +73,7 @@ const initialState = {
     [MODAL_SIMPLE_DIALOG]: false,
     [MODAL_ONBOARDING]: false,
     [MODAL_SHORTCUT_MANAGER]: false,
+    [MODAL_ROADMAP]: false,
     [MODAL_AI]: false,
     [MODAL_AI_CHAT]: false,
     [MODAL_AI_AGENT]: false,
@@ -208,6 +210,12 @@ const openOnboardingModal = function () {
 };
 const openShortcutManagerModal = function () {
     return openModal(MODAL_SHORTCUT_MANAGER);
+};
+const openRoadmapModal = function () {
+    return openModal(MODAL_ROADMAP);
+};
+const closeRoadmapModal = function () {
+    return closeModal(MODAL_ROADMAP);
 };
 const openAIModal = function (config) {
     return {
@@ -477,6 +485,8 @@ export {
     openPreferencesModal,
     openOnboardingModal,
     openShortcutManagerModal,
+    openRoadmapModal,
+    closeRoadmapModal,
     openAIModal,
     closeAIModal,
     openAIChatModal,

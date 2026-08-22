@@ -42,7 +42,7 @@ class SuperRefactorModalContainer extends React.Component {
             filteredFiles: [],
             viewMode: 'code', // code or preview for SVG
             wordWrap: true, // 自动换行
-            useMonacoEditor: false, // 是否使用 Monaco 编辑器
+            useMonacoEditor: true, // 是否使用 Monaco 编辑器（默认新版）
             monacoIframeReady: false, // iframe 中的 Monaco 是否就绪
             modalWidth: Math.min(1100, window.innerWidth - 60),
             modalHeight: Math.min(700, window.innerHeight - 80)
@@ -59,10 +59,10 @@ class SuperRefactorModalContainer extends React.Component {
     }
 
     componentDidUpdate (prevProps) {
-        // 每次打开时重置为旧版编辑器，避免 Monaco 状态跨打开残留
+        // 每次打开时默认重置为新版 Monaco 编辑器，避免状态跨打开残留（点击“旧版编辑器”才会切回）
         if (prevProps.visible === false && this.props.visible === true) {
             this.setState({
-                useMonacoEditor: false,
+                useMonacoEditor: true,
                 monacoIframeReady: false,
                 wordWrap: true
             });

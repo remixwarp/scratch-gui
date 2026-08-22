@@ -6,7 +6,8 @@ export const SHORTCUT_CATEGORIES = {
     EDITOR_NAVIGATION: 'editorNavigation',
     LIBRARY_ACCESS: 'libraryAccess',
     SPRITE_MANAGEMENT: 'spriteManagement',
-    WINDOW_MANAGEMENT: 'windowManagement'
+    WINDOW_MANAGEMENT: 'windowManagement',
+    SUPER_REFACTOR: 'superRefactor'
 };
 
 export const getCategoryLabel = category => {
@@ -18,7 +19,8 @@ export const getCategoryLabel = category => {
         [SHORTCUT_CATEGORIES.EDITOR_NAVIGATION]: 'Editor Navigation',
         [SHORTCUT_CATEGORIES.LIBRARY_ACCESS]: 'Library Access',
         [SHORTCUT_CATEGORIES.SPRITE_MANAGEMENT]: 'Sprite Management',
-        [SHORTCUT_CATEGORIES.WINDOW_MANAGEMENT]: 'Windows'
+        [SHORTCUT_CATEGORIES.WINDOW_MANAGEMENT]: 'Windows',
+        [SHORTCUT_CATEGORIES.SUPER_REFACTOR]: 'Super Refactor'
     };
     return labels[category] || category;
 };
@@ -289,10 +291,30 @@ export const getDefaultShortcuts = () => [
         label: 'Close Window'
     },
     {
+        id: 'openCodeEditor',
+        key: 'Ctrl+Shift+E',
+        defaultKey: 'Ctrl+Shift+E',
+        category: SHORTCUT_CATEGORIES.SUPER_REFACTOR,
+        actionType: 'redux',
+        action: 'openSuperRefactorModal',
+        params: [],
+        label: 'Open Code Editor'
+    },
+    {
+        id: 'openGitPanel',
+        key: 'Ctrl+Shift+G',
+        defaultKey: 'Ctrl+Shift+G',
+        category: SHORTCUT_CATEGORIES.SUPER_REFACTOR,
+        actionType: 'redux',
+        action: 'openGitModal',
+        params: [],
+        label: 'Open Git Panel'
+    },
+    {
         id: 'aiChat',
         key: 'Ctrl+Shift+C',
         defaultKey: 'Ctrl+Shift+C',
-        category: SHORTCUT_CATEGORIES.WINDOW_MANAGEMENT,
+        category: SHORTCUT_CATEGORIES.SUPER_REFACTOR,
         actionType: 'redux',
         action: 'openAIChatModal',
         params: [],
@@ -302,7 +324,7 @@ export const getDefaultShortcuts = () => [
         id: 'aiAgent',
         key: 'Ctrl+Shift+A',
         defaultKey: 'Ctrl+Shift+A',
-        category: SHORTCUT_CATEGORIES.WINDOW_MANAGEMENT,
+        category: SHORTCUT_CATEGORIES.SUPER_REFACTOR,
         actionType: 'redux',
         action: 'openAIAgentModal',
         params: [],
@@ -312,7 +334,7 @@ export const getDefaultShortcuts = () => [
         id: 'commandPalette',
         key: 'Ctrl+K',
         defaultKey: 'Ctrl+K',
-        category: SHORTCUT_CATEGORIES.VIEW,
+        category: SHORTCUT_CATEGORIES.SUPER_REFACTOR,
         actionType: 'callback',
         action: 'toggleCommandPalette',
         params: [],
@@ -322,7 +344,7 @@ export const getDefaultShortcuts = () => [
         id: 'showProblems',
         key: 'Ctrl+Shift+M',
         defaultKey: 'Ctrl+Shift+M',
-        category: SHORTCUT_CATEGORIES.VIEW,
+        category: SHORTCUT_CATEGORIES.SUPER_REFACTOR,
         actionType: 'callback',
         action: 'toggleProblems',
         params: [],
@@ -332,11 +354,31 @@ export const getDefaultShortcuts = () => [
         id: 'showConsole',
         key: 'Ctrl+Shift+Y',
         defaultKey: 'Ctrl+Shift+Y',
-        category: SHORTCUT_CATEGORIES.VIEW,
+        category: SHORTCUT_CATEGORIES.SUPER_REFACTOR,
         actionType: 'callback',
         action: 'toggleConsole',
         params: [],
         label: 'Toggle Console Panel'
+    },
+    {
+        id: 'toggleExplorer',
+        key: 'Ctrl+Alt+E',
+        defaultKey: 'Ctrl+Alt+E',
+        category: SHORTCUT_CATEGORIES.SUPER_REFACTOR,
+        actionType: 'callback',
+        action: 'toggleExplorer',
+        params: [],
+        label: 'Toggle Explorer'
+    },
+    {
+        id: 'toggleZenMode',
+        key: 'Ctrl+Alt+Z',
+        defaultKey: 'Ctrl+Alt+Z',
+        category: SHORTCUT_CATEGORIES.SUPER_REFACTOR,
+        actionType: 'callback',
+        action: 'toggleZenMode',
+        params: [],
+        label: 'Toggle Zen Mode'
     }
 ];
 

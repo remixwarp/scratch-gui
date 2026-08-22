@@ -1,0 +1,55 @@
+.container {
+    padding: 16px 20px;
+    overflow-y: auto;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.subtitle {
+    margin: 0 0 12px;
+    color: #888;
+    font-size: 13px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.table th,
+.table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.18);
+    vertical-align: top;
+}
+
+.thIndex, .tdIndex {
+    width: 32px;
+    text-align: center;
+    color: #999;
+}
+
+.thDesc, .tdDesc {
+    width: 45%;
+    color: #aaa;
+}
+
+.tdTitle {
+    font-weight: 600;
+}
+
+.statusDone {
+    color: #3fb950;
+    font-weight: 600;
+}
+
+.statusPartial {
+    color: #d29922;
+    font-weight: 600;
+}
+
+.statusPlanned {
+    color: #888;
+}

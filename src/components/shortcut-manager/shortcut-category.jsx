@@ -7,7 +7,9 @@ import styles from './shortcut-manager.css';
 
 const ShortcutCategory = ({
     category,
-    shortcuts
+    shortcuts,
+    onEditShortcut,
+    recordingId
 }) => (
     <div className={styles.category}>
         <h3 className={styles.categoryTitle}>{category}</h3>
@@ -16,6 +18,8 @@ const ShortcutCategory = ({
                 <ShortcutItem
                     key={shortcut.id}
                     shortcut={shortcut}
+                    onEdit={onEditShortcut}
+                    isRecording={recordingId === shortcut.id}
                 />
             ))}
         </div>
@@ -29,7 +33,9 @@ ShortcutCategory.propTypes = {
         key: PropTypes.string,
         defaultKey: PropTypes.string,
         label: PropTypes.string
-    })).isRequired
+    })).isRequired,
+    onEditShortcut: PropTypes.func,
+    recordingId: PropTypes.string
 };
 
 export default ShortcutCategory;

@@ -7,6 +7,7 @@ let vm = null;
 let callbacks = {};
 let shortcuts = [];
 let isInitialized = false;
+let shortcutsEnabled = true;
 
 const keyCodeToKey = {
     8: 'backspace',
@@ -263,6 +264,20 @@ const executeReduxAction = shortcut => {
             } else {
                 console.warn('openAIAgentModal not available in dispatch');
             }
+        },
+        openSuperRefactorModal: () => {
+            if (dispatch.openSuperRefactorModal) {
+                dispatch.openSuperRefactorModal();
+            } else {
+                console.warn('openSuperRefactorModal not available in dispatch');
+            }
+        },
+        openGitModal: () => {
+            if (dispatch.openGitModal) {
+                dispatch.openGitModal();
+            } else {
+                console.warn('openGitModal not available in dispatch');
+            }
         }
     };
     
@@ -372,6 +387,12 @@ const executeCallbackAction = shortcut => {
                 callbacks.toggleConsole();
             }
             break;
+        case 'toggleExplorer':
+            window.dispatchEvent(new Event('rw-explorer-toggle'));
+            break;
+        case 'toggleZenMode':
+            window.dispatchEvent(new Event('rw-zen-toggle'));
+            break;
         case 'toggleStageSize':
             if (callbacks.toggleStageSize) {
                 callbacks.toggleStageSize();
@@ -412,6 +433,7 @@ const executeShortcut = shortcut => {
 };
 
 const handleKeyDown = event => {
+    if (!shortcutsEnabled) return;
     if (shouldIgnoreEvent(event)) return;
 
     const keyCombo = normalizeEventKey(event);
@@ -467,11 +489,16 @@ const initialize = (dispatchFn, vmInstance, callbacksFn) => {
     callbacks = {...callbacks, ...callbacksFn};
     shortcuts = getDefaultShortcuts();
     loadCustomShortcuts();
+    shortcutsEnabled = true; // 确保初始化时全局快捷键可用
 
     if (!isInitialized) {
         document.addEventListener('keydown', handleKeyDown);
         isInitialized = true;
     }
+};
+
+const setShortcutsEnabled = enabled => {
+    shortcutsEnabled = !!enabled;
 };
 
 export {
@@ -482,5 +509,6 @@ export {
     dispose,
     normalizeEventKey,
     findMatchingShortcut,
-    executeShortcut
+    executeShortcut,
+    setShortcutsEnabled
 };

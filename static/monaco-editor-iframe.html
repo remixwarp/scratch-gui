@@ -146,15 +146,41 @@
                 language: currentLanguage,
                 theme: currentTheme,
                 automaticLayout: true,
+                fontFamily: 'JetBrains Mono, Fira Code, Menlo, Monaco, Consolas, monospace',
+                fontLigatures: true,
                 fontSize: 13,
-                minimap: { enabled: false },
+                // 面包屑：顶部显示文件路径 / 符号层级，点击可快速跳转
+                breadcrumbs: {enabled: true, showFileKind: true, showSymbol: true},
+                // 吸顶滚动：滚动时固定显示当前作用域标题
+                stickyScroll: {enabled: true},
+                // 缩进参考线，长代码块层次更清晰
+                guides: {indentation: true, highlightActiveIndentation: true},
+                // 小地图（之前为 disabled，现已开启）
+                minimap: {enabled: true, renderCharacters: true, maxColumn: 120},
+                // 代码折叠（区域 + 高阶符号）
+                folding: true,
+                foldingHighlight: true,
+                showFoldingControls: 'always',
+                // 滚轮缩放字号（Ctrl/⌘ + 滚轮）
+                mouseWheelZoom: true,
                 wordWrap: currentWordWrap,
                 lineNumbers: 'on',
                 scrollBeyondLastLine: false,
                 renderLineHighlight: 'all',
                 cursorBlinking: 'smooth',
+                cursorSmoothCaretAnimation: 'on',
                 smoothScrolling: true,
-                tabSize: 4
+                // 黏贴板多光标、列选择
+                multiCursorModifier: 'ctrlCmd',
+                columnSelection: true,
+                tabSize: 4,
+                padding: {top: 8},
+                largeFileOptimizations: true,
+                scrollbar: {
+                    verticalScrollbarSize: 12,
+                    horizontalScrollbarSize: 12,
+                    useShadows: false
+                }
             });
 
             editor.onDidChangeModelContent(function() {

@@ -44,6 +44,7 @@ const TWGitModal = React.lazy(() => import('../../containers/mw-git-modal.jsx'))
 const MWExtensionManagerModal = React.lazy(() => import('../../containers/mw-extension-manager-modal.jsx'));
 const MWProjectThemeModal = React.lazy(() => import('../../containers/mw-project-theme-modal.jsx'));
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
+import RoadmapModal from '../mw-roadmap/roadmap-modal.jsx';
 import AIModal from '../../containers/ai-modal.jsx';
 import AIChatModal from '../../containers/ai-chat-modal.jsx';
 import AIAgentModal from '../../containers/ai-agent-modal.jsx';
@@ -500,6 +501,7 @@ const GUIComponent = props => {
         projectMetadataModalVisible,
         debuggerModalVisible,
         shortcutManagerModalVisible,
+        roadmapModalVisible,
         editingTarget,
         vm,
         // SBFileUploaderHOC props
@@ -1435,6 +1437,7 @@ const GUIComponent = props => {
             <MWExtensionManagerModal />
             <MWProjectThemeModal />
             <ShortcutManager visible={shortcutManagerModalVisible} />
+            <RoadmapModal visible={roadmapModalVisible} />
             {usernameModalVisible && (
                 <React.Suspense fallback={null}>
                     <TWUsernameModal visible={usernameModalVisible} />
@@ -1525,6 +1528,7 @@ const GUIComponent = props => {
         projectMetadataModalVisible,
         debuggerModalVisible,
         shortcutManagerModalVisible,
+        roadmapModalVisible,
         onboardingVisible,
         props.gandiHelpModal,
         customThemeVisible,
@@ -2176,6 +2180,7 @@ GUIComponent.propTypes = {
     usernameModalVisible: PropTypes.bool,
     settingsModalVisible: PropTypes.bool,
     shortcutManagerModalVisible: PropTypes.bool,
+    roadmapModalVisible: PropTypes.bool,
     customExtensionModalVisible: PropTypes.bool,
     extensionLoadChoiceModalVisible: PropTypes.bool,
     extensionLoadChoiceData: PropTypes.shape({
@@ -2234,6 +2239,7 @@ const mapStateToProps = state => ({
     locale: state.locales.locale,
     onboardingVisible: state.scratchGui.onboarding.visible,
     shortcutManagerModalVisible: state.scratchGui.modals.shortcutManagerModal,
+    roadmapModalVisible: state.scratchGui.modals.roadmapModal,
     extensionLoadChoiceModalVisible: state.scratchGui.modals.extensionLoadChoiceModal,
     extensionLoadChoiceData: state.scratchGui.modals.extensionLoadChoiceData,
     gandiHelpModal: state.scratchGui.modals.gandiHelpModal,

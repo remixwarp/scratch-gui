@@ -11,6 +11,8 @@ import React from 'react';
 
 import VM from 'scratch-vm';
 
+import {applyCustomShortcuts} from '../../lib/shortcuts/registry.js';
+
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import CommunityButton from './community-button.jsx';
@@ -2754,6 +2756,12 @@ class MenuBar extends React.Component {
                         // 显示成功消息并提示刷新
                         console.log('设置导入完成');
                         this.showAlert('成功', '设置已成功导入。请刷新页面以应用更改。');
+                        // 导入后立即刷新自定义快捷键（含导出中包含的 tw:shortcuts），无需刷新即可生效
+                        try {
+                            applyCustomShortcuts();
+                        } catch (e) {
+                            console.warn('应用导入的快捷键失败:', e);
+                        }
                     } catch (error) {
                         console.error('Error importing settings:', error);
                         let errorMessage = '导入设置失败';
@@ -3655,6 +3663,22 @@ class MenuBar extends React.Component {
                                 <MenuSection>
                                     <MenuItem
                                         onClick={() => {
+                                            this.props.onClickShortcutManagerModal();
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                        shortcut={formatShortcutDisplay('Ctrl+Shift+K')}
+                                    >
+                                        <Keyboard />
+                                        <FormattedMessage
+                                            defaultMessage="Keyboard Shortcuts"
+                                            description="Menu bar item to open keyboard shortcuts manager"
+                                            id="tw.menuBar.keyboardShortcuts"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
+                                <MenuSection>
+                                    <MenuItem
+                                        onClick={() => {
                                             window.dispatchEvent(new Event('rw-command-palette-toggle'));
                                             this.props.onRequestCloseTools();
                                         }}
@@ -3706,6 +3730,8 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     )}
+                                </MenuSection>
+                                <MenuSection>
                                     <MenuItem
                                         onClick={() => {
                                             this.props.onClickAIAgent();
@@ -3925,20 +3951,6 @@ class MenuBar extends React.Component {
                                             </MenuItem>
                                         </MenuSection>
                                         <MenuSection>
-                                            <MenuItem
-                                                onClick={() => {
-                                                    this.props.onClickShortcutManagerModal();
-                                                    this.handleCloseVariousTools();
-                                                    this.props.onRequestCloseTools();
-                                                }}
-                                            >
-                                                <Keyboard />
-                                                <FormattedMessage
-                                                    defaultMessage="Keyboard Shortcuts"
-                                                    description="Menu bar item for keyboard shortcuts"
-                                                    id="tw.menuBar.keyboardShortcuts"
-                                                />
-                                            </MenuItem>
                                             <MenuItem
                                                 onClick={() => {
                                                     if (window.RWMiniMap && typeof window.RWMiniMap.toggle === 'function') {

@@ -37,6 +37,7 @@ import {
     openExtensionManagerModal,
     openSettingsModal,
     openShortcutManagerModal,
+    openRoadmapModal,
     openHelp,
     openReadme
 } from '../reducers/modals.js';
@@ -305,6 +306,16 @@ export const getCommands = () => [
         category: 'settings',
         icon: Keyboard,
         run: ctx => ctx.dispatch(openShortcutManagerModal())
+    },
+    {
+        id: 'showRoadmap',
+        label: 'View Editor Roadmap',
+        labelZh: '查看编辑器路线图',
+        descZh: '查看硬核编辑器增强路线图的落地进度',
+        keywords: 'roadmap 路线图 计划 进度 硬核 hardcore editor',
+        category: 'help',
+        icon: Keyboard,
+        run: ctx => ctx.dispatch(openRoadmapModal())
     },
     {
         id: 'openHelp',
