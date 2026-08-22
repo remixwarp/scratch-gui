@@ -4,8 +4,9 @@ import {X, Trash2, ChevronUp} from 'lucide-react';
 import classNames from 'classnames';
 import {defineMessages, injectIntl} from 'react-intl';
 import styles from './mw-panel-bar.css';
-import {PANEL_DEFS} from '../../lib/mw-panels-store.js';
+import {PANEL_DEFS, PANEL_TERMINAL} from '../../lib/mw-panels-store.js';
 import ProblemItem from './problem-item.jsx';
+import TerminalPanel from './terminal-panel.jsx';
 
 const messages = defineMessages({
     panelProblems: {
@@ -17,6 +18,11 @@ const messages = defineMessages({
         id: 'mw.panel.console',
         defaultMessage: 'Console',
         description: 'Tab label for the console panel'
+    },
+    panelTerminal: {
+        id: 'mw.panel.terminal',
+        defaultMessage: 'Terminal',
+        description: 'Tab label for the terminal panel'
     },
     clearConsole: {
         id: 'mw.panel.clearConsole',
@@ -141,7 +147,9 @@ class MWPanelBar extends React.Component {
                         const isActive = id === active;
                         const title = id === 'problems' ?
                             intl.formatMessage(messages.panelProblems) :
-                            intl.formatMessage(messages.panelConsole);
+                            (id === 'terminal' ?
+                                intl.formatMessage(messages.panelTerminal) :
+                                intl.formatMessage(messages.panelConsole));
                         return (
                             <button
                                 key={id}
@@ -202,6 +210,8 @@ class MWPanelBar extends React.Component {
                                 ))}
                             </div>
                         )
+                    ) : active === PANEL_TERMINAL ? (
+                        <TerminalPanel />
                     ) : (
                         <div
                             ref={this.listRef}

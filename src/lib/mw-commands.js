@@ -21,7 +21,9 @@ import {
     FileText,
     CircleAlert,
     Terminal,
-    PanelTopClose
+    PanelTopClose,
+    Files,
+    Minimize
 } from 'lucide-react';
 import {AESettings} from './settings.js';
 import {togglePanelViaEvent} from './mw-panels-store.js';
@@ -102,6 +104,26 @@ export const getCommands = () => [
             AESettings.set('EnableStatusBar', !AESettings.get('EnableStatusBar'));
             window.location.reload();
         }
+    },
+    {
+        id: 'toggleExplorer',
+        label: 'Toggle Explorer',
+        labelZh: '开关资源管理器',
+        descZh: '打开或关闭左侧的资源管理器（Explorer）侧边栏，浏览项目中的精灵、造型、声音、变量与自制积木',
+        keywords: 'explorer 资源管理器 文件 files tree 树 侧边栏 sidebar 精灵 sprite 造型',
+        category: 'view',
+        icon: Files,
+        run: () => window.dispatchEvent(new Event('rw-explorer-toggle'))
+    },
+    {
+        id: 'toggleZen',
+        label: 'Toggle Zen Mode',
+        labelZh: '开关禅模式',
+        descZh: '进入或退出专注（Zen）模式：隐藏菜单栏、活动栏、面板栏、状态栏等一切干扰，只留舞台与工作区',
+        keywords: 'zen 禅 专注 全屏 专注模式 focus 隐藏 干扰 distraction free',
+        category: 'view',
+        icon: Minimize,
+        run: () => window.dispatchEvent(new Event('rw-zen-toggle'))
     },
     {
         id: 'showProblems',

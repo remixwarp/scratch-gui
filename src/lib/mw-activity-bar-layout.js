@@ -2,6 +2,7 @@
 // 设置按钮与登录/头像按钮固定在底部，不允许开关或调整顺序
 
 const BUTTONS = [
+    'explorer',
     'addonSettings',
     'addExtension',
     'collaboration',

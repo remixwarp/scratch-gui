@@ -1,0 +1,180 @@
+@import "../../css/colors.css";
+@import "../../css/z-index.css";
+@import "../../css/units.css";
+
+.tree {
+    width: 240px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: rgba(30, 30, 30, 0.95);
+    color: #cccccc;
+    font-size: 0.8125rem;
+    border-right: 1px solid #3c3c3c;
+    overflow: hidden;
+}
+
+.treeHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #bbbbbb;
+    border-bottom: 1px solid #3c3c3c;
+    user-select: none;
+    flex: 0 0 auto;
+}
+
+.treeHeaderIcon {
+    color: #bbbbbb;
+}
+
+.treeBody {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px 0;
+}
+
+.treeBody::-webkit-scrollbar {
+    width: 10px;
+}
+.treeBody::-webkit-scrollbar-thumb {
+    background: #454545;
+    border-radius: 5px;
+}
+
+.treeRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    border: none;
+    background: none;
+    color: inherit;
+    text-align: left;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-right: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    font-family: inherit;
+    font-size: inherit;
+    user-select: none;
+}
+
+.treeRow:hover {
+    background: #2a2d2e;
+}
+
+.treeRowSelected {
+    background: #094771;
+    color: #ffffff;
+}
+
+.treeLeaf {
+    color: #a0a0a0;
+}
+
+.treeLeaf.treeRowSelected {
+    color: #ffffff;
+}
+
+.leafIcon {
+    color: #7fa0a8;
+    flex: 0 0 auto;
+}
+
+.treeRowSelected .leafIcon {
+    color: #ffffff;
+}
+
+.groupIcon {
+    color: #d7ba7d;
+    flex: 0 0 auto;
+}
+
+.stageIcon {
+    color: #f4bf75;
+}
+
+.targetIcon {
+    color: #6eb8d6;
+}
+
+.leafName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1 1 auto;
+}
+
+.badge {
+    font-size: 0.625rem;
+    color: #8a8a8a;
+    background: #3c3c3c;
+    border-radius: 4px;
+    padding: 0 4px;
+    flex: 0 0 auto;
+}
+
+.count {
+    margin-left: auto;
+    font-size: 0.6875rem;
+    color: #858585;
+}
+
+.spacerIcon {
+    width: 14px;
+    flex: 0 0 auto;
+}
+
+.groupHeader {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    border: none;
+    background: none;
+    color: #cccccc;
+    text-align: left;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-right: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    font-family: inherit;
+    font-size: inherit;
+    user-select: none;
+}
+
+.groupHeader:hover {
+    background: #2a2d2e;
+}
+
+.groupLabel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+}
+
+.groupBody {
+    display: flex;
+    flex-direction: column;
+}
+
+.targetBody {
+    display: flex;
+    flex-direction: column;
+}
+
+.empty {
+    padding: 16px;
+    color: #858585;
+    text-align: center;
+}

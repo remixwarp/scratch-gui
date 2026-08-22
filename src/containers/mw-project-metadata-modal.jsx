@@ -11,10 +11,8 @@ import VM from 'scratch-vm';
 import {
     BarChart3,
     FileText,
-    Gauge,
     HardDrive,
-    Info,
-    RefreshCw
+    Info
 } from 'lucide-react';
 
 import Modal from './windowed-modal.jsx';
@@ -336,7 +334,6 @@ const ProjectMetadataModal = ({initialView, intl, onRequestClose, projectTitle, 
         {
             label: intl.formatMessage(messages.groupAnalysis),
             items: [
-                {id: 'optimiser', label: intl.formatMessage({id: 'mw.projectMeta.storage', defaultMessage: 'Bilup storage'}), icon: Gauge},
                 {id: 'breakdown', label: intl.formatMessage({id: 'mw.projectMeta.breakdown', defaultMessage: 'Size breakdown'}), icon: HardDrive}
             ]
         }
@@ -346,118 +343,6 @@ const ProjectMetadataModal = ({initialView, intl, onRequestClose, projectTitle, 
 
     let page;
     switch (view) {
-    case 'optimiser':
-        page = (
-            <React.Fragment>
-                <div className={styles.pageTitle}>
-                    <div>
-                        <Header>
-                            <FormattedMessage
-                                defaultMessage="Bilup storage"
-                                id="mw.projectMeta.storage"
-                            />
-                        </Header>
-                        <p>{intl.formatMessage(messages.storageDescription)}</p>
-                    </div>
-                    <button
-                        className={styles.refresh}
-                        onClick={handleRefresh}
-                    >
-                        <RefreshCw size={16} />
-                        <FormattedMessage
-                            defaultMessage="Refresh"
-                            id="mw.projectMeta.refresh"
-                        />
-                    </button>
-                </div>
-                <div className={hasLocalProblem || hasServerProblem ? styles.statusBad : styles.statusGood}>
-                    <strong>{storageStatus}</strong>
-                    <span>
-                        {intl.formatMessage(messages.vmSizeNote)}
-                    </span>
-                </div>
-                <div className={styles.summary}>
-                    <div>
-                        <span>{intl.formatMessage(messages.editorEstimate)}</span>
-                        <strong>{formatSize(report.localEstimate)}</strong>
-                    </div>
-                    <div>
-                        <span>{intl.formatMessage(messages.storedOnBilup)}</span>
-                        <strong>
-                            {serverProject ? formatSize(serverProject.sizeBytes || 0) :
-                                serverLoading ? intl.formatMessage(messages.loading) : intl.formatMessage(messages.notUploaded)}
-                        </strong>
-                    </div>
-                </div>
-                {serverProject && (
-                    <React.Fragment>
-                        <Header>
-                            <FormattedMessage
-                                defaultMessage="Server usage"
-                                id="mw.projectMeta.serverUsage"
-                            />
-                        </Header>
-                        <Row
-                            label={intl.formatMessage(messages.totalStored)}
-                            value={formatSize(serverProject.sizeBytes || 0)}
-                        />
-                        <Row
-                            label={intl.formatMessage(messages.projectData)}
-                            value={typeof serverProject.storedJsonBytes === 'number' ?
-                                formatSize(serverProject.storedJsonBytes) :
-                                null}
-                        />
-                        <Row
-                            label={intl.formatMessage(messages.assetsLabel)}
-                            value={typeof serverProject.assetBytes === 'number' ?
-                                formatSize(serverProject.assetBytes) :
-                                null}
-                        />
-                    </React.Fragment>
-                )}
-                <Header>
-                    <FormattedMessage
-                        defaultMessage="Upload limits"
-                        id="mw.projectMeta.uploadLimits"
-                    />
-                </Header>
-                {typeof serverStoredJson === 'number' && (
-                    <Meter
-                        current={serverStoredJson}
-                        label={intl.formatMessage(messages.compressedProjectData)}
-                        limit={LIMITS.storedJson}
-                        note={intl.formatMessage(messages.exactSizeFromUpload)}
-                    />
-                )}
-                <Meter
-                    current={report.localAssetSize}
-                    label={intl.formatMessage(messages.assetsInEditor)}
-                    limit={LIMITS.assets}
-                    note={intl.formatMessage(messages.assetsEditorNote)}
-                />
-                <Meter
-                    current={report.largestAsset}
-                    label={intl.formatMessage(messages.largestSingleAsset)}
-                    limit={LIMITS.asset}
-                />
-                <Meter
-                    current={serverProject && typeof serverProject.jsonBytes === 'number' ?
-                        serverProject.jsonBytes :
-                        report.variableDataSize}
-                    label={serverProject && typeof serverProject.jsonBytes === 'number' ?
-                        intl.formatMessage(messages.expandedProjectData) :
-                        intl.formatMessage(messages.variableDataInEditor)}
-                    limit={LIMITS.expandedJson}
-                    note={serverProject && typeof serverProject.jsonBytes === 'number' ?
-                        intl.formatMessage(messages.exactSizeFromUpload) :
-                        intl.formatMessage(messages.fastEstimateFromVM)}
-                />
-                <p className={styles.detail}>
-                    {intl.formatMessage(messages.bilupLimits)}
-                </p>
-            </React.Fragment>
-        );
-        break;
     case 'contents':
         page = (
             <React.Fragment>

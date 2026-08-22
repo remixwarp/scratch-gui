@@ -1,10 +1,11 @@
 import React from 'react';
-import {CircleAlert, Terminal} from 'lucide-react';
+import {CircleAlert, Terminal, TerminalSquare} from 'lucide-react';
 
 export const PANEL_PROBLEMS = 'problems';
 export const PANEL_CONSOLE = 'console';
+export const PANEL_TERMINAL = 'terminal';
 
-export const PANEL_IDS = [PANEL_PROBLEMS, PANEL_CONSOLE];
+export const PANEL_IDS = [PANEL_PROBLEMS, PANEL_CONSOLE, PANEL_TERMINAL];
 
 export const PANEL_DEFS = {
     [PANEL_PROBLEMS]: {
@@ -16,6 +17,11 @@ export const PANEL_DEFS = {
         title: 'Console',
         titleZh: '控制台',
         icon: React.createElement(Terminal, {size: 20})
+    },
+    [PANEL_TERMINAL]: {
+        title: 'Terminal',
+        titleZh: '终端',
+        icon: React.createElement(TerminalSquare, {size: 20})
     }
 };
 

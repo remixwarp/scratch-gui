@@ -34,11 +34,14 @@ const markdownComponents = {
 };
 
 const CustomModalComponent = (props) => {
+    const [nowTab, setTab] = useState(0);
     try {
         let comments = {};
-        if (data != null) { comments = Object.values(data); }
-        else { comments = Object.values(props.vm.editingTarget.comments) }
-        console.log(comments)
+        if (data != null) {
+            comments = Object.values(data);
+        } else if (props.vm && props.vm.editingTarget && props.vm.editingTarget.comments) {
+            comments = Object.values(props.vm.editingTarget.comments);
+        }
         const readMe = [];
         comments.forEach(comment => {
             if (comment.text.slice(0, 7) == "#README") {
@@ -71,17 +74,39 @@ const CustomModalComponent = (props) => {
             }
         })
 
-        const [nowTab, setTab] = useState(0)
-        const [Title, setTitle] = useState(`README${readMe[0].title != undefined ? readMe[0].title.length < 39 ? ":" + readMe[0].title : ":Title is Too Long" : ""}`)
         const handleClose = () => {
             data = null;
             props.onClose();
         };
+
+        // 没有 README 内容时展示空状态，而不是崩溃
+        if (readMe.length === 0) {
+            return (
+                <Modal
+                    className={styles.modalContent}
+                    onRequestClose={handleClose}
+                    contentLabel="README"
+                    id="readme"
+                >
+                    <Box>
+                        <div className={styles.body}>
+                            <p style={{padding: '24px', textAlign: 'center', color: '#888', lineHeight: '1.6'}}>
+                                暂无 README。请在舞台评论中以 “#README” 开头撰写项目说明文档。
+                            </p>
+                        </div>
+                    </Box>
+                </Modal>
+            );
+        }
+
+        const currentTitleSuffix = readMe[nowTab] && readMe[nowTab].title != undefined
+            ? (readMe[nowTab].title.length < 39 ? ":" + readMe[nowTab].title : ":Title is Too Long")
+            : "";
         return (
             <Modal
                 className={styles.modalContent}
                 onRequestClose={handleClose}
-                contentLabel={Title}
+                contentLabel={`README${currentTitleSuffix}`}
                 id="readme"
             >
                 <Box>
@@ -101,9 +126,7 @@ const CustomModalComponent = (props) => {
                                     height: '100%'
 
                                 }}
-                                    onClick={() => {
-                                        setTitle(`README${readMe[index].title != undefined ? readMe[index].title.length < 39 ? ":" + readMe[index].title : ":Title is Too Long" : ""}`); setTab(index)
-                                    }}
+                                    onClick={() => { setTab(index) }}
 
                                 >
                                     {readMe[index].title == undefined ? index + 1 : readMe[index].title}

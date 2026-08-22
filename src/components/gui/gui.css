@@ -293,6 +293,29 @@
     pointer-events: auto;
 }
 
+/* VS Code 布局：资源管理器（Explorer）侧边栏，位于活动栏右侧，可交互浮层 */
+.explorer-host {
+    position: absolute;
+    top: 0;
+    left: 41px;
+    bottom: 0;
+    z-index: 200;
+    pointer-events: auto;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+}
+
+/* VS Code 布局：Zen 模式（专注模式）隐藏一切干扰元素，只留舞台与工作区 */
+.zen-mode .menu-bar-position,
+.zen-mode .activity-bar-separator,
+.zen-mode .activity-bar-button,
+.zen-mode .activity-bar-bottom,
+.zen-mode .panel-bar,
+.zen-mode .status-bar,
+.zen-mode .vscode-backpack-host,
+.zen-mode .explorer-host {
+    display: none !important;
+}
+
 /* VS Code Layout: Find bar as floating overlay */
 .editor-wrapper.vscodeLayout .mw-native-find-bar-container {
     position: absolute;

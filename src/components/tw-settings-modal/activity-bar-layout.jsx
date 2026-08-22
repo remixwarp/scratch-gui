@@ -14,6 +14,7 @@ import {
 } from '../../lib/mw-activity-bar-layout';
 
 const LABELS = {
+    explorer: '资源管理器',
     addonSettings: '插件设置',
     addExtension: '添加扩展',
     collaboration: 'Live Collaboration',

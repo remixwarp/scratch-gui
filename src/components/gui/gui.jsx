@@ -97,7 +97,6 @@ import {Theme} from '../../lib/themes';
 import {setStageSize} from '../../reducers/stage-size';
 import {showOnboarding} from '../../reducers/onboarding';
 import {COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
-import CommandPalette from '../command-palette/command-palette.jsx';
 import {
     openGitModal,
     openAIAgentModal,
@@ -116,12 +115,14 @@ import {
     MODAL_PROJECT_METADATA
 } from '../../reducers/modals.js';
 import {openWorkspaceBookmarksMenu} from '../../reducers/menus.js';
-import MWCommandPalette from '../../containers/mw-command-palette.jsx';
 import {openCollaborationModal} from '../../reducers/collaboration.js';
+import MWCommandPalette from '../../containers/mw-command-palette.jsx';
 import SettingsStore from '../../addons/settings-store-singleton.js';
 import {getVisibleOrderedIds as getActivityBarVisibleIds} from '../../lib/mw-activity-bar-layout.js';
 import {loadPanelState, savePanelState, setPanelStateEvent} from '../../lib/mw-panels-store.js';
 import MWPanelBarContainer from '../../containers/mw-panel-bar.jsx';
+import {buildWorkspaceTree} from '../../lib/mw-workspace-tree.js';
+import WorkspaceTree from '../mw-workspace-tree/workspace-tree.jsx';
 import {
     GitBranch,
     ListTodo,
@@ -133,7 +134,8 @@ import {
     Settings as SettingsIcon,
     Puzzle,
     CircleAlert,
-    Terminal
+    Terminal,
+    Files
 } from 'lucide-react';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
@@ -326,12 +328,19 @@ const GUIComponent = props => {
     });
     
     const [vscodeLayout, setVSCodeLayout] = useState(initialVSCodeLayout);
-    // 命令面板开关状态
-    const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+    // 资源管理器（Explorer）侧边栏显隐
+    const [explorerVisible, setExplorerVisible] = useState(false);
     useEffect(() => {
-        const handleToggle = () => setCommandPaletteOpen(prev => !prev);
-        window.addEventListener('rw-command-palette-toggle', handleToggle);
-        return () => window.removeEventListener('rw-command-palette-toggle', handleToggle);
+        const handleExplorerToggle = () => setExplorerVisible(prev => !prev);
+        window.addEventListener('rw-explorer-toggle', handleExplorerToggle);
+        return () => window.removeEventListener('rw-explorer-toggle', handleExplorerToggle);
+    }, []);
+    // Zen 模式（专注模式）显隐
+    const [zenMode, setZenMode] = useState(false);
+    useEffect(() => {
+        const handleZenToggle = () => setZenMode(prev => !prev);
+        window.addEventListener('rw-zen-toggle', handleZenToggle);
+        return () => window.removeEventListener('rw-zen-toggle', handleZenToggle);
     }, []);
     // 底部面板栏状态（问题/控制台）—— 显隐、当前面板、高度持久化
     const [panelState, setPanelState] = useState(loadPanelState);
@@ -1418,13 +1427,6 @@ const GUIComponent = props => {
         <React.Fragment>
             <RoturSession />
             {!isEmbedded && <RoturExtensionHost />}
-            {commandPaletteOpen ? (
-                <CommandPalette
-                    vm={vm}
-                    dispatch={props.dispatch}
-                    onClose={() => setCommandPaletteOpen(false)}
-                />
-            ) : null}
             <AchievementTracker vm={vm} />
             <Achievements />
             <NotificationsProvider />
@@ -1528,8 +1530,7 @@ const GUIComponent = props => {
         customThemeVisible,
         readmeModalVisible,
         isEmbedded,
-        vm,
-        commandPaletteOpen
+        vm
     ]);
 
     const minDimensions = useMemo(() => ({
@@ -1566,7 +1567,41 @@ const GUIComponent = props => {
     const handlePanelResize = height => {
         setPanelState(prev => ({...prev, height: Math.max(100, Math.min(600, height))}));
     };
+    // 资源管理器：切换侧边栏显隐
+    const toggleExplorer = () => setExplorerVisible(prev => !prev);
+    // 资源管理器：点击精灵/舞台 -> 设为当前编辑目标
+    const handleExplorerSelectTarget = id => {
+        try {
+            if (vm && typeof vm.setEditingTarget === 'function') {
+                vm.setEditingTarget(id);
+            }
+        } catch (e) {
+            console.error('[WorkspaceTree] select target failed:', e);
+        }
+    };
+    // 资源管理器：点击造型 -> 切到目标并激活造型 Tab
+    const handleExplorerSelectCostume = (targetId, costumeId) => {
+        handleExplorerSelectTarget(targetId);
+        if (costumeId && typeof onActivateCostumesTab === 'function') {
+            onActivateCostumesTab();
+        }
+    };
+    // 资源管理器：点击声音 -> 切到目标并激活声音 Tab
+    const handleExplorerSelectSound = (targetId, soundId) => {
+        handleExplorerSelectTarget(targetId);
+        if (soundId && typeof onActivateSoundsTab === 'function') {
+            onActivateSoundsTab();
+        }
+    };
+    // 资源树数据（随目标变化重建）
+    const workspaceTree = useMemo(() => buildWorkspaceTree(vm), [vm, editingTarget]);
     const activityBarDefs = {
+        explorer: {
+            title: intl.formatMessage({defaultMessage: '资源管理器', id: 'mw.tree.explorer'}),
+            onClick: toggleExplorer,
+            icon: <Files size={20} />,
+            active: explorerVisible
+        },
         addonSettings: {
             title: intl.formatMessage({defaultMessage: '插件设置', id: 'tw.addonSettings.title'}),
             onClick: onClickAddonSettings,
@@ -1663,7 +1698,9 @@ const GUIComponent = props => {
             </React.Fragment>
         ) : (
             <Box
-                className={styles.pageWrapper}
+                className={classNames(styles.pageWrapper, {
+                    [styles.zenMode]: zenMode
+                })}
                 dir={isRtl ? 'rtl' : 'ltr'}
                 style={minDimensions}
                 onDragOver={handleDragOver}
@@ -1953,6 +1990,17 @@ const GUIComponent = props => {
                                     {soundsTabVisible ? <SoundTab vm={vm} /> : null}
                                 </TabPanel>
                             </Tabs>
+                            {vscodeLayout && explorerVisible && (
+                                <Box className={styles.explorerHost}>
+                                    <WorkspaceTree
+                                        tree={workspaceTree}
+                                        editingTarget={editingTarget}
+                                        onSelectTarget={handleExplorerSelectTarget}
+                                        onSelectCostume={handleExplorerSelectCostume}
+                                        onSelectSound={handleExplorerSelectSound}
+                                    />
+                                </Box>
+                            )}
                             {backpackVisible && activeTabIndex !== COSTUMES_TAB_INDEX && activeTabIndex !== SOUNDS_TAB_INDEX ? (
                                 vscodeLayout ? (
                                     <Box className={styles.vscodeBackpackHost}>
