@@ -185,6 +185,9 @@ class WindowedModal extends React.Component {
         const existingWindow = WindowManager.getWindow(windowId);
         if (existingWindow) {
             try {
+                // 清空旧窗口的 onClose，避免关闭残留窗口时触发 onRequestClose，
+                // 从而误把刚刚打开的新窗口状态（visible）关掉导致“弹出后立即关闭”。
+                existingWindow.onClose = () => {};
                 existingWindow.close();
             } catch (e) {
                 // Ignore errors from closing an already-closing window

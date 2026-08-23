@@ -18,6 +18,20 @@ const AlertLevels = {
 
 const alerts = [
     {
+        alertId: 'twCustomBlockPercent',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['twCustomBlockPercent'],
+        content: (
+            <FormattedMessage
+                defaultMessage="自制积木里不允许有百分号"
+                description="提示自定义积木名称或参数不能包含百分号"
+                id="gui.alerts.twCustomBlockPercent"
+            />
+        ),
+        level: AlertLevels.WARN,
+        maxDisplaySecs: 5
+    },
+    {
         alertId: 'createSuccess',
         alertType: AlertTypes.STANDARD,
         clearList: ['createSuccess', 'creating', 'createCopySuccess', 'creatingCopy',

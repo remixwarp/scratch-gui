@@ -140,11 +140,13 @@ class LanguageService {
         const FALLBACK_MESSAGES = {
             'zh-cn': {
                 'gui.menuBar.02agent': '02Agent',
-                'mw.settings.activityBar': '活动栏'
+                'mw.settings.activityBar': '活动栏',
+                'gui.alerts.twCustomBlockPercent': '自制积木里不允许有百分号'
             },
             'en': {
                 'gui.menuBar.02agent': '02Agent',
-                'mw.settings.activityBar': 'Activity Bar'
+                'mw.settings.activityBar': 'Activity Bar',
+                'gui.alerts.twCustomBlockPercent': 'Custom blocks cannot contain a percent sign'
             }
         };
 

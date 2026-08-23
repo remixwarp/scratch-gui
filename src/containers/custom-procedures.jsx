@@ -5,6 +5,7 @@ import React from 'react';
 import CustomProceduresComponent from '../components/custom-procedures/custom-procedures.jsx';
 import LazyScratchBlocks from '../lib/tw-lazy-scratch-blocks';
 import {connect} from 'react-redux';
+import {showAlertWithTimeout} from '../reducers/alerts';
 
 class CustomProcedures extends React.Component {
     constructor (props) {
@@ -17,12 +18,17 @@ class CustomProcedures extends React.Component {
             'handleColorChange',
             'handleCancel',
             'handleOk',
-            'setBlocks'
+            'setBlocks',
+            'collectProcedureText',
+            'guardBlocked',
+            'resetProcedureText',
+            'alertPercent'
         ]);
         this.state = {
             rtlOffset: 0,
             warp: false,
-            color: '#FF6680' // Default "more" category color
+            color: '#FF6680', // Default "more" category color
+            hasPercent: false // 自定义积木名称/参数中是否包含非法字符 '%'
         };
     }
     componentWillUnmount () {
@@ -62,6 +68,13 @@ class CustomProcedures extends React.Component {
         this.workspace.addChangeListener(() => {
             if (!this.workspace || !this.mutationRoot || !this.mutationRoot.workspace) return;
             this.mutationRoot.onChangeFn();
+
+            // 实时检测名称/参数中是否包含非法字符 '%'
+            const text = this.collectProcedureText();
+            const hasPercent = typeof text === 'string' && text.indexOf('%') !== -1;
+            if (hasPercent !== this.state.hasPercent) {
+                this.setState({hasPercent});
+            }
             // Keep the block centered on the workspace
             const metrics = this.workspace.getMetrics();
             const {x, y} = this.mutationRoot.getRelativeToSurfaceXY();
@@ -138,6 +151,12 @@ class CustomProcedures extends React.Component {
         setTimeout(() => {
             this.mutationRoot.focusLastEditor_();
         });
+
+        // 初始检测（编辑已有积木时名称可能已含 '%'）
+        const initialText = this.collectProcedureText();
+        this.setState({
+            hasPercent: typeof initialText === 'string' && initialText.indexOf('%') !== -1
+        });
         
         // Add resize observer to handle workspace resizing
         if (window.ResizeObserver && this.blocks) {
@@ -179,9 +198,17 @@ class CustomProcedures extends React.Component {
         }
     }
     handleCancel () {
+        if (this.guardBlocked()) {
+            this.onPercentBlocked();
+            return;
+        }
         this.props.onRequestClose();
     }
     handleOk () {
+        if (this.guardBlocked()) {
+            this.onPercentBlocked();
+            return;
+        }
         const newMutation = this.mutationRoot ? this.mutationRoot.mutationToDom(true) : null;
         // Include the custom color in the mutation data
         if (newMutation && this.state.color !== '#FF6680') {
@@ -190,21 +217,37 @@ class CustomProcedures extends React.Component {
         this.props.onRequestClose(newMutation);
     }
     handleAddLabel () {
+        if (this.guardBlocked()) {
+            this.onPercentBlocked();
+            return;
+        }
         if (this.mutationRoot) {
             this.mutationRoot.addLabelExternal();
         }
     }
     handleAddBoolean () {
+        if (this.guardBlocked()) {
+            this.onPercentBlocked();
+            return;
+        }
         if (this.mutationRoot) {
             this.mutationRoot.addBooleanExternal();
         }
     }
     handleAddTextNumber () {
+        if (this.guardBlocked()) {
+            this.onPercentBlocked();
+            return;
+        }
         if (this.mutationRoot) {
             this.mutationRoot.addStringNumberExternal();
         }
     }
     handleToggleWarp () {
+        if (this.guardBlocked()) {
+            this.onPercentBlocked();
+            return;
+        }
         if (this.mutationRoot &&
             typeof this.mutationRoot.getWarp === 'function' &&
             typeof this.mutationRoot.setWarp === 'function') {
@@ -214,11 +257,68 @@ class CustomProcedures extends React.Component {
         }
     }
     handleColorChange (event) {
+        if (this.guardBlocked()) {
+            this.onPercentBlocked();
+            return;
+        }
         const newColor = event.target.value;
         this.setState({color: newColor});
         // Apply color to the block immediately for preview
         if (this.mutationRoot && typeof this.mutationRoot.setCustomColor === 'function') {
             this.mutationRoot.setCustomColor(newColor);
+        }
+    }
+
+    // 收集自定义积木名称与所有参数/标签文本，用于检测非法字符 '%'
+    collectProcedureText () {
+        if (!this.mutationRoot) return '';
+        let text = '';
+        const collect = block => {
+            if (!block.inputList) return;
+            block.inputList.forEach(input => {
+                (input.fieldRow || []).forEach(field => {
+                    if (field && typeof field.getText === 'function') {
+                        text += ' ' + (field.getText() || '');
+                    }
+                });
+            });
+        };
+        collect(this.mutationRoot);
+        return text;
+    }
+
+    // 实时检测：名称/参数/标签文本中是否包含非法字符 '%'
+    guardBlocked () {
+        const text = this.collectProcedureText();
+        return typeof text === 'string' && text.indexOf('%') !== -1;
+    }
+
+    // 检测到百分号时的统一处理：弹窗提示 + 清空文字 + 更新状态（窗口不关闭）
+    onPercentBlocked () {
+        this.alertPercent();
+        this.resetProcedureText();
+        this.setState({hasPercent: false});
+    }
+
+    // 清空自制积木名称与所有参数/标签文本，去除其中的 '%'
+    resetProcedureText () {
+        if (!this.mutationRoot || !this.mutationRoot.inputList) return;
+        this.mutationRoot.inputList.forEach(input => {
+            (input.fieldRow || []).forEach(field => {
+                if (field && typeof field.setValue === 'function') {
+                    try {
+                        field.setValue('');
+                    } catch (e) {
+                        // 某些只读字段（如标签）无法赋值，忽略即可
+                    }
+                }
+            });
+        });
+    }
+
+    alertPercent () {
+        if (this.props.dispatch) {
+            showAlertWithTimeout(this.props.dispatch, 'twCustomBlockPercent');
         }
     }
     render () {
