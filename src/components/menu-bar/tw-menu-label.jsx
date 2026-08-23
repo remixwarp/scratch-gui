@@ -75,6 +75,13 @@ class MenuLabel extends React.Component {
         this.menuEl = c;
     }
     render () {
+        const {
+            open, // eslint-disable-line no-unused-vars
+            onOpen,
+            onClose,
+            children,
+            ...domProps
+        } = this.props;
         return (
             <div
                 className={classNames(styles.menuBarItem, styles.hoverable, {
@@ -82,6 +89,7 @@ class MenuLabel extends React.Component {
                 })}
                 onClick={this.handleClick}
                 ref={this.menuRef}
+                {...domProps}
             >
                 {this.props.children}
             </div>

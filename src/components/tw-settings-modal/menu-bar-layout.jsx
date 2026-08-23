@@ -29,7 +29,7 @@ const LABELS = {
     'community': '社区'
 };
 
-const isVisibleItem = id => !id.startsWith('__');
+const isVisibleItem = id => !id.startsWith('__') && !/bilme/i.test(id);
 
 class UnwrappedMenuBarLayoutSetting extends React.Component {
     constructor (props) {
@@ -84,7 +84,7 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
     }
     renderRow (zoneId, id, draggable) {
         const visible = !this.state.hidden.includes(id);
-        const label = LABELS[id] || id;
+        const label = LABELS[id] || (id.startsWith('auto:') ? id.slice('auto:'.length) : id);
         return (
             <div
                 key={id}

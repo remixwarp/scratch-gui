@@ -14,8 +14,6 @@ const ZONES = [
     }
 ];
 
-const ALWAYS_SHOW = ['save-status'];
-
 const ALL_ITEMS = ZONES.reduce((acc, zone) => acc.concat(zone.items, zone.extras), []);
 
 const ORDER_KEY = 'mw:menu-bar-order';
@@ -49,47 +47,75 @@ const hasStoredOrder = zoneId => {
 };
 
 const getStoredOrder = zoneId => {
-    const zone = zoneById(zoneId);
-    if (!zone) return [];
-    const stored = (readJSON(ORDER_KEY, {})[zoneId] || []).filter(id => zone.items.includes(id));
-    for (const id of zone.items) {
-        if (!stored.includes(id)) stored.push(id);
-    }
-    return stored;
+    const stored = readJSON(ORDER_KEY, {})[zoneId];
+    return Array.isArray(stored) ? stored : [];
 };
 
-const getHidden = () => readJSON(HIDDEN_KEY, []).filter(id => ALL_ITEMS.includes(id));
+const getHidden = () => readJSON(HIDDEN_KEY, []);
 
 const isHidden = id => getHidden().includes(id);
 
-const getPresentOrderedIds = () => {
-    const hidden = new Set(getHidden());
-    const ids = [];
+const getMenuContainers = () => {
+    const containers = [];
+    const main = document.querySelector('[class*="main-menu"]');
+    if (main) containers.push(main);
+    const right = document.querySelector('[class*="account-info-group"]');
+    if (right && containers.indexOf(right) === -1) containers.push(right);
+    return containers;
+};
+
+const isDivider = el => /divider/i.test(el.className || '');
+const isFileGroup = el => /file-group/i.test(el.className || '');
+
+// Reads the menu items that are actually present in the menu bar right now,
+// including items injected dynamically by addons/plugins (e.g. "Bilup Nova",
+// "外观", the block-count display) which may not carry a `data-mw-item`.
+// Each collected element gets a stable id written back to the DOM
+// (existing `data-mw-item`, or `auto:<text>` derived from its label) so the
+// hide/order CSS can target it. Items whose id starts with `__` are internal
+// separators/counters and are skipped.
+// Returns { left: [ids], right: [ids] }.
+const collectMenuItemsByZone = () => {
+    const result = {left: [], right: []};
     const seen = new Set();
-    for (const el of document.querySelectorAll('[data-mw-item]')) {
-        const id = el.getAttribute('data-mw-item');
-        if (seen.has(id)) continue;
-        if (hidden.has(id) || ALWAYS_SHOW.includes(id) || el.offsetWidth > 0 || el.offsetHeight > 0) {
-            ids.push(id);
-            seen.add(id);
+    for (const container of getMenuContainers()) {
+        const zoneId = /account-info-group/i.test(container.className || '') ? 'right' : 'left';
+        for (const child of Array.from(container.children)) {
+            if (isDivider(child)) continue;
+            if (isFileGroup(child)) {
+                child.querySelectorAll('[data-mw-item]').forEach(el => {
+                    const id = el.getAttribute('data-mw-item');
+                    if (id && !id.startsWith('__') && !seen.has(id)) {
+                        result[zoneId].push(id);
+                        seen.add(id);
+                    }
+                });
+                continue;
+            }
+            let id = child.getAttribute('data-mw-item');
+            if (!id) {
+                const text = (child.textContent || '').trim().slice(0, 24).replace(/\s+/g, '_');
+                if (!text) continue;
+                id = `auto:${text}`;
+                child.setAttribute('data-mw-item', id);
+            }
+            if (id.startsWith('__')) continue;
+            if (!seen.has(id)) {
+                result[zoneId].push(id);
+                seen.add(id);
+            }
         }
     }
-    // Always include every item declared in ZONES (e.g. `block-count`, `view`)
-    // so the settings panel exposes the complete set of available menu options
-    // even when a given item is not currently rendered in the DOM.
-    for (const id of ALL_ITEMS) {
-        if (!seen.has(id)) {
-            seen.add(id);
-            ids.push(id);
-        }
-    }
-    return ids;
+    return result;
+};
+
+const getPresentOrderedIds = () => {
+    const collected = collectMenuItemsByZone();
+    return collected.left.concat(collected.right);
 };
 
 const getZoneDisplayOrder = (zoneId, presentIds) => {
-    const zone = zoneById(zoneId);
-    if (!zone) return [];
-    const present = presentIds.filter(id => zone.items.includes(id));
+    const present = collectMenuItemsByZone()[zoneId];
     if (!hasStoredOrder(zoneId)) return present;
     const stored = getStoredOrder(zoneId).filter(id => present.includes(id));
     for (const id of present) {
@@ -99,9 +125,7 @@ const getZoneDisplayOrder = (zoneId, presentIds) => {
 };
 
 const getZoneExtras = (zoneId, presentIds) => {
-    const zone = zoneById(zoneId);
-    if (!zone) return [];
-    return zone.extras.filter(id => presentIds.includes(id));
+    return [];
 };
 
 const applyLayout = () => {
@@ -113,8 +137,18 @@ const applyLayout = () => {
             parts.push(`[data-mw-item="${order[i]}"]{order:${i};}`);
         }
     }
-    // Note: hidden items are recorded in settings but their buttons are no longer
-    // actually hidden from the menu bar, so users can always toggle them back.
+    for (const id of getHidden()) {
+        parts.push(`[data-mw-item="${id}"]{display:none !important;}`);
+    }
+    // Always hide the "Bilme 主题商店" (Bilme Marketplace) menu item by default.
+    const collected = collectMenuItemsByZone();
+    for (const zoneId of Object.keys(collected)) {
+        for (const id of collected[zoneId]) {
+            if (/bilme/i.test(id)) {
+                parts.push(`[data-mw-item="${id}"]{display:none !important;}`);
+            }
+        }
+    }
     let style = document.getElementById(STYLE_ID);
     if (!style) {
         style = document.createElement('style');

@@ -3292,7 +3292,17 @@ class SettingsModalComponent extends React.Component {
                         id: 'activityBar',
                         label: intl.formatMessage({id: 'mw.settings.activityBar', defaultMessage: '活动栏'}),
                         icon: PanelLeft
-                    }] : [])
+                    }] : []),
+                    {
+                        id: 'experimental',
+                        label: intl.formatMessage({id: 'mw.settings.experimental', defaultMessage: '实验性'}),
+                        icon: Zap
+                    },
+                    {
+                        id: 'ae',
+                        label: intl.formatMessage({id: 'tw.settingsModal.ae', defaultMessage: 'AE 设置'}),
+                        icon: Code
+                    }
                 ]
             },
             {
