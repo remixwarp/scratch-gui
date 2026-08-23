@@ -3734,7 +3734,11 @@ class MenuBar extends React.Component {
                                             }}
                                         >
                                             <Trophy />
-                                            成就
+                                            <FormattedMessage
+                                                defaultMessage="Achievements"
+                                                description="Menu bar item to open the achievements modal"
+                                                id="gui.menuBar.achievements"
+                                            />
                                         </MenuItem>
                                     )}
                                     {SettingsStore.getAddonEnabled('todo-list') && (
@@ -3889,7 +3893,11 @@ class MenuBar extends React.Component {
                                         }}
                                     >
                                         <PackagePlus />
-                                        {this.props.locale === 'zh-cn' ? '扩展编辑器' : 'Extension Editor'}
+                                        <FormattedMessage
+                                            defaultMessage="Extension Editor"
+                                            description="Menu bar item to open the extension editor"
+                                            id="gui.menuBar.extensionEditor"
+                                        />
                                     </MenuItem>
                                 </MenuSection>
                                 <MenuLabel
@@ -3897,7 +3905,13 @@ class MenuBar extends React.Component {
                                     onOpen={this.handleOpenVariousTools}
                                     onClose={this.handleCloseVariousTools}
                                 >
-                                    <span className={styles.collapsibleLabel}>各种小工具</span>
+                                    <span className={styles.collapsibleLabel}>
+                                        <FormattedMessage
+                                            defaultMessage="Various Tools"
+                                            description="Submenu label for various tools"
+                                            id="gui.menuBar.variousTools"
+                                        />
+                                    </span>
                                     <ChevronDown size={8} />
                                     <MenuBarMenu
                                         className={classNames(styles.menuBarMenu)}
@@ -3983,7 +3997,11 @@ class MenuBar extends React.Component {
                                                 }}
                                             >
                                                 <Map />
-                                                {this.props.locale === 'zh-cn' ? 'Mini Map' : 'Mini Map'}
+                                                <FormattedMessage
+                                                    defaultMessage="Mini Map"
+                                                    description="Menu bar item to toggle the mini map"
+                                                    id="gui.menuBar.miniMap"
+                                                />
                                             </MenuItem>
                                             <MenuItem
                                                 onClick={() => {
@@ -3995,7 +4013,11 @@ class MenuBar extends React.Component {
                                                 }}
                                             >
                                                 <Activity />
-                                                {this.props.locale === 'zh-cn' ? '项目健康度仪表盘' : 'Project Health Dashboard'}
+                                                <FormattedMessage
+                                                    defaultMessage="Project Health Dashboard"
+                                                    description="Menu bar item to toggle the project health dashboard"
+                                                    id="gui.menuBar.projectHealth"
+                                                />
                                             </MenuItem>
                                             <MenuItem
                                                 onClick={() => {
@@ -4007,7 +4029,11 @@ class MenuBar extends React.Component {
                                                 }}
                                             >
                                                 <Bug />
-                                                {this.props.locale === 'zh-cn' ? 'Lint 系统' : 'Lint System'}
+                                                <FormattedMessage
+                                                    defaultMessage="Lint System"
+                                                    description="Menu bar item to toggle the lint system"
+                                                    id="gui.menuBar.lintSystem"
+                                                />
                                             </MenuItem>
                                         </MenuSection>
                                     </MenuBarMenu>
