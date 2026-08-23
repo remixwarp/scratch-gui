@@ -17,6 +17,12 @@
 import locales from '@remixwarp/scratch-l10n';
 import editorMessages from '@remixwarp/scratch-l10n/locales/editor-msgs';
 
+// 发布版 @remixwarp/scratch-l10n 可能尚未包含这些自定义语言，在此补充。
+const EXTRA_LOCALES = {
+    'geng': {name: '梗体中文'}
+};
+const allLocales = Object.assign({}, locales, EXTRA_LOCALES);
+
 class LanguageService {
     constructor() {
         this.userLanguagePackages = {};  // 存储用户上传的语言包
@@ -32,7 +38,7 @@ class LanguageService {
     getDefaultLocale() {
         const navigatorLang = navigator.language || navigator.userLanguage || 'en';
         const langCode = navigatorLang.split('-')[0].toLowerCase();
-        return Object.keys(locales).includes(langCode) ? langCode : 'en';
+        return Object.keys(allLocales).includes(langCode) ? langCode : 'en';
     }
 
     /**
@@ -637,11 +643,11 @@ class LanguageService {
         const available = {};
         
         console.log('=== 获取可用语言列表 ===');
-        console.log('locales 对象键:', Object.keys(locales));
+        console.log('locales 对象键:', Object.keys(allLocales));
         console.log('editorMessages 键:', Object.keys(editorMessages));
         
-        Object.keys(locales).forEach(locale => {
-            const localeData = locales[locale];
+        Object.keys(allLocales).forEach(locale => {
+            const localeData = allLocales[locale];
             const messages = editorMessages[locale] || {};
             
             available[locale] = {

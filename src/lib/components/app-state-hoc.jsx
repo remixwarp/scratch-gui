@@ -12,6 +12,12 @@ import {setPlayer, setFullScreen} from '../../reducers/mode.js';
 import locales from '@remixwarp/scratch-l10n';
 import {detectLocale} from '../utils/detect-locale';
 
+// 发布版 @remixwarp/scratch-l10n 可能尚未包含这些自定义语言，在此补充。
+const EXTRA_LOCALES = {
+    'geng': {name: '梗体中文'}
+};
+const allLocales = Object.assign({}, locales, EXTRA_LOCALES);
+
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
 /*
@@ -32,7 +38,7 @@ const AppStateHOC = function (WrappedComponent, localesOnly) {
             let enhancer;
 
             let initializedLocales = localesInitialState;
-            const locale = detectLocale(Object.keys(locales));
+            const locale = detectLocale(Object.keys(allLocales));
             if (locale !== 'en') {
                 initializedLocales = initLocale(initializedLocales, locale);
             }

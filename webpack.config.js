@@ -241,7 +241,32 @@ const base = {
             }
         }, {
             test: /\.(jsx?|tsx?|mjs)$/,
-            loader: 'babel-loader',
+            use: [
+                'thread-loader',
+                {
+                    loader: 'babel-loader',
+                    options: {
+                        cacheDirectory: true,
+                        // Explicitly disable babelrc so we don't catch various config
+                        // in much lower dependencies.
+                        babelrc: false,
+                        plugins: [
+                            '@babel/plugin-transform-class-static-block',
+                            ['react-intl', {
+                                messagesDir: './translations/messages/'
+                            }]
+                        ],
+                        presets: [
+                            ['@babel/preset-env', {
+                                bugfixes: true,
+                                browserslistEnv: 'production'
+                            }],
+                            '@babel/preset-react',
+                            '@babel/preset-typescript'
+                        ]
+                    }
+                }
+            ],
             include: [
                 path.resolve(__dirname, 'src'),
                 /node_modules[\\/]scratch-[^\\/]+[\\/]src/,
@@ -261,27 +286,7 @@ const base = {
             exclude: [
                 /\.(vert|frag|glsl|ttf|woff2?|eot|png|jpe?g|gif|svg)$/,
                 /node_modules[\\/]scratch-render[\\/]src[\\/]shaders/
-            ],
-            options: {
-                cacheDirectory: true,
-                // Explicitly disable babelrc so we don't catch various config
-                // in much lower dependencies.
-                babelrc: false,
-                plugins: [
-                    '@babel/plugin-transform-class-static-block',
-                    ['react-intl', {
-                        messagesDir: './translations/messages/'
-                    }]
-                ],
-                presets: [
-                    ['@babel/preset-env', {
-                        bugfixes: true,
-                        browserslistEnv: 'production'
-                    }],
-                    '@babel/preset-react',
-                    '@babel/preset-typescript'
-                ]
-            }
+            ]
         },
         {
             test: /\.css$/,

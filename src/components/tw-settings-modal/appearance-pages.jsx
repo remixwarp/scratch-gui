@@ -5,6 +5,12 @@ import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 import locales from '@remixwarp/scratch-l10n';
 
+// 发布版 @remixwarp/scratch-l10n 可能尚未包含这些自定义语言，在此补充。
+const EXTRA_LOCALES = {
+    'geng': {name: '梗体中文'}
+};
+const allLocales = Object.assign({}, locales, EXTRA_LOCALES);
+
 import Box from '../box/box.jsx';
 import Input from '../forms/input.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
@@ -60,12 +66,12 @@ const UnconnectedLanguagePage = ({currentLocale, onChangeLanguage}) => (
                 value={currentLocale}
                 onChange={e => onChangeLanguage(e.target.value)}
             >
-                {Object.keys(locales).map(locale => (
+                {Object.keys(allLocales).map(locale => (
                     <option
                         key={locale}
                         value={locale}
                     >
-                        {locales[locale].name}
+                        {allLocales[locale].name}
                     </option>
                 ))}
             </select>
