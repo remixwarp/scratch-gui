@@ -78,6 +78,14 @@ const extractFirstMatchingFile = (filter, relativeDestDir, zipBuffer) => new Pro
 });
 
 const downloadMicrobitHex = async () => {
+    // Files are committed to the repo; skip the network download when present
+    // so installs (local and CI) stay fast and don't fail on flaky network.
+    const existingHex = path.join(basePath, 'static', 'microbit', 'scratch-microbit-1.2.0.hex');
+    const existingGenerated = path.join(basePath, 'src', 'generated', 'microbit-hex-url.cjs');
+    if (fs.existsSync(existingHex) && fs.existsSync(existingGenerated)) {
+        console.info('[prepublish] microbit hex already present, skipping download');
+        return;
+    }
     const url = 'https://packagerdata.turbowarp.org/scratch-microbit-1.2.0.hex.zip';
     const expectedSHA256 = 'dfd574b709307fe76c44dbb6b0ac8942e7908f4d5c18359fae25fbda3c9f4399';
     console.info(`Downloading ${url}`);
@@ -117,8 +125,12 @@ const downloadMicrobitHex = async () => {
 };
 
 const syncPenguinMod = async () => {
-    const SOURCE ='https://raw.githubusercontent.com/PenguinMod/PenguinMod-ExtensionsGallery/main/src/lib/extensions.js';
     const relativeOutFile = path.join('static', 'penguinmod', 'extensions.js');
+    if (fs.existsSync(path.join(basePath, relativeOutFile))) {
+        console.info('[prepublish] penguinmod extensions already present, skipping fetch');
+        return;
+    }
+    const SOURCE ='https://raw.githubusercontent.com/PenguinMod/PenguinMod-ExtensionsGallery/main/src/lib/extensions.js';
     const absoluteOutFile = path.join(basePath, relativeOutFile);
     console.info('[PenguinMod] Fetching gallery…');
     const res = await crossFetch(SOURCE);

@@ -29,7 +29,7 @@
     "watch": "webpack --colors --watch",
     "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint",
     "build:cf": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist && NODE_ENV=production webpack --colors --bail",
-    "cf-build": "node scripts/update-l10n.js && (bun install --ignore-scripts --prefer-offline || npm install --ignore-scripts --no-audit --no-fund --prefer-offline) && node scripts/patch-shader-manager.mjs && npm run build:cf",
+    "cf-build": "node scripts/patch-shader-manager.mjs && npm run build",
     "update-l10n": "node scripts/update-l10n.js",
     "generate-files": "node scripts/generate-file-contents.js",
     "server": "node server/index.js",
