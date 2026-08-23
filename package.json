@@ -113,7 +113,7 @@
     "redux-throttle": "0.1.1",
     "remark-gfm": "1.0.0",
     "scratch-audio": "github:remixwarp/scratch-audio#main",
-    "@remixwarp/scratch-blocks": "https://github.com/remixwarp/scratch-blocks/archive/e45232eb.tar.gz",
+    "@remixwarp/scratch-blocks": "https://github.com/remixwarp/scratch-blocks/archive/main.tar.gz",
     "scratch-paint": "github:Bilup/scratch-paint#develop",
     "scratch-render": "https://github.com/bilup/scratch-render",
     "scratch-vm": "github:remixwarp/scratch-vm#99617d7",

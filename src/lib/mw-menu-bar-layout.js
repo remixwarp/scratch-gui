@@ -113,9 +113,8 @@ const applyLayout = () => {
             parts.push(`[data-mw-item="${order[i]}"]{order:${i};}`);
         }
     }
-    for (const id of getHidden()) {
-        parts.push(`[data-mw-item="${id}"]{display:none !important;}`);
-    }
+    // Note: hidden items are recorded in settings but their buttons are no longer
+    // actually hidden from the menu bar, so users can always toggle them back.
     let style = document.getElementById(STYLE_ID);
     if (!style) {
         style = document.createElement('style');
