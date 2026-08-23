@@ -74,16 +74,8 @@ const mapDispatchToProps = dispatch => ({
             
             dispatch(closeBilmeModal());
             
-            const response = await fetch(
-                `https://theme.bilup.org/api/theme/export?uuid=${theme.uuid}&platform=bilup`
-            );
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to fetch theme: ${response.status} ${response.statusText} - ${errorText}`);
-            }
-            
-            const themeData = await response.json();
+            // 在线主题库已移除，直接使用传入的主题数据（不再从 theme.bilup.org 拉取）。
+            const themeData = theme;
             
             console.log('[DEBUG] Importing pixel theme data');
             const results = customThemeManager.importThemes(themeData, false);

@@ -1,7 +1,6 @@
 import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
-import {isLoggedIn, fetchCurrentUser, login} from '../rotur/client.js';
 
 const API_BASE = 'https://api.bilup.org/api';
 
@@ -23,17 +22,6 @@ const fetchWithTimeout = (url, {timeout = DEFAULT_FETCH_TIMEOUT, ...options} = {
 };
 
 const SESSION_KEY = 'mw:mistwarp-session';
-const ROTUR_TOKEN_KEY = 'mw:rotur-token';
-
-const loadRoturToken = () => {
-    try {
-        return localStorage.getItem(ROTUR_TOKEN_KEY) || null;
-    } catch (e) {
-        return null;
-    }
-};
-
-let exchangeInFlight = null;
 
 const loadSession = () => {
     try {
@@ -108,28 +96,6 @@ const parseResponse = async response => {
     return data;
 };
 
-const exchangeValidator = async (roturToken, appKey = 'bilup') => {
-    const validatorResponse = await fetchWithTimeout(
-        `https://api.accounts.bilup.org/generate_validator?key=${encodeURIComponent(appKey)}&auth=${encodeURIComponent(roturToken)}`
-    );
-    const validatorData = await validatorResponse.json().catch(() => ({}));
-    const validator = validatorData.validator;
-    if (!validator) {
-        const error = new Error(validatorData.error || 'Could not validate Bilup Accounts login');
-        if (validatorData.error || validatorResponse.status === 403) {
-            error.code = 'VALIDATOR_GENERATION_FAILED';
-        }
-        throw error;
-    }
-    const authResponse = await fetchWithTimeout(
-        `${API_BASE}/auth?v=${encodeURIComponent(validator)}`,
-        {method: 'POST'}
-    );
-    const authData = await parseResponse(authResponse);
-    storeSession(authData.token);
-    return authData;
-};
-
 let authInvalidHandler = null;
 const onAuthInvalid = handler => {
     authInvalidHandler = handler;
@@ -138,25 +104,6 @@ const onAuthInvalid = handler => {
 let bannedHandler = null;
 const onBanned = handler => {
     bannedHandler = handler;
-};
-
-const runExchange = token => {
-    if (!exchangeInFlight) {
-        exchangeInFlight = exchangeValidator(token)
-            .catch(error => {
-                if (error.code === 'VALIDATOR_GENERATION_FAILED' && authInvalidHandler) {
-                    authInvalidHandler();
-                }
-                if (error.code === 'banned' && bannedHandler) {
-                    bannedHandler(error.message);
-                }
-                throw error;
-            })
-            .finally(() => {
-                exchangeInFlight = null;
-            });
-    }
-    return exchangeInFlight;
 };
 
 const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true} = {}) => {
@@ -189,15 +136,6 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
         !path.startsWith('/logout')
     ) {
         storeSession(null);
-        const roturToken = loadRoturToken();
-        if (roturToken) {
-            try {
-                await runExchange(roturToken);
-                response = await doFetch();
-            } catch (e) {
-                // keep the original 401 response
-            }
-        }
     }
     if (path === '/me' && response.status === 401) {
         storeSession(null);
@@ -309,10 +247,7 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress) => {
     } catch (e) {
         if (e.status !== 401) throw e;
         storeSession(null);
-        const roturToken = loadRoturToken();
-        if (!roturToken) throw e;
-        await runExchange(roturToken);
-        return uploadXhr(path, form, onUploadProgress);
+        throw e;
     } finally {
         clearApiCache();
         clearContentCache();
@@ -359,28 +294,15 @@ const takeProjectHandoff = id => {
 };
 
 /**
- * Synchronously return the currently logged-in Bilup user, or null.
- * Delegates to the rotur (Bilup Accounts) system.
+ * Bilup Accounts 登录已移除。始终返回未登录态。
  * @returns {object|null}
  */
-const getCurrentUser = () => {
-    if (!isLoggedIn()) return null;
-    try {
-        const raw = sessionStorage.getItem('mw:rotur-restore');
-        if (!raw) return null;
-        const {user} = JSON.parse(raw);
-        return user || null;
-    } catch (_) {
-        return null;
-    }
-};
+const getCurrentUser = () => null;
 
 /**
- * Start the Bilup Accounts login flow to switch to a different account.
+ * Bilup Accounts 登录已移除。切换账号不再可用。
  */
-const switchAccount = async () => {
-    await login();
-};
+const switchAccount = async () => {};
 
 export {
     getCurrentUser,
@@ -389,8 +311,6 @@ export {
     stashProjectHandoff,
     takeProjectHandoff,
     storeSession,
-    exchangeValidator,
-    runExchange,
     onAuthInvalid,
     onBanned,
     logout,

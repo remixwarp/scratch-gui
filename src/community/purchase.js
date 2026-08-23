@@ -1,5 +1,8 @@
 import api from './api';
-import {payUser} from '../lib/rotur/client.js';
+// Bilup Accounts 登录已移除，无法再进行积分转账。
+const payUser = async () => {
+    throw new Error('Accounts login removed');
+};
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 

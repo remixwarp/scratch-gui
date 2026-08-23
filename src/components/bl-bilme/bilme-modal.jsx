@@ -270,46 +270,10 @@ const BilmeModal = props => {
     const [colorFilter, setColorFilter] = useState('all');
 const [popupPosition, setPopupPosition] = useState({top: 0, left: 0, visible: false, theme: null});
 
-    // Fetch themes from Bilme API
+    // Bilup 在线主题库已移除，不再请求 theme.bilup.org。
     useEffect(() => {
-        let isMounted = true;
-        const fetchThemes = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const response = await fetch('https://theme.bilup.org/api/themes');
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch themes: ${response.status}`);
-                }
-                const contentType = response.headers.get('content-type') || '';
-                const text = await response.text();
-                // 服务端异常时可能返回 200 + HTML 页面（<!doctype html>），
-                // 直接 JSON.parse 会抛 SyntaxError 导致整个编辑器崩溃。
-                // 先校验 content-type，再手动解析，失败时优雅降级而不是崩溃。
-                if (!contentType.includes('application/json') && !text.trim().startsWith('{')) {
-                    throw new Error('Invalid JSON response from theme API');
-                }
-                const data = JSON.parse(text);
-                if (isMounted) {
-                    setThemes(Array.isArray(data.themes) ? data.themes : []);
-                }
-            } catch (err) {
-                console.error('Error fetching themes:', err);
-                if (isMounted) {
-                    setThemes([]);
-                    setError(err.message);
-                }
-            } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        fetchThemes();
-        return () => {
-            isMounted = false;
-        };
+        setThemes([]);
+        setLoading(false);
     }, []);
 
     // Filter and sort themes
@@ -353,51 +317,15 @@ const [popupPosition, setPopupPosition] = useState({top: 0, left: 0, visible: fa
     }, [themes, searchQuery, platformFilter, colorFilter, sortBy]);
 
     const handleCreateTheme = () => {
-        window.open('https://theme.bilup.org', '_blank');
+        // 在线主题库已移除。
     };
 
     const handleOpenInBilme = theme => {
-        const slug = theme.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        window.open(`https://theme.bilup.org/themes/${theme.author}/${slug}`, '_blank');
+        // 在线主题库已移除。
     };
 
     const handleDownloadTheme = async theme => {
-        try {
-            const response = await fetch(
-                `https://theme.bilup.org/api/theme/export?uuid=${theme.uuid}&platform=bilup`
-            );
-            
-            if (!response.ok) {
-                throw new Error(`Failed to fetch theme: ${response.status}`);
-            }
-            
-            const themeData = await response.json();
-            
-            // 设置必要的默认值
-            if (!themeData.name) {
-                themeData.name = theme.name;
-            }
-            if (!themeData.gui) {
-                themeData.gui = 'light';
-            }
-            if (!themeData.blocks) {
-                themeData.blocks = 'three';
-            }
-            
-            // 创建下载链接
-            const blob = new Blob([JSON.stringify(themeData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${theme.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Error downloading theme:', error);
-            alert(`下载主题失败: ${error.message}`);
-        }
+        alert('在线主题下载功能已移除');
     };
 
    
@@ -441,43 +369,8 @@ const [popupPosition, setPopupPosition] = useState({top: 0, left: 0, visible: fa
             }
             
             if (props.onThemeApply) {
-                
-                const response = await fetch(
-                    `https://theme.bilup.org/api/theme/export?uuid=${theme.uuid}&platform=bilup`
-                );
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Failed to fetch theme: ${response.status} ${response.statusText} - ${errorText}`);
-                }
-                
-                const themeData = await response.json();
-                console.log('Theme data received:', themeData);
-                
-                // 验证主题数据格式
-                if (!themeData || typeof themeData !== 'object') {
-                    throw new Error('Invalid theme data format');
-                }
-                
-                // 检查是否缺少必要属性，如果缺少则从原始主题数据中获取
-                if (!themeData.name) {
-                    themeData.name = theme.name;
-                    console.log('Added missing name from theme object');
-                }
-                
-                if (!themeData.gui) {
-                    themeData.gui = 'light'; // 默认使用 light GUI
-                    console.log('Added default gui: light');
-                }
-                
-                if (!themeData.blocks) {
-                    themeData.blocks = 'three'; // 默认使用 three blocks
-                    console.log('Added default blocks: three');
-                }
-                
-                console.log('Final theme data:', themeData);
-                
-                props.onThemeApply(themeData);
+                alert('在线主题应用功能已移除');
+                return;
             }
         } catch (err) {
             console.error('Error applying theme:', err);

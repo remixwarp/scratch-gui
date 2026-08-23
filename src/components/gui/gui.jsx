@@ -52,8 +52,6 @@ import BaiduAIModal from '../../containers/baidu-ai-modal.jsx';
 import ExtensionEditorModal from '../../containers/extension-editor-modal.jsx';
 const SuperRefactorModal = React.lazy(() => import('../../containers/super-refactor-modal.jsx'));
 const CompatibilityModal = React.lazy(() => import('../../containers/tv-compatibility-modal.jsx'));
-import RoturSession from '../../containers/rotur-session.jsx';
-import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
 const CustomGalleryModal = React.lazy(() => import('../../containers/custom-gallery-modal.jsx'));
 import MWHelpModal from '../../components/mw-help-modal/help-modal.jsx';
 
@@ -1427,8 +1425,6 @@ const GUIComponent = props => {
     const alwaysEnabledModals = useMemo(() => (
         <React.Suspense fallback={null}>
         <React.Fragment>
-            <RoturSession />
-            {!isEmbedded && <RoturExtensionHost />}
             <AchievementTracker vm={vm} />
             <Achievements />
             <NotificationsProvider />

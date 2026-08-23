@@ -95,7 +95,7 @@ const WarpThemePanel = ({theme, onThemeChange}) => {
         }
         try {
             const data = await request(
-                `/user/themes?username=${encodeURIComponent(userId)}&authType=rotur`,
+                `/user/themes?username=${encodeURIComponent(userId)}`,
                 sessionToken
             );
             setMyThemes(data.themes || []);

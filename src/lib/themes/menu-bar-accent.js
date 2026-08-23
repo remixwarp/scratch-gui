@@ -8,14 +8,6 @@ const MENU_BAR_TEXT_DEFAULT = 'auto';
 const MENU_BAR_TEXT_LIGHT = '#ffffff';
 const MENU_BAR_TEXT_DARK = '#2e2e2e';
 
-const notifyCloudSync = () => {
-    try {
-        require('../rotur/cloud-sync.js').notifyLocalChange();
-    } catch (_) {
-        // cloud sync optional
-    }
-};
-
 const getAccentMenuBar = () => {
     try {
         return localStorage.getItem(ACCENT_MENU_BAR_KEY) !== 'false';
@@ -30,7 +22,6 @@ const setAccentMenuBar = enabled => {
     } catch (_) {
         // ignore
     }
-    notifyCloudSync();
 };
 
 const getMenuBarText = () => {
@@ -49,7 +40,6 @@ const setMenuBarText = value => {
     } catch (_) {
         // ignore
     }
-    notifyCloudSync();
 };
 
 const getCompactSave = () => {
@@ -72,7 +62,6 @@ const setCompactSave = enabled => {
         // ignore
     }
     applyCompactSave();
-    notifyCloudSync();
 };
 
 applyCompactSave();

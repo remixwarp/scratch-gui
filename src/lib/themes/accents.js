@@ -18,7 +18,6 @@ import * as accentPan from './accent/pan';
 import * as accentLesbian from './accent/lesbian';
 import * as accentNonbinary from './accent/nonbinary';
 import * as accentAce from './accent/ace';
-import * as accentRotur from './accent/rotur';
 import * as accentPink from './accent/pink';
 import * as accentPinkV2 from './accent/pink(v2)';
 import * as accentSunset from './accent/sunset';
@@ -257,13 +256,6 @@ const ACCENTS = [
         accent: accentAce,
         description: 'Asexual pride flag accent',
         id: 'mw.accent.asexual',
-        category: 'gradient'
-    },
-    {
-        name: 'Rotur',
-        accent: accentRotur,
-        description: 'Rotur accent color',
-        id: 'tw.accent.rotur',
         category: 'gradient'
     },
     {

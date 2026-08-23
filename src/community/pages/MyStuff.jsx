@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes} from '../format';
-import {getAccountSummary} from '../../lib/rotur/client.js';
+// Bilup Accounts 登录已移除，账户余额/捐赠不可用时返回 null。
+const getAccountSummary = async () => null;
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import ProjectThumbnail from '../components/ProjectThumbnail.jsx';

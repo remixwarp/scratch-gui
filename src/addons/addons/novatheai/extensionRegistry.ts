@@ -98,7 +98,7 @@ export const fetchRemoteExtensions = async (forceRefresh = false) => {
     safeFetchJson<any>("https://extensions.turbowarp.org/generated-metadata/extensions-v0.json", { extensions: [] }),
     safeFetchJson<any>("https://extensions.mistium.com/generated-metadata/extensions-v0.json", { extensions: [] }),
     safeFetchJson<any>("https://sharkpools-extensions.vercel.app/Extension-Keys.json", { extensions: {} }),
-    safeFetchJson<any>("https://extensions.bilup.org/generated-metadata/extensions-v0.json", { extensions: [] }),
+    safeFetchJson<any>("https://rw-extensions.pages.dev/bilup/extensions-index.json", { extensions: [] }),
     safeFetchJson<any>("https://editors.astras.top/extensions/generated-metadata/extensions-v0.json", { extensions: [] }),
   ]);
 
@@ -140,14 +140,14 @@ export const fetchRemoteExtensions = async (forceRefresh = false) => {
     name: normalizeText(extension.name),
     description: normalizeText(extension.description),
     extensionId: normalizeText(extension.id),
-    extensionURL: `https://extensions.bilup.org/${extension.slug}.js`,
-    iconURL: `https://extensions.bilup.org/${extension.image || "images/unknown.svg"}`,
+    extensionURL: `https://rw-extensions.pages.dev/bilup/${extension.slug}.js`,
+    iconURL: `https://rw-extensions.pages.dev/bilup/${extension.image || "images/unknown.svg"}`,
     source: "bilup" as ExtensionSource,
     tags: ["bilup"],
     credits: [...(extension.original || []), ...(extension.by || [])].map(creditToText).filter(Boolean),
     docsURI: null,
     samples: extension.samples ? extension.samples.map((sample: string) => ({
-      href: `${ROOT}editor?project_url=https://extensions.bilup.org/samples/${encodeURIComponent(sample)}.sb3`,
+      href: `${ROOT}editor?project_url=https://rw-extensions.pages.dev/bilup/samples/${encodeURIComponent(sample)}.sb3`,
       text: sample,
     })) : null,
     incompatibleWithScratch: !extension.scratchCompatible,
