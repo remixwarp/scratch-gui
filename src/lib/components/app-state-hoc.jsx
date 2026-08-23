@@ -14,7 +14,7 @@ import {detectLocale} from '../utils/detect-locale';
 
 // 发布版 @remixwarp/scratch-l10n 可能尚未包含这些自定义语言，在此补充。
 const EXTRA_LOCALES = {
-    'geng': {name: '梗体中文'}
+    'geng': {name: '梗体中文测试'}
 };
 const allLocales = Object.assign({}, locales, EXTRA_LOCALES);
 
