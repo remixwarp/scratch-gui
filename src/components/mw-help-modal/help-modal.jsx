@@ -7,6 +7,7 @@ import {Search} from 'lucide-react';
 import Modal from '../../containers/windowed-modal.jsx';
 import {HELP_CATEGORIES, HELP_ENTRIES} from '../../lib/help/index.js';
 import HELP_TRANSLATIONS from '../../lib/help/translations-zh-cn.js';
+import HELP_TRANSLATIONS_WENYAN from '../../lib/help/translations-wenyan.js';
 
 import styles from './help-modal.css';
 
@@ -40,6 +41,13 @@ const CATEGORY_TRANSLATIONS = {
     'Advanced': '高级'
 };
 
+const CATEGORY_TRANSLATIONS_WENYAN = {
+    'Editor': '编',
+    'Blocks': '积木',
+    'Extensions': '扩展',
+    'Advanced': '高'
+};
+
 class HelpModal extends React.Component {
     constructor (props) {
         super(props);
@@ -57,19 +65,30 @@ class HelpModal extends React.Component {
     }
     isChinese () {
         const locale = this.props.intl && this.props.intl.locale;
-        return typeof locale === 'string' && locale.toLowerCase().startsWith('zh');
+        return typeof locale === 'string' &&
+            (locale.toLowerCase().startsWith('zh') || locale.toLowerCase() === 'wenyan');
+    }
+    isWenyan () {
+        const locale = this.props.intl && this.props.intl.locale;
+        return typeof locale === 'string' && locale.toLowerCase() === 'wenyan';
+    }
+    translations () {
+        return this.isWenyan() ? HELP_TRANSLATIONS_WENYAN : HELP_TRANSLATIONS;
     }
     // Returns the localized value of an entry field, falling back to English.
     // `howTo` is an array of strings; title/short are strings.
     entryText (entry, key) {
-        if (this.isChinese() && HELP_TRANSLATIONS[entry.id]) {
-            const localized = HELP_TRANSLATIONS[entry.id][key];
-            if (Array.isArray(localized)) {
-                if (localized.length > 0) {
+        if (this.isChinese()) {
+            const table = this.translations();
+            if (table[entry.id]) {
+                const localized = table[entry.id][key];
+                if (Array.isArray(localized)) {
+                    if (localized.length > 0) {
+                        return localized;
+                    }
+                } else if (typeof localized === 'string' && localized) {
                     return localized;
                 }
-            } else if (typeof localized === 'string' && localized) {
-                return localized;
             }
         }
         return entry[key];
@@ -77,7 +96,7 @@ class HelpModal extends React.Component {
     matchesQuery (entry, query) {
         if (!query) return true;
         const q = query.toLowerCase();
-        const translated = this.isChinese() ? HELP_TRANSLATIONS[entry.id] : null;
+        const translated = this.isChinese() ? this.translations()[entry.id] : null;
         const haystack = [
             entry.title,
             entry.short,
@@ -94,10 +113,11 @@ class HelpModal extends React.Component {
         const query = this.state.query.trim();
         const visibleEntries = HELP_ENTRIES.filter(entry => this.matchesQuery(entry, query));
         const selected = visibleEntries.find(e => e.id === this.state.selectedId) || visibleEntries[0] || null;
+        const categories = this.isWenyan() ? CATEGORY_TRANSLATIONS_WENYAN : CATEGORY_TRANSLATIONS;
         const groups = HELP_CATEGORIES
             .map(category => ({
                 category,
-                label: this.isChinese() ? (CATEGORY_TRANSLATIONS[category] || category) : category,
+                label: this.isChinese() ? (categories[category] || category) : category,
                 entries: visibleEntries.filter(e => e.category === category)
             }))
             .filter(group => group.entries.length > 0);

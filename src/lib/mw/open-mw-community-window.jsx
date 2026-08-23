@@ -7,6 +7,7 @@ import WindowManager from '../../addons/window-system/window-manager';
 import CommunityScope from './community-scope.jsx';
 import IntlBridge from '../tw-use-intl.jsx';
 import communityTranslations from '../../community/translations/zh-cn.json';
+import communityTranslationsWenyan from '../../community/translations/wenyan.json';
 
 addLocaleData(localeData);
 
@@ -23,7 +24,10 @@ const getCommunityIntlProps = () => {
             const {locale, messages} = state.locales;
             if (locale && messages) {
                 const merged = Object.assign({}, messages);
-                const toMixIn = communityTranslations[locale.toLowerCase()];
+                const localeKey = locale.toLowerCase();
+                const toMixIn = localeKey === 'wenyan' ?
+                    communityTranslationsWenyan[localeKey] :
+                    communityTranslations[localeKey];
                 if (toMixIn) {
                     Object.assign(merged, toMixIn);
                 }
