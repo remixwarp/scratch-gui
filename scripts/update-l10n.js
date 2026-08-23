@@ -15,6 +15,15 @@ if (!dep) {
   process.exit(1);
 }
 
+// 默认跳过改写：保持 package.json / package-lock.json 稳定，避免远端每次构建
+// 都改写 l10n 依赖 URL，导致 lockfile 失效、node_modules 缓存无法命中，
+// 构建时间从 3-4 分钟飙到 15 分钟。需要更新翻译时：
+// UPDATE_L10N=1 node scripts/update-l10n.js
+if (process.env.UPDATE_L10N !== '1') {
+  console.log('update-l10n: skipped (set UPDATE_L10N=1 to re-pin @remixwarp/scratch-l10n)');
+  process.exit(0);
+}
+
 let commit;
 try {
   commit = execSync('git ls-remote https://github.com/remixwarp/scratch-l10n.git main', {

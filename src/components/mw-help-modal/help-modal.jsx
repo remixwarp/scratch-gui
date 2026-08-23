@@ -8,6 +8,7 @@ import Modal from '../../containers/windowed-modal.jsx';
 import {HELP_CATEGORIES, HELP_ENTRIES} from '../../lib/help/index.js';
 import HELP_TRANSLATIONS from '../../lib/help/translations-zh-cn.js';
 import HELP_TRANSLATIONS_WENYAN from '../../lib/help/translations-wenyan.js';
+import HELP_TRANSLATIONS_GENG from '../../lib/help/translations-geng.js';
 
 import styles from './help-modal.css';
 
@@ -48,6 +49,13 @@ const CATEGORY_TRANSLATIONS_WENYAN = {
     'Advanced': '高'
 };
 
+const CATEGORY_TRANSLATIONS_GENG = {
+    'Editor': '编辑器',
+    'Blocks': '积木',
+    'Extensions': '扩展',
+    'Advanced': '进阶'
+};
+
 class HelpModal extends React.Component {
     constructor (props) {
         super(props);
@@ -65,15 +73,21 @@ class HelpModal extends React.Component {
     }
     isChinese () {
         const locale = this.props.intl && this.props.intl.locale;
-        return typeof locale === 'string' &&
-            (locale.toLowerCase().startsWith('zh') || locale.toLowerCase() === 'wenyan');
+        const l = typeof locale === 'string' ? locale.toLowerCase() : '';
+        return l.startsWith('zh') || l === 'wenyan' || l === 'geng';
     }
     isWenyan () {
         const locale = this.props.intl && this.props.intl.locale;
         return typeof locale === 'string' && locale.toLowerCase() === 'wenyan';
     }
+    isGeng () {
+        const locale = this.props.intl && this.props.intl.locale;
+        return typeof locale === 'string' && locale.toLowerCase() === 'geng';
+    }
     translations () {
-        return this.isWenyan() ? HELP_TRANSLATIONS_WENYAN : HELP_TRANSLATIONS;
+        if (this.isWenyan()) return HELP_TRANSLATIONS_WENYAN;
+        if (this.isGeng()) return HELP_TRANSLATIONS_GENG;
+        return HELP_TRANSLATIONS;
     }
     // Returns the localized value of an entry field, falling back to English.
     // `howTo` is an array of strings; title/short are strings.
@@ -113,7 +127,8 @@ class HelpModal extends React.Component {
         const query = this.state.query.trim();
         const visibleEntries = HELP_ENTRIES.filter(entry => this.matchesQuery(entry, query));
         const selected = visibleEntries.find(e => e.id === this.state.selectedId) || visibleEntries[0] || null;
-        const categories = this.isWenyan() ? CATEGORY_TRANSLATIONS_WENYAN : CATEGORY_TRANSLATIONS;
+        const categories = this.isWenyan() ? CATEGORY_TRANSLATIONS_WENYAN :
+            this.isGeng() ? CATEGORY_TRANSLATIONS_GENG : CATEGORY_TRANSLATIONS;
         const groups = HELP_CATEGORIES
             .map(category => ({
                 category,

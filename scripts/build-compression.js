@@ -49,7 +49,9 @@ function compressFile(file) {
 
     const buf = fs.readFileSync(file);
 
-    const gz = zlib.gzipSync(buf, {level: 9});
+    // Level 6 is a good trade-off: near-max ratio at a fraction of the CPU
+    // time of level 9 (which dominates post-build time on CI).
+    const gz = zlib.gzipSync(buf, {level: 6});
     fs.writeFileSync(`${file}.gz`, gz);
 
     // Brotli is available in Node >= 11.7 via zlib.brotliCompressSync.

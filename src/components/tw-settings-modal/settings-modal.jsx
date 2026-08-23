@@ -29,6 +29,7 @@ import StylePreview from './style-preview.jsx';
 import SettingsStore from '../../addons/settings-store-singleton.js';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 import ActivityBarLayoutSetting from './activity-bar-layout.jsx';
+import StatusBarLayoutSetting from './status-bar-layout.jsx';
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
     setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
 import {DEFINITIONS as VARIABLE_MANAGER_SETTINGS, getSetting as getVariableManagerSetting,
@@ -38,7 +39,7 @@ import {
     getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
 } from '../../lib/git/config.js';
 
-import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, PanelLeft, Bug, GitBranch, Variable, Upload, Search, PanelsTopLeft, Plus, X} from 'lucide-react';
+import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, PanelLeft, PanelBottom, Bug, GitBranch, Variable, Upload, Search, PanelsTopLeft, Plus, X} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -111,6 +112,11 @@ const messages = defineMessages({
         defaultMessage: '活动栏',
         description: 'Settings modal section',
         id: 'tw.settingsModal.activityBar'
+    },
+    headerStatusBar: {
+        defaultMessage: '状态栏',
+        description: 'Settings modal section',
+        id: 'tw.settingsModal.statusBar'
     },
     headerDebugger: {
         defaultMessage: '调试器',
@@ -2685,6 +2691,21 @@ const pageConfigurations = {
             }
         ]
     },
+    statusBar: {
+        sections: [
+            {
+                headerMessage: 'headerStatusBar',
+                settings: [
+                    {
+                        component: StatusBarLayoutSetting,
+                        props: () => ({}),
+                        // 仅在启用状态栏时显示
+                        condition: () => !!AESettings.get('EnableStatusBar')
+                    }
+                ]
+            }
+        ]
+    },
     debugger: {
         sections: [
             {
@@ -2774,6 +2795,10 @@ const MenuBarPage = props => (<PageRenderer
 />);
 const ActivityBarPage = props => (<PageRenderer
     config={pageConfigurations.activityBar}
+    {...props}
+/>);
+const StatusBarPage = props => (<PageRenderer
+    config={pageConfigurations.statusBar}
     {...props}
 />);
 const LayoutPage = props => (<PageRenderer
@@ -3052,6 +3077,8 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <MenuBarPage {...handlers} />;
     case 'activityBar':
         return <ActivityBarPage {...handlers} />;
+    case 'statusBar':
+        return <StatusBarPage {...handlers} />;
     case 'debugger':
         return <DebuggerPage {...handlers} />;
     case 'versionControl':
@@ -3109,6 +3136,8 @@ const SETTINGS_SEARCH_INDEX = [
     {label: '菜单栏布局', keywords: '菜单栏布局 menu bar layout 位置', category: 'menuBar'},
     // 活动栏
     {label: '活动栏', keywords: '活动栏 activity bar vscode 按钮 顺序', category: 'activityBar'},
+    // 状态栏
+    {label: '状态栏', keywords: '状态栏 status bar 鼠标 坐标 顺序 帧率', category: 'statusBar'},
     // 版本控制
     {label: 'Git 作者', keywords: 'git 作者 author 名字 邮箱', category: 'versionControl'},
     {label: '默认分支', keywords: '默认分支 default branch git 分支', category: 'versionControl'},
@@ -3292,6 +3321,11 @@ class SettingsModalComponent extends React.Component {
                         id: 'activityBar',
                         label: intl.formatMessage({id: 'mw.settings.activityBar', defaultMessage: '活动栏'}),
                         icon: PanelLeft
+                    }] : []),
+                    ...(AESettings.get('EnableStatusBar') ? [{
+                        id: 'statusBar',
+                        label: intl.formatMessage({id: 'mw.settings.statusBar', defaultMessage: '状态栏'}),
+                        icon: PanelBottom
                     }] : []),
                     {
                         id: 'experimental',

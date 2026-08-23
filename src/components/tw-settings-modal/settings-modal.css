@@ -445,6 +445,36 @@
     flex: 1;
 }
 
+.layout-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.layout-toolbar {
+    display: flex;
+    gap: 0.375rem;
+    flex-shrink: 0;
+    margin-top: 0.5rem;
+}
+
+.layout-toolbar-button {
+    font-family: inherit;
+    font-size: 0.75rem;
+    background-color: transparent;
+    color: $text-primary;
+    border: 1px solid $ui-tertiary;
+    padding: 0.25rem 0.625rem;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.layout-toolbar-button:hover {
+    background-color: $ui-secondary;
+}
+
 .setting table {
     border-collapse: collapse;
 }

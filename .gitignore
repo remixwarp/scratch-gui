@@ -20,6 +20,9 @@ npm-*
 /dist
 /.opt-in
 
+# Webpack filesystem build cache
+/.webpack-cache
+
 # Generated translation files
 /translations
 /locale

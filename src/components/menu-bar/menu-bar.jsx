@@ -12,6 +12,7 @@ import React from 'react';
 import VM from 'scratch-vm';
 
 import {applyCustomShortcuts} from '../../lib/shortcuts/registry.js';
+import {initMenuBarLayout} from '../../lib/mw-menu-bar-layout';
 
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
@@ -384,6 +385,18 @@ class MenuBar extends React.Component {
         document.addEventListener('keydown', this.handleKeyPress);
         this.startAutosaveCountdown();
 
+        // 刷新后恢复菜单栏布局：读取高级设置中保存的显示/隐藏与排序配置，
+        // 并持续监听菜单栏 DOM 变化（如 addon 动态注入的菜单项），保证
+        // 菜单栏始终与上次未关闭时的状态一致。
+        initMenuBarLayout();
+        if (this.menuBarNode && typeof MutationObserver !== 'undefined') {
+            this.menuLayoutObserver = new MutationObserver(() => initMenuBarLayout());
+            this.menuLayoutObserver.observe(this.menuBarNode, {
+                childList: true,
+                subtree: true
+            });
+        }
+
         // Prevent the legacy addon from also injecting a bookmarks menu.
         window.__RemixWarpNativeWorkspaceBookmarks = true;
         
@@ -414,6 +427,11 @@ class MenuBar extends React.Component {
     }
     componentWillUnmount () {
         document.removeEventListener('keydown', this.handleKeyPress);
+
+        if (this.menuLayoutObserver) {
+            this.menuLayoutObserver.disconnect();
+            this.menuLayoutObserver = null;
+        }
         
         if (this.autosaveCountdownInterval) {
             clearInterval(this.autosaveCountdownInterval);
@@ -3079,6 +3097,9 @@ class MenuBar extends React.Component {
                     this.props.className,
                     styles.menuBar
                 )}
+                componentRef={el => {
+                    this.menuBarNode = el;
+                }}
             >
                 <div
                     className={classNames(
@@ -3656,6 +3677,7 @@ class MenuBar extends React.Component {
                             }
                             // eslint-disable-next-line react/jsx-no-bind
                             onOpenCustomSettings={this.props.onClickAddonSettings.bind(null, 'editor-theme3')}
+                            onOpenSettingsModal={this.props.onOpenSettingsModal}
                             onRequestClose={this.props.onRequestCloseSettings}
                             onRequestOpen={this.props.onClickSettings}
                             settingsMenuOpen={this.props.settingsMenuOpen}

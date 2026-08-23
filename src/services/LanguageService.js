@@ -101,9 +101,11 @@ class LanguageService {
             const zhCnData = require('../addons/addons-l10n/zh-cn.json');
             const enData = require('../addons/addons-l10n/en.json');
             const wenyanData = require('../addons/addons-l10n/wenyan.json');
+            const gengData = require('../addons/addons-l10n/geng.json');
             addonL10n['zh-cn'] = zhCnData;
             addonL10n['en'] = enData;
             addonL10n['wenyan'] = wenyanData;
+            addonL10n['geng'] = gengData;
         } catch (e) {
             console.error('Failed to load addon localization files:', e);
         }
@@ -133,7 +135,7 @@ class LanguageService {
         // to missing translations. We now read straight from the bundled
         // catalog so translations resolve correctly and synchronously.
         const allData = {};
-        const localesToLoad = ['zh-cn', 'en', 'wenyan'];
+        const localesToLoad = ['zh-cn', 'en', 'wenyan', 'geng'];
 
         // Keys used by newer UI (e.g. the 02Agent menu item and the
         // VSCode-style activity bar) that are missing from the upstream
@@ -154,6 +156,11 @@ class LanguageService {
                 'gui.menuBar.02agent': '02Agent',
                 'mw.settings.activityBar': '活动栏',
                 'gui.alerts.twCustomBlockPercent': '自制积木中不许有百分号'
+            },
+            'geng': {
+                'gui.menuBar.02agent': '02Agent',
+                'mw.settings.activityBar': '活动栏',
+                'gui.alerts.twCustomBlockPercent': '自制积木里不能带百分号哈'
             }
         };
 

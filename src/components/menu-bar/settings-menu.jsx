@@ -4,7 +4,7 @@ import {FormattedMessage} from 'react-intl';
 
 import LanguageMenu from './language-menu.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
-import {MenuSection} from '../menu/menu.jsx';
+import {MenuSection, MenuItem} from '../menu/menu.jsx';
 import MenuLabel from './tw-menu-label.jsx';
 import TWAccentThemeMenu from './tw-theme-accent.jsx';
 import TWGuiThemeMenu from './tw-theme-gui.jsx';
@@ -13,14 +13,12 @@ import TWWallpaperMenu from './tw-theme-wallpaper.jsx';
 import TWFontsThemeMenu from './tw-theme-fonts.jsx';
 import TWMenuBarAlignMenu from './tw-menubar-align.jsx';
 import TWCustomThemeMenu from './tw-theme-custom.jsx';
-import BilmeMenu from './bl-bilme-menu.jsx';
-import WarpthemeMenu from './bl-warptheme-menu.jsx';
 
 import menuBarStyles from './menu-bar.css';
 import styles from './settings-menu.css';
 
 import ChevronDown from './ChevronDown.jsx';
-import {Eye} from 'lucide-react';
+import {Eye, Settings} from 'lucide-react';
 
 const SettingsMenu = ({
     canChangeLanguage,
@@ -28,6 +26,7 @@ const SettingsMenu = ({
     intl,
     isRtl,
     onOpenCustomSettings,
+    onOpenSettingsModal,
     onRequestClose,
     onRequestOpen,
     settingsMenuOpen
@@ -74,10 +73,26 @@ const SettingsMenu = ({
                             <TWGuiThemeMenu />
                             <TWWallpaperMenu />
                             <TWFontsThemeMenu />
-                            <BilmeMenu onRequestClose={onRequestClose} />
-                            <WarpthemeMenu onRequestClose={onRequestClose} />
                         </React.Fragment>
                     )}
+                </MenuSection>
+                <MenuSection>
+                    <MenuItem
+                        onClick={() => {
+                            if (onRequestClose) {
+                                onRequestClose();
+                            }
+                            if (onOpenSettingsModal) {
+                                onOpenSettingsModal();
+                            }
+                        }}
+                    >
+                        <Settings size={16} />
+                        <FormattedMessage
+                            defaultMessage="高级设置"
+                            id="tw.menuBar.moreSettings"
+                        />
+                    </MenuItem>
                 </MenuSection>
             </MenuBarMenu>
         </MenuLabel>
@@ -90,6 +105,7 @@ SettingsMenu.propTypes = {
     intl: PropTypes.object,
     isRtl: PropTypes.bool,
     onOpenCustomSettings: PropTypes.func,
+    onOpenSettingsModal: PropTypes.func,
     onRequestClose: PropTypes.func,
     onRequestOpen: PropTypes.func,
     settingsMenuOpen: PropTypes.bool

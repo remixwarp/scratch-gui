@@ -8,6 +8,7 @@ import CommunityScope from './community-scope.jsx';
 import IntlBridge from '../tw-use-intl.jsx';
 import communityTranslations from '../../community/translations/zh-cn.json';
 import communityTranslationsWenyan from '../../community/translations/wenyan.json';
+import communityTranslationsGeng from '../../community/translations/geng.json';
 
 addLocaleData(localeData);
 
@@ -27,7 +28,9 @@ const getCommunityIntlProps = () => {
                 const localeKey = locale.toLowerCase();
                 const toMixIn = localeKey === 'wenyan' ?
                     communityTranslationsWenyan[localeKey] :
-                    communityTranslations[localeKey];
+                    localeKey === 'geng' ?
+                        communityTranslationsGeng[localeKey] :
+                        communityTranslations[localeKey];
                 if (toMixIn) {
                     Object.assign(merged, toMixIn);
                 }

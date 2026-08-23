@@ -2,5 +2,6 @@
 export default {
   "en": () => require("../addons-l10n-settings/en.json"),
   "zh-cn": () => require("../addons-l10n-settings/zh-cn.json"),
-  "wenyan": () => require("../addons-l10n-settings/wenyan.json")
+  "wenyan": () => require("../addons-l10n-settings/wenyan.json"),
+  "geng": () => require("../addons-l10n-settings/geng.json")
 };

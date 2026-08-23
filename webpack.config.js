@@ -77,6 +77,15 @@ class EditorChunkPrefetchPlugin {
 const CACHE_EPOCH = 'gleba4';
 
 const base = {
+    // 持久化 webpack 编译缓存，显著加速重复构建（CI/远端构建时缓存命中可省数分钟）。
+    // 放在项目根而非 node_modules 内，避免 npm ci 清空 node_modules 时缓存一并丢失。
+    cache: {
+        type: 'filesystem',
+        cacheDirectory: path.resolve(__dirname, '.webpack-cache'),
+        buildDependencies: {
+            config: [__filename]
+        }
+    },
     mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     devtool: process.env.SOURCEMAP || (process.env.NODE_ENV === 'production' ? false : 'cheap-module-source-map'),
     devServer: {

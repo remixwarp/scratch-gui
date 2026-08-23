@@ -15,6 +15,11 @@ import {
 } from 'lucide-react';
 
 import styles from './status-bar.css';
+import {
+    getVisibleOrderedIds,
+    CHANGE_EVENT,
+    RIGHT_FIXED
+} from '../../lib/mw-status-bar-layout';
 
 const StatusBar = ({vm, theme}) => {
     const [blockCount, setBlockCount] = useState(0);
@@ -25,6 +30,15 @@ const StatusBar = ({vm, theme}) => {
     const [stageMouseCoords, setStageMouseCoords] = useState({x: 0, y: 0});
     const [zoomLevel, setZoomLevel] = useState(100);
     const [aiStatus, setAiStatus] = useState('就绪');
+    // 由高级设置中的状态栏布局决定的可见段顺序
+    const [visibleIds, setVisibleIds] = useState(getVisibleOrderedIds);
+
+    // 监听布局配置变更（拖动排序 / 勾选隐藏后实时重排）
+    useEffect(() => {
+        const onLayoutChanged = () => setVisibleIds(getVisibleOrderedIds());
+        window.addEventListener(CHANGE_EVENT, onLayoutChanged);
+        return () => window.removeEventListener(CHANGE_EVENT, onLayoutChanged);
+    }, []);
 
     // 积木数 + 当前角色名 + 缩放比例：300ms 轮询
     useEffect(() => {
@@ -171,57 +185,107 @@ const StatusBar = ({vm, theme}) => {
 
     const isDark = theme && theme.isDark ? theme.isDark() : false;
 
+    const renderSegment = id => {
+        switch (id) {
+        case 'workspaceMouse':
+            return (
+                <div className={styles.segment} data-mw-item="workspaceMouse" title="鼠标在工作区中的坐标">
+                    <MousePointer2 size={13} className={styles.icon} />
+                    <span className={styles.label}>x: {mouseCoords.x}</span>
+                    <span className={styles.label}>y: {mouseCoords.y}</span>
+                </div>
+            );
+        case 'stageMouse':
+            return (
+                <div className={styles.segment} data-mw-item="stageMouse" title="鼠标在舞台上的坐标">
+                    <Monitor size={13} className={styles.icon} />
+                    <span className={styles.label}>x: {stageMouseCoords.x}</span>
+                    <span className={styles.label}>y: {stageMouseCoords.y}</span>
+                </div>
+            );
+        case 'zoom':
+            return (
+                <div
+                    className={`${styles.segment} ${styles.clickable}`}
+                    data-mw-item="zoom"
+                    title="点击重置缩放到 100% 并居中"
+                    onClick={handleResetZoom}
+                >
+                    <ZoomIn size={13} className={styles.icon} />
+                    <span className={styles.label}>{zoomLevel}%</span>
+                </div>
+            );
+        case 'blockCount':
+            return (
+                <div className={styles.segment} data-mw-item="blockCount" title="项目积木总数">
+                    <Boxes size={13} className={styles.icon} />
+                    <span className={styles.label}>{blockCount} 个积木</span>
+                </div>
+            );
+        case 'spriteName':
+            return (
+                <div className={styles.segment} data-mw-item="spriteName" title="当前编辑角色">
+                    <Layers size={13} className={styles.icon} />
+                    <span className={styles.label}>{spriteName || '—'}</span>
+                </div>
+            );
+        case 'fps':
+            return (
+                <div className={styles.segment} data-mw-item="fps" title="渲染帧率">
+                    <Gauge size={13} className={styles.icon} />
+                    <span className={styles.label}>{fps} FPS</span>
+                </div>
+            );
+        case 'running':
+            return (
+                <div className={styles.segment} data-mw-item="running" title="项目运行状态">
+                    {isRunning ? (
+                        <Play size={13} className={`${styles.icon} ${styles.running}`} />
+                    ) : (
+                        <Square size={11} className={styles.icon} />
+                    )}
+                    <span className={styles.label}>{isRunning ? '运行中' : '已停止'}</span>
+                </div>
+            );
+        case 'aiStatus':
+            return (
+                <div
+                    className={`${styles.segment} ${aiStatus === '生成中' ? styles.aiBusy : ''}`}
+                    data-mw-item="aiStatus"
+                    title="AI 助手状态"
+                >
+                    <Sparkles size={13} className={styles.icon} />
+                    <span className={styles.label}>{aiStatus}</span>
+                </div>
+            );
+        default:
+            return null;
+        }
+    };
+
+    // 渲染一组段，段与段之间插入分隔线
+    const renderSegments = ids => {
+        const items = [];
+        ids.forEach(id => {
+            const seg = renderSegment(id);
+            if (!seg) return;
+            if (items.length > 0) {
+                items.push(<div className={styles.divider} key={`divider-${id}`} />);
+            }
+            items.push(React.cloneElement(seg, {key: id}));
+        });
+        return items;
+    };
+
+    // 普通段在左侧，RIGHT_FIXED 段（如 AI 状态）固定在 spacer 右侧
+    const leftIds = visibleIds.filter(id => RIGHT_FIXED.indexOf(id) === -1);
+    const rightIds = visibleIds.filter(id => RIGHT_FIXED.indexOf(id) !== -1);
+
     return (
         <div className={`${styles.statusBar} ${isDark ? styles.dark : styles.light}`}>
-            <div className={styles.segment} title="鼠标在工作区中的坐标">
-                <MousePointer2 size={13} className={styles.icon} />
-                <span className={styles.label}>x: {mouseCoords.x}</span>
-                <span className={styles.label}>y: {mouseCoords.y}</span>
-            </div>
-            <div className={styles.divider} />
-            <div className={styles.segment} title="鼠标在舞台上的坐标">
-                <Monitor size={13} className={styles.icon} />
-                <span className={styles.label}>x: {stageMouseCoords.x}</span>
-                <span className={styles.label}>y: {stageMouseCoords.y}</span>
-            </div>
-            <div className={styles.divider} />
-            <div
-                className={`${styles.segment} ${styles.clickable}`}
-                title="点击重置缩放到 100% 并居中"
-                onClick={handleResetZoom}
-            >
-                <ZoomIn size={13} className={styles.icon} />
-                <span className={styles.label}>{zoomLevel}%</span>
-            </div>
-            <div className={styles.divider} />
-            <div className={styles.segment} title="项目积木总数">
-                <Boxes size={13} className={styles.icon} />
-                <span className={styles.label}>{blockCount} 个积木</span>
-            </div>
-            <div className={styles.divider} />
-            <div className={styles.segment} title="当前编辑角色">
-                <Layers size={13} className={styles.icon} />
-                <span className={styles.label}>{spriteName || '—'}</span>
-            </div>
-            <div className={styles.divider} />
-            <div className={styles.segment} title="渲染帧率">
-                <Gauge size={13} className={styles.icon} />
-                <span className={styles.label}>{fps} FPS</span>
-            </div>
-            <div className={styles.divider} />
-            <div className={styles.segment} title="项目运行状态">
-                {isRunning ? (
-                    <Play size={13} className={`${styles.icon} ${styles.running}`} />
-                ) : (
-                    <Square size={11} className={styles.icon} />
-                )}
-                <span className={styles.label}>{isRunning ? '运行中' : '已停止'}</span>
-            </div>
+            {renderSegments(leftIds)}
             <div className={styles.spacer} />
-            <div className={`${styles.segment} ${aiStatus === '生成中' ? styles.aiBusy : ''}`} title="AI 助手状态">
-                <Sparkles size={13} className={styles.icon} />
-                <span className={styles.label}>{aiStatus}</span>
-            </div>
+            {renderSegments(rightIds)}
         </div>
     );
 };

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
-import locales from '@turbowarp/scratch-l10n';
+import locales from '@remixwarp/scratch-l10n';
 
 import Box from '../box/box.jsx';
 import Input from '../forms/input.jsx';

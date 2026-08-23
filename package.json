@@ -28,7 +28,7 @@
     "test:smoke": "jest --runInBand test[\\\\/]smoke",
     "watch": "webpack --colors --watch",
     "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint",
-    "cf-build": "node scripts/update-l10n.js && npm install --no-audit --no-fund && npm run build",
+    "cf-build": "node scripts/update-l10n.js && npm ci --prefer-offline --no-audit --no-fund && npm run build",
     "update-l10n": "node scripts/update-l10n.js",
     "generate-files": "node scripts/generate-file-contents.js",
     "server": "node server/index.js",

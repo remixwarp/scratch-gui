@@ -2,5 +2,6 @@
 export default {
   "en": () => import(/* webpackChunkName: "addon-l10n-en" */ "../addons-l10n/en.json"),
   "zh-cn": () => import(/* webpackChunkName: "addon-l10n-zh-cn" */ "../addons-l10n/zh-cn.json"),
-  "wenyan": () => import(/* webpackChunkName: "addon-l10n-wenyan" */ "../addons-l10n/wenyan.json")
+  "wenyan": () => import(/* webpackChunkName: "addon-l10n-wenyan" */ "../addons-l10n/wenyan.json"),
+  "geng": () => import(/* webpackChunkName: "addon-l10n-geng" */ "../addons-l10n/geng.json")
 };

@@ -1,33 +1,33 @@
 import React from 'react';
 import bindAll from 'lodash.bindall';
+import {FormattedMessage} from 'react-intl';
 import {GripVertical, Lock} from 'lucide-react';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import LayoutToolbar from './layout-toolbar.jsx';
 import styles from './settings-modal.css';
 import {
-    BUTTONS,
-    FIXED_BOTTOM,
+    SEGMENTS,
+    RIGHT_FIXED,
     getOrder,
     getHidden,
     isHidden,
     setOrder,
     setHidden,
     setHiddenAll
-} from '../../lib/mw-activity-bar-layout';
+} from '../../lib/mw-status-bar-layout';
 
 const LABELS = {
-    explorer: '资源管理器',
-    addonSettings: '插件设置',
-    addExtension: '添加扩展',
-    collaboration: 'Live Collaboration',
-    todo: 'Todo',
-    git: 'Git',
-    bookmarks: '书签',
-    aiAgent: 'AI Agent',
-    achievements: '成就'
+    workspaceMouse: '鼠标在工作区的坐标',
+    stageMouse: '鼠标在舞台上的坐标',
+    zoom: '缩放比例',
+    blockCount: '积木数',
+    spriteName: '当前角色',
+    fps: '帧率 FPS',
+    running: '运行状态',
+    aiStatus: 'AI 状态'
 };
 
-class UnwrappedActivityBarLayoutSetting extends React.Component {
+class UnwrappedStatusBarLayoutSetting extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
@@ -51,11 +51,11 @@ class UnwrappedActivityBarLayoutSetting extends React.Component {
         };
     }
     handleSelectAll () {
-        setHiddenAll(BUTTONS, false);
+        setHiddenAll(SEGMENTS, false);
         this.setState({hidden: getHidden()});
     }
     handleSelectNone () {
-        setHiddenAll(BUTTONS, true);
+        setHiddenAll(SEGMENTS, true);
         this.setState({hidden: getHidden()});
     }
     handleDragStart (id) {
@@ -88,7 +88,7 @@ class UnwrappedActivityBarLayoutSetting extends React.Component {
     handleDragEnd () {
         this.setState({dragId: null});
     }
-    renderButtonRow (id) {
+    renderRow (id) {
         const visible = !isHidden(id);
         const label = LABELS[id] || id;
         return (
@@ -115,7 +115,8 @@ class UnwrappedActivityBarLayoutSetting extends React.Component {
         );
     }
     renderFixedRow (id) {
-        const label = id === 'settings' ? '设置（固定）' : '登录 / 头像（固定）';
+        const visible = !isHidden(id);
+        const label = LABELS[id] || id;
         return (
             <div
                 key={id}
@@ -126,15 +127,22 @@ class UnwrappedActivityBarLayoutSetting extends React.Component {
                     size={16}
                 />
                 <span className={styles['menu-bar-row-label']}>{label}</span>
+                <FancyCheckbox
+                    className={styles.checkbox}
+                    checked={visible}
+                    onChange={this.handleToggle(id)}
+                />
             </div>
         );
     }
     render () {
+        const draggableIds = this.state.order
+            .filter(id => SEGMENTS.indexOf(id) !== -1 && RIGHT_FIXED.indexOf(id) === -1);
         return (
             <div className={styles.setting}>
                 <div className={styles['layout-header']}>
                     <div className={styles['menu-bar-hint']}>
-                        {'拖动左侧把手以调整活动栏按钮顺序，取消勾选以隐藏。设置按钮与登录/头像固定在底部，不可调整。'}
+                        {'拖动左侧把手以调整状态栏显示内容的顺序，取消勾选以隐藏。'}
                     </div>
                     <LayoutToolbar
                         onSelectAll={this.handleSelectAll}
@@ -142,18 +150,18 @@ class UnwrappedActivityBarLayoutSetting extends React.Component {
                     />
                 </div>
                 <div className={styles['menu-bar-zone-label']}>
-                    {'活动栏按钮'}
+                    {'状态栏内容'}
                 </div>
-                {this.state.order
-                    .filter(id => BUTTONS.indexOf(id) !== -1)
-                    .map(id => this.renderButtonRow(id))}
+                {draggableIds.map(id => this.renderRow(id))}
                 <div className={styles['menu-bar-zone-label']}>
-                    {'固定在底部（不可开关 / 调整）'}
+                    <FormattedMessage id="tw.settingsModal.fixedRightLabel" defaultMessage="Fixed right" />
                 </div>
-                {FIXED_BOTTOM.map(id => this.renderFixedRow(id))}
+                {RIGHT_FIXED
+                    .filter(id => SEGMENTS.indexOf(id) !== -1)
+                    .map(id => this.renderFixedRow(id))}
             </div>
         );
     }
 }
 
-export default UnwrappedActivityBarLayoutSetting;
+export default UnwrappedStatusBarLayoutSetting;

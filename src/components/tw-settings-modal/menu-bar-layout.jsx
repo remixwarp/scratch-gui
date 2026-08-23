@@ -2,6 +2,7 @@ import React from 'react';
 import bindAll from 'lodash.bindall';
 import {GripVertical} from 'lucide-react';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
+import LayoutToolbar from './layout-toolbar.jsx';
 import styles from './settings-modal.css';
 import {
     ZONES,
@@ -10,6 +11,7 @@ import {
     setZoneOrder,
     getHidden,
     setHidden,
+    setHiddenAll,
     getPresentOrderedIds
 } from '../../lib/mw-menu-bar-layout';
 
@@ -29,12 +31,12 @@ const LABELS = {
     'community': '社区'
 };
 
-const isVisibleItem = id => !id.startsWith('__') && !/bilme/i.test(id);
+const isVisibleItem = id => !id.startsWith('__');
 
 class UnwrappedMenuBarLayoutSetting extends React.Component {
     constructor (props) {
         super(props);
-        bindAll(this, ['handleDragEnd']);
+        bindAll(this, ['handleDragEnd', 'handleSelectAll', 'handleSelectNone']);
         const present = getPresentOrderedIds();
         this.state = {
             present,
@@ -56,6 +58,16 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
             setHidden(id, !e.target.checked);
             this.setState({hidden: getHidden()});
         };
+    }
+    handleSelectAll () {
+        const ids = getPresentOrderedIds().filter(isVisibleItem);
+        setHiddenAll(ids, false);
+        this.setState({hidden: getHidden()});
+    }
+    handleSelectNone () {
+        const ids = getPresentOrderedIds().filter(isVisibleItem);
+        setHiddenAll(ids, true);
+        this.setState({hidden: getHidden()});
     }
     handleDragStart (zoneId, id) {
         return () => this.setState({dragId: id, dragZone: zoneId});
@@ -130,8 +142,14 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
     render () {
         return (
             <div className={styles.setting}>
-                <div className={styles['menu-bar-hint']}>
-                    {'拖动以重新排序每组中的项目。取消勾选以隐藏。'}
+                <div className={styles['layout-header']}>
+                    <div className={styles['menu-bar-hint']}>
+                        {'拖动以重新排序每组中的项目。取消勾选以隐藏。'}
+                    </div>
+                    <LayoutToolbar
+                        onSelectAll={this.handleSelectAll}
+                        onSelectNone={this.handleSelectNone}
+                    />
                 </div>
                 {[
                     {labelText: '左侧菜单', zones: ['left']},

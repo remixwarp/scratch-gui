@@ -27,7 +27,6 @@ import Watermark from '../../containers/watermark.jsx';
 import Backpack from '../../containers/backpack.jsx';
 
 import BrowserModal from '../browser-modal/browser-modal.jsx';
-import AdvancedSettingsFab from '../tw-settings-modal/advanced-settings-fab.jsx';
 import TipsLibrary from '../../containers/tips-library.jsx';
 import Cards from '../../containers/cards.jsx';
 import Alerts from '../../containers/alerts.jsx';
@@ -1448,9 +1447,6 @@ const GUIComponent = props => {
                     />
                 </React.Suspense>
             )}
-            <AdvancedSettingsFab
-                onClick={() => props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'settingsModal'})}
-            />
             {customExtensionModalVisible && (
                 <React.Suspense fallback={null}>
                     <TWCustomExtensionModal />
@@ -2253,7 +2249,8 @@ const mapStateToProps = state => ({
     assetsModalVisible: state.scratchGui.modals.assetsModal,
     helpModalVisible: state.scratchGui.modals.helpModal,
     projectMetadataModalVisible: state.scratchGui.modals.projectMetadataModal,
-    debuggerModalVisible: state.scratchGui.modals.debuggerModal
+    debuggerModalVisible: state.scratchGui.modals.debuggerModal,
+    settingsModalVisible: state.scratchGui.modals.settingsModal
 });
 
 const mapDispatchToProps = dispatch => ({

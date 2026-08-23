@@ -140,15 +140,6 @@ const applyLayout = () => {
     for (const id of getHidden()) {
         parts.push(`[data-mw-item="${id}"]{display:none !important;}`);
     }
-    // Always hide the "Bilme 主题商店" (Bilme Marketplace) menu item by default.
-    const collected = collectMenuItemsByZone();
-    for (const zoneId of Object.keys(collected)) {
-        for (const id of collected[zoneId]) {
-            if (/bilme/i.test(id)) {
-                parts.push(`[data-mw-item="${id}"]{display:none !important;}`);
-            }
-        }
-    }
     let style = document.getElementById(STYLE_ID);
     if (!style) {
         style = document.createElement('style');
@@ -178,7 +169,26 @@ const setHidden = (id, hidden) => {
     window.dispatchEvent(new Event(CHANGE_EVENT));
 };
 
+// 批量设置多个菜单项的显示/隐藏（用于配置页的全选/全不选）
+const setHiddenAll = (ids, hidden) => {
+    const current = new Set(getHidden());
+    for (const id of ids) {
+        if (hidden) {
+            current.add(id);
+        } else {
+            current.delete(id);
+        }
+    }
+    writeJSON(HIDDEN_KEY, Array.from(current));
+    applyLayout();
+    window.dispatchEvent(new Event(CHANGE_EVENT));
+};
+
 const initMenuBarLayout = () => {
+    // 先为当前菜单栏 DOM（含 addon 动态注入项）补写稳定 id，
+    // 再应用已保存的隐藏/排序配置，保证编辑器刷新后菜单栏
+    // 恢复到上次未关闭时的状态。
+    collectMenuItemsByZone();
     applyLayout();
 };
 
@@ -195,6 +205,7 @@ export {
     getHidden,
     isHidden,
     setHidden,
+    setHiddenAll,
     getPresentOrderedIds,
     applyLayout,
     initMenuBarLayout
