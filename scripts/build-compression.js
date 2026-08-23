@@ -53,10 +53,12 @@ function compressFile(file) {
     fs.writeFileSync(`${file}.gz`, gz);
 
     // Brotli is available in Node >= 11.7 via zlib.brotliCompressSync.
+    // Quality 6 is a good trade-off: near-max ratio at a fraction of the
+    // CPU time of quality 11 (which dominates post-build time on CI).
     if (typeof zlib.brotliCompressSync === 'function') {
         const br = zlib.brotliCompressSync(buf, {
             params: {
-                [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
+                [zlib.constants.BROTLI_PARAM_QUALITY]: 6,
                 [zlib.constants.BROTLI_PARAM_SIZE_HINT]: stat.size
             }
         });

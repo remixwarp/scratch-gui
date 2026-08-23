@@ -74,6 +74,15 @@ const getPresentOrderedIds = () => {
             seen.add(id);
         }
     }
+    // Always include every item declared in ZONES (e.g. `block-count`, `view`)
+    // so the settings panel exposes the complete set of available menu options
+    // even when a given item is not currently rendered in the DOM.
+    for (const id of ALL_ITEMS) {
+        if (!seen.has(id)) {
+            seen.add(id);
+            ids.push(id);
+        }
+    }
     return ids;
 };
 

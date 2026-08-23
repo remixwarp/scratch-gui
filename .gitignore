@@ -6,9 +6,6 @@
 npm-*
 *.zip
 
-# bun
-/bun.lock
-
 # Environment variables
 .env
 .env.local

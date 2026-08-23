@@ -28,7 +28,8 @@
     "test:smoke": "jest --runInBand test[\\\\/]smoke",
     "watch": "webpack --colors --watch",
     "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint",
-    "cf-build": "bun install --no-verify && npm run build",
+    "cf-build": "node scripts/update-l10n.js && npm install --no-audit --no-fund && npm run build",
+    "update-l10n": "node scripts/update-l10n.js",
     "generate-files": "node scripts/generate-file-contents.js",
     "server": "node server/index.js",
     "dev:all": "concurrently \"npm start\" \"npm run server\""
@@ -42,7 +43,7 @@
     "monaco-editor": "^0.52.0",
     "@isomorphic-git/lightning-fs": "^4.6.2",
     "@microbit/microbit-universal-hex": "0.2.2",
-    "@remixwarp/scratch-l10n": "github:remixwarp/scratch-l10n#main",
+    "@remixwarp/scratch-l10n": "https://github.com/remixwarp/scratch-l10n/archive/8eb8d737ceed55da4bc5120ab280e4f75863769e.tar.gz",
     "@turbowarp/jszip": "^3.11.1",
     "@turbowarp/nanolog": "^1.0.1",
     "@turbowarp/scratch-storage": "^2.0.0",
