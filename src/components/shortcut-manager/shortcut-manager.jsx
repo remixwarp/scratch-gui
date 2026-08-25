@@ -220,11 +220,6 @@ const messages = defineMessages({
         defaultMessage: 'Open AI Chat',
         description: 'Shortcut label',
         id: 'shortcut.aiChat'
-    },
-    aiAgent: {
-        defaultMessage: 'Open AI Agent',
-        description: 'Shortcut label',
-        id: 'shortcut.aiAgent'
     }
 });
 
@@ -303,8 +298,7 @@ class ShortcutManager extends React.Component {
             'paste': messages.paste,
             'cut': messages.cut,
             'closeWindow': messages.closeWindow,
-            'aiChat': messages.aiChat,
-            'aiAgent': messages.aiAgent
+            'aiChat': messages.aiChat
         };
 
         const coreShortcuts = defaultShortcuts.map(shortcut => {

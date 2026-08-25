@@ -79,7 +79,7 @@ const messages = defineMessages({
         id: 'onboarding.step7.title'
     },
     step7Content: {
-        defaultMessage: 'RemixWarp includes powerful AI tools to help you code faster and smarter. Access AI Chat for coding assistance or AI Agent for automated tasks.',
+        defaultMessage: 'RemixWarp includes powerful AI tools to help you code faster and smarter. Access AI Chat for coding assistance.',
         description: 'Content of the seventh onboarding step',
         id: 'onboarding.step7.content'
     },

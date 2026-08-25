@@ -17,10 +17,7 @@ class AIModalContainer extends React.Component {
     }
     render () {
         const {visible, isRtl, aiModalProps} = this.props;
-        const type = aiModalProps?.type || 'chat';
-        const title = type === 'chat'
-            ? this.props.intl.formatMessage({defaultMessage: 'AI Chat', id: 'gui.aiModal.chatTitle'})
-            : this.props.intl.formatMessage({defaultMessage: 'AI Agent', id: 'gui.aiModal.agentTitle'});
+        const title = this.props.intl.formatMessage({defaultMessage: 'AI Chat', id: 'gui.aiModal.chatTitle'});
 
         return (
             <Modal
@@ -34,7 +31,6 @@ class AIModalContainer extends React.Component {
                 <AIPanel
                     onRequestClose={this.handleClose}
                     showHeader={false}
-                    type={type}
                 />
             </Modal>
         );

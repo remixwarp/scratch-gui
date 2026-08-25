@@ -51,7 +51,6 @@ import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import AIModal from '../../containers/ai-modal.jsx';
 import AIChatModal from '../../containers/ai-chat-modal.jsx';
-import AIAgentModal from '../../containers/ai-agent-modal.jsx';
 import BaiduAIModal from '../../containers/baidu-ai-modal.jsx';
 import ExtensionEditorModal from '../../containers/extension-editor-modal.jsx';
 import SuperRefactorModal from '../../containers/super-refactor-modal.jsx';
@@ -98,7 +97,6 @@ import {setStageSize} from '../../reducers/stage-size';
 import {showOnboarding} from '../../reducers/onboarding';
 import {
     openGitModal,
-    openAIAgentModal,
     openAssetsModal,
     openHelp,
     openProjectMetadataModal,
@@ -116,7 +114,7 @@ import {
 import {openWorkspaceBookmarksMenu} from '../../reducers/menus.js';
 import {openCollaborationModal} from '../../reducers/collaboration.js';
 import SettingsStore from '../../addons/settings-store-singleton.js';
-import {GitBranch, ListTodo, Handshake, Trophy, Bookmark, PackagePlus, Sparkles, Settings as SettingsIcon, Puzzle, LogIn} from 'lucide-react';
+import {GitBranch, ListTodo, Handshake, Trophy, Bookmark, PackagePlus, Settings as SettingsIcon, Puzzle, LogIn} from 'lucide-react';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
@@ -1312,7 +1310,6 @@ const GUIComponent = props => {
             openExtensionLibrary: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'extensionLibrary'}),
             openExtensionManagerModal: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'extensionManagerModal'}),
             openAIChatModal: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'aiChatModal'}),
-            openAIAgentModal: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'aiAgentModal'}),
             activateTab: (tabIndex) => props.dispatch && props.dispatch({type: 'scratch-gui/navigation/ACTIVATE_TAB', activeTabIndex: tabIndex})
         };
         
@@ -1396,7 +1393,6 @@ const GUIComponent = props => {
             {debuggerModalVisible && <TWDebugger isRtl={isRtl} />}
             <AIModal />
             <AIChatModal />
-            <AIAgentModal />
             <BaiduAIModal />
             <ExtensionEditorModal />
             <SuperRefactorModal />
@@ -1745,13 +1741,6 @@ const GUIComponent = props => {
                                                 onClick={() => props.dispatch(openWorkspaceBookmarksMenu())}
                                             >
                                                 <Bookmark size={20} />
-                                            </button>
-                                            <button
-                                                className={styles.activityBarButton}
-                                                title={intl.formatMessage({defaultMessage: 'AI Agent', id: 'gui.menuBar.aiAgent'})}
-                                                onClick={() => props.dispatch(openAIAgentModal())}
-                                            >
-                                                <Sparkles size={20} />
                                             </button>
                                             {isAchievementsEnabled() && (
                                                 <button

@@ -83,7 +83,7 @@ try {
 import {showOnboarding} from '../../reducers/onboarding';
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
-import {openAIChatModal, openAIAgentModal, openBaiduAIModal, openGandiHelpModal} from '../../reducers/modals';
+import {openAIChatModal, openBaiduAIModal, openGandiHelpModal} from '../../reducers/modals';
 import {
     isTimeTravel220022BC,
     isTimeTravel1920,
@@ -3750,21 +3750,6 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     )}
-                                    <MenuItem
-                                        onClick={() => {
-                                            this.props.onClickAIAgent();
-                                            this.props.onRequestCloseTools();
-                                        }}
-                                    >
-                                        <Sparkles className={styles.icon} />
-                                        <span className={styles.submenuLabel}>
-                                            <FormattedMessage
-                                                defaultMessage="AI Agent"
-                                                description="Menu bar item for AI agent"
-                                                id="gui.menuBar.aiAgent"
-                                            />
-                                        </span>
-                                    </MenuItem>
                                     {SettingsStore.getAddonEnabled('02agent') && (
                                         <MenuItem
                                             onClick={() => {
@@ -4325,7 +4310,6 @@ MenuBar.propTypes = {
     onClickAI: PropTypes.func,
     onRequestCloseAI: PropTypes.func,
     onClickAIChat: PropTypes.func,
-    onClickAIAgent: PropTypes.func,
     onClickSuperRefactor: PropTypes.func,
     onRequestOpenAbout: PropTypes.func,
     onSeeCommunity: PropTypes.func,
@@ -4424,7 +4408,6 @@ const mapDispatchToProps = dispatch => ({
     onClickAI: () => dispatch(openAIMenu()),
     onRequestCloseAI: () => dispatch(closeAIMenu()),
     onClickAIChat: () => dispatch(openAIChatModal()),
-    onClickAIAgent: () => dispatch(openAIAgentModal()),
     onClickBaiduAI: () => dispatch(openBaiduAIModal()),
     onClickLogin: () => dispatch(openLoginMenu()),
     onRequestCloseLogin: () => dispatch(closeLoginMenu()),

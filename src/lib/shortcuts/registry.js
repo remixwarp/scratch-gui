@@ -297,16 +297,6 @@ export const getDefaultShortcuts = () => [
         action: 'openAIChatModal',
         params: [],
         label: 'Open AI Chat'
-    },
-    {
-        id: 'aiAgent',
-        key: 'Ctrl+Shift+A',
-        defaultKey: 'Ctrl+Shift+A',
-        category: SHORTCUT_CATEGORIES.WINDOW_MANAGEMENT,
-        actionType: 'redux',
-        action: 'openAIAgentModal',
-        params: [],
-        label: 'Open AI Agent'
     }
 ];
 

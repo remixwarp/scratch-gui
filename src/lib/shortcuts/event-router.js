@@ -256,13 +256,6 @@ const executeReduxAction = shortcut => {
             } else {
                 console.warn('openAIChatModal not available in dispatch');
             }
-        },
-        openAIAgentModal: () => {
-            if (dispatch.openAIAgentModal) {
-                dispatch.openAIAgentModal();
-            } else {
-                console.warn('openAIAgentModal not available in dispatch');
-            }
         }
     };
     
