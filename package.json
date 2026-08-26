@@ -11,11 +11,10 @@
   },
   "main": "./dist/scratch-gui.js",
   "scripts": {
-    "prepare": "node scripts/prepublish.mjs",
     "postinstall": "node scripts/patch-shader-manager.mjs",
     "build": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist && NODE_ENV=production webpack --colors --bail",
     "deploy": "NODE_ENV=production npm run build && touch build/.nojekyll && gh-pages -t -d build -m \"Build for $(git log --pretty=format:%H -n1)\"",
-    "prepublish": "node scripts/prepublish.mjs",
+    "prepare": "node scripts/prepublish.mjs",
     "prune": "./prune-gh-pages.sh",
     "i18n:push": "tx-push-src scratch-editor interface translations/en.json",
     "i18n:src": "rimraf ./translations/messages/src && babel src > tmp.js && rimraf tmp.js && build-i18n-src ./translations/messages/src ./translations/",
@@ -28,7 +27,7 @@
     "test:smoke": "jest --runInBand test[\\\\/]smoke",
     "watch": "webpack --colors --watch",
     "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint",
-    "cf-build": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun install --no-verify && node scripts/patch-shader-manager.mjs && npm run build",
+    "cf-build": "node scripts/patch-shader-manager.mjs && npm run build",
     "generate-files": "node scripts/generate-file-contents.js",
     "server": "node server/index.js",
     "dev:all": "concurrently \"npm start\" \"npm run server\""
