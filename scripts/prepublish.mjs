@@ -129,7 +129,7 @@ const syncPenguinMod = async () => {
         console.info('[PenguinMod] extensions.js already exists, skipping fetch');
         return;
     }
-    const SOURCE ='https://raw.githubusercontent.com/PenguinMod/PenguinMod-ExtensionsGallery/main/src/lib/extensions.js');
+    const SOURCE = 'https://raw.githubusercontent.com/PenguinMod/PenguinMod-ExtensionsGallery/main/src/lib/extensions.js';
     console.info('[PenguinMod] Fetching gallery…');
     const res = await crossFetch(SOURCE);
     if (!res.ok) throw new Error(`[PenguinMod] Fetch failed: ${res.status}`);
