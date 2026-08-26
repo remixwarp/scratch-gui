@@ -28,7 +28,7 @@
     "test:smoke": "jest --runInBand test[\\\\/]smoke",
     "watch": "webpack --colors --watch",
     "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint",
-    "cf-build": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun install --no-verify && npm run build",
+    "cf-build": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun install --no-verify && node scripts/patch-shader-manager.mjs && npm run build",
     "generate-files": "node scripts/generate-file-contents.js",
     "server": "node server/index.js",
     "dev:all": "concurrently \"npm start\" \"npm run server\""

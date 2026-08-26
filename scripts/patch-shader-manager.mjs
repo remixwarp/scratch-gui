@@ -70,3 +70,18 @@ try {
 } catch (err) {
     console.warn('[patch-shader-manager] ShaderManager.js patch warning:', err.message);
 }
+
+// --- Patch 3: scratch-translate-extension-languages/languages.json — fix empty file ---
+// bun install sometimes leaves this file as 0 bytes, causing webpack JSON parse failure.
+const translateLangPath = path.join(basePath, 'node_modules', 'scratch-translate-extension-languages', 'languages.json');
+try {
+    if (fs.existsSync(translateLangPath)) {
+        const content = fs.readFileSync(translateLangPath, 'utf8').trim();
+        if (content === '' || content === 'null') {
+            fs.writeFileSync(translateLangPath, '{}');
+            console.info('[patch-shader-manager] Patched languages.json: empty -> {}');
+        }
+    }
+} catch (err) {
+    console.warn('[patch-shader-manager] languages.json patch warning:', err.message);
+}
