@@ -249,13 +249,6 @@ const executeReduxAction = shortcut => {
             } else {
                 console.warn('openRestorePointModal not available in dispatch');
             }
-        },
-        openAIChatModal: () => {
-            if (dispatch.openAIChatModal) {
-                dispatch.openAIChatModal();
-            } else {
-                console.warn('openAIChatModal not available in dispatch');
-            }
         }
     };
     

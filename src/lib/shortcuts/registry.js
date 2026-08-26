@@ -287,16 +287,6 @@ export const getDefaultShortcuts = () => [
         action: 'closeTopWindow',
         params: [],
         label: 'Close Window'
-    },
-    {
-        id: 'aiChat',
-        key: 'Ctrl+Shift+C',
-        defaultKey: 'Ctrl+Shift+C',
-        category: SHORTCUT_CATEGORIES.WINDOW_MANAGEMENT,
-        actionType: 'redux',
-        action: 'openAIChatModal',
-        params: [],
-        label: 'Open AI Chat'
     }
 ];
 

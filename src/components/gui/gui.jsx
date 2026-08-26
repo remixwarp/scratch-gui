@@ -49,8 +49,6 @@ import TWGitModal from '../../containers/mw-git-modal.jsx';
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
-import AIModal from '../../containers/ai-modal.jsx';
-import AIChatModal from '../../containers/ai-chat-modal.jsx';
 import BaiduAIModal from '../../containers/baidu-ai-modal.jsx';
 import ExtensionEditorModal from '../../containers/extension-editor-modal.jsx';
 import SuperRefactorModal from '../../containers/super-refactor-modal.jsx';
@@ -1309,7 +1307,6 @@ const GUIComponent = props => {
             openSoundLibrary: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'soundLibrary'}),
             openExtensionLibrary: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'extensionLibrary'}),
             openExtensionManagerModal: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'extensionManagerModal'}),
-            openAIChatModal: () => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'aiChatModal'}),
             activateTab: (tabIndex) => props.dispatch && props.dispatch({type: 'scratch-gui/navigation/ACTIVATE_TAB', activeTabIndex: tabIndex})
         };
         
@@ -1391,8 +1388,6 @@ const GUIComponent = props => {
             {helpModalVisible && <MWHelpModal isRtl={isRtl} entryId={helpEntry} />}
             {projectMetadataModalVisible && <MWProjectMetadataModal isRtl={isRtl} />}
             {debuggerModalVisible && <TWDebugger isRtl={isRtl} />}
-            <AIModal />
-            <AIChatModal />
             <BaiduAIModal />
             <ExtensionEditorModal />
             <SuperRefactorModal />

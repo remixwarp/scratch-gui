@@ -83,7 +83,7 @@ try {
 import {showOnboarding} from '../../reducers/onboarding';
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
-import {openAIChatModal, openBaiduAIModal, openGandiHelpModal} from '../../reducers/modals';
+import {openBaiduAIModal, openGandiHelpModal} from '../../reducers/modals';
 import {
     isTimeTravel220022BC,
     isTimeTravel1920,
@@ -131,10 +131,7 @@ import {
     closeErrorsMenu,
     openToolsMenu,
     closeToolsMenu,
-    toolsMenuOpen,
-    openAIMenu,
-    closeAIMenu,
-    aiMenuOpen
+    toolsMenuOpen
 } from '../../reducers/menus';
 import {setFileHandle} from '../../reducers/tw.js';
 import JSZip from '@turbowarp/jszip';
@@ -4230,7 +4227,6 @@ MenuBar.propTypes = {
     fileMenuOpen: PropTypes.bool,
     workspaceBookmarksMenuOpen: PropTypes.bool,
     toolsMenuOpen: PropTypes.bool,
-    aiMenuOpen: PropTypes.bool,
     handleSaveProject: PropTypes.func,
     intl: intlShape,
     isPlayerOnly: PropTypes.bool,
@@ -4307,9 +4303,6 @@ MenuBar.propTypes = {
     onRequestCloseSettings: PropTypes.func,
     onClickTools: PropTypes.func,
     onRequestCloseTools: PropTypes.func,
-    onClickAI: PropTypes.func,
-    onRequestCloseAI: PropTypes.func,
-    onClickAIChat: PropTypes.func,
     onClickSuperRefactor: PropTypes.func,
     onRequestOpenAbout: PropTypes.func,
     onSeeCommunity: PropTypes.func,
@@ -4362,7 +4355,6 @@ const mapStateToProps = (state, ownProps) => {
         errors: state.scratchGui.tw.compileErrors,
         errorsMenuOpen: errorsMenuOpen(state),
         toolsMenuOpen: toolsMenuOpen(state),
-        aiMenuOpen: aiMenuOpen(state),
         isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
         isRtl: state.locales.isRtl,
         isUpdating: getIsUpdating(loadingState),
@@ -4405,9 +4397,6 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseErrors: () => dispatch(closeErrorsMenu()),
     onClickTools: () => dispatch(openToolsMenu()),
     onRequestCloseTools: () => dispatch(closeToolsMenu()),
-    onClickAI: () => dispatch(openAIMenu()),
-    onRequestCloseAI: () => dispatch(closeAIMenu()),
-    onClickAIChat: () => dispatch(openAIChatModal()),
     onClickBaiduAI: () => dispatch(openBaiduAIModal()),
     onClickLogin: () => dispatch(openLoginMenu()),
     onRequestCloseLogin: () => dispatch(closeLoginMenu()),

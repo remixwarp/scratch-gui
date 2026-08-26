@@ -25,8 +25,6 @@ const MODAL_PREFERENCES = 'preferencesModal';
 const MODAL_SIMPLE_DIALOG = 'simpleDialog';
 const MODAL_ONBOARDING = 'onboardingModal';
 const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
-const MODAL_AI = 'aiModal';
-const MODAL_AI_CHAT = 'aiChatModal';
 const MODAL_BAIDU_AI = 'baiduAIModal';
 const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 const MODAL_WARPTHEME = 'bilmeModal';
@@ -72,8 +70,6 @@ const initialState = {
     [MODAL_SIMPLE_DIALOG]: false,
     [MODAL_ONBOARDING]: false,
     [MODAL_SHORTCUT_MANAGER]: false,
-    [MODAL_AI]: false,
-    [MODAL_AI_CHAT]: false,
     [MODAL_BAIDU_AI]: false,
     [MODAL_EXTENSION_LOAD_CHOICE]: false,
     [MODAL_WARPTHEME]: false,
@@ -208,26 +204,6 @@ const openOnboardingModal = function () {
 };
 const openShortcutManagerModal = function () {
     return openModal(MODAL_SHORTCUT_MANAGER);
-};
-const openAIModal = function (config) {
-    return {
-        type: OPEN_MODAL,
-        modal: MODAL_AI,
-        aiConfig: config
-    };
-};
-const closeAIModal = function () {
-    return closeModal(MODAL_AI);
-};
-const openAIChatModal = function (config) {
-    return {
-        type: OPEN_MODAL,
-        modal: MODAL_AI_CHAT,
-        aiConfig: config
-    };
-};
-const closeAIChatModal = function () {
-    return closeModal(MODAL_AI_CHAT);
 };
 const openBaiduAIModal = function (config) {
     return {
@@ -473,10 +449,6 @@ export {
     openPreferencesModal,
     openOnboardingModal,
     openShortcutManagerModal,
-    openAIModal,
-    closeAIModal,
-    openAIChatModal,
-    closeAIChatModal,
     openBaiduAIModal,
     closeBaiduAIModal,
     openSimpleDialog,

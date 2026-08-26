@@ -215,11 +215,6 @@ const messages = defineMessages({
         defaultMessage: 'Close Window',
         description: 'Shortcut label',
         id: 'shortcut.closeWindow'
-    },
-    aiChat: {
-        defaultMessage: 'Open AI Chat',
-        description: 'Shortcut label',
-        id: 'shortcut.aiChat'
     }
 });
 
@@ -297,8 +292,7 @@ class ShortcutManager extends React.Component {
             'copy': messages.copy,
             'paste': messages.paste,
             'cut': messages.cut,
-            'closeWindow': messages.closeWindow,
-            'aiChat': messages.aiChat
+            'closeWindow': messages.closeWindow
         };
 
         const coreShortcuts = defaultShortcuts.map(shortcut => {
