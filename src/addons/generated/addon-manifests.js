@@ -110,7 +110,7 @@ import _todo from "../addons/todo/_manifest_entry.js";
 import _block_pins from "../addons/block-pins/_manifest_entry.js";
 import _tw_comment_markdown_editor from "../addons/tw-comment-markdown-editor/_manifest_entry.js";
 import _background from "../addons/background/_manifest_entry.js";
-import _santa from "../addons/background/_manifest_entry.js";
+import _santa from "../addons/santa/_manifest_entry.js";
 import _project_size_display from "../addons/project-size-display/_manifest_entry.js";
 import _project_health_dashboard from "../addons/project-health-dashboard/_manifest_entry.js";
 import _lint_system from "../addons/lint-system/_manifest_entry.js";
