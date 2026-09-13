@@ -18,7 +18,7 @@ const HELP_TRANSLATIONS = {
         keywords: ['文件', '编辑', '工具', '顶栏'],
         short: '菜单栏括文件、编辑、工具、书签与设置诸菜单。自存到开调试器，咸自此始。',
         howTo: [
-            '文件菜单括新建、存至 Bilup、存至电脑、打包与还原点。',
+            '文件菜单括新建、存至 RemixWarp、存至电脑、打包与还原点。',
             '工具菜单括 Git 面板、终端、实时协作、调试器与变量管理器。',
             '编辑菜单括撤销、重做、插件与教程。'
         ]
@@ -100,7 +100,7 @@ const HELP_TRANSLATIONS = {
         howTo: [
             '于「吾之积木」类中击「制积木」，添签文与输入项。',
             '勾「行时刷屏」令整积木于帧内行毕。',
-            'Bilup 亦支返值，故自制积木可报果。'
+            'RemixWarp 亦支返值，故自制积木可报果。'
         ]
     },
     'backpack': {
@@ -136,7 +136,7 @@ const HELP_TRANSLATIONS = {
     'themes': {
         title: '主题与观',
         keywords: ['暗式', '强调色', '自定义主题', '色'],
-        short: 'Bilup 许汝重设编辑器与积木之式。编辑器设择积木配色，而全浅/暗主题与强调色则于社站之账户设中定。',
+        short: 'RemixWarp 许汝重设编辑器与积木之式。编辑器设择积木配色，而全浅/暗主题与强调色则于社站之账户设中定。',
         howTo: [
             '于编辑器「主题」设中择积木配色（如高对比）。',
             '于账户设中定全浅/暗主题与强调色。',
@@ -176,7 +176,7 @@ const HELP_TRANSLATIONS = {
     'git': {
         title: '版本之控（Git）',
         keywords: ['git', '提', '推', '拉', '异', '史'],
-        short: 'Bilup 可将作作 git 仓库而踪之，故得全史：含提、推、拉、异与并处。',
+        short: 'RemixWarp 可将作作 git 仓库而踪之，故得全史：含提、推、拉、异与并处。',
         howTo: [
             '自工具菜单开 Git 面板。',
             '以讯提更，乃推以共享。',
@@ -226,7 +226,7 @@ const HELP_TRANSLATIONS = {
     'shortcuts': {
         title: '键盘捷径',
         keywords: ['热键', '键绑'],
-        short: 'Bilup 为常见之操供键盘捷径，并有一捷径管理器供汝览与更。',
+        short: 'RemixWarp 为常见之操供键盘捷径，并有一捷径管理器供汝览与更。',
         howTo: [
             '用 Ctrl/Cmd + S 存，用 Ctrl/Cmd + O 开作。',
             '自设中开捷径管理器览全列。',
@@ -239,7 +239,7 @@ const HELP_TRANSLATIONS = {
         short: '运积木移转角色：移、转、至位、滑与面向。',
         howTo: [
             '运积木唯影角色，不影台。',
-            'Bilup 添「面向 x/y」，以指确坐标。',
+            'RemixWarp 添「面向 x/y」，以指确坐标。',
             '与重复行合可成续运。'
         ]
     },
@@ -280,7 +280,7 @@ const HELP_TRANSLATIONS = {
         howTo: [
             '用「重复行」「重复行…次」与「若」以组逻。',
             '孪令一角于行时生己之副本。',
-            'Bilup 添「当…时」「对每项」「支」「皆行」。'
+            'RemixWarp 添「当…时」「对每项」「支」「皆行」。'
         ]
     },
     'blocks-sensing': {
@@ -300,7 +300,7 @@ const HELP_TRANSLATIONS = {
         howTo: [
             '套算积木以构更巨之式。',
             '用「连」「第…字」与「字数」处文。',
-            'Bilup 添替、修、夹、小、大、圆周率等。'
+            'RemixWarp 添替、修、夹、小、大、圆周率等。'
         ]
     },
     'blocks-variables': {
@@ -316,7 +316,7 @@ const HELP_TRANSLATIONS = {
     'blocks-my-blocks': {
         title: '吾之积木',
         keywords: ['自制积木', '定', '过'],
-        short: '「吾之积木」者，汝所定之自制积木也。可受输入、不刷屏行，于 Bilup 中犹可报返值。',
+        short: '「吾之积木」者，汝所定之自制积木也。可受输入、不刷屏行，于 RemixWarp 中犹可报返值。',
         howTo: [
             '定一积木，乃如他积木呼之。',
             '于定之内用参数积木读输入。',
@@ -324,12 +324,12 @@ const HELP_TRANSLATIONS = {
         ]
     },
     'blocks-mistwarp-extras': {
-        title: 'Bilup 余积木',
+        title: 'RemixWarp 余积木',
         keywords: ['turbowarp', '余', '新积木'],
-        short: 'Bilup 与 TurboWarp 于多类中添原版 Scratch 所无之积木，如「当…时」环、支与余文算积木。',
+        short: 'RemixWarp 与 TurboWarp 于多类中添原版 Scratch 所无之积木，如「当…时」环、支与余文算积木。',
         howTo: [
             '余积木内联显于所属之常类中。',
-            '其会存入标准 sb3 作中，并于凡行 Bilup 之处行焉。',
+            '其会存入标准 sb3 作中，并于凡行 RemixWarp 之处行焉。',
             '参手册可览全列及每积木之性。'
         ]
     },
@@ -344,9 +344,9 @@ const HELP_TRANSLATIONS = {
         ]
     },
     'ext-mistwarp-blocks': {
-        title: 'Bilup 积木',
+        title: 'RemixWarp 积木',
         keywords: ['tw', '末键', '鼠键'],
-        short: 'Bilup 积木扩展添实用之积木，如末所按之键及某鼠键是否按下。',
+        short: 'RemixWarp 积木扩展添实用之积木，如末所按之键及某鼠键是否按下。',
         howTo: [
             '自扩展库添之。',
             '用「末键」无须命名即可应任何键。',
@@ -506,7 +506,7 @@ const HELP_TRANSLATIONS = {
     'javascript': {
         title: 'JavaScript 与编译器',
         keywords: ['性能', '编', 'window.vm'],
-        short: 'Bilup 将积木编为 JavaScript 以速。高级用户亦经 window.vm 访正行之作。',
+        short: 'RemixWarp 将积木编为 JavaScript 以速。高级用户亦经 window.vm 访正行之作。',
         howTo: [
             '编译器自会行；于设中阖之以比其性。',
             '开浏览之控制台，用 window.vm 检行中之作。',
@@ -526,7 +526,7 @@ const HELP_TRANSLATIONS = {
     'embedding': {
         title: '嵌作',
         keywords: ['iframe', '站', '嵌', 'postmessage'],
-        short: '汝可嵌 Bilup 作于他网页，并可择与周页通。',
+        short: '汝可嵌 RemixWarp 作于他网页，并可择与周页通。',
         howTo: [
             '将播放器嵌于汝站之 iframe 中。',
             '用 URL 参数调大小与控件。',

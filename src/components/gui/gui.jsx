@@ -50,6 +50,7 @@ import AIChatModal from '../../containers/ai-chat-modal.jsx';
 import AIAgentModal from '../../containers/ai-agent-modal.jsx';
 import BaiduAIModal from '../../containers/baidu-ai-modal.jsx';
 import ExtensionEditorModal from '../../containers/extension-editor-modal.jsx';
+import WebEmbedModal from '../../containers/web-embed-modal.jsx';
 const SuperRefactorModal = React.lazy(() => import('../../containers/super-refactor-modal.jsx'));
 const CompatibilityModal = React.lazy(() => import('../../containers/tv-compatibility-modal.jsx'));
 const CustomGalleryModal = React.lazy(() => import('../../containers/custom-gallery-modal.jsx'));
@@ -1491,6 +1492,7 @@ const GUIComponent = props => {
             <AIAgentModal />
             <BaiduAIModal />
             <ExtensionEditorModal />
+            <WebEmbedModal />
             <SuperRefactorModal />
             <CompatibilityModal />
             <SimpleDialog />
@@ -1632,11 +1634,6 @@ const GUIComponent = props => {
             title: intl.formatMessage({defaultMessage: 'Bookmarks', id: 'tw.workspaceBookmarks.menuLabel'}),
             onClick: () => props.dispatch(openWorkspaceBookmarksMenu()),
             icon: <Bookmark size={20} />
-        },
-        aiAgent: {
-            title: intl.formatMessage({defaultMessage: 'AI Agent', id: 'gui.menuBar.aiAgent'}),
-            onClick: () => props.dispatch(openAIAgentModal()),
-            icon: <Sparkles size={20} />
         },
         achievements: {
             condition: isAchievementsEnabled(),

@@ -37,6 +37,7 @@ const MODAL_DEBUGGER = 'debuggerModal';
 const MODAL_HELP = 'helpModal';
 const MODAL_WARPTHEME_STORE = 'warpthemeModal';
 const MODAL_EXTENSION_EDITOR = 'extensionEditorModal';
+const MODAL_WEB_EMBED = 'webEmbedModal';
 const MODAL_SUPER_REFACTOR = 'superRefactorModal';
 
 const MODAL_TUTORIAL = 'tutorialModal';
@@ -82,6 +83,7 @@ const initialState = {
     [MODAL_WARPTHEME]: false,
     [MODAL_WARPTHEME_STORE]: false,
     [MODAL_EXTENSION_EDITOR]: false,
+    [MODAL_WEB_EMBED]: false,
     [MODAL_SUPER_REFACTOR]: false,
     [MODAL_TUTORIAL]: false,
     [MODAL_VIDEO]: false,
@@ -531,6 +533,8 @@ export {
     openGandiHelpModal,
     closeGandiHelpModal,
     openExtensionEditorModal,
+    openWebEmbedModal,
+    closeWebEmbedModal,
     closeExtensionEditorModal,
     openSuperRefactorModal,
     closeSuperRefactorModal,
@@ -558,6 +562,7 @@ export {
     MODAL_WARPTHEME,
     MODAL_WARPTHEME_STORE,
     MODAL_EXTENSION_EDITOR,
+    MODAL_WEB_EMBED,
     MODAL_SUPER_REFACTOR,
     MODAL_BAIDU_AI,
     MODAL_COMPATIBILITY

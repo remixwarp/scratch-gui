@@ -18,7 +18,7 @@ const HELP_TRANSLATIONS = {
         keywords: ['文件', '编辑', '工具', '顶栏'],
         short: '菜单栏包含文件、编辑、工具、书签和设置菜单。从保存到打开调试器，一切从这里开始。',
         howTo: [
-            '文件菜单包含新建、保存到 Bilup、保存到电脑、打包和还原点。',
+            '文件菜单包含新建、保存到 RemixWarp、保存到电脑、打包和还原点。',
             '工具菜单包含 Git 面板、终端、实时协作、调试器和变量管理器。',
             '编辑菜单包含撤销、重做、插件和教程。'
         ]
@@ -100,7 +100,7 @@ const HELP_TRANSLATIONS = {
         howTo: [
             '在“我的积木”分类中点击“制作积木”，添加标签文本和输入项。',
             '勾选“运行时刷新屏幕”可让整个积木在一帧内运行。',
-            'Bilup 还支持返回值，因此自制积木可以报告结果。'
+            'RemixWarp 还支持返回值，因此自制积木可以报告结果。'
         ]
     },
     'backpack': {
@@ -136,7 +136,7 @@ const HELP_TRANSLATIONS = {
     'themes': {
         title: '主题与外观',
         keywords: ['深色模式', '强调色', '自定义主题', '颜色'],
-        short: 'Bilup 允许您重新设计编辑器和积木的样式。编辑器设置选择积木配色方案，而整体浅色/深色主题和强调色则在社区网站的账户设置中设置。',
+        short: 'RemixWarp 允许您重新设计编辑器和积木的样式。编辑器设置选择积木配色方案，而整体浅色/深色主题和强调色则在社区网站的账户设置中设置。',
         howTo: [
             '在编辑器的“主题”设置中选择积木配色方案（如高对比度）。',
             '在账户设置中设置整体浅色/深色主题和强调色。',
@@ -176,7 +176,7 @@ const HELP_TRANSLATIONS = {
     'git': {
         title: '版本控制（Git）',
         keywords: ['git', '提交', '推送', '拉取', '差异', '历史'],
-        short: 'Bilup 可以将作品作为 git 仓库跟踪，从而获得包含提交、推送、拉取、差异和合并处理的完整历史。',
+        short: 'RemixWarp 可以将作品作为 git 仓库跟踪，从而获得包含提交、推送、拉取、差异和合并处理的完整历史。',
         howTo: [
             '从工具菜单打开 Git 面板。',
             '使用消息提交更改，然后推送以分享。',
@@ -226,7 +226,7 @@ const HELP_TRANSLATIONS = {
     'shortcuts': {
         title: '键盘快捷键',
         keywords: ['热键', '按键绑定'],
-        short: 'Bilup 为常见操作提供了键盘快捷键，并有一个快捷键管理器供您查看和更改。',
+        short: 'RemixWarp 为常见操作提供了键盘快捷键，并有一个快捷键管理器供您查看和更改。',
         howTo: [
             '使用 Ctrl/Cmd + S 保存，使用 Ctrl/Cmd + O 打开作品。',
             '从设置中打开快捷键管理器查看完整列表。',
@@ -239,7 +239,7 @@ const HELP_TRANSLATIONS = {
         short: '运动积木移动和旋转角色:移动、转向、移到位置、滑行和面向方向。',
         howTo: [
             '运动积木只影响角色，不影响舞台。',
-            'Bilup 添加了“面向 x/y”，用于指向精确坐标。',
+            'RemixWarp 添加了“面向 x/y”，用于指向精确坐标。',
             '与重复执行结合可创建连续运动。'
         ]
     },
@@ -280,7 +280,7 @@ const HELP_TRANSLATIONS = {
         howTo: [
             '使用“重复执行”、“重复执行…次”和“如果”来组织逻辑。',
             '克隆让一个角色在运行时生成自身的副本。',
-            'Bilup 添加了“当…时”、“对每一项”、“分支”和“全部执行”。'
+            'RemixWarp 添加了“当…时”、“对每一项”、“分支”和“全部执行”。'
         ]
     },
     'blocks-sensing': {
@@ -300,7 +300,7 @@ const HELP_TRANSLATIONS = {
         howTo: [
             '嵌套运算积木以构建更大的表达式。',
             '使用“连接”、“第…个字符”和“字符数”处理文本。',
-            'Bilup 添加了替换、修剪、夹取、最小值、最大值、圆周率等。'
+            'RemixWarp 添加了替换、修剪、夹取、最小值、最大值、圆周率等。'
         ]
     },
     'blocks-variables': {
@@ -316,7 +316,7 @@ const HELP_TRANSLATIONS = {
     'blocks-my-blocks': {
         title: '我的积木',
         keywords: ['自制积木', '定义', '过程'],
-        short: '“我的积木”是您定义的自制积木。它们可以接受输入、不刷新屏幕运行，在 Bilup 中还能报告返回值。',
+        short: '“我的积木”是您定义的自制积木。它们可以接受输入、不刷新屏幕运行，在 RemixWarp 中还能报告返回值。',
         howTo: [
             '定义一个积木，然后像其他积木一样调用它。',
             '在定义内部使用参数报告积木读取输入。',
@@ -324,12 +324,12 @@ const HELP_TRANSLATIONS = {
         ]
     },
     'blocks-mistwarp-extras': {
-        title: 'Bilup 额外积木',
+        title: 'RemixWarp 额外积木',
         keywords: ['turbowarp', '额外', '新增积木'],
-        short: 'Bilup 和 TurboWarp 在多个分类中添加了原版 Scratch 没有的积木，例如“当…时”循环、分支和额外的文本运算积木。',
+        short: 'RemixWarp 和 TurboWarp 在多个分类中添加了原版 Scratch 没有的积木，例如“当…时”循环、分支和额外的文本运算积木。',
         howTo: [
             '额外积木内联显示在它们所属的普通分类中。',
-            '它们会保存到标准 sb3 作品中，并在任何运行 Bilup 的地方运行。',
+            '它们会保存到标准 sb3 作品中，并在任何运行 RemixWarp 的地方运行。',
             '参考手册可查看完整列表及每个积木的行为。'
         ]
     },
@@ -344,9 +344,9 @@ const HELP_TRANSLATIONS = {
         ]
     },
     'ext-mistwarp-blocks': {
-        title: 'Bilup 积木',
+        title: 'RemixWarp 积木',
         keywords: ['tw', '最后按键', '鼠标按键'],
-        short: 'Bilup 积木扩展添加了实用积木，例如最后按下的按键以及特定鼠标按键是否按下。',
+        short: 'RemixWarp 积木扩展添加了实用积木，例如最后按下的按键以及特定鼠标按键是否按下。',
         howTo: [
             '从扩展库中添加它。',
             '使用“最后按键”无需命名即可对任何按键做出反应。',
@@ -506,7 +506,7 @@ const HELP_TRANSLATIONS = {
     'javascript': {
         title: 'JavaScript 与编译器',
         keywords: ['性能', '编译', 'window.vm'],
-        short: 'Bilup 将积木编译为 JavaScript 以提高速度。高级用户还可以通过 window.vm 访问正在运行的作品。',
+        short: 'RemixWarp 将积木编译为 JavaScript 以提高速度。高级用户还可以通过 window.vm 访问正在运行的作品。',
         howTo: [
             '编译器会自动运行；在设置中禁用以比较行为。',
             '打开浏览器控制台，使用 window.vm 检查运行中的作品。',
@@ -526,7 +526,7 @@ const HELP_TRANSLATIONS = {
     'embedding': {
         title: '嵌入作品',
         keywords: ['iframe', '网站', '嵌入', 'postmessage'],
-        short: '您可以将 Bilup 作品嵌入另一个网页，并可选地与周围页面通信。',
+        short: '您可以将 RemixWarp 作品嵌入另一个网页，并可选地与周围页面通信。',
         howTo: [
             '将播放器嵌入到您网站的 iframe 中。',
             '使用 URL 参数调整大小和控件。',
