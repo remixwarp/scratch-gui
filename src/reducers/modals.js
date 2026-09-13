@@ -388,6 +388,12 @@ const openExtensionEditorModal = function () {
 const closeExtensionEditorModal = function () {
     return closeModal(MODAL_EXTENSION_EDITOR);
 };
+const openWebEmbedModal = function () {
+    return openModal(MODAL_WEB_EMBED);
+};
+const closeWebEmbedModal = function () {
+    return closeModal(MODAL_WEB_EMBED);
+};
 const openSuperRefactorModal = function () {
     return openModal(MODAL_SUPER_REFACTOR);
 };
