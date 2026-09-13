@@ -14,7 +14,7 @@ const BUTTONS = [
 ];
 
 // 固定在底部、不允许开关/调整顺序的按钮
-const FIXED_BOTTOM = ['login', 'settings'];
+const FIXED_BOTTOM = ['settings'];
 
 const ORDER_KEY = 'mw:activity-bar-order';
 const HIDDEN_KEY = 'mw:activity-bar-hidden';

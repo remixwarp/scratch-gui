@@ -115,7 +115,7 @@ class UnwrappedActivityBarLayoutSetting extends React.Component {
         );
     }
     renderFixedRow (id) {
-        const label = id === 'settings' ? '设置（固定）' : '登录 / 头像（固定）';
+        const label = '设置（固定）';
         return (
             <div
                 key={id}
@@ -134,7 +134,7 @@ class UnwrappedActivityBarLayoutSetting extends React.Component {
             <div className={styles.setting}>
                 <div className={styles['layout-header']}>
                     <div className={styles['menu-bar-hint']}>
-                        {'拖动左侧把手以调整活动栏按钮顺序，取消勾选以隐藏。设置按钮与登录/头像固定在底部，不可调整。'}
+                        {'拖动左侧把手以调整活动栏按钮顺序，取消勾选以隐藏。设置按钮固定在底部，不可调整。'}
                     </div>
                     <LayoutToolbar
                         onSelectAll={this.handleSelectAll}

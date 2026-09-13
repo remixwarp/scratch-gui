@@ -9,11 +9,11 @@ const SEGMENTS = [
     'spriteName',
     'fps',
     'running',
-    'aiStatus'
+    'onlineStatus'
 ];
 
 // 固定在状态栏右侧显示、不参与拖动排序的段（如 AI 状态）
-const RIGHT_FIXED = ['aiStatus'];
+const RIGHT_FIXED = ['onlineStatus'];
 
 const ORDER_KEY = 'mw:status-bar-order';
 const HIDDEN_KEY = 'mw:status-bar-hidden';

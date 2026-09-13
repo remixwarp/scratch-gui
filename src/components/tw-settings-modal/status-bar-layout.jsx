@@ -24,7 +24,7 @@ const LABELS = {
     spriteName: '当前角色',
     fps: '帧率 FPS',
     running: '运行状态',
-    aiStatus: 'AI 状态'
+    onlineStatus: '在线状态'
 };
 
 class UnwrappedStatusBarLayoutSetting extends React.Component {

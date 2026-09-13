@@ -10,7 +10,7 @@ import {
     Gauge,
     Play,
     Square,
-    Sparkles,
+    Wifi,
     ZoomIn
 } from 'lucide-react';
 
@@ -29,7 +29,7 @@ const StatusBar = ({vm, theme}) => {
     const [mouseCoords, setMouseCoords] = useState({x: 0, y: 0});
     const [stageMouseCoords, setStageMouseCoords] = useState({x: 0, y: 0});
     const [zoomLevel, setZoomLevel] = useState(100);
-    const [aiStatus, setAiStatus] = useState('就绪');
+    const [onlineStatus, setOnlineStatus] = useState(navigator.onLine ? '就绪' : '无网络');
     // 由高级设置中的状态栏布局决定的可见段顺序
     const [visibleIds, setVisibleIds] = useState(getVisibleOrderedIds);
 
@@ -160,26 +160,16 @@ const StatusBar = ({vm, theme}) => {
         return () => document.removeEventListener('mousemove', handleMouseMove);
     }, []);
 
-    // AI 状态：监听 02agent/novatheai 事件（如果有）
+    // 在线状态：监听 navigator.onLine + online/offline 事件
     useEffect(() => {
-        const onAIStart = () => setAiStatus('生成中');
-        const onAIDone = () => setAiStatus('就绪');
-        const onAIError = () => setAiStatus('错误');
-
-        window.addEventListener('02agent-request-start', onAIStart);
-        window.addEventListener('02agent-request-done', onAIDone);
-        window.addEventListener('02agent-request-error', onAIError);
-        window.addEventListener('novatheai-request-start', onAIStart);
-        window.addEventListener('novatheai-request-done', onAIDone);
-        window.addEventListener('novatheai-request-error', onAIError);
-
+        const onOnline = () => setOnlineStatus('就绪');
+        const onOffline = () => setOnlineStatus('无网络');
+        setOnlineStatus(navigator.onLine ? '就绪' : '无网络');
+        window.addEventListener('online', onOnline);
+        window.addEventListener('offline', onOffline);
         return () => {
-            window.removeEventListener('02agent-request-start', onAIStart);
-            window.removeEventListener('02agent-request-done', onAIDone);
-            window.removeEventListener('02agent-request-error', onAIError);
-            window.removeEventListener('novatheai-request-start', onAIStart);
-            window.removeEventListener('novatheai-request-done', onAIDone);
-            window.removeEventListener('novatheai-request-error', onAIError);
+            window.removeEventListener('online', onOnline);
+            window.removeEventListener('offline', onOffline);
         };
     }, []);
 
@@ -247,15 +237,15 @@ const StatusBar = ({vm, theme}) => {
                     <span className={styles.label}>{isRunning ? '运行中' : '已停止'}</span>
                 </div>
             );
-        case 'aiStatus':
+        case 'onlineStatus':
             return (
                 <div
-                    className={`${styles.segment} ${aiStatus === '生成中' ? styles.aiBusy : ''}`}
-                    data-mw-item="aiStatus"
-                    title="AI 助手状态"
+                    className={`${styles.segment} ${onlineStatus === '无网络' ? styles.aiBusy : ''}`}
+                    data-mw-item="onlineStatus"
+                    title={onlineStatus === '就绪' ? '网络已连接' : '网络未连接'}
                 >
-                    <Sparkles size={13} className={styles.icon} />
-                    <span className={styles.label}>{aiStatus}</span>
+                    <Wifi size={13} className={styles.icon} />
+                    <span className={styles.label}>{onlineStatus}</span>
                 </div>
             );
         default:
