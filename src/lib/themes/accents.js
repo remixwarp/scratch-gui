@@ -43,6 +43,7 @@ import * as accentOmniBlue from './accent/omnimax-blue';
 import * as accentVaporwave from './accent/vaporwave';
 import * as accentMatrix from './accent/matrix';
 import * as accentHoney from './accent/honey';
+import * as accentMcGreen from './accent/mc-green';
 
 const ACCENTS = [
     // ===== 纯色主题 =====
@@ -198,6 +199,13 @@ const ACCENTS = [
         accent: accentOmniBlue,
         description: 'OmniMAX Blue gradient',
         id: 'tw.accent.omniblue',
+        category: 'solid'
+    },
+    {
+        name: 'MC green',
+        accent: accentMcGreen,
+        description: 'MC green accent color from Minecraft pixel theme',
+        id: 'tw.accent.mcgreen',
         category: 'solid'
     },
 

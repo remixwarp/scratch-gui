@@ -1950,7 +1950,8 @@
     "gui.menuBar.lintSystem": "Lint 系统",
     "tw.settingsModal.selectAll": "全选",
     "tw.settingsModal.selectNone": "全不选",
-    "tw.settingsModal.fixedRightLabel": "固定在右侧"
+    "tw.settingsModal.fixedRightLabel": "固定在右侧",
+    "tw.accent.mcgreen": "MC绿"
   },
   "wenyan": {
     "mw.tree.explorer": "资源管理器",
@@ -3670,7 +3671,8 @@
     "gui.menuBar.lintSystem": "Lint 系",
     "tw.settingsModal.selectAll": "尽选",
     "tw.settingsModal.selectNone": "尽不选",
-    "tw.settingsModal.fixedRightLabel": "恒居右"
+    "tw.settingsModal.fixedRightLabel": "恒居右",
+    "tw.accent.mcgreen": "MC绿"
   },
   "geng": {
     "mw.tree.explorer": "资源管理（赛博工位）",
@@ -5390,6 +5392,7 @@
     "gui.menuBar.lintSystem": "代码检查（lint排雷）",
     "tw.settingsModal.selectAll": "全选（全都要）",
     "tw.settingsModal.selectNone": "全不选（一个都不要）",
-    "tw.settingsModal.fixedRightLabel": "焊死在右侧"
+    "tw.settingsModal.fixedRightLabel": "焊死在右侧",
+    "tw.accent.mcgreen": "MC绿（苦力怕同款）"
   }
 }
