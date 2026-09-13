@@ -176,8 +176,8 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
-    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store, Backpack, Terminal
-} from 'lucide-react';
+    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store, Backpack, Terminal, ExternalLink
+ } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
 
@@ -3780,38 +3780,79 @@ class MenuBar extends React.Component {
                                     )}
                                 </MenuSection>
                                 <MenuSection>
-                                    {SettingsStore.getAddonEnabled('02agent') && (
-                                        <MenuItem
-                                            onClick={() => {
-                                                window.dispatchEvent(new Event('02agent-show-plugin'));
-                                                this.props.onRequestCloseTools();
-                                            }}
-                                        >
-                                            <span className={styles.submenuLabel}>
-                                                <FormattedMessage
-                                                    defaultMessage="02Agent"
-                                                    description="Menu bar item for 02Agent"
-                                                    id="gui.menuBar.02agent"
-                                                />
-                                            </span>
-                                        </MenuItem>
-                                    )}
-                                    {SettingsStore.getAddonEnabled('novatheai') && (
-                                        <MenuItem
-                                            onClick={() => {
-                                                window.dispatchEvent(new Event('novatheai-show-plugin'));
-                                                this.props.onRequestCloseTools();
-                                            }}
-                                        >
-                                            <span className={styles.submenuLabel}>
-                                                <FormattedMessage
-                                                    defaultMessage="Bilup Nova"
-                                                    description="Menu bar item for Bilup Nova"
-                                                    id="gui.menuBar.bilupNova"
-                                                />
-                                            </span>
-                                        </MenuItem>
-                                    )}
+                                    <MenuItem
+                                        onClick={() => {
+                                            const WM = window.wm;
+                                            if (!WM) {
+                                                console.warn('[网页内嵌] WindowManager 未就绪');
+                                                return;
+                                            }
+                                            const existing = WM.getWindow('web-embed');
+                                            if (existing) {
+                                                existing.bringToFront();
+                                            } else {
+                                                const win = WM.createWindow({
+                                                    id: 'web-embed',
+                                                    title: '网页内嵌',
+                                                    width: 800,
+                                                    height: 600,
+                                                    minWidth: 400,
+                                                    minHeight: 300,
+                                                    onClose: () => {
+                                                        // iframe 会随 DOM 一起被移除
+                                                    }
+                                                });
+                                                const root = document.createElement('div');
+                                                root.style.cssText = 'display:flex;flex-direction:column;height:100%;width:100%;background:#fff;';
+
+                                                const bar = document.createElement('div');
+                                                bar.style.cssText = 'display:flex;gap:6px;padding:8px;border-bottom:1px solid rgba(0,0,0,0.08);background:#fafafa;';
+                                                const input = document.createElement('input');
+                                                input.type = 'text';
+                                                input.placeholder = '输入 URL，例如 https://example.com';
+                                                input.style.cssText = 'flex:1;padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;outline:none;';
+                                                input.addEventListener('keydown', e => {
+                                                    if (e.key === 'Enter') load();
+                                                });
+                                                const btn = document.createElement('button');
+                                                btn.textContent = '→';
+                                                btn.title = '加载网页';
+                                                btn.style.cssText = 'padding:0 14px;border:none;border-radius:6px;background:#4c97ff;color:#fff;font-size:16px;cursor:pointer;';
+                                                btn.addEventListener('click', load);
+                                                bar.appendChild(input);
+                                                bar.appendChild(btn);
+
+                                                const iframe = document.createElement('iframe');
+                                                iframe.style.cssText = 'flex:1;width:100%;border:0;background:#fff;';
+                                                iframe.allow = 'fullscreen; autoplay; clipboard-read; clipboard-write;';
+
+                                                root.appendChild(bar);
+                                                root.appendChild(iframe);
+
+                                                function load () {
+                                                    let url = input.value.trim();
+                                                    if (!url) return;
+                                                    if (!/^https?:\/\//i.test(url)) {
+                                                        url = 'https://' + url;
+                                                    }
+                                                    iframe.src = url;
+                                                }
+
+                                                win.setContent(root);
+                                                win.show();
+                                            }
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <ExternalLink className={styles.icon} />
+                                        <span className={styles.submenuLabel}>
+                                            <FormattedMessage
+                                                defaultMessage="网页内嵌"
+                                                description="Menu bar item to open a free window that embeds a web page via URL"
+                                                id="gui.menuBar.webEmbed"
+                                            />
+                                        </span>
+                                    </MenuItem>
                                     <MenuItem
                                         onClick={() => {
                                             this.props.onClickBaiduAI();
