@@ -3780,21 +3780,6 @@ class MenuBar extends React.Component {
                                     )}
                                 </MenuSection>
                                 <MenuSection>
-                                    <MenuItem
-                                        onClick={() => {
-                                            this.props.onClickAIAgent();
-                                            this.props.onRequestCloseTools();
-                                        }}
-                                    >
-                                        <Sparkles className={styles.icon} />
-                                        <span className={styles.submenuLabel}>
-                                            <FormattedMessage
-                                                defaultMessage="AI Agent"
-                                                description="Menu bar item for AI agent"
-                                                id="gui.menuBar.aiAgent"
-                                            />
-                                        </span>
-                                    </MenuItem>
                                     {SettingsStore.getAddonEnabled('02agent') && (
                                         <MenuItem
                                             onClick={() => {
