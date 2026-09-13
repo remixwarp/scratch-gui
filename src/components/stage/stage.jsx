@@ -7,7 +7,6 @@ import DOMElementRenderer from '../../containers/dom-element-renderer.jsx';
 import Loupe from '../loupe/loupe.jsx';
 import MonitorList from '../../containers/monitor-list.jsx';
 import TargetHighlight from '../../containers/target-highlight.jsx';
-import GreenFlagOverlay from '../../containers/green-flag-overlay.jsx';
 import Question from '../../containers/question.jsx';
 import MicIndicator from '../mic-indicator/mic-indicator.jsx';
 import {STAGE_DISPLAY_SIZES} from '../../lib/constants/layout-constants.js';
@@ -22,7 +21,6 @@ const StageComponent = props => {
         isColorPicking,
         isFullScreen,
         isPlayerOnly,
-        isStarted,
         isRtl,
         stageContainerWidth,
         colorInfo,
@@ -138,12 +136,6 @@ const StageComponent = props => {
                         width={0}
                     />
                 </Box>
-                {isStarted ? null : (
-                    <GreenFlagOverlay
-                        className={styles.greenFlagOverlay}
-                        wrapperClass={styles.greenFlagOverlayWrapper}
-                    />
-                )}
             </Box>
             {isColorPicking ? (
                 <Box
@@ -168,7 +160,6 @@ StageComponent.propTypes = {
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
     stageContainerWidth: PropTypes.number,
-    isStarted: PropTypes.bool,
     micIndicator: PropTypes.bool,
     onDeactivateColorPicker: PropTypes.func,
     onDoubleClick: PropTypes.func,

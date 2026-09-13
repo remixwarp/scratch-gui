@@ -385,8 +385,29 @@ for (const accent of ACCENTS) {
 }
 const ACCENT_DEFAULT = 'pale blue';
 
+// Group accents by category for settings modal UI
+const ACCENT_GROUPS = [
+    {
+        label: {
+            id: 'tw.accent.section.solid',
+            defaultMessage: 'Solid',
+            description: 'Section header for solid accent colors'
+        },
+        accents: Object.keys(ACCENT_MAP).filter(k => ACCENT_MAP[k].category !== 'gradient')
+    },
+    {
+        label: {
+            id: 'tw.accent.section.gradient',
+            defaultMessage: 'Gradient',
+            description: 'Section header for gradient accent colors'
+        },
+        accents: Object.keys(ACCENT_MAP).filter(k => ACCENT_MAP[k].category === 'gradient')
+    }
+];
+
 export {
     ACCENTS,
     ACCENT_MAP,
-    ACCENT_DEFAULT
+    ACCENT_DEFAULT,
+    ACCENT_GROUPS
 };
