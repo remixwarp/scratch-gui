@@ -552,7 +552,7 @@ const fetchLibrary = async () => {
         fetchAndAdd('ow', async () => {
             return await fetchWithFallback(
                 'ow',
-                'https://openwarp-extensions.pages.dev/generated-metadata/extensions-v0.json',
+                'https://ow-extensions.pages.dev/generated-metadata/extensions-v0.json',
                 'https://rw-extensions.pages.dev/yesshape/extensions-index.json',
                 data => data.extensions.map(extension => ({
                     name: extension.name,
@@ -560,8 +560,8 @@ const fetchLibrary = async () => {
                     description: extension.description,
                     descriptionTranslations: extension.descriptionTranslations || {},
                     extensionId: extension.id,
-                    extensionURL: `https://openwarp-extensions.pages.dev/${extension.slug}.js`,
-                    iconURL: `https://openwarp-extensions.pages.dev/${extension.image || 'images/unknown.svg'}`,
+                    extensionURL: `https://ow-extensions.pages.dev/${extension.slug}.js`,
+                    iconURL: `https://ow-extensions.pages.dev/${extension.image || 'images/unknown.svg'}`,
                     tags: ['ow'],
                     credits: [
                         ...(extension.by || []),
@@ -581,9 +581,9 @@ const fetchLibrary = async () => {
                         }
                         return credit.name;
                     }),
-                    docsURI: extension.docs ? `https://openwarp-extensions.pages.dev/${extension.slug}` : null,
+                    docsURI: extension.docs ? `https://ow-extensions.pages.dev/${extension.slug}` : null,
                     samples: extension.samples ? extension.samples.map(sample => ({
-                        href: `${process.env.ROOT}editor?project_url=https://openwarp-extensions.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
+                        href: `${process.env.ROOT}editor?project_url=https://ow-extensions.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
                         text: sample
                     })) : null,
                     incompatibleWithScratch: true,
@@ -636,6 +636,35 @@ const fetchLibrary = async () => {
                     }));
                 }
             );
+        }),
+        fetchAndAdd('bilup', async () => {
+            try {
+                const bilupRes = await fetch('https://rw-extensions.pages.dev/bilup/extensions-index.json');
+                if (!bilupRes.ok) {
+                    console.warn(`Bilup extensions: HTTP status ${bilupRes.status}`);
+                    return [];
+                }
+                const bilupData = await bilupRes.json();
+                return bilupData.extensions
+                    .map(extension => ({
+                        name: extension.name,
+                        nameTranslations: extension.nameTranslations || {},
+                        description: extension.description,
+                        descriptionTranslations: extension.descriptionTranslations || {},
+                        extensionId: extension.extensionId,
+                        extensionURL: extension.extensionURL,
+                        iconURL: extension.iconURL || emptyBanner,
+                        tags: ['bilup'],
+                        credits: (extension.credits || []).map(credit => typeof credit === 'object' && credit.name ? credit.name : credit),
+                        docsURI: null,
+                        samples: null,
+                        incompatibleWithScratch: true,
+                        featured: extension.featured
+                    }));
+            } catch (error) {
+                console.warn('Failed to load Bilup extensions:', error);
+                return [];
+            }
         })
     ]);
 
@@ -645,7 +674,7 @@ const fetchLibrary = async () => {
     retryFetchers['ow'] = async () => {
         const result = await fetchWithFallback(
             'ow',
-            'https://openwarp-extensions.pages.dev/generated-metadata/extensions-v0.json',
+            'https://ow-extensions.pages.dev/generated-metadata/extensions-v0.json',
             'https://rw-extensions.pages.dev/yesshape/extensions-index.json',
             data => data.extensions.map(extension => ({
                 name: extension.name,
@@ -653,8 +682,8 @@ const fetchLibrary = async () => {
                 description: extension.description,
                 descriptionTranslations: extension.descriptionTranslations || {},
                 extensionId: extension.id,
-                extensionURL: `https://openwarp-extensions.pages.dev/${extension.slug}.js`,
-                iconURL: `https://openwarp-extensions.pages.dev/${extension.image || 'images/unknown.svg'}`,
+                extensionURL: `https://ow-extensions.pages.dev/${extension.slug}.js`,
+                iconURL: `https://ow-extensions.pages.dev/${extension.image || 'images/unknown.svg'}`,
                 tags: ['ow'],
                 credits: [
                     ...(extension.by || []),
@@ -665,9 +694,9 @@ const fetchLibrary = async () => {
                     }
                     return credit.name;
                 }),
-                docsURI: extension.docs ? `https://openwarp-extensions.pages.dev/${extension.slug}` : null,
+                docsURI: extension.docs ? `https://ow-extensions.pages.dev/${extension.slug}` : null,
                 samples: extension.samples ? extension.samples.map(sample => ({
-                    href: `${process.env.ROOT}editor?project_url=https://openwarp-extensions.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
+                    href: `${process.env.ROOT}editor?project_url=https://ow-extensions.pages.dev/samples/${encodeURIComponent(sample)}.sb3`,
                     text: sample
                 })) : null,
                 incompatibleWithScratch: true,
