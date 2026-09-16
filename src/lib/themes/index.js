@@ -7,6 +7,8 @@ import * as guiDark from './gui/dark';
 import * as guiGenesisDark from './gui/genesisdark';
 import * as guiDeepDark  from './gui/deep_dark';
 import * as guiMidnight from './gui/midnight';
+import * as guiColorblindLight from './gui/colorblind-light';
+import * as guiColorblindDark from './gui/colorblind-dark';
 
 import * as blocksThree from './blocks/three';
 import * as blocksHighContrast from './blocks/high-contrast';
@@ -44,6 +46,8 @@ const GUI_DARK = 'dark';
 const GUI_GENESIS_DARK = 'genesis dark';
 const GUI_DEEPDARK = 'deepdark';
 const GUI_MIDNIGHT = 'midnight';
+const GUI_COLORBLIND_LIGHT = 'colorblind-light';
+const GUI_COLORBLIND_DARK = 'colorblind-dark';
 const GUI_MAP = {
     [GUI_LIGHT]: guiLight,
     [GUI_GENESIS_LIGHT]: guiGenesisLight,
@@ -51,7 +55,9 @@ const GUI_MAP = {
     [GUI_DARK]: guiDark,
     [GUI_GENESIS_DARK]: guiGenesisDark,
     [GUI_DEEPDARK]: guiDeepDark,
-    [GUI_MIDNIGHT]: guiMidnight
+    [GUI_MIDNIGHT]: guiMidnight,
+    [GUI_COLORBLIND_LIGHT]: guiColorblindLight,
+    [GUI_COLORBLIND_DARK]: guiColorblindDark
 };
 const GUI_DEFAULT = GUI_LIGHT;
 
@@ -203,6 +209,8 @@ export {
     GUI_GENESIS_DARK,
     GUI_DEEPDARK,
     GUI_MIDNIGHT,
+    GUI_COLORBLIND_LIGHT,
+    GUI_COLORBLIND_DARK,
     GUI_MAP,
 
     BLOCKS_THREE,

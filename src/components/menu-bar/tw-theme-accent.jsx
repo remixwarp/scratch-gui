@@ -231,6 +231,16 @@ const AccentThemeMenu = ({
                     onClick={() => onChangeTheme(theme.set('accent', item))}
                 />
             ))}
+            <MenuItem onClick={onClickCustomThemeModal}>
+                <div className={styles.option}>
+                    <ColorIcon id="custom" />
+                    <FormattedMessage
+                        defaultMessage="Custom"
+                        description="Custom theme option"
+                        id="tw.accent.custom"
+                    />
+                </div>
+            </MenuItem>
             <SectionHeader sectionKey="gradient" isZh={isZh} />
             {GRADIENT_KEYS.map(item => (
                 <AccentMenuItem
@@ -250,16 +260,6 @@ const AccentThemeMenu = ({
                     </div>
                 </MenuItem>
             ))}
-            <MenuItem onClick={onClickCustomThemeModal}>
-                <div className={styles.option}>
-                    <ColorIcon id="custom" />
-                    <FormattedMessage
-                        defaultMessage="Custom"
-                        description="Custom theme option"
-                        id="tw.accent.custom"
-                    />
-                </div>
-            </MenuItem>
             <MenuItem className={styles.pixelPresetDisclaimerItem}>
                 <div className={styles.pixelPresetDisclaimer}>
                     {isZh ? (

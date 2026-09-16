@@ -44,6 +44,7 @@ import * as accentVaporwave from './accent/vaporwave';
 import * as accentMatrix from './accent/matrix';
 import * as accentHoney from './accent/honey';
 import * as accentMcGreen from './accent/mc-green';
+import * as accentBlack from './accent/black';
 
 const ACCENTS = [
     // ===== 纯色主题 =====
@@ -206,6 +207,13 @@ const ACCENTS = [
         accent: accentMcGreen,
         description: 'MC green accent color from Minecraft pixel theme',
         id: 'tw.accent.mcgreen',
+        category: 'solid'
+    },
+    {
+        name: 'Pure Black',
+        accent: accentBlack,
+        description: 'Pure black accent color',
+        id: 'tw.accent.black',
         category: 'solid'
     },
 

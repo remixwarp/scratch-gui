@@ -172,7 +172,10 @@
     "gui.menuBar.lintSystem": "Lint System",
     "tw.settingsModal.selectAll": "Select all",
     "tw.settingsModal.selectNone": "Deselect all",
-    "tw.settingsModal.fixedRightLabel": "Fixed right"
+    "tw.settingsModal.fixedRightLabel": "Fixed right",
+    "tw.accent.black": "Pure Black",
+    "tw.theme.gui.colorblind-light": "Colorblind Light",
+    "tw.theme.gui.colorblind-dark": "Colorblind Dark"
   },
   "zh-geng": {
     "gui.backpack.searchPlaceholder": "搜索书包...",
@@ -230,7 +233,10 @@
     "tw.login.button": "登入",
     "tw.settingsModal.selectAll": "全選",
     "tw.settingsModal.selectNone": "全不選",
-    "tw.settingsModal.fixedRightLabel": "固定在右側"
+    "tw.settingsModal.fixedRightLabel": "固定在右側",
+    "tw.accent.black": "纯黑（黑到底）",
+    "tw.theme.gui.colorblind-light": "色盲色弱浅（白天不瞎）",
+    "tw.theme.gui.colorblind-dark": "色盲色弱深（夜里不瞎）"
   },
   "zh-cn": {
     "mw.tree.explorer": "资源管理器",
@@ -1952,7 +1958,10 @@
     "tw.settingsModal.selectNone": "全不选",
     "tw.settingsModal.fixedRightLabel": "固定在右侧",
     "tw.accent.mcgreen": "MC绿",
-    "gui.menuBar.webEmbed": "网页内嵌"
+    "gui.menuBar.webEmbed": "网页内嵌",
+    "tw.accent.black": "纯黑",
+    "tw.theme.gui.colorblind-light": "色盲色弱浅",
+    "tw.theme.gui.colorblind-dark": "色盲色弱深"
   },
   "wenyan": {
     "mw.tree.explorer": "资源管理器",
@@ -3674,7 +3683,10 @@
     "tw.settingsModal.selectNone": "尽不选",
     "tw.settingsModal.fixedRightLabel": "恒居右",
     "tw.accent.mcgreen": "MC绿",
-    "gui.menuBar.webEmbed": "网页内嵌"
+    "gui.menuBar.webEmbed": "网页内嵌",
+    "tw.accent.black": "纯黑",
+    "tw.theme.gui.colorblind-light": "色盲浅色",
+    "tw.theme.gui.colorblind-dark": "色盲深色"
   },
   "geng": {
     "mw.tree.explorer": "资源管理（赛博工位）",
@@ -5396,6 +5408,9 @@
     "tw.settingsModal.selectNone": "全不选（一个都不要）",
     "tw.settingsModal.fixedRightLabel": "焊死在右侧",
     "tw.accent.mcgreen": "MC绿（苦力怕同款）",
-    "gui.menuBar.webEmbed": "网页内嵌（摸鱼神器）"
+    "gui.menuBar.webEmbed": "网页内嵌（摸鱼神器）",
+    "tw.accent.black": "纯黑（黑到底）",
+    "tw.theme.gui.colorblind-light": "色盲色弱浅（白天不瞎）",
+    "tw.theme.gui.colorblind-dark": "色盲色弱深（夜里不瞎）"
   }
 }

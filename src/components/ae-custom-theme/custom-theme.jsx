@@ -1,7 +1,5 @@
-//主要结构是我做的，不过后期的一些奇怪的API互动，Redux管理还是交给了AI，我不擅长直接过于抽象化的东西...
-
 import { defineMessages, FormattedMessage, intlShape, injectIntl } from 'react-intl';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import Modal from '../../containers/modal.jsx';
 import PropTypes from 'prop-types';
 import Box from '../box/box.jsx';
@@ -11,6 +9,7 @@ import { persistTheme } from '../../lib/themes/themePersistance.js';
 import { connect } from 'react-redux';
 import styles from './custom-theme.css';
 import classNames from 'classnames';
+import { closeCustomTheme } from '../../reducers/modals.js';
 import {
     customGUITheme,
     customBlockColors,
@@ -20,10 +19,8 @@ import {
 } from "../../lib/themes/custom/custom.js"
 
 function hexToRgb(hex) {
-    // 去除 # 符号
     hex = hex.replace('#', '');
 
-    // 处理 3 位简写
     if (hex.length === 3) {
         hex = hex.split('').map(c => c + c).join('');
     }
@@ -44,7 +41,6 @@ function rgbToHex(r, g, b) {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-/* eslint-disable react/no-multi-comp */
 const messages = defineMessages({
     title: {
         defaultMessage: 'Custom Theme',
@@ -53,34 +49,93 @@ const messages = defineMessages({
     }
 });
 
-const SelectBox = ({ value, onChangeColor, title, intro, id, ...props }) => (
-    <>
-        <div className={styles.header}>
-            <div className={styles.divider} />
-        </div>
+const isValidHex = (value) => {
+    const clean = value.replace('#', '').trim();
+    return /^[0-9a-fA-F]{6}$/.test(clean) || /^[0-9a-fA-F]{3}$/.test(clean);
+};
 
-        <div className={styles.titleBox}>
-            <div>
-                <span className={styles.title}>{title}</span><br />
-                <span>{intro}</span>
+const SelectBox = ({ value, onChangeColor, title, intro, id, ...props }) => {
+    const [hexValue, setHexValue] = useState(value || '#ff4c4c');
+    const [hexError, setHexError] = useState(false);
+
+    const handleColorChange = (newValue) => {
+        setHexValue(newValue);
+        setHexError(false);
+        onChangeColor(newValue);
+    };
+
+    const handleHexChange = (e) => {
+        const raw = e.target.value;
+        setHexValue(raw);
+        const normalized = raw.startsWith('#') ? raw : `#${raw}`;
+        if (isValidHex(normalized)) {
+            setHexError(false);
+            const final = normalized.length === 4
+                ? '#' + normalized.slice(1).split('').map(c => c + c).join('')
+                : normalized;
+            onChangeColor(final);
+        } else if (raw.trim() === '' || raw === '#') {
+            setHexError(false);
+        } else {
+            setHexError(true);
+        }
+    };
+
+    const handleHexBlur = () => {
+        if (!isValidHex(hexValue)) {
+            setHexValue(value || '#ff4c4c');
+            setHexError(false);
+        } else {
+            const normalized = hexValue.startsWith('#') ? hexValue : `#${hexValue}`;
+            const final = normalized.length === 4
+                ? '#' + normalized.slice(1).split('').map(c => c + c).join('')
+                : normalized;
+            setHexValue(final);
+            setHexError(false);
+        }
+    };
+
+    return (
+        <>
+            <div className={styles.header}>
+                <div className={styles.divider} />
             </div>
 
-            <input
-                className={styles.colorInput}
-                type='color'
-                defaultValue={value}
-                onChange={(e) => onChangeColor(e.target.value)}
-            />
-        </div>
-    </>
-)
+            <div className={styles.titleBox}>
+                <div>
+                    <span className={styles.title}>{title}</span><br />
+                    <span>{intro}</span>
+                </div>
+
+                <div className={styles.colorPickerRow}>
+                    <input
+                        className={styles.colorInput}
+                        type='color'
+                        value={value || '#ff4c4c'}
+                        onChange={(e) => handleColorChange(e.target.value)}
+                    />
+                    <input
+                        className={classNames(styles.hexInput, {[styles.hexInputError]: hexError})}
+                        type='text'
+                        value={hexValue}
+                        onChange={handleHexChange}
+                        onBlur={handleHexBlur}
+                        placeholder="#rrggbb"
+                        maxLength={9}
+                    />
+                </div>
+            </div>
+        </>
+    );
+};
+
 const onThemeColorChange = (value, id) => {
     const hex = hexToRgb(value);
     setColorTo(
         "motion-primary", value
     );
     setColorTo(
-        "motion-primary-transparent", value + "e6" //透明度
+        "motion-primary-transparent", value + "e6"
     );
     setColorTo(
         "motion-tertiary", rgbToHex(hex.r, hex.g - 51, hex.b)
@@ -117,6 +172,7 @@ const onThemeColorChange = (value, id) => {
         "checkboxActiveBackground", value
     );
 }
+
 const ThemeColor = props => (
     <SelectBox
         {...props}
@@ -143,55 +199,61 @@ const ThemeColor = props => (
         }}
     />
 )
+
 SelectBox.prototype = {
     title: PropTypes.string,
     intro: PropTypes.string,
     id: PropTypes.string,
 }
 
-const updateColor = (currentTheme, onChangeTheme) => {
-    saveColors();
-    const newTheme = currentTheme.set('accent', 'custom');
-    onChangeTheme(newTheme);
-}
-const CustomModalComponent = props => (
-    <Modal
-        className={styles.modalContent}
-        onRequestClose={props.onClose}
-        contentLabel={props.intl.formatMessage(messages.title)}
-        id="customtheme"
-    >
-        <Box className={styles.body}>
-            <div className={styles.content}>
-                <FormattedMessage
-                    defaultMessage="You can customize the theme colors for the interface. Enter your preferred color below and click 'Apply' to update your theme."
-                    description="introduction of custom theme modal"
-                    id="tw.customTheme.introduction"
-                />
-                <br />
-                <ThemeColor />
-            </div>
-            <div className={styles.apply}>
-                <button
-                    className={styles.button}
-                    onClick={() => updateColor(props.theme, props.onChangeTheme)}
-                >
-                    <FormattedMessage
-                        defaultMessage="Apply"
-                        description="Apply Button"
-                        id="tw.customTheme.apply"
-                    />
-                </button>
-            </div>
-        </Box>
+const CustomModalComponent = props => {
+    const handleApply = () => {
+        saveColors();
+        const newTheme = props.theme.set('accent', 'custom');
+        props.onChangeTheme(newTheme);
+        props.onClose();
+    };
 
-    </Modal>
-);
+    return (
+        <Modal
+            className={styles.modalContent}
+            onRequestClose={props.onClose}
+            contentLabel={props.intl.formatMessage(messages.title)}
+            id="customtheme"
+        >
+            <Box className={styles.body}>
+                <div className={styles.content}>
+                    <FormattedMessage
+                        defaultMessage="You can customize the theme colors for the interface. Enter your preferred color below and click 'Apply' to update your theme."
+                        description="introduction of custom theme modal"
+                        id="tw.customTheme.introduction"
+                    />
+                    <br />
+                    <ThemeColor />
+                </div>
+                <div className={styles.apply}>
+                    <button
+                        className={styles.button}
+                        onClick={handleApply}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Apply"
+                            description="Apply Button"
+                            id="tw.customTheme.apply"
+                        />
+                    </button>
+                </div>
+            </div>
+
+        </Modal>
+    );
+};
 
 CustomModalComponent.propTypes = {
     intl: intlShape,
     onClose: PropTypes.func,
-    theme: PropTypes.instanceOf(Theme)
+    theme: PropTypes.instanceOf(Theme),
+    onChangeTheme: PropTypes.func
 };
 
 const mapStateToProps = state => ({
@@ -202,7 +264,8 @@ const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
         persistTheme(theme);
-    }
+    },
+    onClose: () => dispatch(closeCustomTheme())
 });
 
 export default connect(
