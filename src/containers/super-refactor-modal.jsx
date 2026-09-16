@@ -222,7 +222,8 @@ class SuperRefactorModalContainer extends React.Component {
                         size: content ? content.length : 0,
                         assetType: costume.asset.assetType ? costume.asset.assetType.name : 'image',
                         costume: costume,
-                        targetId: target.id, // 保存目标ID，用于精确定位
+                        targetId: target.id,
+                        costumeIndex: costumeIndex,
                         isStage: isStage
                     });
                 }
@@ -672,33 +673,58 @@ class SuperRefactorModalContainer extends React.Component {
                     });
                 }
             } else if (file.type === 'svg' && file.costume && file.targetId) {
-                // 更新SVG造型 - 使用存储的 targetId 精确定位目标
+                // 更新SVG造型 - 使用存储的 targetId 和 costumeIndex 直接定位
                 if (this.props.vm) {
                     const runtime = this.props.vm.runtime;
                     if (runtime) {
-                        // 直接通过 targetId 找到对应的目标，避免因 assetId 冲突导致错误更新到舞台
+                        // 直接通过 targetId 找到对应的目标
                         const target = runtime.targets.find(t => t.id === file.targetId);
                         if (target) {
-                            const costumes = target.getCostumes ? target.getCostumes() : [];
-                            const costumeIndex = costumes.findIndex(c => c.asset && c.asset.id === file.costume.asset.id);
-                            if (costumeIndex !== -1) {
-                                // 保存原来的编辑目标
+                            // 使用存储的 costumeIndex 或 asset.id 匹配
+                            const spriteCostumes = target.sprite ? target.sprite.costumes : target.getCostumes();
+                            let costumeIndex = file.costumeIndex;
+                            if (typeof costumeIndex !== 'number' || !spriteCostumes[costumeIndex]) {
+                                // fallback: 用 asset.id 查找
+                                costumeIndex = spriteCostumes.findIndex(c => c.asset && c.asset.id === file.costume.asset.id);
+                            }
+                            if (typeof costumeIndex === 'number' && costumeIndex !== -1) {
+                                // 直接更新 costume asset
+                                const costume = spriteCostumes[costumeIndex];
+                                if (costume && costume.asset) {
+                                    // 直接替换 asset 数据
+                                    if (typeof costume.asset.setData === 'function') {
+                                        costume.asset.setData(file.content);
+                                    } else {
+                                        // 直接赋值
+                                        costume.asset.data = file.content;
+                                    }
+                                }
+
+                                // 强制设置 editingTarget 并尝试用 updateSvg 触发渲染更新
                                 const originalEditingTarget = this.props.vm.editingTarget;
-                                
-                                // 临时设置为当前 target 作为编辑目标
                                 this.props.vm.editingTarget = target;
-                                
-                                // 调用 updateSvg 来更新造型
-                                this.props.vm.updateSvg(
-                                    costumeIndex,
-                                    file.content,
-                                    file.costume.rotationCenterX,
-                                    file.costume.rotationCenterY
-                                );
-                                
-                                // 恢复原来的编辑目标
-                                this.props.vm.editingTarget = originalEditingTarget;
-                                
+                                try {
+                                    if (typeof target.setCostume === 'function') {
+                                        target.setCostume(costumeIndex);
+                                    }
+                                    // 调用 updateSvg 以触发完整的更新流程
+                                    this.props.vm.updateSvg(
+                                        costumeIndex,
+                                        file.content,
+                                        file.costume.rotationCenterX,
+                                        file.costume.rotationCenterY
+                                    );
+                                } finally {
+                                    this.props.vm.editingTarget = originalEditingTarget;
+                                }
+
+                                // 刷新舞台
+                                if (typeof this.props.vm.refreshSvg === 'function') {
+                                    this.props.vm.refreshSvg(costumeIndex);
+                                } else if (target.renderer && typeof target.renderer.updateDrawable === 'function') {
+                                    target.renderer.updateDrawable();
+                                }
+
                                 this.setState({ message: '✓ SVG造型已更新！' });
                                 setTimeout(() => this.setState({ message: '' }), 3000);
                                 return;

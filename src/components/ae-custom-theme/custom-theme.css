@@ -150,3 +150,34 @@
     background: rgb(233, 233, 53);
     color: $text-primary-default;
 }
+
+.name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1rem 0 0.5rem 20px;
+}
+
+.name-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: $ui-modal-foreground;
+    white-space: nowrap;
+}
+
+.name-input {
+    flex-grow: 1;
+    border: 1px solid $ui-tertiary;
+    border-radius: 4px;
+    padding: 0.3rem 0.5rem;
+    font-size: 14px;
+    background: $ui-modal-background;
+    color: $ui-modal-foreground;
+    min-width: 180px;
+}
+
+.name-input:focus {
+    outline: none;
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+}

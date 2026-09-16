@@ -15,6 +15,7 @@ import * as blocksHighContrast from './blocks/high-contrast';
 import * as blocksDark from './blocks/dark';
 
 import {ACCENT_MAP, ACCENT_DEFAULT} from './accents';
+import {guiColors as customGuiColors, blockColors as customBlockColors} from './custom/custom';
 
 // Menu bar alignment options
 const MENUBAR_ALIGN = {
@@ -107,7 +108,7 @@ class Theme {
         /** @readonly */
         this.id = ++themeObjectsCreated;
         /** @readonly */
-        this.accent = Object.prototype.hasOwnProperty.call(ACCENT_MAP, accent) ? accent : ACCENT_DEFAULT;
+        this.accent = (Object.prototype.hasOwnProperty.call(ACCENT_MAP, accent) || accent === 'custom') ? accent : ACCENT_DEFAULT;
         /** @readonly */
         this.gui = Object.prototype.hasOwnProperty.call(GUI_MAP, gui) ? gui : GUI_DEFAULT;
         /** @readonly */
@@ -150,18 +151,22 @@ class Theme {
     }
 
     getGuiColors () {
+        const accentColors = this.accent === 'custom' ? customGuiColors :
+            ((ACCENT_MAP[this.accent] && ACCENT_MAP[this.accent].accent && ACCENT_MAP[this.accent].accent.guiColors) || {});
         return defaultsDeep(
             {},
-            (ACCENT_MAP[this.accent] && ACCENT_MAP[this.accent].accent && ACCENT_MAP[this.accent].accent.guiColors) || {},
+            accentColors,
             GUI_MAP[this.gui].guiColors,
             guiLight.guiColors
         );
     }
 
     getBlockColors () {
+        const accentBlockColors = this.accent === 'custom' ? customBlockColors :
+            ((ACCENT_MAP[this.accent] && ACCENT_MAP[this.accent].accent && ACCENT_MAP[this.accent].accent.blockColors) || {});
         return defaultsDeep(
             {},
-            (ACCENT_MAP[this.accent] && ACCENT_MAP[this.accent].accent && ACCENT_MAP[this.accent].accent.blockColors) || {},
+            accentBlockColors,
             GUI_MAP[this.gui].blockColors,
             BLOCKS_MAP[this.blocks].colors
         );

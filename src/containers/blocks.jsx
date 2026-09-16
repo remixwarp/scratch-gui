@@ -1203,18 +1203,29 @@ class Blocks extends React.Component {
 
             // Update category icons in toolbox
             const categoryIcons = document.querySelectorAll('.blocklyTreeIcon');
-            categoryIcons.forEach(icon => {
+            const isColorblind = this.props.theme && (
+                this.props.theme.gui === 'colorblind-light' ||
+                this.props.theme.gui === 'colorblind-dark'
+            );
+            categoryIcons.forEach((icon, idx) => {
                 const parentRow = icon.closest('.blocklyTreeRow');
                 if (parentRow && newColors.toolboxText) {
                     const label = parentRow.querySelector('.blocklyTreeLabel');
-                    if (label) {
+                    if (isColorblind) {
+                        // Alternating white/black circles with thick borders
+                        const isWhite = idx % 2 === 0;
+                        icon.style.backgroundColor = isWhite ? '#ffffff' : '#000000';
+                        icon.style.border = isWhite ? '2px solid #000000' : '2px solid #ffffff';
+                        icon.style.borderRadius = '50%';
+                    } else if (label) {
                         const categoryType = label.getAttribute('data-category');
-                        // Get the color for this category
                         let categoryColor;
                         try {
                             categoryColor = this.ScratchBlocks.Colours.categoryTypeToColorMap[categoryType];
                             if (categoryColor) {
                                 icon.style.backgroundColor = categoryColor.colorPrimary;
+                                icon.style.border = '';
+                                icon.style.borderRadius = '';
                             }
                         } catch (e) {
                             // Ignore errors getting category colors
