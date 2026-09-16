@@ -1,4 +1,5 @@
 import icon from '!!raw-loader!../icons/colorblind-dark.svg';
+import {blockColors} from './midnight';
 
 const name = {
     defaultMessage: 'Colorblind Dark',
@@ -91,34 +92,6 @@ const guiColors = {
     'paint-filter-icon-gray': 'brightness(1.7)'
 };
 
-const blockColors = {
-    insertionMarker: '#cccccc',
-    workspace: '#0a0a0a',
-    toolboxSelected: '#0a0a0a',
-    toolboxText: '#ffffff',
-    toolbox: '#000000',
-    flyout: '#000000',
-    scrollbar: '#555555',
-    valueReportBackground: '#0a0a0a',
-    valueReportBorder: '#ffffff',
-    valueReportForeground: '#ffffff',
-    contextMenuBackground: '#000000',
-    contextMenuBorder: 'rgba(255, 255, 255, 0.5)',
-    contextMenuForeground: '#ffffff',
-    contextMenuActiveBackground: '#1a1a1a',
-    contextMenuDisabledForeground: '#666666',
-    flyoutLabelColor: '#ffffff',
-    checkboxInactiveBackground: '#111111',
-    checkboxInactiveBorder: '#ffffff',
-    buttonBorder: '#ffffff',
-    buttonActiveBackground: '#111111',
-    buttonForeground: '#ffffff',
-    zoomIconFilter: 'invert(100%)',
-    gridColor: '#383838',
-    text: '#ffffff',
-    blackText: '#ffffff',
-    textFieldText: '#ffffff'
-};
 
 export {
     name,

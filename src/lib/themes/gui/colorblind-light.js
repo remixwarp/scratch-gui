@@ -1,4 +1,5 @@
 import icon from '!!raw-loader!../icons/colorblind-light.svg';
+import {blockColors} from './light';
 
 const name = {
     defaultMessage: 'Colorblind Light',
@@ -103,16 +104,6 @@ const guiColors = {
     'paint-filter-icon-gray': 'none'
 };
 
-const blockColors = {
-    workspace: '#FFFFFF',
-    toolbox: '#FFFFFF',
-    flyout: '#FFFFFF',
-    text: '#FFFFFF',
-    toolboxText: '#000000',
-    blackText: '#000000',
-    textFieldText: '#000000',
-    flyoutLabelColor: '#000000'
-};
 
 export {
     name,
