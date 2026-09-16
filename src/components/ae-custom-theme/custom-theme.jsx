@@ -243,7 +243,7 @@ const CustomModalComponent = props => {
                         />
                     </button>
                 </div>
-            </div>
+            </Box>
 
         </Modal>
     );
