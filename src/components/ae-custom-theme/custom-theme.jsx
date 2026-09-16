@@ -38,11 +38,6 @@ const messages = defineMessages({
         description: 'Title of custom theme modal',
         id: 'tw.customTheme.title'
     },
-    nameLabel: {
-        defaultMessage: 'Theme Name (optional)',
-        description: 'Label for theme name input',
-        id: 'tw.customTheme.name'
-    },
     namePlaceholder: {
         defaultMessage: 'My Custom Theme',
         description: 'Placeholder for theme name input',
@@ -151,7 +146,7 @@ const CustomModalComponent = props => {
                             <FormattedMessage
                                 defaultMessage="Theme Name"
                                 description="Theme name label"
-                                id="tw.customTheme.name"
+                                id="tw.customTheme.name.label"
                             />
                         </label>
                         <input
