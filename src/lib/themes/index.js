@@ -130,10 +130,17 @@ class Theme {
     static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST, MENUBAR_ALIGN_DEFAULT);
 
     set (what, to) {
+        const isColorblindGui = g => g === GUI_COLORBLIND_LIGHT || g === GUI_COLORBLIND_DARK;
+        // When switching to a colorblind GUI theme, automatically apply the
+        // pure black accent so every emphasized UI element stays monochrome.
+        const accentFor = gui => isColorblindGui(gui) ? 'black' : this.accent;
+
         if (what === 'accent') {
-            return new Theme(to, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts);
+            // Prevent accent changes from overriding colorblind monochrome look.
+            const nextAccent = isColorblindGui(this.gui) ? 'black' : to;
+            return new Theme(nextAccent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts);
         } else if (what === 'gui') {
-            return new Theme(this.accent, to, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts);
+            return new Theme(accentFor(to), to, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts);
         } else if (what === 'blocks') {
             return new Theme(this.accent, this.gui, to, this.menuBarAlign, this.wallpaper, this.fonts);
         } else if (what === 'menuBarAlign') {

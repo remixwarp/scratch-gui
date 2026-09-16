@@ -1,5 +1,5 @@
 import icon from '!!raw-loader!../icons/colorblind-light.svg';
-import {blockColors} from './light';
+import {blockColors as lightBlockColors} from './light';
 
 const name = {
     defaultMessage: 'Colorblind Light',
@@ -10,7 +10,7 @@ const name = {
 const guiColors = {
     'color-scheme': 'light',
 
-    // === Same as Light theme base ===
+    // === Same as Light theme base, but with pure black menu bar ===
     'ui-primary': 'hsla(0, 0%, 100%, 1)', /* #FFFFFF */
     'ui-secondary': 'hsla(0, 0%, 97%, 1)', /* #F7F7F7 */
     'ui-tertiary': 'hsla(0, 0%, 92%, 1)', /* #EBEBEB */
@@ -30,42 +30,6 @@ const guiColors = {
 
     'text-primary': '#000000',
     'text-primary-transparent': 'rgba(0, 0, 0, 0.75)',
-
-    // === Pure Black accent - ALL colored UI elements become black ===
-    'motion-primary': '#000000',
-    'motion-primary-transparent': 'rgba(0, 0, 0, 0.9)',
-    'motion-tertiary': '#333333',
-
-    'looks-secondary': '#000000',
-    'looks-tertiary': '#333333',
-    'looks-transparent': 'rgba(0, 0, 0, 0.35)',
-    'looks-light-transparent': 'rgba(0, 0, 0, 0.15)',
-    'looks-secondary-dark': '#1a1a1a',
-
-    'red-primary': '#000000',
-    'red-tertiary': '#333333',
-
-    'sound-primary': '#000000',
-    'sound-tertiary': '#333333',
-
-    'control-primary': '#000000',
-
-    'data-primary': '#000000',
-
-    'pen-primary': '#000000',
-    'pen-transparent': 'rgba(0, 0, 0, 0.25)',
-    'pen-tertiary': '#333333',
-
-    'error-primary': '#000000',
-    'error-light': '#333333',
-    'error-transparent': 'rgba(0, 0, 0, 0.25)',
-
-    'extensions-primary': '#000000',
-    'extensions-tertiary': '#333333',
-    'extensions-transparent': 'rgba(0, 0, 0, 0.35)',
-    'extensions-light': '#333333',
-
-    'drop-highlight': '#333333',
 
     // === Black menu bar ===
     'menu-bar-background': '#000000',
@@ -97,8 +61,6 @@ const guiColors = {
     'paint-ui-pane-border': 'rgba(0, 0, 0, 0.15)',
     'paint-text-primary': '#000000',
     'paint-form-border': 'rgba(0, 0, 0, 0.15)',
-    'paint-looks-secondary': '#000000',
-    'paint-looks-transparent': 'rgba(0, 0, 0, 0.35)',
     'paint-input-background': '#ffffff',
     'paint-popover-background': '#ffffff',
     'paint-filter-icon-gray': 'none'
@@ -109,5 +71,5 @@ export {
     name,
     icon,
     guiColors,
-    blockColors
+    lightBlockColors as blockColors
 };

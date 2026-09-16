@@ -1,5 +1,4 @@
 import icon from '!!raw-loader!../icons/colorblind-dark.svg';
-import {blockColors} from './midnight';
 
 const name = {
     defaultMessage: 'Colorblind Dark',
@@ -10,78 +9,45 @@ const name = {
 const guiColors = {
     'color-scheme': 'dark',
 
-    // === Same as Midnight theme base ===
+    // === Same as Midnight theme base, but with pure black menu bar ===
     'ui-primary': '#000000',
     'ui-secondary': '#0a0a0a',
     'ui-tertiary': '#151515',
 
-    'ui-modal-overlay': 'rgba(0, 0, 0, 0.7)',
+    'ui-modal-overlay': '#000000aa',
     'ui-modal-background': '#000000',
-    'ui-modal-foreground': '#ffffff',
+    'ui-modal-foreground': '#eeeeee',
     'ui-modal-header-background': '#000000',
     'ui-modal-header-foreground': '#ffffff',
 
     'ui-white': '#000000',
-    'ui-black-transparent': 'rgba(255, 255, 255, 0.15)',
 
-    'text-primary': '#ffffff',
-    'text-primary-transparent': 'rgba(255, 255, 255, 0.75)',
+    'ui-black-transparent': '#ffffff26',
 
-    // === Pure Black accent - ALL colored UI elements become black ===
-    'motion-primary': '#000000',
-    'motion-primary-transparent': 'rgba(0, 0, 0, 0.9)',
-    'motion-tertiary': '#333333',
+    'text-primary': '#eeeeee',
 
-    'looks-secondary': '#000000',
-    'looks-tertiary': '#333333',
-    'looks-transparent': 'rgba(255, 255, 255, 0.25)',
-    'looks-light-transparent': 'rgba(255, 255, 255, 0.1)',
-    'looks-secondary-dark': '#333333',
-
-    'red-primary': '#000000',
-    'red-tertiary': '#333333',
-
-    'sound-primary': '#000000',
-    'sound-tertiary': '#333333',
-
-    'control-primary': '#000000',
-
-    'data-primary': '#000000',
-
-    'pen-primary': '#000000',
-    'pen-transparent': 'rgba(255, 255, 255, 0.25)',
-    'pen-tertiary': '#333333',
-
-    'error-primary': '#000000',
-    'error-light': '#333333',
-    'error-transparent': 'rgba(255, 255, 255, 0.25)',
-
-    'extensions-primary': '#000000',
-    'extensions-tertiary': '#333333',
-    'extensions-transparent': 'rgba(255, 255, 255, 0.35)',
-    'extensions-light': '#333333',
-
-    'drop-highlight': '#ffffff',
-
-    // === Black menu bar (Midnight had #222222, now pure #000000) ===
+    // === Pure Black menu bar ===
     'menu-bar-background': '#000000',
     'menu-bar-background-image': 'none',
     'menu-bar-foreground': '#ffffff',
 
     'assets-background': '#000000',
+
     'input-background': '#0a0a0a',
+
     'popover-background': '#0a0a0a',
-    'badge-background': '#0a0a0a',
-    'badge-border': '#ffffff',
+
+    'badge-background': '#101820',
+    'badge-border': '#152638',
 
     'fullscreen-background': '#000000',
     'fullscreen-accent': '#000000',
 
     'page-background': '#000000',
-    'page-foreground': '#ffffff',
+    'page-foreground': '#eeeeee',
 
-    'project-title-inactive': '#0a0a0a',
-    'project-title-hover': 'rgba(255, 255, 255, 0.15)',
+    'project-title-inactive': 'var(--ui-secondary)',
+    'project-title-hover': '#ffffff3f',
 
     'link-color': '#ffffff',
 
@@ -90,6 +56,40 @@ const guiColors = {
     'filter-icon-white': 'brightness(0) invert(100%)',
 
     'paint-filter-icon-gray': 'brightness(1.7)'
+};
+
+// Blocks inherit the original color palette from the dark blocks style so
+// that all category colors remain distinguishable. The only differences
+// from Midnight-style blocks are the pure-black workspace/toolbox/flyout
+// backgrounds which we apply directly below.
+const blockColors = {
+    insertionMarker: '#cccccc',
+    workspace: '#0a0a0a',
+    toolboxSelected: '#0a0a0a',
+    toolboxText: '#cccccc',
+    toolbox: '#000000',
+    flyout: '#000000',
+    scrollbar: '#555555',
+    valueReportBackground: '#0a0a0a',
+    valueReportBorder: '#222222',
+    valueReportForeground: '#eeeeee',
+    contextMenuBackground: '#000000',
+    contextMenuBorder: '#ffffff26',
+    contextMenuForeground: '#eeeeee',
+    contextMenuActiveBackground: '#1a1a1a',
+    contextMenuDisabledForeground: '#666666',
+    flyoutLabelColor: '#cccccc',
+    checkboxInactiveBackground: '#111111',
+    checkboxInactiveBorder: '#c8c8c8',
+    buttonBorder: '#c6c6c6',
+    buttonActiveBackground: '#111111',
+    buttonForeground: '#cccccc',
+    zoomIconFilter: 'invert(100%)',
+    gridColor: '#383838',
+    // Text colors for blocks in dark mode
+    text: '#FFFFFF',
+    blackText: '#575E75',
+    textFieldText: '#575E75'
 };
 
 
