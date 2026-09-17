@@ -688,15 +688,30 @@ class SuperRefactorModalContainer extends React.Component {
                                 costumeIndex = spriteCostumes.findIndex(c => c.asset && c.asset.id === file.costume.asset.id);
                             }
                             if (typeof costumeIndex === 'number' && costumeIndex !== -1) {
+                                // 把 SVG 文本转成 UTF-8 ArrayBuffer (scratch-storage Asset 期望的 data 类型)
+                                const svgText = file.content;
+                                const svgBytes = new TextEncoder().encode(svgText);
+                                const svgArrayBuffer = svgBytes.buffer.slice(svgBytes.byteOffset, svgBytes.byteOffset + svgBytes.byteLength);
+
                                 // 直接更新 costume asset
                                 const costume = spriteCostumes[costumeIndex];
                                 if (costume && costume.asset) {
-                                    // 直接替换 asset 数据
+                                    // 关键: setData 的第二个参数是 format，不传就会抛
+                                    //   "Data provided without specifying its format"
+                                    // 对 SVG 造型来说 dataFormat 固定是 'svg'
                                     if (typeof costume.asset.setData === 'function') {
-                                        costume.asset.setData(file.content);
+                                        costume.asset.setData(svgArrayBuffer, 'svg');
                                     } else {
-                                        // 直接赋值
-                                        costume.asset.data = file.content;
+                                        // 直接赋值的兜底 — 同步更新 data / dataFormat / assetId
+                                        costume.asset.data = svgArrayBuffer;
+                                        // 如果旧 asset 已有 dataFormat 属性，强制写回 'svg'
+                                        if ('dataFormat' in costume.asset) {
+                                            costume.asset.dataFormat = 'svg';
+                                        }
+                                        // 让 scratch-storage 重新 hash 出新的 assetId / md5
+                                        if (typeof costume.asset.update === 'function') {
+                                            costume.asset.update();
+                                        }
                                     }
                                 }
 
@@ -707,13 +722,15 @@ class SuperRefactorModalContainer extends React.Component {
                                     if (typeof target.setCostume === 'function') {
                                         target.setCostume(costumeIndex);
                                     }
-                                    // 调用 updateSvg 以触发完整的更新流程
-                                    this.props.vm.updateSvg(
-                                        costumeIndex,
-                                        file.content,
-                                        file.costume.rotationCenterX,
-                                        file.costume.rotationCenterY
-                                    );
+                                    // 调用 updateSvg 以触发完整的更新流程 (可选, 有的 VM 版本没有)
+                                    if (typeof this.props.vm.updateSvg === 'function') {
+                                        this.props.vm.updateSvg(
+                                            costumeIndex,
+                                            svgText,
+                                            file.costume.rotationCenterX,
+                                            file.costume.rotationCenterY
+                                        );
+                                    }
                                 } finally {
                                     this.props.vm.editingTarget = originalEditingTarget;
                                 }
