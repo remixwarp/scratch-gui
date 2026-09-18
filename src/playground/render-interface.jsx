@@ -182,16 +182,27 @@ const Footer = () => (
                         />
                     </a>
                     <a href="rw.html">
-                        {'开发群聊天记录'}
+                        <FormattedMessage
+                            defaultMessage="Dev Chat Log"
+                            description="Link in footer to developer chat logs"
+                            id="tw.footer.devChatLog"
+                        />
                     </a>
                     <a href="https://surge-editor.pages.dev" target="_blank" rel="noopener noreferrer">
-                        {'SurgeEditor'}
+                        <FormattedMessage
+                            defaultMessage="SurgeEditor"
+                            description="Link in footer to SurgeEditor site"
+                            id="tw.footer.surgeEditor"
+                        />
                     </a>
                 </div>
                 <div className={styles.footerSection}>
                     <a href="https://packager.02engine.org/">
-                        {/* Do not translate */}
-                        {'02Engine Packager'}
+                        <FormattedMessage
+                            defaultMessage="02Engine Packager"
+                            description="Link in footer to 02Engine packager service"
+                            id="tw.footer.packager"
+                        />
                     </a>
                     <a href="https://rw-do-cs.pages.dev/embedding">
                         <FormattedMessage
