@@ -9,6 +9,20 @@ import {LANGUAGE_KEY} from '../lib/utils/detect-locale.js';
 addAdditionalTranslations(editorMessages);
 addLocaleData(localeData);
 
+// 梗体中文（geng / zh-geng）是自定义扩展 locale，上游 @remixwarp/scratch-l10n
+// 的 editor-msgs 包里不认识它 —— 那些 gui.alerts.* / gui.connection.* /
+// gui.extension.* 等上游翻译 key 对 geng 来说全不存在，切到 geng 时会 fallback
+// 到英文 defaultMessage。这里把 zh-cn 作为基底 merge 进来（geng 自己声明的
+// 梗体 key 会覆盖掉 zh-cn），这样切梗体时：
+//   - Tw 扩展 key（tw.footer.* / tw.menuBar.*）显示梗体中文
+//   - 上游 scratch-l10n key（gui.*）显示简体中文（而不是英文）
+// zh-geng 同理，保持同步。
+for (const gengLike of ['geng', 'zh-geng']) {
+    if (!editorMessages[gengLike]) editorMessages[gengLike] = {};
+    // 浅拷贝 zh-cn，再把 geng 自有 key 覆盖上去；不要影响 zh-cn 原始对象
+    editorMessages[gengLike] = Object.assign({}, editorMessages['zh-cn'], editorMessages[gengLike]);
+}
+
 const UPDATE_LOCALES = 'scratch-gui/locales/UPDATE_LOCALES';
 const SELECT_LOCALE = 'scratch-gui/locales/SELECT_LOCALE';
 
