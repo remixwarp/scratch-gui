@@ -68,29 +68,29 @@ const guiColors = {
 };
 
 // 所有积木分类统一纯黑 (实际颜色由 black accent 最终覆盖)
-const ALL_BLACK = {
+const BLACK_BODY_WHITE_BORDER = {
     primary: '#000000',
     secondary: '#000000',
-    tertiary: '#000000',
+    tertiary: '#FFFFFF',
     quaternary: '#000000'
 };
 
 const categoryColors = {
-    motion:       ALL_BLACK,
-    looks:        ALL_BLACK,
-    sounds:       ALL_BLACK,
-    event:        ALL_BLACK,
-    control:      ALL_BLACK,
-    sensing:      ALL_BLACK,
-    pen:          ALL_BLACK,
-    operators:    ALL_BLACK,
-    data:         ALL_BLACK,
-    data_lists:   ALL_BLACK,
-    more:         ALL_BLACK,
-    addons:       ALL_BLACK,
-    patch:        ALL_BLACK,
-    strings:      ALL_BLACK,
-    assets:       ALL_BLACK,
+    motion:       BLACK_BODY_WHITE_BORDER,
+    looks:        BLACK_BODY_WHITE_BORDER,
+    sounds:       BLACK_BODY_WHITE_BORDER,
+    event:        BLACK_BODY_WHITE_BORDER,
+    control:      BLACK_BODY_WHITE_BORDER,
+    sensing:      BLACK_BODY_WHITE_BORDER,
+    pen:          BLACK_BODY_WHITE_BORDER,
+    operators:    BLACK_BODY_WHITE_BORDER,
+    data:         BLACK_BODY_WHITE_BORDER,
+    data_lists:   BLACK_BODY_WHITE_BORDER,
+    more:         BLACK_BODY_WHITE_BORDER,
+    addons:       BLACK_BODY_WHITE_BORDER,
+    patch:        BLACK_BODY_WHITE_BORDER,
+    strings:      BLACK_BODY_WHITE_BORDER,
+    assets:       BLACK_BODY_WHITE_BORDER,
 
     // 积木文字白色
     text: '#FFFFFF',

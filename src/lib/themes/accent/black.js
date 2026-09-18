@@ -106,30 +106,32 @@ const guiColors = {
     'filter-icon-white': 'brightness(0) invert(100%)'
 };
 
-// 积木分类颜色全部统一成纯黑
-const makeAllBlack = {
+// 积木主体填充 = primary/#000000 纯黑
+// 积木边框 = tertiary/#FFFFFF 纯白细边（scratch-blocks 里 stroke 用 tertiary）
+// secondary / quaternary 也设成黑，在 glowing 状态下作为填充 fallback
+const BLACK_BODY_WHITE_BORDER = {
     primary: '#000000',
     secondary: '#000000',
-    tertiary: '#000000',
+    tertiary: '#FFFFFF',
     quaternary: '#000000'
 };
 
 const blockColors = {
-    motion:     makeAllBlack,
-    looks:      makeAllBlack,
-    sounds:     makeAllBlack,
-    event:      makeAllBlack,
-    control:    makeAllBlack,
-    sensing:    makeAllBlack,
-    pen:        makeAllBlack,
-    operators:  makeAllBlack,
-    data:       makeAllBlack,
-    data_lists: makeAllBlack,
-    more:       makeAllBlack,
-    addons:     makeAllBlack,
-    patch:      makeAllBlack,
-    strings:    makeAllBlack,
-    assets:     makeAllBlack,
+    motion:     BLACK_BODY_WHITE_BORDER,
+    looks:      BLACK_BODY_WHITE_BORDER,
+    sounds:     BLACK_BODY_WHITE_BORDER,
+    event:      BLACK_BODY_WHITE_BORDER,
+    control:    BLACK_BODY_WHITE_BORDER,
+    sensing:    BLACK_BODY_WHITE_BORDER,
+    pen:        BLACK_BODY_WHITE_BORDER,
+    operators:  BLACK_BODY_WHITE_BORDER,
+    data:       BLACK_BODY_WHITE_BORDER,
+    data_lists: BLACK_BODY_WHITE_BORDER,
+    more:       BLACK_BODY_WHITE_BORDER,
+    addons:     BLACK_BODY_WHITE_BORDER,
+    patch:      BLACK_BODY_WHITE_BORDER,
+    strings:    BLACK_BODY_WHITE_BORDER,
+    assets:     BLACK_BODY_WHITE_BORDER,
 
     // 积木文字白色, 在黑积木上清晰可读
     text: '#FFFFFF',
