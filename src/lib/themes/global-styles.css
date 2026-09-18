@@ -97,14 +97,16 @@
     font-weight: normal !important;
 }
 
-/* Ensure input field backgrounds are white */
+/* Use theme-provided input field colors so black-accent themes (colorblind-dark /
+ * colorblind-light) render block input fields on a black background with readable
+ * contrast, while normal light/dark themes keep their defaults. */
 :global(.blocklyFieldInput),
 :global(.blocklyFieldNumber),
 :global(.blocklyInput),
 :global(.blocklyNumberInput) {
-    fill: #FFFFFF !important;
-    background-color: #FFFFFF !important;
-    border-color: #CCCCCC !important;
+    fill: var(--editorTheme3-inputColor, #FFFFFF) !important;
+    background-color: var(--editorTheme3-inputColor, #FFFFFF) !important;
+    border-color: var(--editorTheme3-inputColor-text, #CCCCCC) !important;
 }
 
 :global(svg.blocklyToolbox) {

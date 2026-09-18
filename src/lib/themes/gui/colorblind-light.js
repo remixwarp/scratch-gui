@@ -94,8 +94,14 @@ const categoryColors = {
 
     // 积木文字白色
     text: '#FFFFFF',
+    // 色盲浅主题: 积木块是黑底白字, 输入框也必须保持黑底白字,
+    // 否则白字落在默认白底 (three.js 默认 textField='#FFFFFF') 上不可读.
+    textField: '#000000',
     textFieldText: '#FFFFFF',
-    blackText: '#575E75'
+    blackText: '#575E75',
+
+    // 其他 light.js 默认的 workspace / toolbox / flyout / scrollbar 等值
+    // 由 defaultsDeep 从 lightBlockColors 补齐
 };
 
 // light.js 提供的 workspace / toolbox / flyout 等基础属性保留,
