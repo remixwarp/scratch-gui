@@ -134,9 +134,11 @@ const blockColors = {
     assets:     BLACK_BODY_WHITE_BORDER,
 
     // 积木文字白色, 在黑积木上清晰可读
+    // 输入框背景 + 文字都用黑+白 (scratch-blocks textinput: background=textField, color=textFieldText)
     text: '#FFFFFF',
     blackText: '#575E75',
-    textFieldText: '#575E75',
+    textFieldText: '#FFFFFF',
+    textField: '#000000',
 
     // Blockly 容器背景统一成深灰/纯黑保持对比
     workspace: '#000000',

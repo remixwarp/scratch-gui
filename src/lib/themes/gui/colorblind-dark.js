@@ -127,8 +127,9 @@ const blockColors = {
     zoomIconFilter: 'invert(100%)',
     gridColor: '#383838',
     text: '#FFFFFF',
-    blackText: '#575E75',
-    textFieldText: '#575E75'
+    textFieldText: '#FFFFFF',
+    textField: '#000000',
+    blackText: '#575E75'
 };
 
 
