@@ -1,3 +1,4 @@
+import defaultsDeep from 'lodash.defaultsdeep';
 import icon from '!!raw-loader!../icons/colorblind-light.svg';
 import {blockColors as lightBlockColors} from './light';
 
@@ -66,10 +67,49 @@ const guiColors = {
     'paint-filter-icon-gray': 'none'
 };
 
+// 色盲色弱浅主题 — 工具盒分类圆圈在白色背景上按黑/白交替排列，
+// 让每个分类都在纯白背景上保持清晰对比，同时积木本体也统一成纯黑或纯白两色。
+// 分类顺序与 src/lib/themes/blocks/three.js 保持一致，浅色背景上必须从黑色开始。
+const BLACK = '#000000';
+const WHITE = '#FFFFFF';
+const makeMono = c => ({
+    primary: c,
+    secondary: c,
+    tertiary: c,
+    quaternary: c
+});
+
+const categoryColors = {
+    motion:       makeMono(BLACK),
+    looks:        makeMono(WHITE),
+    sounds:       makeMono(BLACK),
+    control:      makeMono(WHITE),
+    event:        makeMono(BLACK),
+    sensing:      makeMono(WHITE),
+    pen:          makeMono(BLACK),
+    operators:    makeMono(WHITE),
+    data:         makeMono(BLACK),
+    data_lists:   makeMono(WHITE),
+    more:         makeMono(BLACK),
+    addons:       makeMono(WHITE),
+    patch:        makeMono(BLACK),
+    strings:      makeMono(WHITE),
+    assets:       makeMono(BLACK)
+};
+
+// light.js 提供的 workspace / toolbox / flyout / text 等基础属性保留，
+// 再用 categoryColors 覆盖 three.js 的彩色分类。defaultsDeep 的顺序必须把
+// categoryColors 放在前面（优先级更高），lightBlockColors 后面只补缺。
+const blockColors = defaultsDeep(
+    {},
+    categoryColors,
+    lightBlockColors
+);
+
 
 export {
     name,
     icon,
     guiColors,
-    lightBlockColors as blockColors
+    blockColors
 };
