@@ -1,4 +1,4 @@
-import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE} from './index.js';
+import {BLOCKS_CUSTOM, Theme, ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_THREE, GUI_COLORBLIND_LIGHT, GUI_COLORBLIND_DARK} from './index.js';
 import {customThemeManager, CustomTheme} from './custom-themes.js';
 import {applyGuiColors} from './guiHelpers.js';
 
@@ -85,15 +85,22 @@ const detectTheme = () => {
         
         // Any invalid values in storage will be handled by Theme itself
         const wallpaper = parsed.wallpaper || {url: '', opacity: 0.3, darkness: 0, gridVisible: true, history: []};
-        
+
         // Add backward compatibility for gridVisible
         if (typeof wallpaper.gridVisible === 'undefined') {
             wallpaper.gridVisible = true;
         }
 
+        const gui = parsed.gui || systemPreferences.gui;
+        // 与 Theme.set('gui', ...) 保持一致: 色盲 GUI 强制 accent='black'，
+        // 否则 localStorage 里残留的旧 accent (如 pale-blue) 会在刷新后
+        // 继续给 UI 注入 #75C1C4 这种强调色。
+        const isColorblindGui = g => g === GUI_COLORBLIND_LIGHT || g === GUI_COLORBLIND_DARK;
+        const accent = isColorblindGui(gui) ? 'black' : (parsed.accent || systemPreferences.accent);
+
         return new Theme(
-            parsed.accent || systemPreferences.accent,
-            parsed.gui || systemPreferences.gui,
+            accent,
+            gui,
             parsed.blocks || systemPreferences.blocks,
             parsed.menuBarAlign || systemPreferences.menuBarAlign,
             wallpaper,
