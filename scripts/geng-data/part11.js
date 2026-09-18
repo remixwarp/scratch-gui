@@ -1,4 +1,3 @@
-// geng 梗体中文翻译（由 generated-translations.json 恢复生成）
 module.exports = {
   "rotur.bilupShop.search.tooltip": "按关键词搜索商品（淘货）。",
   "rotur.bilupShop.order.text": "下单 %1 数量 %2（冲！）",
@@ -154,5 +153,21 @@ module.exports = {
   "gui.menuBar.variousTools": "各种工具（工具箱）",
   "gui.menuBar.miniMap": "小地图（缩略图）",
   "gui.menuBar.projectHealth": "项目健康（体检报告）",
-  "gui.menuBar.lintSystem": "代码检查（lint排雷）",
+  "gui.menuBar.lintSystem": "代码检查（lint排雷）",,
+  "gui.menuBar.file": "文（文档/存读档）",
+  "gui.menuBar.edit": "辑（编辑）",
+  "gui.menuBar.new": "新（新开项目）",
+  "gui.menuBar.saveNow": "立刻存（手动存档）",
+  "gui.menuBar.saveAsCopy": "存成副本（留个备份）",
+  "gui.menuBar.remix": "二创（Remix 改一改）",
+  "gui.menuBar.modeMenu": "模式（形态切换）",
+  "gui.menuBar.normalMode": "普通模式（凡人形态）",
+  "gui.menuBar.turboModeOn": "开挂（极速模式启动）",
+  "gui.menuBar.turboModeOff": "下挂（极速模式关闭）",
+  "gui.menuBar.caturdayMode": "猫头夜鹰（神秘模式）",
+  "gui.menuBar.restore": "回档（读档重来）",
+  "gui.menuBar.restoreSprite": "回档角色",
+  "gui.menuBar.restoreCostume": "回档造型",
+  "gui.menuBar.restoreSound": "回档声音"
+
 };
