@@ -84,31 +84,24 @@ const guiColors = {
 // 很浅的浅灰 #E8E8E8, 让全局白字 (#FFFFFF) 在浅灰积木上还能看清.
 // 黑色积木保持纯黑 #000000, 白字在纯黑上完美可读.
 
-const BLACK = '#000000';
-const LIGHT = '#E8E8E8';
-const makeMono = c => ({
-    primary: c,
-    secondary: c,
-    tertiary: c,
-    quaternary: c
-});
-
+// 所有积木分类统一纯黑 (实际颜色由 black accent 最终覆盖)
+const ALL_BLACK = { primary: '#000000', secondary: '#000000', tertiary: '#000000', quaternary: '#000000' };
 const blockColors = {
-    motion:       makeMono(BLACK),   // 1  奇
-    looks:        makeMono(LIGHT),   // 2  偶
-    sounds:       makeMono(BLACK),   // 3  奇
-    event:        makeMono(LIGHT),   // 4  偶
-    control:      makeMono(BLACK),   // 5  奇
-    sensing:      makeMono(LIGHT),   // 6  偶
-    pen:          makeMono(BLACK),   // 7  奇 (就近)
-    operators:    makeMono(BLACK),   // 7  奇
-    data:         makeMono(LIGHT),   // 10 偶
-    data_lists:   makeMono(LIGHT),   // 10 偶 (就近)
-    more:         makeMono(BLACK),   // 11 奇
-    addons:       makeMono(BLACK),   // 11 奇 (就近)
-    patch:        makeMono(BLACK),   // 11 奇 (就近)
-    strings:      makeMono(LIGHT),   // 8  偶
-    assets:       makeMono(BLACK),   // 9  奇
+    motion:       ALL_BLACK,
+    looks:        ALL_BLACK,
+    sounds:       ALL_BLACK,
+    event:        ALL_BLACK,
+    control:      ALL_BLACK,
+    sensing:      ALL_BLACK,
+    pen:          ALL_BLACK,
+    operators:    ALL_BLACK,
+    data:         ALL_BLACK,
+    data_lists:   ALL_BLACK,
+    more:         ALL_BLACK,
+    addons:       ALL_BLACK,
+    patch:        ALL_BLACK,
+    strings:      ALL_BLACK,
+    assets:       ALL_BLACK,
 
     insertionMarker: '#cccccc',
     workspace: '#0a0a0a',
