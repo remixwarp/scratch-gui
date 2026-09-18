@@ -44,7 +44,7 @@
     "monaco-editor": "^0.52.0",
     "@isomorphic-git/lightning-fs": "^4.6.2",
     "@microbit/microbit-universal-hex": "0.2.2",
-    "@remixwarp/scratch-l10n": "https://github.com/remixwarp/scratch-l10n/archive/8eb8d737ceed55da4bc5120ab280e4f75863769e.tar.gz",
+    "@remixwarp/scratch-l10n": "https://github.com/remixwarp/scratch-l10n/archive/b4d4bf5.tar.gz",
     "@turbowarp/jszip": "^3.11.1",
     "@turbowarp/nanolog": "^1.0.1",
     "@turbowarp/scratch-storage": "^2.0.0",

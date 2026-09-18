@@ -175,7 +175,10 @@
     "tw.settingsModal.fixedRightLabel": "Fixed right",
     "tw.accent.black": "Pure Black",
     "tw.theme.gui.colorblind-light": "Colorblind Light",
-    "tw.theme.gui.colorblind-dark": "Colorblind Dark"
+    "tw.theme.gui.colorblind-dark": "Colorblind Dark",
+    "tw.footer.devChatLog": "Dev Chat Log",
+    "tw.footer.surgeEditor": "SurgeEditor",
+    "tw.footer.packager": "02Engine Packager"
   },
   "zh-geng": {
     "gui.backpack.searchPlaceholder": "搜索书包...",
@@ -271,7 +274,10 @@
     "tw.footer.parameters": "网址参数",
     "tw.privacy": "隐私政策（其实没有隐私）",
     "tw.footer.documentation": "文档（并不存在）",
-    "tw.documentation": "文档（并不存在）"
+    "tw.documentation": "文档（并不存在）",
+    "tw.footer.devChatLog": "开发群聊天记录（全是骂声）",
+    "tw.footer.surgeEditor": "SurgeEditor（神秘编辑器）",
+    "tw.footer.packager": "02Engine Packager 打包器"
   },
   "zh-cn": {
     "mw.tree.explorer": "资源管理器",
@@ -2011,7 +2017,10 @@
     "gui.menuBar.restore": "还原项目",
     "gui.menuBar.restoreSprite": "还原角色",
     "gui.menuBar.restoreCostume": "还原造型",
-    "gui.menuBar.restoreSound": "还原声音"
+    "gui.menuBar.restoreSound": "还原声音",
+    "tw.footer.devChatLog": "开发群聊天记录",
+    "tw.footer.surgeEditor": "SurgeEditor",
+    "tw.footer.packager": "02Engine Packager 打包器"
   },
   "wenyan": {
     "mw.tree.explorer": "资源管理器",
@@ -3736,7 +3745,10 @@
     "gui.menuBar.webEmbed": "网页内嵌",
     "tw.accent.black": "纯黑",
     "tw.theme.gui.colorblind-light": "色盲浅色",
-    "tw.theme.gui.colorblind-dark": "色盲深色"
+    "tw.theme.gui.colorblind-dark": "色盲深色",
+    "tw.footer.devChatLog": "开发群聊天记录（全是骂声）",
+    "tw.footer.surgeEditor": "SurgeEditor（神秘编辑器）",
+    "tw.footer.packager": "02Engine Packager 打包器"
   },
   "geng": {
     "mw.tree.explorer": "资源管理（赛博工位）",
@@ -5478,6 +5490,9 @@
     "gui.menuBar.restoreCostume": "回档造型",
     "gui.menuBar.restoreSound": "回档声音",
     "tw.menuBar.tools": "工具锤子",
-    "tw.footer.credit": "开发群聊天记录（全是骂声）"
+    "tw.footer.credit": "开发群聊天记录（全是骂声）",
+    "tw.footer.devChatLog": "开发群聊天记录（全是骂声）",
+    "tw.footer.surgeEditor": "SurgeEditor（神秘编辑器）",
+    "tw.footer.packager": "02Engine Packager 打包器"
   }
 }
