@@ -1,6 +1,6 @@
 {
   "name": "scratch-gui",
-  "version": "3.2.41",
+  "version": "3.2.42",
   "description": "Graphical User Interface for creating and running Scratch 3.0 projects",
   "author": "Massachusetts Institute of Technology",
   "license": "GPL-3.0",
@@ -144,7 +144,6 @@
     "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "10.1.0",
     "babel-loader": "8.3.0",
-    "chromedriver": "117.0.3",
     "concurrently": "^8.2.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
