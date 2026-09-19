@@ -1,6 +1,6 @@
 {
     "name": "scratch-gui",
-    "version": "3.2.47",
+    "version": "3.2.48",
     "description": "Graphical User Interface for creating and running Scratch 3.0 projects",
     "author": "Massachusetts Institute of Technology",
     "license": "GPL-3.0",
@@ -115,7 +115,7 @@
         "remark-gfm": "1.0.0",
         "scratch-audio": "github:remixwarp/scratch-audio#main",
         "@remixwarp/scratch-blocks": "https://github.com/remixwarp/scratch-blocks/archive/main.tar.gz",
-        "scratch-paint": "https://github.com/remixwarp/scratch-paint/archive/98dd865f434fbc42de848cdfad5d5bd15cb7f984.tar.gz",
+        "scratch-paint": "https://github.com/remixwarp/scratch-paint/archive/087052e048c0253d9539ca9be22479415d62e602.tar.gz",
         "scratch-render": "https://github.com/bilup/scratch-render",
         "scratch-vm": "github:remixwarp/scratch-vm#99617d7",
         "style-loader": "^0.23.0",
