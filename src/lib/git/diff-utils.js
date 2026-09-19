@@ -5,6 +5,14 @@
 
 const MyersDiff = {
     /**
+     * 单侧允许参与 Myers 算法比较的最大行数。
+     * Myers 是 O(ND) 算法（D 最坏可达 N+M），且实现中 trace 数组每步复制
+     * 整个 V 数组，内存开销为 O((N+M)²)。对超大文件会长时间阻塞主线程
+     * （表现为应用卡死/无响应），因此超过阈值时退化为全量替换 diff。
+     */
+    MAX_DIFF_LINES: 2000,
+
+    /**
      * Compute the edit script (diff) between two texts
      * @param {string} textA - Original text
      * @param {string} textB - Modified text
@@ -24,6 +32,12 @@ const MyersDiff = {
 
         if (linesB.length === 0) {
             return this._createRemoveAllResult(linesA);
+        }
+
+        // 超大输入保护：避免 Myers O(ND) 卡死主线程。
+        // 结果仍是正确 diff（全量替换），只是不再尝试找出最少编辑步数。
+        if (linesA.length > this.MAX_DIFF_LINES || linesB.length > this.MAX_DIFF_LINES) {
+            return this._createReplaceAllResult(linesA, linesB);
         }
 
         const editScript = this._myersDiffAlgorithm(linesA, linesB);
@@ -290,6 +304,46 @@ const MyersDiff = {
             linesA,
             linesB: [],
             totalAdditions: 0,
+            totalDeletions: linesA.length
+        };
+    },
+
+    /**
+     * Create result with all lines replaced (remove all + add all).
+     * 用于超大输入保护：结果正确但不保证最小编辑步数。
+     * @param {string[]} linesA - Original lines
+     * @param {string[]} linesB - Modified lines
+     * @returns {object} Diff result
+     */
+    _createReplaceAllResult (linesA, linesB) {
+        const changes = [];
+        for (let i = 0; i < linesA.length; i++) {
+            changes.push({
+                type: 'remove',
+                content: linesA[i],
+                lineA: i,
+                lineB: null
+            });
+        }
+        for (let i = 0; i < linesB.length; i++) {
+            changes.push({
+                type: 'add',
+                content: linesB[i],
+                lineA: null,
+                lineB: i
+            });
+        }
+        return {
+            hunks: [{
+                oldStart: 1,
+                oldLines: linesA.length,
+                newStart: 1,
+                newLines: linesB.length,
+                changes
+            }],
+            linesA,
+            linesB,
+            totalAdditions: linesB.length,
             totalDeletions: linesA.length
         };
     },

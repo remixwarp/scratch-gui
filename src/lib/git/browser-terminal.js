@@ -1,4 +1,4 @@
-import {Bash, defineCommand} from 'just-bash';
+import { Bash, defineCommand } from 'just-bash';
 
 import {
     REPO_DIR,
@@ -10,7 +10,8 @@ import {
     readWorktreeFile,
     writeWorktreeFile
 } from './browser-git';
-import {formatStatusRows} from './status-format';
+import { formatStatusRows } from './status-format';
+import { currentUser, setShellUser } from './shell-user';
 
 const bytesEqual = (a, b) => {
     if (!a || !b || a.length !== b.length) return false;
@@ -75,31 +76,31 @@ const syncWorkspace = async (before, bash) => {
 };
 
 const statusLines = async () => {
-    const matrix = await git.statusMatrix({fs: getFs(), dir: REPO_DIR});
+    const matrix = await git.statusMatrix({ fs: getFs(), dir: REPO_DIR });
     return formatStatusRows(matrix);
 };
 
 const stagePaths = async args => {
     const fs = getFs();
-    const matrix = await git.statusMatrix({fs, dir: REPO_DIR});
+    const matrix = await git.statusMatrix({ fs, dir: REPO_DIR });
     const requested = args.length === 0 || args.includes('.') || args.includes('-A') ?
         null : new Set(args.filter(arg => !arg.startsWith('-')).map(safeGitPath));
     let count = 0;
     for (const [filepath, , workdir] of matrix) {
         if (requested && !requested.has(filepath)) continue;
         if (workdir === 0) {
-            await git.remove({fs, dir: REPO_DIR, filepath});
+            await git.remove({ fs, dir: REPO_DIR, filepath });
         } else {
-            await git.add({fs, dir: REPO_DIR, filepath});
+            await git.add({ fs, dir: REPO_DIR, filepath });
         }
         count += 1;
     }
     return count;
 };
 
-const SHELL_HELP = `MistWarp Fractch shell
+const SHELL_HELP = `RemixWarp Fractch shell
 
-  files      cat cp file find head ln ls mkdir mv rm rmdir stat tail touch tree wc
+  files      cat cp file find head ln ls md mkdir mv rm rmdir stat tail touch tree wc
   text       awk column comm cut diff expand fold grep join nl od paste rev rg sed sort
              split strings tac tee tr uniq xargs
   data       base64 gzip jq md5sum
@@ -111,48 +112,47 @@ Not available in the browser: curl, python3, sqlite3, tar and other host-only to
 `;
 
 const LOGO = [
-    '++++++++++++++++++++++++++++++++++++',
-    '++++++++++++++++++++++++++++++++++++',
-    '++++++++++++++++++++++++++++++++++++',
-    '++++++++++==--::-=-      -=+++++++++',
-    '+++++++=                    -+++++++',
-    '++++++-    :-===: :+++++=    -++++++',
-    '+++++=   :++++=+++++---=++:   =+++++',
-    '+++++=   =++-:  +++  --=++:   =+++++',
-    '++++++    -+++   =+   ++=    -++++++',
-    '+++++++    -++ :  =   ++=    -++++++',
-    '++++++    :++= :+   : =+++:   =+++++',
-    '+++++=   =++-    -  :   ++=   -+++++',
-    '+++++=   -+++++++++==++++=    =+++++',
-    '++++++:    :--:   -++=:      +++++++',
-    '+++++++=                  :=++++++++',
-    '++++++++++=---===-:  :-=++++++++++++',
-    '++++++++++++++++++++++++++++++++++++',
-    '++++++++++++++++++++++++++++++++++++',
-    '++++++++++++++++++++++++++++++++++++'
+    '⡀⡀⡀⡀⡀⡀⡀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⡀⡀⣠⣿⣿⣿⣿⣿⣿⣿⣿⠟',
+    '⡀⡀⡀⡀⡀⣠⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠁⡀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⠁⡀',
+    '⡀⡀⡀⢀⣾⣿⣿⣿⠛⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⢀⣾⣿⣿⣿⠛⡀⡀⣴',
+    '⡀⡀⣴⣿⣿⣿⠿⡀⡀⡀⡀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣴⣿⣿⣿⠿⡀⡀⣠⣿⣿',
+    '⣠⣿⣿⣿⣿⠉⡀⡀⡀⣠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠉⡀⢀⣾⣿⣿⠋',
+    '⣿⣿⣿⠟⡀⡀⡀⢀⣾⣿⣿⣿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠟⡀⡀⣴⣿⣿⠟⡀⡀',
+    '⣿⣿⣿⡀⡀⡀⣴⣿⣿⣿⠟⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⣠⣿⣿⡟⠁⡀⡀⡀',
+    '⣿⣿⣿⡀⡀⡀⣿⣿⣿⠃⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⢀⣾⣿⡿⠃⡀⡀⡀⡀⡀',
+    '⣿⣿⣿⡀⡀⡀⣿⣿⣿⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⣴⣿⣿⠏⡀⡀⡀⡀⡀⡀⡀',
+    '⣿⣿⣿⡀⡀⡀⣿⣿⣿⡀⡀⡀⡀⡀⡀⡀⡀⣠⣿⣿⠟⠁⡀⣠⣶⣶⣶⣶⣶⣶',
+    '⣿⣿⣿⡀⡀⡀⣿⣿⣿⡀⡀⡀⡀⡀⡀⢀⣾⣿⣿⠉⡀⢀⣾⣿⣿⣿⣿⣿⣿⣿',
+    '⠈⢿⣿⡀⡀⡀⣿⣿⣿⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⣿⣿⣿',
+    '⡀⡀⠙⡀⡀⡀⣿⣿⣿⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⣿⣿⣿',
+    '⣿⣤⡀⡀⡀⡀⣿⣿⣿⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⣿⣿⣿',
+    '⣿⣿⣿⡀⡀⡀⣿⣿⣿⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⢀⣾⣿⣿⣿',
+    '⣿⣿⣿⡀⡀⡀⣿⡿⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⣴⣿⣿⣿⡿⠁',
+    '⣿⣿⣿⡀⡀⡀⠁⡀⢀⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣿⣿⣿⡿⠃⡀⡀',
+    '⣿⣿⣿⡀⡀⡀⡀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠏⡀⡀⡀⡀'
 ];
 
 const LOGO_WIDTH = Math.max(...LOGO.map(line => line.length));
 
-// The lavender accent's menu bar gradient, converted from oklab to rgb.
-const LAVENDER_STOPS = [
-    [191, 133, 249],
-    [193, 150, 248],
-    [200, 167, 234],
-    [225, 168, 214],
-    [250, 169, 193],
-    [255, 184, 175]
+// The pale-blue accent's gradient, derived from src/lib/themes/accent/pale-blue.js.
+const PALE_BLUE_STOPS = [
+    [60, 118, 153],
+    [77, 143, 178],
+    [93, 168, 204],
+    [105, 180, 200],
+    [117, 193, 196],
+    [112, 198, 199]
 ];
 
 const BOLD = '\x1b[1m';
 const RESET = '\x1b[0m';
 
 const gradientAt = position => {
-    const scaled = Math.max(0, Math.min(1, position)) * (LAVENDER_STOPS.length - 1);
-    const index = Math.min(LAVENDER_STOPS.length - 2, Math.floor(scaled));
+    const scaled = Math.max(0, Math.min(1, position)) * (PALE_BLUE_STOPS.length - 1);
+    const index = Math.min(PALE_BLUE_STOPS.length - 2, Math.floor(scaled));
     const ratio = scaled - index;
-    const [r, g, b] = LAVENDER_STOPS[index].map(
-        (channel, i) => Math.round(channel + ((LAVENDER_STOPS[index + 1][i] - channel) * ratio))
+    const [r, g, b] = PALE_BLUE_STOPS[index].map(
+        (channel, i) => Math.round(channel + ((PALE_BLUE_STOPS[index + 1][i] - channel) * ratio))
     );
     return `\x1b[38;2;${r};${g};${b}m`;
 };
@@ -210,19 +210,15 @@ const osName = () => {
     return 'unknown';
 };
 
-// The rotur handle wins over whatever username the VM was given for the cloud/username block.
-let shellUser = {local: null, rotur: null};
-
-const setShellUser = patch => {
-    shellUser = {...shellUser, ...patch};
-};
-
-const currentUser = () => shellUser.rotur || shellUser.local || 'player';
+// The shell user state (and its setter) live in ./shell-user.js so that
+// importers which only want to update the prompt username — rotur-session.jsx,
+// which sits in the initial bundle — don't pull just-bash and browser-git in.
+// setShellUser is re-exported below to keep the existing import sites working.
 
 const gitHelp = `Supported git commands:
   status, add, rm, commit, log, branch, checkout, diff --name-only,
   config, remote, rev-parse
-Use MistWarp's Version Control window for clone, pull, push, and merges.\n`;
+Use RemixWarp's Version Control window for clone, pull, push, and merges.\n`;
 
 const createGitCommand = state => defineCommand('git', async args => {
     const fs = getFs();
@@ -230,116 +226,116 @@ const createGitCommand = state => defineCommand('git', async args => {
     state.usedGit = true;
     try {
         switch (subcommand) {
-        case 'help':
-        case '--help':
-            return {stdout: gitHelp, stderr: '', exitCode: 0};
-        case 'init':
-            return {stdout: 'Repository already initialized in /repo\n', stderr: '', exitCode: 0};
-        case 'status': { // eslint-disable-line no-case-declarations
-            const branch = await git.currentBranch({fs, dir: REPO_DIR, fullname: false});
-            const lines = await statusLines();
-            const summary = lines.length ? `${lines.join('\n')}\n` : 'nothing to commit, working tree clean\n';
-            return {
-                stdout: `On branch ${branch || '(detached)'}\n${summary}`,
-                stderr: '',
-                exitCode: 0
-            };
-        }
-        case 'add': { // eslint-disable-line no-case-declarations
-            const count = await stagePaths(args);
-            return {stdout: `staged ${count} file${count === 1 ? '' : 's'}\n`, stderr: '', exitCode: 0};
-        }
-        case 'rm': { // eslint-disable-line no-case-declarations
-            for (const value of args.filter(arg => !arg.startsWith('-'))) {
-                const filepath = safeGitPath(value);
-                await deleteWorktreeFile(filepath);
-                await git.remove({fs, dir: REPO_DIR, filepath});
+            case 'help':
+            case '--help':
+                return { stdout: gitHelp, stderr: '', exitCode: 0 };
+            case 'init':
+                return { stdout: 'Repository already initialized in /repo\n', stderr: '', exitCode: 0 };
+            case 'status': { // eslint-disable-line no-case-declarations
+                const branch = await git.currentBranch({ fs, dir: REPO_DIR, fullname: false });
+                const lines = await statusLines();
+                const summary = lines.length ? `${lines.join('\n')}\n` : 'nothing to commit, working tree clean\n';
+                return {
+                    stdout: `On branch ${branch || '(detached)'}\n${summary}`,
+                    stderr: '',
+                    exitCode: 0
+                };
             }
-            state.worktreeChanged = true;
-            return {stdout: '', stderr: '', exitCode: 0};
-        }
-        case 'commit': { // eslint-disable-line no-case-declarations
-            const messageIndex = args.indexOf('-m');
-            const message = messageIndex === -1 ? '' : args[messageIndex + 1];
-            if (!message) throw new Error('usage: git commit -m "message"');
-            const oid = await git.commit({
-                fs,
-                dir: REPO_DIR,
-                message,
-                author: getDefaultAuthor()
-            });
-            return {stdout: `[${oid.slice(0, 7)}] ${message}\n`, stderr: '', exitCode: 0};
-        }
-        case 'log': { // eslint-disable-line no-case-declarations
-            const commits = await git.log({fs, dir: REPO_DIR, depth: 20});
-            const oneline = args.includes('--oneline');
-            const output = commits.map(({oid, commit}) => {
-                if (oneline) return `${oid.slice(0, 7)} ${commit.message.split('\n')[0]}`;
-                return `commit ${oid}\nAuthor: ${commit.author.name} <${commit.author.email}>\n\n    ${commit.message}`;
-            }).join('\n');
-            return {stdout: `${output}\n`, stderr: '', exitCode: 0};
-        }
-        case 'branch': { // eslint-disable-line no-case-declarations
-            const current = await git.currentBranch({fs, dir: REPO_DIR, fullname: false});
-            if (args[0] === '-d' && args[1]) {
-                await git.deleteBranch({fs, dir: REPO_DIR, ref: args[1]});
-                return {stdout: `Deleted branch ${args[1]}\n`, stderr: '', exitCode: 0};
+            case 'add': { // eslint-disable-line no-case-declarations
+                const count = await stagePaths(args);
+                return { stdout: `staged ${count} file${count === 1 ? '' : 's'}\n`, stderr: '', exitCode: 0 };
             }
-            if (args[0]) {
-                await git.branch({fs, dir: REPO_DIR, ref: args[0]});
-                return {stdout: '', stderr: '', exitCode: 0};
+            case 'rm': { // eslint-disable-line no-case-declarations
+                for (const value of args.filter(arg => !arg.startsWith('-'))) {
+                    const filepath = safeGitPath(value);
+                    await deleteWorktreeFile(filepath);
+                    await git.remove({ fs, dir: REPO_DIR, filepath });
+                }
+                state.worktreeChanged = true;
+                return { stdout: '', stderr: '', exitCode: 0 };
             }
-            const branches = await git.listBranches({fs, dir: REPO_DIR});
-            return {
-                stdout: `${branches.map(branch => `${branch === current ? '*' : ' '} ${branch}`).join('\n')}\n`,
-                stderr: '',
-                exitCode: 0
-            };
-        }
-        case 'checkout': { // eslint-disable-line no-case-declarations
-            if (!args[0]) throw new Error('usage: git checkout <branch>');
-            await git.checkout({fs, dir: REPO_DIR, ref: args[0], force: true});
-            state.worktreeChanged = true;
-            return {stdout: `Switched to ${args[0]}\n`, stderr: '', exitCode: 0};
-        }
-        case 'diff': { // eslint-disable-line no-case-declarations
-            const lines = await statusLines();
-            const output = args.includes('--name-only') ? lines.map(line => line.slice(3)) : lines;
-            return {stdout: `${output.join('\n')}${output.length ? '\n' : ''}`, stderr: '', exitCode: 0};
-        }
-        case 'config': { // eslint-disable-line no-case-declarations
-            const path = args.filter(arg => !arg.startsWith('-'))[0];
-            const value = args.filter(arg => !arg.startsWith('-'))[1];
-            if (!path) throw new Error('usage: git config <key> [value]');
-            if (typeof value === 'string') {
-                await git.setConfig({fs, dir: REPO_DIR, path, value});
-                return {stdout: '', stderr: '', exitCode: 0};
+            case 'commit': { // eslint-disable-line no-case-declarations
+                const messageIndex = args.indexOf('-m');
+                const message = messageIndex === -1 ? '' : args[messageIndex + 1];
+                if (!message) throw new Error('usage: git commit -m "message"');
+                const oid = await git.commit({
+                    fs,
+                    dir: REPO_DIR,
+                    message,
+                    author: getDefaultAuthor()
+                });
+                return { stdout: `[${oid.slice(0, 7)}] ${message}\n`, stderr: '', exitCode: 0 };
             }
-            const result = await git.getConfig({fs, dir: REPO_DIR, path});
-            return {stdout: result ? `${result}\n` : '', stderr: '', exitCode: result ? 0 : 1};
-        }
-        case 'remote': { // eslint-disable-line no-case-declarations
-            const remotes = await git.listRemotes({fs, dir: REPO_DIR});
-            const verbose = args.includes('-v');
-            const lines = remotes.map(({remote, url}) => {
-                if (verbose) return `${remote}\t${url} (fetch)\n${remote}\t${url} (push)`;
-                return remote;
-            });
-            return {stdout: `${lines.join('\n')}${lines.length ? '\n' : ''}`, stderr: '', exitCode: 0};
-        }
-        case 'rev-parse': { // eslint-disable-line no-case-declarations
-            if (args.includes('--abbrev-ref') && args.includes('HEAD')) {
-                const branch = await git.currentBranch({fs, dir: REPO_DIR, fullname: false});
-                return {stdout: `${branch || 'HEAD'}\n`, stderr: '', exitCode: 0};
+            case 'log': { // eslint-disable-line no-case-declarations
+                const commits = await git.log({ fs, dir: REPO_DIR, depth: 20 });
+                const oneline = args.includes('--oneline');
+                const output = commits.map(({ oid, commit }) => {
+                    if (oneline) return `${oid.slice(0, 7)} ${commit.message.split('\n')[0]}`;
+                    return `commit ${oid}\nAuthor: ${commit.author.name} <${commit.author.email}>\n\n    ${commit.message}`;
+                }).join('\n');
+                return { stdout: `${output}\n`, stderr: '', exitCode: 0 };
             }
-            const oid = await git.resolveRef({fs, dir: REPO_DIR, ref: args[0] || 'HEAD'});
-            return {stdout: `${oid}\n`, stderr: '', exitCode: 0};
-        }
-        default:
-            return {stdout: '', stderr: `git: '${subcommand}' is not supported here\n${gitHelp}`, exitCode: 1};
+            case 'branch': { // eslint-disable-line no-case-declarations
+                const current = await git.currentBranch({ fs, dir: REPO_DIR, fullname: false });
+                if (args[0] === '-d' && args[1]) {
+                    await git.deleteBranch({ fs, dir: REPO_DIR, ref: args[1] });
+                    return { stdout: `Deleted branch ${args[1]}\n`, stderr: '', exitCode: 0 };
+                }
+                if (args[0]) {
+                    await git.branch({ fs, dir: REPO_DIR, ref: args[0] });
+                    return { stdout: '', stderr: '', exitCode: 0 };
+                }
+                const branches = await git.listBranches({ fs, dir: REPO_DIR });
+                return {
+                    stdout: `${branches.map(branch => `${branch === current ? '*' : ' '} ${branch}`).join('\n')}\n`,
+                    stderr: '',
+                    exitCode: 0
+                };
+            }
+            case 'checkout': { // eslint-disable-line no-case-declarations
+                if (!args[0]) throw new Error('usage: git checkout <branch>');
+                await git.checkout({ fs, dir: REPO_DIR, ref: args[0], force: true });
+                state.worktreeChanged = true;
+                return { stdout: `Switched to ${args[0]}\n`, stderr: '', exitCode: 0 };
+            }
+            case 'diff': { // eslint-disable-line no-case-declarations
+                const lines = await statusLines();
+                const output = args.includes('--name-only') ? lines.map(line => line.slice(3)) : lines;
+                return { stdout: `${output.join('\n')}${output.length ? '\n' : ''}`, stderr: '', exitCode: 0 };
+            }
+            case 'config': { // eslint-disable-line no-case-declarations
+                const path = args.filter(arg => !arg.startsWith('-'))[0];
+                const value = args.filter(arg => !arg.startsWith('-'))[1];
+                if (!path) throw new Error('usage: git config <key> [value]');
+                if (typeof value === 'string') {
+                    await git.setConfig({ fs, dir: REPO_DIR, path, value });
+                    return { stdout: '', stderr: '', exitCode: 0 };
+                }
+                const result = await git.getConfig({ fs, dir: REPO_DIR, path });
+                return { stdout: result ? `${result}\n` : '', stderr: '', exitCode: result ? 0 : 1 };
+            }
+            case 'remote': { // eslint-disable-line no-case-declarations
+                const remotes = await git.listRemotes({ fs, dir: REPO_DIR });
+                const verbose = args.includes('-v');
+                const lines = remotes.map(({ remote, url }) => {
+                    if (verbose) return `${remote}\t${url} (fetch)\n${remote}\t${url} (push)`;
+                    return remote;
+                });
+                return { stdout: `${lines.join('\n')}${lines.length ? '\n' : ''}`, stderr: '', exitCode: 0 };
+            }
+            case 'rev-parse': { // eslint-disable-line no-case-declarations
+                if (args.includes('--abbrev-ref') && args.includes('HEAD')) {
+                    const branch = await git.currentBranch({ fs, dir: REPO_DIR, fullname: false });
+                    return { stdout: `${branch || 'HEAD'}\n`, stderr: '', exitCode: 0 };
+                }
+                const oid = await git.resolveRef({ fs, dir: REPO_DIR, ref: args[0] || 'HEAD' });
+                return { stdout: `${oid}\n`, stderr: '', exitCode: 0 };
+            }
+            default:
+                return { stdout: '', stderr: `git: '${subcommand}' is not supported here\n${gitHelp}`, exitCode: 1 };
         }
     } catch (error) {
-        return {stdout: '', stderr: `git: ${error.message || error}\n`, exitCode: 1};
+        return { stdout: '', stderr: `git: ${error.message || error}\n`, exitCode: 1 };
     }
 });
 
@@ -354,8 +350,8 @@ const createInfoCommand = () => defineCommand('info', async () => {
     let branch = '(none)';
     let commits = 0;
     try {
-        branch = (await git.currentBranch({fs, dir: REPO_DIR, fullname: false})) || '(detached)';
-        commits = (await git.log({fs, dir: REPO_DIR, depth: 1000})).length;
+        branch = (await git.currentBranch({ fs, dir: REPO_DIR, fullname: false })) || '(detached)';
+        commits = (await git.log({ fs, dir: REPO_DIR, depth: 1000 })).length;
     } catch (e) {
         // A repo with no commits yet still deserves an info screen.
     }
@@ -372,7 +368,7 @@ const createInfoCommand = () => defineCommand('info', async () => {
 
     let head = '(none)';
     try {
-        head = (await git.resolveRef({fs, dir: REPO_DIR, ref: 'HEAD'})).slice(0, 7);
+        head = (await git.resolveRef({ fs, dir: REPO_DIR, ref: 'HEAD' })).slice(0, 7);
     } catch (e) {
         // No commits yet.
     }
@@ -384,7 +380,7 @@ const createInfoCommand = () => defineCommand('info', async () => {
     const host = typeof location === 'undefined' ? 'unknown' : location.host;
 
     const fields = [
-        ['User', `${currentUser()}@mistwarp`],
+        ['User', `${currentUser()}@remixwarp`],
         ['Host', host],
         ['Uptime', formatUptime()],
         ['Shell', 'just-bash (browser)'],
@@ -404,7 +400,7 @@ const createInfoCommand = () => defineCommand('info', async () => {
     const labelWidth = Math.max(...fields.map(([label]) => label.length));
     const user = currentUser();
     const rows = [
-        `${BOLD}${gradientLine(`${user}@mistwarp`, 0, 1)}`,
+        `${BOLD}${gradientLine(`${user}@remixwarp`, 0, 1)}`,
         gradientLine('-'.repeat(user.length + 9), 0, 1),
         ...fields.map(([label, value]) => (
             `${gradientAt(0.25)}${label.padEnd(labelWidth)}${RESET}  ${gradientAt(0.75)}|${RESET}  ${value}`
@@ -420,7 +416,7 @@ const createInfoCommand = () => defineCommand('info', async () => {
             ' '.repeat(LOGO_WIDTH);
         lines.push(`${art}   ${rows[i - top] || ''}`.trimEnd());
     }
-    return {stdout: `${lines.join('\n')}\n`, stderr: '', exitCode: 0};
+    return { stdout: `${lines.join('\n')}\n`, stderr: '', exitCode: 0 };
 });
 
 const LS_HELP = `ls: list directory contents (Windows dir style)
@@ -470,7 +466,7 @@ const createLsCommand = () => defineCommand('ls', async (args, ctx) => {
         } else if (arg === '--') {
             literal = true;
         } else if (arg === '--help') {
-            return {stdout: LS_HELP, stderr: '', exitCode: 0};
+            return { stdout: LS_HELP, stderr: '', exitCode: 0 };
         } else if (arg.startsWith('-') && arg !== '-') {
             for (const flag of arg.slice(1)) {
                 switch (flag) {
@@ -486,7 +482,7 @@ const createLsCommand = () => defineCommand('ls', async (args, ctx) => {
                     case 'S': sortBySize = true; break;
                     case 't': sortByTime = true; break;
                     default:
-                        return {stdout: '', stderr: `ls: invalid option -- '${flag}'\n`, exitCode: 2};
+                        return { stdout: '', stderr: `ls: invalid option -- '${flag}'\n`, exitCode: 2 };
                 }
             }
         } else {
@@ -595,21 +591,21 @@ const createLsCommand = () => defineCommand('ls', async (args, ctx) => {
 
 // Windows-style shorthand for mkdir.
 const createMdCommand = () => defineCommand('md', async (args, ctx) => (
-    ctx.exec('mkdir', {cwd: ctx.cwd, args})
+    ctx.exec('mkdir', { cwd: ctx.cwd, args })
 ));
 
 const runBrowserCommand = async (command, cwd = REPO_DIR) => {
     // just-bash's builtin help lists bash builtins it does not implement, and it wins over
     // customCommands, so answer help ourselves before the line reaches the shell.
     if (/^help\s*$/.test(String(command).trim())) {
-        return {stdout: SHELL_HELP, stderr: '', exitCode: 0, worktreeChanged: false, cwd};
+        return { stdout: SHELL_HELP, stderr: '', exitCode: 0, worktreeChanged: false, cwd };
     }
     // just-bash's builtin whoami answers with its own sandbox user and wins over customCommands.
     if (/^whoami\s*$/.test(String(command).trim())) {
-        return {stdout: `${currentUser()}\n`, stderr: '', exitCode: 0, worktreeChanged: false, cwd};
+        return { stdout: `${currentUser()}\n`, stderr: '', exitCode: 0, worktreeChanged: false, cwd };
     }
     const files = await readWorkspace();
-    const state = {usedGit: false, worktreeChanged: false};
+    const state = { usedGit: false, worktreeChanged: false };
     const bash = new Bash({
         cwd,
         files,
@@ -617,7 +613,7 @@ const runBrowserCommand = async (command, cwd = REPO_DIR) => {
     });
     const result = await bash.exec(command);
     const changed = state.usedGit ? state.worktreeChanged : await syncWorkspace(files, bash);
-    return {...result, worktreeChanged: changed, cwd: result.env.PWD || cwd};
+    return { ...result, worktreeChanged: changed, cwd: result.env.PWD || cwd };
 };
 
-export {runBrowserCommand, setShellUser};
+export { runBrowserCommand, setShellUser };

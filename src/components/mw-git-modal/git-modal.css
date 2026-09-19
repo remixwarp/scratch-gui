@@ -1,29 +1,31 @@
 @import "../../css/colors.css";
 
-.modal-content {
-    width: min(720px, calc(100vw - 2rem));
-    max-width: 720px;
+.modalContent {
+    height: 100%;
 }
 
-.body {
-    background: $ui-modal-background;
-    padding: 1.25rem 1.5rem;
-    overflow: scroll;
+.contentArea {
+    overflow-y: auto;
+}
+
+.sidebarRefresh {
+    width: 100%;
+    justify-content: center;
 }
 
 .section {
-    margin-bottom: 1rem;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    background: $ui-modal-background;
-    padding: 0.9rem 1rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
 }
 
-.section-header {
+.sectionTitle {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.4rem;
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
 }
 
 .section-title {
@@ -81,9 +83,11 @@
 }
 
 .subSection {
-    margin-top: 1rem;
-    border-top: 1px solid $ui-black-transparent;
+    margin-top: 1.25rem;
     padding-top: 1rem;
+    border-top: 1px solid $ui-black-transparent;
+    display: flex;
+    flex-direction: column;
 }
 
 .subSectionHeader {
@@ -185,188 +189,943 @@
     border-radius: 8px;
     background: $input-background;
     border: 1px solid $ui-black-transparent;
-    font-weight: 600;
-    font-size: 0.85rem;
-    white-space: nowrap;
+    color: $text-primary;
 }
 
-.button:focus-visible,
-.primary-button:focus-visible,
-.small-button:focus-visible,
-.text-input:focus-visible,
-.select:focus-visible {
-    outline: 2px solid $looks-secondary;
-    outline-offset: 2px;
-}
-
-.button[disabled],
-.primary-button[disabled] {
-    opacity: 0.5;
-}
-
-.primary-button:not([disabled]):hover {
-    filter: brightness(1.05);
-}
-
-.danger-button {
-    border-color: $motion-primary;
-    color: $motion-primary;
-}
-
-.danger-button:not([disabled]):hover {
-    filter: brightness(1.05);
-}
-
-.small-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.35rem 0.6rem;
-    border-radius: 8px;
-    background: $input-background;
-    border: 1px solid $ui-black-transparent;
-    font-weight: 600;
-    font-size: 0.75rem;
-    flex: 0 0 auto;
-    white-space: nowrap;
-}
-
-.small-button:not([disabled]):hover {
-    filter: brightness(1.05);
-}
-
-.commit-list {
-    border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    background-color: $input-background;
-    max-height: 200px;
-    overflow: auto;
-    padding: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.commit-row {
+.subTitle {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0.25rem;
-    border-radius: 6px;
-}
-
-.commit-row:not(:last-child) {
-    border-bottom: 1px solid $ui-black-transparent;
-}
-
-.commit-row:hover {
-    filter: brightness(1.05);
-}
-
-.commit-oid {
-    font-family: monospace;
-    opacity: 0.8;
-    width: 4.5rem;
-    flex: 0 0 auto;
-}
-
-.commit-msg {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    gap: 0.4rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    color: $text-primary;
 }
 
 .muted {
-    opacity: 0.7;
+    color: $text-primary;
+    opacity: 0.65;
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
 }
 
-.error {
-    border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    background: white;
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 1rem;
-    color: $motion-primary;
-}
-
-.busy {
-    border: 1px solid $ui-black-transparent;
-    border-radius: 8px;
-    background: $input-background;
-    padding: 0.6rem 0.75rem;
-    margin-bottom: 1rem;
-    display: flex;
+/* Buttons */
+.button,
+.primaryButton {
+    display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 6px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-white;
+    color: $text-primary;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+}
+
+.button:hover:not(:disabled),
+.primaryButton:hover:not(:disabled) {
+    filter: brightness(0.97);
+}
+
+.primaryButton {
+    background: $looks-secondary;
+    color: white;
+    border-color: transparent;
+}
+
+.button:disabled,
+.primaryButton:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.dangerButton {
+    background: color-mix(in srgb, #c62828 12%, transparent);
+    border-color: color-mix(in srgb, #c62828 40%, transparent);
+    color: #c62828;
+}
+
+.iconButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: $text-primary;
+    cursor: pointer;
+}
+
+.iconButton:hover:not(:disabled) {
+    background: $ui-tertiary;
+}
+
+.iconButton:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.buttonIcon {
+    width: 15px;
+    height: 15px;
+}
+
+.rowButtons {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
     flex-wrap: wrap;
 }
 
-.busy-text {
+/* Commit box */
+.commitTypeRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.commitTypeSelect {
+    flex: 0 0 auto;
+    width: 140px;
+    min-width: 0;
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+}
+
+.commitTypeSelect:focus {
+    outline: none;
+    border-color: $looks-secondary;
+}
+
+.commitBox {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    min-height: 64px;
+    resize: vertical;
+    padding: 0.6rem;
+    border-radius: 6px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+    font-family: inherit;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+}
+
+.commitBox:focus {
+    outline: none;
+    border-color: $looks-secondary;
+}
+
+/* Fields */
+.field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.85rem;
+}
+
+.fieldLabel {
+    font-size: 0.8rem;
     font-weight: 600;
+    color: $text-primary;
+    margin-bottom: 0.3rem;
 }
 
-.busy-percent {
-    opacity: 0.8;
-    font-variant-numeric: tabular-nums;
+.input,
+.inputSmall,
+.select {
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+    font-size: 0.85rem;
+    box-sizing: border-box;
 }
 
-.progress-bar {
+.input {
+    flex: 1;
     width: 100%;
-    height: 8px;
-    border-radius: 999px;
+}
+
+.inputSmall {
+    width: 90px;
+    flex-shrink: 0;
+}
+
+.inlineForm {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* File lists */
+.fileList,
+.branchList,
+.commitList {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fileRow,
+.branchRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+}
+
+.fileRow:hover,
+.branchRow:hover {
+    background: $ui-tertiary;
+}
+
+.fileRowClickable {
+    cursor: pointer;
+}
+
+.filePath {
+    font-family: monospace;
+    color: $text-primary;
+    word-break: break-all;
+    flex: 1;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    flex-shrink: 0;
+    color: white;
+}
+
+.badgeAdd {
+    background: #2e7d32;
+}
+
+.badgeDelete {
+    background: #c62828;
+}
+
+.badgeModify {
+    background: #f9a825;
+}
+
+/* Readme */
+.readmeBox {
+    width: 100%;
+    min-height: 260px;
+    resize: vertical;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    color: $text-primary;
+    font-family: monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+
+/* Commit history — VS Code / Git Graph style rows: a continuous background
+   graph (one svg for the whole list) + two-line rows on top of it. */
+.commitList {
+    list-style: none;
+    margin: 0.25rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.historyWrap {
+    position: relative;
+}
+
+.historyGraph {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+}
+
+.commitRow {
+    display: flex;
+    align-items: center;
+    padding: 0 0.35rem 0 0;
+    height: 42px;
+    border-radius: 6px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.commitRow:hover {
+    background: rgba(127, 135, 150, 0.14);
+}
+
+.commitRowSelected {
+    background: color-mix(in srgb, $looks-secondary 18%, transparent);
+}
+
+.commitRowSelected:hover {
+    background: color-mix(in srgb, $looks-secondary 26%, transparent);
+}
+
+.commitMain {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.1rem;
+    flex: 1;
+    min-width: 0;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    overflow: hidden;
+}
+
+.commitMessageRow {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.commitMessage {
+    font-size: 0.83rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: $text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.commitChips {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.commitMetaRow {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.7rem;
+    line-height: 1.35;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.commitAuthor {
+    color: $text-primary;
+    opacity: 0.8;
+}
+
+.commitMetaSep {
+    color: $text-primary;
+    opacity: 0.35;
+}
+
+.commitTime {
+    color: $text-primary;
+    opacity: 0.55;
+}
+
+.commitHash {
+    font-family: monospace;
+    font-size: 0.7rem;
+    color: $text-primary;
+    opacity: 0.45;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.branchChip {
+    font-size: 0.68rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.4;
+}
+
+/* Type colouring of branch labels: local branches are blue, remote-tracking
+   refs ("origin/main") purple — a pulled branch shows both chips side by side. */
+.branchChipLocal {
+    background: #2563eb;
+}
+
+.branchChipRemote {
+    background: #7c3aed;
+}
+
+.readOnlyTag {
+    font-size: 0.72rem;
+    color: $text-primary;
+    opacity: 0.5;
+}
+
+.commitActions {
+    display: flex;
+    gap: 0.2rem;
+    flex-shrink: 0;
+    opacity: 0.45;
+    transition: opacity 0.12s ease;
+    padding-left: 0.25rem;
+}
+
+.commitRow:hover .commitActions,
+.commitRowSelected .commitActions {
+    opacity: 1;
+}
+
+/* Commit detail panel (below the list) */
+.commitDetail {
+    margin-top: 1rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 8px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.detailHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.detailSubject {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: $text-primary;
+    flex: 1 1 auto;
+    word-break: break-word;
+}
+
+.detailHash {
+    font-family: monospace;
+    font-size: 0.75rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: $ui-tertiary;
+    color: $text-primary;
+    opacity: 0.8;
+    flex: 0 0 auto;
+}
+
+.detailBody {
+    margin: 0;
+    padding: 0.55rem 0.7rem;
+    border-radius: 6px;
+    background: $ui-tertiary;
+    color: $text-primary;
+    font-family: monospace;
+    font-size: 0.78rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+.detailGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.detailRow {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.detailLabel {
+    flex: 0 0 80px;
+    font-weight: 600;
+    color: $text-primary;
+    opacity: 0.65;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+}
+
+.detailValue {
+    flex: 1 1 auto;
+    color: $text-primary;
+    word-break: break-word;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.detailMuted {
+    color: $text-primary;
+    opacity: 0.55;
+    font-family: monospace;
+    font-size: 0.78rem;
+}
+
+.detailParent {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.05rem 0.4rem;
+    border-radius: 4px;
+    background: $ui-tertiary;
+    color: $text-primary;
+    font-size: 0.72rem;
+    margin-right: 0.3rem;
+}
+
+.detailParentLink {
+    cursor: pointer;
+}
+
+.detailParentLink:hover {
+    background: color-mix(in srgb, $looks-secondary 20%, transparent);
+}
+
+.currentTag {
+    margin-left: 0.5rem;
+    font-size: 0.68rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 8px;
+    background: $looks-secondary;
+    color: white;
+    font-weight: 600;
+    font-family: sans-serif;
+}
+
+/* Remotes */
+.remoteList {
+    list-style: none;
+    margin: 0.25rem 0 1.25rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.remoteRow {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-primary;
+    transition: border-color 0.15s ease;
+}
+
+.remoteRow:hover {
+    border-color: color-mix(in srgb, $looks-secondary 45%, transparent);
+}
+
+.remoteIcon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: $looks-secondary;
+}
+
+.remoteInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.remoteName {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: $text-primary;
+}
+
+.remoteUrl {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: $text-primary;
+    opacity: 0.6;
+    word-break: break-all;
+}
+
+.remoteEmpty {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1rem;
+    margin: 0.25rem 0 1.25rem;
+    border-radius: 8px;
+    border: 1px dashed color-mix(in srgb, $text-primary 25%, transparent);
+    color: $text-primary;
+    opacity: 0.75;
+    font-size: 0.85rem;
+}
+
+.remoteEmptyIcon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+
+.remoteLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.82rem;
+    color: $looks-secondary;
+    text-decoration: none;
+    cursor: pointer;
+    margin-top: 0.15rem;
+}
+
+.remoteLink:hover {
+    text-decoration: underline;
+}
+
+/* Merge / conflicts */
+.conflicts {
+    margin: 0.75rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.conflictRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    background: $ui-tertiary;
+}
+
+.chip {
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-white;
+    color: $text-primary;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.chipActive {
+    background: $looks-secondary;
+    color: white;
+    border-color: transparent;
+}
+
+.checkboxRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: $text-primary;
+    margin: 0.5rem 0 1rem;
+    cursor: pointer;
+}
+
+.dangerZone {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid color-mix(in srgb, #c62828 30%, transparent);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Empty state */
+.emptyState {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    text-align: center;
+    color: $text-primary;
+}
+
+.emptyIcon {
+    width: 48px;
+    height: 48px;
+    opacity: 0.5;
+}
+
+.emptyDivider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 420px;
+    margin: 0.5rem 0;
+    color: $text-primary;
+    opacity: 0.55;
+    font-size: 0.78rem;
+}
+
+.emptyDivider::before,
+.emptyDivider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: $ui-black-transparent;
+}
+
+.cloneForm {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 420px;
+    align-items: center;
+}
+
+.cloneConfirm {
+    width: 100%;
+    max-width: 420px;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, #c62828 40%, transparent);
+    background: color-mix(in srgb, #c62828 10%, transparent);
+    color: $text-primary;
+    font-size: 0.82rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Busy / error bars */
+.busyBar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.5rem 1.5rem;
+    background: color-mix(in srgb, $looks-secondary 12%, transparent);
+    color: $text-primary;
+    font-size: 0.82rem;
+}
+
+.progressBar {
+    height: 4px;
+    border-radius: 2px;
     background: $ui-black-transparent;
     overflow: hidden;
 }
 
-.progress-bar-fill {
+.progressBarFill {
     height: 100%;
     background: $looks-secondary;
+    transition: width 0.2s ease;
 }
 
-.confirm-dialog {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+.errorBar {
+    padding: 0.6rem 1.5rem;
+    background: color-mix(in srgb, #c62828 15%, transparent);
+    color: #c62828;
+    font-size: 0.82rem;
+    word-break: break-word;
+}
+
+.successBar {
+    padding: 0.6rem 1.5rem;
+    background: color-mix(in srgb, #2e7d32 14%, transparent);
+    color: #2e7d32;
+    font-size: 0.82rem;
+    word-break: break-word;
+}
+
+.hiddenInput {
+    display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Staging area (decision D2).
+   The changes list is split into "Staged changes" and "Changes" groups, each
+   row carrying a real checkbox that moves the path in or out of the index.
+   Appended last so none of the frozen rules above are touched.
+   --------------------------------------------------------------------------- */
+
+.changeGroup {
+    margin-top: 0.85rem;
+}
+
+.changeGroupHeader {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0 0.15rem;
+}
+
+.changeGroupTitle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: $text-primary;
+}
+
+.changeCount {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    z-index: 10000;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: $ui-tertiary;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0;
 }
 
-.confirm-dialog-content {
-    background: $ui-modal-background;
-    border-radius: 8px;
-    padding: 1.5rem;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+.linkButton {
+    border: none;
+    background: none;
+    padding: 0.15rem 0.25rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: $looks-secondary;
+    cursor: pointer;
 }
 
-.confirm-message {
-    margin-bottom: 1.5rem;
-    line-height: 1.4;
-    color: $text-primary-transparent;
+.linkButton:hover:not(:disabled) {
+    text-decoration: underline;
 }
 
-.confirm-buttons {
+.linkButton:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.changeCheckbox {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: $looks-secondary;
+    cursor: pointer;
+}
+
+/* Renamed files read as a single entry: "old → new". */
+.badgeRename {
+    background: #0277bd;
+}
+
+.filePathOld {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.filePathArrow {
+    margin: 0 0.35rem;
+    opacity: 0.7;
+}
+
+/* ---------------------------------------------------------------------------
+   Sync banner (decision D3): drift between the checked-out branch and its
+   upstream, so Push / Pull never has to be guessed at.
+   --------------------------------------------------------------------------- */
+
+.syncBar {
     display: flex;
-    gap: 0.75rem;
-    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    margin: -0.35rem 0 0.85rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    background: $ui-tertiary;
+    font-size: 0.75rem;
 }
 
-@media (max-width: 640px) {
-    .body {
-        padding: 1rem;
-    }
+.syncText {
+    flex: 1;
+    color: $text-primary;
+    opacity: 0.85;
+    word-break: break-all;
+}
 
-    .section {
-        padding: 0.75rem;
-    }
+.syncCount {
+    flex-shrink: 0;
+    font-family: monospace;
+    font-weight: 700;
+}
 
-    .confirm-dialog-content {
-        margin: 1rem;
-        width: calc(100% - 2rem);
-    }
+.syncAhead {
+    color: #2e7d32;
+}
+
+.syncBehind {
+    color: #c62828;
+}
+
+/* ---------------------------------------------------------------------------
+   Detached HEAD banner.
+   HEAD holding a raw commit is a dead end in this product: the commit can be
+   neither pushed nor seen on a branch. The window used to show only "no branch
+   (detached HEAD)" in the Remote view, with no way back — the recovery picker
+   below is the way out. Appended last so none of the frozen rules above move.
+   --------------------------------------------------------------------------- */
+.detachedBar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1.5rem;
+    background: color-mix(in srgb, #ff8c1a 18%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, #ff8c1a 45%, transparent);
+}
+
+.detachedText {
+    flex: 1;
+    color: #8a4b00;
+    font-size: 0.82rem;
+    word-break: break-word;
+}
+
+.detachedSelect {
+    flex-shrink: 0;
+    max-width: 14rem;
 }

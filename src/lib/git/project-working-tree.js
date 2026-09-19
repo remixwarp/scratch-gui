@@ -1,31 +1,4 @@
-let globalFormatMessage = null;
-let globalIntl = null;
-
-const getFormattedMessage = (messageKey, defaultText, values) => {
-    if (globalIntl && globalIntl.messages && typeof globalIntl.messages === 'object') {
-        const translated = globalIntl.messages[messageKey];
-        if (translated && typeof translated === 'string') {
-            return translated;
-        }
-    }
-    if (globalFormatMessage && typeof globalFormatMessage === 'function') {
-        try {
-            return globalFormatMessage(
-                { id: messageKey, defaultMessage: defaultText },
-                values
-            );
-        } catch (e) {
-            console.warn('Failed to format message:', messageKey, e);
-        }
-    }
-    return defaultText;
-};
-const setFormatMessage = formatter => {
-    globalFormatMessage = formatter;
-};
-const setIntl = intlObject => {
-    globalIntl = intlObject;
-};
+import {getFormattedMessage, setFormatMessage, setIntl} from './i18n.js';
 
 const sanitizePathPart = name => {
     if (!name || typeof name !== 'string') {
@@ -250,10 +223,10 @@ const writeTarget = async ({vm, target, storage, fs, dir, onProgress, progressSt
                 onProgress({
                     phase: 'write',
                     message: getFormattedMessage(
-    'mw.git.writeScripts',
-    'Writing scripts for {spriteName}…',
-    { spriteName }
-),
+                        'mw.git.writeScripts',
+                        'Writing scripts for {spriteName}…',
+                        {spriteName}
+                    ),
                     completed: progressState.completed,
                     total: progressState.total
                 });
@@ -299,10 +272,10 @@ const writeTarget = async ({vm, target, storage, fs, dir, onProgress, progressSt
                 onProgress({
                     phase: 'write',
                     message: getFormattedMessage(
-    'mw.git.writeCostumes',
-    'Writing costumes for {spriteName}…',
-    { spriteName }
-),
+                        'mw.git.writeCostumes',
+                        'Writing costumes for {spriteName}…',
+                        {spriteName}
+                    ),
                     completed: progressState.completed,
                     total: progressState.total
                 });
@@ -340,10 +313,10 @@ const writeTarget = async ({vm, target, storage, fs, dir, onProgress, progressSt
                 onProgress({
                     phase: 'write',
                     message: getFormattedMessage(
-    'mw.git.writeSounds',
-    'Writing sounds for {spriteName}…',
-    { spriteName }
-),
+                        'mw.git.writeSounds',
+                        'Writing sounds for {spriteName}…',
+                        {spriteName}
+                    ),
                     completed: progressState.completed,
                     total: progressState.total
                 });
@@ -385,10 +358,10 @@ const writeTarget = async ({vm, target, storage, fs, dir, onProgress, progressSt
             onProgress({
                 phase: 'write',
                 message: getFormattedMessage(
-    'mw.git.writeMetadata',
-    'Writing metadata for {spriteName}…',
-    { spriteName }
-),
+                    'mw.git.writeMetadata',
+                    'Writing metadata for {spriteName}…',
+                    {spriteName}
+                ),
                 completed: progressState.completed,
                 total: progressState.total
             });
@@ -429,9 +402,9 @@ const writeProjectToWorkingTree = async ({vm, fs, dir, onProgress} = {}) => {
         onProgress({
             phase: 'write',
             message: getFormattedMessage(
-    'mw.git.writeProject',
-    'Writing project files…'
-),
+                'mw.git.writeProject',
+                'Writing project files…'
+            ),
             completed: 0,
             total: progressState.total
         });

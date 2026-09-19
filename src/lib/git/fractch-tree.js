@@ -1,6 +1,7 @@
 import JSZip from '@turbowarp/jszip';
 import {convertProject, buildProjectFromBuildDir, toPromiseFs} from 'fractch';
 import storage from '../persistence/storage';
+import {getFormattedMessage} from './i18n.js';
 
 // Custom assets are mirrored into the repo as a real tracked folder with real
 // filenames instead of md5 blobs. Identity is recovered by re-hashing on pack,
@@ -170,7 +171,12 @@ const writeProjectToFractchTree = async ({vm, sb3ArrayBuffer, fs, dir, onProgres
     }
 
     if (typeof onProgress === 'function') {
-        onProgress({phase: 'write', message: 'Reading project…', completed: 0, total: 1});
+        onProgress({
+            phase: 'write',
+            message: getFormattedMessage('mw.git.readingProject', 'Reading project…'),
+            completed: 0,
+            total: 1
+        });
     }
 
     const {zip, projectJson} = await loadSb3Zip({vm, sb3ArrayBuffer});
@@ -180,7 +186,12 @@ const writeProjectToFractchTree = async ({vm, sb3ArrayBuffer, fs, dir, onProgres
     }
 
     if (typeof onProgress === 'function') {
-        onProgress({phase: 'write', message: 'Writing fractch source…', completed: 0, total: 1});
+        onProgress({
+            phase: 'write',
+            message: getFormattedMessage('mw.git.writingFractch', 'Writing fractch source…'),
+            completed: 0,
+            total: 1
+        });
         await yieldToBrowser();
     }
 
@@ -211,7 +222,11 @@ const writeProjectToFractchTree = async ({vm, sb3ArrayBuffer, fs, dir, onProgres
         if (typeof onProgress === 'function') {
             onProgress({
                 phase: 'write',
-                message: `Writing assets for ${target.name}…`,
+                message: getFormattedMessage(
+                    'mw.git.writingAssets',
+                    'Writing assets for {spriteName}…',
+                    {spriteName: target.name}
+                ),
                 completed,
                 total: Math.max(1, targets.length)
             });
@@ -226,7 +241,12 @@ const buildSb3FromFractchTree = async ({fs, dir, onProgress} = {}) => {
     }
 
     if (typeof onProgress === 'function') {
-        onProgress({phase: 'pack', message: 'Rebuilding project from fractch…', completed: 0, total: 1});
+        onProgress({
+            phase: 'pack',
+            message: getFormattedMessage('mw.git.rebuildingFractch', 'Rebuilding project from fractch…'),
+            completed: 0,
+            total: 1
+        });
     }
 
     const {manifest, assetFiles} = await buildProjectFromBuildDir({buildDir: dir, fs});
@@ -268,7 +288,12 @@ const buildSb3FromFractchTree = async ({fs, dir, onProgress} = {}) => {
     }
 
     if (typeof onProgress === 'function') {
-        onProgress({phase: 'pack', message: 'Compressing project…', completed: 1, total: 1});
+        onProgress({
+            phase: 'pack',
+            message: getFormattedMessage('mw.git.compressing', 'Compressing project…'),
+            completed: 1,
+            total: 1
+        });
     }
 
     return zip.generateAsync({type: 'uint8array'});
