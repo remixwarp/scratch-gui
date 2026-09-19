@@ -297,7 +297,6 @@
         "mw.git.sidebar.noChanges": "No changes",
         "mw.git.sidebar.cleanTree": "Working tree is clean.",
         "mw.git.sidebar.notInitializing": "Not initialized.",
-        "mw.git.sidebar.noRepoInit": "No repository initialized.\nOpen the full Git window to clone or create one.",
         "mw.git.sidebar.noCommits": "No commits yet.",
         "mw.git.sidebar.noBranches": "No branches yet.",
         "mw.git.sidebar.moreBranches": "+{count} more",
@@ -326,7 +325,9 @@
         "mw.git.changes.stageAll": "Stage all",
         "mw.git.changes.unstageAll": "Unstage all",
         "mw.git.changes.typeLabel": "Commit type",
-        "mw.git.working": "Working…"
+        "mw.git.working": "Working…",
+        "mw.git.sidebar.noRepoInitFirst": "No repository initialized.",
+        "mw.git.sidebar.noRepoInitSecond": "Open the full Git window to clone or create one."
     },
     "zh-geng": {
         "gui.backpack.searchPlaceholder": "搜索书包...",
@@ -2086,7 +2087,6 @@
         "mw.git.sidebar.noChanges": "无更改",
         "mw.git.sidebar.cleanTree": "工作区是干净的。",
         "mw.git.sidebar.notInitializing": "未初始化。",
-        "mw.git.sidebar.noRepoInit": "还没有版本库。\n打开完整 Git 窗口来克隆或创建一个。",
         "mw.git.sidebar.noCommits": "还没有提交。",
         "mw.git.sidebar.noBranches": "还没有分支。",
         "mw.git.sidebar.moreBranches": "还有 {count} 个…",
@@ -2107,7 +2107,9 @@
         "mw.git.changes.unstaged": "更改",
         "mw.git.changes.stageAll": "全部暂存",
         "mw.git.changes.unstageAll": "全部取消暂存",
-        "mw.git.changes.typeLabel": "提交类型"
+        "mw.git.changes.typeLabel": "提交类型",
+        "mw.git.sidebar.noRepoInitFirst": "还没有版本库。",
+        "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。"
     },
     "zh-cn": {
         "mw.tree.explorer": "资源管理器",
@@ -3865,7 +3867,6 @@
         "mw.git.sidebar.noChanges": "无更改",
         "mw.git.sidebar.cleanTree": "工作区是干净的。",
         "mw.git.sidebar.notInitializing": "未初始化。",
-        "mw.git.sidebar.noRepoInit": "还没有版本库。\n打开完整 Git 窗口来克隆或创建一个。",
         "mw.git.sidebar.noCommits": "还没有提交。",
         "mw.git.sidebar.noBranches": "还没有分支。",
         "mw.git.sidebar.moreBranches": "还有 {count} 个…",
@@ -3886,7 +3887,9 @@
         "mw.git.changes.unstaged": "更改",
         "mw.git.changes.stageAll": "全部暂存",
         "mw.git.changes.unstageAll": "全部取消暂存",
-        "mw.git.changes.typeLabel": "提交类型"
+        "mw.git.changes.typeLabel": "提交类型",
+        "mw.git.sidebar.noRepoInitFirst": "还没有版本库。",
+        "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。"
     },
     "wenyan": {
         "mw.tree.explorer": "资源管理器",
@@ -5644,7 +5647,6 @@
         "mw.git.sidebar.noChanges": "无更改",
         "mw.git.sidebar.cleanTree": "工作区是干净的。",
         "mw.git.sidebar.notInitializing": "未初始化。",
-        "mw.git.sidebar.noRepoInit": "还没有版本库。\n打开完整 Git 窗口来克隆或创建一个。",
         "mw.git.sidebar.noCommits": "还没有提交。",
         "mw.git.sidebar.noBranches": "还没有分支。",
         "mw.git.sidebar.moreBranches": "还有 {count} 个…",
@@ -5665,7 +5667,9 @@
         "mw.git.changes.unstaged": "更改",
         "mw.git.changes.stageAll": "全部暂存",
         "mw.git.changes.unstageAll": "全部取消暂存",
-        "mw.git.changes.typeLabel": "提交类型"
+        "mw.git.changes.typeLabel": "提交类型",
+        "mw.git.sidebar.noRepoInitFirst": "还没有版本库。",
+        "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。"
     },
     "geng": {
         "mw.tree.explorer": "资源管理（赛博工位）",
@@ -7425,7 +7429,6 @@
         "mw.git.sidebar.noChanges": "无更改",
         "mw.git.sidebar.cleanTree": "工作区是干净的。",
         "mw.git.sidebar.notInitializing": "未初始化。",
-        "mw.git.sidebar.noRepoInit": "还没有版本库。\n打开完整 Git 窗口来克隆或创建一个。",
         "mw.git.sidebar.noCommits": "还没有提交。",
         "mw.git.sidebar.noBranches": "还没有分支。",
         "mw.git.sidebar.moreBranches": "还有 {count} 个…",
@@ -7446,6 +7449,8 @@
         "mw.git.changes.unstaged": "更改",
         "mw.git.changes.stageAll": "全部暂存",
         "mw.git.changes.unstageAll": "全部取消暂存",
-        "mw.git.changes.typeLabel": "提交类型"
+        "mw.git.changes.typeLabel": "提交类型",
+        "mw.git.sidebar.noRepoInitFirst": "还没有版本库。",
+        "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。"
     }
 }

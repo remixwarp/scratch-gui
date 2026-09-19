@@ -412,10 +412,18 @@ class GitSidebar extends React.Component {
                     >
                         {!repo.initialized && (
                             <div className={styles.emptyHint}>
-                                <FormattedMessage
-                                    id="mw.git.sidebar.noRepoInit"
-                                    defaultMessage="No repository initialized.\nOpen the full Git window to clone or create one."
-                                />
+                                <div>
+                                    <FormattedMessage
+                                        id="mw.git.sidebar.noRepoInitFirst"
+                                        defaultMessage="No repository initialized."
+                                    />
+                                </div>
+                                <div>
+                                    <FormattedMessage
+                                        id="mw.git.sidebar.noRepoInitSecond"
+                                        defaultMessage="Open the full Git window to clone or create one."
+                                    />
+                                </div>
                             </div>
                         )}
                         {repo.initialized && !hasWorkingChanges && (
