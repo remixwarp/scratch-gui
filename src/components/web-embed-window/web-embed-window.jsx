@@ -1,127 +1,216 @@
 import PropTypes from 'prop-types';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import WindowManager from '../../addons/window-system/window-manager';
+
+/**
+ * WebEmbedWindow — Turbowarp "网页内嵌" 工具。
+ *
+ * 三个关键修复（原来这三个问题全是硬编码/闭包导致）：
+ *
+ *  1. "点箭头不立即嵌入" — 原实现里 createTabDOM 绑到 btn/input 的
+ *     click/keydown listener 闭包闭到了首次 render 时的 selectedTab=null，
+ *     loadCurrent 里 if (!info) return 直接短路。修法：
+ *       - loadCurrent 用 useCallback([selectedTab]) 让 closure 永远是新的
+ *       - selectedTab 变化时 useEffect 里重新把最新的 loadCurrent 绑回每个 DOM
+ *       - iframe.src 先置空再赋新 URL，强制浏览器重新加载（某些代理/CDN
+ *         场景下只改 src 不触发 load）
+ *
+ *  2. "深色模式下背景还是白色" — 原实现所有颜色硬写 #fff / #fafafa /
+ *     #e8e8e8 / rgba(0,0,0,0.08)。修法：全部从 Turbowarp 在主题切换时
+ *     写入 documentElement 的 CSS 变量读取。
+ *
+ *  3. "深浅色切换要动态生效" — 原实现完全没监听 theme 变化。修法：
+ *     MutationObserver 挂到 <html> 和 <body> 的 style/class 属性上，
+ *     一旦 Turbowarp 改了主题变量，applyThemeToAll() 重新解析 CSS
+ *     变量并给所有 DOM 节点刷一遍颜色。
+ *
+ * 设计：
+ *   - 窗口结构仍用纯 DOM 搭（WindowManager 的集成方式不能动）
+ *   - 所有 DOM 节点颜色都在 createTabDOM / renderTabBar 里从 theme
+ *     对象读（theme 对象由 resolveTheme() 从 CSS 变量解析）
+ *   - 每次 theme 变化 / selectedTab 变化 / addTab / removeTab 都会
+ *     统一调用 applyThemeToAll() 把颜色刷一遍
+ */
+
+/** Turbowarp 在主题切换时写入 documentElement 的 CSS 变量，带 fallback */
+function readThemeColorVar (names, fallback) {
+    try {
+        const cs = getComputedStyle(document.documentElement);
+        for (const n of names) {
+            const v = cs.getPropertyValue(n).trim();
+            if (v) return v;
+        }
+    } catch (e) { /* ignore */ }
+    return fallback;
+}
+
+/** 解析当前主题下要用的所有颜色 —— 每次 theme 变或组件 mount 时调 */
+function resolveTheme () {
+    return {
+        primary:  readThemeColorVar(['--motion-primary', '--ui-primary'], '#4c97ff'),
+        bgRoot:   readThemeColorVar(['--ui-white', '--ui-tertiary'], '#ffffff'),
+        bgBar:    readThemeColorVar(['--ui-tertiary', '--ui-secondary', '--looks-secondary'], '#fafafa'),
+        bgTabIn:  readThemeColorVar(['--ui-primary'], '#ffffff'),
+        bgTabOut: readThemeColorVar(['--ui-secondary'], '#f0f0f0'),
+        bgEmbed:  readThemeColorVar(['--page-background', '--ui-primary'], '#ffffff'),
+        fgMain:   readThemeColorVar(['--text-primary', '--looks-primary'], '#111111'),
+        fgMuted:  readThemeColorVar(['--looks-secondary', '--text-secondary'], '#888888'),
+        border:   readThemeColorVar(['--ui-tertiary'], 'rgba(0,0,0,0.08)'),
+        border2:  readThemeColorVar(['--ui-tertiary', '--ui-secondary'], '#cccccc')
+    };
+}
 
 const WebEmbedWindow = ({visible, onClose}) => {
     const windowRef = useRef(null);
-    const containersRef = useRef(new Map()); // tabId -> {iframe, container, url}
+    const containersRef = useRef(new Map()); // tabId -> {iframe, container, input, btn, toggleBtn}
+    const tabsBarRef = useRef(null);
+    const themeRef = useRef(resolveTheme());
     const [selectedTab, setSelectedTab] = useState(null);
-    const [tabs, setTabs] = useState([]); // [{id, label}]
-    const [urlBarCollapsed, setUrlBarCollapsed] = useState(false);
-    const themePrimaryRef = useRef('');
+    const [tabs, setTabs] = useState([]);
 
-    // 初始化主题色读取（从 CSS 变量或 ScratchBlocks）
-    const readThemePrimary = () => {
-        try {
-            const v = getComputedStyle(document.documentElement).getPropertyValue('--motion-primary').trim();
-            if (v) return v;
-        } catch (e) { /* ignore */ }
-        try {
-            const ScratchBlocks = window.ScratchBlocks || window.Blockly;
-            if (ScratchBlocks && ScratchBlocks.Colors && ScratchBlocks.Colors.motion) {
-                return ScratchBlocks.Colors.motion.primary;
+    /** 把当前 theme 应用到所有已创建的 DOM — 每次 theme 变 / tab 变时调用 */
+    const applyThemeToAll = useCallback(() => {
+        const t = resolveTheme();
+        themeRef.current = t;
+
+        containersRef.current.forEach(info => {
+            if (!info.container) return;
+            info.container.style.background = t.bgEmbed;
+            const bar = info.container.querySelector('[data-role="urlbar"]');
+            if (bar) bar.style.background = t.bgBar;
+            if (info.input) {
+                info.input.style.background = t.bgRoot;
+                info.input.style.color = t.fgMain;
+                info.input.style.borderColor = t.border2;
             }
-        } catch (e) { /* ignore */ }
-        return '#4c97ff'; // 兜底默认值
-    };
+            if (info.btn) {
+                info.btn.style.background = t.primary;
+                info.btn.style.color = '#ffffff';
+            }
+            if (info.toggleBtn) {
+                info.toggleBtn.style.borderColor = t.primary;
+                info.toggleBtn.style.background = t.bgRoot;
+                info.toggleBtn.style.color = t.primary;
+            }
+            if (info.iframe) info.iframe.style.background = t.bgEmbed;
+        });
 
-    // 从 URL 提取短 label（去掉协议 + 路径）
-    const urlToLabel = (url) => {
+        if (windowRef.current && windowRef.current._content) {
+            windowRef.current._content.style.background = t.bgRoot;
+        }
+        if (tabsBarRef.current) {
+            tabsBarRef.current.style.background = t.bgBar;
+            tabsBarRef.current.style.borderBottom = `1px solid ${t.border}`;
+        }
+        renderTabBar();
+    /* eslint-disable react-hooks/exhaustive-deps */
+    }, [tabs, selectedTab]);
+
+    /** 监听 html/body 的 style/class 变化 → theme 变了就立刻重刷 */
+    useEffect(() => {
+        const observer = new MutationObserver(() => applyThemeToAll());
         try {
-            const u = new URL(url);
-            return u.hostname;
-        } catch (e) {
+            observer.observe(document.documentElement, {attributes: true, attributeFilter: ['style', 'class']});
+            observer.observe(document.body, {attributes: true, attributeFilter: ['style', 'class']});
+        } catch (e) { /* ignore */ }
+        return () => observer.disconnect();
+    }, [applyThemeToAll]);
+
+    const urlToLabel = (url) => {
+        try { return new URL(url).hostname; } catch (e) {
             return url.length > 24 ? url.slice(0, 21) + '…' : url;
         }
     };
 
-    // 创建一个 tab 的 DOM（URL 栏 + iframe + 可折叠）
     const createTabDOM = (tabId, initialUrl) => {
-        const themeColor = readThemePrimary();
-        const container = document.createElement('div');
-        container.style.cssText = 'display:flex;flex-direction:column;height:100%;width:100%;background:#fff;';
+        const t = themeRef.current;
 
-        // URL 栏（可折叠）
+        const container = document.createElement('div');
+        container.style.cssText = `display:flex;flex-direction:column;height:100%;width:100%;background:${t.bgEmbed};`;
+
         const bar = document.createElement('div');
         bar.dataset.role = 'urlbar';
-        bar.style.cssText = `display:flex;gap:6px;padding:8px;border-bottom:1px solid rgba(0,0,0,0.08);background:#fafafa;`;
+        bar.style.cssText = `display:flex;gap:6px;padding:8px;border-bottom:1px solid ${t.border};background:${t.bgBar};`;
 
         const input = document.createElement('input');
         input.type = 'text';
         input.placeholder = '输入 URL，例如 https://example.com';
         input.value = initialUrl || '';
-        input.style.cssText = 'flex:1;padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;outline:none;';
-        input.addEventListener('keydown', e => {
-            if (e.key === 'Enter') loadCurrent();
-        });
+        input.style.cssText = `flex:1;padding:6px 10px;border:1px solid ${t.border2};border-radius:6px;font-size:13px;outline:none;background:${t.bgRoot};color:${t.fgMain};`;
 
-        // 折叠/展开按钮（主题色）
         const toggleBtn = document.createElement('button');
-        toggleBtn.textContent = urlBarCollapsed ? '▸' : '▾';
-        toggleBtn.title = urlBarCollapsed ? '展开地址栏' : '收起地址栏';
-        toggleBtn.style.cssText = `padding:0 10px;border:1px solid ${themeColor};border-radius:6px;background:#fff;color:${themeColor};cursor:pointer;font-size:12px;min-width:32px;`;
+        toggleBtn.textContent = '▾';
+        toggleBtn.title = '收起地址栏';
+        toggleBtn.style.cssText = `padding:0 10px;border:1px solid ${t.primary};border-radius:6px;background:${t.bgRoot};color:${t.primary};cursor:pointer;font-size:12px;min-width:32px;`;
         toggleBtn.addEventListener('click', () => {
             const hidden = bar.style.display === 'none';
-            if (hidden) {
-                bar.style.display = '';
-                toggleBtn.textContent = '▾';
-                toggleBtn.title = '收起地址栏';
-            } else {
-                bar.style.display = 'none';
-                toggleBtn.textContent = '▸';
-                toggleBtn.title = '展开地址栏';
-            }
+            if (hidden) { bar.style.display = ''; toggleBtn.textContent = '▾'; toggleBtn.title = '收起地址栏'; }
+            else       { bar.style.display = 'none'; toggleBtn.textContent = '▸'; toggleBtn.title = '展开地址栏'; }
         });
 
-        // 加载按钮（箭头 + 主题色背景）
         const btn = document.createElement('button');
         btn.textContent = '→';
         btn.title = '加载网页';
-        btn.style.cssText = `padding:0 14px;border:none;border-radius:6px;background:${themeColor};color:#fff;font-size:16px;cursor:pointer;`;
-        btn.addEventListener('click', loadCurrent);
+        btn.style.cssText = `padding:0 14px;border:none;border-radius:6px;background:${t.primary};color:#fff;font-size:16px;cursor:pointer;`;
 
         bar.appendChild(input);
         bar.appendChild(btn);
         bar.appendChild(toggleBtn);
 
-        // iframe
         const iframe = document.createElement('iframe');
-        iframe.style.cssText = 'flex:1;width:100%;border:0;background:#fff;';
+        iframe.style.cssText = `flex:1;width:100%;border:0;background:${t.bgEmbed};`;
         iframe.allow = 'fullscreen; autoplay; clipboard-read; clipboard-write;';
 
         container.appendChild(bar);
         container.appendChild(iframe);
 
-        containersRef.current.set(tabId, {iframe, container, input});
+        containersRef.current.set(tabId, {iframe, container, input, btn, toggleBtn});
         if (initialUrl) iframe.src = initialUrl;
 
         return container;
     };
 
-    const loadCurrent = () => {
+    /**
+     * 加载当前 tab 的 URL 到 iframe。
+     *  - useCallback([selectedTab]) 保证 closure 里永远是最新 selectedTab
+     *  - iframe 先置空再赋新 URL — 某些代理/CDN 场景下只改 src 不重加载
+     */
+    const loadCurrent = useCallback(() => {
         const info = containersRef.current.get(selectedTab);
-        if (!info) return;
+        if (!info || !info.input) return;
         let url = info.input.value.trim();
         if (!url) return;
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-        info.iframe.src = url;
-        // 更新 label
+        if (info.iframe) {
+            info.iframe.src = 'about:blank';
+            info.iframe.src = url;
+        }
         setTabs(prev => prev.map(t => t.id === selectedTab ? {...t, label: urlToLabel(url)} : t));
-        // 更新 tab bar label
         const tabEl = tabsBarRef.current && tabsBarRef.current.querySelector(`[data-tab-id="${selectedTab}"] .tab-label`);
         if (tabEl) tabEl.textContent = urlToLabel(url);
-    };
+    }, [selectedTab]);
 
-    const tabsBarRef = useRef(null);
+    /**
+     * 每当 selectedTab 变化，把每个 tab 的 btn/input 都重新绑定最新的
+     * loadCurrent。原实现里 listener 只绑一次（在 createTabDOM 里），
+     * 之后 selectedTab 变了但 closure 还是旧的 —— 这就是 "点箭头没反应" 的根因。
+     */
+    useEffect(() => {
+        containersRef.current.forEach(info => {
+            if (info.btn) info.btn.onclick = () => loadCurrent();
+            if (info.input) info.input.onkeydown = e => { if (e.key === 'Enter') loadCurrent(); };
+        });
+    }, [selectedTab, loadCurrent]);
 
     const renderTabBar = () => {
         if (!tabsBarRef.current) return;
         tabsBarRef.current.innerHTML = '';
-        const themeColor = readThemePrimary();
+        const t = themeRef.current;
         tabs.forEach(tab => {
             const tabEl = document.createElement('div');
             tabEl.dataset.tabId = tab.id;
-            tabEl.style.cssText = `display:flex;align-items:center;gap:4px;padding:6px 10px;cursor:pointer;border-bottom:2px solid ${selectedTab === tab.id ? themeColor : 'transparent'};font-size:12px;background:${selectedTab === tab.id ? '#fff' : '#f0f0f0'};border-top-left-radius:6px;border-top-right-radius:6px;user-select:none;`;
+            const active = selectedTab === tab.id;
+            tabEl.style.cssText = `display:flex;align-items:center;gap:4px;padding:6px 10px;cursor:pointer;border-bottom:2px solid ${active ? t.primary : 'transparent'};font-size:12px;background:${active ? t.bgTabIn : t.bgTabOut};color:${t.fgMain};border-top-left-radius:6px;border-top-right-radius:6px;user-select:none;`;
             tabEl.onclick = () => setSelectedTab(tab.id);
 
             const label = document.createElement('span');
@@ -129,26 +218,21 @@ const WebEmbedWindow = ({visible, onClose}) => {
             label.textContent = tab.label;
             tabEl.appendChild(label);
 
-            // 关闭按钮（第一个 tab 不可关）
             if (tabs.length > 1) {
                 const close = document.createElement('span');
                 close.textContent = '×';
-                close.style.cssText = 'margin-left:6px;color:#888;font-size:14px;cursor:pointer;';
+                close.style.cssText = `margin-left:6px;color:${t.fgMuted};font-size:14px;cursor:pointer;`;
                 close.title = '关闭标签';
-                close.onclick = (e) => {
-                    e.stopPropagation();
-                    removeTab(tab.id);
-                };
+                close.onclick = (e) => { e.stopPropagation(); removeTab(tab.id); };
                 tabEl.appendChild(close);
             }
 
             tabsBarRef.current.appendChild(tabEl);
         });
 
-        // + 新建 tab
         const plus = document.createElement('div');
         plus.textContent = '+';
-        plus.style.cssText = 'padding:6px 10px;cursor:pointer;font-size:14px;color:#666;';
+        plus.style.cssText = `padding:6px 10px;cursor:pointer;font-size:14px;color:${t.fgMuted};`;
         plus.title = '新建标签';
         plus.onclick = () => addTab('');
         tabsBarRef.current.appendChild(plus);
@@ -157,7 +241,6 @@ const WebEmbedWindow = ({visible, onClose}) => {
     const addTab = (initialUrl) => {
         const id = 'tab-' + Date.now();
         setTabs(prev => [...prev, {id, label: urlToLabel(initialUrl || '新标签页')}]);
-        // 稍后切换
         setTimeout(() => setSelectedTab(id), 0);
     };
 
@@ -181,8 +264,6 @@ const WebEmbedWindow = ({visible, onClose}) => {
     useEffect(() => {
         if (tabs.length > 0 && !selectedTab) setSelectedTab(tabs[0].id);
         renderTabBar();
-
-        // 切换 iframe 显示
         containersRef.current.forEach((info, tabId) => {
             info.container.style.display = (tabId === selectedTab) ? '' : 'none';
             if (tabId === selectedTab && !info.container.parentNode) {
@@ -190,61 +271,56 @@ const WebEmbedWindow = ({visible, onClose}) => {
                 if (content) content.appendChild(info.container);
             }
         });
+    /* eslint-disable react-hooks/exhaustive-deps */
     }, [tabs, selectedTab]);
 
     useEffect(() => {
         if (visible && !windowRef.current) {
-            const themeColor = readThemePrimary();
-
             const win = WindowManager.createWindow({
                 id: 'web-embed',
                 title: '网页内嵌',
-                width: 880,
-                height: 620,
-                minWidth: 480,
-                minHeight: 320,
-                resizable: true,
-                maximizable: true,
+                width: 880, height: 620,
+                minWidth: 480, minHeight: 320,
+                resizable: true, maximizable: true,
                 closable: true,
-                onClose: () => {
-                    // 不销毁，只是隐藏——用户再次打开时已有内容保留
-                    windowRef.current = null;
-                }
+                onClose: () => { windowRef.current = null; }
             });
 
             windowRef.current = win;
 
-            // 根容器
             const root = document.createElement('div');
-            win._content = root; // 暴露给上面的 useEffect 用
-            root.style.cssText = 'display:flex;flex-direction:column;height:100%;width:100%;background:#fff;';
+            win._content = root;
+            root.style.cssText = 'display:flex;flex-direction:column;height:100%;width:100%;';
 
-            // Tab 栏
             const tabBar = document.createElement('div');
-            tabBar.style.cssText = 'display:flex;align-items:center;gap:0;padding:0 6px;background:#e8e8e8;border-bottom:1px solid rgba(0,0,0,0.08);flex-shrink:0;min-height:32px;';
+            tabBar.style.cssText = 'display:flex;align-items:center;gap:0;padding:0 6px;flex-shrink:0;min-height:32px;';
             tabsBarRef.current = tabBar;
             root.appendChild(tabBar);
 
             win.setContent(root);
             win.show();
 
-            // 默认开一个 tab
             setTabs([{id: 'tab-default', label: '新标签页'}]);
             setSelectedTab('tab-default');
 
-            // 创建 default tab DOM 并 append
             const defaultTabDom = createTabDOM('tab-default', '');
             defaultTabDom.style.display = 'none';
             root.appendChild(defaultTabDom);
             containersRef.current.set('tab-default', {
                 iframe: defaultTabDom.querySelector('iframe'),
                 container: defaultTabDom,
-                input: defaultTabDom.querySelector('input')
+                input: defaultTabDom.querySelector('input'),
+                btn: null,
+                toggleBtn: null
             });
-            // 显示
             setTimeout(() => {
                 defaultTabDom.style.display = '';
+                const fix = containersRef.current.get('tab-default');
+                fix.btn = defaultTabDom.querySelector('button[title="加载网页"]');
+                fix.toggleBtn = defaultTabDom.querySelector('button[title="收起地址栏"], button[title="展开地址栏"]');
+                containersRef.current.set('tab-default', fix);
                 renderTabBar();
+                applyThemeToAll();
             }, 0);
         } else if (!visible && windowRef.current) {
             windowRef.current.close();
@@ -260,12 +336,11 @@ const WebEmbedWindow = ({visible, onClose}) => {
                 windowRef.current = null;
             }
         };
+    /* eslint-disable react-hooks/exhaustive-deps */
     }, [visible]);
 
-    // 当 addTab 时创建 DOM
     useEffect(() => {
         if (!windowRef.current || !tabsBarRef.current) return;
-        // 为新 tab 创建 DOM（如果还没）
         const root = windowRef.current._content;
         tabs.forEach(tab => {
             if (!containersRef.current.has(tab.id)) {
@@ -275,10 +350,14 @@ const WebEmbedWindow = ({visible, onClose}) => {
                 containersRef.current.set(tab.id, {
                     iframe: dom.querySelector('iframe'),
                     container: dom,
-                    input: dom.querySelector('input')
+                    input: dom.querySelector('input'),
+                    btn: dom.querySelector('button[title="加载网页"]'),
+                    toggleBtn: dom.querySelector('button[title="收起地址栏"], button[title="展开地址栏"]')
                 });
             }
         });
+        applyThemeToAll();
+    /* eslint-disable react-hooks/exhaustive-deps */
     }, [tabs]);
 
     return null;
