@@ -292,7 +292,8 @@ class GitSidebar extends React.Component {
     static propTypes = {
         intl: intlShape.isRequired,
         vm: PropTypes.object,
-        onOpenFull: PropTypes.func
+        onOpenFull: PropTypes.func,
+        isDark: PropTypes.bool
     };
 
     constructor (props) {
@@ -400,7 +401,7 @@ class GitSidebar extends React.Component {
         );
 
         return (
-            <div className={styles.root}>
+            <div className={styles.root} data-panel-theme={this.props.isDark ? 'dark' : 'light'}>
                 {/* ── Scrollable upper area ── */}
                 <div className={styles.scrollArea}>
                     {/* Working changes (Git 窗口 Changes 视图的快捷概览) */}
