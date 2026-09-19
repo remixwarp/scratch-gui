@@ -65,23 +65,43 @@ const cyrb53 = (str, seed = 0) => {
     return ((4294967296 * (2097151 & h2)) + (h1 >>> 0)).toString(16);
 };
 
-// Synchronous on purpose (pure string hash); callers `await` it, which works
-// identically for a plain value.
-const computeProjectHash = vm => {
-    if (!vm || typeof vm.toJSON !== 'function') {
+// Compute a content hash that is *guaranteed to line up* with what
+// writeProjectToFractchTree produces. That function serializes the project
+// through saveProjectSb3 → unpack project.json → convertProject, so hashing
+// vm.toJSON() here is incorrect: isomorphic-git's toJSON returns an object
+// whose JSON.stringify ordering can differ from the sb3 packer (nested
+// extension state, monitors table ordering, etc.), and even when it agrees
+// writeProjectToFractchTree consumes the sb3-packed bytes, not the object.
+// Using the same sb3 unpack path makes the hash strategy faithful: an
+// unchanged VM → identical sb3 → identical project.json string → identical
+// hash. If sb3 serialization fails we return null so callers fall through to
+// a full rebuild (worse perf, always correct).
+const computeProjectHash = async vm => {
+    if (!vm || typeof vm.saveProjectSb3 !== 'function') {
         return null;
     }
     try {
-        // Only hash the project.json body (lightweight), not asset bytes.
-        // Any asset change is reflected through the project.json entries that
-        // reference it (md5ext etc.), so hashing project.json is enough to
-        // answer "did the project change?".
-        const projectJson = vm.toJSON();
-        return cyrb53(projectJson);
+        const buffer = await vm.saveProjectSb3('arraybuffer');
+        if (!buffer || buffer.byteLength === 0) return null;
+        const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+        const zip = await JSZip.loadAsync(bytes);
+        const projectEntry = zip.file('project.json');
+        if (!projectEntry) return null;
+        const projectJsonStr = await projectEntry.async('string');
+        return cyrb53(projectJsonStr);
     } catch (e) {
-        // Serialization failed: return null so callers treat it as "rebuild needed".
         return null;
     }
+};
+
+// Reset the in-memory worktree hash cache. Must be called after any operation
+// that moves HEAD / rewrites the working tree out from under us: commits,
+// checkouts, clones, deletes, merges, sb3 imports. Without this the stale
+// cache would short-circuit the next getRepoChanges and report "no changes"
+// even after the repo was mutated underneath the VM.
+const resetRepoCache = () => {
+    lastProjectHash = null;
+    worktreeInitialized = false;
 };
 
 const pathJoin = (...parts) => parts
@@ -382,6 +402,7 @@ const initRepo = async ({defaultBranch = 'main', vm = null, onProgress} = {}) =>
         }
     }
 
+    resetRepoCache();
     return {
         fs,
         dir: REPO_DIR
@@ -479,6 +500,7 @@ const restoreProjectFromCurrentRef = async vm => {
     } catch (e) {
         throw new Error(`Failed to restore project: ${e.message}`);
     }
+    resetRepoCache();
 };
 
 const describeRepoChange = ([, head, workdir, stage]) => {
@@ -595,6 +617,7 @@ const checkoutBranch = async ref => {
     } catch (e) {
         throw new Error(`Failed to checkout branch ${ref}: ${e.message}`);
     }
+    resetRepoCache();
     return 'ok';
 };
 
@@ -610,18 +633,21 @@ const checkoutCommit = async oid => {
     } catch (e) {
         throw new Error(`Failed to checkout commit ${oid}: ${e.message}`);
     }
+    resetRepoCache();
     return 'ok';
 };
 
 const checkoutBranchAndRestore = async ({vm, ref}) => {
     await checkoutBranch(ref);
     await restoreProjectFromCurrentRef(vm);
+    resetRepoCache();
     return 'ok';
 };
 
 const checkoutCommitAndRestore = async ({vm, oid}) => {
     await checkoutCommit(oid);
     await restoreProjectFromCurrentRef(vm);
+    resetRepoCache();
     return 'ok';
 };
 
@@ -794,6 +820,7 @@ const push = async ({vm, remote, branch, ref, setUpstream = true, onProgress, ..
         }
     }
 
+    resetRepoCache();
     return result;
 };
 
@@ -844,6 +871,7 @@ const fetchRemote = async ({remote = 'origin', ref, onAuth, onProgress} = {}) =>
         throw new Error('Repository not initialized');
     }
     await runFetch({remote, ref, tags: true, prune: true, onAuth, onProgress});
+    resetRepoCache();
     return {status: 'fetched'};
 };
 
@@ -984,6 +1012,7 @@ const pull = async ({vm, remote, ref, author, onAuth, onProgress} = {}) => {
         }
         throw new Error(`Failed to pull: ${e && e.message ? e.message : String(e)}`);
     }
+    resetRepoCache();
 };
 
 // `onlyStaged` (decision D2): when true the index is left exactly as the user
@@ -1012,23 +1041,27 @@ const commitProject = async ({vm, message, author, onProgress, onlyStaged = fals
         throw new Error('VM does not support save/load project');
     }
 
-    // Fast path: if the working tree still mirrors the current project (same
-    // project hash as the last sync), there is nothing to commit. Bail out
-    // before the expensive full working-tree rebuild + staging pass.
+    // Compute hash *before* rebuilding the working tree. If it already matches
+// the last cached hash, the current worktree is still consistent with the VM
+// and we can skip the expensive re-serialization below. We still run the
+// statusMatrix afterwards so the "no changes" decision is *never* based on
+// the cache alone — the cache is purely a performance hint.
     const projectHash = await computeProjectHash(vm);
-    if (worktreeInitialized && lastProjectHash !== null && lastProjectHash === projectHash) {
-        throw new Error('No changes to commit');
-    }
+    const worktreeAlreadyFresh = worktreeInitialized &&
+        lastProjectHash !== null &&
+        lastProjectHash === projectHash;
 
     let sb3ArrayBuffer;
 
-    try {
-        sb3ArrayBuffer = await vm.saveProjectSb3('arraybuffer');
-        if (!sb3ArrayBuffer || sb3ArrayBuffer.byteLength === 0) {
-            throw new Error('Failed to save project');
+    if (!worktreeAlreadyFresh) {
+        try {
+            sb3ArrayBuffer = await vm.saveProjectSb3('arraybuffer');
+            if (!sb3ArrayBuffer || sb3ArrayBuffer.byteLength === 0) {
+                throw new Error('Failed to save project');
+            }
+        } catch (e) {
+            throw new Error(`Failed to save project: ${e.message}`);
         }
-    } catch (e) {
-        throw new Error(`Failed to save project: ${e.message}`);
     }
 
     if (typeof onProgress === 'function') {
@@ -1041,7 +1074,12 @@ const commitProject = async ({vm, message, author, onProgress, onlyStaged = fals
     }
 
     try {
-        await writeProjectToFractchTree({vm, sb3ArrayBuffer, fs: pfs, dir: REPO_DIR, onProgress});
+        // Only rebuild the working tree when the project actually changed.
+        // When the hash was already fresh the worktree is still the one we
+        // produced last time, so skip rebuild + rely on the cached status.
+        if (!worktreeAlreadyFresh) {
+            await writeProjectToFractchTree({vm, sb3ArrayBuffer, fs: pfs, dir: REPO_DIR, onProgress});
+        }
 
         // Ensure any new files are discoverable by isomorphic-git (it uses callback fs,
         // but LightningFS mirrors state).
@@ -1087,6 +1125,11 @@ const commitProject = async ({vm, message, author, onProgress, onlyStaged = fals
             message: message.trim(),
             author: effectiveAuthor
         });
+        // HEAD moved — the old hash/worktree cache is now stale. Drop it so
+        // the next getRepoChanges rebuilds from the *new* HEAD instead of
+        // diffing a freshly edited project against a commit that is no longer
+        // the current one.
+        resetRepoCache();
         return ret;
     } catch (e) {
         throw new Error(`Failed to commit: ${e.message}`);
@@ -1098,6 +1141,7 @@ const deleteRepo = async () => {
     const pfs = fs.promises;
     if (!(await exists(pfs, REPO_DIR))) return;
     await removeRecursive(pfs, REPO_DIR);
+    resetRepoCache();
 };
 
 const deleteBranch = async ref => {
@@ -1115,6 +1159,7 @@ const deleteBranch = async ref => {
     } catch (e) {
         throw new Error(`Failed to delete branch ${ref}: ${e.message}`);
     }
+    resetRepoCache();
 };
 
 const listBranches = async () => {
@@ -1242,6 +1287,7 @@ const mergeBranchesApply = async ({ours, theirs, resolutions, author} = {}) => {
             parent: [oursOid, theirsOid]
         });
     }
+    resetRepoCache();
     return res;
 };
 
@@ -1302,6 +1348,7 @@ const startEditorMerge = async ({ours, theirs, author} = {}) => {
         });
         return {conflicts: text, merged: false};
     }
+    resetRepoCache();
 };
 
 const abortEditorMerge = async () => {
@@ -1311,6 +1358,7 @@ const abortEditorMerge = async () => {
     setPendingMerge(null);
     await clearWorkdirExceptGit(fs.promises);
     await git.checkout({fs, dir: REPO_DIR, ref: ours, force: true});
+    resetRepoCache();
 };
 
 const completeEditorMerge = async ({author} = {}) => {
@@ -1574,6 +1622,7 @@ const commitSb3 = async ({
         author: authorUsed
     });
 
+    resetRepoCache();
     return oid;
 };
 
@@ -1697,6 +1746,7 @@ const cloneRepo = async ({url, ref, onAuth, onProgress} = {}) => {
     await deleteRepo();
     await moveDir(pfs, tmpDir, REPO_DIR);
 
+    resetRepoCache();
     return {fs, dir: REPO_DIR};
 };
 
@@ -1881,6 +1931,7 @@ const importRepoFromSb3 = async input => {
         }
     }
 
+    resetRepoCache();
     return true;
 };
 
