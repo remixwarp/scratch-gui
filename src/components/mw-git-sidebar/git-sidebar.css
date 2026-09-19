@@ -100,8 +100,8 @@
 
     --git-warning-fg: #a07a00;
 
-    --git-current-row-bg: rgba(0,122,204,0.10);
-    --git-current-row-fg: #007acc;
+    --git-current-row-bg: rgba(0,122,204,1);
+    --git-current-row-fg: #ffffff;
     --git-selected-blue:  #007acc;
 
     --git-author-fg:       #1a1a1a;
