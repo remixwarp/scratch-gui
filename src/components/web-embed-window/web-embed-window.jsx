@@ -68,6 +68,23 @@ const WebEmbedWindow = ({visible, onClose}) => {
     const [selectedTab, setSelectedTab] = useState(null);
     const [tabs, setTabs] = useState([]);
 
+    /**
+     * 关闭窗口的统一入口 —— WindowManager 的 X 按钮、visible=false 的 effect
+     * 清理逻辑都走这里。关键：必须调 props.onClose() 让 Redux 的
+     * webEmbedModal 归零，这样下次用户点菜单按钮时 visible 才会从 false
+     * 跳回 true，触发 [visible] effect 重新 createWindow。
+     */
+    const closeWindow = useCallback(() => {
+        if (windowRef.current) {
+            try { windowRef.current.close(); } catch (e) { /* ignore */ }
+            windowRef.current = null;
+        }
+        containersRef.current.clear();
+        setTabs([]);
+        setSelectedTab(null);
+        if (typeof onClose === 'function') onClose();
+    }, [onClose]);
+
     /** 把当前 theme 应用到所有已创建的 DOM — 每次 theme 变 / tab 变时调用 */
     const applyThemeToAll = useCallback(() => {
         const t = resolveTheme();
@@ -283,7 +300,8 @@ const WebEmbedWindow = ({visible, onClose}) => {
                 minWidth: 480, minHeight: 320,
                 resizable: true, maximizable: true,
                 closable: true,
-                onClose: () => { windowRef.current = null; }
+                // 用户点 WindowManager 的 X 按钮 —— 走统一 closeWindow
+                onClose: () => closeWindow()
             });
 
             windowRef.current = win;
@@ -323,18 +341,24 @@ const WebEmbedWindow = ({visible, onClose}) => {
                 applyThemeToAll();
             }, 0);
         } else if (!visible && windowRef.current) {
-            windowRef.current.close();
-            windowRef.current = null;
+            // Redux 要求关闭（onClose 被 dispatch 或 visible 变 false）
+            // —— 不调用 props.onClose 因为它本身就是触发者
+            if (windowRef.current) {
+                try { windowRef.current.close(); } catch (e) { /* ignore */ }
+                windowRef.current = null;
+            }
             containersRef.current.clear();
             setTabs([]);
             setSelectedTab(null);
         }
 
         return () => {
+            // effect 重跑 / 组件卸载 —— 只清 DOM 不回调 onClose，避免循环
             if (windowRef.current) {
-                windowRef.current.close();
+                try { windowRef.current.close(); } catch (e) { /* ignore */ }
                 windowRef.current = null;
             }
+            containersRef.current.clear();
         };
     /* eslint-disable react-hooks/exhaustive-deps */
     }, [visible]);
