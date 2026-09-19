@@ -276,13 +276,14 @@ const WorkspaceTree = ({
     onSelectTarget,
     onSelectCostume,
     onSelectSound,
-    intl
+    intl,
+    isDark
 }) => {
     const hasSprites = tree.sprites && tree.sprites.length > 0;
     const hasStage = tree.stage !== null && tree.stage !== undefined;
 
     return (
-        <div className={styles.tree}>
+        <div className={styles.tree} data-panel-theme={isDark ? 'dark' : 'light'}>
             <div className={styles.treeHeader}>
                 <FolderOpen size={16} className={styles.treeHeaderIcon} />
                 <span>{intl.formatMessage({defaultMessage: 'Explorer', id: 'mw.tree.title'})}</span>
@@ -327,7 +328,8 @@ WorkspaceTree.propTypes = {
     onSelectTarget: PropTypes.func,
     onSelectCostume: PropTypes.func,
     onSelectSound: PropTypes.func,
-    intl: PropTypes.object
+    intl: PropTypes.object,
+    isDark: PropTypes.bool
 };
 
 export default injectIntl(WorkspaceTree);

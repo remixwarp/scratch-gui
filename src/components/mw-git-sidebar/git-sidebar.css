@@ -1,3 +1,134 @@
+/* ── Theme variables (dark = default, light override below) ── */
+:root,
+.root,
+.root[data-panel-theme="dark"] {
+    --git-bg:            #1e1e1e;
+    --git-bg-alt:        #252526;
+    --git-bg-hover:      #2d2d30;
+    --git-border:        #2a2a2a;
+    --git-border-strong: #3a3a3a;
+    --git-fg:            #cccccc;
+    --git-fg-muted:      #9a9a9a;
+    --git-fg-strong:     #ffffff;
+    --git-title-fg:      #cccccc;
+    --git-scrollbar:     #4b4b4b;
+    --git-scrollbar-bg:  #252526;
+    --git-section-header-hover: rgba(255,255,255,0.035);
+
+    /* badges */
+    --git-badge-add:    #4ec9b0;
+    --git-badge-del:    #f48771;
+    --git-badge-del-fg: #ffffff;
+    --git-badge-rename: #dcdcaa;
+    --git-badge-mod:    #569cd6;
+    --git-badge-mod-fg: #ffffff;
+
+    /* branch chips */
+    --git-chip-local:  #2563eb;
+    --git-chip-remote: #7c3aed;
+
+    /* sync banner */
+    --git-sync-in-sync: #4ec9b0;
+    --git-sync-ahead:   #ffb454;
+    --git-sync-behind:  #ff6080;
+
+    /* empty description hint */
+    --git-warning-fg: #d4a017;
+
+    /* current branch highlight */
+    --git-current-row-bg: rgba(78,201,176,0.10);
+    --git-current-row-fg: #4ec9b0;
+    --git-selected-blue:  #094771;
+
+    /* author / meta row */
+    --git-author-fg:       #cccccc;
+    --git-date-fg:         #cccccc;
+    --git-date-opacity:    0.55;
+    --git-time-fg:         #cccccc;
+    --git-time-opacity:    0.55;
+    --git-hash-fg:         #cccccc;
+    --git-hash-opacity:    0.45;
+    --git-meta-sep-opacity: 0.35;
+
+    /* SVG graph dot colors per lane */
+    --git-lane-default: #888;
+
+    /* floating button */
+    --git-float-bg:        #252526;
+    --git-float-bg-hover:  #37373d;
+    --git-float-border:    #3a3a3a;
+    --git-float-color:     #cccccc;
+    --git-float-color-hover:#ffffff;
+
+    /* remote list row */
+    --git-remote-row-name: #4ec9b0;
+    --git-remote-row-url:  #9a9a9a;
+    --git-remote-row-bg:   #252526;
+
+    /* currentTag pill */
+    --git-current-tag-bg:   #37373d;
+    --git-current-tag-fg:   #9a9a9a;
+}
+
+.root[data-panel-theme="light"] {
+    --git-bg:            var(--git-fg-strong);
+    --git-bg-alt:        #f7f7f7;
+    --git-bg-hover:      #eaf1fb;
+    --git-border:        #e5e5e5;
+    --git-border-strong: #d0d0d0;
+    --git-fg:            #1a1a1a;
+    --git-fg-muted:      #555555;
+    --git-fg-strong:     #000000;
+    --git-title-fg:      #333333;
+    --git-scrollbar:     #c5c5c5;
+    --git-scrollbar-bg:  #f5f5f5;
+    --git-section-header-hover: rgba(0,0,0,0.03);
+
+    --git-badge-add:    #2da87e;
+    --git-badge-del:    #e04343;
+    --git-badge-del-fg: var(--git-fg-strong);
+    --git-badge-rename: #b8931f;
+    --git-badge-mod:    #1976d2;
+    --git-badge-mod-fg: var(--git-fg-strong);
+
+    --git-chip-local:  #2563eb;
+    --git-chip-remote: #7c3aed;
+
+    --git-sync-in-sync: #2da87e;
+    --git-sync-ahead:   #d48a12;
+    --git-sync-behind:  #d1304a;
+
+    --git-warning-fg: #a07a00;
+
+    --git-current-row-bg: rgba(0,122,204,0.10);
+    --git-current-row-fg: #007acc;
+    --git-selected-blue:  #007acc;
+
+    --git-author-fg:       #1a1a1a;
+    --git-date-fg:         #444444;
+    --git-date-opacity:    1;
+    --git-time-fg:         #444444;
+    --git-time-opacity:    1;
+    --git-hash-fg:         #666666;
+    --git-hash-opacity:    1;
+    --git-meta-sep-opacity: 0.45;
+
+    --git-lane-default: #777;
+
+    --git-float-bg:        #f5f5f5;
+    --git-float-bg-hover:  #e5e5e5;
+    --git-float-border:    #d0d0d0;
+    --git-float-color:     #333333;
+    --git-float-color-hover:#000000;
+
+    --git-remote-row-name: #007acc;
+    --git-remote-row-url:  #555555;
+    --git-remote-row-bg:   #f7f7f7;
+
+    --git-current-tag-bg:   #e8e8e8;
+    --git-current-tag-fg:   #555555;
+}
+
 /* VS Code – style dark side panel for Git. Mirrors the modal's colour
    semantics (blue local branches / purple remote refs, M/A/D/R badge
    colours) but keeps everything themed against VS Code's side panel so
@@ -9,8 +140,8 @@
     flex-direction: column;
     width: 100%;
     min-height: 100%;
-    background: #1e1e1e;
-    color: #cccccc;
+    background: var(--git-bg);
+    color: var(--git-fg);
     font-size: 12px;
     font-family: "Segoe UI", "Source Code Pro", Menlo, Consolas, monospace;
 }
@@ -21,25 +152,25 @@
     overflow-x: hidden;
     padding-bottom: 16px;
     scrollbar-width: thin;
-    scrollbar-color: #4b4b4b #252526;
+    scrollbar-color: var(--git-scrollbar) var(--git-scrollbar-bg);
 }
 .scrollArea::-webkit-scrollbar { width: 8px; height: 8px; }
 .scrollArea::-webkit-scrollbar-thumb {
-    background: #4b4b4b;
+    background: var(--git-scrollbar);
     border-radius: 4px;
 }
-.scrollArea::-webkit-scrollbar-track { background: #252526; }
+.scrollArea::-webkit-scrollbar-track { background: var(--git-bg-alt); }
 
 .fixedBottom {
     flex-shrink: 0;
-    border-top: 1px solid #2a2a2a;
-    background: #1e1e1e;
+    border-top: 1px solid var(--git-border);
+    background: var(--git-bg);
     overflow: hidden;
 }
 
 /* Section header + body */
 .section {
-    border-bottom: 1px solid #252526;
+    border-bottom: 1px solid var(--git-border);
 }
 
 .sectionHeader {
@@ -48,7 +179,7 @@
     padding: 6px 8px;
     background: transparent;
     border: none;
-    color: #cccccc;
+    color: var(--git-fg);
     cursor: pointer;
     font-size: 11px;
     font-weight: 600;
@@ -60,7 +191,7 @@
     user-select: none;
 }
 .sectionHeader:hover {
-    background: rgba(255,255,255,0.035);
+    background: var(--git-section-header-hover);
     opacity: 1;
 }
 .sectionHeader svg {
@@ -81,12 +212,12 @@
 
 .sectionBody {
     padding: 2px 0 8px;
-    color: #cccccc;
+    color: var(--git-fg);
     font-size: 12px;
 }
 
 .titleCount {
-    color: #888;
+    color: var(--git-fg-muted);
     font-weight: 500;
     font-size: 11px;
 }
@@ -102,7 +233,7 @@
 
 .muted {
     padding: 0 10px;
-    color: #9a9a9a;
+    color: var(--git-fg-muted);
     font-size: 11.5px;
     opacity: 0.9;
 }
@@ -110,9 +241,9 @@
 .emptyDescriptionHint {
     margin-top: 4px;
     padding-top: 6px;
-    border-top: 1px dashed #2d2d2d;
+    border-top: 1px dashed var(--git-border);
     opacity: 1;
-    color: #d4a017;
+    color: var(--git-warning-fg);
 }
 
 /* ── Working changes group ── */
@@ -125,7 +256,7 @@
 .changeSubTitle {
     font-size: 10.5px;
     font-weight: 600;
-    color: #9a9a9a;
+    color: var(--git-fg-muted);
     text-transform: uppercase;
     letter-spacing: 0.6px;
     padding: 2px 2px 4px;
@@ -136,14 +267,14 @@
     gap: 6px;
     padding: 2px 2px;
     font-size: 12px;
-    color: #cccccc;
+    color: var(--git-fg);
 }
 .changeRow:hover {
-    background: rgba(255,255,255,0.04);
+    background: var(--git-bg-hover);
     cursor: default;
 }
 .changePath {
-    color: #cccccc;
+    color: var(--git-fg);
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -165,30 +296,30 @@
     flex-shrink: 0;
     user-select: none;
 }
-.badgeAdd    { background: #4ec9b0; }
-.badgeDelete { background: #f48771; color: #fff; }
-.badgeRename { background: #dcdcaa; }
-.badgeModify { background: #569cd6; color: #fff; }
+.badgeAdd    { background: var(--git-badge-add); }
+.badgeDelete { background: var(--git-badge-del); color: var(--git-badge-del-fg); }
+.badgeRename { background: var(--git-badge-rename); }
+.badgeModify { background: var(--git-badge-mod); color: var(--git-badge-mod-fg); }
 
 /* ── Sync banner ── */
 .syncStatus {
     margin: 4px 8px 8px;
     padding: 6px 8px;
     border-radius: 4px;
-    background: #252526;
+    background: var(--git-bg-alt);
     font-size: 11.5px;
-    color: #cccccc;
+    color: var(--git-fg);
     line-height: 1.5;
 }
 .syncInSync {
-    color: #4ec9b0;
+    color: var(--git-sync-in-sync);
 }
 .syncAhead {
-    color: #ffb454;
+    color: var(--git-sync-ahead);
     font-weight: 600;
 }
 .syncBehind {
-    color: #ff6080;
+    color: var(--git-sync-behind);
     font-weight: 600;
 }
 
@@ -207,18 +338,18 @@
     gap: 1px;
     padding: 4px 6px;
     border-radius: 4px;
-    background: #252526;
+    background: var(--git-bg-alt);
     font-size: 11.5px;
 }
 .remoteRow:hover {
-    background: #2d2d30;
+    background: var(--git-bg-hover);
 }
 .remoteName {
     font-weight: 600;
-    color: #4ec9b0;
+    color: var(--git-remote-row-name);
 }
 .remoteUrl {
-    color: #9a9a9a;
+    color: var(--git-remote-row-url);
     font-size: 11px;
     word-break: break-all;
 }
@@ -239,14 +370,14 @@
     padding: 3px 6px;
     border-radius: 4px;
     font-size: 12px;
-    color: #cccccc;
+    color: var(--git-fg);
 }
 .branchRow:hover {
-    background: rgba(255,255,255,0.04);
+    background: var(--git-bg-hover);
 }
 .branchRowCurrent {
-    background: rgba(78,201,176,0.10);
-    color: #4ec9b0;
+    background: var(--git-current-row-bg);
+    color: var(--git-current-row-fg);
 }
 .branchIcon {
     opacity: 0.6;
@@ -255,8 +386,8 @@
 .currentTag {
     margin-left: auto;
     font-size: 10px;
-    color: #9a9a9a;
-    background: #37373d;
+    color: var(--git-current-tag-fg);
+    background: var(--git-current-tag-bg);
     border-radius: 3px;
     padding: 1px 6px;
     letter-spacing: 0.4px;
@@ -268,7 +399,7 @@
     font-size: 10px;
     padding: 1px 6px;
     border-radius: 10px;
-    color: #fff;
+    color: var(--git-fg-strong);
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -276,10 +407,10 @@
     white-space: nowrap;
 }
 .branchChipLocal {
-    background: #2563eb;
+    background: var(--git-chip-local);
 }
 .branchChipRemote {
-    background: #7c3aed;
+    background: var(--git-chip-remote);
 }
 
 /* ── History / commit list ── */
@@ -314,7 +445,7 @@
     min-width: 0;
 }
 .commitRow:hover {
-    background: rgba(255,255,255,0.05);
+    background: var(--git-bg-hover);
 }
 
 .commitMain {
@@ -340,7 +471,7 @@
     font-size: 12px;
     font-weight: 500;
     line-height: 1.3;
-    color: #cccccc;
+    color: var(--git-fg);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -367,22 +498,22 @@
 }
 
 .commitAuthor {
-    color: #cccccc;
-    opacity: 0.8;
+    color: var(--git-author-fg);
+    opacity: 0.85;
 }
 .commitMetaSep {
-    color: #cccccc;
-    opacity: 0.35;
+    color: var(--git-author-fg);
+    opacity: var(--git-meta-sep-opacity);
 }
 .commitDate, .commitTime {
-    color: #cccccc;
-    opacity: 0.55;
+    color: var(--git-author-fg);
+    opacity: var(--git-date-opacity);
 }
 .commitHash {
     font-family: Menlo, Consolas, monospace;
     font-size: 11px;
-    color: #cccccc;
-    opacity: 0.45;
+    color: var(--git-author-fg);
+    opacity: var(--git-hash-opacity);
     margin-left: auto;
     flex-shrink: 0;
 }
@@ -395,20 +526,20 @@
     width: 26px;
     height: 26px;
     border-radius: 4px;
-    background: #252526;
-    border: 1px solid #3a3a3a;
-    color: #cccccc;
+    background: var(--git-bg-alt);
+    border: 1px solid var(--git-border-strong);
+    color: var(--git-fg);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
     transition: background 0.08s linear, border-color 0.08s linear;
 }
 .openFullButton:hover {
-    background: #37373d;
-    border-color: #4b4b4b;
-    color: #ffffff;
+    background: var(--git-float-bg-hover);
+    border-color: var(--git-border-strong);
+    color: var(--git-float-color-hover);
 }
 .openFullButton svg {
     opacity: 0.85;

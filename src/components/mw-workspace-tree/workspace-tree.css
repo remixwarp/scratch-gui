@@ -1,16 +1,65 @@
 @import "../../css/colors.css";
 @import "../../css/z-index.css";
+@import "../../css/colors.css";
+@import "../../css/z-index.css";
 @import "../../css/units.css";
+
+/* ── Theme variables (dark = default, light override below) ── */
+:root,
+.tree,
+.tree[data-panel-theme="dark"] {
+    --tree-bg:            rgba(30, 30, 30, 0.95);
+    --tree-bg-alt:        #1e1e1e;
+    --tree-fg:            #cccccc;
+    --tree-fg-dim:        #a0a0a0;
+    --tree-header-fg:     #bbbbbb;
+    --tree-border:        #3c3c3c;
+    --tree-scrollbar:     #454545;
+    --tree-row-hover:     #2a2d2e;
+    --tree-row-selected:  #094771;
+    --tree-row-selected-fg:#ffffff;
+    --tree-leaf-fg:       #a0a0a0;
+    --tree-leaf-icon-fg:  #7fa0a8;
+    --tree-group-icon-fg: #d7ba7d;
+    --tree-stage-icon-fg: #f4bf75;
+    --tree-target-icon-fg:#6eb8d6;
+    --tree-badge-fg:      #8a8a8a;
+    --tree-badge-bg:      #3c3c3c;
+    --tree-count-fg:      #858585;
+    --tree-empty-fg:      #858585;
+}
+
+.tree[data-panel-theme="light"] {
+    --tree-bg:            #ffffff;
+    --tree-bg-alt:        #f7f7f7;
+    --tree-fg:            #1a1a1a;
+    --tree-fg-dim:        #4a4a4a;
+    --tree-header-fg:     #555555;
+    --tree-border:        #e5e5e5;
+    --tree-scrollbar:     #c5c5c5;
+    --tree-row-hover:     #eaf1fb;
+    --tree-row-selected:  #007acc;
+    --tree-row-selected-fg:#ffffff;
+    --tree-leaf-fg:       #555555;
+    --tree-leaf-icon-fg:  #3d7a82;
+    --tree-group-icon-fg: #b08b28;
+    --tree-stage-icon-fg: #c47a22;
+    --tree-target-icon-fg:#3a7e9b;
+    --tree-badge-fg:      #666666;
+    --tree-badge-bg:      #eeeeee;
+    --tree-count-fg:      #777777;
+    --tree-empty-fg:      #777777;
+}
 
 .tree {
     width: 240px;
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: rgba(30, 30, 30, 0.95);
-    color: #cccccc;
+    background: var(--tree-bg);
+    color: var(--tree-fg);
     font-size: 0.8125rem;
-    border-right: 1px solid #3c3c3c;
+    border-right: 1px solid var(--tree-border);
     overflow: hidden;
 }
 
@@ -23,14 +72,14 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #bbbbbb;
-    border-bottom: 1px solid #3c3c3c;
+    color: var(--tree-header-fg);
+    border-bottom: 1px solid var(--tree-border);
     user-select: none;
     flex: 0 0 auto;
 }
 
 .treeHeaderIcon {
-    color: #bbbbbb;
+    color: var(--tree-header-fg);
 }
 
 .treeBody {
@@ -44,7 +93,7 @@
     width: 10px;
 }
 .treeBody::-webkit-scrollbar-thumb {
-    background: #454545;
+    background: var(--tree-scrollbar);
     border-radius: 5px;
 }
 
@@ -69,42 +118,42 @@
 }
 
 .treeRow:hover {
-    background: #2a2d2e;
+    background: var(--tree-row-hover);
 }
 
 .treeRowSelected {
-    background: #094771;
-    color: #ffffff;
+    background: var(--tree-row-selected);
+    color: var(--tree-row-selected-fg);
 }
 
 .treeLeaf {
-    color: #a0a0a0;
+    color: var(--tree-leaf-fg);
 }
 
 .treeLeaf.treeRowSelected {
-    color: #ffffff;
+    color: var(--tree-row-selected-fg);
 }
 
 .leafIcon {
-    color: #7fa0a8;
+    color: var(--tree-leaf-icon-fg);
     flex: 0 0 auto;
 }
 
 .treeRowSelected .leafIcon {
-    color: #ffffff;
+    color: var(--tree-row-selected-fg);
 }
 
 .groupIcon {
-    color: #d7ba7d;
+    color: var(--tree-group-icon-fg);
     flex: 0 0 auto;
 }
 
 .stageIcon {
-    color: #f4bf75;
+    color: var(--tree-stage-icon-fg);
 }
 
 .targetIcon {
-    color: #6eb8d6;
+    color: var(--tree-target-icon-fg);
 }
 
 .leafName {
@@ -115,8 +164,8 @@
 
 .badge {
     font-size: 0.625rem;
-    color: #8a8a8a;
-    background: #3c3c3c;
+    color: var(--tree-badge-fg);
+    background: var(--tree-badge-bg);
     border-radius: 4px;
     padding: 0 4px;
     flex: 0 0 auto;
@@ -125,7 +174,7 @@
 .count {
     margin-left: auto;
     font-size: 0.6875rem;
-    color: #858585;
+    color: var(--tree-count-fg);
 }
 
 .spacerIcon {
@@ -140,7 +189,7 @@
     width: 100%;
     border: none;
     background: none;
-    color: #cccccc;
+    color: var(--tree-fg);
     text-align: left;
     padding-top: 3px;
     padding-bottom: 3px;
@@ -154,7 +203,7 @@
 }
 
 .groupHeader:hover {
-    background: #2a2d2e;
+    background: var(--tree-row-hover);
 }
 
 .groupLabel {
@@ -175,6 +224,6 @@
 
 .empty {
     padding: 16px;
-    color: #858585;
+    color: var(--tree-empty-fg);
     text-align: center;
 }

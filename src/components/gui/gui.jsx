@@ -2000,19 +2000,31 @@ const GUIComponent = props => {
                                 </TabPanel>
                             </Tabs>
                             {vscodeLayout && explorerVisible && (
-                                <Box className={styles.explorerHost}>
+                                <Box
+                                    className={styles.explorerHost}
+                                    data-panel-theme={theme && typeof theme.isDark === 'function' && theme.isDark() ? 'dark' : 'light'}
+                                >
                                     <WorkspaceTree
                                         tree={workspaceTree}
                                         editingTarget={editingTarget}
                                         onSelectTarget={handleExplorerSelectTarget}
                                         onSelectCostume={handleExplorerSelectCostume}
                                         onSelectSound={handleExplorerSelectSound}
+                                        isDark={!(theme && typeof theme.isDark === 'function') || theme.isDark()}
                                     />
                                 </Box>
                             )}
                             {vscodeLayout && gitVisible && (
-                                <Box className={styles.explorerHost} style={{background: '#1e1e1e', color: '#ccc', overflow: 'auto'}}>
-                                    <GitSidebar vm={vm} onOpenFull={() => props.dispatch(openGitModal())} />
+                                <Box
+                                    className={styles.explorerHost}
+                                    data-panel-theme={theme && typeof theme.isDark === 'function' && theme.isDark() ? 'dark' : 'light'}
+                                    style={{overflow: 'auto'}}
+                                >
+                                    <GitSidebar
+                                        vm={vm}
+                                        onOpenFull={() => props.dispatch(openGitModal())}
+                                        isDark={!(theme && typeof theme.isDark === 'function') || theme.isDark()}
+                                    />
                                 </Box>
                             )}
                             {backpackVisible && activeTabIndex !== COSTUMES_TAB_INDEX && activeTabIndex !== SOUNDS_TAB_INDEX ? (
