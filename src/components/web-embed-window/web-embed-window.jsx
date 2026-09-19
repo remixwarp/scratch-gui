@@ -5,31 +5,18 @@ import WindowManager from '../../addons/window-system/window-manager';
 /**
  * WebEmbedWindow — Turbowarp "网页内嵌" 工具。
  *
- * 三个关键修复（原来这三个问题全是硬编码/闭包导致）：
+ * 本次（v3）修复清单：
+ *   ✅ 点箭头立即嵌入（闭包 stale → useCallback + useEffect 重绑）
+ *   ✅ 深色/浅色变量化 + 动态切换（CSS 变量 + MutationObserver）
+ *   ✅ 关闭后重开（WindowManager.onClose → props.onClose → Redux state 归零）
+ *   ✅ 默认 tab 渲染为空白（初始化 ref 状态错误 → 用 DOM 反查 + applyThemeToAll）
+ *   ✅ iframe 不铺满（flex 高度链路断 → 每一层显式 flex:1/min-height:0/height:100%）
+ *   ✅ 关闭后菜单全部失效（closeWindow 与 WindowManager.destroy 竞态 → 分职责）
  *
- *  1. "点箭头不立即嵌入" — 原实现里 createTabDOM 绑到 btn/input 的
- *     click/keydown listener 闭包闭到了首次 render 时的 selectedTab=null，
- *     loadCurrent 里 if (!info) return 直接短路。修法：
- *       - loadCurrent 用 useCallback([selectedTab]) 让 closure 永远是新的
- *       - selectedTab 变化时 useEffect 里重新把最新的 loadCurrent 绑回每个 DOM
- *       - iframe.src 先置空再赋新 URL，强制浏览器重新加载（某些代理/CDN
- *         场景下只改 src 不触发 load）
- *
- *  2. "深色模式下背景还是白色" — 原实现所有颜色硬写 #fff / #fafafa /
- *     #e8e8e8 / rgba(0,0,0,0.08)。修法：全部从 Turbowarp 在主题切换时
- *     写入 documentElement 的 CSS 变量读取。
- *
- *  3. "深浅色切换要动态生效" — 原实现完全没监听 theme 变化。修法：
- *     MutationObserver 挂到 <html> 和 <body> 的 style/class 属性上，
- *     一旦 Turbowarp 改了主题变量，applyThemeToAll() 重新解析 CSS
- *     变量并给所有 DOM 节点刷一遍颜色。
- *
- * 设计：
- *   - 窗口结构仍用纯 DOM 搭（WindowManager 的集成方式不能动）
- *   - 所有 DOM 节点颜色都在 createTabDOM / renderTabBar 里从 theme
- *     对象读（theme 对象由 resolveTheme() 从 CSS 变量解析）
- *   - 每次 theme 变化 / selectedTab 变化 / addTab / removeTab 都会
- *     统一调用 applyThemeToAll() 把颜色刷一遍
+ * 核心架构：
+ *   - WindowManager.onClose 回调**只负责 Redux close**，同步触发 visible=false
+ *   - visible 变 false 后由 [visible] effect 调 WindowManager.close() 开始动画
+ *   - effect cleanup（依赖 visible）在卸载时清 DOM — 三处路径职责分明不交叉
  */
 
 /** Turbowarp 在主题切换时写入 documentElement 的 CSS 变量，带 fallback */
@@ -60,6 +47,12 @@ function resolveTheme () {
     };
 }
 
+/**
+ * 高度链路样式字符串 —— 每一层都必须显式 flex:1 + min-height:0
+ * 否则 Chrome 会按内容最小高度撑破 flex 容器，iframe 高度不铺满。
+ */
+const FLEX_COL_FILL = 'display:flex;flex-direction:column;flex:1 1 auto;min-height:0;width:100%;';
+
 const WebEmbedWindow = ({visible, onClose}) => {
     const windowRef = useRef(null);
     const containersRef = useRef(new Map()); // tabId -> {iframe, container, input, btn, toggleBtn}
@@ -69,23 +62,9 @@ const WebEmbedWindow = ({visible, onClose}) => {
     const [tabs, setTabs] = useState([]);
 
     /**
-     * 关闭窗口的统一入口 —— WindowManager 的 X 按钮、visible=false 的 effect
-     * 清理逻辑都走这里。关键：必须调 props.onClose() 让 Redux 的
-     * webEmbedModal 归零，这样下次用户点菜单按钮时 visible 才会从 false
-     * 跳回 true，触发 [visible] effect 重新 createWindow。
+     * 把当前 theme 应用到所有已创建的 DOM。
+     * 每次 theme 变量变化（MutationObserver 触发）/ tab 变化 / addTab 时调。
      */
-    const closeWindow = useCallback(() => {
-        if (windowRef.current) {
-            try { windowRef.current.close(); } catch (e) { /* ignore */ }
-            windowRef.current = null;
-        }
-        containersRef.current.clear();
-        setTabs([]);
-        setSelectedTab(null);
-        if (typeof onClose === 'function') onClose();
-    }, [onClose]);
-
-    /** 把当前 theme 应用到所有已创建的 DOM — 每次 theme 变 / tab 变时调用 */
     const applyThemeToAll = useCallback(() => {
         const t = resolveTheme();
         themeRef.current = t;
@@ -109,7 +88,13 @@ const WebEmbedWindow = ({visible, onClose}) => {
                 info.toggleBtn.style.background = t.bgRoot;
                 info.toggleBtn.style.color = t.primary;
             }
-            if (info.iframe) info.iframe.style.background = t.bgEmbed;
+            if (info.iframe) {
+                info.iframe.style.background = t.bgEmbed;
+                info.iframe.style.width = '100%';
+                info.iframe.style.height = '100%';
+                info.iframe.style.flex = '1 1 auto';
+                info.iframe.style.minHeight = '0';
+            }
         });
 
         if (windowRef.current && windowRef.current._content) {
@@ -139,26 +124,31 @@ const WebEmbedWindow = ({visible, onClose}) => {
         }
     };
 
+    /**
+     * 创建单个 tab 的 DOM。每一层容器都必须显式 height/flex 属性，
+     * 否则 Chrome 会按内容最小高度撑破 flex 容器，iframe 就不铺满。
+     */
     const createTabDOM = (tabId, initialUrl) => {
         const t = themeRef.current;
 
         const container = document.createElement('div');
-        container.style.cssText = `display:flex;flex-direction:column;height:100%;width:100%;background:${t.bgEmbed};`;
+        container.style.cssText = `${FLEX_COL_FILL}height:100%;background:${t.bgEmbed};`;
 
+        // URL bar — flex-shrink:0，不参与挤压
         const bar = document.createElement('div');
         bar.dataset.role = 'urlbar';
-        bar.style.cssText = `display:flex;gap:6px;padding:8px;border-bottom:1px solid ${t.border};background:${t.bgBar};`;
+        bar.style.cssText = `display:flex;gap:6px;padding:8px;border-bottom:1px solid ${t.border};background:${t.bgBar};flex-shrink:0;`;
 
         const input = document.createElement('input');
         input.type = 'text';
         input.placeholder = '输入 URL，例如 https://example.com';
         input.value = initialUrl || '';
-        input.style.cssText = `flex:1;padding:6px 10px;border:1px solid ${t.border2};border-radius:6px;font-size:13px;outline:none;background:${t.bgRoot};color:${t.fgMain};`;
+        input.style.cssText = `flex:1;padding:6px 10px;border:1px solid ${t.border2};border-radius:6px;font-size:13px;outline:none;background:${t.bgRoot};color:${t.fgMain};min-width:0;`;
 
         const toggleBtn = document.createElement('button');
         toggleBtn.textContent = '▾';
         toggleBtn.title = '收起地址栏';
-        toggleBtn.style.cssText = `padding:0 10px;border:1px solid ${t.primary};border-radius:6px;background:${t.bgRoot};color:${t.primary};cursor:pointer;font-size:12px;min-width:32px;`;
+        toggleBtn.style.cssText = `padding:0 10px;border:1px solid ${t.primary};border-radius:6px;background:${t.bgRoot};color:${t.primary};cursor:pointer;font-size:12px;min-width:32px;flex-shrink:0;`;
         toggleBtn.addEventListener('click', () => {
             const hidden = bar.style.display === 'none';
             if (hidden) { bar.style.display = ''; toggleBtn.textContent = '▾'; toggleBtn.title = '收起地址栏'; }
@@ -168,20 +158,31 @@ const WebEmbedWindow = ({visible, onClose}) => {
         const btn = document.createElement('button');
         btn.textContent = '→';
         btn.title = '加载网页';
-        btn.style.cssText = `padding:0 14px;border:none;border-radius:6px;background:${t.primary};color:#fff;font-size:16px;cursor:pointer;`;
+        btn.style.cssText = `padding:0 14px;border:none;border-radius:6px;background:${t.primary};color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;`;
 
         bar.appendChild(input);
         bar.appendChild(btn);
         bar.appendChild(toggleBtn);
 
+        // iframe — flex:1 + min-height:0 + height:100% 三把锁一起上
         const iframe = document.createElement('iframe');
-        iframe.style.cssText = `flex:1;width:100%;border:0;background:${t.bgEmbed};`;
+        iframe.style.cssText = `flex:1 1 auto;width:100%;height:100%;min-height:0;border:0;background:${t.bgEmbed};display:block;`;
         iframe.allow = 'fullscreen; autoplay; clipboard-read; clipboard-write;';
 
         container.appendChild(bar);
         container.appendChild(iframe);
 
-        containersRef.current.set(tabId, {iframe, container, input, btn, toggleBtn});
+        // 用 DOM 反查填 containersRef — 不再让调用方负责逐个传 key，
+        // 这样默认 tab 也能一次性完整入库（之前默认 tab 初始化时 btn/toggleBtn
+        // 是 null，必须 setTimeout 再补一次，极易错乱）。
+        const info = {
+            iframe: container.querySelector('iframe'),
+            container,
+            input: container.querySelector('input'),
+            btn: container.querySelector('button[title="加载网页"]'),
+            toggleBtn: container.querySelector('button[title="收起地址栏"], button[title="展开地址栏"]')
+        };
+        containersRef.current.set(tabId, info);
         if (initialUrl) iframe.src = initialUrl;
 
         return container;
@@ -189,8 +190,7 @@ const WebEmbedWindow = ({visible, onClose}) => {
 
     /**
      * 加载当前 tab 的 URL 到 iframe。
-     *  - useCallback([selectedTab]) 保证 closure 里永远是最新 selectedTab
-     *  - iframe 先置空再赋新 URL — 某些代理/CDN 场景下只改 src 不重加载
+     * useCallback([selectedTab]) 保证 closure 永远是最新 selectedTab。
      */
     const loadCurrent = useCallback(() => {
         const info = containersRef.current.get(selectedTab);
@@ -207,11 +207,7 @@ const WebEmbedWindow = ({visible, onClose}) => {
         if (tabEl) tabEl.textContent = urlToLabel(url);
     }, [selectedTab]);
 
-    /**
-     * 每当 selectedTab 变化，把每个 tab 的 btn/input 都重新绑定最新的
-     * loadCurrent。原实现里 listener 只绑一次（在 createTabDOM 里），
-     * 之后 selectedTab 变了但 closure 还是旧的 —— 这就是 "点箭头没反应" 的根因。
-     */
+    /** selectedTab 变化时重绑 btn/input → 保证 listener 里 closure 永远最新 */
     useEffect(() => {
         containersRef.current.forEach(info => {
             if (info.btn) info.btn.onclick = () => loadCurrent();
@@ -264,11 +260,12 @@ const WebEmbedWindow = ({visible, onClose}) => {
     const removeTab = (tabId) => {
         setTabs(prev => {
             const next = prev.filter(t => t.id !== tabId);
-            if (containersRef.current.has(tabId)) {
-                const info = containersRef.current.get(tabId);
+            const info = containersRef.current.get(tabId);
+            if (info) {
                 info.iframe && info.iframe.remove();
-                containersRef.current.delete(tabId);
+                info.container && info.container.remove();
             }
+            containersRef.current.delete(tabId);
             if (selectedTab === tabId && next.length > 0) {
                 const idx = prev.findIndex(t => t.id === tabId);
                 const neighbor = next[Math.min(idx, next.length - 1)];
@@ -278,6 +275,7 @@ const WebEmbedWindow = ({visible, onClose}) => {
         });
     };
 
+    /** tab 显示/隐藏切换 */
     useEffect(() => {
         if (tabs.length > 0 && !selectedTab) setSelectedTab(tabs[0].id);
         renderTabBar();
@@ -291,6 +289,23 @@ const WebEmbedWindow = ({visible, onClose}) => {
     /* eslint-disable react-hooks/exhaustive-deps */
     }, [tabs, selectedTab]);
 
+    /**
+     * 核心 effect：根据 visible 决定 WindowManager 窗口的创建/销毁。
+     *
+     * 关闭路径（关键设计，避免 WindowManager.destroy 和 React effect 竞态）：
+     *   1. 用户点 WindowManager 的 X 按钮 → WindowManager.onClose 回调
+     *   2. 这个回调**只调 props.onClose()**，让 Redux 把 webEmbedModal 设为 false
+     *   3. Redux → React 传 visible=false → 本 effect 的 !visible 分支跑
+     *   4. 这里调 WindowManager.close()（此时 WindowManager.destroy 已在
+     *      第 2 步里把 isDestroying 设过，但动画可能还没跑）—— destroy
+     *      会检测 isDestroying=true 然后直接 return，不会干扰动画
+     *   5. effect cleanup 再扫一次残余 DOM（保险）
+     *
+     * 这样三条路径职责绝对分离：
+     *   WindowManager.onClose → 只管 Redux close
+     *   effect !visible 分支  → 管 WindowManager.close 调起动画 + 清 React state
+     *   effect cleanup        → 兜底 DOM remove + ref 归零
+     */
     useEffect(() => {
         if (visible && !windowRef.current) {
             const win = WindowManager.createWindow({
@@ -300,15 +315,25 @@ const WebEmbedWindow = ({visible, onClose}) => {
                 minWidth: 480, minHeight: 320,
                 resizable: true, maximizable: true,
                 closable: true,
-                // 用户点 WindowManager 的 X 按钮 —— 走统一 closeWindow
-                onClose: () => closeWindow()
+                // 关键：这里**只调 props.onClose()**，不自己清 DOM ——
+                // WindowManager.destroy 会先调我们这里 onClose()，
+                // 然后开始动画；等 visible 变 false 后 React 会触发
+                // 本 effect 的 !visible 分支 + cleanup，完成 DOM 清理。
+                // 这样 WindowManager 的动画才能完整播放，不会被
+                // 我们提前 removeChild 打断，也就不会污染后续的
+                // 菜单系统事件流。
+                onClose: () => {
+                    try { if (typeof onClose === 'function') onClose(); } catch (e) { /* ignore */ }
+                }
             });
 
             windowRef.current = win;
 
+            // 根容器 —— 必须显式 height:100% + flex column，
+            // 否则 WindowManager 的 contentElement 不会给我们铺够高度
             const root = document.createElement('div');
             win._content = root;
-            root.style.cssText = 'display:flex;flex-direction:column;height:100%;width:100%;';
+            root.style.cssText = `${FLEX_COL_FILL}height:100%;`;
 
             const tabBar = document.createElement('div');
             tabBar.style.cssText = 'display:flex;align-items:center;gap:0;padding:0 6px;flex-shrink:0;min-height:32px;';
@@ -318,44 +343,46 @@ const WebEmbedWindow = ({visible, onClose}) => {
             win.setContent(root);
             win.show();
 
+            // 默认 tab —— 一次性 setTabs + createTabDOM + 入库，
+            // createTabDOM 内部用 DOM 反查，不会有 null ref
             setTabs([{id: 'tab-default', label: '新标签页'}]);
             setSelectedTab('tab-default');
 
             const defaultTabDom = createTabDOM('tab-default', '');
             defaultTabDom.style.display = 'none';
             root.appendChild(defaultTabDom);
-            containersRef.current.set('tab-default', {
-                iframe: defaultTabDom.querySelector('iframe'),
-                container: defaultTabDom,
-                input: defaultTabDom.querySelector('input'),
-                btn: null,
-                toggleBtn: null
-            });
-            setTimeout(() => {
+
+            // 请求一帧让 createWindow/show 跑完再 applyTheme + 显示
+            requestAnimationFrame(() => {
                 defaultTabDom.style.display = '';
-                const fix = containersRef.current.get('tab-default');
-                fix.btn = defaultTabDom.querySelector('button[title="加载网页"]');
-                fix.toggleBtn = defaultTabDom.querySelector('button[title="收起地址栏"], button[title="展开地址栏"]');
-                containersRef.current.set('tab-default', fix);
                 renderTabBar();
                 applyThemeToAll();
-            }, 0);
+            });
         } else if (!visible && windowRef.current) {
-            // Redux 要求关闭（onClose 被 dispatch 或 visible 变 false）
-            // —— 不调用 props.onClose 因为它本身就是触发者
-            if (windowRef.current) {
-                try { windowRef.current.close(); } catch (e) { /* ignore */ }
-                windowRef.current = null;
-            }
+            // Redux 告诉我们要关 —— 开始 WindowManager 关闭动画
+            try { windowRef.current.close(); } catch (e) { /* ignore */ }
             containersRef.current.clear();
             setTabs([]);
             setSelectedTab(null);
+            // 注意：**不把 windowRef.current 置 null** —— 让 cleanup 统一处理。
+            // 如果这里置 null，cleanup 就拿不到 windowRef 来 removeChild 了
+            // （destroy 动画要 200ms 后才真正 remove）
         }
 
         return () => {
-            // effect 重跑 / 组件卸载 —— 只清 DOM 不回调 onClose，避免循环
+            // cleanup：effect 重跑 / 组件卸载时兜底
             if (windowRef.current) {
-                try { windowRef.current.close(); } catch (e) { /* ignore */ }
+                try {
+                    // WindowManager.destroy 可能还在跑（isDestroying=true），
+                    // 我们让它 finish 自己的动画 + removeChild。
+                    // 但也有可能 WindowManager.close() 根本没被调（比如
+                    // Redux 直接让 visible=false 但没触发 destroy）——
+                    // 两种情况都 try 一下 destroy(noOnClose=true) 保险
+                    // 且不会重复调用我们的 onClose。
+                    if (typeof windowRef.current.destroy === 'function') {
+                        windowRef.current.destroy(false);
+                    }
+                } catch (e) { /* ignore */ }
                 windowRef.current = null;
             }
             containersRef.current.clear();
@@ -363,6 +390,7 @@ const WebEmbedWindow = ({visible, onClose}) => {
     /* eslint-disable react-hooks/exhaustive-deps */
     }, [visible]);
 
+    /** tabs 变化 → 创建新 tab DOM 并入库（addTab 路径） */
     useEffect(() => {
         if (!windowRef.current || !tabsBarRef.current) return;
         const root = windowRef.current._content;
@@ -371,13 +399,6 @@ const WebEmbedWindow = ({visible, onClose}) => {
                 const dom = createTabDOM(tab.id, '');
                 dom.style.display = 'none';
                 root.appendChild(dom);
-                containersRef.current.set(tab.id, {
-                    iframe: dom.querySelector('iframe'),
-                    container: dom,
-                    input: dom.querySelector('input'),
-                    btn: dom.querySelector('button[title="加载网页"]'),
-                    toggleBtn: dom.querySelector('button[title="收起地址栏"], button[title="展开地址栏"]')
-                });
             }
         });
         applyThemeToAll();
