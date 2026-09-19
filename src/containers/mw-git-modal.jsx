@@ -585,11 +585,15 @@ class TWGitModal extends React.Component {
             graphNodes,
             graphBranchLogs,
             graphRemoteBranches,
-            commitGraphLayout: buildCommitGraphLayout({
-                graphNodes,
-                graphBranchLogs,
-                branchColors: this._branchColors || {}
-            }),
+            // Prefer the layout freshly computed by ops (it's rebuilt on every
+            // history-affecting op and shared with the VS-Code sidebar); only
+            // build it locally as a fallback for older states without it.
+            commitGraphLayout: (state.history && state.history.layout) ||
+                buildCommitGraphLayout({
+                    graphNodes,
+                    graphBranchLogs,
+                    branchColors: this._branchColors || {}
+                }),
             changes: state.changes || [],
             upstream: state.upstream || {remote: null, branch: null, tracking: false, ahead: null, behind: null},
             remotes,

@@ -628,6 +628,15 @@ class GitModalComponent extends React.Component {
                         />
                     </button>
                 </Box>
+                {canCommit && !this.props.commitMessage.trim() && (
+                    <p className={styles.muted}>
+                        <FormattedMessage
+                            defaultMessage="Add a description above before committing — or the commit message will be left blank."
+                            description="Hint shown when there are staged changes but no commit description"
+                            id="mw.git.changes.emptyDescription"
+                        />
+                    </p>
+                )}
                 {hasChanges ? (
                     <>
                         {stagedEntries.length > 0 && (
