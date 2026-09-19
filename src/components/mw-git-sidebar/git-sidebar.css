@@ -71,7 +71,7 @@
 }
 
 .root[data-panel-theme="light"] {
-    --git-bg:            var(--git-fg-strong);
+    --git-bg:            #ffffff;
     --git-bg-alt:        #f7f7f7;
     --git-bg-hover:      #eaf1fb;
     --git-border:        #e5e5e5;
