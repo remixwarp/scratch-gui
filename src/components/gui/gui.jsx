@@ -123,6 +123,7 @@ import {loadPanelState, savePanelState, setPanelStateEvent} from '../../lib/mw-p
 import MWPanelBarContainer from '../../containers/mw-panel-bar.jsx';
 import {buildWorkspaceTree} from '../../lib/mw-workspace-tree.js';
 import WorkspaceTree from '../mw-workspace-tree/workspace-tree.jsx';
+import GitSidebar from '../mw-git-sidebar/git-sidebar.jsx';
 import {
     GitBranch,
     ListTodo,
@@ -135,7 +136,8 @@ import {
     Puzzle,
     CircleAlert,
     Terminal,
-    Files
+    Files,
+    ExternalLink
 } from 'lucide-react';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
@@ -330,6 +332,8 @@ const GUIComponent = props => {
     const [vscodeLayout, setVSCodeLayout] = useState(initialVSCodeLayout);
     // 资源管理器（Explorer）侧边栏显隐
     const [explorerVisible, setExplorerVisible] = useState(false);
+    // Git 仓库侧边栏显隐（VS Code 布局下 activity bar Git 按钮点击）
+    const [gitVisible, setGitVisible] = useState(false);
     useEffect(() => {
         const handleExplorerToggle = () => setExplorerVisible(prev => !prev);
         window.addEventListener('rw-explorer-toggle', handleExplorerToggle);
@@ -1598,12 +1602,6 @@ const GUIComponent = props => {
     // 资源树数据（随目标变化重建）
     const workspaceTree = useMemo(() => buildWorkspaceTree(vm), [vm, editingTarget]);
     const activityBarDefs = {
-        explorer: {
-            title: intl.formatMessage({defaultMessage: '资源管理器', id: 'mw.tree.explorer'}),
-            onClick: toggleExplorer,
-            icon: <Files size={20} />,
-            active: explorerVisible
-        },
         addonSettings: {
             title: intl.formatMessage({defaultMessage: '插件设置', id: 'tw.addonSettings.title'}),
             onClick: onClickAddonSettings,
@@ -1627,8 +1625,22 @@ const GUIComponent = props => {
         },
         git: {
             title: intl.formatMessage({defaultMessage: 'Git', id: 'mw.menuBar.git'}),
-            onClick: () => props.dispatch(openGitModal()),
-            icon: <GitBranch size={20} />
+            onClick: () => {
+                setGitVisible(prev => !prev);
+                // activity bar 面板在同一位置显示，互斥一下
+                setExplorerVisible(false);
+            },
+            icon: <GitBranch size={20} />,
+            active: gitVisible
+        },
+        explorer: {
+            title: intl.formatMessage({defaultMessage: '资源管理器', id: 'mw.tree.explorer'}),
+            onClick: () => {
+                toggleExplorer();
+                setGitVisible(false);
+            },
+            icon: <Files size={20} />,
+            active: explorerVisible
         },
         bookmarks: {
             title: intl.formatMessage({defaultMessage: 'Bookmarks', id: 'tw.workspaceBookmarks.menuLabel'}),
@@ -1996,6 +2008,11 @@ const GUIComponent = props => {
                                         onSelectCostume={handleExplorerSelectCostume}
                                         onSelectSound={handleExplorerSelectSound}
                                     />
+                                </Box>
+                            )}
+                            {vscodeLayout && gitVisible && (
+                                <Box className={styles.explorerHost} style={{background: '#1e1e1e', color: '#ccc', overflow: 'auto'}}>
+                                    <GitSidebar vm={vm} onOpenFull={() => props.dispatch(openGitModal())} />
                                 </Box>
                             )}
                             {backpackVisible && activeTabIndex !== COSTUMES_TAB_INDEX && activeTabIndex !== SOUNDS_TAB_INDEX ? (
