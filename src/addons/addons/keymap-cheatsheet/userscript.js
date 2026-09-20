@@ -13,7 +13,6 @@ const ADDON_SHORTCUTS = [
     {id: 'addon_debugger', key: 'Ctrl+Shift+D', defaultKey: 'Ctrl+Shift+D', category: 'view', label: '打开调试器', source: 'debugger', readOnly: true},
     {id: 'addon_block_count', key: 'Ctrl+Shift+B', defaultKey: 'Ctrl+Shift+B', category: 'view', label: '显示块数', source: 'block-count', readOnly: true},
     {id: 'addon_calculator', key: 'Ctrl+Shift+C', defaultKey: 'Ctrl+Shift+C', category: 'windowManagement', label: '打开计算器', source: 'calculator', readOnly: true},
-    {id: 'addon_ai_agent', key: 'Ctrl+Shift+A', defaultKey: 'Ctrl+Shift+A', category: 'windowManagement', label: '打开 AI Agent', source: '02agent', readOnly: true},
     {id: 'addon_number_arrow', key: 'Ctrl+↑/↓', defaultKey: 'Ctrl+↑/↓', category: 'edit', label: '数值增减', source: 'editor-number-arrow-keys', readOnly: true},
     {id: 'addon_number_arrow_big', key: 'Shift+↑/↓', defaultKey: 'Shift+↑/↓', category: 'edit', label: '数值大幅增减', source: 'editor-number-arrow-keys', readOnly: true},
     {id: 'addon_cheatsheet', key: '?', defaultKey: '?', category: 'view', label: '打开快捷键速查表', source: 'keymap-cheatsheet', readOnly: true}

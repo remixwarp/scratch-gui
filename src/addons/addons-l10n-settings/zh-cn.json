@@ -518,8 +518,6 @@
   "background/@info-reducePerformance": "这可能会造成一些性能问题，而且会覆盖 Bilup 原有的壁纸设置。",
   "todo/@name": "待办",
   "todo/@description": "记录作品的待办!",
-  "novatheai/@name": "Bilup Nova",
-  "novatheai/@description": "一个为 Bilup 设计的 AI 助手，基于 Gandi IDE AI 助手插件。",
   "project-size-display/@name": "项目大小显示",
   "project-size-display/@description": "在角色栏底部显示作品大小、代码数量和选中角色/舞台的大小。"
 }

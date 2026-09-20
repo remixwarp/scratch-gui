@@ -149,22 +149,18 @@ class LanguageService {
         // "Missing message" warnings and the UI shows proper localized text.
         const FALLBACK_MESSAGES = {
             'zh-cn': {
-                'gui.menuBar.02agent': '02Agent',
                 'mw.settings.activityBar': '活动栏',
                 'gui.alerts.twCustomBlockPercent': '自制积木里不允许有百分号'
             },
             'en': {
-                'gui.menuBar.02agent': '02Agent',
                 'mw.settings.activityBar': 'Activity Bar',
                 'gui.alerts.twCustomBlockPercent': 'Custom blocks cannot contain a percent sign'
             },
             'wenyan': {
-                'gui.menuBar.02agent': '02Agent',
                 'mw.settings.activityBar': '活动栏',
                 'gui.alerts.twCustomBlockPercent': '自制积木中不许有百分号'
             },
             'geng': {
-                'gui.menuBar.02agent': '02Agent',
                 'mw.settings.activityBar': '活动栏',
                 'gui.alerts.twCustomBlockPercent': '自制积木里不能带百分号哈'
             }

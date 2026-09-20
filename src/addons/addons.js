@@ -110,8 +110,6 @@ const addons = [
     'project-health-dashboard',
     'lint-system',
     'script-tabs',
-    '02agent',
-    'novatheai',
     'merge-operators',
     'resize-selected-item',
     'bilup-sample'

@@ -636,45 +636,7 @@ export default async function ({ addon, console: _console }) {
     }
 
     function getCurrentAIConfig() {
-        // 优先从 novatheai 的 localStorage 读取（它使用 aiapi.remix.de5.net）
-        try {
-            const agentsRaw = localStorage.getItem('AI_ASSISTANT_AGENTS');
-            if (agentsRaw) {
-                const agents = JSON.parse(agentsRaw);
-                const currentModelId = JSON.parse(localStorage.getItem('AI_ASSISTANT_CURRENT_AGENT_ID') || '""');
-                for (const agent of agents) {
-                    const model = (agent.models || []).find(m => m.id === currentModelId);
-                    if (model && agent.baseUrl && agent.apiKey && isValidRemixAPI(agent.baseUrl, agent.apiKey)) {
-                        return {
-                            baseUrl: agent.baseUrl,
-                            apiKey: agent.apiKey,
-                            model: normalizeModelName(model.modelId),
-                            provider: agent.provider || 'custom'
-                        };
-                    }
-                }
-            }
-        } catch (e) {}
-        // 再尝试 02agent（但需校验 key 是否匹配 endpoint）
-        try {
-            const agentsRaw = localStorage.getItem('AI_ASSISTANT_AGENTS_02');
-            if (agentsRaw) {
-                const agents = JSON.parse(agentsRaw);
-                const currentModelId = JSON.parse(localStorage.getItem('AI_ASSISTANT_CURRENT_AGENT_ID_02') || '""');
-                for (const agent of agents) {
-                    const model = (agent.models || []).find(m => m.id === currentModelId);
-                    if (model && agent.baseUrl && agent.apiKey && isValidRemixAPI(agent.baseUrl, agent.apiKey)) {
-                        return {
-                            baseUrl: agent.baseUrl,
-                            apiKey: agent.apiKey,
-                            model: normalizeModelName(model.modelId),
-                            provider: agent.provider || 'custom'
-                        };
-                    }
-                }
-            }
-        } catch (e) {}
-        // 最终回退：ai-api-models-test.md 官方指定的配置
+// 最终回退：ai-api-models-test.md 官方指定的配置
         return AI_DEFAULT_CONFIG;
     }
 
