@@ -848,6 +848,55 @@ a:active, a:focus {
     }
 }
 
+.custom-plugins-section {
+    border: 1px dashed $ui-black-transparent;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 16px;
+}
+.custom-plugins-header {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+.custom-plugins-title {
+    font-weight: bold;
+    font-size: 1.05em;
+    margin-right: 10px;
+}
+.custom-plugins-hint {
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+.custom-plugins-empty {
+    opacity: 0.7;
+    font-style: italic;
+    margin-bottom: 8px;
+}
+.custom-plugins-actions {
+    display: flex;
+    margin-top: 8px;
+}
+.custom-plugins-import-button {
+    margin-right: 8px;
+}
+.custom-addon {
+    margin-bottom: 6px;
+}
+.custom-delete-button {
+    border: none;
+    background: transparent;
+    color: $ui-black-transparent;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+.custom-delete-button:hover {
+    background: $ui-black-transparent;
+    color: white;
+}
+
 /* Editor and Category buttons */
 
 .editorMenu {
