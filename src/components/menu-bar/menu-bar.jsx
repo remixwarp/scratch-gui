@@ -490,9 +490,9 @@ class MenuBar extends React.Component {
 
     getPlatformInfo (agentName) {   
         const platforms = {
-            'Scratch': { name: 'Scratch', url: 'https://scratch.mit.edu' },
-            'TurboWarp': { name: 'TurboWarp', url: 'https://turbowarp.org' },
-            '02Engine': { name: '02Engine', url: 'https://02engine.02studio.xyz/' },
+            'Scratch': { name: 'Scratch', url: 'https://scratch.mit.edu/' },
+            'TurboWarp': { name: 'TurboWarp', url: 'https://turbowarp.org/' },
+            '02Engine': { name: '02Engine', url: 'https://02engine.org/' },
             'AstraEditor': { name: 'AstraEditor', url: 'https://editors.astras.top/' },
             'Bilup': { name: 'Bilup', url: 'https://com.bilup.org/' },
             'Gandi': { name: 'Gandi', url: 'https://getgandi.com/' }
@@ -3772,7 +3772,7 @@ class MenuBar extends React.Component {
                                         >
                                             <ListTodo />
                                             <FormattedMessage
-                                                defaultMessage="Todo"
+                                                defaultMessage="To-Do (V1)"
                                                 description="Menu bar item to open todo list"
                                                 id="gui.menuBar.todo"
                                             />
