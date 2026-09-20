@@ -120,4 +120,7 @@ export default {
   "event-tracer": () => import(/* webpackChunkName: "addon-entry-event-tracer" */ "../addons/event-tracer/_runtime_entry.js"),
   "02agent": () => import(/* webpackChunkName: "addon-entry-02agent" */ "../addons/02agent/_runtime_entry.js"),
   "novatheai": () => import(/* webpackChunkName: "addon-entry-novatheai" */ "../addons/novatheai/_runtime_entry.js"),
+  "resize-selected-item": () => import(/* webpackChunkName: "addon-entry-resize-selected-item" */ "../addons/resize-selected-item/_runtime_entry.js"),
+  "bilup-sample": () => import(/* webpackChunkName: "addon-entry-bilup-sample" */ "../addons/bilup-sample/_runtime_entry.js"),
+  "merge-operators": () => import(/* webpackChunkName: "addon-entry-merge-operators" */ "../addons/merge-operators/_runtime_entry.js"),
 };
