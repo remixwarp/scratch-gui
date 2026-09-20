@@ -34,5 +34,19 @@
   "import": "Import settings",
   "unsupported": "Some addons are not available in this browser:",
   "addonFeedback": "Addon Feedback",
-  "enableDangerous": "This addon is dangerous and may intentionally DISABLE features. Most users SHOULD NOT enable this addon. Are you sure you want to enable it?"
+  "enableDangerous": "This addon is dangerous and may intentionally DISABLE features. We do not recommend you enable this addon. Are you sure you want to enable it?",
+  "customPlugins": "Custom Plugins",
+  "customPluginsHint": "Plugins you have imported yourself. They run with full access to the editor, only import from sources you trust.",
+  "customPluginsEmpty": "No custom plugins yet. Import a plugin file or load one from a URL below.",
+  "customPluginsImportFile": "Import from file...",
+  "customPluginsImportUrl": "Load from URL...",
+  "customPluginsUrlPrompt": "Enter the URL of the plugin file (.js):",
+  "customPluginsTrust": "This is not an official plugin. Running it gives the code full access to your projects and editor. Only continue if you trust the source. Continue?",
+  "customPluginsImportError": "Failed to load plugin:",
+  "customPluginsImportSuccess": "Plugin imported successfully. You can now enable it from the list above.",
+  "customPluginsFormatError": "Invalid plugin file. A custom plugin must export a \"manifest\" object and a default entry function.",
+  "customPluginsUrlError": "Failed to fetch plugin from URL:",
+  "customPluginsDelete": "Delete this custom plugin",
+  "customPluginsDeleteConfirm": "Delete this custom plugin? It will be removed from this browser.",
+  "customPluginsNoDescription": "No description provided."
 }
