@@ -307,10 +307,19 @@ class GitSidebar extends React.Component {
         };
         this._unsubscribe = null;
         this._refreshPending = false;
+        this._pollTimer = null;
+        this._firstHistoryLoaded = false;
     }
 
     componentDidMount () {
-        this._refresh();
+        // Initial refresh must include history — the sidebar shows the commit
+        // graph out of the box, unlike the modal that walks in with its own
+        // refresh({history:true}) call. Without this first sync, History /
+        // Branches sections stay empty until the user opens the git window
+        // (which, coincidentally, also re-refreshes — that's what made the
+        // VS-Code layout look broken).
+        this._refresh({history: true});
+
         this._unsubscribe = gitStore.subscribe(() => {
             // Sidebar does not merge gitStore state directly into this.state
             // because setState would overwrite collapsed flags. Instead each
@@ -318,11 +327,26 @@ class GitSidebar extends React.Component {
             // re-render by toggling a tiny counter.
             this.setState(s => ({...s, _tick: (s._tick || 0) + 1}));
         });
+
+        // Debounced working-tree resync on any project edit, same as the modal.
+        // A plain edit never needs a history rebuild, but this doubles as the
+        // sidebar's wake-up call for ops-triggered changes that may have
+        // slipped past the store subscription.
+        if (this.props.vm && typeof this.props.vm.on === 'function') {
+            this.props.vm.on('PROJECT_CHANGED', this._handleProjectChanged);
+        }
     }
 
     componentDidUpdate (prev) {
         if (prev.vm !== this.props.vm) {
-            this._refresh();
+            if (prev.vm && typeof prev.vm.off === 'function') {
+                prev.vm.off('PROJECT_CHANGED', this._handleProjectChanged);
+            }
+            if (this.props.vm && typeof this.props.vm.on === 'function') {
+                this.props.vm.on('PROJECT_CHANGED', this._handleProjectChanged);
+            }
+            this._firstHistoryLoaded = false;
+            this._refresh({history: true});
         }
     }
 
@@ -330,12 +354,37 @@ class GitSidebar extends React.Component {
         if (typeof this._unsubscribe === 'function') {
             this._unsubscribe();
         }
+        if (this.props.vm && typeof this.props.vm.off === 'function') {
+            this.props.vm.off('PROJECT_CHANGED', this._handleProjectChanged);
+        }
+        if (this._pollTimer) {
+            clearTimeout(this._pollTimer);
+            this._pollTimer = null;
+        }
     }
 
-    _refresh = () => {
+    _handleProjectChanged = () => {
+        if (this._pollTimer) clearTimeout(this._pollTimer);
+        this._pollTimer = setTimeout(() => {
+            this._pollTimer = null;
+            // Working-tree changes are what PROJECT_CHANGED is really about —
+            // re-walking the graph on every 700ms edit would be as expensive
+            // here as it is in the modal. Once the sidebar has seen its
+            // initial history we stop requesting it here; any later history
+            // mutation (commit, branch, fetch, ...) fires through ops anyway.
+            const needHistory = !this._firstHistoryLoaded;
+            if (needHistory) this._firstHistoryLoaded = true;
+            this._refresh({history: needHistory});
+        }, 700);
+    };
+
+    _refresh = ({history = false} = {}) => {
         if (!this.props.vm || this._refreshPending) return;
         this._refreshPending = true;
-        ops.refreshRepository({vm: this.props.vm})
+        Promise.all([
+            ops.refreshRepository({vm: this.props.vm}),
+            history ? ops.refreshHistory() : Promise.resolve()
+        ])
             .catch(() => { /* ignore — the sidebar keeps whatever state it had */ })
             .finally(() => { this._refreshPending = false; });
     };
