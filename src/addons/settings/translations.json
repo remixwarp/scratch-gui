@@ -37,6 +37,20 @@
     "import": "导入设置",
     "unsupported": "以下插件在当前浏览器中不可用：",
     "addonFeedback": "插件反馈",
-    "enableDangerous": "此插件存在潜在风险，可能会禁用某些功能。大多数用户不应启用此插件。确定要继续启用吗？"
+    "enableDangerous": "此插件存在潜在风险，可能会禁用某些功能。我们并不推荐启用此插件。确认要继续启用吗?",
+    "customPlugins": "自定义插件",
+    "customPluginsHint": "你自己导入的插件。它们对编辑器拥有完全访问权限，请只从可信来源导入。",
+    "customPluginsEmpty": "还没有自定义插件。可以在下方导入插件文件，或从网址加载。",
+    "customPluginsImportFile": "从文件导入...",
+    "customPluginsImportUrl": "从网址加载...",
+    "customPluginsUrlPrompt": "请输入插件文件的网址（.js）:",
+    "customPluginsTrust": "这不是官方插件。运行它将使代码获得对你项目和编辑器的完全访问权限。请仅在信任来源时继续。是否继续?",
+    "customPluginsImportError": "插件加载失败:",
+    "customPluginsImportSuccess": "插件导入成功。现在可以在上方列表中启用它。",
+    "customPluginsFormatError": "插件文件格式无效。自定义插件必须导出一个 manifest 对象和一个默认入口函数。",
+    "customPluginsUrlError": "从网址获取插件失败:",
+    "customPluginsDelete": "删除此自定义插件",
+    "customPluginsDeleteConfirm": "删除此自定义插件?将从当前浏览器中移除。",
+    "customPluginsNoDescription": "未提供描述。"
   }
 }
