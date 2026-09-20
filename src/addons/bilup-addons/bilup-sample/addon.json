@@ -1,0 +1,29 @@
+{
+    "name": "Bilup Sample",
+    "description": "A sample local plugin demonstrating the bilup-addons pipeline. Shows a message in the stage header and logs it to console.",
+    "credits": [
+        {
+            "name": "Bilup"
+        }
+    ],
+    "userscripts": [
+        {
+            "url": "userscript.js",
+            "matches": [
+                "projects"
+            ]
+        }
+    ],
+    "settings": [
+        {
+            "id": "message",
+            "type": "string",
+            "default": "Hello from Bilup Sample!",
+            "name": "Message"
+        }
+    ],
+    "tags": [
+        "recommended"
+    ],
+    "enabledByDefault": false
+}
