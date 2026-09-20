@@ -101,7 +101,6 @@ const addons = [
     'batch-color-replace',
     'simple-project-analyzer',
     'todo-list',
-    'todo',
     'block-pins',
     'tw-comment-markdown-editor',
     'background',
