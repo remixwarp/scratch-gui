@@ -17,7 +17,7 @@ import {
 import ops from '../../lib/git/ops/index.js';
 import gitStore from '../../lib/git/state/store.js';
 import {hasChanges as hasChangesSelector} from '../../lib/git/state/selectors.js';
-import {DETACHED_BRANCH} from '../../lib/git/graph-layout.js';
+import buildCommitGraphLayout, {DETACHED_BRANCH} from '../../lib/git/graph-layout.js';
 
 import styles from './git-sidebar.css';
 
@@ -401,9 +401,27 @@ class GitSidebar extends React.Component {
         const changes = Array.isArray(st.changes) ? st.changes : [];
         const remotes = Array.isArray(st.remotes) ? st.remotes : [];
         const branches = Array.isArray(st.branches) ? st.branches : [];
-        const history = st.history || {layout: null, remoteBranches: []};
+        const history = st.history || {nodes: [], branchLogs: [], remoteBranches: []};
         const commits = Array.isArray(st.commits) ? st.commits : [];
-        const layout = history.layout || {rows: [], lanesCount: 1};
+        // Layout is computed locally on every render — the ops layer deliberately
+        // stopped persisting it (see syncHistory in ops/index.js) because the
+        // layout depends on UI-owned data (branchColors, collapsed state) and
+        // pre-building it there was also masking mutation bugs (branch creation
+        // would succeed and then crash mid-refresh while syncHistory rebuilt
+        // the graph). This is the same call the full modal makes — inputs are
+        // pure git state, so the layout is deterministic for a given commit.
+        let layout = {rows: [], lanesCount: 1};
+        try {
+            layout = buildCommitGraphLayout({
+                graphNodes: history.nodes,
+                graphBranchLogs: history.branchLogs,
+                branchColors: {}
+            }) || layout;
+        } catch (e) {
+            // Sidebar never crashes because of a bad graph render — users still
+            // need the working-changes / branches panes.
+            console.warn('git sidebar: could not compute commit graph layout', e);
+        }
         const rows = Array.isArray(layout.rows) ? layout.rows : [];
         const remoteBranchSet = new Set(history.remoteBranches || []);
         const isBusy = Boolean(st.op && st.op.name);
@@ -411,8 +429,14 @@ class GitSidebar extends React.Component {
         const collapsed = this.state.collapsed;
         const currentBranch = repo.detached ? null : (repo.branch || null);
         const hasWorkingChanges = repo.initialized && changes.some(c => c && c.description !== 'unmodified');
-        const stagedCount = changes.filter(c => c && c.description === 'staged').length;
-        const unstagedCount = changes.filter(c => c && c.description === 'unstaged').length;
+        // Stage / workdir flags come from ops.readStatusMatrix — do NOT derive
+        // them from `description`, that field only carries file-type semantics
+        // (modified / untracked / added / deleted / renamed). Before this fix
+        // the counts were always zero because nothing ever has description
+        // "staged" or "unstaged"; the same bug also made every visible change
+        // look like "untracked" whenever dedup happened to drop one side.
+        const stagedCount = changes.filter(c => c && c.staged).length;
+        const unstagedCount = changes.filter(c => c && c.unstaged).length;
 
         // Files that are both staged AND have real work-tree changes appear twice.
         // For the sidebar we de-dup by filepath to keep the list compact.

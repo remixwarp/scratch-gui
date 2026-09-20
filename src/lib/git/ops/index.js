@@ -62,7 +62,6 @@ import {toGitError, GitError, GIT_ERROR_CODES} from '../errors.js';
 import adapter from '../workspace/adapter.js';
 import registry from '../workspace/registry.js';
 import {setDefaultBranch} from '../config.js';
-import buildCommitGraphLayout from '../graph-layout.js';
 
 // ---------------------------------------------------------------------------
 // Progress / lifecycle plumbing
@@ -359,19 +358,20 @@ const syncRemotes = async () => {
 const syncHistory = async ({depth = 50} = {}) => {
     const graph = await computeCommitGraph({depth});
     const branchLogs = await getBranchLogs({depth});
-    // Compute the row layout once in the ops layer so both the modal and the
-    // VS-Code sidebar can render the same graph without re-building it.
-    const layout = buildCommitGraphLayout({
-        graphNodes: graph.nodes,
-        graphBranchLogs: graph.branchLogs,
-        branchColors: {}
-    });
+    // Layout is now computed by each rendering surface (modal + sidebar) — it
+    // depends on UI-owned data (branchColors, collapsed state) that the ops
+    // layer does not have. Moving it out of syncHistory also removes a source
+    // of "mutation succeeded but then crashed mid-refresh" bugs: if the graph
+    // building ever throws (detached HEAD, empty repo, …), the branch creation
+    // / checkout had already written the repository; callers just saw a red
+    // "failed!" toast while the ref change went through. Now syncHistory only
+    // handles isomorphic-git reads — cheap and failure-tolerant — and the UI
+    // falls back to rendering an empty graph on any exception.
     gitStore.setHistory({
         nodes: graph.nodes,
         branches: graph.branches,
         remoteBranches: graph.remoteBranches,
-        branchLogs: branchLogs.map(log => ({branch: log.branch, oids: log.commits.map(c => c.oid)})),
-        layout
+        branchLogs: branchLogs.map(log => ({branch: log.branch, oids: log.commits.map(c => c.oid)}))
     });
     return graph;
 };
