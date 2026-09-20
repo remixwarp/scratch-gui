@@ -3793,9 +3793,8 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     )}
-                                   </MenuSection>
-                                   {SettingsStore.getAddonEnabled('simple-project-analyzer') && (
-                                       <MenuItem
+                                    {SettingsStore.getAddonEnabled('simple-project-analyzer') && (
+                                        <MenuItem
                                            onClick={() => {
                                                window.dispatchEvent(new Event('rw-simple-project-analyzer-open'));
                                                this.props.onRequestCloseTools();
