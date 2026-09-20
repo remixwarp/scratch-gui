@@ -111,7 +111,10 @@ const addons = [
     'lint-system',
     'script-tabs',
     '02agent',
-    'novatheai'
+    'novatheai',
+    'merge-operators',
+    'resize-selected-item',
+    'bilup-sample'
 ];
 
 const newAddons = [
@@ -122,11 +125,8 @@ const newAddons = [
     'remove-extension-button',
     'coder-style',
     'comment-vscode-sync',
-    'Terminal',
-    'astras-copilot',
     'my-blocks-plus',
     'hide-menubar',
-    'santa',
     'project-size-display',
     'project-health-dashboard',
     'lint-system',
