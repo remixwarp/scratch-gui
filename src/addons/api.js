@@ -23,6 +23,7 @@ import addons from './generated/addon-manifests';
 let addonMessages = {};
 import l10nEntries from './generated/l10n-entries';
 import addonEntries from './generated/addon-entries';
+import CustomPlugins from './custom-plugins';
 import {addContextMenu} from './contextmenu';
 import * as modal from './modal';
 import * as textColorHelpers from './libraries/common/cs/text-color.esm.js';
@@ -777,7 +778,7 @@ class Self extends EventTargetShim {
 class AddonRunner {
     constructor (id) {
         AddonRunner.instances.push(this);
-        const manifest = addons[id];
+        const manifest = addons[id] || CustomPlugins.getManifest(id);
 
         this.id = id;
         this.manifest = manifest;
@@ -957,7 +958,9 @@ class AddonRunner {
             await untilInEditor();
         }
 
-        const mod = await addonEntries[this.id]();
+        const mod = CustomPlugins.isCustom(this.id) ?
+            await CustomPlugins.getEntry(this.id) :
+            await addonEntries[this.id]();
         this.resources = mod.resources;
 
         if (!this.manifest.noTranslations) {
@@ -1040,9 +1043,14 @@ SettingsStore.addEventListener('addon-changed', e => {
     }
 });
 
-for (const id of Object.keys(addons)) {
-    if (!SettingsStore.getAddonEnabled(id)) {
-        continue;
-    }
-    runAddon(id);
-}
+const boot = async () => {
+    await CustomPlugins.refreshFromDB();
+    SettingsStore.readLocalStorage();
+    const allAddonIds = [...Object.keys(addons), ...CustomPlugins.getIds()];
+    for (const id of allAddonIds) {
+        if (!SettingsStore.getAddonEnabled(id)) {
+            continue;
+        }
+        runAddon(id);
+};
+boot();
