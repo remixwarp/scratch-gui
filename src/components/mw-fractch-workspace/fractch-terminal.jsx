@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import '@fontsource/jetbrains-mono/latin-400.css';
 import '!!style-loader!css-loader!./code-font.css';
 
 const TERMINAL_FONT_FAMILY = '"JetBrains Mono"';

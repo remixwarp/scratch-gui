@@ -21,8 +21,6 @@ import {
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 // eslint-disable-next-line import/no-unresolved, import/default
 import EditorWorker from 'worker-loader!monaco-editor/esm/vs/editor/editor.worker.js';
-
-import '@fontsource/jetbrains-mono/latin-400.css';
 import '!!style-loader!css-loader!./code-font.css';
 
 import {Theme} from '../../lib/themes';
