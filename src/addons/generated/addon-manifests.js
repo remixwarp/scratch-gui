@@ -104,7 +104,6 @@ import _hide_menubar from "../addons/hide-menubar/_manifest_entry.js";
 import _batch_color_replace from "../addons/batch-color-replace/_manifest_entry.js";
 import _simple_project_analyzer from "../addons/simple-project-analyzer/_manifest_entry.js";
 import _todo_list from "../addons/todo-list/_manifest_entry.js";
-import _todo from "../addons/todo/_manifest_entry.js";
 import _block_pins from "../addons/block-pins/_manifest_entry.js";
 import _tw_comment_markdown_editor from "../addons/tw-comment-markdown-editor/_manifest_entry.js";
 import _background from "../addons/background/_manifest_entry.js";
@@ -228,7 +227,6 @@ export default {
   "batch-color-replace": _batch_color_replace,
   "simple-project-analyzer": _simple_project_analyzer,
   "todo-list": _todo_list,
-  "todo": _todo,
   "block-pins": _block_pins,
   "tw-comment-markdown-editor": _tw_comment_markdown_editor,
   "background": _background,
