@@ -1211,7 +1211,7 @@ class AddonList extends React.Component {
             turbowarp: ['cat-blocks', 'editor-devtools', 'find-bar', 'middle-click-popup', 'jump-to-def', 'reorder-custom-inputs', 'editor-searchable-dropdowns', 'data-category-tweaks-v2', 'block-palette-icons', 'hide-flyout', 'mediarecorder', 'drag-drop', 'debugger', 'pause', 'mute-project', 'vol-slider', 'clones', 'mouse-pos', 'color-picker', 'remove-sprite-confirm', 'block-count', 'onion-skinning', 'paint-snap', 'default-costume-editor-color', 'bitmap-copy', '2d-color-picker', 'paint-skew', 'better-img-uploads', 'pick-colors-from-stage', 'custom-block-shape', 'editor-square-inputs', 'zebra-striping', 'custom-menu-bar', 'editor-theme3', 'custom-block-text', 'editor-colored-context-menus', 'editor-stage-left', 'editor-buttons-reverse-order', 'variable-manager', 'search-sprites', 'sprite-properties', 'gamepad', 'editor-sounds', 'folders', 'block-switching', 'load-extensions', 'custom-zoom', 'copy-reporter', 'initialise-sprite-position', 'blocks2image', 'remove-curved-stage-border', 'transparent-orphans', 'paint-by-default', 'block-cherry-picking', 'hide-new-variables', 'editor-extra-keys', 'hide-delete-button', 'no-script-bumping', 'disable-stage-drag-select', 'move-to-top-bottom', 'move-to-top-layer', 'disable-paste-offset', 'block-duplicate', 'rename-broadcasts', 'swap-local-global', 'editor-comment-previews', 'columns', 'number-pad', 'editor-number-arrow-keys', 'script-snap', 'fullscreen', 'hide-stage', 'tw-straighten-comments', 'tw-remove-backpack', 'tw-remove-feedback', 'tw-disable-cloud-variables', 'editor-stepping', 'canvas-screenshot', 'santa'],
             
             // BL特有的插件
-            bilup: ['autosave', 'no-category-text', 'green-flag-order', 'remove-extension-button', 'tab-styles', 'sprite-folders', 'project-size-display', 'resize-selected-item', 'bilup-sample', 'merge-operators'],
+            bilup: ['autosave', 'no-category-text', 'green-flag-order', 'remove-extension-button', 'tab-styles', 'sprite-folders', 'project-size-display', 'resize-selected-item', 'bilup-sample', 'merge-operators', 'novatheai'],
             
             // RW与BL对比多出的存入RW
             remixwarp: ['calculator', 'daily-quote', 'stage-camera', 'window-theme', 'cat-blocks-extended', 'cn-code', 'keymap-cheatsheet', 'mini-map', 'project-health-dashboard', 'lint-system', 'script-tabs'],
@@ -1220,7 +1220,7 @@ class AddonList extends React.Component {
             astraeditor: ['Terminal', 'astras-copilot', 'my-blocks-plus', 'hide-menubar', 'simple-project-analyzer', 'todo-list', 'block-pins', 'tw-comment-markdown-editor', 'bookmark', 'background'],
             
             // 02与TW对比多出的存入02
-            '02engine': ['coder-style', 'comment-vscode-sync']
+            '02engine': ['coder-style', 'comment-vscode-sync', '02agent']
         };
         
         // 收集所有选中编辑器的插件ID
