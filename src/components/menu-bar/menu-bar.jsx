@@ -175,7 +175,7 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
-    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Sparkles, Wrench, Keyboard,
+    Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, TerminalSquare, Sparkles, Wrench, Keyboard,
     Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store, Backpack, Terminal, ExternalLink
  } from 'lucide-react';
 
@@ -3732,6 +3732,21 @@ class MenuBar extends React.Component {
                                             defaultMessage="Command Palette"
                                             description="Menu bar item to open the command palette"
                                             id="mw.menuBar.commandPalette"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => {
+                                            import('../../lib/mw/open-fractch-terminal-window.js')
+                                                .then(module => module.default({vm: this.props.vm}))
+                                                .catch(e => console.error(e));
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <TerminalSquare />
+                                        <FormattedMessage
+                                            defaultMessage="Terminal"
+                                            description="Menu bar item that opens the shell in a window"
+                                            id="mw.menuBar.terminal"
                                         />
                                     </MenuItem>
                                     )}
