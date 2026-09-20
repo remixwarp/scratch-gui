@@ -3789,7 +3789,7 @@ class MenuBar extends React.Component {
                                         <ExternalLink className={styles.icon} />
                                         <span className={styles.submenuLabel}>
                                             <FormattedMessage
-                                                defaultMessage="网页内嵌"
+                                                defaultMessage="Web Emulator"
                                                 description="Menu bar item to open a free window that embeds a web page via URL"
                                                 id="gui.menuBar.webEmbed"
                                             />
@@ -3803,7 +3803,7 @@ class MenuBar extends React.Component {
                                     >
                                         <span className={styles.submenuLabel}>
                                             <FormattedMessage
-                                                defaultMessage="百度AI"
+                                                defaultMessage="Baidu AI"
                                                 description="Menu bar item for Baidu AI"
                                                 id="gui.menuBar.baiduAI"
                                             />
