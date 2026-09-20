@@ -117,6 +117,8 @@ import _performance_profiler from "../addons/performance-profiler/_manifest_entr
 import _performance_budget from "../addons/performance-budget/_manifest_entry.js";
 import _project_outline from "../addons/project-outline/_manifest_entry.js";
 import _event_tracer from "../addons/event-tracer/_manifest_entry.js";
+import _02agent from "../addons/02agent/_manifest_entry.js";
+import _novatheai from "../addons/novatheai/_manifest_entry.js";
 export default {
   "calculator": _calculator,
   "cn-code": _cn_code,
@@ -235,5 +237,7 @@ export default {
   "performance-profiler": _performance_profiler,
   "performance-budget": _performance_budget,
   "project-outline": _project_outline,
-  "event-tracer": _event_tracer
+  "event-tracer": _event_tracer,
+  "02agent": _02agent,
+  "novatheai": _novatheai
 };
