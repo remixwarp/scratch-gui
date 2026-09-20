@@ -3794,6 +3794,25 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                     )}
                                 </MenuSection>
+                                ) : null}
+                                {window.__bilupTodoToggle || window.__bilupSPAToggle ? (
+                                    <MenuSection>
+                                        {window.__bilupSPAToggle && (
+                                            <MenuItem
+                                                onClick={() => {
+                                                    window.__bilupSPAToggle();
+                                                    this.props.onRequestCloseTools();
+                                                }}
+                                            >
+                                                <ChartColumn />
+                                                <FormattedMessage
+                                                    defaultMessage="Simple Project Analyzer"
+                                                    description="Menu bar item to toggle the simple project analyzer"
+                                                    id="tw.menuBar.spa"
+                                                />
+                                            </MenuItem>
+                                        )}
+                                </MenuSection>
                                 <MenuSection>
                                     <MenuItem
                                         onClick={() => {
