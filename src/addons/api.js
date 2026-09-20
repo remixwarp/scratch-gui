@@ -1052,5 +1052,6 @@ const boot = async () => {
             continue;
         }
         runAddon(id);
+    }
 };
 boot();
