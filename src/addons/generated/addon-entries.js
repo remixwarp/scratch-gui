@@ -118,4 +118,6 @@ export default {
   "performance-budget": () => import(/* webpackChunkName: "addon-entry-performance-budget" */ "../addons/performance-budget/_runtime_entry.js"),
   "project-outline": () => import(/* webpackChunkName: "addon-entry-project-outline" */ "../addons/project-outline/_runtime_entry.js"),
   "event-tracer": () => import(/* webpackChunkName: "addon-entry-event-tracer" */ "../addons/event-tracer/_runtime_entry.js"),
+  "02agent": () => import(/* webpackChunkName: "addon-entry-02agent" */ "../addons/02agent/_runtime_entry.js"),
+  "novatheai": () => import(/* webpackChunkName: "addon-entry-novatheai" */ "../addons/novatheai/_runtime_entry.js"),
 };
