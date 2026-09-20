@@ -32,7 +32,10 @@ class WindowedModal extends React.Component {
         this.createdWindow = false;
         this.windowId = this.props.id || 'modal-window';
         this.blocklyWidgetRepositionRaf_ = null;
-        this.isMobile = isMobileUA();
+        // 所有设备统一使用浮动窗口（WindowManager + AddonWindow），
+        // 不再根据 UA 切到内联全屏分支。移动端由 createWindow()
+        // 内的视口约束 + 居中逻辑处理尺寸。
+        this.isMobile = false;
         this.addEventListeners();
     }
     
@@ -204,23 +207,41 @@ class WindowedModal extends React.Component {
         // Determine window size based on content type
         let width = this.props.width || 600;
         let height = this.props.height || 500;
+        let minWidth = this.props.minWidth || 400;
+        let minHeight = this.props.minHeight || 300;
         const resizable = this.props.resizable !== false;
         const maximizable = this.props.maximizable !== false;
-        const minWidth = this.props.minWidth || 400;
-        const minHeight = this.props.minHeight || 300;
         const maxWidth = this.props.maxWidth || null;
         const maxHeight = this.props.maxHeight || null;
-    
+
+        // 所有设备统一视口约束 + 居中定位，保证 modal 不超出屏幕、
+        // 且不是随机飘在左上角。移动端尤其需要：props.width 通常是
+        // 600-900px，而手机视口可能只有 375px。
+        const padding = 24;
+        const maxW = window.innerWidth - padding;
+        const maxH = window.innerHeight - padding;
         if (fullScreen) {
-            width = Math.min(1200, window.innerWidth - 100);
-            height = Math.min(800, window.innerHeight - 100);
+            width = Math.min(1200, maxW);
+            height = Math.min(800, maxH);
+        } else {
+            width = Math.min(width, maxW);
+            height = Math.min(height, maxH);
         }
+        // 视口过小时也允许 minWidth/minHeight 收缩，避免硬性 400px 下限
+        // 把移动端 modal 撑出屏幕。
+        minWidth = Math.min(minWidth, width);
+        minHeight = Math.min(minHeight, height);
+
+        const x = Math.max(0, Math.round((window.innerWidth - width) / 2));
+        const y = Math.max(0, Math.round((window.innerHeight - height) / 2));
         
         this.window = WindowManager.createWindow({
             id: windowId,
             title: typeof contentLabel === 'string' ? contentLabel : 'Dialog',
             width,
             height,
+            x,
+            y,
             minWidth,
             minHeight,
             maxWidth,
