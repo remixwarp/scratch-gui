@@ -9,10 +9,6 @@ import WindowManager from '../addons/window-system/window-manager';
 import Box from '../components/box/box.jsx';
 import './windowed-modal.css';
 
-// 移动端 UA 检测：匹配常见手机/平板浏览器标识
-const isMobileUA = () => typeof navigator !== 'undefined' &&
-    /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Silk/i.test(navigator.userAgent);
-
 class WindowedModal extends React.Component {
     constructor (props) {
         super(props);
@@ -32,11 +28,10 @@ class WindowedModal extends React.Component {
         this.createdWindow = false;
         this.windowId = this.props.id || 'modal-window';
         this.blocklyWidgetRepositionRaf_ = null;
-        // 仍然保留 UA 检测，但不再用来切换内联全屏分支 —
-        // 所有设备统一走 WindowManager.AddonWindow（有 header + 关闭/
-        // 最大化按钮）。移动端在 createWindow() 里自动 maximize 到
-        // 100vw×100vh，minimizable 关掉（iOS 没有合理的"最小化"语义）。
-        this.isMobile = isMobileUA();
+        // 不再区分移动/桌面 UA — 所有设备统一走浮动窗口：可拖动、可
+        // 调整大小、三个控制按钮齐全（最小化 / 最大化 / 关闭）。viewport
+        // 过小时 createWindow() 里的 padding + minWidth/minHeight 收缩
+        // 逻辑会保证初始尺寸不撑出屏幕，但窗口仍保持自由浮动。
         this.addEventListeners();
     }
     
@@ -227,10 +222,9 @@ class WindowedModal extends React.Component {
 
         const x = Math.max(0, Math.round((window.innerWidth - width) / 2));
         const y = Math.max(0, Math.round((window.innerHeight - height) / 2));
-        // 移动端保留 Header + 关闭/最大化按钮，但没有"最小化"语义，
-        // 并且创建后立即 maximize 到 100vw×100vh，等价于以前的内联
-        // 全屏效果，只是共享同一套 AddonWindow 外壳。
-        const minimizable = !this.isMobile && this.props.minimizable !== false;
+        // 所有设备一视同仁 — 由调用方 props.minimizable 控制，默认 true。
+        // 移动端也保留最小化按钮，让窗口系统的三键统一。
+        const minimizable = this.props.minimizable !== false;
 
         this.window = WindowManager.createWindow({
             id: windowId,
@@ -258,11 +252,8 @@ class WindowedModal extends React.Component {
         });
         this.createdWindow = true;
 
-        // 移动端自动展开到全屏（100vw×100vh），保留 PC 版的
-        // Header + 按钮体系，用户随时能点"还原"回到浮动尺寸。
-        if (this.isMobile) {
-            this.window.maximize();
-        }
+        // 不再在移动端 auto-maximize。所有设备默认显示居中浮动尺寸，
+        // 用户需要全屏时自己点最大化按钮。
         
         // Create content container with modal styling
         this.contentContainer = document.createElement('div');
@@ -445,54 +436,11 @@ class WindowedModal extends React.Component {
         if (push) return history.pushState(state, this.id, null);
         history.replaceState(state, this.id, null);
     }
-    
-    renderInlineMobile () {
-        const {
-            children,
-            onRequestClose,
-            locale,
-            messages,
-            store
-        } = this.props;
-
-        const content = React.createElement(
-            'div',
-            {
-                className: 'windowed-modal-mobile-overlay',
-                onClick: e => {
-                    // 点击背景（非内容区域）关闭模态
-                    if (e.target === e.currentTarget && onRequestClose) {
-                        onRequestClose();
-                    }
-                }
-            },
-            React.createElement(
-                'div',
-                {
-                    className: 'windowed-modal-mobile-container'
-                },
-                children
-            )
-        );
-
-        return React.createElement(
-            Provider,
-            {store},
-            React.createElement(
-                IntlProvider,
-                {
-                    locale: locale || 'en',
-                    messages: messages || {}
-                },
-                content
-            )
-        );
-    }
 
     render () {
         // 所有设备统一通过 WindowManager.AddonWindow portal 渲染。
-        // 内联全屏分支（renderInlineMobile）已废弃 — mobile 端走
-        // 同一套窗口，只是在 createWindow() 里 auto-maximize。
+        // 旧的 renderInlineMobile 内联全屏分支已整体移除 —— 移动端
+        // 现在和桌面端共用同一套浮动窗口外壳。
         if (this.contentContainer) {
             return this.renderContent();
         }
