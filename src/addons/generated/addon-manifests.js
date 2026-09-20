@@ -120,6 +120,8 @@ import _event_tracer from "../addons/event-tracer/_manifest_entry.js";
 import _resize_selected_item from "../addons/resize-selected-item/_manifest_entry.js";
 import _bilup_sample from "../addons/bilup-sample/_manifest_entry.js";
 import _merge_operators from "../addons/merge-operators/_manifest_entry.js";
+import _02agent from "../addons/02agent/_manifest_entry.js";
+import _novatheai from "../addons/novatheai/_manifest_entry.js";
 export default {
   "calculator": _calculator,
   "cn-code": _cn_code,
@@ -242,4 +244,6 @@ export default {
   "resize-selected-item": _resize_selected_item,
   "bilup-sample": _bilup_sample,
   "merge-operators": _merge_operators,
+  "02agent": _02agent,
+  "novatheai": _novatheai,
 };
