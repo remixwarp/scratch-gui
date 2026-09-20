@@ -3772,7 +3772,7 @@ class MenuBar extends React.Component {
                                         >
                                             <ListTodo />
                                             <FormattedMessage
-                                                defaultMessage="To-Do (V1)"
+                                                defaultMessage="To-Do"
                                                 description="Menu bar item to open todo list"
                                                 id="gui.menuBar.todo"
                                             />
