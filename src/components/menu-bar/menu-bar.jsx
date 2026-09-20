@@ -3734,6 +3734,7 @@ class MenuBar extends React.Component {
                                             id="mw.menuBar.commandPalette"
                                         />
                                     </MenuItem>
+                                    )}
                                     <MenuItem
                                         onClick={() => {
                                             import('../../lib/mw/open-fractch-terminal-window.js')
@@ -3749,7 +3750,6 @@ class MenuBar extends React.Component {
                                             id="mw.menuBar.terminal"
                                         />
                                     </MenuItem>
-                                    )}
                                     <MenuItem
                                         onClick={() => {
                                             this.props.onClickGitModal();
