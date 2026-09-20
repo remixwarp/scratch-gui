@@ -32,10 +32,11 @@ class WindowedModal extends React.Component {
         this.createdWindow = false;
         this.windowId = this.props.id || 'modal-window';
         this.blocklyWidgetRepositionRaf_ = null;
-        // 所有设备统一使用浮动窗口（WindowManager + AddonWindow），
-        // 不再根据 UA 切到内联全屏分支。移动端由 createWindow()
-        // 内的视口约束 + 居中逻辑处理尺寸。
-        this.isMobile = false;
+        // 仍然保留 UA 检测，但不再用来切换内联全屏分支 —
+        // 所有设备统一走 WindowManager.AddonWindow（有 header + 关闭/
+        // 最大化按钮）。移动端在 createWindow() 里自动 maximize 到
+        // 100vw×100vh，minimizable 关掉（iOS 没有合理的"最小化"语义）。
+        this.isMobile = isMobileUA();
         this.addEventListeners();
     }
     
@@ -43,11 +44,8 @@ class WindowedModal extends React.Component {
         if (this.props.visible === false) {
             return;
         }
-        // 移动端直接渲染内联全屏模态，不创建浮动窗口
-        if (this.isMobile) {
-            this.forceUpdate();
-            return;
-        }
+        // 所有设备统一走 WindowManager.AddonWindow —— 不再有 mobile 的
+        // 内联全屏短路。mobile 端 auto-maximize 放在 createWindow 里做。
         this.createWindow();
         // Add a history event only if it's not currently for our modal. This
         // avoids polluting the history with many entries. We only need one.
@@ -61,10 +59,8 @@ class WindowedModal extends React.Component {
     }
     
     componentDidUpdate (prevProps) {
-        // 移动端：可见性由 render() 方法处理，无需窗口操作
-        if (this.isMobile) {
-            return;
-        }
+        // 所有设备统一走 WindowManager.AddonWindow。移除 mobile 的
+        // 内联全屏短路，让下面 show/hide 逻辑对所有 UA 生效。
         // Handle visibility changes
         if (this.props.visible !== prevProps.visible) {
             if (this.props.visible && !this.window) {
@@ -105,10 +101,7 @@ class WindowedModal extends React.Component {
 
     componentWillUnmount () {
         this.removeEventListeners();
-        // 移动端没有浮动窗口，无需清理
-        if (this.isMobile) {
-            return;
-        }
+        // 所有设备统一走 WindowManager.AddonWindow，mobile 也要清理
         if (this.blocklyWidgetRepositionRaf_) {
             window.cancelAnimationFrame(this.blocklyWidgetRepositionRaf_);
             this.blocklyWidgetRepositionRaf_ = null;
@@ -234,7 +227,11 @@ class WindowedModal extends React.Component {
 
         const x = Math.max(0, Math.round((window.innerWidth - width) / 2));
         const y = Math.max(0, Math.round((window.innerHeight - height) / 2));
-        
+        // 移动端保留 Header + 关闭/最大化按钮，但没有"最小化"语义，
+        // 并且创建后立即 maximize 到 100vw×100vh，等价于以前的内联
+        // 全屏效果，只是共享同一套 AddonWindow 外壳。
+        const minimizable = !this.isMobile && this.props.minimizable !== false;
+
         this.window = WindowManager.createWindow({
             id: windowId,
             title: typeof contentLabel === 'string' ? contentLabel : 'Dialog',
@@ -247,6 +244,7 @@ class WindowedModal extends React.Component {
             maxWidth,
             maxHeight,
             resizable,
+            minimizable,
             maximizable,
             closable: true,
             className: `modal-window ${className}`,
@@ -259,6 +257,12 @@ class WindowedModal extends React.Component {
             onResize: this.handleWindowResize
         });
         this.createdWindow = true;
+
+        // 移动端自动展开到全屏（100vw×100vh），保留 PC 版的
+        // Header + 按钮体系，用户随时能点"还原"回到浮动尺寸。
+        if (this.isMobile) {
+            this.window.maximize();
+        }
         
         // Create content container with modal styling
         this.contentContainer = document.createElement('div');
@@ -486,11 +490,9 @@ class WindowedModal extends React.Component {
     }
 
     render () {
-        // 移动端：使用内联全屏模态渲染
-        if (this.isMobile && this.props.visible !== false) {
-            return this.renderInlineMobile();
-        }
-        // Always try to render content if we have a container
+        // 所有设备统一通过 WindowManager.AddonWindow portal 渲染。
+        // 内联全屏分支（renderInlineMobile）已废弃 — mobile 端走
+        // 同一套窗口，只是在 createWindow() 里 auto-maximize。
         if (this.contentContainer) {
             return this.renderContent();
         }
