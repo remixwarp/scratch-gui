@@ -109,7 +109,9 @@ const addons = [
     'project-size-display',
     'project-health-dashboard',
     'lint-system',
-    'script-tabs'
+    'script-tabs',
+    '02agent',
+    'novatheai'
 ];
 
 const newAddons = [
