@@ -726,5 +726,8 @@
   "project-health-dashboard/longest-script": "最长脚本",
   "project-health-dashboard/code-quality": "代码质量",
   "project-health-dashboard/structure-clarity": "结构清晰",
-  "project-health-dashboard/categories": "积木类别"
+  "project-health-dashboard/categories": "积木类别",
+  "todo-list/default-project-name": "项目",
+  "todo-list/new-group": "新组",
+  "todo-list/select-group": "选择组"
 }

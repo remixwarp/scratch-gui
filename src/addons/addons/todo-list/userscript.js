@@ -5,7 +5,7 @@ export default async function ({ addon, msg, console }) {
     const CommentId = 'todo';
     const EmptyTodo = { groups: [], tasks: [] };
 
-    let PROJECT_NAME = 'Project';
+    let PROJECT_NAME = msg('default-project-name') || 'Project';
     let COMMENT_ID = CommentId;
     let selectedGroup = null;
 
@@ -93,7 +93,7 @@ export default async function ({ addon, msg, console }) {
         `;
 
         const title = document.createElement('h1');
-        title.textContent = `${PROJECT_NAME} 的待办`;
+        title.textContent = msg('title', {project: PROJECT_NAME});
         title.style.cssText = `
             font-size: 1.2rem;
             margin: 0 0 1rem 0;
@@ -125,7 +125,7 @@ export default async function ({ addon, msg, console }) {
                 background-color: ${selectedGroup === null ? 'var(--looks-secondary)' : 'var(--looks-secondary)60'};
                 color: white;
             `;
-            allBtn.textContent = '全部';
+            allBtn.textContent = msg('all');
             allBtn.addEventListener('click', () => {
                 selectedGroup = null;
                 refreshTodoWindow();
@@ -218,7 +218,7 @@ export default async function ({ addon, msg, console }) {
                 opacity: 0.6;
                 padding: 20px 0;
             `;
-            emptyTip.textContent = '这里还没有待办事项，尝试添加一个!';
+            emptyTip.textContent = msg('no-todo');
             taskList.appendChild(emptyTip);
         } else {
             tasks.forEach((task, index) => {
@@ -354,7 +354,7 @@ export default async function ({ addon, msg, console }) {
             justify-content: center;
             gap: 8px;
         `;
-        addButton.innerHTML = '<span style="font-size: 20px;">+</span><span>添加待办</span>';
+        addButton.innerHTML = `<span style="font-size: 20px;">+</span><span>${msg('add')}</span>`;
         addButton.addEventListener('click', () => {
             showCreateModal();
         });
@@ -380,7 +380,7 @@ export default async function ({ addon, msg, console }) {
 
         todoWindow = WindowManager.createWindow({
             id: 'todo-list',
-            title: `${PROJECT_NAME} 的待办`,
+            title: msg('title', {project: PROJECT_NAME}),
             width: 450,
             height: 450,
             minWidth: 350,
@@ -399,7 +399,7 @@ export default async function ({ addon, msg, console }) {
     const showCreateModal = () => {
         const createWindow = WindowManager.createWindow({
             id: 'todo-create',
-            title: '创建待办',
+            title: msg('create-title'),
             width: 400,
             height: 480,
             minWidth: 350,
@@ -447,7 +447,7 @@ export default async function ({ addon, msg, console }) {
             justify-content: center;
             white-space: nowrap;
         `;
-        taskTabBtn.textContent = '任务';
+        taskTabBtn.textContent = msg('task');
 
         const groupTabBtn = document.createElement('button');
         groupTabBtn.className = 'sa-todo-mode-tab-btn unable';
@@ -465,14 +465,14 @@ export default async function ({ addon, msg, console }) {
             justify-content: center;
             white-space: nowrap;
         `;
-        groupTabBtn.textContent = '组';
+        groupTabBtn.textContent = msg('group');
 
         const defaultColor = '#75C1C4';
         let config = {
             mode: 2,
             id: generateId(),
-            name: '新的待办',
-            groupName: '新组',
+            name: msg('new-todo'),
+            groupName: msg('new-group'),
             color: defaultColor,
             task: {
                 startTime: Date.now(),
@@ -547,7 +547,7 @@ export default async function ({ addon, msg, console }) {
             padding-bottom: 5px;
             border-bottom: 1px dashed var(--ui-tertiary);
         `;
-        previewLabel.textContent = '预览';
+        previewLabel.textContent = msg('preview');
 
         let nameInputField = null;
 
@@ -625,7 +625,7 @@ export default async function ({ addon, msg, console }) {
                 display: block;
                 margin-bottom: 8px;
             `;
-            selectorLabel.textContent = '选择组';
+            selectorLabel.textContent = msg('select-group');
             groupSelector.appendChild(selectorLabel);
 
             const tagsContainer = document.createElement('div');
@@ -664,14 +664,14 @@ export default async function ({ addon, msg, console }) {
             groupSelector.appendChild(tagsContainer);
         };
 
-        taskFields.appendChild(inputField('color', '颜色', { key: 'color' }));
-        taskFields.appendChild(inputField('datetime-local', '开始时间', { key: 'task', key2: 'startTime' }));
-        taskFields.appendChild(inputField('datetime-local', '结束时间', { key: 'task', key2: 'endTime' }));
-        taskFields.appendChild(inputField('text', '名称', { key: 'name' }));
+        taskFields.appendChild(inputField('color', msg('color'), { key: 'color' }));
+        taskFields.appendChild(inputField('datetime-local', msg('start-time'), { key: 'task', key2: 'startTime' }));
+        taskFields.appendChild(inputField('datetime-local', msg('end-time'), { key: 'task', key2: 'endTime' }));
+        taskFields.appendChild(inputField('text', msg('name'), { key: 'name' }));
         taskFields.appendChild(groupSelector);
 
-        groupFields.appendChild(inputField('text', '名称', { key: 'groupName' }));
-        groupFields.appendChild(inputField('color', '颜色', { key: 'color' }));
+        groupFields.appendChild(inputField('text', msg('name'), { key: 'groupName' }));
+        groupFields.appendChild(inputField('color', msg('color'), { key: 'color' }));
 
         preview_steps_create.style.cssText = `
             padding: 10px;
@@ -685,7 +685,7 @@ export default async function ({ addon, msg, console }) {
             opacity: 0.5;
             pointer-events: none;
         `;
-        preview_steps_create.textContent = '新的步骤';
+        preview_steps_create.textContent = msg('new-step');
 
         const doneBtn = document.createElement('button');
         doneBtn.style.cssText = `
@@ -698,13 +698,13 @@ export default async function ({ addon, msg, console }) {
             cursor: pointer;
             margin-top: 10px;
         `;
-        doneBtn.textContent = '完成';
+        doneBtn.textContent = msg('done');
         doneBtn.addEventListener('click', () => {
             const todoData = getTodoListContent();
             if (config.mode === 1) {
                 todoData.groups.push({
                     id: config.id,
-                    name: config.groupName || '新组',
+                    name: config.groupName || msg('new-group'),
                     color: config.color
                 });
             } else {
@@ -731,7 +731,7 @@ export default async function ({ addon, msg, console }) {
             padding-bottom: 5px;
             border-bottom: 1px dashed var(--ui-tertiary);
         `;
-        editHeader.textContent = '编辑';
+        editHeader.textContent = msg('edit');
 
         const switchMode = (newMode) => {
             config.mode = newMode;
@@ -809,7 +809,7 @@ export default async function ({ addon, msg, console }) {
             opacity: 0.5;
             pointer-events: none;
         `;
-        preview_steps_create.textContent = '新的步骤';
+        preview_steps_create.textContent = msg('new-step');
 
         doneBtn.style.cssText = `
             flex: 1;
@@ -821,7 +821,7 @@ export default async function ({ addon, msg, console }) {
             font-size: 14px;
             cursor: pointer;
         `;
-        doneBtn.textContent = '完成';
+        doneBtn.textContent = msg('done');
 
         buttonContainer.appendChild(preview_steps_create);
         buttonContainer.appendChild(doneBtn);
