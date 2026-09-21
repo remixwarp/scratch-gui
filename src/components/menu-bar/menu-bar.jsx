@@ -4099,6 +4099,7 @@ class MenuBar extends React.Component {
                                 </MenuBarMenu>
                              )}
                          </span>
+                       </MenuLabel>
                      </div>
 
                     <Divider className={styles.divider} data-mw-item="__divider" />
