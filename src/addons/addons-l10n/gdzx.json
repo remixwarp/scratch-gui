@@ -725,5 +725,17 @@
   "project-health-dashboard/longest-script": "最长脚本",
   "project-health-dashboard/code-quality": "代码质量",
   "project-health-dashboard/structure-clarity": "结构清晰",
-  "project-health-dashboard/categories": "积木类别"
+  "project-health-dashboard/categories": "积木类别",
+  "todo-list/default-project-name": "项目",
+  "todo-list/new-group": "新组",
+  "todo-list/select-group": "选择组",
+  "resize-selected-item/resize": "调整选中项大小",
+  "resize-selected-item/size": "尺寸",
+  "resize-selected-item/width": "宽度",
+  "resize-selected-item/height": "高度",
+  "resize-selected-item/constrainProportions": "约束比例",
+  "resize-selected-item/position": "位置",
+  "resize-selected-item/x": "X",
+  "resize-selected-item/y": "Y",
+  "resize-selected-item/direction": "方向"
 }
