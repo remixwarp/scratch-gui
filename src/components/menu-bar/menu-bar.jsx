@@ -3808,7 +3808,7 @@ class MenuBar extends React.Component {
                                            />
                                        </MenuItem>
                                     )}
-                                    </MenuSection>
+                                    <MenuSection>
                                     <MenuItem
                                         onClick={() => {
                                             this.props.dispatch(openWebEmbedModal());
