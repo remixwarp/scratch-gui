@@ -4097,10 +4097,8 @@ class MenuBar extends React.Component {
                                         onClearAll={this.handleClearAllWorkspaceBookmarks}
                                     />
                                 </MenuBarMenu>
-                            </MenuLabel>
-                        )}
-                    </div>
-                    </MenuBarMenu>
+                              )}
+                        </div>
 
                     <Divider className={styles.divider} data-mw-item="__divider" />
 
