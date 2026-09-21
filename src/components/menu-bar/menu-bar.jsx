@@ -3795,9 +3795,9 @@ class MenuBar extends React.Component {
                                     )}
                                     {SettingsStore.getAddonEnabled('simple-project-analyzer') && (
                                         <MenuItem
-                                           onClick={() => {
-                                               window.dispatchEvent(new Event('rw-simple-project-analyzer-open'));
-                                               this.props.onRequestCloseTools();
+                                            onClick={() => {
+                                                window.dispatchEvent(new Event('rw-simple-project-analyzer-open'));
+                                                this.props.onRequestCloseTools();
                                            }}
                                        >
                                            <SimpleAnalyzer />
@@ -3805,11 +3805,10 @@ class MenuBar extends React.Component {
                                                defaultMessage="Simple Project Analyzer"
                                                description="Menu bar item to toggle the simple project analyzer"
                                                id="tw.menuBar.spa"
-                                            />
-                                        </MenuItem>
+                                           />
+                                       </MenuItem>
                                     )}
                                     </MenuSection>
-                                    <MenuSection>
                                     <MenuItem
                                         onClick={() => {
                                             this.props.dispatch(openWebEmbedModal());
