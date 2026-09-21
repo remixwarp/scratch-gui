@@ -467,5 +467,14 @@
   "todo-list/task-name": "Task name",
   "todo-list/default-project-name": "Project",
   "todo-list/new-group": "New group",
-  "todo-list/select-group": "Select group"
+  "todo-list/select-group": "Select group",
+  "resize-selected-item/resize": "Resize selected item",
+  "resize-selected-item/size": "Size",
+  "resize-selected-item/width": "Width",
+  "resize-selected-item/height": "Height",
+  "resize-selected-item/constrainProportions": "Constrain proportions",
+  "resize-selected-item/position": "Position",
+  "resize-selected-item/x": "X",
+  "resize-selected-item/y": "Y",
+  "resize-selected-item/direction": "Direction"
 }
