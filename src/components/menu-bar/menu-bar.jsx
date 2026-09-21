@@ -4057,7 +4057,7 @@ class MenuBar extends React.Component {
                                         </MenuSection>
                                     </MenuBarMenu>
                                 </MenuLabel>
-                            </MenuBarMenu>
+                            </MenuSection>
                         </MenuLabel>
                         {!this.props.isPlayerOnly && (
                             <MenuLabel
