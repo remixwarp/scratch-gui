@@ -4058,7 +4058,7 @@ class MenuBar extends React.Component {
                                     </MenuBarMenu>
                                 </MenuLabel>
                             </MenuSection>
-                        </MenuLabel>
+                        <MenuBarMenu>
                         {!this.props.isPlayerOnly && (
                             <MenuLabel
                                 data-mw-item="bookmarks"
