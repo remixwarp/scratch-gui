@@ -3905,6 +3905,8 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                 </MenuSection>
+                            </MenuBarMenu>
+                        </MenuLabel>
                                 <MenuLabel
                                     open={this.state.variousToolsOpen}
                                     onOpen={this.handleOpenVariousTools}
