@@ -176,7 +176,7 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, TerminalSquare, Sparkles, Wrench, Keyboard,
-    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, LineChart, Map, Activity, Store, Backpack, Terminal, ExternalLink
+    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store, Backpack, Terminal, ExternalLink
  } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -3792,21 +3792,6 @@ class MenuBar extends React.Component {
                                                 id="gui.menuBar.todo"
                                             />
                                         </MenuItem>
-                                    )}
-                                    {SettingsStore.getAddonEnabled('simple-project-analyzer') && (
-                                        <MenuItem
-                                            onClick={() => {
-                                                window.dispatchEvent(new Event('rw-simple-project-analyzer-open'));
-                                                this.props.onRequestCloseTools();
-                                           }}
-                                       >
-                                           <LineChart />
-                                           <FormattedMessage
-                                               defaultMessage="Simple Project Analyzer"
-                                               description="Menu bar item to toggle the simple project analyzer"
-                                               id="tw.menuBar.spa"
-                                           />
-                                       </MenuItem>
                                     )}
                                     <MenuSection>
                                     <MenuItem
