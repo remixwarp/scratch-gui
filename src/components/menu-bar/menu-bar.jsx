@@ -3905,8 +3905,6 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                 </MenuSection>
-                            </MenuBarMenu>
-                        </MenuLabel>
                                 <MenuLabel
                                     open={this.state.variousToolsOpen}
                                     onOpen={this.handleOpenVariousTools}
@@ -4046,14 +4044,15 @@ class MenuBar extends React.Component {
                                     </MenuBarMenu>
                                 </MenuLabel>
                             </MenuSection>
-                        <MenuBarMenu>
-                        {!this.props.isPlayerOnly && (
-                            <MenuLabel
-                                data-mw-item="bookmarks"
-                                open={this.props.workspaceBookmarksMenuOpen}
-                                onOpen={this.props.onClickWorkspaceBookmarks}
-                                onClose={this.props.onRequestCloseWorkspaceBookmarks}
-                            >
+                        </MenuBarMenu>
+                    </MenuLabel>
+                    {!this.props.isPlayerOnly && (
+                    <MenuLabel
+                        data-mw-item="bookmarks"
+                        open={this.props.workspaceBookmarksMenuOpen}
+                        onOpen={this.props.onClickWorkspaceBookmarks}
+                        onClose={this.props.onRequestCloseWorkspaceBookmarks}
+                    >
                                 <Bookmark size={20} />
                                 <span className={styles.collapsibleLabel}>
                                     <FormattedMessage
@@ -4084,12 +4083,9 @@ class MenuBar extends React.Component {
                                         onImport={this.handleImportWorkspaceBookmarks}
                                         onClearAll={this.handleClearAllWorkspaceBookmarks}
                                     />
-                                </MenuBarMenu>
-                              )}
-                          </MenuLabel>
-                       </span>
-                     <div>
-                   </div>
+                            </MenuBarMenu>
+                        </MenuLabel>
+                    )}
 
                     <Divider className={styles.divider} data-mw-item="__divider" />
 
@@ -4204,6 +4200,7 @@ class MenuBar extends React.Component {
                         </a>
                     </div>
                 </div>
+            </div>
 
                 <div className={styles.accountInfoGroup}>
                     <span data-mw-item="save-status">
