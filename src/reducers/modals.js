@@ -29,7 +29,6 @@ const MODAL_ROADMAP = 'roadmapModal';
 const MODAL_AI = 'aiModal';
 const MODAL_AI_CHAT = 'aiChatModal';
 const MODAL_AI_AGENT = 'aiAgentModal';
-const MODAL_BAIDU_AI = 'baiduAIModal';
 const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 const MODAL_WARPTHEME = 'bilmeModal';
 const MODAL_CUSTOM_GALLERY = 'customGalleryModal';
@@ -78,7 +77,6 @@ const initialState = {
     [MODAL_AI]: false,
     [MODAL_AI_CHAT]: false,
     [MODAL_AI_AGENT]: false,
-    [MODAL_BAIDU_AI]: false,
     [MODAL_EXTENSION_LOAD_CHOICE]: false,
     [MODAL_WARPTHEME]: false,
     [MODAL_WARPTHEME_STORE]: false,
@@ -248,16 +246,6 @@ const openAIAgentModal = function (config) {
 };
 const closeAIAgentModal = function () {
     return closeModal(MODAL_AI_AGENT);
-};
-const openBaiduAIModal = function (config) {
-    return {
-        type: OPEN_MODAL,
-        modal: MODAL_BAIDU_AI,
-        aiConfig: config
-    };
-};
-const closeBaiduAIModal = function () {
-    return closeModal(MODAL_BAIDU_AI);
 };
 
 const openSimpleDialog = function (dialogConfig) {
@@ -501,8 +489,6 @@ export {
     closeAIChatModal,
     openAIAgentModal,
     closeAIAgentModal,
-    openBaiduAIModal,
-    closeBaiduAIModal,
     openSimpleDialog,
     closeBackdropLibrary,
     closeCostumeLibrary,
@@ -570,6 +556,5 @@ export {
     MODAL_EXTENSION_EDITOR,
     MODAL_WEB_EMBED,
     MODAL_SUPER_REFACTOR,
-    MODAL_BAIDU_AI,
     MODAL_COMPATIBILITY
 };

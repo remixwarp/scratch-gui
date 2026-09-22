@@ -78,7 +78,7 @@ try {
 import {showOnboarding} from '../../reducers/onboarding';
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
-import {openAIChatModal, openAIAgentModal, openBaiduAIModal, openGandiHelpModal, openWebEmbedModal} from '../../reducers/modals';
+import {openAIChatModal, openAIAgentModal, openGandiHelpModal, openWebEmbedModal} from '../../reducers/modals';
 import {
     isTimeTravel220022BC,
     isTimeTravel1920,
@@ -3824,20 +3824,6 @@ class MenuBar extends React.Component {
                                             />
                                         </span>
                                     </MenuItem>
-                                    <MenuItem
-                                        onClick={() => {
-                                            this.props.onClickBaiduAI();
-                                            this.props.onRequestCloseTools();
-                                        }}
-                                    >
-                                        <span className={styles.submenuLabel}>
-                                            <FormattedMessage
-                                                defaultMessage="Baidu AI"
-                                                description="Menu bar item for Baidu AI"
-                                                id="gui.menuBar.baiduAI"
-                                            />
-                                        </span>
-                                    </MenuItem>
                                 </MenuSection>
                                 {window.__mistwarpDebuggerToggle || window.__mistwarpVariableManagerToggle ? (
                                     <MenuSection>
@@ -4455,7 +4441,6 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseAI: () => dispatch(closeAIMenu()),
     onClickAIChat: () => dispatch(openAIChatModal()),
     onClickAIAgent: () => dispatch(openAIAgentModal()),
-    onClickBaiduAI: () => dispatch(openBaiduAIModal()),
     onClickLogin: () => dispatch(openLoginMenu()),
     onRequestCloseLogin: () => dispatch(closeLoginMenu()),
     onClickMode: () => dispatch(openModeMenu()),

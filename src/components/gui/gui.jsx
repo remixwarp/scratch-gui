@@ -48,7 +48,6 @@ import RoadmapModal from '../mw-roadmap/roadmap-modal.jsx';
 import AIModal from '../../containers/ai-modal.jsx';
 import AIChatModal from '../../containers/ai-chat-modal.jsx';
 import AIAgentModal from '../../containers/ai-agent-modal.jsx';
-import BaiduAIModal from '../../containers/baidu-ai-modal.jsx';
 import ExtensionEditorModal from '../../containers/extension-editor-modal.jsx';
 import WebEmbedModal from '../../containers/web-embed-modal.jsx';
 const SuperRefactorModal = React.lazy(() => import('../../containers/super-refactor-modal.jsx'));
@@ -1494,7 +1493,6 @@ const GUIComponent = props => {
             <AIModal />
             <AIChatModal />
             <AIAgentModal />
-            <BaiduAIModal />
             <ExtensionEditorModal />
             <WebEmbedModal />
             <SuperRefactorModal />
