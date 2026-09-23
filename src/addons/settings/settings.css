@@ -896,6 +896,151 @@ a:active, a:focus {
 .custom-plugins-import-button {
     margin-right: 8px;
 }
+
+/* Import custom plugin modal */
+.import-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    animation: modal-fade-in 0.15s ease;
+}
+@keyframes modal-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+.import-modal {
+    background: $ui-white;
+    color: $text-primary;
+    border-radius: 8px;
+    width: 560px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+.import-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+.import-modal-title {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+.import-modal-close {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 1.4em;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+    border-radius: 4px;
+}
+.import-modal-close:hover {
+    background: $ui-black-transparent;
+    color: white;
+}
+.import-modal-tabs {
+    display: flex;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+.import-modal-tab {
+    flex: 1;
+    padding: 10px 8px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+}
+.import-modal-tab:hover {
+    background: $ui-black-transparent;
+}
+.import-modal-tab[data-active="true"] {
+    border-bottom-color: $looks-secondary;
+    font-weight: bold;
+}
+.import-modal-body {
+    padding: 14px 16px;
+}
+.import-modal-textarea {
+    width: 100%;
+    min-height: 180px;
+    max-height: 320px;
+    box-sizing: border-box;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    padding: 8px;
+    font-family: monospace;
+    font-size: 13px;
+    resize: vertical;
+}
+.import-modal-url-input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 14px;
+    height: 36px;
+}
+.import-modal-file-hint {
+    padding: 12px;
+    border: 1px dashed $ui-black-transparent;
+    border-radius: 4px;
+    text-align: center;
+    opacity: 0.85;
+}
+.import-modal-trust {
+    margin: 12px 0 0;
+    padding: 8px 10px;
+    background: rgba(255, 180, 0, 0.18);
+    border: 1px solid rgba(255, 180, 0, 0.5);
+    border-radius: 4px;
+    font-size: 0.9em;
+    opacity: 0.95;
+}
+.import-modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid $ui-black-transparent;
+}
+.import-modal-submit {
+    background: $looks-secondary;
+    color: white;
+}
+.import-modal-submit:hover {
+    background: $looks-secondary;
+}
+.import-modal-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.import-modal-cancel {
+    background: transparent;
+    color: $ui-black-transparent;
+}
+.import-modal-cancel:hover {
+    background: $ui-tertiary;
+}
 .custom-addon {
     margin-bottom: 6px;
 }

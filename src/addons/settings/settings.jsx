@@ -79,6 +79,16 @@ const postThrottledSettingsChange = store => {
     }, 100);
 };
 
+// 安全弹出确认框：在某些受限 iframe 中 window.confirm 会被浏览器拦截而抛出异常，
+// 此时按用户拒绝处理（保持安全默认），避免未捕获异常导致后续流程中断。
+const safeConfirm = message => {
+    try {
+        return window.confirm(message);
+    } catch (e) {
+        return false;
+    }
+};
+
 const filterAddonsBySupport = () => {
     const supported = {};
     const unsupported = {};
@@ -1378,7 +1388,12 @@ class AddonSettingsComponent extends React.Component {
         this.handleTagFilter = this.handleTagFilter.bind(this);
         this.handleClearAll = this.handleClearAll.bind(this);
         this.handleImportCustomPluginFile = this.handleImportCustomPluginFile.bind(this);
-        this.handleImportCustomPluginUrl = this.handleImportCustomPluginUrl.bind(this);
+        this.handleOpenImportModal = this.handleOpenImportModal.bind(this);
+        this.handleCloseImportModal = this.handleCloseImportModal.bind(this);
+        this.handleSwitchImportType = this.handleSwitchImportType.bind(this);
+        this.handleChangeImportText = this.handleChangeImportText.bind(this);
+        this.handleChangeImportUrl = this.handleChangeImportUrl.bind(this);
+        this.handleImportModalSubmit = this.handleImportModalSubmit.bind(this);
         this.handleToggleCustomPlugin = this.handleToggleCustomPlugin.bind(this);
         this.handleDeleteCustomPlugin = this.handleDeleteCustomPlugin.bind(this);
         this.handleEditorSelect = this.handleEditorSelect.bind(this);
@@ -1408,6 +1423,12 @@ class AddonSettingsComponent extends React.Component {
                 bilup: false
             }, // 控制每个编辑器的分类菜单是否打开
             align: 'left', // 对齐方式，默认靠左对齐
+            importModal: {
+                open: false,
+                type: 'text', // 'text' | 'url' | 'file'
+                text: '',
+                url: ''
+            },
             ...this.readFullAddonState()
         };
         if (Channels.changeChannel) {
@@ -1591,9 +1612,9 @@ class AddonSettingsComponent extends React.Component {
             selectedTags: new Set()
         });
     }
-    importCustomPlugin (code, sourceName) {
+    importCustomPlugin (code, sourceName, {skipTrust = false} = {}) {
         return (async () => {
-            if (!safeConfirm(settingsTranslations.customPluginsTrust)) {
+            if (!skipTrust && !safeConfirm(settingsTranslations.customPluginsTrust)) {
                 return;
             }
             let parsed;
@@ -1616,31 +1637,64 @@ class AddonSettingsComponent extends React.Component {
             return;
         }
         const reader = new FileReader();
-        reader.onload = () => this.importCustomPlugin(reader.result, file.name);
+        reader.onload = () => this.importCustomPlugin(reader.result, file.name, {skipTrust: true});
         reader.readAsText(file);
         e.target.value = '';
     }
-    handleImportCustomPluginUrl () {
-        const url = prompt(settingsTranslations.customPluginsUrlPrompt);
-        if (!url) {
-            return;
-        }
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                return response.text();
-            })
-            .then(code => this.importCustomPlugin(code, url))
-            .catch(err => alert(`${settingsTranslations.customPluginsUrlError} ${err.message}`));
+    handleOpenImportModal () {
+        this.setState({importModal: {open: true, type: 'text', text: '', url: ''}});
     }
-    handleImportCustomPluginPaste () {
-        const code = prompt(settingsTranslations.customPluginsPastePrompt);
-        if (!code) {
+    handleCloseImportModal () {
+        this.setState({importModal: {open: false, type: 'text', text: '', url: ''}});
+    }
+    handleSwitchImportType (type) {
+        this.setState(state => ({
+            importModal: {...state.importModal, type}
+        }));
+    }
+    handleChangeImportText (e) {
+        this.setState(state => ({
+            importModal: {...state.importModal, text: e.target.value}
+        }));
+    }
+    handleChangeImportUrl (e) {
+        this.setState(state => ({
+            importModal: {...state.importModal, url: e.target.value}
+        }));
+    }
+    canSubmitImportModal () {
+        const {type, text, url} = this.state.importModal;
+        if (type === 'text') {
+            return text.trim().length > 0;
+        }
+        if (type === 'url') {
+            return url.trim().length > 0;
+        }
+        return true; // 文件类型交由系统文件选择框处理
+    }
+    handleImportModalSubmit () {
+        const {type, text, url} = this.state.importModal;
+        if (!this.canSubmitImportModal()) {
             return;
         }
-        this.importCustomPlugin(code, '粘贴的源代码');
+        this.handleCloseImportModal();
+        if (type === 'text') {
+            this.importCustomPlugin(text, '粘贴的源代码', {skipTrust: true});
+        } else if (type === 'url') {
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(code => this.importCustomPlugin(code, url, {skipTrust: true}))
+                .catch(err => alert(`${settingsTranslations.customPluginsUrlError} ${err.message}`));
+        } else if (type === 'file') {
+            if (this.fileInputRef) {
+                this.fileInputRef.click();
+            }
+        }
     }
     handleToggleCustomPlugin (id, enabled) {
         if (enabled && !CustomPlugins.isTrusted(id)) {
@@ -1970,21 +2024,9 @@ class AddonSettingsComponent extends React.Component {
                                 <div className={styles['custom-plugins-actions']}>
                                     <button
                                         className={classNames(styles.button, styles['custom-plugins-import-button'])}
-                                        onClick={() => this.fileInputRef.click()}
+                                        onClick={this.handleOpenImportModal}
                                     >
-                                        {settingsTranslations.customPluginsImportFile}
-                                    </button>
-                                    <button
-                                        className={classNames(styles.button, styles['custom-plugins-import-button'])}
-                                        onClick={this.handleImportCustomPluginUrl}
-                                    >
-                                        {settingsTranslations.customPluginsImportUrl}
-                                    </button>
-                                    <button
-                                        className={classNames(styles.button, styles['custom-plugins-import-button'])}
-                                        onClick={this.handleImportCustomPluginPaste}
-                                    >
-                                        {settingsTranslations.customPluginsImportPaste}
+                                        {settingsTranslations.customPluginsImport}
                                     </button>
                                     <input
                                         ref={el => {
@@ -2047,6 +2089,109 @@ class AddonSettingsComponent extends React.Component {
                         )}
                     </div>
                 </div>
+                {this.state.importModal.open && (
+                    <div
+                        className={styles['import-modal-backdrop']}
+                        onMouseDown={e => {
+                            if (e.target === e.currentTarget) {
+                                this.handleCloseImportModal();
+                            }
+                        }}
+                    >
+                        <div
+                            className={styles['import-modal']}
+                            role="dialog"
+                            aria-modal="true"
+                        >
+                            <div className={styles['import-modal-header']}>
+                                <span className={styles['import-modal-title']}>
+                                    {settingsTranslations.customPluginsImportModalTitle}
+                                </span>
+                                <button
+                                    className={styles['import-modal-close']}
+                                    onClick={this.handleCloseImportModal}
+                                    aria-label={settingsTranslations.cancel}
+                                    title={settingsTranslations.cancel}
+                                >
+                                    {'×'}
+                                </button>
+                            </div>
+                            <div className={styles['import-modal-tabs']}>
+                                <button
+                                    className={styles['import-modal-tab']}
+                                    data-active={this.state.importModal.type === 'text'}
+                                    onClick={() => this.handleSwitchImportType('text')}
+                                >
+                                    {settingsTranslations.customPluginsImportPaste}
+                                </button>
+                                <button
+                                    className={styles['import-modal-tab']}
+                                    data-active={this.state.importModal.type === 'url'}
+                                    onClick={() => this.handleSwitchImportType('url')}
+                                >
+                                    {settingsTranslations.customPluginsImportUrl}
+                                </button>
+                                <button
+                                    className={styles['import-modal-tab']}
+                                    data-active={this.state.importModal.type === 'file'}
+                                    onClick={() => this.handleSwitchImportType('file')}
+                                >
+                                    {settingsTranslations.customPluginsImportFile}
+                                </button>
+                            </div>
+                            <div className={styles['import-modal-body']}>
+                                {this.state.importModal.type === 'text' && (
+                                    <textarea
+                                        className={styles['import-modal-textarea']}
+                                        value={this.state.importModal.text}
+                                        onChange={this.handleChangeImportText}
+                                        placeholder={settingsTranslations.customPluginsPastePrompt}
+                                        spellCheck="false"
+                                        autoFocus
+                                    />
+                                )}
+                                {this.state.importModal.type === 'url' && (
+                                    <input
+                                        className={styles['import-modal-url-input']}
+                                        type="text"
+                                        value={this.state.importModal.url}
+                                        onChange={this.handleChangeImportUrl}
+                                        placeholder={settingsTranslations.customPluginsUrlPrompt}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                this.handleImportModalSubmit();
+                                            }
+                                        }}
+                                        autoFocus
+                                    />
+                                )}
+                                {this.state.importModal.type === 'file' && (
+                                    <div className={styles['import-modal-file-hint']}>
+                                        {settingsTranslations.customPluginsImportFilePrompt}
+                                    </div>
+                                )}
+                                <p className={styles['import-modal-trust']}>
+                                    {settingsTranslations.customPluginsTrust}
+                                </p>
+                            </div>
+                            <div className={styles['import-modal-buttons']}>
+                                <button
+                                    className={classNames(styles.button, styles['import-modal-cancel'])}
+                                    onClick={this.handleCloseImportModal}
+                                >
+                                    {settingsTranslations.cancel}
+                                </button>
+                                <button
+                                    className={classNames(styles.button, styles['import-modal-submit'])}
+                                    onClick={this.handleImportModalSubmit}
+                                    disabled={!this.canSubmitImportModal()}
+                                >
+                                    {settingsTranslations.customPluginsImport}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
