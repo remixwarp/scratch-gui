@@ -1612,8 +1612,11 @@ class AddonSettingsComponent extends React.Component {
             selectedTags: new Set()
         });
     }
-    importCustomPlugin (code, sourceName, {skipTrust = false} = {}) {
-        return (async () => {
+    importCustomPlugin (code, sourceName, {skipTrust = false, closeAfter = false} = {}) {
+        // 顶层 try/catch：任何解析/写入/刷新阶段的未预料 throw
+        // （包括 await CustomPlugins.add 内部的 rejected Promise）都会被兜住，
+        // 不再冒泡成 unhandled rejection 导致 React 组件树干掉（白屏）。
+        const run = async () => {
             if (!skipTrust && !safeConfirm(settingsTranslations.customPluginsTrust)) {
                 return;
             }
@@ -1626,10 +1629,21 @@ class AddonSettingsComponent extends React.Component {
             }
             await CustomPlugins.add(parsed.manifest, code, true);
             this.setState({customPlugins: CustomPlugins.getAll()});
-            postThrottledSettingsChange(SettingsStore.store);
+            try {
+                postThrottledSettingsChange(SettingsStore.store);
+            } catch (_e) {
+                // 跨窗口消息通道可能在某些场景下不可用，忽略
+            }
             console.info(`[Custom Plugins] 已导入自定义插件: ${sourceName}`);
+            if (closeAfter) {
+                this.handleCloseImportModal();
+            }
             alert(settingsTranslations.customPluginsImportSuccess);
-        })();
+        };
+        run().catch(err => {
+            console.error('[Custom Plugins] 导入时发生未捕获异常:', err);
+            alert(`${settingsTranslations.customPluginsImportError} ${err && err.message ? err.message : String(err)}`);
+        });
     }
     handleImportCustomPluginFile (e) {
         const file = e.target.files[0];
@@ -1677,9 +1691,8 @@ class AddonSettingsComponent extends React.Component {
         if (!this.canSubmitImportModal()) {
             return;
         }
-        this.handleCloseImportModal();
         if (type === 'text') {
-            this.importCustomPlugin(text, '粘贴的源代码', {skipTrust: true});
+            this.importCustomPlugin(text, '粘贴的源代码', {skipTrust: true, closeAfter: true});
         } else if (type === 'url') {
             fetch(url)
                 .then(response => {
@@ -1688,9 +1701,12 @@ class AddonSettingsComponent extends React.Component {
                     }
                     return response.text();
                 })
-                .then(code => this.importCustomPlugin(code, url, {skipTrust: true}))
+                .then(code => this.importCustomPlugin(code, url, {skipTrust: true, closeAfter: true}))
                 .catch(err => alert(`${settingsTranslations.customPluginsUrlError} ${err.message}`));
         } else if (type === 'file') {
+            // 弹窗只作为入口，文件选择仍通过原生 input 完成
+            // 先关弹窗再触发 file input，避免 modal 层级遮挡系统对话框
+            this.handleCloseImportModal();
             if (this.fileInputRef) {
                 this.fileInputRef.click();
             }
