@@ -41,6 +41,8 @@
   "customPluginsEmpty": "No custom plugins yet. Import a plugin file or load one from a URL below.",
   "customPluginsImportFile": "Import from file...",
   "customPluginsImportUrl": "Load from URL...",
+  "customPluginsImportPaste": "Paste source code...",
+  "customPluginsPastePrompt": "Paste the complete source code of your custom plugin (ES Module format with export const manifest and a default export entry function):",
   "customPluginsUrlPrompt": "Enter the URL of the plugin file (.js):",
   "customPluginsTrust": "This is not an official plugin. Running it gives the code full access to your projects and editor. Only continue if you trust the source. Continue?",
   "customPluginsImportError": "Failed to load plugin:",

@@ -33,7 +33,7 @@ import brushImage from './icons/brush.svg';
 import undoImage from './icons/undo.svg';
 import expandImageBlack from './icons/expand.svg';
 import infoImage from './icons/info.svg';
-import helpImage from './icons/help-circle.svg';
+import helpImage from './icons/help.svg';
 import TWFancyCheckbox from '../../components/tw-fancy-checkbox/checkbox.jsx';
 import styles from './settings.css';
 import {detectTheme} from '../../lib/themes/themePersistance.js';
@@ -1635,6 +1635,13 @@ class AddonSettingsComponent extends React.Component {
             .then(code => this.importCustomPlugin(code, url))
             .catch(err => alert(`${settingsTranslations.customPluginsUrlError} ${err.message}`));
     }
+    handleImportCustomPluginPaste () {
+        const code = prompt(settingsTranslations.customPluginsPastePrompt);
+        if (!code) {
+            return;
+        }
+        this.importCustomPlugin(code, '粘贴的源代码');
+    }
     handleToggleCustomPlugin (id, enabled) {
         if (enabled && !CustomPlugins.isTrusted(id)) {
             if (!safeConfirm(settingsTranslations.customPluginsTrust)) {
@@ -1972,6 +1979,12 @@ class AddonSettingsComponent extends React.Component {
                                         onClick={this.handleImportCustomPluginUrl}
                                     >
                                         {settingsTranslations.customPluginsImportUrl}
+                                    </button>
+                                    <button
+                                        className={classNames(styles.button, styles['custom-plugins-import-button'])}
+                                        onClick={this.handleImportCustomPluginPaste}
+                                    >
+                                        {settingsTranslations.customPluginsImportPaste}
                                     </button>
                                     <input
                                         ref={el => {

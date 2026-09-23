@@ -44,6 +44,8 @@
     "customPluginsEmpty": "还没有自定义插件。可以在下方导入插件文件，或从网址加载。",
     "customPluginsImportFile": "从文件导入...",
     "customPluginsImportUrl": "从网址加载...",
+    "customPluginsImportPaste": "粘贴源代码...",
+    "customPluginsPastePrompt": "请粘贴自定义插件的完整源代码（ES Module 格式，包含 export const manifest 与 export default 入口函数）：",
     "customPluginsUrlPrompt": "请输入插件文件的网址（.js）:",
     "customPluginsTrust": "这不是官方插件。运行它将使代码获得对你项目和编辑器的完全访问权限。请仅在信任来源时继续。是否继续?",
     "customPluginsImportError": "插件加载失败:",

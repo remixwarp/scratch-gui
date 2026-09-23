@@ -11,15 +11,37 @@
     --text: #202020;
     --muted: #6b6b6b;
     --border: #e0e0e0;
-    --accent: #4c97ff;
-    --accent-dark: #3373cc;
+    --accent: #75c1c4;
+    --accent-dark: #5aa6a9;
     --code-bg: #1e2430;
     --code-text: #e6e6e6;
-    --chip: #eaf3ff;
-    --chip-text: #3373cc;
+    --code-border: #2c3442;
+    --chip: #e8f6f6;
+    --chip-text: #3f8f92;
     --warn-bg: #fff7e6;
     --warn-border: #ffe0a3;
     --warn-text: #8a5a00;
+    --header-from: #75c1c4;
+    --header-to: #9fd4d6;
+  }
+  [data-theme="dark"] {
+    --bg: #1c2128;
+    --panel: #2a313a;
+    --text: #e6e8ea;
+    --muted: #a2abb4;
+    --border: #3a434e;
+    --accent: #75c1c4;
+    --accent-dark: #8fd4d7;
+    --code-bg: #14181f;
+    --code-text: #dbe2ea;
+    --code-border: #2c3442;
+    --chip: rgba(117, 193, 196, 0.16);
+    --chip-text: #8fd4d7;
+    --warn-bg: #2e2818;
+    --warn-border: #5a4a20;
+    --warn-text: #e8c876;
+    --header-from: #5aa6a9;
+    --header-to: #75c1c4;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -29,11 +51,13 @@
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
     line-height: 1.65;
+    transition: background 0.25s ease, color 0.25s ease;
   }
   header {
-    background: linear-gradient(135deg, var(--accent) 0%, #7ab4ff 100%);
+    background: linear-gradient(135deg, var(--header-from) 0%, var(--header-to) 100%);
     color: #fff;
     padding: 32px 24px;
+    transition: background 0.25s ease;
   }
   header .wrap { max-width: 900px; margin: 0 auto; }
   header h1 { margin: 0 0 8px; font-size: 26px; }
@@ -45,6 +69,7 @@
     border-radius: 10px;
     padding: 18px 22px;
     margin: 24px 0;
+    transition: background 0.25s ease, border-color 0.25s ease;
   }
   .toc h2 { margin: 0 0 10px; font-size: 15px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
   .toc ol { margin: 0; padding-left: 20px; }
@@ -61,7 +86,8 @@
   h3 { font-size: 16px; margin: 26px 0 8px; color: var(--accent-dark); }
   p { margin: 10px 0; }
   code:not(pre code) {
-    background: #eef1f5;
+    background: var(--chip);
+    color: var(--chip-text);
     padding: 2px 6px;
     border-radius: 4px;
     font-family: "SF Mono", Consolas, "Courier New", monospace;
@@ -73,6 +99,7 @@
     padding: 12px 16px;
     border-radius: 6px;
     margin: 14px 0;
+    transition: background 0.25s ease;
   }
   .warn {
     background: var(--warn-bg);
@@ -84,15 +111,16 @@
     margin: 14px 0;
   }
   .table-wrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; background: var(--panel); border-radius: 8px; overflow: hidden; font-size: 14px; }
+  table { border-collapse: collapse; width: 100%; background: var(--panel); border-radius: 8px; overflow: hidden; font-size: 14px; transition: background 0.25s ease; }
   th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { background: #f0f4f9; font-weight: 600; white-space: nowrap; }
+  th { background: var(--chip); font-weight: 600; white-space: nowrap; }
   tr:last-child td { border-bottom: none; }
   code.block { white-space: nowrap; }
   .code-block { position: relative; margin: 14px 0; }
   .code-block pre {
     background: var(--code-bg);
     color: var(--code-text);
+    border: 1px solid var(--code-border);
     padding: 16px 16px 16px 16px;
     border-radius: 8px;
     overflow-x: auto;
@@ -131,17 +159,49 @@
   footer { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 16px 40px; }
   a.back { color: #fff; background: rgba(255,255,255,0.2); text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; }
   a.back:hover { background: rgba(255,255,255,0.3); }
+
+  /* 右上角主题切换按钮 */
+  .theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(255,255,255,0.45);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+  }
+  .theme-toggle:hover { background: rgba(255,255,255,0.32); transform: scale(1.05); }
+  .theme-toggle svg { width: 18px; height: 18px; }
+  .theme-toggle .icon-sun { display: none; }
+  .theme-toggle .icon-moon { display: block; }
+  [data-theme="dark"] .theme-toggle { border-color: rgba(255,255,255,0.5); }
+  [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+  [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 </style>
 </head>
 <body>
 
 <header>
-    <div class="wrap">
-      <a class="back" href="/">← 返回编辑器</a>
+  <div class="wrap">
+    <a class="back" href="/">← 返回编辑器</a>
     <h1>自定义插件编写指南</h1>
     <p>学习如何编写、导入并运行你自己的自定义插件，扩展编辑器的能力。</p>
   </div>
 </header>
+
+<button class="theme-toggle" id="theme-toggle" aria-label="切换深色/浅色主题" title="切换深色/浅色主题">
+  <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+</button>
 
 <div class="wrap">
 
@@ -164,9 +224,9 @@
     <h2 class="sec">1. 什么是自定义插件</h2>
     <p>自定义插件是一个<strong>单个 JavaScript 文件</strong>（ES Module 格式），导出：
       <code>manifest</code>（插件的清单/元数据）和 <code>export default</code>（入口函数）。
-      导入后它会在 SCAN 编辑器里运行，拥有对编辑器和当前作品的完全访问权限——因此请只导入你信任的代码。
+      导入后它会在编辑器里运行，拥有对编辑器和当前作品的完全访问权限——因此请只导入你信任的代码。
     </p>
-    <div class="note">导入入口：<strong>插件设置</strong> 界面 → <strong>自定义插件</strong> → <strong>从文件导入...</strong> 或 <strong>从网址加载...</strong>。导入后需在列表中启用。</div>
+    <div class="note">导入方式（<strong>插件设置</strong> → <strong>自定义插件</strong>）：<strong>从文件导入...</strong>、<strong>从网址加载...</strong> 或 <strong>粘贴源代码...</strong>。导入后需在列表中启用。本页所有示例都可以直接复制、粘贴到「粘贴源代码...」中导入。</div>
   </section>
 
   <section id="format">
@@ -184,7 +244,7 @@
     enabledByDefault: false     // 可选：默认是否启用
 };
 
-export default async function ({addon, console, msg, global}) {
+export default async function ({addon, console, msg}) {
     // 在这里写你的插件逻辑
     // 入口函数在插件被启用时运行一次
     console.log('插件已启动');
@@ -236,7 +296,7 @@ export default async function ({addon, console, msg, global}) {
     settings: [
         { id: 'enabled', type: 'boolean', name: '启用', default: true },
         { id: 'speed', type: 'positive_integer', name: '速度', min: 0, max: 100, default: 10 },
-        { id: 'color', type: 'color', name: '主色', default: '#ff6611' },
+        { id: 'color', type: 'color', name: '主色', default: '#75c1c4' },
         { id: 'mode', type: 'select', name: '模式', default: 'a', options: [
             { name: '模式 A', value: 'a' },
             { name: '模式 B', value: 'b' }
@@ -296,7 +356,7 @@ export default async function ({addon}) {
         <tr><td><code class="block">addon.tab.redux</code></td><td>Redux store。<code>.state</code> 读取状态；<code>addEventListener('statechanged', fn)</code> 监听初始化和状态变化。</td></tr>
         <tr><td><code class="block">await addon.tab.waitForElement(selector, opts)</code></td><td>等待某个 DOM 元素出现并返回它。非常适合注入 UI。<code>opts</code> 见下。</td></tr>
         <tr><td><code class="block">addon.tab.appendToSharedSpace({space, element, order, scope})</code></td><td>把元素插入到编辑器的已知位置（舞台头部、绿旗旁、声音标签后等）。</td></tr>
-        <tr><td><code class="block">addon.tab.addBlock(proc, {args, displayName, callback})</code></td><td>添加一个点击执行的自定义积木（在绿旗积木运行机制里执行回调）。</td></tr>
+        <tr><td><code class="block">addon.tab.addBlock(proc, {args, displayName, callback})</code></td><td>添加一个点击执行的自定义积木。<code>proc</code> 与 <code>args</code> 中的参数数量必须一致；回调为 <code>(args, thread)</code>。</td></tr>
         <tr><td><code class="block">addon.tab.getCustomBlock(proc)</code></td><td>获取由 <code>addBlock</code> 创建的自定义积木描述。</td></tr>
         <tr><td><code class="block">addon.tab.createBlockContextMenu(cb, opts)</code></td><td>向积木右键菜单注入项目。<code>opts</code>: <code>workspace/blocks/flyout/comments</code> 布尔值。</td></tr>
         <tr><td><code class="block">addon.tab.createEditorContextMenu(cb, opts)</code></td><td>向编辑器右键菜单（舞台/角色列表等）注入项目。</td></tr>
@@ -362,28 +422,26 @@ export default async function ({addon}) {
 
   <section id="examples">
     <h2 class="sec">7. 完整示例插件</h2>
-    <p>以下是可直接复制导入的真实示例。<span class="chip">可直接运行</span></p>
+    <p>以下是可直接复制导入的真实示例，复制后粘贴到「粘贴源代码...」即可导入启用。<span class="chip">可直接运行</span></p>
 
     <h3>示例 1：在舞台头部加一个按钮</h3>
-    <p>向编辑器的舞台头部插入一个按钮，点击后改变舞台背景颜色。</p>
+    <p>向编辑器的舞台头部插入一个按钮，点击后改变按钮自身颜色并打印日志。</p>
     <div class="code-block">
       <button class="copy-btn" data-target="ex1">复制</button>
 <pre><code id="ex1">export const manifest = {
     name: '按钮示例',
-    description: '在舞台头部添加一个按钮，点击改变背景色',
+    description: '在舞台头部添加一个按钮',
     settings: [
-        { id: 'color', type: 'color', name: '背景色', default: '#ff6611' }
+        { id: 'color', type: 'color', name: '按钮颜色', default: '#75c1c4' }
     ]
 };
 
-export default async function ({addon}) {
-    const vm = addon.tab.traps.vm;
-
+export default async function ({addon, console}) {
     // 创建一个按钮
     const button = document.createElement('button');
-    button.textContent = '红色背景';
+    button.textContent = '自定义按钮';
     button.style.cssText = 'margin:0 4px;border:none;border-radius:4px;' +
-        'padding:4px 10px;background:#ffb84d;cursor:pointer;';
+        'padding:4px 10px;background:#75c1c4;cursor:pointer;';
 
     // 插入到舞台头部（绿旗按钮之后）
     addon.tab.appendToSharedSpace({
@@ -392,20 +450,18 @@ export default async function ({addon}) {
         order: 99
     });
 
-    // 点击后修改当前目标造型的背景（角色在没有背景时为舞台）
+    // 点击后更换按钮颜色，并读取插件设置
     button.addEventListener('click', () => {
-        const target = vm.editingTarget || vm.runtime.getTargetForStage();
-        if (target && target.setCostume) {
-            console.log('当前舞台：', target.sprite && target.sprite.name);
-        }
-        console.log('按钮被点击，背景色设为', addon.settings.get('color'));
+        const color = addon.settings.get('color');
+        button.style.background = color;
+        console.log('按钮被点击，颜色设置为', color);
     });
 }
 </code></pre>
     </div>
 
     <h3>示例 2：添加一个自定义积木</h3>
-    <p>向积木区添加一个新的「自定义积木」，点击/运行时执行回调。</p>
+    <p>向积木区添加一个新的「自定义积木」，点击/运行时执行回调。回调参数为 <code>(args, thread)</code>，可通过 <code>thread.target</code> 获取当前目标。</p>
     <div class="code-block">
       <button class="copy-btn" data-target="ex2">复制</button>
 <pre><code id="ex2">export const manifest = {
@@ -417,19 +473,19 @@ export default async function ({addon, console}) {
     addon.tab.addBlock('自定义积木 %s 份', {
         args: ['数量'],
         displayName: '自定义积木 %s 份',
-        callback: (a, util) => {
-            const target = util.target;
-            const count = a.数量;
+        callback: (args, thread) => {
+            const count = args['数量'];
+            const target = thread && thread.target;
             console.log('自定义积木运行', count, '次');
-            console.log('当前目标：', target.getName());
+            console.log('当前目标：', target ? target.getName() : '未知');
         }
     });
 }
 </code></pre>
     </div>
 
-    <h3>示例 3：等待并改造积木外观</h3>
-    <p>使用 Blockly API 给积木右键菜单注入项目。需要插件启用后才能看到效果。</p>
+    <h3>示例 3：给积木右键菜单注入项目</h3>
+    <p>使用 Blockly API 往积木的右键菜单里加一个「控制台输出」项目。右键菜单回调为 <code>(items, block)</code>，右键空白工作区时 <code>block</code> 可能为 undefined，需要判空。</p>
     <div class="code-block">
       <button class="copy-btn" data-target="ex3">复制</button>
 <pre><code id="ex3">export const manifest = {
@@ -437,16 +493,21 @@ export default async function ({addon, console}) {
     description: '给积木右键菜单添加一个「控制台输出」项目'
 };
 
-export default async function ({addon}) {
-    const ScratchBlocks = await addon.tab.traps.getBlockly();
+export default async function ({addon, console}) {
+    // 先拿到 Blockly（异步）
+    await addon.tab.traps.getBlockly();
 
     addon.tab.createBlockContextMenu((items, block) => {
+        if (!block) {
+            return items; // 右键的是空白区域，不注入
+        }
         items.push({
             text: '控制台输出这个积木',
             enabled: true,
             callback: () => {
                 console.log('积木类型:', block.type);
-                console.log('积木位置:', block.getRelativeToSurfaceXY());
+                const pos = block.getRelativeToSurfaceXY();
+                console.log('积木位置:', pos.x, pos.y);
             }
         });
         return items;
@@ -472,7 +533,7 @@ export default async function ({addon}) {
 
     const apply = () => {
         const w = addon.settings.get('width');
-        style.textContent = `.stage_stage_ {\n  outline: ${w}px solid #4c97ff;\n}`;
+        style.textContent = '.stage_stage_ {\n  outline: ' + w + 'px solid #75c1c4;\n}';
     };
     apply();
     addon.settings.addEventListener('change', apply);
@@ -490,16 +551,15 @@ export default async function ({addon}) {
 <pre><code id="css1">export const manifest = {
     name: '圆角化 UI',
     description: '把按钮和菜单改成圆角',
-    css: `
-        [class*="button_button"],
-        [class*="menu-bar_menu-bar-item_"] {
-            border-radius: 12px;
-        }
-    `
+    css: [
+        '[class*="button_button"],',
+        '[class*="menu-bar_menu-bar-item_"] {',
+        '    border-radius: 12px;',
+        '}'
+    ].join('\n')
 };
 
-export default async function ({addon}) {
-    // 空入口函数也可以（或用 addon.console 打日志）
+export default async function () {
     console.log('纯 CSS 插件已加载');
 }
 </code></pre>
@@ -520,7 +580,12 @@ export default async function ({addon}) {
 
     <div class="code-block">
       <button class="copy-btn" data-target="clean">复制</button>
-<pre><code id="clean">export default async function ({addon}) {
+<pre><code id="clean">export const manifest = {
+    name: '资源清理示例',
+    description: '演示在插件被禁用时清理动态 UI 与定时器'
+};
+
+export default async function ({addon, console}) {
     const div = document.createElement('div');
     div.textContent = '我是一些临时 UI';
     document.body.appendChild(div);
@@ -546,6 +611,22 @@ export default async function ({addon}) {
 
 <script>
   (function () {
+    // ---- 主题切换 ----
+    var KEY = 'custom-plugins-guide-theme';
+    var root = document.documentElement;
+    var saved = null;
+    try { saved = localStorage.getItem(KEY); } catch (e) {}
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var current = saved === 'dark' || (saved !== 'light' && prefersDark) ? 'dark' : 'light';
+    root.setAttribute('data-theme', current);
+
+    document.getElementById('theme-toggle').addEventListener('click', function () {
+      current = current === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', current);
+      try { localStorage.setItem(KEY, current); } catch (e) {}
+    });
+
+    // ---- 复制代码 ----
     function copyText(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         return navigator.clipboard.writeText(text);
@@ -568,9 +649,7 @@ export default async function ({addon}) {
       btn.addEventListener('click', function () {
         var target = document.getElementById(btn.getAttribute('data-target'));
         if (!target) return;
-        var text = target.textContent;
-        // 去除编辑器可能自动缩进的空格（如果有的话仍保留代码原有缩进）
-        copyText(text).then(function () {
+        copyText(target.textContent).then(function () {
           btn.textContent = '已复制 ✓';
           btn.classList.add('copied');
           setTimeout(function () {
