@@ -1041,6 +1041,28 @@ a:active, a:focus {
 .import-modal-cancel:hover {
     background: $ui-tertiary;
 }
+
+/* Settings error boundary */
+.settings-crash {
+    padding: 24px;
+}
+.settings-crash-title {
+    font-size: 1.3em;
+    margin: 0 0 12px;
+}
+.settings-crash-detail {
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: $ui-black-transparent;
+    color: $text-primary;
+    padding: 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 320px;
+    overflow: auto;
+    margin: 0 0 16px;
+}
 .custom-addon {
     margin-bottom: 6px;
 }

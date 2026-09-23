@@ -1372,6 +1372,48 @@ AddonList.propTypes = {
     allSettings: PropTypes.object
 };
 
+// 设置页是 iframe 内的独立 React 根节点：一旦渲染期抛异常，
+// 没有错误边界时整棵树会被卸载，表现为窗口全白、看不到任何内容。
+// 这里捕获异常并把错误信息直接渲染到页面上，便于在无法打开控制台时定位问题。
+class SettingsErrorBoundary extends React.Component {
+    constructor (props) {
+        super(props);
+        this.state = {
+            error: null
+        };
+    }
+    componentDidCatch (error, errorInfo) {
+        console.error('[Addon Settings] 渲染异常:', error, errorInfo);
+        if (!this.state.error) {
+            this.setState({error});
+        }
+    }
+    render () {
+        if (this.state.error) {
+            return (
+                <div className={styles['settings-crash']}>
+                    <h2 className={styles['settings-crash-title']}>
+                        {settingsTranslations.settingsCrashTitle}
+                    </h2>
+                    <pre className={styles['settings-crash-detail']}>
+                        {String((this.state.error && this.state.error.stack) || this.state.error)}
+                    </pre>
+                    <button
+                        className={styles.button}
+                        onClick={() => window.location.reload()}
+                    >
+                        {settingsTranslations.settingsCrashReload}
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+SettingsErrorBoundary.propTypes = {
+    children: PropTypes.node
+};
+
 class AddonSettingsComponent extends React.Component {
     constructor (props) {
         super(props);
@@ -1667,13 +1709,20 @@ class AddonSettingsComponent extends React.Component {
         }));
     }
     handleChangeImportText (e) {
+        // 必须在事件回调内同步读取 value。
+        // React 16 会池化合成事件（event pooling）：回调结束后 e.target 会被置空。
+        // 若在 setState 的函数式更新里惰性读取 e.target.value，读取时 target 已为 null，
+        // 会抛 TypeError 并在渲染阶段冒泡，导致整个设置窗口白屏。
+        const value = e.target.value;
         this.setState(state => ({
-            importModal: {...state.importModal, text: e.target.value}
+            importModal: {...state.importModal, text: value}
         }));
     }
     handleChangeImportUrl (e) {
+        // 同上：同步读取，避免事件池化后 e.target 为 null
+        const value = e.target.value;
         this.setState(state => ({
-            importModal: {...state.importModal, url: e.target.value}
+            importModal: {...state.importModal, url: value}
         }));
     }
     canSubmitImportModal () {
@@ -2216,4 +2265,11 @@ AddonSettingsComponent.propTypes = {
     onExportSettings: PropTypes.func
 };
 
-export default AddonSettingsComponent;
+// 用错误边界包住整个设置页，避免渲染异常导致窗口全白
+const AddonSettingsWithBoundary = props => (
+    <SettingsErrorBoundary>
+        <AddonSettingsComponent {...props} />
+    </SettingsErrorBoundary>
+);
+
+export default AddonSettingsWithBoundary;

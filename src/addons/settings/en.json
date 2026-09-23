@@ -46,6 +46,8 @@
   "customPluginsImportModalTitle": "Import Custom Plugin",
   "customPluginsImportFilePrompt": "Select the plugin's JavaScript file. It will be imported automatically once you choose it.",
   "cancel": "Cancel",
+  "settingsCrashTitle": "The addon settings page crashed",
+  "settingsCrashReload": "Reload",
   "customPluginsPastePrompt": "Paste the complete source code of your custom plugin (ES Module format with export const manifest and a default export entry function):",
   "customPluginsUrlPrompt": "Enter the URL of the plugin file (.js):",
   "customPluginsTrust": "This is not an official plugin. Running it gives the code full access to your projects and editor. Only continue if you trust the source. Continue?",
