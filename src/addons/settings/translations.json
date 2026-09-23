@@ -39,6 +39,7 @@
     "addonFeedback": "插件反馈",
     "enableDangerous": "此插件存在潜在风险，可能会禁用某些功能。我们并不推荐启用此插件。确认要继续启用吗?",
     "customPlugins": "自定义插件",
+    "customPluginsHelp": "打开自定义插件编写文档",
     "customPluginsHint": "你自己导入的插件。它们对编辑器拥有完全访问权限，请只从可信来源导入。",
     "customPluginsEmpty": "还没有自定义插件。可以在下方导入插件文件，或从网址加载。",
     "customPluginsImportFile": "从文件导入...",

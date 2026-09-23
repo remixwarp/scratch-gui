@@ -33,6 +33,7 @@ import brushImage from './icons/brush.svg';
 import undoImage from './icons/undo.svg';
 import expandImageBlack from './icons/expand.svg';
 import infoImage from './icons/info.svg';
+import helpImage from './icons/help-circle.svg';
 import TWFancyCheckbox from '../../components/tw-fancy-checkbox/checkbox.jsx';
 import styles from './settings.css';
 import {detectTheme} from '../../lib/themes/themePersistance.js';
@@ -1924,6 +1925,21 @@ class AddonSettingsComponent extends React.Component {
                                 <div className={styles['custom-plugins-header']}>
                                     <span className={styles['custom-plugins-title']}>
                                         {settingsTranslations.customPlugins}
+                                        <a
+                                            className={styles['custom-plugins-help-link']}
+                                            href="custom-plugins-guide.html"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label={settingsTranslations.customPluginsHelp}
+                                            title={settingsTranslations.customPluginsHelp}
+                                        >
+                                            <img
+                                                className={styles['custom-plugins-help-icon']}
+                                                src={helpImage}
+                                                alt={settingsTranslations.customPluginsHelp}
+                                                draggable={false}
+                                            />
+                                        </a>
                                     </span>
                                     <span className={styles['custom-plugins-hint']}>
                                         {settingsTranslations.customPluginsHint}

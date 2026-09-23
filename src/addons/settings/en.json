@@ -36,6 +36,7 @@
   "addonFeedback": "Addon Feedback",
   "enableDangerous": "This addon is dangerous and may intentionally DISABLE features. We do not recommend you enable this addon. Are you sure you want to enable it?",
   "customPlugins": "Custom Plugins",
+  "customPluginsHelp": "Open the custom plugin authoring documentation",
   "customPluginsHint": "Plugins you have imported yourself. They run with full access to the editor, only import from sources you trust.",
   "customPluginsEmpty": "No custom plugins yet. Import a plugin file or load one from a URL below.",
   "customPluginsImportFile": "Import from file...",

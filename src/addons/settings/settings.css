@@ -864,6 +864,22 @@ a:active, a:focus {
     font-size: 1.05em;
     margin-right: 10px;
 }
+.custom-plugins-help-link {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+    line-height: 0;
+}
+.custom-plugins-help-icon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+    cursor: help;
+    transition: opacity 0.15s ease;
+}
+.custom-plugins-help-icon:hover {
+    opacity: 1;
+}
 .custom-plugins-hint {
     opacity: 0.7;
     font-size: 0.9em;
