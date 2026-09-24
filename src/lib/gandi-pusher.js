@@ -111,7 +111,7 @@ export const pushExtension = async (extId, source) => {
         body: JSON.stringify(body)
     });
 
-    return `https://rw-gandi.pages.dev/${safeId}/${safeId}.js`;
+    return `https://rw-gandi.pages.dev/rwc/${safeId}.js`;
 };
 
 /**

@@ -2,13 +2,19 @@ export default (filename, data) => {
     const downloadLink = document.createElement('a');
     document.body.appendChild(downloadLink);
 
-    // Convert Uint8Array or ArrayBuffer to Blob if needed
-    let blob;
-    if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
-        blob = new Blob([data], {type: 'application/zip'});
-    } else {
-        blob = data;
-    }
+    // Convert Uint8Array or ArrayBuffer to Blob if needed.
+      // IMPORTANT: the Blob MIME type must NOT be 'application/zip' — browsers
+      // (notably Safari on macOS, but also some Linux Chromium builds) will then
+      // *derive* a canonical extension (.zip) from the MIME and suffix it onto
+      // whatever filename the caller asked for (so a requested .sb3 ends up as
+      // .sb3.zip).  'application/octet-stream' is opaque — browsers don't infer
+      // anything from it and the download filename is left untouched.
+      let blob;
+      if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
+          blob = new Blob([data], {type: 'application/octet-stream'});
+      } else {
+          blob = data;
+      }
 
     // Use special ms version if available to get it working on Edge.
     if (navigator.msSaveOrOpenBlob) {
