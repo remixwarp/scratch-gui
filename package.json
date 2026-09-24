@@ -42,7 +42,7 @@
     },
     "dependencies": {
         "monaco-editor": "^0.52.0",
-        "@isomorphic-git/lightning-fs": "^4.6.2",
+        "@isomorphic-git/lightning-fs": "4.9.0",
         "@microbit/microbit-universal-hex": "0.2.2",
         "@remixwarp/scratch-l10n": "https://github.com/remixwarp/scratch-l10n/archive/b4d4bf5.tar.gz",
         "@turbowarp/jszip": "^3.11.1",
