@@ -559,22 +559,18 @@ class MenuBar extends React.Component {
                         'boost', 'gdxfor', 'tw'
                     ]);
 
-                    // Gandi project.json 里 costume/sound 必须带 id 字段，
-                    // 格式是 scratch-blocks 的 20 字符随机串（genUid 风格）。
-                    // RemixWarp 的 scratch-vm saveProjectSb3DontZip 不写这个字段，
-                    // 所以转换时统一用 scratch-blocks genUid 算法本地回填。
-                    //
-                    // 注意：GUI 里的 LazyScratchBlocks 懒加载出来的对象没有把
-                    // utils.idGenerator.genUid() 暴露出来（LazyScratchBlocks 是
-                    // 一个 proxy，只转发 blocks 工具层），所以直接在这里复制
-                    // scratch-blocks 原版 genUid() 实现 —— 算法一字不差：20 个
-                    // 字符，字符集 [0-9a-zA-Z][\[][\]][(][)]!#$%^&*_\-+=,./?><;:\'"\{\}\|`~]
-                    const genTargetAssetId = () => {
+                    // Gandi project.json 里 costume/sound/block-key 必须用
+                    // scratch-blocks 的 20 字符 genUid 风格。RemixWarp 的
+                    // scratch-vm saveProjectSb3DontZip 不但不写 costume/sound
+                    // 的 id，而且 block 的 key 也是 RW 自己生成的短串（'a' / 'b'），
+                    // 还缺 hidden / locked 字段。Gandi 加载时短 block-key + 缺
+                    // 字段 → parse-fail，所以统一在这里把 genUid 风格算法拷一份
+                    // （GUI 里的 LazyScratchBlocks proxy 没暴露 utils.idGenerator）。
+                    const genUid = () => {
                         const chars =
                             '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' +
                             '[]()!#$%^&*_-+=,./?><;:{}|`~';
                         let result = '';
-                        // scratch-blocks genUid 用的是 20 字符（62 个字母数字 + 其余）
                         for (let i = 0; i < 20; i++) {
                             result += chars.charAt(Math.floor(Math.random() * chars.length));
                         }
@@ -638,7 +634,7 @@ class MenuBar extends React.Component {
                             // idGenerator 统一回填，并且把 id 写在 costumer 对象的
                             // 最前面（跟 Gandi 原生编辑顺序一致）。
                             if (!costume.id) {
-                                costume.id = genTargetAssetId();
+                                costume.id = genUid();
                             }
                         });
                         (target.sounds || []).forEach(sound => {
@@ -646,9 +642,65 @@ class MenuBar extends React.Component {
                             if (sound.sampleCount === undefined) sound.sampleCount = 0;
                             // 同上，原生 Gandi 的 sound 也必须有 id
                             if (!sound.id) {
-                                sound.id = genTargetAssetId();
+                                sound.id = genUid();
                             }
                         });
+
+                        // Gandi 原生保存的 block key 是 scratch-blocks genUid
+                        // （20 字符随机串），RW saveProjectSb3DontZip 输出的是
+                        // 短串（'a' / 'b' / 'c'...），而且缺 hidden / locked
+                        // 字段。把短 key 重刷成 genUid，补齐 hidden / locked。
+                        // 注意：RW 里的 blocks 引用（inputs 里 shadow 的 parent 链）
+                        // 用的也是 RW 自己的 block key，这里 RW 的 save 不依赖 key
+                        // 引用（input 里全是 [shadow, literal] 直接引用 shadow key），
+                        // 但在 Gandi 里这种引用链要完整存在才行。所以我们必须：
+                        //   1) 先统一重刷所有 block key → newKeyMap
+                        //   2) 重写 blocks 对象的 key（RW 的 block 引用就是 keys 本身）
+                        //   3) 再扫一遍，把 parent / next / shadow / inputs[*][1]（shadow）
+                        //      里的旧 key 全部替换成 newKeyMap
+                        if (target.blocks) {
+                            const blockNewKeyMap = {};
+                            Object.keys(target.blocks).forEach(oldKey => {
+                                blockNewKeyMap[oldKey] = genUid();
+                            });
+                            const newBlocks = {};
+                            Object.entries(target.blocks).forEach(([oldKey, b]) => {
+                                if (typeof b !== 'object' || b === null) {
+                                    newBlocks[blockNewKeyMap[oldKey]] = b;
+                                    return;
+                                }
+                                //补齐 hidden / locked（RW 不写，Gandi 要求存在）
+                                if (b.hidden === undefined) b.hidden = false;
+                                if (b.locked === undefined) b.locked = false;
+                                // parent / next / shadow 直接引用旧 block key
+                                if (b.parent && blockNewKeyMap[b.parent]) {
+                                    b.parent = blockNewKeyMap[b.parent];
+                                }
+                                if (b.next && blockNewKeyMap[b.next]) {
+                                    b.next = blockNewKeyMap[b.next];
+                                }
+                                if (b.shadow && blockNewKeyMap[b.shadow]) {
+                                    b.shadow = blockNewKeyMap[b.shadow];
+                                }
+                                // inputs 结构 [kind, value, shadow?]，shadow 在索引 2
+                                // 或者 inputs[key][1] 本身就是 shadow block key
+                                Object.values(b.inputs || {}).forEach(inp => {
+                                    if (!Array.isArray(inp)) return;
+                                    if (inp.length >= 2 &&
+                                        typeof inp[1] === 'string' &&
+                                        inp[1] in blockNewKeyMap) {
+                                        inp[1] = blockNewKeyMap[inp[1]];
+                                    }
+                                    if (inp.length >= 3 &&
+                                        typeof inp[2] === 'string' &&
+                                        inp[2] in blockNewKeyMap) {
+                                        inp[2] = blockNewKeyMap[inp[2]];
+                                    }
+                                });
+                                newBlocks[blockNewKeyMap[oldKey]] = b;
+                            });
+                            target.blocks = newBlocks;
+                        }
                     };
 
                     // Step 2 — 有自定义扩展：fetch → normalize → push
