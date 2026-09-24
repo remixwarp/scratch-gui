@@ -559,6 +559,14 @@ class MenuBar extends React.Component {
                         'boost', 'gdxfor', 'tw'
                     ]);
 
+                    // Gandi project.json 里 costume/sound 必须带 id 字段，
+                    // 格式是 scratch-blocks 的 20 字符随机串（genUid 风格）。
+                    // RemixWarp 的 scratch-vm saveProjectSb3DontZip 不写这个字段，
+                    // 所以转换时统一用 Blockly 的 idGenerator 回填。
+                    const ScratchBlocks = await this.ensureScratchBlocks();
+                    const genTargetAssetId = () =>
+                        ScratchBlocks.utils.idGenerator.genUid();
+
                     // Step 1 — 拆解扩展
                     const extIds = (projectJson.extensions || [])
                         .filter(id => !builtins.has(id));
@@ -609,10 +617,23 @@ class MenuBar extends React.Component {
                             if (costume.rotationCenterY === undefined) {
                                 costume.rotationCenterY = 0.5;
                             }
+                            // Gandi 原生 project.json 里每个 costume 都有 id
+                            // 字段（scratch-blocks genUid 风格的 20 字符随机串）。
+                            // RemixWarp 的 scratch-vm saveProjectSb3DontZip 不写这个
+                            // 字段，Gandi 加载时会当成解析失败 —— 用 Blockly 的
+                            // idGenerator 统一回填，并且把 id 写在 costumer 对象的
+                            // 最前面（跟 Gandi 原生编辑顺序一致）。
+                            if (!costume.id) {
+                                costume.id = genTargetAssetId();
+                            }
                         });
                         (target.sounds || []).forEach(sound => {
                             if (sound.rate === undefined) sound.rate = 44100;
                             if (sound.sampleCount === undefined) sound.sampleCount = 0;
+                            // 同上，原生 Gandi 的 sound 也必须有 id
+                            if (!sound.id) {
+                                sound.id = genTargetAssetId();
+                            }
                         });
                     };
 
