@@ -581,16 +581,16 @@ class MenuBar extends React.Component {
                             }
                         }
                         // Gandi 的 project.json 格式约定 targets[].frames 和
-                        // Stage.extractProperties 必须存在（原生 Gandi 编辑出来的文件
-                        // 永远有这两个键，值是空对象 {}）。RemixWarp 原本不写这两个字段，
-                        // 缺失时 Gandi 加载时把它当成解析失败 —— 这里统一补成 {}。
-                        // 如果恰好里面已经有内容（RW 高级模式注入的帧数据），直接保留即可。
+                        // targets[].extractProperties（*所有* target，不只是 Stage）
+                        // 必须存在（原生 Gandi 编辑出来的文件每个 target 永远有这两个
+                        // 键，值是空对象 {}）。RemixWarp 原本不写这两个字段，缺失时
+                        // Gandi 加载时把它当成解析失败 —— 这里统一补成 {}。
+                        // 如果恰好里面已经有内容（RW 高级模式注入的帧数据），直接保留。
                         if (!target.frames || typeof target.frames !== 'object') {
                             target.frames = {};
                         }
-                        if (target.isStage &&
-                            (!target.extractProperties ||
-                              typeof target.extractProperties !== 'object')) {
+                        if (!target.extractProperties ||
+                            typeof target.extractProperties !== 'object') {
                             target.extractProperties = {};
                         }
 
