@@ -562,10 +562,24 @@ class MenuBar extends React.Component {
                     // Gandi project.json 里 costume/sound 必须带 id 字段，
                     // 格式是 scratch-blocks 的 20 字符随机串（genUid 风格）。
                     // RemixWarp 的 scratch-vm saveProjectSb3DontZip 不写这个字段，
-                    // 所以转换时统一用 Blockly 的 idGenerator 回填。
-                    const ScratchBlocks = await this.ensureScratchBlocks();
-                    const genTargetAssetId = () =>
-                        ScratchBlocks.utils.idGenerator.genUid();
+                    // 所以转换时统一用 scratch-blocks genUid 算法本地回填。
+                    //
+                    // 注意：GUI 里的 LazyScratchBlocks 懒加载出来的对象没有把
+                    // utils.idGenerator.genUid() 暴露出来（LazyScratchBlocks 是
+                    // 一个 proxy，只转发 blocks 工具层），所以直接在这里复制
+                    // scratch-blocks 原版 genUid() 实现 —— 算法一字不差：20 个
+                    // 字符，字符集 [0-9a-zA-Z][\[][\]][(][)]!#$%^&*_\-+=,./?><;:\'"\{\}\|`~]
+                    const genTargetAssetId = () => {
+                        const chars =
+                            '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' +
+                            '[]()!#$%^&*_-+=,./?><;:{}|`~';
+                        let result = '';
+                        // scratch-blocks genUid 用的是 20 字符（62 个字母数字 + 其余）
+                        for (let i = 0; i < 20; i++) {
+                            result += chars.charAt(Math.floor(Math.random() * chars.length));
+                        }
+                        return result;
+                    };
 
                     // Step 1 — 拆解扩展
                     const extIds = (projectJson.extensions || [])
