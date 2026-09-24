@@ -1619,10 +1619,28 @@ class Blocks extends React.Component {
     }
     onVisualReport (data) {
         if (!workspaceIsAlive(this)) return;
-        // 拆分模式：使用 getBlockById 确保只处理当前工作区存在的积木
-        const block = this.workspace.getBlockById(data.id);
+        // 先在主脚本区 workspace 里找积木
+        let block = this.workspace.getBlockById(data.id);
+        let ownerWorkspace = this.workspace;
+        // 主工作区找不到时，去 flyout workspace 里找
+        // （用户点击工具箱里 reporter 积木触发运行时，积木只存在于 flyout 里）
+        if (!block && typeof this.workspace.getFlyout === 'function') {
+            try {
+                const flyout = this.workspace.getFlyout();
+                const flyoutWorkspace = flyout && (
+                    (typeof flyout.getWorkspace === 'function') ?
+                        flyout.getWorkspace() : flyout.workspace_
+                );
+                if (flyoutWorkspace) {
+                    block = flyoutWorkspace.getBlockById(data.id);
+                    if (block) ownerWorkspace = flyoutWorkspace;
+                }
+            } catch (e) {
+                // ignore flyout 查找错误，保持 block=null 继续返回
+            }
+        }
         if (!block) return;
-        this.workspace.reportValue(data.id, data.value, data.fullValue);
+        ownerWorkspace.reportValue(data.id, data.value, data.fullValue);
     }
     getToolboxXML () {
         try {
