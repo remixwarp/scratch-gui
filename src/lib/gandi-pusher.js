@@ -114,20 +114,84 @@ export const pushExtension = async (extId, source) => {
     return `https://rw-gandi.pages.dev/rwc/${safeId}.js`;
 };
 
+/*
+ * Rewrite patterns that TurboWarp's extension compiler emits but Gandi's
+ * runtime cannot resolve.  The goal is to produce an extension whose asset
+ * URLs are plain, fetch()-able HTTPS links and whose WASM binary loading
+ * logic does not rely on TurboWarp-only primitives (__internal.*,
+ * Scratch.external.blob, and so on).
+ *
+ * Patterns handled:
+ *
+ *   1.  "generated dependency -- Scratch.external.blob(URL)" wrapper
+ *       blocks (with "end generated dependency" terminator) that compile
+ *       dependencies into Promise.resolve(new Blob([...], ...))
+ *       -> replace the whole wrapper with just the original URL literal
+ *          (which the comment block always carries).
+ *
+ *   2.  URL.createObjectURL( <a plain https:// URL> )
+ *       -> the URL literal itself.  There's no ObjectURL shim to call.
+ *
+ *   3.  locateFile(path) blocks that throw for SIMD WASM or rely on a
+ *       TurboWarp-provided fileMap populated through pattern 1's blobs.
+ *       We collapse them down to a one-liner that returns fileMap[path]
+ *       unchanged, so the rewritten CDN URL from pattern 1 flows through.
+ */
+const TW_BLOB_DEP_PATTERN =
+    /\/\*\s*generated dependency -- Scratch\.external\.blob\(\s*"([^"]+)"\s*\)\s*\*\/(?:await\s+)?Promise\.resolve\(new Blob\([\s\S]*?\)\)\s*\/\*\s*end generated dependency\s*\*\//g;
+
+// await? /* comment */import(URL.createObjectURL(new Blob([...]))/* end */
+const TW_IMPORTMODULE_DEP_PATTERN =
+    /await?\s*\/\*\s*generated dependency -- Scratch\.external\.importModule\(\s*"([^"]+)"\s*\)\s*\*\/import\([\s\S]*?\)\s*\/\*\s*end generated dependency\s*\*\//g;
+
+// URL.createObjectURL(whitespace await? whitespace "https://..." whitespace)
+// — the blob step above may leave await + URL on the same line.
+const URL_CREATE_OBJECTURL_PATTERN =
+    /URL\.createObjectURL\(\s*(?:await\s*\n?\s*)?("https?:\/\/[^"]+")\s*\)/g;
+
+const LOCATEFILE_REWRITE_PATTERN =
+    /locateFile\s*:\s*\(([^)]*)\)\s*=>\s*\{[\s\S]*?return\s+fileMap\[\1\];\s*\}/g;
+
+const rewriteExtensionSourceForGandi = (source) => {
+    if (!source) return '';
+    let out = source;
+
+    // 1. Scratch.external.blob wrapper → original CDN URL.
+    out = out.replace(TW_BLOB_DEP_PATTERN, (_m, url) => JSON.stringify(url));
+
+    // 2. Scratch.external.importModule wrapper → await import("URL").
+    out = out.replace(
+        TW_IMPORTMODULE_DEP_PATTERN,
+        (_m, url) => `await import(${JSON.stringify(url)})`
+    );
+
+    // 3. URL.createObjectURL(/* URL */) → URL literal.
+    out = out.replace(URL_CREATE_OBJECTURL_PATTERN, (_m, url) => url);
+
+    // 4. locateFile block → one-liner that returns the rewritten fileMap.
+    out = out.replace(
+        LOCATEFILE_REWRITE_PATTERN,
+        (_m, arg) => `locateFile: (${arg.trim()}) => fileMap[${arg.trim()}]`
+    );
+
+    return out;
+};
+
 /**
- * Light normalisation: the source stays untouched beyond:
- *   - ensure there is a single `// Gandi Format` marker (dedup preventer)
- *   - rewrite any `id: "..."` literal to lowercase-underscore so Gandi's
- *     block opcode lookups line up with what we advertise in wildExtensions.
+ * Light normalisation + TurboWarp → Gandi runtime rewrites.
  */
 export const normalizeExtensionForGandi = (source, extId) => {
     if (!source || !source.trim()) return '';
     const safeId = String(extId).toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-    let out = source.replace(
-        /id\s*:\s*(['"])(.+?)\1/g,
+
+    let out = rewriteExtensionSourceForGandi(source);
+
+    out = out.replace(
+        /\bid\s*:\s*(['"])(.+?)\1/g,
         (_m, q, id) =>
             `id: ${q}${id.toLowerCase().replace(/-/g, '_')}${q}`
     );
+
     if (!out.includes('// Gandi Format')) {
         out = `// Gandi Format (from RemixWarp, id=${safeId})\n${out}`;
     }
