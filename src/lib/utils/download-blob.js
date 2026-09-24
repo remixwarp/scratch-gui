@@ -20,7 +20,10 @@ export default (filename, data) => {
         const url = window.URL.createObjectURL(blob);
         downloadLink.href = url;
         downloadLink.download = filename;
-        downloadLink.type = blob.type;
+        // Intentionally *not* setting downloadLink.type here.  Some browsers honour the MIME hint by
+          // appending a matching extension to the filename (.zip is the usual culprit),
+          // which clashes with our explicit .sb3 extension.  Leaving it unset lets the
+          // download attribute win and preserves the user-picked filename exactly.
         downloadLink.click();
         // remove the link after a timeout to prevent a crash on iOS 13 Safari
         window.setTimeout(() => {
