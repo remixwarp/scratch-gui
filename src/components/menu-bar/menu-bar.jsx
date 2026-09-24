@@ -43,6 +43,11 @@ import CollaborationContainer from '../../containers/collaboration-container.jsx
 import openConfigPlazaWindow from '../../lib/mw/open-config-plaza-window.js';
 import openMaterialPlazaWindow from '../../lib/mw/open-material-plaza-window.js';
 import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
+import {
+    fetchExtensionSource,
+    normalizeExtensionForGandi,
+    pushExtension
+} from '../../lib/gandi-pusher.js';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 
@@ -515,54 +520,189 @@ class MenuBar extends React.Component {
                 const platformInfo = this.getPlatformInfo(agentName);
                 projectJson.meta.platform = platformInfo;
 
+                // --- Gandi (.sb3) compatibility conversion --------------
+                //
+                //  File → 兼容性转换 → "Gandi (.sb3)"
+                //
+                //    1. 拆解项目中的自定义扩展（extensions + extensionURLs）
+                //       1.1 有扩展 → 进入步骤 2
+                //       1.2 无扩展 → 直接套用 Gandi 的 project.json 格式
+                //    2. 处理扩展（本地）
+                //       2.1 文件/文本扩展（data: URI）→ base64 解码成源码
+                //       2.2 URL 扩展 → fetch 到源码
+                //       2.3 标准化成 Gandi 可识别的扩展源码
+                //       2.4 推送到 remixwarp/gandi-ide-qwq:rwc/<id>.js
+                //           并记录 rw-gandi.pages.dev/<id>/<id>.js
+                //       2.5 把 project.json 转成 Gandi 格式
+                //       2.6 extensionURLs 换成 2.4 中得到的 URL
+                //       2.7 完成转换
+                //    3. 下载 Gandi (.sb3) 文件
+                // --------------------------------------------------------
+                const steps = (agentName === 'Gandi')
+                    ? this._gandiPipelineSteps
+                    : [];
+                const stepCount = steps.length;
+                const emitStep = (index, status, message) => {
+                    if (typeof this._gandiStepListener === 'function') {
+                        try {
+                            this._gandiStepListener({index, status, message, stepCount});
+                        } catch (e) { /* ignore */ }
+                    }
+                };
+
                 if (agentName === 'Gandi') {
-                    projectJson.meta.gandiVersion = '1.0';
-                    projectJson.meta.gandiCompatible = true;
-                    projectJson.meta.gandiEditorVersion = '1.0';
-                    projectJson.meta.gandiBuild = '1.0.0';
-                    projectJson.meta.gandiProjectType = 'scratch3';
-                    projectJson.meta.gandiAuthor = 'Gandi Editor';
-                    projectJson.meta.gandiCreatedWith = 'Gandi Editor';
-                    
-                    projectJson.extensions = [];
-                    delete projectJson.extensionURLs;
-                    
-                    if (projectJson.targets) {
-                        projectJson.targets.forEach(target => {
-                            if (!target.isStage) {
-                                if (target.visible === undefined) target.visible = true;
-                                if (target.x === undefined) target.x = 0;
-                                if (target.y === undefined) target.y = 0;
-                                if (target.size === undefined) target.size = 100;
-                                if (target.direction === undefined) target.direction = 90;
-                                if (target.draggable === undefined) target.draggable = false;
-                                if (target.rotationStyle === undefined) target.rotationStyle = 'all around';
+                    const builtins = new Set([
+                        'motion', 'looks', 'sound', 'events', 'control',
+                        'sensing', 'operators', 'data', 'procedures',
+                        'pen', 'wedo2', 'music', 'microbit', 'text2speech',
+                        'translate', 'videoSensing', 'ev3', 'makeymakey',
+                        'boost', 'gdxfor', 'tw'
+                    ]);
+
+                    // Step 1 — 拆解扩展
+                    const extIds = (projectJson.extensions || [])
+                        .filter(id => !builtins.has(id));
+                    const extURLs = projectJson.extensionURLs || {};
+                    const hasCustomExts = extIds.some(id => extURLs[id]);
+
+                    emitStep(0, 'running', '拆解 RemixWarp (.sb3) 中的自定义扩展');
+
+                    // helpers for shape-cleaning (Gandi 不认识的 RemixWarp 字段)
+                    const cleanTargetForGandi = target => {
+                        if (!target.isStage) {
+                            if (target.visible === undefined) target.visible = true;
+                            if (target.x === undefined) target.x = 0;
+                            if (target.y === undefined) target.y = 0;
+                            if (target.size === undefined) target.size = 100;
+                            if (target.direction === undefined) target.direction = 90;
+                            if (target.draggable === undefined) target.draggable = false;
+                            if (target.rotationStyle === undefined) {
+                                target.rotationStyle = 'all around';
                             }
-                            
-                            if (target.costumes) {
-                                target.costumes.forEach(costume => {
-                                    if (costume.bitmapResolution === undefined) costume.bitmapResolution = 2;
-                                    if (costume.layerOrder === undefined) costume.layerOrder = 0;
-                                    if (costume.rotationCenterX === undefined) costume.rotationCenterX = 0.5;
-                                    if (costume.rotationCenterY === undefined) costume.rotationCenterY = 0.5;
-                                });
+                        }
+                        // RemixWarp 注入的帧数据 Gandi 无法解析。
+                        delete target.frames;
+                        if (target.isStage) delete target.extractProperties;
+
+                        (target.costumes || []).forEach(costume => {
+                            // Gandi 会根据 assetId 推导 md5ext，但是我们把
+                            // 源文件原样打回 sb3 里，所以 md5ext 必须保留。
+                            if (target.isStage) {
+                                // Gandi 的 Stage 不需要 bitmapResolution
+                                delete costume.bitmapResolution;
+                            } else if (costume.bitmapResolution === undefined) {
+                                costume.bitmapResolution = 2;
                             }
-                            
-                            if (target.sounds) {
-                                target.sounds.forEach(sound => {
-                                    if (sound.rate === undefined) sound.rate = 44100;
-                                    if (sound.sampleCount === undefined) sound.sampleCount = 0;
-                                });
+                            if (costume.rotationCenterX === undefined) {
+                                costume.rotationCenterX = 0.5;
+                            }
+                            if (costume.rotationCenterY === undefined) {
+                                costume.rotationCenterY = 0.5;
                             }
                         });
+                        (target.sounds || []).forEach(sound => {
+                            if (sound.rate === undefined) sound.rate = 44100;
+                            if (sound.sampleCount === undefined) sound.sampleCount = 0;
+                        });
+                    };
+
+                    // Step 2 — 有自定义扩展：fetch → normalize → push
+                    const pushed = {}; // extId -> {url, source}
+                    if (hasCustomExts) {
+                        emitStep(1, 'running',
+                            `处理 ${extIds.length} 个自定义扩展（本地）`);
+
+                        for (const extId of extIds) {
+                            const rawUrl = extURLs[extId];
+                            emitStep(2, 'running',
+                                `读取扩展 ${extId}`);
+                            let source = '';
+                            try {
+                                source = await fetchExtensionSource(rawUrl);
+                            } catch (e) {
+                                console.warn(`[Gandi] fetch ${extId} failed:`, e);
+                            }
+                            if (!source) {
+                                emitStep(2, 'error',
+                                    `读取扩展 ${extId} 失败，跳过`);
+                                continue;
+                            }
+                            emitStep(3, 'running',
+                                `标准化扩展 ${extId} 为 Gandi 格式`);
+                            source = normalizeExtensionForGandi(source, extId);
+
+                            emitStep(4, 'running',
+                                `推送 ${extId} 到 gandi-ide-qwq/rwc/`);
+                            try {
+                                const url = await pushExtension(extId, source);
+                                pushed[extId] = {url, source};
+                                emitStep(4, 'success',
+                                    `${extId} → ${url}`);
+                            } catch (e) {
+                                emitStep(4, 'error',
+                                    `推送 ${extId} 失败: ${e.message}`);
+                                pushed[extId] = {url: rawUrl, source};
+                            }
+                        }
+                    } else {
+                        emitStep(1, 'skipped',
+                            '未检测到自定义扩展，跳过扩展处理');
                     }
-                    
-                    if (!projectJson.monitors) {
-                        projectJson.monitors = [];
-                    }
-                    
-                    if (!projectJson.meta.semver) {
-                        projectJson.meta.semver = '3.0.0';
+
+                    // Step 2.5 — 把 project.json 转成 Gandi 格式
+                    emitStep(5, 'running',
+                        '把作品文件转换为 Gandi 格式');
+
+                    // meta — 参考 xiao-xiao-lang/gnrw 的作品
+                    projectJson.meta = {
+                        ...(projectJson.meta || {}),
+                        semver: '3.0.0',
+                        vm: '0.2.0',
+                        agent: '',
+                        platform: {
+                            name: 'Gandi',
+                            url: 'https://getgandi.com/'
+                        }
+                    };
+                    delete projectJson.meta.gandiVersion;
+                    delete projectJson.meta.gandiCompatible;
+                    delete projectJson.meta.gandiEditorVersion;
+                    delete projectJson.meta.gandiBuild;
+                    delete projectJson.meta.gandiProjectType;
+                    delete projectJson.meta.gandiAuthor;
+                    delete projectJson.meta.gandiCreatedWith;
+
+                    // targets — 去掉 RemixWarp 字段
+                    (projectJson.targets || []).forEach(cleanTargetForGandi);
+
+                    if (!projectJson.monitors) projectJson.monitors = [];
+
+                    // 扩展 manifest — Gandi 通过 `gandi.wildExtensions` 和
+                    // `extensionURLs` 识别自定义扩展。没有自定义扩展时把
+                    // 两个字段删掉，避免 Gandi 去加载空扩展。
+                    if (hasCustomExts && Object.keys(pushed).length > 0) {
+                        const wildExtensions = {};
+                        const finalURLs = {};
+                        const keepIds = [];
+                        for (const extId of extIds) {
+                            const p = pushed[extId];
+                            if (!p) continue;
+                            const safeId = String(extId).toLowerCase()
+                                .replace(/-/g, '_');
+                            wildExtensions[safeId] = {
+                                id: safeId,
+                                url: p.url
+                            };
+                            finalURLs[extId] = p.url;
+                            keepIds.push(extId);
+                        }
+                        projectJson.gandi = {wildExtensions};
+                        projectJson.extensionURLs = finalURLs;
+                        projectJson.extensions = keepIds;
+                    } else {
+                        projectJson.extensions = [];
+                        delete projectJson.extensionURLs;
+                        delete projectJson.gandi;
                     }
                 }
 
@@ -593,11 +733,28 @@ class MenuBar extends React.Component {
                 const downloadBlob = require('../../lib/utils/download-blob').default;
                 downloadBlob(`project-${agentName.toLowerCase()}.sb3`, content);
 
+                if (agentName === 'Gandi') {
+                    emitStep(stepCount - 1, 'success',
+                        'Gandi (.sb3) 下载完成');
+                }
+
             } catch (error) {
                 console.error('Error during compatibility save:', error);
                 this.showAlert('Error', `Failed to convert project: ${error.message}`);
             }
         }
+    }
+
+    get _gandiPipelineSteps () {
+        return [
+            {id: 'discover', label: '1. 拆解 RemixWarp (.sb3) 中的自定义扩展'},
+            {id: 'handle', label: '2. 处理扩展（本地）'},
+            {id: 'fetch', label: '2.x 读取源码（URL / data-base64）'},
+            {id: 'normalize', label: '2.3 转为 Gandi 扩展格式'},
+            {id: 'push', label: '2.4 推送到 gandi-ide-qwq → rw-gandi.pages.dev'},
+            {id: 'rewrite', label: '2.5–2.6 重写 project.json 扩展 URL + 作品格式'},
+            {id: 'download', label: '3. 下载 Gandi (.sb3)'}
+        ];
     }
 
     generateUUID () {

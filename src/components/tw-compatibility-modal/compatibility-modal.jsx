@@ -2,7 +2,15 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {defineMessages, FormattedMessage, intlShape, injectIntl} from 'react-intl';
-import {Download, AlertTriangle, CheckCircle2, ExternalLink} from 'lucide-react';
+import {
+    Download,
+    AlertTriangle,
+    CheckCircle2,
+    ExternalLink,
+    Circle,
+    Loader2,
+    XCircle
+} from 'lucide-react';
 
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
@@ -48,6 +56,11 @@ const messages = defineMessages({
         defaultMessage: '转换并下载',
         description: 'Convert button text',
         id: 'tw.compatibilityModal.convertAndDownload'
+    },
+    workflowTitle: {
+        defaultMessage: 'Gandi 工作流',
+        description: 'Title of the Gandi workflow pipeline section',
+        id: 'tw.compatibilityModal.workflowTitle'
     }
 });
 
@@ -67,37 +80,84 @@ class CompatibilityModal extends React.Component {
             selectedPlatform: 'Scratch',
             isConverting: false,
             conversionSuccess: false,
-            issues: []
+            issues: [],
+            // Workflow pipeline state: array of {label, status, message}
+            pipeline: []
         };
         this.handleConvert = this.handleConvert.bind(this);
         this.handlePlatformChange = this.handlePlatformChange.bind(this);
+        this._onGandiStep = this._onGandiStep.bind(this);
+    }
+
+    componentDidMount () {
+        // Wire up step listener so the menu-bar's Gandi conversion pipeline
+        // can stream progress updates into this modal.
+        const inst = window.__remixWarpMenuBarInstance;
+        if (inst) inst._gandiStepListener = this._onGandiStep;
+    }
+
+    componentWillUnmount () {
+        const inst = window.__remixWarpMenuBarInstance;
+        if (inst && inst._gandiStepListener === this._onGandiStep) {
+            inst._gandiStepListener = null;
+        }
+    }
+
+    _onGandiStep ({index, status, message, stepCount}) {
+        const inst = window.__remixWarpMenuBarInstance;
+        if (!inst) return;
+        const steps = inst._gandiPipelineSteps;
+        if (!Array.isArray(steps)) return;
+
+        this.setState(prev => {
+            const next = (prev.pipeline && prev.pipeline.length === steps.length)
+                ? prev.pipeline.slice()
+                : steps.map(s => ({label: s.label, status: 'pending', message: ''}));
+            if (index >= 0 && index < next.length) {
+                next[index] = {label: steps[index].label, status, message: message || ''};
+            }
+            return {pipeline: next};
+        });
     }
 
     handlePlatformChange (event) {
         this.setState({
             selectedPlatform: event.target.value,
             conversionSuccess: false,
-            issues: []
+            issues: [],
+            pipeline: []
         });
     }
 
     async handleConvert () {
         const {selectedPlatform} = this.state;
+        const inst = window.__remixWarpMenuBarInstance;
+
+        // Reset pipeline for Gandi
+        if (selectedPlatform === 'Gandi' && inst && Array.isArray(inst._gandiPipelineSteps)) {
+            this.setState({
+                pipeline: inst._gandiPipelineSteps.map(s => ({
+                    label: s.label,
+                    status: 'pending',
+                    message: ''
+                }))
+            });
+        }
+
         this.setState({isConverting: true, conversionSuccess: false});
 
         try {
             // 获取兼容性问题
             const issues = this.props.getCompatibilityIssues(selectedPlatform);
-            
+
             if (issues.length > 0) {
-                this.setState({issues});
-                this.setState({isConverting: false});
+                this.setState({issues, isConverting: false});
                 return;
             }
 
             // 执行转换
             await this.props.handleCompatibilitySave(selectedPlatform);
-            
+
             this.setState({
                 isConverting: false,
                 conversionSuccess: true,
@@ -124,11 +184,79 @@ class CompatibilityModal extends React.Component {
         }
     }
 
+    renderPipeline () {
+        const {pipeline} = this.state;
+        if (!pipeline || pipeline.length === 0) return null;
+
+        return (
+            <div className={styles.pipeline}>
+                <div className={styles.pipelineHeader}>
+                    <span className={styles.pipelineTitle}>
+                        <FormattedMessage {...messages.workflowTitle} />
+                    </span>
+                    <a
+                        href="https://github.com/remixwarp/gandi-ide-qwq"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.pipelineLink}
+                    >
+                        gandi-ide-qwq
+                    </a>
+                </div>
+                <ol className={styles.pipelineList}>
+                    {pipeline.map((step, idx) => {
+                        const Icon = step.status === 'running'
+                            ? Loader2
+                            : step.status === 'success'
+                                ? CheckCircle2
+                                : step.status === 'error'
+                                    ? XCircle
+                                    : step.status === 'skipped'
+                                        ? CheckCircle2
+                                        : Circle;
+                        return (
+                            <li
+                                key={idx}
+                                className={classNames(
+                                    styles.pipelineStep,
+                                    {
+                                        [styles.stepPending]: step.status === 'pending',
+                                        [styles.stepRunning]: step.status === 'running',
+                                        [styles.stepSuccess]: step.status === 'success',
+                                        [styles.stepError]: step.status === 'error',
+                                        [styles.stepSkipped]: step.status === 'skipped'
+                                    }
+                                )}
+                            >
+                                <div className={styles.pipelineStepHead}>
+                                    <Icon
+                                        className={classNames(
+                                            styles.stepIcon,
+                                            {[styles.spin]: step.status === 'running'}
+                                        )}
+                                        size={16}
+                                    />
+                                    <span className={styles.stepLabel}>{step.label}</span>
+                                </div>
+                                {step.message && (
+                                    <div className={styles.stepMessage}>
+                                        {step.message}
+                                    </div>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ol>
+            </div>
+        );
+    }
+
     render () {
         const {selectedPlatform, isConverting, conversionSuccess, issues} = this.state;
         const {intl} = this.props;
         const selectedPlatformInfo = platforms.find(p => p.id === selectedPlatform);
-        
+        const isGandi = selectedPlatform === 'Gandi';
+
         const errors = issues.filter(i => i.severity === 'error');
         const warnings = issues.filter(i => i.severity === 'warning');
 
@@ -139,13 +267,13 @@ class CompatibilityModal extends React.Component {
                         <span className={styles.platformName}>RemixWarp</span>
                         <span className={styles.platformExtension}>.sb3</span>
                     </div>
-                    
+
                     <div className={styles.arrowContainer}>
                         <svg className={styles.arrow} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M5 12h14M12 5l7 7-7 7"/>
                         </svg>
                     </div>
-                    
+
                     <select
                         className={styles.targetSelect}
                         value={selectedPlatform}
@@ -174,9 +302,9 @@ class CompatibilityModal extends React.Component {
                             />
                         </div>
                         <div className={styles.infoFooter}>
-                            <a 
-                                href={selectedPlatformInfo.url} 
-                                target="_blank" 
+                            <a
+                                href={selectedPlatformInfo.url}
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className={styles.platformLink}
                             >
@@ -186,6 +314,8 @@ class CompatibilityModal extends React.Component {
                         </div>
                     </div>
                 )}
+
+                {isGandi && this.renderPipeline()}
 
                 {issues.length > 0 && (
                     <div className={styles.issuesContainer}>

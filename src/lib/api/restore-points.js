@@ -949,6 +949,10 @@ const copyCloudRestorePointLink = async (id, filename) => {
     }
 };
 
+// Public accessor used by other features (e.g. Gandi compatibility
+// conversion) so the token stays defined in exactly one place.
+export const getNetworkRestoreToken = () => GITHUB_TOKEN;
+
 export default {
     TYPE_AUTOMATIC,
     TYPE_MANUAL,
