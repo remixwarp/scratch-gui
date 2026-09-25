@@ -89,18 +89,28 @@ const getFileSha = async (filePath) => {
 };
 
 /**
- * Push a single extension source file to `rwc/<extId>.js` on the Gandi
- * mirror repo and return the final rw-gandi.pages.dev URL that it will be
- * served from.
+ * Push a single extension source file under
+ * `rwc/<folderName>/<extId>.js` on the Gandi mirror repo and return the
+ * final rw-gandi.pages.dev URL that it will be served from.
+ *
+ * `folderName` is a stable id representing one conversion run (usually
+ * `Date.now()` → base64url) so every project's extensions land in its
+ * own namespace — never colliding with another project's files and never
+ * polluting the top-level `rwc/` directory.
  */
-export const pushExtension = async (extId, source) => {
+export const pushExtension = async (extId, source, folderName) => {
     const safeId = String(extId).toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-    const filePath = `rwc/${safeId}.js`;
+    // folderName 可能是 undefined（旧调用），则兼容为直接放在 rwc/<id>.js
+    // 但根据新规则，调用方都必须传 folderName。
+    const folder = folderName ? String(folderName) : '';
+    const filePath = folder
+        ? `rwc/${folder}/${safeId}.js`
+        : `rwc/${safeId}.js`;
     const base64 = arrayBufferToBase64(new TextEncoder().encode(source));
     const sha = await getFileSha(filePath);
 
     const body = {
-        message: `Gandi compat: upload extension ${safeId}`,
+        message: `Gandi compat: upload extension ${safeId}${folder ? ' → ' + folder : ''}`,
         content: base64,
         branch: GANDI_REPO_BRANCH
     };
@@ -111,7 +121,20 @@ export const pushExtension = async (extId, source) => {
         body: JSON.stringify(body)
     });
 
-    return `https://rw-gandi.pages.dev/rwc/${safeId}.js`;
+    return `https://rw-gandi.pages.dev/${filePath}`;
+};
+
+/**
+ * Encode a timestamp (number, e.g. Date.now()) into a URL-safe base64
+ * string that can be used as a stable folder name.  The value is
+ * deterministic — same input always yields same output — so callers can
+ * capture it once at the start of a conversion run and reuse it everywhere
+ * without the risk of multiple folders appearing for one project.
+ */
+export const encodeTimestampFolder = (ts) => {
+    const str = String(ts);
+    const bin = String.fromCharCode(...new TextEncoder().encode(str));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
 /*

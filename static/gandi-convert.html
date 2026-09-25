@@ -422,18 +422,26 @@ const getFileSha = async (filePath) => {
 };
 
 /**
- * Push a single extension source file to `rwc/<extId>.js` on the Gandi
- * mirror repo and return the final rw-gandi.pages.dev URL that it will be
- * served from.
+ * Push a single extension source file under
+ * `rwc/<folderName>/<extId>.js` on the Gandi mirror repo and return the
+ * final rw-gandi.pages.dev URL that it will be served from.
+ *
+ * `folderName` is a stable id representing one conversion run (usually
+ * `Date.now()` → base64url) so every project's extensions land in its own
+ * namespace — never colliding with another project's files and never
+ * polluting the top-level `rwc/` directory.
  */
-const pushExtension = async (extId, source) => {
+const pushExtension = async (extId, source, folderName) => {
     const safeId = String(extId).toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-    const filePath = `rwc/${safeId}.js`;
+    const folder = folderName ? String(folderName) : '';
+    const filePath = folder
+        ? `rwc/${folder}/${safeId}.js`
+        : `rwc/${safeId}.js`;
     const base64 = arrayBufferToBase64(new TextEncoder().encode(source));
     const sha = await getFileSha(filePath);
 
     const body = {
-        message: `Gandi compat: upload extension ${safeId}`,
+        message: `Gandi compat: upload extension ${safeId}${folder ? ' → ' + folder : ''}`,
         content: base64,
         branch: GANDI_REPO_BRANCH
     };
@@ -444,7 +452,20 @@ const pushExtension = async (extId, source) => {
         body: JSON.stringify(body)
     });
 
-    return `https://rw-gandi.pages.dev/rwc/${safeId}.js`;
+    return `https://rw-gandi.pages.dev/${filePath}`;
+};
+
+/**
+ * Encode a timestamp (number, e.g. Date.now()) into a URL-safe base64
+ * string that can be used as a stable folder name.  The value is
+ * deterministic — same input always yields same output — so callers can
+ * capture it once at the start of a conversion run and reuse it everywhere
+ * without the risk of multiple folders appearing for one project.
+ */
+const encodeTimestampFolder = (ts) => {
+    const str = String(ts);
+    const bin = String.fromCharCode(...new TextEncoder().encode(str));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
 /*
@@ -710,6 +731,12 @@ const convertToGandiSb3 = async ({
     };
 
     // Step 0 — 拆解扩展
+    // 每个项目一次独立的 rwc/<folderName>/ 文件夹。folderName
+    // 在转换开始那一刻就固定好，以后永远不会变 —— 该项目里
+    // 所有自定义扩展都 push 到同一个目录，project.json 里的
+    // extensionURLs 最终也写这个目录下的 URL。
+    const gandiFolderName = encodeTimestampFolder(Date.now());
+
     emitStep(0, 'running',
         '1. 拆解 RemixWarp (.sb3) 中的自定义扩展');
 
@@ -775,9 +802,9 @@ const convertToGandiSb3 = async ({
             source = normalizeExtensionForGandi(source, extId);
 
             emitStep(4, 'running',
-                `推送 ${extId} 到 gandi-ide-qwq/rwc/`);
+                `推送 ${extId} → gandi-ide-qwq/rwc/${gandiFolderName}/`);
             try {
-                const url = await pushExtension(extId, source);
+                const url = await pushExtension(extId, source, gandiFolderName);
                 pushed[extId] = {url, source};
                 emitStep(4, 'success',
                     `${extId} → ${url}`);

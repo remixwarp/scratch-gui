@@ -46,7 +46,8 @@ import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.j
 import {
     fetchExtensionSource,
     normalizeExtensionForGandi,
-    pushExtension
+    pushExtension,
+    encodeTimestampFolder
 } from '../../lib/gandi-pusher.js';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
@@ -611,6 +612,12 @@ class MenuBar extends React.Component {
                 }
 
                 if (agentName === 'Gandi') {
+                    // 每个项目一次独立的 rwc/<folderName>/ 文件夹。folderName
+                    // 在转换开始那一刻就固定好，以后永远不会变 —— 该项目里
+                    // 所有自定义扩展都 push 到同一个目录，project.json 里的
+                    // extensionURLs 最终也写这个目录下的 URL。
+                    const gandiFolderName = encodeTimestampFolder(Date.now());
+
                     const builtins = new Set([
                         'motion', 'looks', 'sound', 'events', 'control',
                         'sensing', 'operators', 'data', 'procedures',
@@ -833,9 +840,9 @@ class MenuBar extends React.Component {
                             source = normalizeExtensionForGandi(source, extId);
 
                             emitStep(4, 'running',
-                                `推送 ${extId} 到 gandi-ide-qwq/rwc/`);
+                                `推送 ${extId} → gandi-ide-qwq/rwc/${gandiFolderName}/`);
                             try {
-                                const url = await pushExtension(extId, source);
+                                const url = await pushExtension(extId, source, gandiFolderName);
                                 pushed[extId] = {url, source};
                                 emitStep(4, 'success',
                                     `${extId} → ${url}`);
