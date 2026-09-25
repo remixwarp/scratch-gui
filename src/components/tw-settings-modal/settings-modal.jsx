@@ -25,6 +25,10 @@ import storage from '../../lib/persistence/storage.js';
 import {costumeUpload} from '../../lib/file-uploader.js';
 
 import {STYLE_GROUPS, setStyleSetting} from '../../lib/mw-style-settings';
+import {
+    openGitModal,
+    closeSettingsModal
+} from '../../reducers/modals.js';
 import StylePreview from './style-preview.jsx';
 import SettingsStore from '../../addons/settings-store-singleton.js';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
@@ -3082,7 +3086,23 @@ const SettingsRouter = ({view, ...handlers}) => {
     case 'debugger':
         return <DebuggerPage {...handlers} />;
     case 'versionControl':
-        return <VersionControlPage {...handlers} />;
+        // 用户点击"版本控制" → 直接跳转到 git 仓库窗口（工具菜单下的那个），
+        // 不要让 VersionControlPage 渲染 —— 它只设置 git author / email /
+        // defaultBranch / autoCommit 等参数，界面简陋且 inject('dc') 时
+        // 容易 crash（injectIntl + inject 双 HOC 冲突会触发 "Object(...) is
+        // not a function"）。
+        //
+        // 同时 closeSettingsModal + openGitModal —— 先关再开避免两个 modal
+        // 同时打开 overlay 叠在一起。
+        if (typeof handlers.dispatch === 'function') {
+            handlers.dispatch(closeSettingsModal());
+            // 用 setTimeout 让 redux 先 close settingsModal，再 open gitModal
+            // —— 同一次 dispatch 里开两个 modal 会让 close 被后面的 open 覆盖
+            setTimeout(() => handlers.dispatch(openGitModal()), 0);
+        }
+        // 返回 null，settings modal 自己会在 closeSettingsModal 后消失，
+        // 下一个 event loop gitModal 开起来
+        return null;
     case 'variableManager':
         return <VariableManagerPage {...handlers} />;
     case 'experimental':
