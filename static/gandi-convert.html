@@ -306,6 +306,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
 (function(){
 
+
+// <script> tag can't do ESM 'import JSZip from ...'. JSZip is already
+// available on window (loaded by the previous inline JSZip <script>).
+var JSZip = window.JSZip;
+
+
 const base64ToArrayBuffer = base64 => {
     const binaryString = atob(base64);
     const len = binaryString.length;
@@ -315,7 +321,6 @@ const base64ToArrayBuffer = base64 => {
     }
     return array.buffer;
 };
-
 const arrayBufferToBase64 = buffer => {
     let binary = '';
     const bytes = new Uint8Array(buffer);
@@ -337,6 +342,8 @@ const arrayBufferToBase64 = buffer => {
  * (remixwarp/gandi-ide-qwq) while reusing the network-restore-point token
  * already defined in lib/api/restore-points.js.
  */
+
+
 // Target repo for pushed custom extensions (Gandi).
 const GANDI_REPO_OWNER = 'remixwarp';
 const GANDI_REPO_NAME = 'gandi-ide-qwq';
@@ -529,7 +536,6 @@ const normalizeExtensionForGandi = (source, extId) => {
 };
 
 
-
 /**
  * src/lib/gandi-pipeline.js
  *
@@ -545,7 +551,8 @@ const normalizeExtensionForGandi = (source, extId) => {
  * run in a vanilla-browser context.  The GitHub-extension-push step is
  * performed by src/lib/gandi-pusher.js (same GitHub token source).
  */
-import JSZip from 'jszip';
+
+
 const BUILTIN_EXTENSIONS = new Set([
     'motion', 'looks', 'sound', 'events', 'control',
     'sensing', 'operators', 'data', 'procedures',
@@ -684,7 +691,7 @@ const cleanTargetForGandi = (target, extIdMap) => {
  *        optional progress callback
  * @returns {Promise<{content: Uint8Array, filename: string, finalProjectJson: object, finalFiles: object}>}
  */
-var convertToGandiSb3 = async ({
+const convertToGandiSb3 = async ({
     projectJson,
     projectFiles,
     onStep = () => {}
@@ -870,7 +877,6 @@ convertToGandiSb3.stepLabels = [
     {id: 'rewrite',  label: '2.5–2.6 重写 project.json 扩展 URL + 作品格式'},
     {id: 'download', label: '3. 下载 Gandi (.sb3)'}
 ];
-
 
 
 window.convertToGandiSb3 = convertToGandiSb3;
