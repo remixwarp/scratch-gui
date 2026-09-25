@@ -784,10 +784,14 @@ class MenuBar extends React.Component {
                         for (const extId of extIds) {
                             const p = pushed[extId];
                             if (!p) continue;
-                            const safeId = String(extId).toLowerCase()
-                                .replace(/-/g, '_');
-                            wildExtensions[safeId] = {
-                                id: safeId,
+                            // All three places (extensions[], extensionURLs,
+                            // gandi.wildExtensions) *must* use the exact same
+                            // extId (original case from project.json) so that
+                            // VM._loadExtensions can resolve the URL via
+                            // extensionURLs.get(extensionID) — it does a
+                            // plain, case-sensitive Map lookup.
+                            wildExtensions[extId] = {
+                                id: extId,
                                 url: p.url
                             };
                             finalURLs[extId] = p.url;

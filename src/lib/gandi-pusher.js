@@ -186,11 +186,15 @@ export const normalizeExtensionForGandi = (source, extId) => {
 
     let out = rewriteExtensionSourceForGandi(source);
 
-    out = out.replace(
-        /\bid\s*:\s*(['"])(.+?)\1/g,
-        (_m, q, id) =>
-            `id: ${q}${id.toLowerCase().replace(/-/g, '_')}${q}`
-    );
+    // IMPORTANT: we deliberately do NOT rewrite the extension's `id:`
+    // declaration here.  The project.json that references this extension
+    // has its blocks, extensions[] and extensionURLs keyed by the *exact*
+    // id declared in the original extension source (e.g. "faceSensing").
+    // Lowercasing the id would silently rename every opcode prefix
+    // ("faceSensing_goToPart" → "facesensing_goToPart") and make every
+    // block in the project.json an unknown opcode when Gandi loads it.
+    // The pushExtension helper handles its own lowercase safeId for the
+    // on-disk file name, which is independent of the runtime id.
 
     if (!out.includes('// Gandi Format')) {
         out = `// Gandi Format (from RemixWarp, id=${safeId})\n${out}`;
