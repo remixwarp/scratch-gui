@@ -206,7 +206,7 @@ const Footer = () => (
                             id="tw.footer.packager"
                         />
                     </a>
-                    <a href="https://remixwarp.pages.dev/gandi-convert" target="_blank" rel="noopener noreferrer">
+                    <a href="https://remixwarp.pages.dev/convert" target="_blank" rel="noopener noreferrer">
                         <FormattedMessage
                             defaultMessage="兼容性转换"
                             description="Link in footer to Gandi / RemixWarp compatibility converter"

@@ -6,8 +6,8 @@
  * logic used to live inside src/components/menu-bar/menu-bar.jsx and is
  * shared between:
  *   - the editor's "File → 兼容性转换 → Gandi" flow
- *   - the standalone H5 page at static/gandi-convert.html
- *     (https://remixwarp.pages.dev/gandi-convert.html)
+ *   - the standalone H5 page at static/convert.html
+ *     (https://remixwarp.pages.dev/convert.html)
  *
  * The function is intentionally free of React/VM imports so that it can
  * run in a vanilla-browser context.  The GitHub-extension-push step is
