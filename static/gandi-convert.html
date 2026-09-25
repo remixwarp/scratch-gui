@@ -210,8 +210,8 @@
   <section class="card">
     <h2>上传 RemixWarp / TurboWarp / Scratch .sb3 作品</h2>
 
-    <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="点击或拖拽上传 .sb3 文件">
-      <input id="file-input" type="file" accept=".sb3,.zip,application/zip">
+    <label id="dropzone" class="dropzone" for="file-input" tabindex="0" role="button" aria-label="点击或拖拽上传 .sb3 文件">
+      <input id="file-input" type="file" hidden>
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#75c1c4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
         <polyline points="17 8 12 3 7 8"/>
@@ -346,11 +346,8 @@
       downloadLink.removeAttribute('href');
     }
 
-    dropzone.addEventListener('click', () => fileInput.click());
-    dropzone.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
-    });
-
+    // dropzone is now a <label for="file-input"> — click is handled natively.
+    // Keydown on Enter/Space also opens picker natively for <label>.
     ['dragenter','dragover'].forEach(ev =>
       dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('hover'); }));
     ['dragleave','drop'].forEach(ev =>

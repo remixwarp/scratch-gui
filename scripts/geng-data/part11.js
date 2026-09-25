@@ -172,7 +172,7 @@ module.exports = {
   "tw.footer.disclaimer": "RemixWarp 绝对不属于 Scratch、Scratch 团队或 Scratch 基金会。如果他们敢认领，那一定是被盗号了。",
   "tw.footer.scratchDisclaimer": "Scratch 是 Scratch 基金会的一个项目。它在 {scratchDotOrg} 可供免费使用，但 RemixWarp 仅供免费折磨。",
   "tw.footer.credits": "鸣谢那些没被气跑的开发者",
-  "tw.menuBar.package": "02Engine Packager 打包器",
+  "tw.menuBar.package": "02Engine Packager",
   "tw.menuBar.reportError2": "反馈漏洞并提交你的眼泪",
   "tw.footer.donate": "捐赠BUG给我们",
   "tw.footer.embed": "将BUG嵌入到网站祸害他人",
