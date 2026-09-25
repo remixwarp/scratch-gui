@@ -106,7 +106,18 @@ class CompatibilityModal extends React.Component {
     _onGandiStep ({index, status, message, stepCount}) {
         const inst = window.__remixWarpMenuBarInstance;
         if (!inst) return;
-        const steps = inst._gandiPipelineSteps;
+
+        // 优先用 state 里的 selectedPlatform 取 labels；回退到 _gandiPipelineSteps
+        // （兼容旧 getter，兜底 Gandi 7 步）
+        let steps;
+        try {
+            if (typeof inst._getPipelineSteps === 'function') {
+                steps = inst._getPipelineSteps(this.state.selectedPlatform);
+            }
+        } catch (e) { /* ignore */ }
+        if (!Array.isArray(steps) || steps.length === 0) {
+            steps = inst._gandiPipelineSteps;
+        }
         if (!Array.isArray(steps)) return;
 
         this.setState(prev => {
@@ -133,15 +144,18 @@ class CompatibilityModal extends React.Component {
         const {selectedPlatform} = this.state;
         const inst = window.__remixWarpMenuBarInstance;
 
-        // Reset pipeline for Gandi
-        if (selectedPlatform === 'Gandi' && inst && Array.isArray(inst._gandiPipelineSteps)) {
-            this.setState({
-                pipeline: inst._gandiPipelineSteps.map(s => ({
-                    label: s.label,
-                    status: 'pending',
-                    message: ''
-                }))
-            });
+        // 根据目标平台初始化 pipeline labels（Gandi 7 步 / 其他 2 步）
+        if (inst && typeof inst._getPipelineSteps === 'function') {
+            const steps = inst._getPipelineSteps(selectedPlatform);
+            if (Array.isArray(steps)) {
+                this.setState({
+                    pipeline: steps.map(s => ({
+                        label: s.label,
+                        status: 'pending',
+                        message: ''
+                    }))
+                });
+            }
         }
 
         this.setState({isConverting: true, conversionSuccess: false});
@@ -185,23 +199,30 @@ class CompatibilityModal extends React.Component {
     }
 
     renderPipeline () {
-        const {pipeline} = this.state;
+        const {pipeline, selectedPlatform} = this.state;
         if (!pipeline || pipeline.length === 0) return null;
+        const isGandi = selectedPlatform === 'Gandi';
 
         return (
             <div className={styles.pipeline}>
                 <div className={styles.pipelineHeader}>
                     <span className={styles.pipelineTitle}>
-                        <FormattedMessage {...messages.workflowTitle} />
+                        {isGandi ? (
+                            <FormattedMessage {...messages.workflowTitle} />
+                        ) : (
+                            `转换流程 (${selectedPlatform})`
+                        )}
                     </span>
-                    <a
-                        href="https://github.com/remixwarp/gandi-ide-qwq"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.pipelineLink}
-                    >
-                        gandi-ide-qwq
-                    </a>
+                    {isGandi && (
+                        <a
+                            href="https://github.com/remixwarp/gandi-ide-qwq"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.pipelineLink}
+                        >
+                            gandi-ide-qwq
+                        </a>
+                    )}
                 </div>
                 <ol className={styles.pipelineList}>
                     {pipeline.map((step, idx) => {
@@ -315,7 +336,7 @@ class CompatibilityModal extends React.Component {
                     </div>
                 )}
 
-                {isGandi && this.renderPipeline()}
+                {this.renderPipeline()}
 
                 {issues.length > 0 && (
                     <div className={styles.issuesContainer}>

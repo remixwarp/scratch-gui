@@ -588,9 +588,7 @@ class MenuBar extends React.Component {
                 //       2.7 完成转换
                 //    3. 下载 Gandi (.sb3) 文件
                 // --------------------------------------------------------
-                const steps = (agentName === 'Gandi')
-                    ? this._gandiPipelineSteps
-                    : [];
+                const steps = this._getPipelineSteps(agentName);
                 const stepCount = steps.length;
                 const emitStep = (index, status, message) => {
                     if (typeof this._gandiStepListener === 'function') {
@@ -599,6 +597,18 @@ class MenuBar extends React.Component {
                         } catch (e) { /* ignore */ }
                     }
                 };
+
+                // 统一为所有平台（包括非 Gandi）发出 pipeline 进度
+                // 非 Gandi 走两条：改写 meta → 生成并下载 .sb3
+                if (agentName !== 'Gandi') {
+                    emitStep(0, 'running',
+                        `改写 meta.agent / meta.platform → ${agentName}`);
+                    // meta 已在上面改写过（projectJson.meta.agent / .platform）
+                    emitStep(0, 'success',
+                        `meta 写入完成 (${platformInfo.url})`);
+
+                    emitStep(1, 'running', '重新打包 sb3');
+                }
 
                 if (agentName === 'Gandi') {
                     const builtins = new Set([
@@ -928,10 +938,8 @@ class MenuBar extends React.Component {
                 const downloadBlob = require('../../lib/utils/download-blob').default;
                 downloadBlob(`project-${agentName.toLowerCase()}.sb3`, content);
 
-                if (agentName === 'Gandi') {
-                    emitStep(stepCount - 1, 'success',
-                        'Gandi (.sb3) 下载完成');
-                }
+                emitStep(stepCount - 1, 'success',
+                    `${agentName} (.sb3) 下载完成`);
 
             } catch (error) {
                 console.error('Error during compatibility save:', error);
@@ -940,16 +948,29 @@ class MenuBar extends React.Component {
         }
     }
 
-    get _gandiPipelineSteps () {
+    _getPipelineSteps (agentName) {
+        if (agentName === 'Gandi') {
+            return [
+                {id: 'discover', label: '1. 拆解 RemixWarp (.sb3) 中的自定义扩展'},
+                {id: 'handle', label: '2. 处理扩展（本地）'},
+                {id: 'fetch', label: '2.x 读取源码（URL / data-base64）'},
+                {id: 'normalize', label: '2.3 转为 Gandi 扩展格式'},
+                {id: 'push', label: '2.4 推送到 gandi-ide-qwq → rw-gandi.pages.dev'},
+                {id: 'rewrite', label: '2.5–2.6 重写 project.json 扩展 URL + 作品格式'},
+                {id: 'download', label: '3. 下载 Gandi (.sb3)'}
+            ];
+        }
+        // 其他平台：Scratch / TurboWarp / 02Engine / AstraEditor / Bilup …
+        // 只做 meta 改写 + 重新打包下载
         return [
-            {id: 'discover', label: '1. 拆解 RemixWarp (.sb3) 中的自定义扩展'},
-            {id: 'handle', label: '2. 处理扩展（本地）'},
-            {id: 'fetch', label: '2.x 读取源码（URL / data-base64）'},
-            {id: 'normalize', label: '2.3 转为 Gandi 扩展格式'},
-            {id: 'push', label: '2.4 推送到 gandi-ide-qwq → rw-gandi.pages.dev'},
-            {id: 'rewrite', label: '2.5–2.6 重写 project.json 扩展 URL + 作品格式'},
-            {id: 'download', label: '3. 下载 Gandi (.sb3)'}
+            {id: 'meta', label: '1. 改写 meta.agent / meta.platform'},
+            {id: 'download', label: `2. 生成 ${agentName} (.sb3) 并下载`}
         ];
+    }
+
+    // 兼容旧引用（compatibility-modal.jsx 里可能还会读这个名字）
+    get _gandiPipelineSteps () {
+        return this._getPipelineSteps('Gandi');
     }
 
     generateUUID () {
