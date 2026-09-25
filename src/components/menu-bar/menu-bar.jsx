@@ -676,6 +676,9 @@ class MenuBar extends React.Component {
 
                     emitStep(0, 'running', '拆解 RemixWarp (.sb3) 中的自定义扩展');
 
+                    emitStep(0, 'success',
+                        `拆解完成：${extIds.length} 个自定义扩展${hasCustomExts ? '待处理' : '，无需处理'}`);
+
                     // helpers for shape-cleaning (Gandi 不认识的 RemixWarp 字段)
                     const cleanTargetForGandi = (target, eidMap) => {
                         if (!target.isStage) {
@@ -835,9 +838,14 @@ class MenuBar extends React.Component {
                                     `读取扩展 ${extId} 失败，跳过`);
                                 continue;
                             }
+                            emitStep(2, 'success',
+                                `${extId} 读取完成`);
+
                             emitStep(3, 'running',
                                 `标准化扩展 ${extId} 为 Gandi 格式`);
                             source = normalizeExtensionForGandi(source, extId);
+                            emitStep(3, 'success',
+                                `${extId} 标准化完成`);
 
                             emitStep(4, 'running',
                                 `推送 ${extId} → gandi-ide-qwq/rwc/${gandiFolderName}/`);
@@ -852,6 +860,9 @@ class MenuBar extends React.Component {
                                 pushed[extId] = {url: rawUrl, source};
                             }
                         }
+                        const successCount = Object.keys(pushed).length;
+                        emitStep(1, 'success',
+                            `扩展处理完成：${successCount}/${extIds.length} 推送成功`);
                     } else {
                         emitStep(1, 'skipped',
                             '未检测到自定义扩展，跳过扩展处理');
@@ -916,6 +927,8 @@ class MenuBar extends React.Component {
                         delete projectJson.extensionURLs;
                         delete projectJson.gandi;
                     }
+
+                    emitStep(5, 'success', '作品格式转换完成');
                 }
 
                 const modifiedJson = new TextEncoder().encode(JSON.stringify(projectJson));

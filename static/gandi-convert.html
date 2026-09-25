@@ -784,6 +784,9 @@ const convertToGandiSb3 = async ({
     projectJson.extensions = [...canonicalExtIds];
     const hasCustomExts = canonicalExtIds.some(id => extURLsLower[id]);
 
+    emitStep(0, 'success',
+        `拆解完成：${canonicalExtIds.length} 个自定义扩展${hasCustomExts ? '待处理' : '，无需处理'}`);
+
     // Step 1-5 — 扩展处理（可能没有自定义扩展就跳过）
     const pushed = {};
     if (hasCustomExts) {
@@ -805,9 +808,14 @@ const convertToGandiSb3 = async ({
                     `读取扩展 ${extId} 失败，跳过`);
                 continue;
             }
+            emitStep(2, 'success',
+                `${extId} 读取完成`);
+
             emitStep(3, 'running',
                 `标准化扩展 ${extId} 为 Gandi 格式`);
             source = normalizeExtensionForGandi(source, extId);
+            emitStep(3, 'success',
+                `${extId} 标准化完成`);
 
             emitStep(4, 'running',
                 `推送 ${extId} → gandi-ide-qwq/rwc/${gandiFolderName}/`);
@@ -822,6 +830,9 @@ const convertToGandiSb3 = async ({
                 pushed[extId] = {url: rawUrl, source};
             }
         }
+        const successCount = Object.keys(pushed).length;
+        emitStep(1, 'success',
+            `扩展处理完成：${successCount}/${canonicalExtIds.length} 推送成功`);
     } else {
         emitStep(1, 'skipped',
             '未检测到自定义扩展，跳过扩展处理');
@@ -871,6 +882,9 @@ const convertToGandiSb3 = async ({
         delete projectJson.extensionURLs;
         delete projectJson.gandi;
     }
+
+    emitStep(5, 'success',
+        '作品格式转换完成');
 
     emitStep(6, 'running', '打包 Gandi (.sb3)');
 
