@@ -97,10 +97,12 @@ class CompatibilityModal extends React.Component {
     }
 
     componentWillUnmount () {
-        const inst = window.__remixWarpMenuBarInstance;
-        if (inst && inst._gandiStepListener === this._onGandiStep) {
-            inst._gandiStepListener = null;
-        }
+        // 注意：不要把 _gandiStepListener 置空。menu-bar 实例
+        // （window.__remixWarpMenuBarInstance）的生命周期比 modal 长很多
+        // —— 只要转换还在后台跑、还会 emitStep，我们就希望 listener
+        // 继续留在那里。modal 只是暂时消失，下次再打开时会重新绑定
+        // 同一个 listener；如果这次把它清掉了，后台转换的 success/error
+        // 事件就永远丢失了。
     }
 
     _onGandiStep ({index, status, message, stepCount}) {
