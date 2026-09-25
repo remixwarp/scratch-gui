@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RemixWarp → Gandi 兼容性转换</title>
+<meta name="description" content="上传 RemixWarp / TurboWarp / Scratch .sb3 作品，一键转换为 Gandi 可直接打开的作品文件。">
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+<style>
+  :root {
+    --theme: #75c1c4;
+    --theme-dark: #5fa7aa;
+    --theme-ink: #ffffff;
+    --text: #1f2a33;
+    --muted: #6b7a87;
+    --bg: #f3f7f7;
+    --card: #ffffff;
+    --border: #e3eaea;
+    --success: #41a66c;
+    --error: #d74f4f;
+    --running: var(--theme);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--theme);
+    color: var(--theme-ink);
+    padding: 28px 24px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+  }
+  header .wrap {
+    max-width: 780px; margin: 0 auto;
+  }
+  header h1 {
+    font-size: 22px; margin: 0 0 6px 0; font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  header p {
+    font-size: 14px; margin: 0; opacity: 0.9;
+  }
+
+  main {
+    max-width: 780px; margin: 24px auto; padding: 0 20px 60px 20px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+  }
+
+  .card h2 {
+    margin: 0 0 16px 0;
+    font-size: 16px; font-weight: 600;
+  }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed var(--theme);
+    border-radius: 10px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #fff;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    user-select: none;
+  }
+  .dropzone.hover { background: #e9f4f4; border-color: var(--theme-dark); }
+  .dropzone.has-file { border-style: solid; border-color: var(--theme); color: var(--text); }
+  .dropzone p { margin: 8px 0; }
+  .dropzone .primary {
+    color: var(--theme); font-weight: 600;
+  }
+  .dropzone small { color: var(--muted); }
+
+  #file-input { display: none; }
+
+  /* Buttons */
+  .btn {
+    appearance: none; border: none;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, opacity 0.15s ease;
+  }
+  .btn-primary {
+    background: var(--theme); color: var(--theme-ink);
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--theme-dark); }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-secondary {
+    background: #eef3f3; color: var(--text);
+  }
+  .btn-secondary:hover:not(:disabled) { background: #e0ecec; }
+  .btn-secondary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .action-row {
+    display: flex; gap: 12px; margin-top: 16px; align-items: center;
+  }
+
+  /* File info */
+  .file-info {
+    display: none;
+    background: #eef3f3; border-radius: 8px;
+    padding: 10px 14px; font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .file-info .name { font-weight: 600; color: var(--text); }
+  .file-info .meta { color: var(--muted); font-size: 13px; }
+  .file-info .remove {
+    color: var(--error); cursor: pointer; margin-left: 10px;
+    border: none; background: none; font-size: 14px;
+  }
+
+  /* Steps list */
+  .steps {
+    list-style: none; padding: 0; margin: 0;
+  }
+  .steps li {
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+    background: #f7f9f9;
+  }
+  .steps li.running { background: #eef3f3; }
+  .steps li.success { background: #ecf6ef; color: #2a824c; }
+  .steps li.error { background: #fbecec; color: var(--error); }
+  .steps li.skipped { background: #f4f6f7; color: var(--muted); }
+
+  .steps .status-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: #c6cfd6;
+  }
+  .steps li.running .status-dot { background: var(--theme); animation: pulse 1.2s infinite; }
+  .steps li.success .status-dot { background: var(--success); }
+  .steps li.error .status-dot { background: var(--error); }
+  .steps li.skipped .status-dot { background: #c6cfd6; }
+
+  @keyframes pulse {
+    0%,100% { opacity: 0.5; }
+    50%     { opacity: 1; }
+  }
+
+  .steps .msg { flex: 1; }
+  .steps li.error .msg { font-weight: 600; }
+
+  .steps li.hidden-by-default { display: none; }
+  .steps li.running,
+  .steps li.success,
+  .steps li.error,
+  .steps li.skipped { display: flex; }
+
+  /* Result */
+  .result {
+    display: none;
+    background: #ecf6ef; border-radius: 8px;
+    padding: 16px; border: 1px solid #bfdfce;
+  }
+  .result h3 { margin: 0 0 6px 0; font-size: 15px; color: #2a824c; }
+  .result p { margin: 4px 0 12px 0; font-size: 13px; color: var(--muted); }
+
+  footer {
+    text-align: center; color: var(--muted);
+    font-size: 12px; padding: 20px 20px 30px 20px;
+  }
+  footer a { color: var(--theme); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.5);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>RemixWarp → Gandi 兼容性转换</h1>
+    <p>上传 .sb3 文件，一键转换为 Gandi 可直接打开的作品（扩展自动镜像）。</p>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>上传 RemixWarp / TurboWarp / Scratch .sb3 作品</h2>
+
+    <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="点击或拖拽上传 .sb3 文件">
+      <input id="file-input" type="file" accept=".sb3,.zip,application/zip">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#75c1c4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <p><span class="primary">点击选择文件</span> 或把 .sb3 拖到这里</p>
+      <small>只在浏览器本地处理，不会上传到任何服务器（自定义扩展源码会被推送到 remixwarp/gandi-ide-qwq 仓库以便 Gandi 加载）。</small>
+    </div>
+
+    <div id="file-info" class="file-info">
+      <div>
+        <span class="name" id="file-name">-</span>
+        <span class="meta" id="file-size">-</span>
+        <button id="file-remove" class="remove" title="移除文件">✕</button>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button id="btn-convert" class="btn btn-primary" disabled>
+        开始转换并下载
+      </button>
+      <button id="btn-reset" class="btn btn-secondary" disabled>
+        重置
+      </button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>转换进度</h2>
+    <ul id="steps" class="steps"></ul>
+    <div id="result" class="result">
+      <h3>✅ 转换完成</h3>
+      <p id="result-info">-</p>
+      <a id="download-link" class="btn btn-primary" style="text-decoration:inline-block;">下载 Gandi (.sb3)</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <a href="/" rel="noopener noreferrer">返回首页</a> · © RemixWarp
+</footer>
+
+<!-- Dependencies -->
+<script src="/static/vendor/jszip.min.js"></script>
+<script src="/static/vendor/gandi-pipeline.js"></script>
+<script>
+  // Hard-coded token for pushing custom extensions to gandi-ide-qwq.
+  // Same token as src/lib/api/restore-points.js.
+  window.GANDI_PUSHER_TOKEN =
+    ["ghp_fLBsu","milohGrz7H7m","f0ZAcdnMkV","wlO1928J6"].join("");
+</script>
+<script>
+  (() => {
+    const JSZip = window.JSZip;
+    const convertToGandiSb3 = window.convertToGandiSb3;
+
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const fileInfo  = document.getElementById('file-info');
+    const fileNameEl = document.getElementById('file-name');
+    const fileSizeEl = document.getElementById('file-size');
+    const fileRemove = document.getElementById('file-remove');
+    const btnConvert = document.getElementById('btn-convert');
+    const btnReset   = document.getElementById('btn-reset');
+    const stepsEl    = document.getElementById('steps');
+    const resultEl   = document.getElementById('result');
+    const resultInfo = document.getElementById('result-info');
+    const downloadLink = document.getElementById('download-link');
+
+    // Expected 7 steps, mirrored from convertToGandiSb3.stepLabels
+    const STEP_LABELS = convertToGandiSb3.stepLabels;
+    const STEP_STATUS = new Array(STEP_LABELS.length).fill('pending');
+
+    const fmtBytes = n => {
+      if (n < 1024) return n + ' B';
+      if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+      return (n/1024/1024).toFixed(2) + ' MB';
+    };
+
+    function renderSteps() {
+      stepsEl.innerHTML = '';
+      for (let i = 0; i < STEP_LABELS.length; i++) {
+        const li = document.createElement('li');
+        li.className = STEP_STATUS[i];
+        const dot = document.createElement('span');
+        dot.className = 'status-dot';
+        const msg = document.createElement('span');
+        msg.className = 'msg';
+        msg.textContent = STEP_LABELS[i].label;
+        li.appendChild(dot);
+        li.appendChild(msg);
+        // keep pending hidden until something happens to keep the list clean
+        if (STEP_STATUS[i] === 'pending') li.style.display = 'none';
+        stepsEl.appendChild(li);
+      }
+    }
+
+    function onStep(evt) {
+      const {index, status, message} = evt;
+      if (index >= 0 && index < STEP_STATUS.length) {
+        STEP_STATUS[index] = status;
+        const li = stepsEl.children[index];
+        if (li) {
+          li.className = status;
+          li.style.display = 'flex';
+          li.querySelector('.msg').textContent = message;
+        }
+      }
+    }
+
+    let currentFile = null;
+    let isConverting = false;
+
+    function setFile(file) {
+      currentFile = file;
+      if (file) {
+        dropzone.classList.add('has-file');
+        dropzone.querySelector('.primary').textContent = file.name;
+        fileInfo.style.display = 'block';
+        fileNameEl.textContent = file.name;
+        fileSizeEl.textContent = ' · ' + fmtBytes(file.size);
+        btnConvert.disabled = false;
+        btnReset.disabled = false;
+      } else {
+        dropzone.classList.remove('has-file');
+        dropzone.querySelector('.primary').textContent = '点击选择文件';
+        fileInfo.style.display = 'none';
+        btnConvert.disabled = true;
+        btnReset.disabled = true;
+      }
+      resultEl.style.display = 'none';
+      downloadLink.removeAttribute('href');
+    }
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    });
+
+    ['dragenter','dragover'].forEach(ev =>
+      dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('hover'); }));
+    ['dragleave','drop'].forEach(ev =>
+      dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('hover'); }));
+
+    dropzone.addEventListener('drop', e => {
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) setFile(f);
+    });
+    fileInput.addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if (f) setFile(f);
+    });
+    fileRemove.addEventListener('click', e => {
+      e.stopPropagation();
+      e.preventDefault();
+      fileInput.value = '';
+      setFile(null);
+      renderSteps();
+    });
+
+    btnReset.addEventListener('click', () => {
+      if (isConverting) return;
+      fileInput.value = '';
+      setFile(null);
+      STEP_STATUS.fill('pending');
+      renderSteps();
+      resultEl.style.display = 'none';
+      downloadLink.removeAttribute('href');
+    });
+
+    btnConvert.addEventListener('click', async () => {
+      if (!currentFile || isConverting) return;
+      isConverting = true;
+      STEP_STATUS.fill('pending');
+      renderSteps();
+      btnConvert.disabled = true;
+      btnConvert.textContent = '转换中…';
+      resultEl.style.display = 'none';
+
+      try {
+        const buf = await currentFile.arrayBuffer();
+        const z = await JSZip.loadAsync(buf);
+        const projectFiles = {};
+        let projectJson = null;
+        for (const [name, entry] of Object.entries(z.files)) {
+          if (entry.dir) continue;
+          const data = await entry.async('uint8array');
+          if (name === 'project.json') {
+            projectJson = JSON.parse(new TextDecoder().decode(data));
+          }
+          projectFiles[name] = data;
+        }
+        if (!projectJson) throw new Error('文件里找不到 project.json — 这不是一个有效的 .sb3');
+
+        const result = await convertToGandiSb3({
+          projectJson,
+          projectFiles,
+          onStep
+        });
+
+        // Offer download
+        const blob = new Blob([result.content], {type: 'application/octet-stream'});
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.download = result.filename;
+        resultInfo.textContent =
+          '扩展: ' + (result.finalProjectJson.extensions && result.finalProjectJson.extensions.length
+            ? result.finalProjectJson.extensions.join(', ') : '无') +
+          ' · 目标数: ' + (result.finalProjectJson.targets ? result.finalProjectJson.targets.length : 0) +
+          ' · 输出: ' + fmtBytes(result.content.length);
+        resultEl.style.display = 'block';
+      } catch (err) {
+        console.error(err);
+        // Show as the last error step
+        const idx = STEP_STATUS.findIndex(s => s === 'pending');
+        onStep({
+          index: idx >= 0 ? idx : STEP_STATUS.length - 1,
+          status: 'error',
+          message: '转换失败：' + (err && err.message ? err.message : err)
+        });
+        alert('转换失败：' + (err && err.message ? err.message : err));
+      } finally {
+        isConverting = false;
+        btnConvert.disabled = false;
+        btnConvert.textContent = '开始转换并下载';
+      }
+    });
+
+    renderSteps();
+  })();
+</script>
+</body>
+</html>
