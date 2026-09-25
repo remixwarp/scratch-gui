@@ -2,9 +2,9 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RemixWarp → Gandi 兼容性转换</title>
-<meta name="description" content="上传 RemixWarp / TurboWarp / Scratch .sb3 作品，一键转换为 Gandi 可直接打开的作品文件。">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>兼容性转换 · RemixWarp</title>
+<meta name="description" content="上传 RemixWarp / TurboWarp / Scratch .sb3 作品，一键转换为 Scratch、TurboWarp、02Engine、AstraEditor、Bilup 或 Gandi 可直接打开的作品文件。">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 <style>
   :root {
@@ -21,7 +21,7 @@
     --running: var(--theme);
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   html, body {
     margin: 0; padding: 0;
@@ -36,96 +36,139 @@
   header {
     background: var(--theme);
     color: var(--theme-ink);
-    padding: 28px 24px;
-    box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+    padding: 24px 20px;
   }
   header .wrap {
-    max-width: 780px; margin: 0 auto;
+    max-width: 720px; margin: 0 auto;
   }
   header h1 {
-    font-size: 22px; margin: 0 0 6px 0; font-weight: 700;
-    letter-spacing: 0.2px;
+    font-size: 20px; margin: 0 0 4px 0; font-weight: 700;
   }
   header p {
-    font-size: 14px; margin: 0; opacity: 0.9;
+    font-size: 13px; margin: 0; opacity: 0.92;
   }
 
   main {
-    max-width: 780px; margin: 24px auto; padding: 0 20px 60px 20px;
+    max-width: 720px; margin: 16px auto; padding: 0 14px 60px 14px;
   }
 
   .card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 24px;
-    margin-bottom: 20px;
+    padding: 18px;
+    margin-bottom: 14px;
     box-shadow: 0 1px 0 rgba(0,0,0,0.02);
   }
 
   .card h2 {
-    margin: 0 0 16px 0;
-    font-size: 16px; font-weight: 600;
+    margin: 0 0 12px 0;
+    font-size: 15px; font-weight: 600;
   }
 
-  /* Drop zone */
-  .dropzone {
-    border: 2px dashed var(--theme);
-    border-radius: 10px;
-    padding: 40px 20px;
-    text-align: center;
+  /* Upload area — pure button, no nested input, no label trickery */
+  .upload-row {
+    display: flex; gap: 10px; flex-direction: column;
+  }
+  .upload-btn {
+    width: 100%;
+    appearance: none; border: 2px dashed var(--theme);
     background: #fff;
-    color: var(--muted);
+    padding: 28px 16px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    user-select: none;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+    font-family: inherit;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
   }
-  .dropzone.hover { background: #e9f4f4; border-color: var(--theme-dark); }
-  .dropzone.has-file { border-style: solid; border-color: var(--theme); color: var(--text); }
-  .dropzone p { margin: 8px 0; }
-  .dropzone .primary {
-    color: var(--theme); font-weight: 600;
+  .upload-btn:hover { background: #e9f4f4; }
+  .upload-btn:active { background: #dcecec; }
+  .upload-btn.has-file {
+    border-style: solid; border-color: var(--theme);
+    color: var(--text);
+    padding: 18px 16px;
   }
-  .dropzone small { color: var(--muted); }
+  .upload-btn .icon {
+    display: block; width: 40px; height: 40px; margin: 0 auto 8px auto;
+  }
+  .upload-btn .primary {
+    color: var(--theme); font-weight: 600; display: block;
+    font-size: 15px;
+  }
+  .upload-btn small {
+    display: block; color: var(--muted); font-size: 12px; margin-top: 2px;
+  }
 
-  #file-input { display: none; }
+  .remove-btn {
+    appearance: none; border: 1px solid var(--border);
+    background: #fff; color: var(--muted);
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 13px; cursor: pointer; font-family: inherit;
+    align-self: flex-start;
+  }
+  .remove-btn:hover { color: var(--error); border-color: var(--error); }
 
-  /* Buttons */
+  #hidden-input { display: none; }
+
+  /* Platform select */
+  .platform-label {
+    font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 8px;
+  }
+  .platform-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  @media (max-width: 420px) { .platform-grid { grid-template-columns: repeat(2, 1fr); } }
+  .platform-chip {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .platform-chip.selected {
+    background: var(--theme);
+    color: var(--theme-ink);
+    border-color: var(--theme);
+  }
+  .platform-chip:active { transform: scale(0.98); }
+
+  /* Main action buttons */
+  .action-row {
+    display: flex; gap: 10px; margin-top: 16px; align-items: center;
+    flex-wrap: wrap;
+  }
   .btn {
     appearance: none; border: none;
-    padding: 10px 20px; border-radius: 8px;
+    padding: 12px 20px; border-radius: 8px;
     font-size: 14px; font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s ease, opacity 0.15s ease;
+    font-family: inherit;
+    transition: background 0.12s ease, opacity 0.12s ease;
+    flex: 1; min-width: 120px;
   }
   .btn-primary {
     background: var(--theme); color: var(--theme-ink);
   }
   .btn-primary:hover:not(:disabled) { background: var(--theme-dark); }
-  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-secondary {
     background: #eef3f3; color: var(--text);
+    flex: 0 0 auto;
   }
   .btn-secondary:hover:not(:disabled) { background: #e0ecec; }
-  .btn-secondary:disabled { opacity: 0.55; cursor: not-allowed; }
-
-  .action-row {
-    display: flex; gap: 12px; margin-top: 16px; align-items: center;
-  }
-
-  /* File info */
-  .file-info {
-    display: none;
-    background: #eef3f3; border-radius: 8px;
-    padding: 10px 14px; font-size: 14px;
-    margin-bottom: 12px;
-  }
-  .file-info .name { font-weight: 600; color: var(--text); }
-  .file-info .meta { color: var(--muted); font-size: 13px; }
-  .file-info .remove {
-    color: var(--error); cursor: pointer; margin-left: 10px;
-    border: none; background: none; font-size: 14px;
-  }
 
   /* Steps list */
   .steps {
@@ -184,25 +227,14 @@
   }
   footer a { color: var(--theme); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
-
-  /* Spinner */
-  .spinner {
-    display: inline-block; width: 14px; height: 14px;
-    border: 2px solid rgba(255,255,255,0.5);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    vertical-align: middle; margin-right: 6px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <header>
   <div class="wrap">
-    <h1>RemixWarp → Gandi 兼容性转换</h1>
-    <p>上传 .sb3 文件，一键转换为 Gandi 可直接打开的作品（扩展自动镜像）。</p>
+    <h1>兼容性转换</h1>
+    <p>上传 .sb3 文件，转换为目标编辑器可直接打开的作品。</p>
   </div>
 </header>
 
@@ -210,32 +242,32 @@
   <section class="card">
     <h2>上传 RemixWarp / TurboWarp / Scratch .sb3 作品</h2>
 
-    <label id="dropzone" class="dropzone" for="file-input" tabindex="0" role="button" aria-label="点击或拖拽上传 .sb3 文件">
-      <input id="file-input" type="file" hidden>
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#75c1c4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="17 8 12 3 7 8"/>
-        <line x1="12" y1="3" x2="12" y2="15"/>
-      </svg>
-      <p><span class="primary">点击选择文件</span> 或把 .sb3 拖到这里</p>
-      <small>只在浏览器本地处理，不会上传到任何服务器（自定义扩展源码会被推送到 remixwarp/gandi-ide-qwq 仓库以便 Gandi 加载）。</small>
+    <div class="upload-row">
+      <button id="upload-btn" class="upload-btn" type="button" aria-label="点击选择文件">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#75c1c4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span class="primary" id="upload-primary">点击选择文件</span>
+        <small>支持 .sb3 / .zip，本地浏览器处理，不会上传到任何服务器</small>
+      </button>
+      <button id="remove-btn" class="remove-btn" type="button" style="display:none;">× 移除文件</button>
     </div>
 
-    <div id="file-info" class="file-info">
-      <div>
-        <span class="name" id="file-name">-</span>
-        <span class="meta" id="file-size">-</span>
-        <button id="file-remove" class="remove" title="移除文件">✕</button>
-      </div>
-    </div>
+    <input id="hidden-input" type="file" accept=".sb3,.zip">
+  </section>
 
+  <section class="card">
+    <h2>选择目标编辑器</h2>
+    <div class="platform-label">将作品转换为哪个编辑器的格式？</div>
+    <div class="platform-grid" id="platform-grid"></div>
+  </section>
+
+  <section class="card">
     <div class="action-row">
-      <button id="btn-convert" class="btn btn-primary" disabled>
-        开始转换并下载
-      </button>
-      <button id="btn-reset" class="btn btn-secondary" disabled>
-        重置
-      </button>
+      <button id="btn-convert" class="btn btn-primary" disabled>开始转换并下载</button>
+      <button id="btn-reset" class="btn btn-secondary" type="button">重置</button>
     </div>
   </section>
 
@@ -243,9 +275,8 @@
     <h2>转换进度</h2>
     <ul id="steps" class="steps"></ul>
     <div id="result" class="result">
-      <h3>✅ 转换完成</h3>
+      <h3>转换完成 ✅</h3>
       <p id="result-info">-</p>
-      <a id="download-link" class="btn btn-primary" style="text-decoration:inline-block;">下载 Gandi (.sb3)</a>
     </div>
   </section>
 </main>
@@ -258,8 +289,7 @@
 <script src="/static/vendor/jszip.min.js"></script>
 <script src="/static/vendor/gandi-pipeline.js"></script>
 <script>
-  // Hard-coded token for pushing custom extensions to gandi-ide-qwq.
-  // Same token as src/lib/api/restore-points.js.
+  // Token for pushing custom extensions to gandi-ide-qwq. Same as src/lib/api/restore-points.js.
   window.GANDI_PUSHER_TOKEN =
     ["ghp_fLBsu","milohGrz7H7m","f0ZAcdnMkV","wlO1928J6"].join("");
 </script>
@@ -268,127 +298,143 @@
     const JSZip = window.JSZip;
     const convertToGandiSb3 = window.convertToGandiSb3;
 
-    const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('file-input');
-    const fileInfo  = document.getElementById('file-info');
-    const fileNameEl = document.getElementById('file-name');
-    const fileSizeEl = document.getElementById('file-size');
-    const fileRemove = document.getElementById('file-remove');
-    const btnConvert = document.getElementById('btn-convert');
-    const btnReset   = document.getElementById('btn-reset');
-    const stepsEl    = document.getElementById('steps');
-    const resultEl   = document.getElementById('result');
-    const resultInfo = document.getElementById('result-info');
-    const downloadLink = document.getElementById('download-link');
+    // --- Editor list (matches CompatibilityModal) -----------------------
+    const PLATFORMS = [
+      {id: 'Scratch',     name: 'Scratch',     url: 'https://scratch.mit.edu'},
+      {id: 'TurboWarp',   name: 'TurboWarp',   url: 'https://turbowarp.org'},
+      {id: '02Engine',    name: '02Engine',    url: 'https://02engine.02studio.xyz/'},
+      {id: 'AstraEditor', name: 'AstraEditor', url: 'https://editors.astras.top/'},
+      {id: 'Bilup',       name: 'Bilup',       url: 'https://com.bilup.org/'},
+      {id: 'Gandi',       name: 'Gandi',       url: 'https://getgandi.com/'}
+    ];
 
-    // Expected 7 steps, mirrored from convertToGandiSb3.stepLabels
-    const STEP_LABELS = convertToGandiSb3.stepLabels;
-    const STEP_STATUS = new Array(STEP_LABELS.length).fill('pending');
+    // --- DOM refs --------------------------------------------------------
+    const uploadBtn   = document.getElementById('upload-btn');
+    const uploadPri   = document.getElementById('upload-primary');
+    const removeBtn   = document.getElementById('remove-btn');
+    const fileInput   = document.getElementById('hidden-input');
+    const grid        = document.getElementById('platform-grid');
+    const btnConvert  = document.getElementById('btn-convert');
+    const btnReset    = document.getElementById('btn-reset');
+    const stepsEl     = document.getElementById('steps');
+    const resultEl    = document.getElementById('result');
+    const resultInfo  = document.getElementById('result-info');
 
-    const fmtBytes = n => {
-      if (n < 1024) return n + ' B';
-      if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
-      return (n/1024/1024).toFixed(2) + ' MB';
-    };
+    // --- State -----------------------------------------------------------
+    let currentFile      = null;
+    let selectedPlatform = 'Scratch';
+    let isConverting     = false;
+    let STEP_LABELS      = [];  // filled lazily
 
+    // --- Platform chips ---------------------------------------------------
+    PLATFORMS.forEach(p => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'platform-chip' + (p.id === selectedPlatform ? ' selected' : '');
+      chip.dataset.id = p.id;
+      chip.textContent = p.name;
+      chip.addEventListener('click', () => {
+        selectedPlatform = p.id;
+        grid.querySelectorAll('.platform-chip').forEach(c =>
+          c.classList.toggle('selected', c.dataset.id === p.id));
+        resetPipeline();
+      });
+      grid.appendChild(chip);
+    });
+
+    // --- Step rendering ---------------------------------------------------
+    let STEP_STATUS = [];
+    function resetPipeline() {
+      resultEl.style.display = 'none';
+      renderSteps();
+    }
     function renderSteps() {
       stepsEl.innerHTML = '';
+      STEP_STATUS = new Array(STEP_LABELS.length).fill('pending');
       for (let i = 0; i < STEP_LABELS.length; i++) {
         const li = document.createElement('li');
-        li.className = STEP_STATUS[i];
-        const dot = document.createElement('span');
-        dot.className = 'status-dot';
-        const msg = document.createElement('span');
-        msg.className = 'msg';
+        li.className = 'pending';
+        const dot = document.createElement('span'); dot.className = 'status-dot';
+        const msg = document.createElement('span'); msg.className = 'msg';
         msg.textContent = STEP_LABELS[i].label;
-        li.appendChild(dot);
-        li.appendChild(msg);
-        // keep pending hidden until something happens to keep the list clean
-        if (STEP_STATUS[i] === 'pending') li.style.display = 'none';
+        li.appendChild(dot); li.appendChild(msg);
+        li.style.display = 'none';
         stepsEl.appendChild(li);
       }
     }
-
     function onStep(evt) {
       const {index, status, message} = evt;
-      if (index >= 0 && index < STEP_STATUS.length) {
-        STEP_STATUS[index] = status;
-        const li = stepsEl.children[index];
-        if (li) {
-          li.className = status;
-          li.style.display = 'flex';
-          li.querySelector('.msg').textContent = message;
-        }
-      }
+      if (index < 0 || index >= STEP_STATUS.length) return;
+      STEP_STATUS[index] = status;
+      const li = stepsEl.children[index];
+      if (!li) return;
+      li.className = status;
+      li.style.display = 'flex';
+      if (message) li.querySelector('.msg').textContent = message;
     }
 
-    let currentFile = null;
-    let isConverting = false;
-
+    // --- File handling ---------------------------------------------------
+    function fmtBytes(n) {
+      if (n < 1024) return n + ' B';
+      if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+      return (n/1024/1024).toFixed(2) + ' MB';
+    }
     function setFile(file) {
       currentFile = file;
       if (file) {
-        dropzone.classList.add('has-file');
-        dropzone.querySelector('.primary').textContent = file.name;
-        fileInfo.style.display = 'block';
-        fileNameEl.textContent = file.name;
-        fileSizeEl.textContent = ' · ' + fmtBytes(file.size);
-        btnConvert.disabled = false;
-        btnReset.disabled = false;
+        uploadBtn.classList.add('has-file');
+        uploadPri.textContent = file.name + ' (' + fmtBytes(file.size) + ')';
+        removeBtn.style.display = 'inline-block';
       } else {
-        dropzone.classList.remove('has-file');
-        dropzone.querySelector('.primary').textContent = '点击选择文件';
-        fileInfo.style.display = 'none';
-        btnConvert.disabled = true;
-        btnReset.disabled = true;
+        uploadBtn.classList.remove('has-file');
+        uploadPri.textContent = '点击选择文件';
+        removeBtn.style.display = 'none';
+        fileInput.value = '';
       }
+      updateConvertEnabled();
       resultEl.style.display = 'none';
-      downloadLink.removeAttribute('href');
+    }
+    function updateConvertEnabled() {
+      btnConvert.disabled = !currentFile || isConverting;
     }
 
-    // dropzone is now a <label for="file-input"> — click is handled natively.
-    // Keydown on Enter/Space also opens picker natively for <label>.
-    ['dragenter','dragover'].forEach(ev =>
-      dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('hover'); }));
-    ['dragleave','drop'].forEach(ev =>
-      dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('hover'); }));
-
-    dropzone.addEventListener('drop', e => {
-      const f = e.dataTransfer.files && e.dataTransfer.files[0];
-      if (f) setFile(f);
-    });
-    fileInput.addEventListener('change', e => {
-      const f = e.target.files && e.target.files[0];
-      if (f) setFile(f);
-    });
-    fileRemove.addEventListener('click', e => {
-      e.stopPropagation();
+    // Upload button opens the native file picker via programmatic click.
+    // This is the robust approach that works across mobile/desktop — no
+    // parent <label> trickery, no nested form elements.
+    uploadBtn.addEventListener('click', e => {
       e.preventDefault();
-      fileInput.value = '';
+      fileInput.value = '';  // allow re-picking the same file
+      fileInput.click();
+    });
+    removeBtn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
       setFile(null);
-      renderSteps();
+      resetPipeline();
+    });
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files && fileInput.files[0];
+      if (f) setFile(f);
     });
 
+    // --- Reset -----------------------------------------------------------
     btnReset.addEventListener('click', () => {
       if (isConverting) return;
-      fileInput.value = '';
       setFile(null);
-      STEP_STATUS.fill('pending');
-      renderSteps();
-      resultEl.style.display = 'none';
-      downloadLink.removeAttribute('href');
+      resetPipeline();
+      btnConvert.textContent = '开始转换并下载';
+      btnConvert.disabled = false;
     });
 
+    // --- Convert ---------------------------------------------------------
     btnConvert.addEventListener('click', async () => {
       if (!currentFile || isConverting) return;
       isConverting = true;
-      STEP_STATUS.fill('pending');
-      renderSteps();
-      btnConvert.disabled = true;
+      updateConvertEnabled();
       btnConvert.textContent = '转换中…';
       resultEl.style.display = 'none';
 
       try {
+        // Load sb3
         const buf = await currentFile.arrayBuffer();
         const z = await JSZip.loadAsync(buf);
         const projectFiles = {};
@@ -401,43 +447,86 @@
           }
           projectFiles[name] = data;
         }
-        if (!projectJson) throw new Error('文件里找不到 project.json — 这不是一个有效的 .sb3');
+        if (!projectJson) throw new Error('找不到 project.json — 这不是有效的 .sb3');
 
-        const result = await convertToGandiSb3({
-          projectJson,
-          projectFiles,
-          onStep
-        });
+        // Apply metadata matching menu-bar.jsx
+        if (!projectJson.meta) projectJson.meta = {};
+        const platformInfo = {name: selectedPlatform, url: PLATFORMS.find(p => p.id === selectedPlatform).url};
+        projectJson.meta.agent   = selectedPlatform;
+        projectJson.meta.platform = platformInfo;
 
-        // Offer download
-        const blob = new Blob([result.content], {type: 'application/octet-stream'});
+        let filename = `project-${selectedPlatform.toLowerCase()}.sb3`;
+        let content;
+
+        if (selectedPlatform === 'Gandi') {
+          STEP_LABELS = convertToGandiSb3.stepLabels;
+          renderSteps();
+          const res = await convertToGandiSb3({projectJson, projectFiles, onStep});
+          content = res.content;
+          resultInfo.textContent =
+            (res.finalProjectJson.extensions && res.finalProjectJson.extensions.length
+              ? '扩展: ' + res.finalProjectJson.extensions.join(', ') + ' · ' : '') +
+            '目标数: ' + (res.finalProjectJson.targets ? res.finalProjectJson.targets.length : 0) +
+            ' · 输出: ' + fmtBytes(res.content.length);
+        } else {
+          // All other editors: plain sb3 (no extension rewriting)
+          STEP_LABELS = [{label: '处理中…', status: 'pending'}];
+          renderSteps();
+          onStep({index: 0, status: 'running', message: '生成 ' + selectedPlatform + ' (.sb3)'});
+
+          const modifiedJson = new TextEncoder().encode(JSON.stringify(projectJson));
+          projectFiles['project.json'] = modifiedJson;
+
+          // Rebuild zip — keep only files sb3 actually uses
+          const zip = new JSZip();
+          for (const [name, data] of Object.entries(projectFiles)) {
+            if (name === 'project.json' ||
+                /^[a-f0-9]{32}\.[a-z0-9]{3}$/i.test(name) ||
+                /^costumes\//.test(name) ||
+                /^sounds\//.test(name)) {
+              zip.file(name, data);
+            }
+          }
+          content = await zip.generateAsync({
+            type: 'uint8array',
+            compression: 'DEFLATE',
+            compressionOptions: {level: 6}
+          });
+          onStep({index: 0, status: 'success', message: selectedPlatform + ' (.sb3) 准备就绪'});
+          resultInfo.textContent = '输出: ' + fmtBytes(content.length);
+        }
+
+        // Download
+        const blob = new Blob([content], {type: 'application/octet-stream'});
         const url = URL.createObjectURL(blob);
-        downloadLink.href = url;
-        downloadLink.download = result.filename;
-        resultInfo.textContent =
-          '扩展: ' + (result.finalProjectJson.extensions && result.finalProjectJson.extensions.length
-            ? result.finalProjectJson.extensions.join(', ') : '无') +
-          ' · 目标数: ' + (result.finalProjectJson.targets ? result.finalProjectJson.targets.length : 0) +
-          ' · 输出: ' + fmtBytes(result.content.length);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
         resultEl.style.display = 'block';
       } catch (err) {
         console.error(err);
-        // Show as the last error step
         const idx = STEP_STATUS.findIndex(s => s === 'pending');
         onStep({
-          index: idx >= 0 ? idx : STEP_STATUS.length - 1,
+          index: idx >= 0 ? idx : Math.max(STEP_STATUS.length - 1, 0),
           status: 'error',
           message: '转换失败：' + (err && err.message ? err.message : err)
         });
         alert('转换失败：' + (err && err.message ? err.message : err));
       } finally {
         isConverting = false;
-        btnConvert.disabled = false;
         btnConvert.textContent = '开始转换并下载';
+        updateConvertEnabled();
       }
     });
 
+    // init
+    STEP_LABELS = [{label: '等待选择文件…'}];
     renderSteps();
+    updateConvertEnabled();
   })();
 </script>
 </body>
