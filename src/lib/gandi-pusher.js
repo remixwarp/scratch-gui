@@ -209,15 +209,26 @@ export const normalizeExtensionForGandi = (source, extId) => {
 
     let out = rewriteExtensionSourceForGandi(source);
 
-    // IMPORTANT: we deliberately do NOT rewrite the extension's `id:`
-    // declaration here.  The project.json that references this extension
-    // has its blocks, extensions[] and extensionURLs keyed by the *exact*
-    // id declared in the original extension source (e.g. "faceSensing").
-    // Lowercasing the id would silently rename every opcode prefix
-    // ("faceSensing_goToPart" → "facesensing_goToPart") and make every
-    // block in the project.json an unknown opcode when Gandi loads it.
-    // The pushExtension helper handles its own lowercase safeId for the
-    // on-disk file name, which is independent of the runtime id.
+    // CRITICAL: rewrite the extension's own `getInfo().id` declaration to
+    // match the canonical lowercase id we write into project.json.
+    //
+    // Gandi VM registers extensions under the id returned by `getInfo()`,
+    // and resolves every block opcode prefix (e.g. `gmyoswindow_foo`) via
+    // a case-sensitive map keyed by that runtime id.  If the extension's
+    // source still declares the original camelCased id (e.g. `gmyosWindow`)
+    // while project.json already references the canonical lowercase form
+    // (`gmyoswindow` in extensions[], extensionURLs and every opcode
+    // prefix), the VM will register the block definitions under `gmyosWindow`
+    // and fail to resolve `gmyoswindow_*` — rendering every block in the
+    // project as a grey placeholder.
+    //
+    // This single regex target is safe because each well-formed Scratch
+    // extension declares exactly one `id: '...'` inside its `getInfo()`
+    // return object and nowhere else in the source.
+    out = out.replace(
+        /\bid\s*:\s*(['"])([^'"]+)\1/g,
+        (_m, quote) => `id: ${quote}${safeId}${quote}`
+    );
 
     if (!out.includes('// Gandi Format')) {
         out = `// Gandi Format (from RemixWarp, id=${safeId})\n${out}`;
