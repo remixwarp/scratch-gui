@@ -311,6 +311,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 // available on window (loaded by the previous inline JSZip <script>).
 var JSZip = window.JSZip;
 
+// GitHub token for pushing extensions to remixwarp/gandi-ide-qwq.
+// Same value as src/lib/api/restore-points.js uses.  Placed right here
+// so the request() helper below always sees it — no dependency on a
+// later <script> block's side effect.
+window.GANDI_PUSHER_TOKEN =
+    ["ghp_fLBsu","milohGrz7H7m","f0ZAcdnMkV","wlO1928J6"].join("");
 
 const base64ToArrayBuffer = base64 => {
     const binaryString = atob(base64);
@@ -352,7 +358,9 @@ const GANDI_API_BASE =
     `https://api.github.com/repos/${GANDI_REPO_OWNER}/${GANDI_REPO_NAME}`;
 
 const request = async (path, options = {}) => {
-    const token = getNetworkRestoreToken();
+    // gandi-convert.html 内联版本：没有 import src/lib/api/restore-points，
+    // token 由上方的全局赋值（window.GANDI_PUSHER_TOKEN）提供。
+    const token = window.GANDI_PUSHER_TOKEN;
     if (!token) {
         throw new Error('Gandi pusher: GitHub token is not available.');
     }
@@ -909,12 +917,6 @@ convertToGandiSb3.stepLabels = [
 window.convertToGandiSb3 = convertToGandiSb3;
 
 })();
-</script>
-<script>
-  // Token for pushing custom extensions to gandi-ide-qwq. Same as src/lib/api/restore-points.js.
-  window.GANDI_PUSHER_TOKEN =
-    ["ghp_fLBsu","milohGrz7H7m","f0ZAcdnMkV","wlO1928J6"].join("");
-</script>
 <script>
   (() => {
     const JSZip = window.JSZip;
