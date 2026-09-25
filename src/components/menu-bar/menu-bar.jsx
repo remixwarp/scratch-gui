@@ -520,7 +520,57 @@ class MenuBar extends React.Component {
                 const platformInfo = this.getPlatformInfo(agentName);
                 projectJson.meta.platform = platformInfo;
 
-                // --- Gandi (.sb3) compatibility conversion --------------
+                // --- 扩展检测（Scratch 特判） ---------------------------
+                //
+                // Scratch 原版 (scratch.mit.edu) 的 VM 不加载任何自定义扩展
+                // —— 带 URL 或 data-base64 的扩展一遇到就直接报错。
+                //
+                // 内置扩展（画笔 / 声音 / 控制等）在 Scratch 里有硬编码实现，
+                // project.json 里 extensions[] 可以保留它们（只要对应的
+                // extensionURLs key 不存在 / 为空），Scratch VM 能正常加载。
+                //
+                // 所以：
+                //   extensions[] 里有自定义 id 且 extensionURLs[id] 非空
+                //   → Scratch 转换直接阻止，弹 alert 告诉用户
+                //   → 其他编辑器（TurboWarp / RemixWarp / 02Engine / Gandi ...）
+                //     提示一下但允许继续，因为这些宿主都能加载自定义扩展。
+                const builtinSet = new Set([
+                    'motion', 'looks', 'sound', 'events', 'control',
+                    'sensing', 'operators', 'data', 'procedures',
+                    'pen', 'wedo2', 'music', 'microbit', 'text2speech',
+                    'translate', 'videoSensing', 'ev3', 'makeymakey',
+                    'boost', 'gdxfor', 'tw'
+                ]);
+                const customExtIds = (projectJson.extensions || [])
+                    .filter(id => !builtinSet.has((id || '').toLowerCase()))
+                    .filter(id => {
+                        const urls = projectJson.extensionURLs || {};
+                        // 标准 key 或 lower key —— pipeline 里已经重 key 过
+                        return urls[id] || urls[id.toLowerCase()];
+                    });
+                if (agentName === 'Scratch' && customExtIds.length > 0) {
+                    this.showAlert(
+                        '⚠ Scratch 原版不支持自定义扩展',
+                        '该项目包含以下自定义扩展：\n\n' +
+                        customExtIds.join(', ') +
+                        '\n\n这些扩展带有外部 URL 或 data-base64 编码的源码，' +
+                        'Scratch 加载时会直接报错。\n\n' +
+                        '请改用 TurboWarp / RemixWarp / Gandi 等编辑器，' +
+                        '或者先从项目中移除这些扩展再转换。'
+                    );
+                    return;  // 明确中断，不继续打包
+                }
+                if (agentName !== 'Scratch' && customExtIds.length > 0) {
+                    this.showAlert(
+                        '⚠ 检测到自定义扩展',
+                        '该项目包含以下自定义扩展：\n\n' +
+                        customExtIds.join(', ') +
+                        '\n\n目标平台「' + agentName + '」可能可以加载，' +
+                        '也可能因为扩展源码来源不同而无法正常运行。\n' +
+                        '转换仍会继续进行，请在目标编辑器内打开后手动验证。'
+                    );
+                }
+                // --- 扩展检测 end --------------------------------------
                 //
                 //  File → 兼容性转换 → "Gandi (.sb3)"
                 //

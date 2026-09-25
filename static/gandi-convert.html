@@ -1064,15 +1064,63 @@ window.convertToGandiSb3 = convertToGandiSb3;
             '目标数: ' + (res.finalProjectJson.targets ? res.finalProjectJson.targets.length : 0) +
             ' · 输出: ' + fmtBytes(res.content.length);
         } else {
-          // All other editors: plain sb3 (no extension rewriting)
-          STEP_LABELS = [{label: '处理中…', status: 'pending'}];
-          renderSteps();
-          onStep({index: 0, status: 'running', message: '生成 ' + selectedPlatform + ' (.sb3)'});
+          // All other editors: 2-step pipeline (metadata rewrite + repack)
+          // Scratch 原版：不允许带有任何自定义扩展（URL / data-base64 编码）
+          // —— 画笔 / 声音 / 控制等内置扩展（无 extensionURLs key）没问题
+          const BUILTIN_EXT = new Set([
+            'motion','looks','sound','events','control',
+            'sensing','operators','data','procedures',
+            'pen','wedo2','music','microbit','text2speech',
+            'translate','videoSensing','ev3','makeymakey',
+            'boost','gdxfor','tw'
+          ]);
+          const extIds = (projectJson.extensions || []).filter(
+            id => !BUILTIN_EXT.has((id || '').toLowerCase())
+          );
+          const extURLs = projectJson.extensionURLs || {};
+          // custom = extension id 有 URL / data-base64 引用
+          const customExts = extIds.filter(id => extURLs[id] || extURLs[id.toLowerCase()]);
+          if (customExts.length > 0) {
+            const list = customExts.join(', ');
+            if (selectedPlatform === 'Scratch') {
+              // Scratch 原版 100% 不支持自定义扩展 —— 明确阻止
+              alert(
+                '⚠ Scratch 原版不支持任何自定义扩展。\n\n' +
+                '该项目包含以下自定义扩展：\n' +
+                '  ' + list + '\n\n' +
+                '这些扩展带有外部 URL 或 data-base64 编码的源码，' +
+                'Scratch 加载时会直接报错。\n\n' +
+                '请改用 TurboWarp / RemixWarp / Gandi，' +
+                '或者先从项目中移除这些扩展再转换。'
+              );
+              throw new Error('Scratch 不支持自定义扩展: ' + list);
+            } else {
+              // 其他编辑器提示但允许继续
+              alert(
+                '⚠ 检测到自定义扩展：' + list + '\n\n' +
+                '目标平台 ' + selectedPlatform + ' 可能可以加载，' +
+                '也可能因为扩展源码来源不同而无法正常运行。\n' +
+                '转换仍会继续进行，但请在目标编辑器内打开后手动验证。'
+              );
+            }
+          }
 
+          STEP_LABELS = [
+            {label: '1. 改写 meta.agent / meta.platform → ' + selectedPlatform},
+            {label: '2. 生成 ' + selectedPlatform + ' (.sb3) 并下载'}
+          ];
+          renderSteps();
+
+          onStep({index: 0, status: 'running',
+            message: '改写 meta: ' + selectedPlatform + ' → ' + platformInfo.url});
+
+          // meta 已在上面 apply 过 —— 直接打包
+          onStep({index: 0, status: 'success', message: 'meta 写入完成'});
+
+          onStep({index: 1, status: 'running', message: '重新打包 sb3'});
           const modifiedJson = new TextEncoder().encode(JSON.stringify(projectJson));
           projectFiles['project.json'] = modifiedJson;
 
-          // Rebuild zip — keep only files sb3 actually uses
           const zip = new JSZip();
           for (const [name, data] of Object.entries(projectFiles)) {
             if (name === 'project.json' ||
@@ -1087,8 +1135,14 @@ window.convertToGandiSb3 = convertToGandiSb3;
             compression: 'DEFLATE',
             compressionOptions: {level: 6}
           });
-          onStep({index: 0, status: 'success', message: selectedPlatform + ' (.sb3) 准备就绪'});
-          resultInfo.textContent = '输出: ' + fmtBytes(content.length);
+          onStep({index: 1, status: 'success', message: selectedPlatform + ' (.sb3) 准备就绪'});
+
+          let info = '输出: ' + fmtBytes(content.length);
+          if (extIds.length) {
+            info += ' · 扩展: ' + extIds.join(', ') +
+                    (customExts.length ? ' (自定义⚠)' : ' (内置)');
+          }
+          resultInfo.textContent = info;
         }
 
         // Download
