@@ -42,7 +42,7 @@ const genUid = () => {
     return result;
 };
 
-const cleanTargetForGandi = target => {
+const cleanTargetForGandi = (target, extIdMap) => {
     if (!target.isStage) {
         if (target.visible === undefined) target.visible = true;
         if (target.x === undefined) target.x = 0;
@@ -86,6 +86,25 @@ const cleanTargetForGandi = target => {
     });
 
     if (target.blocks) {
+        // Build a case-insensitive opcode prefix map so we can rewrite
+        // e.g. "nishiowoDectalk_stopAll" → "nishiowodectalk_stopAll"
+        // because Gandi does case-sensitive extension-id resolution.
+        // Only rewrite when the original (case-preserving) prefix is in
+        // extIdMap — this avoids accidentally touching builtins.
+        const rewriteOpcode = opcode => {
+            if (!opcode) return opcode;
+            for (const [origId, canonical] of Object.entries(extIdMap || {})) {
+                // origId may be camelCase (e.g. "nishiowoDectalk"),
+                // canonical is always lowercase ("nishiowodectalk").
+                // Rewrite any opcode that starts with origId + '_'.
+                if (opcode === canonical) continue;
+                if (opcode.startsWith(origId + '_')) {
+                    return canonical + opcode.slice(origId.length);
+                }
+            }
+            return opcode;
+        };
+
         const blockNewKeyMap = {};
         Object.keys(target.blocks).forEach(oldKey => {
             blockNewKeyMap[oldKey] = genUid();
@@ -120,6 +139,7 @@ const cleanTargetForGandi = target => {
                     inp[2] = blockNewKeyMap[inp[2]];
                 }
             });
+            b.opcode = rewriteOpcode(b.opcode);
             newBlocks[blockNewKeyMap[oldKey]] = b;
         });
         target.blocks = newBlocks;
@@ -160,19 +180,50 @@ export const convertToGandiSb3 = async ({
     emitStep(0, 'running',
         '1. 拆解 RemixWarp (.sb3) 中的自定义扩展');
 
-    const extIds = (projectJson.extensions || [])
-        .filter(id => !BUILTIN_EXTENSIONS.has(id));
+    // IMPORTANT: Gandi VM does case-sensitive Map lookups for
+    // extensionURLs.get(extensionID) and wildExtensions[extId], so the
+    // extId must match everywhere — extensions[] array, extensionURLs
+    // keys, wildExtensions keys, and wildExtensions[*].id field.
+    // xiao-xiao-lang's hand-written Gandi files (Cnv2.sb3 / Cnv0.sb3)
+    // consistently use lowercase for all of these. We lowercase at
+    // the very top so there is one canonical form everywhere.
+
+    // Capture the original (case-preserving) ids first, because the
+    // project.json block opcodes are prefixed with these (e.g.
+    // "nishiowoDectalk_stopAll") and we need to rewrite them to match
+    // the new lowercase id ("nishiowodectalk_stopAll").
+    const rawExtIds = (projectJson.extensions || []).filter(
+        id => !BUILTIN_EXTENSIONS.has(id.toLowerCase())
+    );
+    const canonicalExtIds = rawExtIds.map(id => id.toLowerCase());
+
+    // extIdMap keys are the original (possibly camelCased) ids as they
+    // appear in block opcodes; values are the canonical lowercase form we
+    // write into extensions[] / wildExtensions. This lets us rewrite
+    // opcodes like "nishiowoDectalk_stopAll" → "nishiowodectalk_stopAll"
+    // below when target.blocks get cleaned.
+    const extIdMap = {};
+    for (const orig of rawExtIds) {
+        extIdMap[orig] = orig.toLowerCase();
+    }
+
     const extURLs = projectJson.extensionURLs || {};
-    const hasCustomExts = extIds.some(id => extURLs[id]);
+    const extURLsLower = {};
+    for (const [k, v] of Object.entries(extURLs)) {
+        extURLsLower[k.toLowerCase()] = v;
+    }
+    projectJson.extensionURLs = extURLsLower;
+    projectJson.extensions = [...canonicalExtIds];
+    const hasCustomExts = canonicalExtIds.some(id => extURLsLower[id]);
 
     // Step 1-5 — 扩展处理（可能没有自定义扩展就跳过）
     const pushed = {};
     if (hasCustomExts) {
         emitStep(1, 'running',
-            `2. 处理 ${extIds.length} 个自定义扩展（本地）`);
+            `2. 处理 ${canonicalExtIds.length} 个自定义扩展（本地）`);
 
-        for (const extId of extIds) {
-            const rawUrl = extURLs[extId];
+        for (const extId of canonicalExtIds) {
+            const rawUrl = extURLsLower[extId];
             emitStep(2, 'running',
                 `读取扩展 ${extId}`);
             let source = '';
@@ -230,14 +281,14 @@ export const convertToGandiSb3 = async ({
     delete projectJson.meta.gandiAuthor;
     delete projectJson.meta.gandiCreatedWith;
 
-    (projectJson.targets || []).forEach(cleanTargetForGandi);
+    (projectJson.targets || []).forEach(t => cleanTargetForGandi(t, extIdMap));
     if (!projectJson.monitors) projectJson.monitors = [];
 
     if (hasCustomExts && Object.keys(pushed).length > 0) {
         const wildExtensions = {};
         const finalURLs = {};
         const keepIds = [];
-        for (const extId of extIds) {
+        for (const extId of canonicalExtIds) {
             const p = pushed[extId];
             if (!p) continue;
             wildExtensions[extId] = {id: extId, url: p.url};

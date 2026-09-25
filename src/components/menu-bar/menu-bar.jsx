@@ -578,15 +578,39 @@ class MenuBar extends React.Component {
                     };
 
                     // Step 1 — 拆解扩展
-                    const extIds = (projectJson.extensions || [])
-                        .filter(id => !builtins.has(id));
+                    // IMPORTANT: Gandi VM does case-sensitive Map lookups for
+                    // extensionURLs.get(extensionID) and wildExtensions[extId],
+                    // so the extId must match everywhere — extensions[] array,
+                    // extensionURLs keys, wildExtensions keys, and
+                    // wildExtensions[*].id field. xiao-xiao-lang's hand-written
+                    // Gandi files (Cnv2.sb3 / Cnv0.sb3) consistently use
+                    // lowercase for all of these. We lowercase at the very top
+                    // so there is one canonical form everywhere.
+                    const rawExtIds = (projectJson.extensions || [])
+                        .filter(id => !builtins.has(id.toLowerCase()));
+                    const extIds = rawExtIds.map(id => id.toLowerCase());
                     const extURLs = projectJson.extensionURLs || {};
-                    const hasCustomExts = extIds.some(id => extURLs[id]);
+                    const extURLsLower = {};
+                    for (const [k, v] of Object.entries(extURLs)) {
+                        extURLsLower[k.toLowerCase()] = v;
+                    }
+                    projectJson.extensionURLs = extURLsLower;
+                    projectJson.extensions = [...extIds];
+                    const hasCustomExts = extIds.some(id => extURLsLower[id]);
+                    // extIdMap keys are the original (possibly camelCased) ids
+                    // as they appear in block opcodes; values are the canonical
+                    // lowercase form we write into extensions[] / wildExtensions.
+                    // cleanTargetForGandi uses this to rewrite opcodes like
+                    // "nishiowoDectalk_stopAll" → "nishiowodectalk_stopAll".
+                    const extIdMap = {};
+                    for (const orig of rawExtIds) {
+                        extIdMap[orig] = orig.toLowerCase();
+                    }
 
                     emitStep(0, 'running', '拆解 RemixWarp (.sb3) 中的自定义扩展');
 
                     // helpers for shape-cleaning (Gandi 不认识的 RemixWarp 字段)
-                    const cleanTargetForGandi = target => {
+                    const cleanTargetForGandi = (target, eidMap) => {
                         if (!target.isStage) {
                             if (target.visible === undefined) target.visible = true;
                             if (target.x === undefined) target.x = 0;
@@ -659,6 +683,25 @@ class MenuBar extends React.Component {
                         //   3) 再扫一遍，把 parent / next / shadow / inputs[*][1]（shadow）
                         //      里的旧 key 全部替换成 newKeyMap
                         if (target.blocks) {
+                            // Rewrite block opcodes whose prefix matches one of our
+                            // extension ids in its original (possibly camelCased)
+                            // form so they use the canonical lowercase form. Gandi
+                            // VM does case-sensitive extension lookup and the
+                            // opcode prefix must match extensions[] / wildExtensions
+                            // keys exactly.
+                            const rewriteOpcode = opcode => {
+                                if (!opcode || !eidMap) return opcode;
+                                for (const [origId, canonical] of Object.entries(eidMap)) {
+                                    // origId may be camelCase (e.g. "nishiowoDectalk"),
+                                    // canonical is always lowercase ("nishiowodectalk").
+                                    if (opcode === canonical) continue;
+                                    if (opcode.startsWith(origId + '_')) {
+                                        return canonical + opcode.slice(origId.length);
+                                    }
+                                }
+                                return opcode;
+                            };
+
                             const blockNewKeyMap = {};
                             Object.keys(target.blocks).forEach(oldKey => {
                                 blockNewKeyMap[oldKey] = genUid();
@@ -697,6 +740,7 @@ class MenuBar extends React.Component {
                                         inp[2] = blockNewKeyMap[inp[2]];
                                     }
                                 });
+                                b.opcode = rewriteOpcode(b.opcode);
                                 newBlocks[blockNewKeyMap[oldKey]] = b;
                             });
                             target.blocks = newBlocks;
@@ -710,7 +754,7 @@ class MenuBar extends React.Component {
                             `处理 ${extIds.length} 个自定义扩展（本地）`);
 
                         for (const extId of extIds) {
-                            const rawUrl = extURLs[extId];
+                            const rawUrl = extURLsLower[extId];
                             emitStep(2, 'running',
                                 `读取扩展 ${extId}`);
                             let source = '';
@@ -770,7 +814,7 @@ class MenuBar extends React.Component {
                     delete projectJson.meta.gandiCreatedWith;
 
                     // targets — 去掉 RemixWarp 字段
-                    (projectJson.targets || []).forEach(cleanTargetForGandi);
+                    (projectJson.targets || []).forEach(t => cleanTargetForGandi(t, extIdMap));
 
                     if (!projectJson.monitors) projectJson.monitors = [];
 
