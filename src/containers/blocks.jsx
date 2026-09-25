@@ -242,6 +242,84 @@ class Blocks extends React.Component {
 
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
 
+        // remixwarp: Monkey-patch runtime._pushThread 修复 reporter 弹窗在
+        // 拆分/工具箱场景下完全不出现的问题。
+        //
+        // 根因：scratch-vm 的 _pushThread 一律把 thread.blockContainer
+        // 设为 target.blocks，不查 runtime.flyoutBlocks。点 reporter 时
+        // (stackClick=true) 又立即 tryCompile（compilerOptions.enabled 默认
+        // true），irgen 在 target.blocks 里找不到 reporter → 抛 "Cannot
+        // find top block" 循环刷屏，正常 stepThread 执行路径被阻塞，
+        // VISUAL_REPORT 事件永远不发 → 弹窗完全不出现。
+        //
+        // 修复：
+        // 1. blockContainer 选择加上 flyoutBlocks 回退
+        // 2. stackClick 模式（点击 reporter / 一次性短寿命执行）一律跳过
+        //    tryCompile：官方就标注 flyout block "cannot compile"，短寿命
+        //    单次执行 compile 收益极小，compile 失败还会阻塞正常执行。
+        const runtime = this.props.vm.runtime;
+        if (runtime && !runtime._pushThreadPatched) {
+            runtime._pushThreadPatched = true;
+            const origPushThread = runtime._pushThread.bind(runtime);
+            runtime._pushThread = function (id, target, opts) {
+                // 先调原始实现（它会 pushStack id 字符串——不查 blockContainer，
+                // 所以用错 blockContainer 也不会出事；但 tryCompile 会用错的
+                // blockContainer 抛错）。
+                const thread = origPushThread(id, target, opts);
+
+                // remixwarp: 正确选择 blockContainer
+                // - monitor thread → monitorBlocks
+                // - target.blocks 里能找到 → target.blocks
+                // - runtime.flyoutBlocks 里能找到 → flyoutBlocks
+                //   （reporter 在工具箱/拆分工作区 flyout 里的场景）
+                // - 都找不到 → 保持原值
+                const isMonitor = Boolean(opts && opts.updateMonitor);
+                let wantContainer;
+                if (isMonitor) {
+                    wantContainer = this.monitorBlocks;
+                } else if (target && target.blocks && target.blocks.getBlock(id)) {
+                    wantContainer = target.blocks;
+                } else if (this.flyoutBlocks && this.flyoutBlocks.getBlock(id)) {
+                    wantContainer = this.flyoutBlocks;
+                } else {
+                    wantContainer = thread.blockContainer; // 保持原值
+                }
+                if (thread.blockContainer !== wantContainer && wantContainer) {
+                    thread.blockContainer = wantContainer;
+                }
+
+                // remixwarp: stackClick（一次性点击执行，尤其是工具箱 reporter）
+                // 一律不走 compile —— flyout block 官方就标注 "cannot compile"，
+                // 短寿命单次执行 compile 收益极小，更关键的是：原始实现里
+                // compilerOptions.enabled=true 时立刻 tryCompile，会在
+                // target.blocks 里找不到 reporter → 抛 "Cannot find top block"
+                // 循环刷屏，compile error 还会被 blockContainer 缓存，
+                // sequencer 之后尝试 stepThread 也被阻塞 → VISUAL_REPORT 事件
+                // 永远不发 → reporter 弹窗完全不出现。
+                if (opts && opts.stackClick) {
+                    // 重置 tryCompile 状态让 sequencer 走 stepThread
+                    thread.triedToCompile = false;
+                    thread.isCompiled = false;
+                    thread.generator = null;
+                    thread.procedures = {};
+                    thread.executableHat = false;
+                    thread.blockGlowInFrame = null;
+                    // 清掉可能被缓存的 compile error（在错误的 blockContainer
+                    // 上 tryCompile 时可能已经缓存了 Cannot find top block）
+                    try {
+                        thread.blockContainer &&
+                            thread.blockContainer.clearCachedCompileResult &&
+                            thread.blockContainer.clearCachedCompileResult(id);
+                        this.flyoutBlocks &&
+                            this.flyoutBlocks.clearCachedCompileResult &&
+                            this.flyoutBlocks.clearCachedCompileResult(id);
+                    } catch (_) { /* ignore */ }
+                }
+
+                return thread;
+            };
+        }
+
         // Monkey-patch ScratchBlockComment for hat reminder features
         const ScratchBlockComment = this.ScratchBlocks.ScratchBlockComment;
         const ScratchBubble = this.ScratchBlocks.ScratchBubble;
