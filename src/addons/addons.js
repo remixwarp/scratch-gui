@@ -111,9 +111,7 @@ const addons = [
     'script-tabs',
     'merge-operators',
     'resize-selected-item',
-    'bilup-sample',
-    '02agent',
-    'novatheai'
+    'bilup-sample'
 ];
 
 const newAddons = [
