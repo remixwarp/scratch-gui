@@ -59,7 +59,31 @@ const getCategoryInfo = (categoryId) => {
 };
 
 const tutorialData = [
-
+    {
+        id: 'BV14aaT6jERa',
+        bvid: 'BV14aaT6jERa',
+        category: 2,
+        bt: 'Scratch?! 可视化列表?! 看看效果如何~',
+        jj: '欢迎泥~ 链接在这：https://talanfurry.lanzouc.com/i3sGh49syila',
+        fm: require('./images/BV14aaT6jERa.jpg'),
+        url: 'https://rw-vep.pages.dev/BV14aaT6jERa'
+    },
+    {
+        id: 'BV1fgb16PEy7',
+        bvid: 'BV1fgb16PEy7',
+        category: 2,
+        bt: 'scratch求百分数！仅4积木，非常简单~',
+        jj: '非常简单',
+        fm: require('./images/BV1fgb16PEy7.jpg'),
+    },
+    {
+        id: 'BV1kQMJ6mE3Q',
+        bvid: 'BV1kQMJ6mE3Q',
+        category: 2,
+        bt: 'Turbowarp的文本也能换行？！教你在turbowarp里获得回车、换行符！非常简单，一学就会。',
+        jj: '这个视频比较短，更多是介绍unicode和这个文本扩展的',
+        fm: require('./images/BV1kQMJ6mE3Q.jpg'),
+    },
     {
         id: 'BV1Cu5m6kENy',
         bvid: 'BV1Cu5m6kENy',

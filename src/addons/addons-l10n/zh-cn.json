@@ -347,6 +347,8 @@
   "block-count/total-blocks": "积木总数",
   "block-count/total-scripts": "脚本数",
   "block-count/total-sprites": "角色数",
+  "block-count/total-costumes": "造型总数",
+  "block-count/total-sounds": "声音总数",
   "block-count/complexity-score": "复杂度评分",
   "block-count/max-nesting": "最大嵌套层级",
   "block-count/avg-nesting": "平均嵌套层级",

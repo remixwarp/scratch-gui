@@ -66,7 +66,7 @@ const VideoModal = props => {
                 ) : (
                     <>
                         <iframe
-                            src={`//player.bilibili.com/player.html?isOutside=true&bvid=${props.tutorial.bvid}&p=1`}
+                            src={`https://player.bilibili.com/player.html?isOutside=true&bvid=${props.tutorial.bvid}&p=1`}
                             scrolling="no"
                             border="0"
                             frameBorder="no"
