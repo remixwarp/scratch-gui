@@ -39,3 +39,5 @@ npm-*
 
 # Dev server log
 dev-server.log
+devserver.log
+devserver*.log
