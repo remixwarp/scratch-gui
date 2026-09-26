@@ -2,9 +2,14 @@
 .DS_Store
 
 # NPM
-/node_modules
+# 忽略任意层级的 node_modules（不只根目录），避免临时安装的依赖被提交
+**/node_modules/
+node_modules/
 npm-*
 *.zip
+
+# 本地临时目录（排查/临时安装用）
+/.tmp-test
 
 # Environment variables
 .env
