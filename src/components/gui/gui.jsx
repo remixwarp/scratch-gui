@@ -114,6 +114,7 @@ import {
     MODAL_PROJECT_METADATA
 } from '../../reducers/modals.js';
 import {openWorkspaceBookmarksMenu} from '../../reducers/menus.js';
+import {setLoadingProgress} from '../../reducers/loading-progress.js';
 import {openCollaborationModal} from '../../reducers/collaboration.js';
 import MWCommandPalette from '../../containers/mw-command-palette.jsx';
 import SettingsStore from '../../addons/settings-store-singleton.js';
@@ -441,6 +442,7 @@ const GUIComponent = props => {
         isTotallyNormal,
         loading,
         locale,
+        dispatch,
         logo,
         renderLogin,
         onClickAbout,
@@ -603,7 +605,8 @@ const GUIComponent = props => {
             console.log('File:', file);
             
             // Check if the file is a Scratch project file
-            if (file.name.endsWith('.sb3') || file.name.endsWith('.sb2') || file.name.endsWith('.sb') || file.name.endsWith('.html')) {
+            // eslint-disable-next-line max-len
+            if (file.name.endsWith('.sb3') || file.name.endsWith('.sb2') || file.name.endsWith('.sb') || file.name.endsWith('.html') || file.name.endsWith('.rj')) {
                 console.log('Scratch project file detected:', file.name);
                 
                 // Directly handle the file upload
@@ -618,6 +621,14 @@ const GUIComponent = props => {
                     
                     // Read the file
                     const reader = new FileReader();
+                    dispatch(setLoadingProgress({
+                        source: 'file',
+                        phase: 'readFile',
+                        detail: locale === 'zh-cn' ?
+                            `正在从硬盘读取作品文件（${file.name}）……` :
+                            `Reading project file from disk (${file.name}) …`,
+                        percent: 2
+                    }));
                     reader.onload = () => {
                         console.log('File read successfully');
                         const filename = file.name;
@@ -648,6 +659,35 @@ const GUIComponent = props => {
                                 onLoadingFailed(error);
                                 onLoadingFinished(loadingState, false);
                             }
+                        } else if (filename && filename.endsWith('.rj')) {
+                            // .rj = RemixWarp 分片式作品文件，直接装进 VM（资源按需解压）
+                            console.log('RJ file detected, loading into VM');
+                            Promise.all([
+                                import('../../lib/rj/deserialize.js'),
+                                import('../../lib/rj/progress.js')
+                            ])
+                                .then(([{loadRJIntoVM}, {createRJProgressReporter}]) => {
+                                    const report = payload => dispatch(setLoadingProgress(payload));
+                                    return loadRJIntoVM(vm, projectData, {
+                                        onProgress: progress => {
+                                            console.log('[rj]', progress.stage);
+                                            createRJProgressReporter(locale, report)(progress);
+                                        }
+                                    });
+                                })
+                                .then(() => {
+                                    if (filename) {
+                                        const titleMatch = filename.match(/^(.*)\.(?:sb[23]?|rj|html)$/);
+                                        if (titleMatch) onSetProjectTitle(titleMatch[1].substring(0, 100));
+                                    }
+                                    if (vm.renderer) vm.renderer.draw();
+                                    onLoadingFinished(loadingState, true);
+                                })
+                                .catch(error => {
+                                    console.error('Failed to load .rj file:', error);
+                                    onLoadingFailed(error);
+                                    onLoadingFinished(loadingState, false);
+                                });
                         } else {
                             loadProjectData();
                         }
@@ -658,7 +698,8 @@ const GUIComponent = props => {
                                 .then(() => {
                                     console.log('Project loaded successfully');
                                     if (filename) {
-                                        const uploadedProjectTitle = filename.match(/^(.*)\.(?:sb[23]?|html)$/) ? filename.match(/^(.*)\.(?:sb[23]?|html)$/)[1].substring(0, 100) : '';
+                                        const titleMatch = filename.match(/^(.*)\.(?:sb[23]?|rj|html)$/);
+                                    const uploadedProjectTitle = titleMatch ? titleMatch[1].substring(0, 100) : '';
                                         onSetProjectTitle(uploadedProjectTitle);
                                         console.log('Project title set to:', uploadedProjectTitle);
                                     }
@@ -1043,7 +1084,7 @@ const GUIComponent = props => {
         );
         const isSmall = stageContainerWidth < smallThreshold;
 
-        if (isSmall && props.stageSizeMode !== STAGE_SIZE_MODES.small) {
+        if (isSmall && props.stageSizeMode !== STAGE_SIZE_MODES.small && props.stageSizeMode !== STAGE_SIZE_MODES.full) {
             syncingModeRef.current = true;
             props.onSetStageSize(STAGE_SIZE_MODES.small);
         } else if (!isSmall && props.stageSizeMode === STAGE_SIZE_MODES.small) {
@@ -1061,7 +1102,7 @@ const GUIComponent = props => {
         }
 
         if (stageContainerWidth < AUTO_SMALL_STAGE_INNER_WIDTH) {
-            if (props.stageSizeMode !== STAGE_SIZE_MODES.small) {
+            if (props.stageSizeMode !== STAGE_SIZE_MODES.small && props.stageSizeMode !== STAGE_SIZE_MODES.full) {
                 if (autoSmallStageRequestedRef.current) return;
                 autoSmallStageRequestedRef.current = true;
                 autoSmallStageActiveRef.current = true;

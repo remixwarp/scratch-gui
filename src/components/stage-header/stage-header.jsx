@@ -17,7 +17,6 @@ import BlockCounterToggle from '../block-counter/block-counter-toggle.jsx';
 
 import largeStageIcon from '!../../lib/tw-recolor/build!./icon--large-stage.svg';
 import smallStageIcon from '!../../lib/tw-recolor/build!./icon--small-stage.svg';
-import fullStageIcon from '!../../lib/tw-recolor/build!./icon--full-stage.svg';
 import settingsIcon from './icon--settings.svg';
 
 import {
@@ -90,7 +89,6 @@ const StageHeaderComponent = function (props) {
         onSetStageUnFullScreen,
         onSetStageLarge,
     onSetStageSmall,
-    onSetStageInitial,
     onSetStageFull,
     onOpenSettings,
         isEmbedded,
@@ -248,13 +246,6 @@ const StageHeaderComponent = function (props) {
                                 title: props.intl.formatMessage(messages.smallStageSizeMessage)
                             },
                             {
-                                handleClick: onSetStageInitial,
-                                icon: fullStageIcon,
-                                iconClassName: styles.stageButtonIcon,
-                                isSelected: stageSizeMode === STAGE_SIZE_MODES.initial,
-                                title: props.intl.formatMessage(messages.initialStageSizeMessage)
-                            },
-                            {
                                 handleClick: onSetStageFull,
                                 icon: largeStageIcon,
                                 iconClassName: styles.stageButtonIcon,
@@ -351,7 +342,6 @@ StageHeaderComponent.propTypes = {
     onSetStageUnFullScreen: PropTypes.func.isRequired,
     onSetStageLarge: PropTypes.func.isRequired,
     onSetStageSmall: PropTypes.func.isRequired,
-    onSetStageInitial: PropTypes.func.isRequired,
     onSetStageFull: PropTypes.func.isRequired,
     onOpenSettings: PropTypes.func.isRequired,
     isEmbedded: PropTypes.bool.isRequired,

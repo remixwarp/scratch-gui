@@ -205,6 +205,34 @@
     width: 0;
     height: 100%;
     background-color: $ui-white-default;
+    overflow: hidden;
+}
+
+/* 进度条上的高光：用 transform 做动画（由合成器线程驱动），
+   即使主线程因超大作品的反序列化被卡住，高光也会继续流动，
+   让界面看起来仍在工作，而不是「卡死」。 */
+.bar-shimmer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.55) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    animation: bar-shimmer-move 1.1s linear infinite;
+}
+
+@keyframes bar-shimmer-move {
+    0% {
+        transform: translateX(-120%);
+    }
+    100% {
+        transform: translateX(320%);
+    }
 }
 
 .random-message {
@@ -216,6 +244,29 @@
     animation: fade-in 0.8s ease-in-out;
 }
 
+/* 进度条 + 百分比数字 */
+.bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 320px;
+}
+
+.bar-row .bar-outer {
+    flex: 1;
+}
+
+.percent-text {
+    min-width: 44px;
+    text-align: left;
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: $ui-white-default;
+}
+
+/* 遮罩淡入 */
 @keyframes fade-in {
     from {
         opacity: 0;

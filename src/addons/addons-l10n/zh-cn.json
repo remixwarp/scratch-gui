@@ -164,6 +164,7 @@
   "variable-manager/search": "搜索",
   "variable-manager/too-big": "单击显示非常大的值。",
   "variable-manager/variables": "变量",
+  "variable-manager/lists": "列表",
   "search-sprites/placeholder": "搜索角色...",
   "sprite-properties/close-properties-panel-tooltip": "收起属性面板",
   "sprite-properties/open-properties-panel-tooltip": "打开属性面板",

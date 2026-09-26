@@ -28,6 +28,7 @@ import {MenuItem, MenuSection, Submenu} from '../menu/menu.jsx';
 import ProjectTitleInput from './project-title-input.jsx';
 import AuthorInfo from './author-info.jsx';
 import SB3Downloader from '../../containers/sb3-downloader.jsx';
+import RJDownloader from '../../containers/rj-downloader.jsx';
 import DeletionRestorer from '../../containers/deletion-restorer.jsx';
 import TurboMode from '../../containers/turbo-mode.jsx';
 import FramerateChanger from '../../containers/tw-framerate-changer.jsx';
@@ -182,7 +183,8 @@ import {
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, Settings, PackagePlus, Puzzle,
     Bookmark, GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, TerminalSquare, Sparkles, Wrench, Keyboard,
-    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store, Backpack, Terminal, ExternalLink
+    Zap, Gauge, BookOpen, Code, Trophy, ListTodo, Map, Activity, Store, Backpack, Terminal, ExternalLink,
+    FileDown
  } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -3669,6 +3671,19 @@ class MenuBar extends React.Component {
                                                 </React.Fragment>
                                             )}
                                         </SB3Downloader>
+                                        <RJDownloader>
+                                            {(_rjClassName, saveAsRJ) => (
+                                                <MenuItem
+                                                    isRtl={this.props.isRtl}
+                                                    onClick={this.getSaveToComputerHandler(saveAsRJ)}
+                                                >
+                                                    <FileDown size={20} />
+                                                    {this.props.locale === 'zh-cn' ?
+                                                        '保存为 .rj 作品文件' :
+                                                        'Save as .rj project file'}
+                                                </MenuItem>
+                                            )}
+                                        </RJDownloader>
                                     </MenuSection>
                                     <MenuSection>
                                         <MenuItem

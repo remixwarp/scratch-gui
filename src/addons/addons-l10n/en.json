@@ -207,6 +207,7 @@
   "variable-manager/search": "Search",
   "variable-manager/too-big": "Click to display very large value.",
   "variable-manager/variables": "Variables",
+  "variable-manager/lists": "Lists",
   "search-sprites/placeholder": "Search sprites...",
   "sprite-properties/close-properties-panel-tooltip": "Collapse properties panel",
   "sprite-properties/open-properties-panel-tooltip": "Open properties panel",

@@ -7,6 +7,10 @@ import log from '../utils/log';
 import sharedMessages from '../constants/shared-messages';
 import {setFileHandle, setProjectError} from '../../reducers/tw';
 import unpackage from '../unpackager';
+import {loadRJIntoVM} from '../rj/deserialize.js';
+import {isRJFilename} from '../rj/constants.js';
+import {createRJProgressReporter} from '../rj/progress.js';
+import {setLoadingProgress, resetLoadingProgress} from '../../reducers/loading-progress';
 
 import {
     LoadingStates,
@@ -87,7 +91,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                                     accept: {
                                         // Using application/x.scratch.sb3 as done in scratch-vm causes file pickers
                                         // to disallow picking any items in Chrome 133 on Android.
-                                        'application/octet-stream': ['.sb', '.sb2', '.sb3'],
+                                        'application/octet-stream': ['.sb', '.sb2', '.sb3', '.rj'],
                                         'text/html': ['.html']
                                     }
                                 }
@@ -112,7 +116,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
             } else {
                 // create <input> element and add it to DOM
                 this.inputElement = document.createElement('input');
-                this.inputElement.accept = '.sb,.sb2,.sb3,.html';
+                this.inputElement.accept = '.sb,.sb2,.sb3,.html,.rj';
                 this.inputElement.style = 'display: none;';
                 this.inputElement.type = 'file';
                 this.inputElement.onchange = this.handleChange; // connects to step 3
@@ -185,8 +189,8 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         getProjectTitleFromFilename (fileInputFilename) {
             if (!fileInputFilename) return '';
             // only parse title with valid scratch project extensions
-            // (.sb, .sb2, .sb3, or .html)
-            const matches = fileInputFilename.match(/^(.*)\.(?:sb[23]?|html)$/);
+            // (.sb, .sb2, .sb3, .rj, or .html)
+            const matches = fileInputFilename.match(/^(.*)\.(?:sb[23]?|rj|html)$/);
             if (!matches) return '';
             return matches[1].substring(0, 100); // truncate project title to max 100 chars
         }
@@ -194,8 +198,22 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         // file upload raw data is available in the reader
         async onload () {
             if (this.fileReader) {
-                this.props.onLoadingStarted();
                 const filename = this.fileToUpload && this.fileToUpload.name;
+                // 先上报「正在从硬盘读取作品文件」，再打开加载遮罩。
+                // 注意顺序：onLoadingStarted 会 reset 进度，所以必须放在它之后。
+                const reportReadFile = () => {
+                    const zh = this.props.locale === 'zh-cn';
+                    this.props.onLoadingProgress({
+                        source: 'file',
+                        phase: 'readFile',
+                        detail: zh ?
+                            `正在从硬盘读取作品文件（${filename}）……` :
+                            `Reading project file from disk (${filename}) …`,
+                        percent: 2
+                    });
+                };
+                this.props.onLoadingStarted();
+                reportReadFile();
                 let loadingSuccess = false;
                 // tw: stop when loading new project
                 this.props.vm.quit();
@@ -208,6 +226,36 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                         projectData = unpackaged.data;
                     } catch (error) {
                         log.error('Failed to unpackage HTML file:', error);
+                        this.props.onLoadingFailed(error);
+                        this.props.onLoadingFinished(this.props.loadingState, false);
+                        this.removeFileObjects();
+                        return;
+                    }
+                }
+
+                // .rj 是 RemixWarp 的分片式作品文件（zip + 多个 json）。
+                // 读取时按顺序读出角色 / 造型 / 背景 / 声音 / 变量 / 积木等名称表与数据，
+                // 然后直接装进 VM —— 资源由 VM 按需解压，不再重新打包成 sb3，
+                // 因此大作品的加载速度大幅提升。
+                if (isRJFilename(filename)) {
+                    try {
+                        const locale = this.props.locale;
+                        const report = this.props.onLoadingProgress;
+                        await loadRJIntoVM(this.props.vm, projectData, {
+                            onProgress: progress => {
+                                log.info(`[rj] ${progress.stage}`, progress);
+                                createRJProgressReporter(locale, report)(progress);
+                            }
+                        });
+                        if (filename) {
+                            this.props.onSetProjectTitle(this.getProjectTitleFromFilename(filename));
+                        }
+                        this.props.vm.renderer.draw();
+                        this.props.onLoadingFinished(this.props.loadingState, true);
+                        this.removeFileObjects();
+                        return;
+                    } catch (error) {
+                        log.error('Failed to load .rj project file:', error);
                         this.props.onLoadingFailed(error);
                         this.props.onLoadingFinished(this.props.loadingState, false);
                         this.removeFileObjects();
@@ -255,8 +303,10 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                 isLoadingUpload,
                 isShowingWithoutId,
                 loadingState,
+                locale,
                 onLoadingFailed,
                 onLoadingFinished,
+                onLoadingProgress,
                 onLoadingStarted,
                 onSetFileHandle,
                 onSetProjectTitle,
@@ -288,8 +338,10 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         loadingState: PropTypes.oneOf(LoadingStates),
         onLoadingFailed: PropTypes.func,
         onLoadingFinished: PropTypes.func,
+        onLoadingProgress: PropTypes.func,
         onLoadingStarted: PropTypes.func,
         onSetProjectTitle: PropTypes.func,
+        locale: PropTypes.string,
         projectChanged: PropTypes.bool,
         requestProjectUpload: PropTypes.func,
         showOpenFilePicker: PropTypes.func,
@@ -319,6 +371,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
             projectChanged: state.scratchGui.projectChanged,
             userOwnsProject: ownProps.authorUsername && user &&
                 (ownProps.authorUsername === user.username),
+            locale: state.locales ? state.locales.locale : 'en',
             vm: state.scratchGui.vm
         };
     };
@@ -337,7 +390,11 @@ const SBFileUploaderHOC = function (WrappedComponent) {
             dispatch(closeFileMenu());
         },
         // show project loading screen
-        onLoadingStarted: () => dispatch(openLoadingProject()),
+        onLoadingStarted: () => {
+            dispatch(resetLoadingProgress());
+            dispatch(openLoadingProject());
+        },
+        onLoadingProgress: payload => dispatch(setLoadingProgress(payload)),
         onSetProjectTitle: title => dispatch(setProjectTitle(title)),
         // step 4: transition the project state so we're ready to handle the new
         // project data. When this is done, the project state transition will be

@@ -140,8 +140,8 @@ export default async function ({addon, console, msg}) {
                       globalVariables.filter(v => v.scratchVariable.type === 'list').length;
     
         statsContainer.innerHTML = `
-      <span>Variables: ${totalVars - totalLists}</span>
-      <span>Lists: ${totalLists}</span>
+      <span>${msg('variables')}: ${totalVars - totalLists}</span>
+      <span>${msg('lists')}: ${totalLists}</span>
     `;
     };
 

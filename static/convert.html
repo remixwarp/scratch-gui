@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>兼容性转换 · RemixWarp</title>
-<meta name="description" content="上传 RemixWarp / TurboWarp / Scratch .sb3 作品，一键转换为 Scratch、TurboWarp、02Engine、AstraEditor、Bilup 或 Gandi 可直接打开的作品文件。">
+<meta name="description" content="上传 RemixWarp / TurboWarp / Scratch .sb3 作品，一键转换为 Scratch、TurboWarp、02Engine、AstraEditor、Bilup、Gandi 可直接打开的作品文件，或导出为 RemixWarp .rj 分片式作品文件。">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 <style>
   :root {
@@ -234,7 +234,7 @@
 <header>
   <div class="wrap">
     <h1>兼容性转换</h1>
-    <p>上传 .sb3 文件，转换为目标编辑器可直接打开的作品。</p>
+    <p>上传 .sb3 文件，转换为目标编辑器可直接打开的作品；选择 RemixWarp (.rj) 则导出分片式作品文件。</p>
   </div>
 </header>
 
@@ -944,9 +944,387 @@ window.convertToGandiSb3 = convertToGandiSb3;
 })();
 </script>
 <script>
+/*
+ * convertToRJ —— 把标准 .sb3 转换成 RemixWarp 的 .rj 分片式作品文件。
+ *
+ * 这里的实现与 src/lib/rj/serialize.js 完全一致（同样的常量、同样的文件名、
+ * 同样的字段结构），因此转换出来的 .rj 可以被编辑器直接导入。
+ *
+ * .rj 容器结构（仍然是 zip，解压后是很多 json）：
+ *   manifest.json            容器清单
+ *   tables/targets.json      角色名称表与角色数量
+ *   tables/costumes.json     造型 / 背景名称表
+ *   tables/sounds.json       声音名称表
+ *   tables/variables.json    变量 / 列表 / 广播名称表
+ *   tables/monitors.json     舞台监视器
+ *   targets/<index>.json     每个角色的数据（不含积木）
+ *   blocks/<index>.json      每个角色的积木与注释
+ *   assets/<md5ext>          造型 / 声音 / 字体等二进制资源
+ */
+(() => {
+  const JSZip = window.JSZip;
+
+  // —— 与 src/lib/rj/constants.js 保持一致 ——
+  const RJ_MAGIC         = 'RemixWarp-RJ-Project';
+  const RJ_FORMAT_ID     = 'rj';
+  const RJ_FORMAT_VERSION = 1;
+  const RJ_SB3_VERSION   = 3;
+  const RJ_APP_NAME      = 'RemixWarp';
+
+  const TABLE_DIR  = 'tables';
+  const TARGET_DIR = 'targets';
+  const BLOCK_DIR  = 'blocks';
+  const ASSET_DIR  = 'assets';
+
+  const MANIFEST_FILE   = 'manifest.json';
+  const TARGETS_TABLE   = TABLE_DIR + '/targets.json';
+  const COSTUMES_TABLE  = TABLE_DIR + '/costumes.json';
+  const SOUNDS_TABLE    = TABLE_DIR + '/sounds.json';
+  const VARIABLES_TABLE = TABLE_DIR + '/variables.json';
+  const MONITORS_TABLE  = TABLE_DIR + '/monitors.json';
+
+  const targetFile = index => TARGET_DIR + '/' + index + '.json';
+  const blockFile  = index => BLOCK_DIR  + '/' + index + '.json';
+  const assetFile  = name  => ASSET_DIR  + '/' + name;
+
+  const countKeys = obj => Object.keys(obj || {}).length;
+
+  // —— 与 src/lib/rj/serialize.js 保持一致 ——
+  const costumeFileName = costume => {
+    if (costume.md5ext) return costume.md5ext;
+    return costume.assetId + '.' + (costume.dataFormat || 'png').toLowerCase();
+  };
+  const soundFileName = sound => {
+    if (sound.md5ext) return sound.md5ext;
+    return sound.assetId + '.' + (sound.dataFormat || 'wav').toLowerCase();
+  };
+
+  const buildTargetTableEntry = (target, index) => {
+    const isStage = !!target.isStage;
+    const entry = {
+      index: index,
+      name: target.name,
+      isStage: isStage,
+      currentCostume: target.currentCostume,
+      volume: target.volume,
+      layerOrder: target.layerOrder,
+      costumeCount: (target.costumes || []).length,
+      soundCount: (target.sounds || []).length,
+      variableCount: countKeys(target.variables),
+      listCount: countKeys(target.lists),
+      broadcastCount: countKeys(target.broadcasts),
+      blockCount: countKeys(target.blocks),
+      commentCount: countKeys(target.comments),
+      targetFile: targetFile(index),
+      blocksFile: blockFile(index)
+    };
+    if (isStage) {
+      entry.tempo = target.tempo;
+      entry.videoTransparency = target.videoTransparency;
+      entry.videoState = target.videoState;
+      entry.textToSpeechLanguage = target.textToSpeechLanguage;
+    } else {
+      entry.visible = target.visible;
+      entry.x = target.x;
+      entry.y = target.y;
+      entry.size = target.size;
+      entry.direction = target.direction;
+      entry.draggable = target.draggable;
+      entry.rotationStyle = target.rotationStyle;
+    }
+    return entry;
+  };
+
+  const buildCostumeTable = targets => {
+    const items = [];
+    targets.forEach((target, targetIndex) => {
+      const isBackdrop = !!target.isStage;
+      (target.costumes || []).forEach((costume, costumeIndex) => {
+        const fileName = costumeFileName(costume);
+        items.push({
+          index: costumeIndex,
+          targetIndex: targetIndex,
+          targetName: target.name,
+          isBackdrop: isBackdrop,
+          name: costume.name,
+          assetId: costume.assetId,
+          md5ext: fileName,
+          dataFormat: costume.dataFormat,
+          bitmapResolution: costume.bitmapResolution,
+          rotationCenterX: costume.rotationCenterX,
+          rotationCenterY: costume.rotationCenterY,
+          file: assetFile(fileName)
+        });
+      });
+    });
+    const backdropCount = items.filter(i => i.isBackdrop).length;
+    return {
+      count: items.length,
+      backdropCount: backdropCount,
+      costumeCount: items.length - backdropCount,
+      items: items
+    };
+  };
+
+  const buildSoundTable = targets => {
+    const items = [];
+    targets.forEach((target, targetIndex) => {
+      (target.sounds || []).forEach((sound, soundIndex) => {
+        const fileName = soundFileName(sound);
+        items.push({
+          index: soundIndex,
+          targetIndex: targetIndex,
+          targetName: target.name,
+          name: sound.name,
+          assetId: sound.assetId,
+          md5ext: fileName,
+          dataFormat: sound.dataFormat,
+          format: sound.format,
+          rate: sound.rate,
+          sampleCount: sound.sampleCount,
+          file: assetFile(fileName)
+        });
+      });
+    });
+    return {count: items.length, items: items};
+  };
+
+  const buildVariableTable = targets => {
+    const items = [];
+    targets.forEach((target, targetIndex) => {
+      const variables = target.variables || {};
+      Object.keys(variables).forEach(id => {
+        const value = variables[id];
+        items.push({
+          id: id,
+          kind: 'variable',
+          targetIndex: targetIndex,
+          targetName: target.name,
+          name: Array.isArray(value) ? value[0] : value,
+          value: Array.isArray(value) ? value[1] : null,
+          isCloud: Array.isArray(value) ? value[2] === true : false,
+          isLocal: !target.isStage
+        });
+      });
+      const lists = target.lists || {};
+      Object.keys(lists).forEach(id => {
+        const value = lists[id];
+        const listValue = Array.isArray(value) && Array.isArray(value[1]) ? value[1] : [];
+        items.push({
+          id: id,
+          kind: 'list',
+          targetIndex: targetIndex,
+          targetName: target.name,
+          name: Array.isArray(value) ? value[0] : value,
+          value: listValue,
+          length: listValue.length,
+          isCloud: false,
+          isLocal: !target.isStage
+        });
+      });
+      const broadcasts = target.broadcasts || {};
+      Object.keys(broadcasts).forEach(id => {
+        items.push({
+          id: id,
+          kind: 'broadcast',
+          targetIndex: targetIndex,
+          targetName: target.name,
+          name: broadcasts[id],
+          value: broadcasts[id],
+          isCloud: false,
+          isLocal: !target.isStage
+        });
+      });
+    });
+    return {
+      count: items.length,
+      variableCount: items.filter(i => i.kind === 'variable').length,
+      listCount: items.filter(i => i.kind === 'list').length,
+      broadcastCount: items.filter(i => i.kind === 'broadcast').length,
+      items: items
+    };
+  };
+
+  const splitProjectJSON = projectJSON => {
+    const targets = projectJSON.targets || [];
+
+    const targetTable = {
+      count: targets.length,
+      stageCount: targets.filter(t => t.isStage).length,
+      spriteCount: targets.filter(t => !t.isStage).length,
+      items: targets.map(buildTargetTableEntry)
+    };
+    const costumeTable  = buildCostumeTable(targets);
+    const soundTable    = buildSoundTable(targets);
+    const variableTable = buildVariableTable(targets);
+    const monitors = projectJSON.monitors || [];
+
+    // 除 targets / monitors 外的顶层字段原样保留，保证相对 sb3 无损
+    const extras = {};
+    Object.keys(projectJSON).forEach(key => {
+      if (key === 'targets' || key === 'monitors') return;
+      extras[key] = projectJSON[key];
+    });
+
+    const targetFiles = targets.map((target, index) => {
+      const withoutBlocks = Object.assign({}, target);
+      delete withoutBlocks.blocks;
+      delete withoutBlocks.comments;
+      return {
+        path: targetFile(index),
+        content: {
+          index: index,
+          name: target.name,
+          isStage: !!target.isStage,
+          target: withoutBlocks
+        }
+      };
+    });
+
+    const blockFiles = targets.map((target, index) => ({
+      path: blockFile(index),
+      content: {
+        index: index,
+        name: target.name,
+        isStage: !!target.isStage,
+        blockCount: countKeys(target.blocks),
+        commentCount: countKeys(target.comments),
+        blocks: target.blocks || {},
+        comments: target.comments || {}
+      }
+    }));
+
+    const manifest = {
+      magic: RJ_MAGIC,
+      format: RJ_FORMAT_ID,
+      formatVersion: RJ_FORMAT_VERSION,
+      sb3Version: RJ_SB3_VERSION,
+      app: RJ_APP_NAME,
+      createdAt: new Date().toISOString(),
+      title: null,
+      targetCount: targets.length,
+      costumeCount: costumeTable.count,
+      backdropCount: costumeTable.backdropCount,
+      soundCount: soundTable.count,
+      variableCount: variableTable.variableCount,
+      listCount: variableTable.listCount,
+      broadcastCount: variableTable.broadcastCount,
+      blockCount: targets.reduce((acc, t) => acc + countKeys(t.blocks), 0),
+      monitorCount: monitors.length,
+      assetCount: costumeTable.count + soundTable.count,
+      monitors: monitors,
+      project: extras,
+      files: {
+        targets: targetFiles.map(f => f.path),
+        blocks: blockFiles.map(f => f.path),
+        assets: []
+      }
+    };
+
+    const tables = {};
+    tables[TARGETS_TABLE]   = targetTable;
+    tables[COSTUMES_TABLE]  = costumeTable;
+    tables[SOUNDS_TABLE]    = soundTable;
+    tables[VARIABLES_TABLE] = variableTable;
+    tables[MONITORS_TABLE]  = {count: monitors.length, items: monitors};
+
+    return {
+      manifest: manifest,
+      tables: tables,
+      targetFiles: targetFiles,
+      blockFiles: blockFiles
+    };
+  };
+
+  const buildRJZip = (parts, assets, title) => {
+    const zip = new JSZip();
+    const manifest = Object.assign({}, parts.manifest);
+    if (title) manifest.title = title;
+
+    const assetNames = Object.keys(assets).map(assetFile);
+    manifest.files = Object.assign({}, manifest.files, {assets: assetNames});
+
+    zip.file(MANIFEST_FILE, JSON.stringify(manifest));
+
+    Object.keys(parts.tables).forEach(path => {
+      zip.file(path, JSON.stringify(parts.tables[path]));
+    });
+
+    parts.targetFiles.forEach(f => zip.file(f.path, JSON.stringify(f.content)));
+    parts.blockFiles.forEach(f => zip.file(f.path, JSON.stringify(f.content)));
+    Object.keys(assets).forEach(name => zip.file(assetFile(name), assets[name]));
+
+    return zip;
+  };
+
+  /**
+   * 主入口：把 sb3 的 {projectJson, projectFiles} 转换成 .rj
+   * @param {object} input {projectJson, projectFiles, onStep, title}
+   * @returns {Promise<object>} {content, filename, finalProjectJson, finalFiles}
+   */
+  const convertToRJ = async input => {
+    const {projectJson, projectFiles, onStep, title} = input;
+    const emit = (index, status, message) => {
+      if (typeof onStep === 'function') onStep({index, status, message});
+    };
+
+    emit(0, 'running', '校验作品结构（保留原始 meta）');
+    emit(0, 'success', '作品结构校验完成');
+
+    emit(1, 'running', '生成名称表（角色 / 造型 / 背景 / 声音 / 变量 / 列表）');
+    const parts = splitProjectJSON(projectJson);
+    const m = parts.manifest;
+    emit(1, 'success',
+      '角色 ' + m.targetCount +
+      ' · 造型 ' + (m.costumeCount - m.backdropCount) +
+      ' · 背景 ' + m.backdropCount +
+      ' · 声音 ' + m.soundCount +
+      ' · 变量 ' + m.variableCount +
+      ' · 列表 ' + m.listCount);
+
+    emit(2, 'running', '拆分角色数据（targets/）与积木（blocks/）');
+    emit(2, 'success',
+      parts.targetFiles.length + ' 个角色 · ' +
+      parts.blockFiles.length + ' 份积木 · ' + m.blockCount + ' 个积木');
+
+    emit(3, 'running', '打包 .rj（manifest + tables + targets + blocks + assets）');
+    const assets = {};
+    Object.keys(projectFiles).forEach(name => {
+      if (name === 'project.json') return;
+      assets[name] = projectFiles[name];
+    });
+    const zip = buildRJZip(parts, assets, title);
+    const content = await zip.generateAsync({
+      type: 'uint8array',
+      mimeType: 'application/octet-stream',
+      compression: 'DEFLATE',
+      compressionOptions: {level: 6}
+    });
+    emit(3, 'success', '.rj 打包完成');
+
+    return {
+      content,
+      filename: 'project-remixwarp.rj',
+      finalProjectJson: projectJson,
+      finalFiles: Object.assign({}, projectFiles)
+    };
+  };
+
+  convertToRJ.stepLabels = [
+    {id: 'meta',      label: '1. 校验作品结构（保留原始 meta）'},
+    {id: 'tables',    label: '2. 生成名称表（角色 / 造型 / 背景 / 声音 / 变量 / 列表）'},
+    {id: 'split',     label: '3. 拆分角色数据（targets/）与积木（blocks/）'},
+    {id: 'download',  label: '4. 打包 .rj 并下载'}
+  ];
+
+  window.convertToRJ = convertToRJ;
+})();
+</script>
+<script>
   (() => {
     const JSZip = window.JSZip;
     const convertToGandiSb3 = window.convertToGandiSb3;
+    const convertToRJ = window.convertToRJ;
 
     // --- Editor list (matches CompatibilityModal) -----------------------
     const PLATFORMS = [
@@ -955,7 +1333,16 @@ window.convertToGandiSb3 = convertToGandiSb3;
       {id: '02Engine',    name: '02Engine',    url: 'https://02engine.02studio.xyz/'},
       {id: 'AstraEditor', name: 'AstraEditor', url: 'https://editors.astras.top/'},
       {id: 'Bilup',       name: 'Bilup',       url: 'https://com.bilup.org/'},
-      {id: 'Gandi',       name: 'Gandi',       url: 'https://getgandi.com/'}
+      {id: 'Gandi',       name: 'Gandi',       url: 'https://getgandi.com/'},
+      // .rj = RemixWarp 分片式作品文件（zip + 多个 json），可被编辑器直接导入。
+      // keepMeta: .rj 是 RemixWarp 原生格式，保留作品原本的 meta，
+      // 不改写 meta.platform —— 否则大小写不一致会触发编辑器的「未知平台」弹窗，
+      // 而该弹窗被加载遮罩挡住，导致加载永久卡死。
+      {
+        id: 'RemixWarpRJ', name: 'RemixWarp (.rj)',
+        url: 'https://github.com/RemixWarp',
+        agent: 'RemixWarp', ext: 'rj', keepMeta: true
+      }
     ];
 
     // --- DOM refs --------------------------------------------------------
@@ -1101,14 +1488,33 @@ window.convertToGandiSb3 = convertToGandiSb3;
 
         // Apply metadata matching menu-bar.jsx
         if (!projectJson.meta) projectJson.meta = {};
-        const platformInfo = {name: selectedPlatform, url: PLATFORMS.find(p => p.id === selectedPlatform).url};
-        projectJson.meta.agent   = selectedPlatform;
-        projectJson.meta.platform = platformInfo;
+        const platform = PLATFORMS.find(p => p.id === selectedPlatform);
+        const agentName = platform.agent || platform.id;
+        const platformInfo = {name: agentName, url: platform.url};
+        if (!platform.keepMeta) {
+          projectJson.meta.agent   = agentName;
+          projectJson.meta.platform = platformInfo;
+        }
 
-        let filename = `project-${selectedPlatform.toLowerCase()}.sb3`;
+        let filename = `project-${selectedPlatform.toLowerCase()}.${platform.ext || 'sb3'}`;
         let content;
 
-        if (selectedPlatform === 'Gandi') {
+        if (selectedPlatform === 'RemixWarpRJ') {
+          // RemixWarp 原生支持自定义扩展，无需做扩展兼容性检查
+          STEP_LABELS = convertToRJ.stepLabels;
+          renderSteps();
+          // 用上传的文件名作为作品标题写进 manifest / meta
+          const baseTitle = (currentFile.name || '').replace(/\.(sb3|zip|rj)$/i, '');
+          if (baseTitle && !projectJson.meta.name) projectJson.meta.name = baseTitle;
+          const res = await convertToRJ({
+            projectJson, projectFiles, onStep, title: baseTitle
+          });
+          content = res.content;
+          filename = res.filename;
+          resultInfo.textContent =
+            '角色: ' + (res.finalProjectJson.targets ? res.finalProjectJson.targets.length : 0) +
+            ' · 输出: ' + fmtBytes(res.content.length);
+        } else if (selectedPlatform === 'Gandi') {
           STEP_LABELS = convertToGandiSb3.stepLabels;
           renderSteps();
           const res = await convertToGandiSb3({projectJson, projectFiles, onStep});
