@@ -168,12 +168,6 @@ class CustomProcedures extends React.Component {
                 relayout();
             });
         }
-        // Focus the name field after the layout has settled.
-        setTimeout(() => {
-            if (this.mutationRoot && this.mutationRoot.focusLastEditor_) {
-                this.mutationRoot.focusLastEditor_();
-            }
-        }, 50);
 
         // 初始检测（编辑已有积木时名称可能已含 '%'）
         const initialText = this.collectProcedureText();
