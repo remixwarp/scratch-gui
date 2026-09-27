@@ -442,17 +442,20 @@ class Interface extends React.Component {
             return;
         }
 
+        // Make the addon (plugin) settings window wider on first open, but keep
+        // it within the viewport so it never overflows on smaller screens.
+        const settingsWidth = Math.min(1100, Math.max(window.innerWidth - 48, 600));
         settingsWindow = windowManager.createWindow({
             title: intl.formatMessage({
                 defaultMessage: 'Addon Settings',
                 description: 'Title of the addon settings window',
                 id: 'tw.addonSettings.title'
             }),
-            width: 900,
+            width: settingsWidth,
             height: 700,
             minWidth: 600,
             minHeight: 400,
-            x: Math.max(50, (window.innerWidth - 900) / 2),
+            x: Math.max(0, (window.innerWidth - settingsWidth) / 2),
             y: Math.max(50, (window.innerHeight - 700) / 2),
             onClose: () => {
                 settingsWindow = null;
