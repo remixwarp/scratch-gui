@@ -148,9 +148,32 @@ class CustomProcedures extends React.Component {
         }
         
         // Allow the initial events to run to position this block, then focus.
+        // The editable name field can be misaligned on first open: either the
+        // workspace metrics are computed before the modal is laid out (so the
+        // field's overlay is offset), or the block's web font hasn't finished
+        // loading yet (so the field is measured with a fallback font). Recompute
+        // the layout immediately and once fonts are ready so the field lines up
+        // with the block from the start.
+        const relayout = () => {
+            if (!this.workspace || !this.mutationRoot || !this.mutationRoot.workspace) return;
+            this.workspace.resize();
+            this.mutationRoot.render();
+        };
+        setTimeout(relayout, 0);
+        if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => {
+                if (!this.workspace || !this.mutationRoot || !this.mutationRoot.workspace) return;
+                // Don't disrupt an active text editor (e.g. the user is already typing).
+                if (ScratchBlocks.WidgetDiv && ScratchBlocks.WidgetDiv.isVisible()) return;
+                relayout();
+            });
+        }
+        // Focus the name field after the layout has settled.
         setTimeout(() => {
-            this.mutationRoot.focusLastEditor_();
-        });
+            if (this.mutationRoot && this.mutationRoot.focusLastEditor_) {
+                this.mutationRoot.focusLastEditor_();
+            }
+        }, 50);
 
         // 初始检测（编辑已有积木时名称可能已含 '%'）
         const initialText = this.collectProcedureText();
