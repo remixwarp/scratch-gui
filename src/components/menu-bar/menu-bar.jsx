@@ -4299,6 +4299,7 @@ class MenuBar extends React.Component {
                                     </MenuItem>
                                 </MenuSection>
                                 <MenuLabel
+                                    className={styles.nestedMenuItem}
                                     open={this.state.variousToolsOpen}
                                     onOpen={this.handleOpenVariousTools}
                                     onClose={this.handleCloseVariousTools}
@@ -4312,7 +4313,7 @@ class MenuBar extends React.Component {
                                     </span>
                                     <ChevronDown size={8} />
                                     <MenuBarMenu
-                                        className={classNames(styles.menuBarMenu)}
+                                        className={classNames(styles.menuBarMenu, styles.nestedSubmenu)}
                                         open={this.state.variousToolsOpen}
                                         place={this.props.isRtl ? 'left' : 'right'}
                                     >

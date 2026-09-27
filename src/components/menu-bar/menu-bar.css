@@ -251,6 +251,30 @@
     margin: 0 .25rem;
 }
 
+/* Menu label nested inside a dropdown menu (e.g. "Various Tools" in the
+   Tools menu). MenuLabel normally gets .menu-bar-item (a top bar button:
+   48px tall, no padding, large font), which looks misaligned and oversized
+   inside a menu whose rows are 34px tall. */
+.nested-menu-item {
+    height: 34px;
+    padding: 0 10px;
+    font-size: .75rem;
+}
+
+.nested-menu-item .collapsible-label {
+    margin: 0 .25rem 0 0;
+}
+
+/* Keep the nested submenu right below its label row, aligned with the
+   parent menu, instead of pushed down by .menu-bar-menu's margin-top. */
+.nested-submenu {
+    margin-top: 0;
+}
+
+.nested-submenu > ul {
+    top: 100%;
+}
+
 @media only screen and (max-width: 1124px) {
     .tutorials-label, .collapsible-label {
         display: none;
