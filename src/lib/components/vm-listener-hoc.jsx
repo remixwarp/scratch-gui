@@ -148,6 +148,14 @@ const vmListenerHOC = function (WrappedComponent) {
             if (this.props.shouldUpdateTargets && !prevProps.shouldUpdateTargets) {
                 this.props.vm.emitTargetsUpdate(false /* Emit the event, but do not trigger project change */);
             }
+
+            // 作品加载完成（isLoadingProject 由 true→false）时补发一次 targetsUpdate。
+            // 加载期间 handleTargetsUpdate 会整段跳过 targetsUpdate，而懒加载让作品加载变快，
+            // installTargets 之后的那次 targetsUpdate 往往落在 LOADING_VM 阶段被丢弃，
+            // 导致角色列表停留在旧状态，必须切全屏退出才刷新。此处主动补一次即可。
+            if (prevProps.isLoadingProject && !this.props.isLoadingProject) {
+                this.props.vm.emitTargetsUpdate(false /* Emit the event, but do not trigger project change */);
+            }
         }
         componentWillUnmount () {
             if (this.props.attachKeyboardEvents) {

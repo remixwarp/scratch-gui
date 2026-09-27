@@ -490,6 +490,95 @@
     margin-right: 0.5rem;
 }
 
+/* Shared slider style used by Frosted Glass page. `accent-color` makes modern browsers color the fill natively;
+   ::-webkit-slider-* and ::-moz-range-* styles are kept so Firefox and
+   Chrome both render the same flat thumb and track instead of falling back
+   to platform-native 3-D widgets that don't match the editor UI.
+   Firefox needs a larger min-height for clickable area when appearance: none is set. */
+.gcSlider {
+    flex: 1;
+    min-width: 0;
+    height: auto;
+    min-height: 20px;
+    background: transparent;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    accent-color: $looks-secondary;
+    cursor: pointer;
+}
+
+/* Remove Firefox's dotted focus outline */
+.gcSlider::-moz-focus-outer {
+    border: 0;
+}
+
+.gcSlider::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: $ui-black-transparent;
+}
+
+.gcSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: $looks-secondary;
+    cursor: pointer;
+    margin-top: -5px;
+    border: 0;
+}
+
+.gcSlider::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: $ui-black-transparent;
+    border: 0;
+}
+
+.gcSlider::-moz-range-progress {
+    height: 4px;
+    border-radius: 2px;
+    background: $looks-secondary;
+}
+
+.gcSlider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: $looks-secondary;
+    cursor: pointer;
+    border: 0;
+}
+
+/* ── Frosted Glass page ── */
+
+.settingHeader {
+    margin: 0.5rem 0 0.25rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.settingValue {
+    margin-left: 0.5rem;
+    font-size: 0.8125rem;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    font-weight: 600;
+    min-width: 2.5rem;
+    text-align: right;
+}
+
+.rangeLabels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    margin-top: 0.2rem;
+    padding: 0 0.15rem;
+}
+
 .help-icon {
     position: relative;
     border: 0;

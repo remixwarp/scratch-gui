@@ -117,7 +117,7 @@
     position: relative;
     overflow-y: auto;
     scrollbar-width: thin;
-    padding: 10px 0 126px;
+    padding: 10px 0 10px;
 }
 
 .vscodeList {
@@ -239,13 +239,11 @@
     transform: none;
 }
 
-/* VS Code 活动栏底部固定栏：登录/头像 + 高级设置按钮，始终吸附在最下方 */
+/* VS Code 活动栏底部固定栏：登录/头像 + 高级设置按钮，作为活动栏正常流的一部分吸附在最下方（不再用绝对定位浮层，避免盖住全屏舞台等场景） */
 .activity-bar-bottom {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
+    position: relative;
+    margin-top: auto;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;

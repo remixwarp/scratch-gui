@@ -5,6 +5,9 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import styles from './loader.css';
+import {Github} from 'lucide-react';
+import {getLoaderSettings} from '../../lib/mw/loader-settings';
+import {GITHUB_URL} from '../../lib/constants/brand.js';
 import {getIsLoadingWithId} from '../../reducers/project-state';
 import {RJ_ASSET_PHASE_END} from '../../lib/rj/progress.js';
 import topBlock from './top-block.svg';
@@ -76,7 +79,11 @@ class LoaderComponent extends React.Component {
         this.messageEl = null;
         this.percentEl = null;
         this.ignoreProgress = false;
-        this.randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+        this.settings = getLoaderSettings();
+        // 优先使用设置里填写的自定义名言，留空时回退到内置 "Also try X!"
+        const quotePool = (Array.isArray(this.settings.customQuotes) && this.settings.customQuotes.length > 0) ?
+            this.settings.customQuotes : randomMessages;
+        this.randomMessage = quotePool[Math.floor(Math.random() * quotePool.length)];
         this._mounted = false;
         // .rj 的 json 分片阶段已经走到的百分比；之后的 VM 资源加载从这里续到 ASSET_PHASE_END
         this.rjBase = 0;
@@ -248,34 +255,42 @@ class LoaderComponent extends React.Component {
                     {this.state.displayText}
                 </div>
 
-                <div className={styles.blockAnimation}>
-                    <img
-                        className={styles.topBlock}
-                        src={topBlock}
-                        draggable={false}
-                    />
-                    <img
-                        className={styles.middleBlock}
-                        src={middleBlock}
-                        draggable={false}
-                    />
-                    <img
-                        className={styles.bottomBlock}
-                        src={bottomBlock}
-                        draggable={false}
-                    />
-                </div>
+                {this.settings.showAnimation ? (
+                    <div className={styles.blockAnimation}>
+                        <img
+                            className={styles.topBlock}
+                            src={topBlock}
+                            draggable={false}
+                        />
+                        <img
+                            className={styles.middleBlock}
+                            src={middleBlock}
+                            draggable={false}
+                        />
+                        <img
+                            className={styles.bottomBlock}
+                            src={bottomBlock}
+                            draggable={false}
+                        />
+                    </div>
+                ) : null}
 
-                <div className={styles.title}>
-                    {mainMessages[this.props.messageId]}
-                </div>
+                {this.settings.showTitle ? (
+                    <div className={styles.title}>
+                        {mainMessages[this.props.messageId]}
+                    </div>
+                ) : null}
 
                 <div
                     className={styles.message}
+                    hidden={!this.settings.showStatus}
                     ref={this.messageRef}
                 />
 
-                <div className={styles.barRow}>
+                <div
+                    className={styles.barRow}
+                    hidden={!this.settings.showProgress}
+                >
                     <div className={styles.barOuter}>
                         <div
                             className={styles.barInner}
@@ -290,9 +305,27 @@ class LoaderComponent extends React.Component {
                     />
                 </div>
 
-                <div className={styles.randomMessage}>
-                    {this.randomMessage}
-                </div>
+                {this.settings.showQuotes ? (
+                    <div className={styles.randomMessage}>
+                        {this.randomMessage}
+                    </div>
+                ) : null}
+
+                {this.settings.showGithub ? (
+                    <a
+                        className={styles.githubCta}
+                        href={GITHUB_URL}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                    >
+                        <Github size={14} />
+                        <FormattedMessage
+                            defaultMessage="Follow RemixWarp on GitHub"
+                            description="Link on the loading screen to the RemixWarp GitHub organisation"
+                            id="mw.loader.github"
+                        />
+                    </a>
+                ) : null}
             </div>
         );
 

@@ -1973,16 +1973,18 @@ const GUIComponent = props => {
                                                     {item.separatorAfter && <div className={styles.activityBarSeparator} />}
                                                 </React.Fragment>
                                             ))}
-                                            <div className={styles.activityBarBottom}>
-                                                <div className={styles.activityBarBottomGap} />
-                                                <button
-                                                    className={styles.activityBarButton}
-                                                    title={intl.formatMessage({defaultMessage: '高级设置', id: 'gui.menuBar.settings'})}
-                                                    onClick={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'settingsModal'})}
-                                                >
-                                                    <SettingsIcon size={20} />
-                                                </button>
-                                            </div>
+                                            {!isFullScreen && (
+                                                <div className={styles.activityBarBottom}>
+                                                    <div className={styles.activityBarBottomGap} />
+                                                    <button
+                                                        className={styles.activityBarButton}
+                                                        title={intl.formatMessage({defaultMessage: '高级设置', id: 'gui.menuBar.settings'})}
+                                                        onClick={() => props.dispatch && props.dispatch({type: 'scratch-gui/modals/OPEN_MODAL', modal: 'settingsModal'})}
+                                                    >
+                                                        <SettingsIcon size={20} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </>
                                     )}
                                 </TabList>

@@ -30,6 +30,8 @@ import {
     closeSettingsModal
 } from '../../reducers/modals.js';
 import StylePreview from './style-preview.jsx';
+import FrostedGlassPage from './frosted-glass-page.jsx';
+import LoadingScreenPage from './loading-screen-page.jsx';
 import SettingsStore from '../../addons/settings-store-singleton.js';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 import ActivityBarLayoutSetting from './activity-bar-layout.jsx';
@@ -43,7 +45,7 @@ import {
     getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
 } from '../../lib/git/config.js';
 
-import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, PanelLeft, PanelBottom, Bug, GitBranch, Variable, Upload, Search, PanelsTopLeft, Plus, X} from 'lucide-react';
+import {Settings, Zap, Code, RotateCcw, ChevronDown, Blocks, Palette, PanelTop, PanelLeft, PanelBottom, Bug, GitBranch, Variable, Upload, Search, PanelsTopLeft, Droplets, Hourglass, Plus, X} from 'lucide-react';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -3083,6 +3085,10 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <ActivityBarPage {...handlers} />;
     case 'statusBar':
         return <StatusBarPage {...handlers} />;
+    case 'frostedGlass':
+        return <FrostedGlassPage />;
+    case 'loadingScreen':
+        return <LoadingScreenPage />;
     case 'debugger':
         return <DebuggerPage {...handlers} />;
     case 'versionControl':
@@ -3331,6 +3337,19 @@ class SettingsModalComponent extends React.Component {
                         id: 'styles',
                         label: intl.formatMessage({id: 'mw.settings.styles', defaultMessage: '样式'}),
                         icon: Palette
+                    },
+                    {
+                        id: 'frostedGlass',
+                        label: intl.formatMessage({id: 'bl.frostedGlass.pageTitle', defaultMessage: '毛玻璃'}),
+                        icon: Droplets
+                    },
+                    {
+                        id: 'loadingScreen',
+                        label: intl.formatMessage({
+                            id: 'mw.settings.loadingScreen',
+                            defaultMessage: '加载画面'
+                        }),
+                        icon: Hourglass
                     },
                     {
                         id: 'menuBar',

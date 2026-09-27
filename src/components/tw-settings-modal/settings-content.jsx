@@ -668,4 +668,5 @@ SettingsContent.propTypes = {
     onCloudVariableServerChange: PropTypes.func
 };
 
+export {BooleanSetting};
 export default injectIntl(SettingsContent);

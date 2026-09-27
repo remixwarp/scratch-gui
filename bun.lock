@@ -8,7 +8,7 @@
         "@isomorphic-git/lightning-fs": "4.9.0",
         "@microbit/microbit-universal-hex": "0.2.2",
         "@mixmark-io/domino": "^2.2.0",
-        "@remixwarp/scratch-blocks": "https://github.com/remixwarp/scratch-blocks/archive/794cfc6.tar.gz",
+        "@remixwarp/scratch-blocks": "https://github.com/remixwarp/scratch-blocks/archive/3234c561bcd9f00d05e5af03008a4faa45599d5a.tar.gz",
         "@remixwarp/scratch-l10n": "https://github.com/remixwarp/scratch-l10n/archive/b4d4bf5.tar.gz",
         "@turbowarp/jszip": "^3.11.1",
         "@turbowarp/nanolog": "^1.0.1",
@@ -436,7 +436,7 @@
 
     "@remix-run/router": ["@remix-run/router@1.23.4", "https://registry.npmmirror.com/@remix-run/router/-/router-1.23.4.tgz", {}, "sha512-q7j5geK7xs3UJSdm9/iytUNclBnLmYx1EnSeCFXHPeutdqgIMeFeHtUZgS3EhlKxdBEAu8OwtJCwmLrEzpSs7Q=="],
 
-    "@remixwarp/scratch-blocks": ["@remixwarp/scratch-blocks@https://github.com/remixwarp/scratch-blocks/archive/794cfc6.tar.gz", { "dependencies": { "exports-loader": "0.7.0", "imports-loader": "0.8.0" } }, "sha512-VrEFWaHow/wtz+oHRMxYiXgYiKWsble8Vb1TcWKgPEm78VEp0NUf5lJQMhmsseudUSPXZnEReHNV2yqt1JzKBw=="],
+    "@remixwarp/scratch-blocks": ["@remixwarp/scratch-blocks@https://github.com/remixwarp/scratch-blocks/archive/3234c561bcd9f00d05e5af03008a4faa45599d5a.tar.gz", { "dependencies": { "exports-loader": "0.7.0", "imports-loader": "0.8.0" } }, "sha512-TDsY5R57YsPHRQ/DG5JXNpRPgC3feIhrjY7uEK12AwnI63/QuSHTI7HIOgmvfTleQLMv0xMf4/M1pbQWiKt4ww=="],
 
     "@remixwarp/scratch-l10n": ["@bilup/scratch-l10n@https://github.com/remixwarp/scratch-l10n/archive/b4d4bf5.tar.gz", { "dependencies": { "@babel/cli": "^7.1.2", "@babel/core": "^7.1.2", "babel-plugin-react-intl": "^3.0.1" }, "bin": { "build-i18n-src": "./scripts/build-i18n-src.js" } }, "sha512-2YR/LuApvGomhCsw856dbBvpDbTiRcNZw96DqjxtykNPyPKJAy4j7Q6zzPMf6KceKN6EhJrXQbRc0oxEBN3Kug=="],
 

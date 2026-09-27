@@ -46,6 +46,7 @@ import { initPrefetch } from '../community/prefetch-editor.js';
 import runAddons from '../addons/entry';
 import { APP_NAME, FEEDBACK_URL, GITHUB_URL } from '../lib/constants/brand.js';
 import { AESettings } from '../lib/settings.js';
+import {initFrostedGlass} from '../lib/bl-frosted-glass.js';
 import {
     STAGE_DISPLAY_SCALE_METADATA,
     STAGE_DISPLAY_SIZES
@@ -70,6 +71,154 @@ const loadWindowManager = async () => {
     return WindowManager;
 };
 
+/* 毛玻璃：插件设置页是**独立同源应用**，跑在 iframe 里，主文档注入的
+   <style id="bl-frosted-glass-window"> 完全够不着它（CSS 不跨文档边界）。
+   而 settings.css 里 `body { background-color: $page-background }` 是整个
+   页面的大实底（深色 #111111 / 浅色 #ffffff），加上 .addon / .switch /
+   .tag-button 等一批实色，构成"插件设置窗口里还有纯色"的根因。
+   这里把等价的一小套玻璃规则注入**子文档**，用与主文档相同的算法取色：
+     · 深色 → 纯黑 rgba(0,0,0,α)，浅色 → 纯白 rgba(255,255,255,α)
+     · --input-background / --page-background 的值即当前主题的实底色
+   只处理"页面底板 + 成片行块"，不动按钮/开关/标签这类控件色。 */
+const FROSTED_GLASS_STORAGE_KEY = 'bl:frosted-glass';
+
+const readFrostedGlassSettings = () => {
+    try {
+        const raw = window.localStorage.getItem(FROSTED_GLASS_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.enabled) return null;
+        return {
+            blurRadius: typeof parsed.blurRadius === 'number' ? parsed.blurRadius : 12,
+            opacity: typeof parsed.opacity === 'number' ? parsed.opacity : 0.25,
+            themeBoost: typeof parsed.themeBoost === 'number' ? parsed.themeBoost : 0.15
+        };
+    } catch (e) {
+        return null;
+    }
+};
+
+const isDarkColorScheme = doc => {
+    const style = getComputedStyle(doc.documentElement);
+    const scheme = style.getPropertyValue('--color-scheme').trim();
+    if (scheme === 'dark') return true;
+    if (scheme === 'light') return false;
+    // 兜底：从 body 实际背景色判断亮度（BT.709 亮度权重）
+    try {
+        const bg = getComputedStyle(doc.body).backgroundColor;
+        const m = bg.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        if (m) {
+            const r = Number(m[1]);
+            const g = Number(m[2]);
+            const b = Number(m[3]);
+            return ((0.2126 * r) + (0.7152 * g) + (0.0722 * b)) < 128;
+        }
+    } catch (e) { /* ignore */ }
+    return true;
+};
+
+const applyFrostedGlassToAddonsIframe = iframe => {
+    const settings = readFrostedGlassSettings();
+    const doc = iframe && iframe.contentDocument;
+    if (!doc) return;
+
+    const STYLE_ID = 'bl-frosted-glass-addons';
+    const existing = doc.getElementById(STYLE_ID);
+    if (!settings) {
+        if (existing) existing.remove();
+        return;
+    }
+
+    const {blurRadius, opacity, themeBoost} = settings;
+    const dark = isDarkColorScheme(doc);
+    const [r, g, b] = dark ? [0, 0, 0] : [255, 255, 255];
+    // 与主模块同一套深色补偿（themeBoost 为"深浅比值"，可调）
+    const alpha = dark ? Math.min(0.72, opacity + themeBoost) : opacity;
+    const glass = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    const glassTint = `rgba(${r}, ${g}, ${b}, ${(alpha * 0.55).toFixed(3)})`;
+    const cardGlass = `rgba(${r}, ${g}, ${b}, ${(alpha * 0.4).toFixed(3)})`;
+    const blur = Math.round(blurRadius);
+
+    const css = `
+/* 页面底板 — settings.css 的 body 实底，改成玻璃 */
+html, body {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+/* settings.css 的 .container 是 flex 铺满的页面根，本身无背景，无需处理。
+   标题栏 .header 铺 $ui-secondary（深色 #1e1e1e）→ 玻璃 */
+.header {
+    background-color: ${cardGlass} !important;
+    background: ${cardGlass} !important;
+}
+/* 搜索框外壳与输入框 */
+.search-container {
+    background-color: ${cardGlass} !important;
+    background: ${cardGlass} !important;
+}
+.search-input {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+/* 插件卡片 .addon（无背景）+ .addon-dirty（铺 $ui-tertiary #2e2e2e）
+   → 卡片统一给淡玻璃底，保持卡片边界可辨 */
+.addon {
+    background-color: ${glassTint} !important;
+    background: ${glassTint} !important;
+}
+.addon-dirty {
+    background-color: ${glass} !important;
+    background: ${glass} !important;
+}
+/* 标签筛选条与标签胶囊 */
+.tag-filter {
+    background-color: ${cardGlass} !important;
+    background: ${cardGlass} !important;
+}
+.tag-button {
+    background-color: ${cardGlass} !important;
+    background: ${cardGlass} !important;
+}
+/* 设置行里的输入框（数值/文本）铺 $input-background → 玻璃 */
+.setting input {
+    background-color: ${cardGlass} !important;
+    background: ${cardGlass} !important;
+}
+.reset-setting-button {
+    background-color: ${cardGlass} !important;
+    background: ${cardGlass} !important;
+}
+/* 下拉分段控件的未选中档（铺 $ui-secondary）→ 玻璃；
+   .select-option.selected 铺 $looks-secondary 品牌色，保留 */
+.select-option {
+    background-color: ${cardGlass} !important;
+    background: ${cardGlass} !important;
+}
+.select-option.selected {
+    background: var(--looks-secondary) !important;
+    background-color: var(--looks-secondary) !important;
+}
+/* 悬浮提示条 .dirty-inner 铺 $ui-tertiary → 玻璃 */
+.dirty-inner {
+    background: ${glass} !important;
+    background-color: ${glass} !important;
+    backdrop-filter: blur(${blur}px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(${blur}px) saturate(150%) !important;
+}
+/* 自定义插件区块的虚线框内无实底，无需处理。
+   明确不动的：.switch 开关（控件）、.tag-* 彩色徽标（语义色）、
+   .button（按钮）、.notice（提示色块，用 rgba 半透明青绿）、
+   .clear-tags-button（红色圆形按钮）。 */
+`;
+    let styleEl = existing;
+    if (!styleEl) {
+        styleEl = doc.createElement('style');
+        styleEl.id = STYLE_ID;
+        doc.head.appendChild(styleEl);
+    }
+    styleEl.textContent = css;
+};
+
 const createSettingsContent = (addonId) => {
     const container = settingsWindow.getContentElement();
     container.style.padding = '0';
@@ -87,6 +236,11 @@ const createSettingsContent = (addonId) => {
     const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
 
     iframe.src = url;
+
+    iframe.addEventListener('load', () => {
+        applyFrostedGlassToAddonsIframe(iframe);
+    });
+
     container.appendChild(iframe);
 };
 
@@ -310,6 +464,9 @@ class Interface extends React.Component {
     }
     componentDidMount() {
         window.handleClickAddonSettings = this.handleClickAddonSettings;
+
+        // 启动后应用毛玻璃效果（若用户已在设置中开启），并监听主题切换自动重算
+        initFrostedGlass();
 
         const settings = new AESettings();
         const urlParams = new URLSearchParams(window.location.search);
