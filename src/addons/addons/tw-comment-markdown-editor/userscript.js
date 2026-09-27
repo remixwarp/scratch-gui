@@ -560,8 +560,8 @@ export default async function ({addon, console}) {
         return range;
     };
 
-    /** 单击预览的位置在编辑器里定位到同一处（两边布局一致，坐标可以直传） */
-    const focusEditorAt = (entry, clientX, clientY) => {
+    /** 按点击坐标把光标放进编辑器；落点不可用时兜底到最近的可编辑锚点 */
+    const placeCaretByPoint = (entry, clientX, clientY) => {
         const editor = entry.editor;
         if (!editor) return;
         editor.focus();
@@ -576,13 +576,21 @@ export default async function ({addon, console}) {
                 range.collapse(true);
             }
         }
+        const selection = window.getSelection();
+        if (!selection) return;
         if (range && editor.contains(range.startContainer)) {
-            const selection = window.getSelection();
             selection.removeAllRanges();
             selection.addRange(fixCaretRange(range, clientX, clientY));
             return;
         }
-        focusEditorEnd(entry);
+        // 点击落点没法定位（死区/空隙/外缘）：放在最近锚点，保证光标常闪
+        selection.removeAllRanges();
+        selection.addRange(placeCaretAtClosestAnchor(editor, clientY));
+    };
+
+    /** 单击预览的位置在编辑器里定位到同一处（两边布局一致，坐标可以直传） */
+    const focusEditorAt = (entry, clientX, clientY) => {
+        placeCaretByPoint(entry, clientX, clientY);
     };
 
     /**
@@ -877,20 +885,15 @@ export default async function ({addon, console}) {
             }
         }, true);
 
-        // 编辑态里点哪儿都要保证焦点和光标留在编辑器上
+        // 编辑态里点哪儿都要把光标落到可见位置：不再依赖浏览器自动放置的
+        // caret（点中死区/空隙时它常常干脆不放光标），而是按点击坐标重新算，
+        // 这样光标才稳定出现。拖选文字时（有展开选区）保留选区，不抢光标。
         editor.addEventListener('mouseup', e => {
             if (addon.self.disabled) return;
             ensureEditorFocused(entry);
-            // 点在积木行上时浏览器会把光标放进那个不可编辑的块里（于是看不见），
-            // 按点击位置把它挪到这行的前面或后面
             const selection = window.getSelection();
-            if (!selection || !selection.rangeCount || !entry.editor) return;
-            const current = selection.getRangeAt(0);
-            if (!entry.editor.contains(current.startContainer)) return;
-            const fixed = fixCaretRange(current, e.clientX, e.clientY);
-            if (fixed === current) return;
-            selection.removeAllRanges();
-            selection.addRange(fixed);
+            if (selection && selection.rangeCount && !selection.isCollapsed) return;
+            placeCaretByPoint(entry, e.clientX, e.clientY);
         });
 
         editor.addEventListener('keyup', () => {
