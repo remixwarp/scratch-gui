@@ -144,7 +144,8 @@ export default class Dropdown {
             operators: 'operators',
             sounds: 'sounds',
             block: 'more',
-            flag: 'events'
+            flag: 'events',
+            comment: 'more'
         };
 
         if (proc.cls === 'flag') {
@@ -182,6 +183,9 @@ export default class Dropdown {
                 item.style.color = colours[name];
             } else {
                 item.className = `sa-block-color sa-block-color-${colorId}`;
+            }
+            if (proc.cls === 'comment') {
+                item.classList.add('sa-find-comment');
             }
         }
 
@@ -267,6 +271,12 @@ export default class Dropdown {
                 }
             }
             this.carousel.build(item, blocks, instanceBlock);
+            return;
+        }
+
+        if (cls === 'comment') {
+            this.utils.scrollCommentIntoView(item.data.labelID);
+            this.carousel.remove();
             return;
         }
 

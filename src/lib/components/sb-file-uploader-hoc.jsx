@@ -10,6 +10,7 @@ import unpackage from '../unpackager';
 import {loadRJIntoVM} from '../rj/deserialize.js';
 import {isRJFilename} from '../rj/constants.js';
 import {createRJProgressReporter} from '../rj/progress.js';
+import {clearCurrentRJ} from '../rj/rj-store.js';
 import {setLoadingProgress, resetLoadingProgress} from '../../reducers/loading-progress';
 
 import {
@@ -263,6 +264,9 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                     }
                 }
 
+                // 非 .rj 作品（sb3/sb2/html）：清除「当前 .rj」记录，
+                // 让超级重构等面板回到 sb3 视图。
+                clearCurrentRJ();
                 this.props.vm.loadProject(projectData)
                     .then(() => {
                         if (filename) {

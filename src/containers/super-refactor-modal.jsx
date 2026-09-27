@@ -7,10 +7,64 @@ import {closeSuperRefactorModal} from '../reducers/modals';
 import Modal from './windowed-modal.jsx';
 import Button from '../components/button/button.jsx';
 import VM from 'scratch-vm';
+import {hasCurrentRJ, getCurrentRJZip, getCurrentRJRaw} from '../lib/rj/rj-store.js';
+import {mapLimit} from '../lib/rj/rj-shared.js';
 import './super-refactor-modal.css';
 
 // 超过该字节数的文件不做逐 token 语法高亮与逐行行号渲染，避免打开卡顿
 const LARGE_CONTENT_THRESHOLD = 150000;
+
+// ---------------------------------------------------------------------------
+// .rj 分片视图辅助函数：当前作品是 .rj 时，文件面板直接列出 .rj 内部
+// 真实的分片文件（manifest / tables / targets / blocks / assets），
+// 而不是把已加载的 VM 重新序列化成 sb3 视图。
+// ---------------------------------------------------------------------------
+const RJ_IMAGE_EXTS = ['png', 'bmp', 'jpeg', 'jpg', 'gif', 'webp'];
+const RJ_IMAGE_MIME = {
+    png: 'image/png',
+    bmp: 'image/bmp',
+    jpeg: 'image/jpeg',
+    jpg: 'image/jpeg',
+    gif: 'image/gif',
+    webp: 'image/webp'
+};
+
+const rjExtOf = path => {
+    const idx = path.lastIndexOf('.');
+    return idx === -1 ? '' : path.substring(idx + 1).toLowerCase();
+};
+
+// 展示顺序：清单 → 名称表 → 角色数据 → 积木 → 二次加载缓存 → 资源 → 其它
+const rjPathRank = path => {
+    if (path === 'manifest.json') return 0;
+    if (path.indexOf('tables/') === 0) return 1;
+    if (path.indexOf('targets/') === 0) return 2;
+    if (path.indexOf('blocks/prebuilt/') === 0) return 4;
+    if (path.indexOf('blocks/') === 0) return 3;
+    if (path.indexOf('assets/') === 0) return 5;
+    return 6;
+};
+
+const rjNumericSuffix = path => {
+    const m = path.match(/(\d+)\.json$/);
+    return m ? parseInt(m[1], 10) : -1;
+};
+
+const rjPathCompare = (a, b) => {
+    const rankDiff = rjPathRank(a) - rjPathRank(b);
+    if (rankDiff !== 0) return rankDiff;
+    const na = rjNumericSuffix(a);
+    const nb = rjNumericSuffix(b);
+    if (na !== -1 && nb !== -1 && na !== nb) return na - nb;
+    return a < b ? -1 : (a > b ? 1 : 0);
+};
+
+const uint8ArrayToDataURL = (u8, mime) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('读取图片数据失败'));
+    reader.readAsDataURL(new Blob([u8], {type: mime}));
+});
 
 class SuperRefactorModalContainer extends React.Component {
     constructor (props) {
@@ -255,7 +309,19 @@ class SuperRefactorModalContainer extends React.Component {
         return files;
     }
 
-    loadProjectFiles () {
+    async loadProjectFiles () {
+        // 当前打开的是 .rj：直接展示 .rj 内部真实的分片文件结构，
+        // 而不是把已加载的 VM 重新序列化成 sb3 视图。
+        if (hasCurrentRJ()) {
+            try {
+                await this.loadRJFiles();
+                return;
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                console.error('读取 .rj 分片失败，回退到 sb3 视图：', e);
+            }
+        }
+
         const files = this.getProjectFiles();
         
         if (files.length > 0) {
@@ -270,6 +336,65 @@ class SuperRefactorModalContainer extends React.Component {
                 filteredFiles: files,
                 currentFile: 0,
                 content: content
+            });
+        }
+    }
+
+    /**
+     * 列出当前 .rj 内部的真实分片文件（只读预览）：
+     *   manifest.json、tables/*.json、targets/*.json、
+     *   blocks/*.json、blocks/prebuilt/*.json、assets/*
+     */
+    async loadRJFiles () {
+        const zip = await getCurrentRJZip();
+        if (!zip) throw new Error('.rj 数据不可用');
+
+        const paths = Object.keys(zip.files).filter(p => !zip.files[p].dir);
+        paths.sort(rjPathCompare);
+
+        const buildFile = async path => {
+            const entry = zip.file(path);
+            if (!entry) return null;
+            const ext = rjExtOf(path);
+            try {
+                if (ext === 'json') {
+                    const text = await entry.async('string');
+                    return {id: path, name: path, type: 'json', content: text, size: text.length, readOnly: true};
+                }
+                if (ext === 'svg') {
+                    const text = await entry.async('string');
+                    return {id: path, name: path, type: 'svg', content: text, size: text.length, readOnly: true};
+                }
+                if (RJ_IMAGE_EXTS.indexOf(ext) !== -1) {
+                    const u8 = await entry.async('uint8array');
+                    const dataURL = await uint8ArrayToDataURL(u8, RJ_IMAGE_MIME[ext] || 'image/png');
+                    return {id: path, name: path, type: 'image', content: dataURL, size: u8.byteLength, readOnly: true};
+                }
+                if (ext === 'wav' || ext === 'mp3') {
+                    const u8 = await entry.async('uint8array');
+                    return {id: path, name: path, type: 'sound', content: u8, size: u8.byteLength, readOnly: true};
+                }
+                const text = await entry.async('string');
+                return {id: path, name: path, type: 'text', content: text, size: text.length, readOnly: true};
+            } catch (e) {
+                return {id: path, name: path, type: 'text', content: `读取失败: ${e.message}`, size: 0, readOnly: true};
+            }
+        };
+
+        // 分批并行读取，避免超大作品一次性解压全部资源把内存打爆
+        const results = await mapLimit(paths, 8, buildFile);
+        const files = results.filter(Boolean);
+
+        if (files.length > 0) {
+            let content = files[0].content;
+            if (files[0].type === 'json') {
+                content = this.formatJSON(content);
+            }
+            this.setState({
+                files,
+                filteredFiles: files,
+                currentFile: 0,
+                content
             });
         }
     }
@@ -657,6 +782,14 @@ class SuperRefactorModalContainer extends React.Component {
         const file = files[currentFile];
         if (!file) return;
 
+        // .rj 分片文件是只读预览：直接改分片内容无法安全地同步回 VM
+        // （积木已反序列化、资源已加载），需要用「保存 .rj」重新生成。
+        if (file.readOnly) {
+            this.setState({message: '.rj 分片文件为只读预览，请用「保存 .rj」重新生成'});
+            setTimeout(() => this.setState({message: ''}), 3000);
+            return;
+        }
+
         try {
             if (file.name === 'project.json') {
                 // 压缩JSON回一行
@@ -763,6 +896,30 @@ class SuperRefactorModalContainer extends React.Component {
 
     // 下载项目
     downloadProject () {
+        // .rj 模式：直接下载当前 .rj 原始文件，保持分片结构不变
+        if (hasCurrentRJ()) {
+            const raw = getCurrentRJRaw();
+            if (raw) {
+                try {
+                    const blob = new Blob([raw], {type: 'application/octet-stream'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'project.rj';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    this.setState({message: '已下载 .rj 文件！'});
+                    setTimeout(() => this.setState({message: ''}), 3000);
+                } catch (e) {
+                    this.setState({message: '下载 .rj 失败'});
+                    setTimeout(() => this.setState({message: ''}), 5000);
+                }
+                return;
+            }
+        }
+
         const {files} = this.state;
         const projectFile = files.find(f => f.name === 'project.json');
         

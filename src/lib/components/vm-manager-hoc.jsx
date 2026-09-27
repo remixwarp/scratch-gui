@@ -75,14 +75,10 @@ const vmManagerHOC = function (WrappedComponent) {
         }
 
         loadProject () {
-            // Guard against concurrent loads: if a previous load is still in
-            // flight, quit the VM first (which cancels its work) and then let
-            // the new load proceed. The old promise is discarded so its
-            // callbacks won't fire on a stale VM state.
-            if (this._loadingPromise) {
-                this.props.vm.quit();
-            }
-
+            // Guard against concurrent loads: quit the VM before starting a new
+            // load (which cancels the in-flight work). Stale results are already
+            // discarded by the `this._loadingPromise !== promise` checks below,
+            // so a second quit() here would just do the same work twice.
             // tw: stop when loading new project
             this.props.vm.quit();
             const promise = this.props.vm.loadProject(this.props.projectData)

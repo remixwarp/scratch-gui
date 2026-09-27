@@ -3,96 +3,16 @@ import JSZip from '@turbowarp/jszip';
 import {
     RJ_MAGIC,
     RJ_FORMAT_ID,
-    RJ_FASTLOAD_VERSION,
     MANIFEST_FILE,
-    TARGETS_TABLE,
-    COSTUMES_TABLE,
-    SOUNDS_TABLE,
-    VARIABLES_TABLE,
-    MONITORS_TABLE,
-    RJ_LOAD_STAGES,
-    targetFile,
-    blockFile,
-    prebuiltBlockFile
+    RJ_LOAD_STAGES
 } from './constants.js';
+import {assembleFromZip} from './rj-assemble.js';
+import {yieldToUI, normalizePlatformName} from './rj-shared.js';
+import {loadRJIntoVMViaWorker} from './rj-worker-client.js';
+import {setCurrentRJ, clearCurrentRJ} from './rj-store.js';
 
 const PROJECT_JSON = 'project.json';
 const ASSET_PREFIX = 'assets/';
-
-/**
- * 同时解压的文件数量上限。一次性 Promise.all 上百个大资源会把上百 MB
- * 同时压进内存，导致 GC 抖动甚至崩溃；分批读取可以把峰值内存压下来。
- */
-const DEFAULT_CONCURRENCY = 8;
-
-/**
- * 让出主线程，让浏览器有机会绘制进度（大作品解析时不会「假死」）
- * @returns {Promise<void>} 下一个事件循环后 resolve
- */
-const yieldToUI = () => new Promise(resolve => setTimeout(resolve, 0));
-
-/**
- * 受限并发的 map：分批执行，每批之间让出主线程。
- * @param {Array} items 输入
- * @param {number} limit 每批数量
- * @param {Function} mapper (item, index) => Promise
- * @returns {Promise<Array>} 与输入一一对应的结果
- */
-const mapLimit = async (items, limit, mapper) => {
-    const results = new Array(items.length);
-    const size = limit > 0 ? limit : items.length;
-    for (let start = 0; start < items.length; start += size) {
-        const end = Math.min(start + size, items.length);
-        const batch = [];
-        for (let i = start; i < end; i++) {
-            batch.push(Promise.resolve()
-                .then(() => mapper(items[i], i))
-                .then(value => {
-                    results[i] = value;
-                }));
-        }
-        if (end < items.length) {
-            // eslint-disable-next-line no-await-in-loop
-            await Promise.all(batch);
-            // eslint-disable-next-line no-await-in-loop
-            await yieldToUI();
-        } else {
-            // eslint-disable-next-line no-await-in-loop
-            await Promise.all(batch);
-        }
-    }
-    return results;
-};
-
-const readJSON = async (zip, path, optional) => {
-    const entry = zip.file(path);
-    if (!entry) {
-        if (optional) return null;
-        throw new Error(`.rj 文件缺少 ${path}`);
-    }
-    const text = await entry.async('string');
-    return JSON.parse(text);
-};
-
-const readBinary = (zip, path) => {
-    const entry = zip.file(path);
-    if (!entry) return Promise.resolve(null);
-    return entry.async('uint8array');
-};
-
-/**
- * 并行读取一批 zip 内的文件，单个文件失败不会中断其它读取
- * @param {JSZip} zip zip 对象
- * @param {Array<object>} tasks [{path, kind, ref}]
- * @param {number} concurrency 并发上限
- * @returns {Promise<Array<object>>} 与 tasks 一一对应的 [{path, value, ref}]
- */
-const readAll = (zip, tasks, concurrency) => mapLimit(tasks, concurrency || DEFAULT_CONCURRENCY, task => {
-    const reader = task.kind === 'json' ? readJSON : readBinary;
-    return reader(zip, task.path, true)
-        .then(value => ({path: task.path, value, ref: task.ref}))
-        .catch(() => ({path: task.path, value: null, ref: task.ref}));
-});
 
 /**
  * 一次性建立「资源名 → zip 条目」的索引。
@@ -152,19 +72,14 @@ const createAssetZipView = index => ({
 });
 
 /**
- * 读取并加载 .rj 作品文件。
- *
- * 完整加载流程（与 .rj 的分片结构一一对应）：
- *   1. 读取角色名称表与角色数量        → 渲染角色框
- *   2. 读取造型 / 背景名称表            → 渲染造型框 / 背景框
- *   3. 读取声音名称表、变量与列表名称表 → 渲染声音、变量、列表
- *   4. 读取造型表，并行加载多个角色中的多个造型
- *   5. 读取声音表与变量 / 列表表，并行载入声音与变量等
- *   6. 并行载入积木，并渲染
+ * 读取并加载 .rj 作品文件（主线程回退路径）。
  *
  * 装配阶段只做「拼接」，不再重新压缩：返回 projectJSON + 一个按需解压的
  * 资源视图，交给 vm.deserializeProject 直接加载，因此数据模型与 sb3 完全
  * 一致，同时避免了整包重新 DEFLATE 的开销。
+ *
+ * 本函数把「读分片 + 装配 projectJSON」委托给 rj-assemble.js（与 Worker
+ * 路径共用同一套逻辑），自身只负责基于真实 zip 构造资源视图与 sb3 兜底。
  *
  * @param {ArrayBuffer|Uint8Array|Blob} input .rj 文件内容
  * @param {object} options 选项
@@ -173,116 +88,8 @@ const createAssetZipView = index => ({
  * @returns {Promise<object>} {projectJSON, zipView, getArrayBuffer, manifest, tables, title}
  */
 export const loadRJProject = async (input, options = {}) => {
-    const {onProgress} = options;
-    const concurrency = options.concurrency || DEFAULT_CONCURRENCY;
-    const report = (stage, payload) => {
-        if (typeof onProgress === 'function') {
-            onProgress(Object.assign({stage}, payload));
-        }
-    };
-
     const zip = await JSZip.loadAsync(input);
-
-    // ---------------------------------------------------------------
-    // 阶段 0：容器清单
-    // ---------------------------------------------------------------
-    const manifest = await readJSON(zip, MANIFEST_FILE);
-    if (!manifest || manifest.magic !== RJ_MAGIC || manifest.format !== RJ_FORMAT_ID) {
-        throw new Error('这不是一个有效的 .rj 作品文件');
-    }
-    report(RJ_LOAD_STAGES.MANIFEST, {manifest});
-
-    // ---------------------------------------------------------------
-    // 阶段 1：读取角色名称表与角色数量 → 渲染角色框
-    // ---------------------------------------------------------------
-    const targetTable = await readJSON(zip, TARGETS_TABLE);
-    const targetCount = targetTable && typeof targetTable.count === 'number' ?
-        targetTable.count :
-        (manifest.targetCount || ((manifest.files && manifest.files.targets) || []).length);
-    report(RJ_LOAD_STAGES.TARGETS, {
-        targetCount,
-        targetTable,
-        names: (targetTable.items || []).map(item => item.name)
-    });
-
-    // ---------------------------------------------------------------
-    // 阶段 2：读取造型与背景名称表 → 渲染造型框 / 背景框
-    // ---------------------------------------------------------------
-    const costumeTable = await readJSON(zip, COSTUMES_TABLE);
-    report(RJ_LOAD_STAGES.COSTUMES, {
-        costumeCount: costumeTable ? costumeTable.count : 0,
-        backdropCount: costumeTable ? costumeTable.backdropCount : 0,
-        costumeTable
-    });
-
-    // ---------------------------------------------------------------
-    // 阶段 3：读取声音名称表与变量 / 列表名称表 → 渲染声音、变量、列表
-    // ---------------------------------------------------------------
-    const [soundTable, variableTable, monitorTable] = await Promise.all([
-        readJSON(zip, SOUNDS_TABLE, true),
-        readJSON(zip, VARIABLES_TABLE, true),
-        readJSON(zip, MONITORS_TABLE, true)
-    ]);
-    report(RJ_LOAD_STAGES.SOUNDS_AND_VARIABLES, {
-        soundCount: soundTable ? soundTable.count : 0,
-        variableCount: variableTable ? variableTable.variableCount : 0,
-        listCount: variableTable ? variableTable.listCount : 0,
-        soundTable,
-        variableTable,
-        monitorTable
-    });
-
-    const indices = [];
-    for (let i = 0; i < targetCount; i++) {
-        indices.push(i);
-    }
-
-    // ---------------------------------------------------------------
-    // 阶段 4 + 6：并行读取全部 json 分片（角色数据 + 积木）
-    // 角色数据与积木互不依赖，一起并行读取可以少等一轮。
-    // ---------------------------------------------------------------
-    const jsonTasks = [];
-    for (let i = 0; i < indices.length; i++) {
-        jsonTasks.push({path: targetFile(i), kind: 'json', ref: {type: 'target', index: i}});
-        jsonTasks.push({path: blockFile(i), kind: 'json', ref: {type: 'block', index: i}});
-        // 二次加载加速缓存（已展开积木表）：命中则跳过 deserializeBlocks + 逐积木 createBlock
-        jsonTasks.push({path: prebuiltBlockFile(i), kind: 'json', ref: {type: 'prebuilt', index: i}});
-    }
-    const jsonResults = await readAll(zip, jsonTasks, concurrency);
-
-    const targetData = new Map();
-    const blockData = new Map();
-    const prebuiltData = new Map();
-    for (let i = 0; i < jsonResults.length; i++) {
-        const item = jsonResults[i];
-        if (!item || !item.value) continue;
-        if (item.ref.type === 'target') {
-            targetData.set(item.ref.index, item.value);
-        } else if (item.ref.type === 'block') {
-            blockData.set(item.ref.index, item.value);
-        } else {
-            // prebuilt：仅当版本匹配时才采纳，否则回退到标准积木路径
-            const value = item.value;
-            if (value && value.version === RJ_FASTLOAD_VERSION && value.blocks) {
-                prebuiltData.set(item.ref.index, value);
-            }
-        }
-    }
-
-    report(RJ_LOAD_STAGES.COSTUME_ASSETS, {
-        loadedTargets: targetData.size,
-        loadedCostumes: (costumeTable && costumeTable.items) ? costumeTable.items.length : 0,
-        costumeTotal: (costumeTable && costumeTable.items) ? costumeTable.items.length : 0
-    });
-    report(RJ_LOAD_STAGES.SOUND_ASSETS, {
-        loadedSounds: (soundTable && soundTable.items) ? soundTable.items.length : 0,
-        soundTotal: (soundTable && soundTable.items) ? soundTable.items.length : 0,
-        variableTable
-    });
-    report(RJ_LOAD_STAGES.BLOCKS, {
-        loadedBlockFiles: blockData.size,
-        blockCount: manifest.blockCount || 0
-    });
+    const assembled = await assembleFromZip(zip, options);
 
     // ---------------------------------------------------------------
     // 资源索引：只建索引，不解压（解压交给 scratch-vm 按需进行）
@@ -290,49 +97,13 @@ export const loadRJProject = async (input, options = {}) => {
     const assetIndex = buildAssetIndex(zip);
     const zipView = createAssetZipView(assetIndex);
 
-    // ---------------------------------------------------------------
-    // 组装：把所有分片还原成标准 sb3 的 project.json
-    // ---------------------------------------------------------------
-    const targets = indices.map(index => {
-        const fileValue = targetData.get(index);
-        const target = fileValue && fileValue.target ?
-            {...fileValue.target} :
-            {isStage: index === 0, name: `target${index}`};
-        const blockEntry = blockData.get(index);
-        target.blocks = blockEntry && blockEntry.blocks ? blockEntry.blocks : {};
-        target.comments = blockEntry && blockEntry.comments ? blockEntry.comments : {};
-        // 二次加载加速缓存：若本角色存在版本匹配的已展开积木表，直接交给
-        // scratch-vm 的快速路径（跳过 deserializeBlocks + 逐积木 createBlock）。
-        // 标准压缩积木（target.blocks）仍保留，缓存失效时 scratch-vm 会自动回退。
-        const prebuilt = prebuiltData.get(index);
-        if (prebuilt) {
-            target.__prebuiltBlocks = prebuilt.blocks;
-        }
-        return target;
-    });
-
-    const monitors = (monitorTable && monitorTable.items) || manifest.monitors || [];
-
-    const projectJSON = Object.assign({}, manifest.project || {}, {
-        targets,
-        monitors
-    });
-    // scratch-parser 在校验时会补上这个字段；这里直接走 deserializeProject，
-    // 因此手动补上以保持一致。
-    if (!projectJSON.projectVersion) projectJSON.projectVersion = 3;
-
-    report(RJ_LOAD_STAGES.FINISHED, {
-        targetCount: targets.length,
-        projectJSON
-    });
-
     /** 兜底用：按需生成一份标准 sb3 的 ArrayBuffer（会重新压缩，较慢） */
     let cachedArrayBuffer = null;
     const getArrayBuffer = async () => {
         if (cachedArrayBuffer) return cachedArrayBuffer;
         const sb3Zip = new JSZip();
         /* eslint-disable require-atomic-updates */
-        sb3Zip.file(PROJECT_JSON, JSON.stringify(projectJSON));
+        sb3Zip.file(PROJECT_JSON, JSON.stringify(assembled.projectJSON));
         for (let i = 0; i < assetIndex.all.length; i++) {
             const item = assetIndex.all[i];
             const data = await item.entry.async('uint8array');
@@ -349,61 +120,23 @@ export const loadRJProject = async (input, options = {}) => {
     };
 
     return {
-        projectJSON,
+        projectJSON: assembled.projectJSON,
         zipView,
         getArrayBuffer,
-        manifest,
-        tables: {
-            targets: targetTable,
-            costumes: costumeTable,
-            sounds: soundTable,
-            variables: variableTable,
-            monitors: monitorTable
-        },
-        title: manifest.title || null
+        manifest: assembled.manifest,
+        tables: assembled.tables,
+        title: assembled.title
     };
 };
 
 /**
- * 把作品 meta.platform.name 对齐到运行时自身的平台名（忽略大小写）。
- *
- * scratch-vm 的 checkPlatformCompatibility 是**大小写敏感**的字符串比较，
- * 只要名字对不上就会 emit PLATFORM_MISMATCH 并**阻塞等待用户确认**。
- * 而「未知平台」弹窗的 z-index(8000) 低于加载遮罩(9500)，被完全盖住，
- * 用户既看不见也点不到 —— 表现就是进度条停住、作品永远载入不完。
- * 这里把仅大小写不同的同名平台归一成运行时的写法，从根上避免这个死锁。
- *
- * @param {object} projectJSON 组装好的 project.json
- * @param {object} vm scratch-vm 实例
- * @returns {void}
- */
-const normalizePlatformName = (projectJSON, vm) => {
-    const runtimePlatform = vm && vm.runtime && vm.runtime.platform;
-    if (!runtimePlatform || typeof runtimePlatform.name !== 'string') return;
-    const meta = projectJSON && projectJSON.meta;
-    const platform = meta && meta.platform;
-    if (!platform || typeof platform.name !== 'string') return;
-    if (platform.name === runtimePlatform.name) return;
-    if (platform.name.toLowerCase() !== runtimePlatform.name.toLowerCase()) return;
-    meta.platform = Object.assign({}, platform, {name: runtimePlatform.name});
-};
-
-/**
- * 把 .rj 作品直接装进 VM（快速路径）。
- *
- * 走 vm.deserializeProject(projectJSON, zipView)，资源由 scratch-vm 从
- * .rj 里按需解压，省掉「重新打包 sb3」这一整趟压缩 + 解压。
- * 万一快速路径失败，自动回退到标准 sb3 流程（vm.loadProject）。
- *
+ * 主线程加载路径（Worker 失败时的回退）。
  * @param {object} vm scratch-vm 实例
  * @param {ArrayBuffer|Uint8Array|Blob} input .rj 文件内容
- * @param {object} options 同 loadRJProject
- * @returns {Promise<object>} loadRJProject 的结果
+ * @param {object} options 选项
+ * @returns {Promise<object>} 结果对象
  */
-export const loadRJIntoVM = async (vm, input, options = {}) => {
-    if (!vm) {
-        throw new Error('loadRJIntoVM: 缺少 VM 实例');
-    }
+const loadRJIntoVMMainThread = async (vm, input, options = {}) => {
     const result = await loadRJProject(input, options);
     normalizePlatformName(result.projectJSON, vm);
 
@@ -436,6 +169,39 @@ export const loadRJIntoVM = async (vm, input, options = {}) => {
     const arrayBuffer = await result.getArrayBuffer();
     await vm.loadProject(arrayBuffer);
     return result;
+};
+
+/**
+ * 把 .rj 作品直接装进 VM。
+ *
+ * 优先走 **Web Worker 并行反序列化快速路径**（zip 解包 / 分片解析 / 资源解压
+ * 全部在子线程完成，主线程不卡顿）；任何环节失败都会自动回退到下面的主线程
+ * 加载路径，因此 Worker 不可用也绝不影响正常打开作品。
+ *
+ * @param {object} vm scratch-vm 实例
+ * @param {ArrayBuffer|Uint8Array|Blob} input .rj 文件内容
+ * @param {object} options 同 loadRJProject
+ * @returns {Promise<object>} 结果对象
+ */
+export const loadRJIntoVM = async (vm, input, options = {}) => {
+    if (!vm) {
+        throw new Error('loadRJIntoVM: 缺少 VM 实例');
+    }
+    // 记录当前打开的 .rj 原始内容（「超级重构」等面板用它直接展示分片结构，
+    // 而不是把 VM 重新序列化成 sb3 视图）。加载彻底失败时清除。
+    setCurrentRJ(input);
+    try {
+        return await loadRJIntoVMViaWorker(vm, input, options);
+    } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[rj] Worker 并行反序列化失败，回退到主线程加载：', err);
+    }
+    try {
+        return await loadRJIntoVMMainThread(vm, input, options);
+    } catch (err) {
+        clearCurrentRJ();
+        throw err;
+    }
 };
 
 /**

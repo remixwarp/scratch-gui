@@ -209,3 +209,192 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.05);
 }
+
+/* ------------------------------------------------------------------ */
+/* 注释内嵌积木 + 工具栏                                                */
+/* ------------------------------------------------------------------ */
+
+.scratchCommentBody {
+  position: relative;
+  width: 100%;
+}
+
+/* 预览层覆盖在 textarea 之上 */
+.rw-cb-preview {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* 宽高由脚本同步成 textarea 的尺寸（syncPreviewSize）。不能用 inset: 0 撑开：
+     textarea 被隐藏后 body 里没有占流的元素，高度会塌成 0，内容只剩 padding
+     那一条。 */
+  padding: 10px 12px;
+  box-sizing: border-box;
+  overflow: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--editorTheme3-commentText, #333);
+  word-break: break-word;
+  scrollbar-width: thin;
+}
+
+.rw-cb-preview::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.rw-cb-preview::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.rw-cb-preview p {
+  margin: 0 0 6px;
+}
+
+.rw-cb-preview h1,
+.rw-cb-preview h2,
+.rw-cb-preview h3 {
+  margin: 6px 0 4px;
+  font-weight: 600;
+}
+
+.rw-cb-preview h1 {
+  font-size: 19px;
+}
+
+.rw-cb-preview h2 {
+  font-size: 17px;
+}
+
+.rw-cb-preview h3 {
+  font-size: 15px;
+}
+
+.rw-cb-preview blockquote {
+  margin: 4px 0;
+  padding: 2px 10px;
+  border-left: 3px solid rgba(0, 0, 0, 0.25);
+  color: #6a737d;
+}
+
+.rw-cb-preview ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.rw-cb-preview code {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.08);
+  font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+}
+
+.rw-cb-empty {
+  color: rgba(0, 0, 0, 0.35);
+  font-style: italic;
+}
+
+/* 积木片段 */
+.rw-cb-snippet {
+  position: relative;
+  display: inline-block;
+  margin: 4px 0 8px;
+  padding: 4px 14px 4px 4px;
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.03);
+  cursor: grab;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.rw-cb-snippet:hover {
+  border-color: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.rw-cb-snippet-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.rw-cb-snippet-broken {
+  font-size: 12px;
+  color: #b00020;
+}
+
+.rw-cb-snippet-delete {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.18);
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.rw-cb-snippet:hover .rw-cb-snippet-delete {
+  opacity: 1;
+}
+
+.rw-cb-snippet-delete:hover {
+  background: #d32f2f;
+}
+
+/* 拖出时跟随鼠标的浮层 */
+.rw-cb-drag-ghost {
+  position: fixed;
+  z-index: 100000;
+  pointer-events: none;
+  opacity: 0.85;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* 编辑态：文字是 Markdown 原文，围栏画成积木 */
+.rw-cb-editor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--editorTheme3-commentText, #333);
+  /* 光标颜色跟文字走，避免暗色主题下光标看不见 */
+  caret-color: currentColor;
+  outline: none;
+  cursor: text;
+  scrollbar-width: thin;
+}
+
+.rw-cb-editor::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.rw-cb-editor::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+/* 编辑态里的积木片段：单独占一行，前后都能打字 */
+.rw-cb-snippet-editing {
+  display: block;
+  margin: 4px 0;
+  cursor: default;
+  user-select: none;
+}

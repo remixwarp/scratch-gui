@@ -21,6 +21,20 @@
     --running: var(--theme);
   }
 
+  [data-theme="dark"] {
+    --bg: #1c2128;
+    --card: #2a313a;
+    --text: #e6e8ea;
+    --muted: #a2abb4;
+    --border: #3a434e;
+    --theme: #75c1c4;
+    --theme-dark: #8fd4d7;
+    --theme-ink: #ffffff;
+    --success: #41a66c;
+    --error: #e57373;
+    --running: var(--theme);
+  }
+
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   html, body {
@@ -227,6 +241,54 @@
   }
   footer a { color: var(--theme); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
+
+  /* 主题切换过渡 */
+  body, header, .card, .upload-btn, .remove-btn, .result, footer {
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  }
+
+  /* 深色模式下白底控件的适配 */
+  [data-theme="dark"] .upload-btn { background: #232b34; }
+  [data-theme="dark"] .upload-btn:hover { background: #2a343f; }
+  [data-theme="dark"] .upload-btn:active { background: #303b47; }
+  [data-theme="dark"] .remove-btn { background: #2a313a; }
+  [data-theme="dark"] .platform-chip { background: #2a313a; }
+  [data-theme="dark"] .btn-secondary { background: #2a313a; }
+  [data-theme="dark"] .btn-secondary:hover:not(:disabled) { background: #303b47; }
+  [data-theme="dark"] .steps li { background: #232b34; }
+  [data-theme="dark"] .steps li.running { background: #28323d; }
+  [data-theme="dark"] .steps li.success { background: #21302a; color: #6fcf97; }
+  [data-theme="dark"] .steps li.error { background: #3a2626; }
+  [data-theme="dark"] .steps li.skipped { background: #28323d; }
+  [data-theme="dark"] .result { background: #21302a; border-color: #2f4a3c; }
+  [data-theme="dark"] .result h3 { color: #6fcf97; }
+
+  /* 右上角主题切换按钮 */
+  .theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(255,255,255,0.45);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+  }
+  .theme-toggle:hover { background: rgba(255,255,255,0.32); transform: scale(1.05); }
+  .theme-toggle svg { width: 18px; height: 18px; }
+  .theme-toggle .icon-sun { display: none; }
+  .theme-toggle .icon-moon { display: block; }
+  [data-theme="dark"] .theme-toggle { border-color: rgba(255,255,255,0.5); }
+  [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+  [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 </style>
 </head>
 <body>
@@ -237,6 +299,32 @@
     <p>上传 .sb3 文件，转换为目标编辑器可直接打开的作品；选择 RemixWarp (.rj) 则导出分片式作品文件。</p>
   </div>
 </header>
+
+<button class="theme-toggle" id="theme-toggle" aria-label="切换深色/浅色主题" title="切换深色/浅色主题">
+  <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+</button>
+
+<script>
+  (function () {
+    var KEY = 'convert-theme';
+    var root = document.documentElement;
+    var saved = null;
+    try { saved = localStorage.getItem(KEY); } catch (e) {}
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var current = saved === 'dark' || (saved !== 'light' && prefersDark) ? 'dark' : 'light';
+    root.setAttribute('data-theme', current);
+
+    var btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        current = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', current);
+        try { localStorage.setItem(KEY, current); } catch (e) {}
+      });
+    }
+  })();
+</script>
 
 <main>
   <section class="card">

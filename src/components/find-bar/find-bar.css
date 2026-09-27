@@ -352,6 +352,15 @@
     }
 }
 
+/* 搜索结果里的注释条目 */
+:global(.sa-find-comment::before) {
+    content: "\1F4AC  ";
+}
+
+:global(.sa-find-dropdown .sa-find-comment) {
+    font-style: italic;
+}
+
 @media (max-width: 768px) {
     :global(.sa-find-controls) {
         flex-wrap: wrap;

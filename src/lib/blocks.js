@@ -1,4 +1,5 @@
 import LazyScratchBlocks from './tw-lazy-scratch-blocks';
+import installWorkspaceCulling from './tw-workspace-culling';
 
 /**
  * Connect scratch blocks with the vm
@@ -374,6 +375,9 @@ export default function (vm) {
     ScratchBlocks.utils.is3dSupported = function () {
         return true;
     };
+
+    // 视口外的积木从 DOM 中摘除（而不是 display:none），大作品下平移/缩放才不卡
+    installWorkspaceCulling(ScratchBlocks);
 
     return ScratchBlocks;
 }

@@ -302,7 +302,7 @@ export default class FindBarController {
         }
     }
 
-    findMatch ({displayName, procCode, opcode, searchNeedle, regex}) {
+    findMatch ({displayName, procCode, opcode, searchText, searchNeedle, regex}) {
         const primaryText = displayName || procCode;
 
         if (regex) {
@@ -330,6 +330,16 @@ export default class FindBarController {
                 }
             }
 
+            // 注释正文：命中位置不在显示的那一行摘要里
+            if (searchText) {
+                regex.lastIndex = 0;
+                match = regex.exec(searchText);
+                regex.lastIndex = 0;
+                if (match) {
+                    return {matchIndex: match.index, matchLength: match[0].length, matchInBody: true};
+                }
+            }
+
             return null;
         }
 
@@ -352,6 +362,15 @@ export default class FindBarController {
             matchIndex = opcodeSearchText.indexOf(searchNeedle);
             if (matchIndex >= 0) {
                 return {matchIndex, matchLength: searchNeedle.length, matchInOpcode: true};
+            }
+        }
+
+        // 注释正文：命中位置不在显示的那一行摘要里
+        if (searchText) {
+            const bodySearchText = this.isCaseSensitive ? searchText : searchText.toLowerCase();
+            matchIndex = bodySearchText.indexOf(searchNeedle);
+            if (matchIndex >= 0) {
+                return {matchIndex, matchLength: searchNeedle.length, matchInBody: true};
             }
         }
 
@@ -393,8 +412,9 @@ export default class FindBarController {
         for (const li of listLI) {
             const procCode = li.data.procCode;
             const opcode = li.data.opcode;
+            const searchText = li.data.searchText;
             const displayName = li.displayName || procCode;
-            const match = this.findMatch({displayName, procCode, opcode, searchNeedle: searchVal, regex});
+            const match = this.findMatch({displayName, procCode, opcode, searchText, searchNeedle: searchVal, regex});
 
             if (match) {
                 matches++;
@@ -402,7 +422,18 @@ export default class FindBarController {
 
                 this.clearChildren(li);
 
-                if (match.matchInOpcode && opcode) {
+                if (match.matchInBody && searchText) {
+                    // 注释：命中的是正文而不是列表里那一行摘要，补一段上下文
+                    li.appendChild(document.createTextNode(displayName));
+                    li.appendChild(document.createTextNode(' · '));
+
+                    const bodySpan = document.createElement('span');
+                    bodySpan.className = 'sa-find-opcode';
+                    const snippet = this.getMatchSnippet(searchText, match.matchIndex, match.matchLength);
+                    this.appendHighlightedText(bodySpan, snippet.text, snippet.index, match.matchLength);
+
+                    li.appendChild(bodySpan);
+                } else if (match.matchInOpcode && opcode) {
                     li.appendChild(document.createTextNode(displayName));
                     li.appendChild(document.createTextNode(' ('));
 
@@ -637,7 +668,7 @@ export default class FindBarController {
             }
         }
 
-        const clsOrder = {flag: 0, receive: 1, event: 2, define: 3, var: 4, VAR: 5, list: 6, LIST: 7};
+        const clsOrder = {flag: 0, receive: 1, event: 2, define: 3, var: 4, VAR: 5, list: 6, LIST: 7, comment: 8};
 
         myBlocks.sort((a, b) => {
             const t = clsOrder[a.cls] - clsOrder[b.cls];
@@ -653,7 +684,7 @@ export default class FindBarController {
     addBlocksFromWorkspace (workspace, myBlocks, myBlocksByProcCode, spriteName, isCurrentSprite) {
         const topBlocks = workspace.getTopBlocks();
 
-        const addBlock = (cls, txt, root, opcode = null) => {
+        const addBlock = (cls, txt, root, opcode = null, searchText = null) => {
             const id = root.id ? root.id : root.getId ? root.getId() : null;
             const displayText = isCurrentSprite || !spriteName ? txt : `[${spriteName}] ${txt}`;
 
@@ -661,10 +692,15 @@ export default class FindBarController {
             if (clone) {
                 if (!clone.clones) clone.clones = [];
                 clone.clones.push(id);
+                if (searchText) {
+                    // 合并条目时正文也要累加，否则第二条注释的内容搜不到
+                    clone.searchText = clone.searchText ? `${clone.searchText}\n${searchText}` : searchText;
+                    clone.searchTextLower = clone.searchText.toLowerCase();
+                }
                 return clone;
             }
 
-            const items = new BlockItem(cls, displayText, id, 0, opcode);
+            const items = new BlockItem(cls, displayText, id, 0, opcode, searchText);
             items.y = root.getRelativeToSurfaceXY ? root.getRelativeToSurfaceXY().y : null;
             items.spriteName = spriteName;
             items.isCurrentSprite = isCurrentSprite;
@@ -818,7 +854,66 @@ export default class FindBarController {
             item.isTextInputEntry = true;
         }
 
+        this.addCommentsFromWorkspace(workspace, addBlock);
+
         return myBlocks;
+    }
+
+    /**
+     * 注释正文进搜索索引：自由摆放的注释和挂在积木上的注释都算。
+     * 列表里只显示一行摘要，但整段正文（含内嵌积木围栏之外的文字）都能被搜到。
+     * @param {*} workspace the workspace
+     * @param {Function} addBlock the addBlock helper of addBlocksFromWorkspace
+     */
+    addCommentsFromWorkspace (workspace, addBlock) {
+        if (typeof workspace.getTopComments !== 'function') return;
+
+        const comments = workspace.getTopComments(false) || [];
+        for (const comment of comments) {
+            if (!comment) continue;
+
+            let text = '';
+            if (comment.textarea_) {
+                text = String(comment.textarea_.value || '');
+            } else if (typeof comment.getText === 'function') {
+                text = String(comment.getText() || '');
+            }
+            if (!text.trim()) continue;
+
+            const item = addBlock('comment', `注释: ${this.getCommentSummary(text)}`, comment, null, text);
+            item.isCommentEntry = true;
+        }
+    }
+
+    /**
+     * 取注释的一行摘要（跳过 ```blocks 围栏，避免把积木 XML 显示到结果列表里）
+     * @param {string} text the comment text
+     * @returns {string} a single line summary
+     */
+    getCommentSummary (text) {
+        const withoutFences = String(text).replace(/```[\s\S]*?```/g, '');
+        const line = withoutFences.split(/\r?\n/).map(l => l.trim()).find(l => l.length > 0) || '';
+        if (!line) return '（空白注释）';
+        return line.length > 40 ? `${line.slice(0, 40)}…` : line;
+    }
+
+    /**
+     * 截取命中位置附近的一段正文，用于在结果里展示上下文
+     * @param {string} text the full text
+     * @param {number} index match index
+     * @param {number} length match length
+     * @returns {{text: string, index: number}} snippet and the match index inside it
+     */
+    getMatchSnippet (text, index, length) {
+        const padding = 16;
+        const start = Math.max(0, index - padding);
+        const end = Math.min(text.length, index + length + padding);
+        const prefix = start > 0 ? '…' : '';
+        const suffix = end < text.length ? '…' : '';
+        return {
+            text: prefix + text.slice(start, end) + suffix,
+            index: prefix.length + (index - start)
+        };
     }
 
     addBlocksFromTarget (target, myBlocks, myBlocksByProcCode, spriteName) {

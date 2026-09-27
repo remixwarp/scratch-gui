@@ -1,5 +1,5 @@
 export default class BlockItem {
-    constructor (cls, procCode, labelID, y, opcode = null) {
+    constructor (cls, procCode, labelID, y, opcode = null, searchText = null) {
         this.cls = cls;
         this.procCode = procCode;
         this.labelID = labelID;
@@ -7,6 +7,13 @@ export default class BlockItem {
         this.lower = procCode.toLowerCase();
         this.opcode = opcode;
         this.opcodeSearch = opcode ? opcode.toLowerCase() : null;
+        /**
+         * 额外的可搜索正文（例如注释的完整内容）。显示名通常只是它的一行摘要，
+         * 但搜索应当能命中正文里的任意位置。
+         * @type {?string}
+         */
+        this.searchText = searchText;
+        this.searchTextLower = searchText ? searchText.toLowerCase() : null;
         /**
          * An Array of block ids
          * @type {Array.<string>}

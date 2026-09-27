@@ -615,6 +615,13 @@ module.exports = [
                     {
                         from: 'static',
                         to: ''
+                    },
+                    // Monaco 编辑器：把 monaco 的 AMD 运行时（loader.js + 各语言/主题
+                    // 模块）随构建一起输出，这样 /monaco-editor-iframe.html 可以离线
+                    // 加载本地文件，不必访问 CDN（国内网络下 CDN 常常超时导致编辑器黑屏）。
+                    {
+                        from: 'node_modules/monaco-editor/min/vs',
+                        to: 'monaco/vs'
                     }
                 ]
             }),
