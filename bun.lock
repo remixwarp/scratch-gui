@@ -83,7 +83,7 @@
         "scratch-audio": "github:remixwarp/scratch-audio#main",
         "scratch-paint": "github:remixwarp/scratch-paint#main",
         "scratch-render": "github:remixwarp/scratch-render#develop",
-        "scratch-vm": "github:remixwarp/scratch-vm#41ced887a98c56138ad158530066dcc610ea6ade",
+        "scratch-vm": "github:remixwarp/scratch-vm#1c290538bf3ce5c282a036721f0048c18a651ef0",
         "style-loader": "^0.23.0",
         "text-encoding": "0.7.0",
         "to-style": "1.3.3",
@@ -2570,7 +2570,7 @@
 
     "scratch-translate-extension-languages": ["scratch-translate-extension-languages@0.0.20191118205314", "https://registry.npmmirror.com/scratch-translate-extension-languages/-/scratch-translate-extension-languages-0.0.20191118205314.tgz", {}, "sha512-r0lvpgQjPMjbhI2wROrgoXzBhCvWJdkbAqJMfl2CdNqrwBpUXqLvNNtI3VtNLPJAcp9VfxEylkU9lVZ0gvU46Q=="],
 
-    "scratch-vm": ["scratch-vm@github:remixwarp/scratch-vm#41ced88", { "dependencies": { "@turbowarp/json": "^0.1.2", "@turbowarp/jszip": "^3.11.0", "@turbowarp/nanolog": "^0.2.0", "@vernier/godirect": "1.5.0", "arraybuffer-loader": "^1.0.6", "atob": "2.1.2", "btoa": "1.2.1", "canvas-toBlob": "1.0.0", "decode-html": "2.0.0", "diff-match-patch": "1.0.4", "eslint-auto-fix": "^1.0.4", "format-message": "6.2.1", "htmlparser2": "3.10.0", "immutable": "3.8.2", "scratch-parser": "github:TurboWarp/scratch-parser#master", "scratch-sb1-converter": "0.2.7", "scratch-translate-extension-languages": "0.0.20191118205314", "text-encoding": "0.7.0", "uuid": "8.3.2", "worker-loader": "^1.1.1" }, "peerDependencies": { "@turbowarp/scratch-svg-renderer": "^1.0.0-202312300007-62fe825" } }, "remixwarp-scratch-vm-41ced88", "sha512-5hXPyjt1XYVQOloBqO/bx3WT17q3kcoJrEUM4VgXrx2EBZ2xlcXhHaai+P2e931ar2djWhUqh6SLwOORKpm13w=="],
+    "scratch-vm": ["scratch-vm@github:remixwarp/scratch-vm#1c29053", { "dependencies": { "@turbowarp/json": "^0.1.2", "@turbowarp/jszip": "^3.11.0", "@turbowarp/nanolog": "^0.2.0", "@vernier/godirect": "1.5.0", "arraybuffer-loader": "^1.0.6", "atob": "2.1.2", "btoa": "1.2.1", "canvas-toBlob": "1.0.0", "decode-html": "2.0.0", "diff-match-patch": "1.0.4", "eslint-auto-fix": "^1.0.4", "format-message": "6.2.1", "htmlparser2": "3.10.0", "immutable": "3.8.2", "scratch-parser": "github:TurboWarp/scratch-parser#master", "scratch-sb1-converter": "0.2.7", "scratch-translate-extension-languages": "0.0.20191118205314", "text-encoding": "0.7.0", "uuid": "8.3.2", "worker-loader": "^1.1.1" }, "peerDependencies": { "@turbowarp/scratch-svg-renderer": "^1.0.0-202312300007-62fe825" } }, "remixwarp-scratch-vm-1c29053", "sha512-sQoz1mkx1qQ+82QugmAdYCDbq5y+1REPUr4vPM4RMxtVg5BjqXo0gJVNWu4kbSQJfHa5f/HBOHY0P1IODmcRwA=="],
 
     "sdp": ["sdp@2.12.0", "https://registry.npmmirror.com/sdp/-/sdp-2.12.0.tgz", {}, "sha512-jhXqQAQVM+8Xj5EjJGVweuEzgtGWb3tmEEpl3CLP3cStInSbVHSg0QWOGQzNq8pSID4JkpeV2mPqlMDLrm0/Vw=="],
 

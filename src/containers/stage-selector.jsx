@@ -9,6 +9,7 @@ import {openBackdropLibrary} from '../reducers/modals';
 import {activateTab, COSTUMES_TAB_INDEX} from '../reducers/editor-tab';
 import {showStandardAlert, closeAlertWithId} from '../reducers/alerts';
 import {setHoveredSprite} from '../reducers/hovered-target';
+import getCostumeUrl from '../lib/utils/get-costume-url';
 import DragConstants from '../lib/constants/drag-constants';
 import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
 import ThrottledPropertyHOC from '../lib/components/throttled-property-hoc.jsx';
@@ -201,7 +202,7 @@ StageSelector.propTypes = {
 
 const mapStateToProps = (state, {asset, id}) => ({
     isRtl: state.locales.isRtl,
-    url: asset && asset.encodeDataURI(),
+    url: asset && getCostumeUrl(asset),
     vm: state.scratchGui.vm,
     receivedBlocks: state.scratchGui.hoveredTarget.receivedBlocks &&
             state.scratchGui.hoveredTarget.sprite === id,
