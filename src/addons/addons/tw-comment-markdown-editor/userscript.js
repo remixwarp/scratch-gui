@@ -586,7 +586,7 @@ export default async function ({addon, console, msg}) {
             if (!g) return;
             e.preventDefault();
             e.stopPropagation();
-            startSnippetDrag(entry, xml, e);
+            startSnippetDrag(entry, xml, e, wrap);
         });
         wrap.addEventListener('touchstart', e => {
             if (e.target === remove) return;
@@ -595,7 +595,7 @@ export default async function ({addon, console, msg}) {
             if (!g) return;
             e.preventDefault();
             e.stopPropagation();
-            startSnippetDrag(entry, xml, e);
+            startSnippetDrag(entry, xml, e, wrap);
         }, {passive: false});
         wrap.addEventListener('pointerdown', e => {
             if (e.target === remove) return;
@@ -605,7 +605,7 @@ export default async function ({addon, console, msg}) {
             e.preventDefault();
             e.stopPropagation();
             try { wrap.setPointerCapture(e.pointerId); } catch (_e) {}
-            startSnippetDrag(entry, xml, e);
+            startSnippetDrag(entry, xml, e, wrap);
         }, {passive: false});
         return wrap;
     };
@@ -1228,13 +1228,38 @@ export default async function ({addon, console, msg}) {
     // 拖拽链能被挂到 window 上，避免 dropSnippetToWorkspace 被多次调用。
     let _rwActiveDrag = null;
 
-    const startSnippetDrag = (entry, xml, e) => {
+    const startSnippetDrag = (entry, xml, e, dragHost) => {
         const ws = getMainWorkspace();
         if (!ws) return;
         if (_rwActiveDrag) return; // 已有活跃拖拽，这次丢弃（去重 / 重入保护）
         const start = getClientXY(e);
         if (!start) return;
-        _rwActiveDrag = {entry, xml};
+
+        let cleanedUp = false;
+        const cleanup = () => {
+            if (cleanedUp) return;
+            cleanedUp = true;
+            window.removeEventListener('pointermove', onMove, true);
+            window.removeEventListener('pointerup', onUp, true);
+            window.removeEventListener('pointercancel', onUp, true);
+            window.removeEventListener('mousemove', onMove, true);
+            window.removeEventListener('mouseup', onUp, true);
+            window.removeEventListener('touchmove', onMove, true);
+            window.removeEventListener('touchend', onUp, true);
+            window.removeEventListener('touchcancel', onUp, true);
+            try {
+                if (dragHost && dragHost.releasePointerCapture && e.pointerId != null) {
+                    dragHost.releasePointerCapture(e.pointerId);
+                }
+            } catch (_e) {}
+            if (ghost) {
+                try { ghost.remove(); } catch (_e) {}
+                ghost = null;
+            }
+            _rwActiveDrag = null;
+        };
+
+        _rwActiveDrag = {entry, xml, cleanup};
         let ghost = null;
         let moved = false;
         // 手机上 touchend / pointerup 事件里 clientX/clientY 常常是 0：
@@ -1242,20 +1267,11 @@ export default async function ({addon, console, msg}) {
         // 我们在 move 里缓存最后一次有效的坐标，onUp 拿不到时用它兜底。
         let lastValidPoint = {...start};
 
-        // 识别事件来源：pointer/mouse/touch。pointer 最可靠（覆盖鼠标+触摸+触控笔）。
-        const type = (e.type || '').toLowerCase();
-        const isPointer = type.startsWith('pointer');
-        const isTouch = type.startsWith('touch') || isPointer && e.pointerType === 'touch';
-        const isPen = isPointer && e.pointerType === 'pen';
-
         const onMove = event => {
-            if (isTouch || isPen) {
-                try { event.preventDefault(); } catch (_e) {}
-            }
+            try { event.preventDefault(); } catch (_e) {}
             const point = getClientXY(event);
             if (!point) return;
-            // 缓存最后一次有效坐标 —— 手机上 up 事件拿不到 clientX/clientY 时救急
-            lastValidPoint = point;
+            lastValidPoint = point; // 缓存最后一次有效坐标
             if (!moved && Math.abs(point.x - start.x) < DRAG_THRESHOLD &&
                 Math.abs(point.y - start.y) < DRAG_THRESHOLD) return;
             if (!moved) {
@@ -1274,58 +1290,30 @@ export default async function ({addon, console, msg}) {
         };
 
         const onUp = event => {
-            // 清理所有可能在 move 阶段挂过的监听器（哪个类型进来的就清哪个）
-            window.removeEventListener('mousemove', onMove, true);
-            window.removeEventListener('mouseup', onUp, true);
-            window.removeEventListener('touchmove', onMove, true);
-            window.removeEventListener('touchend', onUp, true);
-            window.removeEventListener('touchcancel', onUp, true);
-            window.removeEventListener('pointermove', onMove, true);
-            window.removeEventListener('pointerup', onUp, true);
-            window.removeEventListener('pointercancel', onUp, true);
-
-            // 释放全局锁 —— 无论 drop 有没有成功，手势结束就清
-            _rwActiveDrag = null;
-            lastStartEventKey = null; // 顺便让 gateStart 的 150ms 窗关闭，下次新按压能正常触发
-
-            if (ghost) ghost.remove();
-            ghost = null;
-            if (!moved) return;
-            const point = getClientXY(event);
-            // 手机上 touch/pointer 的 up 事件里 clientX/clientY 常常是 0 ——
-            // 我们缓存开始/移动过程中最后一次有效的坐标，用它兜底。
-            const finalPoint = point || lastValidPoint;
-            if (!finalPoint) {
-                console.warn('[comment-blocks] onUp: 拿不到 clientXY，丢了');
-                return;
+            try {
+                if (!moved) return; // 没真拖过，cleanup 交给 finally
+                const point = getClientXY(event);
+                const finalPoint = point || lastValidPoint;
+                if (!finalPoint) return;
+                if (!isOverWorkspace(ws, finalPoint.x, finalPoint.y)) return;
+                if (findCommentAt(finalPoint.x, finalPoint.y)) return;
+                dropSnippetToWorkspace(ws, xml, screenToWorkspace(ws, finalPoint.x, finalPoint.y));
+            } finally {
+                cleanup();
             }
-            if (!isOverWorkspace(ws, finalPoint.x, finalPoint.y)) {
-                console.warn('[comment-blocks] onUp: 松手点不在工作区',
-                    {client: finalPoint, rect: ws.getParentSvg?.().getBoundingClientRect?.()});
-                return;
-            }
-            const overComment = findCommentAt(finalPoint.x, finalPoint.y);
-            if (overComment) {
-                console.warn('[comment-blocks] onUp: 松手点落在了注释上', overComment);
-                return;
-            }
-            const wp = screenToWorkspace(ws, finalPoint.x, finalPoint.y);
-            console.log('[comment-blocks] onUp: 准备 drop', {client: finalPoint, workspace: wp});
-            dropSnippetToWorkspace(ws, xml, wp);
         };
 
-        // 统一监听：mouse 一套 / touch 一套 / pointer 一套（pointerdown 已经调用时
-        // 也一起挂上 pointermove/pointerup 兜底）。
-        // pointermove 用 capture: true 确保即使手指滑到 scratch 的 DOM 上我们也能收到
-        // 事件（配合 pointerdown 里 setPointerCapture 最稳）。
-        window.addEventListener('mousemove', onMove, true);
-        window.addEventListener('mouseup', onUp, true);
-        window.addEventListener('touchmove', onMove, {capture: true, passive: false});
-        window.addEventListener('touchend', onUp, true);
-        window.addEventListener('touchcancel', onUp, true);
+        // move/up 只用 pointer 一套 —— 它覆盖所有输入源，配合 setPointerCapture 最稳。
         window.addEventListener('pointermove', onMove, {capture: true, passive: false});
         window.addEventListener('pointerup', onUp, true);
         window.addEventListener('pointercancel', onUp, true);
+
+        // 兜底：有些极旧的 Android 浏览器不发 pointer，或用户直接用 mouse 事件进来
+        // （比如桌面浏览器）。这两种情况我们也挂 mouse/touch 的 up —— 但它们不会再同时发
+        // move 了，因为浏览器会在 pointer capture 期间吞掉合成事件。
+        window.addEventListener('mouseup', onUp, true);
+        window.addEventListener('touchend', onUp, true);
+        window.addEventListener('touchcancel', onUp, true);
     };
 
     /* ------------------------------------------------------------------ */
