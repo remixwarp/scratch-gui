@@ -35,9 +35,18 @@ export default async function ({addon, console, msg}) {
     };
 
     const getClientXY = e => {
-        if (typeof e.clientX === 'number') return {x: e.clientX, y: e.clientY};
-        const touch = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
-        return touch ? {x: touch.clientX, y: touch.clientY} : null;
+        // 优先读 event.clientX/clientY —— pointer/mouse 都有，touch 在
+        // 某些浏览器（如 Chrome Android 上 pointer 合成事件）也会填。
+        if (typeof e.clientX === 'number' && !Number.isNaN(e.clientX)) {
+            return {x: e.clientX, y: e.clientY};
+        }
+        // 触摸专用：changedTouches（up/cancel 事件上 touches 会空，
+        // 但 changedTouches 在松手那一刻是有的）→ touches（move/start 事件）。
+        const list = e.changedTouches || e.touches || (e.pointerId != null ? [e] : null);
+        if (list && list.length && typeof list[0].clientX === 'number') {
+            return {x: list[0].clientX, y: list[0].clientY};
+        }
+        return null;
     };
 
     /** 屏幕坐标 -> 工作区坐标 */
@@ -1228,6 +1237,10 @@ export default async function ({addon, console, msg}) {
         _rwActiveDrag = {entry, xml};
         let ghost = null;
         let moved = false;
+        // 手机上 touchend / pointerup 事件里 clientX/clientY 常常是 0：
+        // 浏览器在松手那一刻可能已经清空了 touches / changedTouches，
+        // 我们在 move 里缓存最后一次有效的坐标，onUp 拿不到时用它兜底。
+        let lastValidPoint = {...start};
 
         // 识别事件来源：pointer/mouse/touch。pointer 最可靠（覆盖鼠标+触摸+触控笔）。
         const type = (e.type || '').toLowerCase();
@@ -1237,13 +1250,12 @@ export default async function ({addon, console, msg}) {
 
         const onMove = event => {
             if (isTouch || isPen) {
-                // 触摸/触控笔：每帧 preventDefault 阻止页面滚动/缩放手势。
-                // pointermove 里 preventDefault 要先 cancelPointer 才生效，但我们在
-                // pointerdown 里已经 touch-action: none 了，所以浏览器本来就不会滚。
                 try { event.preventDefault(); } catch (_e) {}
             }
             const point = getClientXY(event);
             if (!point) return;
+            // 缓存最后一次有效坐标 —— 手机上 up 事件拿不到 clientX/clientY 时救急
+            lastValidPoint = point;
             if (!moved && Math.abs(point.x - start.x) < DRAG_THRESHOLD &&
                 Math.abs(point.y - start.y) < DRAG_THRESHOLD) return;
             if (!moved) {
@@ -1252,8 +1264,6 @@ export default async function ({addon, console, msg}) {
                 ghost.className = 'rw-cb-drag-ghost';
                 const svg = renderSnippetSvg(xml);
                 if (svg) ghost.appendChild(svg);
-                // 注释里的积木画在工作区 SVG 里，会跟着工作区缩放；浮层挂在 body 上
-                // 用的是屏幕像素，不跟着缩就会显得比注释里大一圈。
                 const scale = ws.scale || 1;
                 ghost.style.transform = `scale(${scale})`;
                 ghost.style.transformOrigin = 'top left';
@@ -1282,9 +1292,26 @@ export default async function ({addon, console, msg}) {
             ghost = null;
             if (!moved) return;
             const point = getClientXY(event);
-            if (!point || !isOverWorkspace(ws, point.x, point.y)) return;
-            if (findCommentAt(point.x, point.y)) return;
-            dropSnippetToWorkspace(ws, xml, screenToWorkspace(ws, point.x, point.y));
+            // 手机上 touch/pointer 的 up 事件里 clientX/clientY 常常是 0 ——
+            // 我们缓存开始/移动过程中最后一次有效的坐标，用它兜底。
+            const finalPoint = point || lastValidPoint;
+            if (!finalPoint) {
+                console.warn('[comment-blocks] onUp: 拿不到 clientXY，丢了');
+                return;
+            }
+            if (!isOverWorkspace(ws, finalPoint.x, finalPoint.y)) {
+                console.warn('[comment-blocks] onUp: 松手点不在工作区',
+                    {client: finalPoint, rect: ws.getParentSvg?.().getBoundingClientRect?.()});
+                return;
+            }
+            const overComment = findCommentAt(finalPoint.x, finalPoint.y);
+            if (overComment) {
+                console.warn('[comment-blocks] onUp: 松手点落在了注释上', overComment);
+                return;
+            }
+            const wp = screenToWorkspace(ws, finalPoint.x, finalPoint.y);
+            console.log('[comment-blocks] onUp: 准备 drop', {client: finalPoint, workspace: wp});
+            dropSnippetToWorkspace(ws, xml, wp);
         };
 
         // 统一监听：mouse 一套 / touch 一套 / pointer 一套（pointerdown 已经调用时
