@@ -472,6 +472,15 @@ export default async function ({addon, console, msg}) {
             e.stopPropagation();
             startSnippetDrag(entry, xml, e);
         });
+        // 移动端触摸：touchstart 要 preventDefault 阻止浏览器的长按/点击菜单，
+        // 同时告诉 scratch-blocks 的 gesture 系统这不是它要处理的拖拽。
+        wrap.addEventListener('touchstart', e => {
+            if (e.target === remove) return;
+            if (e.touches && e.touches.length !== 1) return; // 只支持单指
+            e.preventDefault();
+            e.stopPropagation();
+            startSnippetDrag(entry, xml, e);
+        }, {passive: false});
         return wrap;
     };
 
@@ -1094,8 +1103,12 @@ export default async function ({addon, console, msg}) {
         if (!start) return;
         let ghost = null;
         let moved = false;
+        let touchActive = false; // 触摸事件里要阻止页面滚动
+
+        const isTouch = typeof e.type === 'string' && e.type.startsWith('touch');
 
         const onMove = event => {
+            if (isTouch) event.preventDefault(); // 阻止触摸拖拽时页面滚动/缩放
             const point = getClientXY(event);
             if (!point) return;
             if (!moved && Math.abs(point.x - start.x) < DRAG_THRESHOLD &&
@@ -1120,6 +1133,10 @@ export default async function ({addon, console, msg}) {
         const onUp = event => {
             window.removeEventListener('mousemove', onMove, true);
             window.removeEventListener('mouseup', onUp, true);
+            window.removeEventListener('touchmove', onMove, true);
+            window.removeEventListener('touchend', onUp, true);
+            window.removeEventListener('touchcancel', onUp, true);
+            touchActive = false;
             if (ghost) ghost.remove();
             ghost = null;
             if (!moved) return;
@@ -1132,6 +1149,13 @@ export default async function ({addon, console, msg}) {
 
         window.addEventListener('mousemove', onMove, true);
         window.addEventListener('mouseup', onUp, true);
+        // 触摸也要挂；onMove 里会 preventDefault 阻止滚动
+        if (isTouch) {
+            touchActive = true;
+            window.addEventListener('touchmove', onMove, {capture: true, passive: false});
+            window.addEventListener('touchend', onUp, true);
+            window.addEventListener('touchcancel', onUp, true);
+        }
     };
 
     /* ------------------------------------------------------------------ */
