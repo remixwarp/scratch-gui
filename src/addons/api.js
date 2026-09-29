@@ -158,7 +158,7 @@ const getEditorMode = () => {
 };
 
 /**
- * @returns {string} Locale code
+ * @returns {string} 当前运行时语言的 locale code（每次调用都读最新值，支持运行时切语言）
  */
 const getLocale = () => {
     const locale = reduxInstance.state.locales.locale;
@@ -167,21 +167,51 @@ const getLocale = () => {
     }
     return locale.split('-')[0];
 };
-const language = getLocale();
 
-const getTranslations = async () => {
-    // 先加载英文翻译作为默认
+/**
+ * 刷新 addonMessages：先清掉全部运行时翻译，再按 en -> 当前 locale 的顺序合并。
+ * 这样切语言后，插件里的 msg() 下次调用就能拿到新翻译，
+ * 同时 AddonRunner.messageCache 会在切语言事件里被清空，不会返回旧值。
+ */
+let lastLoadedLocale = null;
+const refreshAddonMessages = async () => {
+    const current = getLocale();
+    // 防止首次初始化和并发调用重复 IO
+    if (lastLoadedLocale === current) {
+        // 但如果调用方显式传入强制刷新（切语言事件），就清掉缓存重新加载
+        return;
+    }
+    // 英文永远先加载
+    addonMessages = {};
     if (Object.prototype.hasOwnProperty.call(l10nEntries, 'en')) {
         const enMessages = await l10nEntries['en']();
         Object.assign(addonMessages, enMessages);
     }
-    // 然后加载当前语言的翻译覆盖默认值
-    if (language !== 'en' && Object.prototype.hasOwnProperty.call(l10nEntries, language)) {
-        const localeMessages = await l10nEntries[language]();
+    // 当前语言覆盖（英文的就不用再覆盖一次了）
+    if (current !== 'en' && Object.prototype.hasOwnProperty.call(l10nEntries, current)) {
+        const localeMessages = await l10nEntries[current]();
         Object.assign(addonMessages, localeMessages);
     }
+    lastLoadedLocale = current;
 };
-const addonMessagesPromise = getTranslations();
+
+const addonMessagesPromise = refreshAddonMessages();
+
+// 运行时切语言监听：Redux 每次 dispatch 后会触发 statechanged
+reduxInstance.addEventListener('statechanged', async e => {
+    const nextLocale = e.detail.next && e.detail.next.locales && e.detail.next.locales.locale;
+    const prevLocale = e.detail.prev && e.detail.prev.locales && e.detail.prev.locales.locale;
+    if (nextLocale && nextLocale !== prevLocale) {
+        // 重新加载 addonMessages（按新 locale）
+        addonMessages = {};
+        lastLoadedLocale = null;
+        await refreshAddonMessages();
+        // 清空所有插件实例的 messageCache，强制下次 msg() 读新翻译
+        for (const runner of AddonRunner.instances) {
+            runner.messageCache = {};
+        }
+    }
+});
 
 const untilInEditor = () => {
     if (

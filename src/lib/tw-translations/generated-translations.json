@@ -350,7 +350,8 @@
     "mw.git.changes.typeLabel": "Commit type",
     "mw.git.working": "Working…",
     "mw.git.sidebar.noRepoInitFirst": "No repository initialized.",
-    "mw.git.sidebar.noRepoInitSecond": "Open the full Git window to clone or create one."
+    "mw.git.sidebar.noRepoInitSecond": "Open the full Git window to clone or create one.",
+    "tw.defaultComment": "Click to write a comment, or drag in blocks"
   },
   "zh-geng": {
     "gui.backpack.searchPlaceholder": "搜索书包...",
@@ -2128,7 +2129,8 @@
     "mw.git.changes.unstageAll": "全部取消暂存",
     "mw.git.changes.typeLabel": "提交类型",
     "mw.git.sidebar.noRepoInitFirst": "还没有版本库。",
-    "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。"
+    "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。",
+    "tw.defaultComment": "点击写注释，或者把积木拖进来哦"
   },
   "zh-cn": {
     "mw.settings.loadingScreen": "加载画面",
@@ -3938,7 +3940,8 @@
     "mw.git.changes.unstageAll": "全部取消暂存",
     "mw.git.changes.typeLabel": "提交类型",
     "mw.git.sidebar.noRepoInitFirst": "还没有版本库。",
-    "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。"
+    "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。",
+    "tw.defaultComment": "单击编写注释，或拖入积木"
   },
   "wenyan": {
     "mw.tree.explorer": "资源管理器",
@@ -5714,7 +5717,8 @@
     "mw.git.changes.unstageAll": "全部取消暂存",
     "mw.git.changes.typeLabel": "提交类型",
     "mw.git.sidebar.noRepoInitFirst": "还没有版本库。",
-    "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。"
+    "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。",
+    "tw.defaultComment": "点此批注，或拖积木入"
   },
   "geng": {
     "mw.tree.explorer": "资源管理（赛博工位）",
@@ -7492,6 +7496,10 @@
     "mw.git.changes.unstageAll": "全部取消暂存",
     "mw.git.changes.typeLabel": "提交类型",
     "mw.git.sidebar.noRepoInitFirst": "还没有版本库。",
-    "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。"
+    "mw.git.sidebar.noRepoInitSecond": "打开完整 Git 窗口来克隆或创建一个。",
+    "tw.defaultComment": "点击写注释，或者把积木拖进来哦"
+  },
+  "zh_geng": {
+    "tw.defaultComment": "点击写注释，或者把积木拖进来哦"
   }
 }

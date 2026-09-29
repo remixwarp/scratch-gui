@@ -16,7 +16,7 @@ const FENCE_CLOSE = '```';
 const SNIPPET_REGEX = /```blocks[ \t]*\r?\n([\s\S]*?)\r?\n?```/g;
 const DRAG_THRESHOLD = 5;
 
-export default async function ({addon, console}) {
+export default async function ({addon, console, msg}) {
     const Blockly = await addon.tab.traps.getBlockly();
 
     /** comment 对象 -> entry */
@@ -379,7 +379,11 @@ export default async function ({addon, console}) {
         if (!preview.children.length && !preview.textContent.trim()) {
             const empty = document.createElement('p');
             empty.className = 'rw-cb-empty';
-            empty.textContent = '单击编写注释，或拖入积木';
+            // 走 addon.msg()：key 会走 addonMessages 命名空间，
+            // 切语言后 api.js 监听 Redux statechanged 会重新加载翻译，
+            // 我们再在下面的语言切换监听器里让所有已渲染的 preview 重建一次，
+            // 这样空注释占位文字就能跟上当前语言。
+            empty.textContent = msg('default-comment');
             preview.appendChild(empty);
         }
     };
@@ -1286,6 +1290,7 @@ export default async function ({addon, console}) {
         window.clearInterval(timer);
         document.removeEventListener('mousedown', globalClick, true);
         document.removeEventListener('keydown', globalKeydown, true);
+        reduxListener.removeEventListener('statechanged', onLocaleChanged);
         for (const entry of entries.values()) {
             if (entry.syncTimer) window.clearTimeout(entry.syncTimer);
             entry.preview.remove();
@@ -1294,6 +1299,20 @@ export default async function ({addon, console}) {
         }
         entries.clear();
     });
+
+    // 语言切换时：对所有空注释重建 preview → msg('default-comment') 会拿到新翻译
+    let lastLocale = null;
+    const reduxListener = addon.tab.redux;
+    const onLocaleChanged = e => {
+        const next = e.detail.next && e.detail.next.locales && e.detail.next.locales.locale;
+        if (!next || next === lastLocale) return;
+        lastLocale = next;
+        for (const entry of entries.values()) {
+            // refresh 会先 buildPreview，空注释的 placeholder 就用到新翻译了
+            refresh(entry);
+        }
+    };
+    reduxListener.addEventListener('statechanged', onLocaleChanged);
 
     addon.self.addEventListener('reenabled', () => {
         window.setTimeout(processCommentElements, 300);
