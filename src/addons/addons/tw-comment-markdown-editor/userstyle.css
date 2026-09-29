@@ -219,6 +219,15 @@
   width: 100%;
 }
 
+/* 核心保险：当我们的 preview/editor 覆盖层存在时，强制隐藏 scratch 原生的 textarea。
+   scratch-blocks 在 showComment_ 等路径里会给 textarea 设 inline display 样式，
+   用 !important 才能压过。 */
+body.blocklyMinimalBody:has(> .rw-cb-preview, > .rw-cb-editor) > textarea.blocklyCommentTextarea {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+}
+
 /* 预览层覆盖在 textarea 之上 */
 .rw-cb-preview {
   position: absolute;

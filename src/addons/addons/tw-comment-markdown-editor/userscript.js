@@ -177,222 +177,92 @@ export default async function ({addon, console, msg}) {
     const snippetSvgCache = new Map();
     const SNIPPET_SVG_CACHE_LIMIT = 60;
 
-    /* ------------------------------------------------------------------ */
-    /* 独立的"草稿 Workspace"：和主工作区隔离，只用来渲染片段 SVG           */
-    /* ------------------------------------------------------------------ */
-    let scratchWorkspace = null;
-    let draftWorkspace = null;
-    const getDraftWorkspace = () => {
-        if (draftWorkspace) return draftWorkspace;
-        if (!Blockly || !Blockly.Workspace) return null;
-        try {
-            // 先拿到一个已经初始化好的 Blockly 实例当模板（主工作区或其它已有 workspace）。
-            // draftWorkspace 只用来"生一块积木 → 渲染 SVG → dispose"，完全独立：
-            //   * 不挂进 DOM，所以不会触发主工作区联动 / 不会把主工作区搞脏；
-            //   * 和 VM 运行时隔离，避免 opcodes / 自定义积木 还没加载时 domToWorkspace 失败。
-            const opts = {
-                blockDrag: false,
-                comments: false,
-                connectToBlocks: false,
-                disable: false,
-                grids: false,
-                horizontalLayout: false,
-                media: {},
-                multipleDrag: false,
-                renderer: 'scratch',
-                rtl: false,
-                scrollbars: false,
-                sounds: false,
-                tooltips: false,
-                trashcan: false,
-                maxTrashcanContents: 0
-            };
-            // scratch-blocks 里的 ScratchWorkspace 可以继承主工作区的 opcodes 注册，
-            // 也会自己在内部建 Blockly.Workspace 实例。用主工作区作原型可以让自定义积木
-            // / 扩展积木 的 block definitions 都自动可用。
-            const MainWorkspaceClass = Blockly.ScratchWorkspace || Blockly.Workspace;
-            if (typeof MainWorkspaceClass !== 'function') return null;
-
-            // 先尝试用主工作区作为 prototype 来确保所有 block 类型可用
-            scratchWorkspace = getMainWorkspace();
-            if (scratchWorkspace && scratchWorkspace.options) {
-                opts.renderer = scratchWorkspace.options.renderer || 'scratch';
-                opts.rtl = !!scratchWorkspace.options.rtl;
-            }
-
-            const canvas = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            canvas.style.display = 'none';
-            document.body.appendChild(canvas);
-            const metricsManager = scratchWorkspace && scratchWorkspace.getMetricsManager ?
-                scratchWorkspace.getMetricsManager() : null;
-            const draft = new MainWorkspaceClass(opts, Blockly.getMainWorkspace ? Blockly.getMainWorkspace() : null, metricsManager);
-            draftWorkspace = draft;
-            // 给它弄个 svg 画布让它能渲染
-            draft.inject(canvas);
-            // 关闭事件，彻底静态
-            if (draft.Events) draft.Events.disable();
-            return draftWorkspace;
-        } catch (err) {
-            console.warn('[comment-blocks] 草稿 workspace 初始化失败，回退到主工作区', err);
-            draftWorkspace = null;
-            return null;
-        }
-    };
-
-    /** 取一个能用的 workspace：优先草稿 workspace，失败了退回主工作区 */
-    const getRenderWorkspace = () => {
-        const draft = getDraftWorkspace();
-        if (draft) return draft;
-        return getMainWorkspace();
-    };
-
-    /** 清理草稿 workspace（插件销毁时调用，避免残留 DOM / 事件） */
-    const cleanupDraftWorkspace = () => {
-        try {
-            if (draftWorkspace) {
-                draftWorkspace.dispose && draftWorkspace.dispose();
-                draftWorkspace = null;
-            }
-        } catch (_e) { /* ignore */ }
-    };
-
     /**
-     * 把一个 block 渲染成 <svg> 元素。同时处理了两种常见的不稳定情况：
-     *   1. 直接克隆 root 后 bbox 是 0 → 改用 renderBlock() 这个 scratch-blocks 原生渲染接口；
-     *   2. getBBox 报 "SVGGElement is not in SVG document" → 重新挂到真实 document 上再量。
+     * 片段异步重试队列：当 domToWorkspace 因为 opcode 尚未注册等原因失败时，
+     * 下一个 tick 再试一次。最多重试 5 次（200ms × 5 = 1s），opcode 肯定加载完了。
      */
-    const buildSnippetSvgFromBlock = block => {
-        let root = null;
-        try {
-            root = block.getSvgRoot ? block.getSvgRoot() : null;
-        } catch (_e) { return null; }
-        if (!root) return null;
-
-        // scratch-blocks 暴露的 renderBlock() 直接给你一份干净的 SVG 片段，
-        // 避免手动 clone + 手动量 bbox 时的各种边界问题。
-        const renderBlock = Blockly.renderBlock || (Blockly.BlockSvg ? Blockly.BlockSvg.renderBlock : null);
-        if (typeof renderBlock === 'function') {
-            let rendered = null;
-            try {
-                rendered = renderBlock(block);
-            } catch (_e) { /* ignore */ }
-            if (rendered && rendered.nodeType === 1) {
-                // 拿到的可能是 <g> 或多个子节点：用 <svg> 包起来并加 bbox
-                const bbox = getNodeBBoxSafely(rendered);
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('width', Math.round(Math.max(bbox.width + 8, 8)));
-                svg.setAttribute('height', Math.round(Math.max(bbox.height + 8, 8)));
-                svg.setAttribute('viewBox', `${bbox.x - 4} ${bbox.y - 4} ${Math.max(bbox.width + 8, 8)} ${Math.max(bbox.height + 8, 8)}`);
-                svg.classList.add('rw-cb-snippet-svg');
-                // renderBlock 可能返回 <g>，也可能直接就是多个子节点，把它们都塞进 svg
-                for (const child of Array.from(rendered.childNodes || [])) {
-                    svg.appendChild(child.cloneNode(true));
-                }
-                if (!svg.childNodes.length && rendered.cloneNode) {
-                    svg.appendChild(rendered.cloneNode(true));
-                }
-                return svg;
+    const retryQueue = [];
+    let retryScheduled = false;
+    const scheduleRetry = (xml, entry) => {
+        if (!entry || !entries.has(entry.comment)) return;
+        if (retryQueue.some(item => item.entry === entry && item.xml === xml)) return;
+        retryQueue.push({xml, entry, attempts: 0});
+        if (!retryScheduled) {
+            retryScheduled = true;
+            window.setTimeout(flushRetryQueue, 150);
+        }
+    };
+    const flushRetryQueue = () => {
+        retryScheduled = false;
+        const remaining = [];
+        for (const item of retryQueue) {
+            const {entry, xml, attempts} = item;
+            if (!entries.has(entry.comment)) continue;
+            snippetSvgCache.delete(xml);
+            const newSvg = renderSnippetSvg(xml);
+            if (newSvg) {
+                // 渲染成功 → 重建 preview，把占位换成真 SVG
+                refresh(entry);
+            } else if (attempts + 1 < 5) {
+                remaining.push({...item, attempts: attempts + 1});
             }
         }
-
-        // 回退路径：直接克隆 block 的 SVG 根节点
-        const bbox = getNodeBBoxSafely(root);
-        if (!bbox || !bbox.width || !bbox.height) {
-            // bbox 拿不到（节点不在 DOM / 浏览器没排版）→ 放到草稿 workspace 的 svg 上再量一次
-            try {
-                const wsRoot = block.workspace && block.workspace.getParentSvg ? block.workspace.getParentSvg() : null;
-                if (wsRoot && !document.body.contains(root)) {
-                    // 临时挂一下
-                    const holder = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                    holder.style.display = 'none';
-                    wsRoot.appendChild(holder);
-                    holder.appendChild(root);
-                    try { root.setAttribute('transform', root.getAttribute('transform') || ''); } catch (_e) {}
-                    const bbox2 = root.getBBox ? root.getBBox() : null;
-                    if (bbox2 && (bbox2.width || bbox2.height)) {
-                        const clone = root.cloneNode(true);
-                        holder.removeChild(root);
-                        wsRoot.removeChild(holder);
-                        clone.removeAttribute('transform');
-                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svg.setAttribute('width', Math.round(Math.max(bbox2.width + 8, 8)));
-                        svg.setAttribute('height', Math.round(Math.max(bbox2.height + 8, 8)));
-                        svg.setAttribute('viewBox', `${bbox2.x - 4} ${bbox2.y - 4} ${Math.max(bbox2.width + 8, 8)} ${Math.max(bbox2.height + 8, 8)}`);
-                        svg.classList.add('rw-cb-snippet-svg');
-                        svg.appendChild(clone);
-                        return svg;
-                    }
-                    holder.removeChild(root);
-                    wsRoot.removeChild(holder);
-                }
-            } catch (_e) { /* ignore */ }
-            return null;
-        }
-        const clone = root.cloneNode(true);
-        clone.removeAttribute('transform');
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', Math.round(Math.max(bbox.width + 8, 8)));
-        svg.setAttribute('height', Math.round(Math.max(bbox.height + 8, 8)));
-        svg.setAttribute('viewBox', `${bbox.x - 4} ${bbox.y - 4} ${Math.max(bbox.width + 8, 8)} ${Math.max(bbox.height + 8, 8)}`);
-        svg.classList.add('rw-cb-snippet-svg');
-        svg.appendChild(clone);
-        return svg;
-    };
-
-    /** 尽量安全地拿到一个节点的 bbox：避免节点不在 svg document 里时报错 */
-    const getNodeBBoxSafely = node => {
-        try {
-            if (!node || typeof node.getBBox !== 'function') return null;
-            return node.getBBox();
-        } catch (_e) {
-            return null;
+        retryQueue.length = 0;
+        retryQueue.push(...remaining);
+        if (retryQueue.length) {
+            retryScheduled = true;
+            window.setTimeout(flushRetryQueue, 300);
         }
     };
 
     /**
-     * 渲染片段：用独立的草稿 workspace 生一块积木，渲染成 <svg> 后立刻 dispose。
-     * 主工作区状态不受影响；opcode / 自定义积木 注册从主工作区继承，
-     * 所以即便扩展积木晚于插件加载也能渲染。
+     * 渲染片段：在主工作区临时建一块，克隆出 SVG 后立刻销毁。
+     * 和原来一样简单，但加了多顶层 id 遍历 + 失败时交给重试队列兜底。
      */
     const renderSnippetSvg = xml => {
         const cached = snippetSvgCache.get(xml);
         if (cached) return cached.cloneNode(true);
 
-        if (!Blockly.Xml) return null;
-
-        const ws = getRenderWorkspace();
-        if (!ws) return null;
+        const ws = getMainWorkspace();
+        if (!ws || !Blockly.Xml) return null;
 
         let svg = null;
-        let block = null;
-        const eventsWereEnabled = Blockly.Events && Blockly.Events.isEnabled ? Blockly.Events.isEnabled() : true;
-        if (Blockly.Events && eventsWereEnabled) Blockly.Events.disable();
+        let firstBlock = null;
+        const eventsWereEnabled = Blockly.Events.isEnabled();
+        if (eventsWereEnabled) Blockly.Events.disable();
         try {
             const ids = Blockly.Xml.domToWorkspace(snippetToDom(xml, FAR_AWAY, FAR_AWAY), ws);
-            block = blockFromIds(ids, ws);
-            if (block) {
-                svg = buildSnippetSvgFromBlock(block);
-            } else {
-                // domToWorkspace 可能返回多个 id（XML 里多个顶层积木）。取第一个有 root 的
-                if (ids && ids.length) {
-                    for (const id of ids) {
-                        const b = ws.getBlockById ? ws.getBlockById(id) : null;
-                        if (b) {
-                            block = b;
-                            svg = buildSnippetSvgFromBlock(b);
-                            break;
-                        }
-                    }
+            if (ids && ids.length) {
+                for (const id of ids) {
+                    const b = ws.getBlockById ? ws.getBlockById(id) : null;
+                    if (!b) continue;
+                    if (!firstBlock) firstBlock = b;
+                    const root = b.getSvgRoot ? b.getSvgRoot() : null;
+                    if (!root) continue;
+                    let bbox = null;
+                    try {
+                        bbox = root.getBBox();
+                    } catch (_e) { bbox = null; }
+                    if (!bbox || !bbox.width || !bbox.height) continue;
+                    const clone = root.cloneNode(true);
+                    clone.removeAttribute('transform');
+                    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('width', Math.round(Math.max(bbox.width + 8, 8)));
+                    svg.setAttribute('height', Math.round(Math.max(bbox.height + 8, 8)));
+                    svg.setAttribute('viewBox', `${bbox.x - 4} ${bbox.y - 4} ${Math.max(bbox.width + 8, 8)} ${Math.max(bbox.height + 8, 8)}`);
+                    svg.classList.add('rw-cb-snippet-svg');
+                    svg.appendChild(clone);
+                    break;
                 }
             }
         } catch (err) {
-            // domToWorkspace 可能因为 opcode 还没注册就失败 → 让调用方走异步重试
+            // opcode 还没注册、XML 损坏等 → 让调用方走重试
             console.warn('[comment-blocks] 片段渲染失败', err);
         } finally {
-            // 草稿 workspace 里的临时积木一定要清掉（保留 workspace 自己复用）
-            if (block && typeof block.dispose === 'function') {
+            if (firstBlock && typeof firstBlock.dispose === 'function') {
                 try {
-                    block.dispose(false);
+                    // 这条链上可能还有子 block，dispose 会递归清理
+                    firstBlock.dispose(false);
                 } catch (err) {
                     console.warn('[comment-blocks] 临时积木清理失败', err);
                 }
@@ -404,46 +274,6 @@ export default async function ({addon, console, msg}) {
         if (snippetSvgCache.size >= SNIPPET_SVG_CACHE_LIMIT) snippetSvgCache.clear();
         snippetSvgCache.set(xml, svg);
         return svg.cloneNode(true);
-    };
-
-    /**
-     * 片段异步重试队列：当 domToWorkspace 因为 opcode 尚未注册等原因失败时，
-     * 下一个 tick 再试一次。最多重试 3 次，避免无限循环。
-     */
-    const retryQueue = [];
-    let retryScheduled = false;
-    const scheduleRetry = (xml, entry, snippetIndex) => {
-        if (!entry || !entries.has(entry.comment)) return;
-        // 已经在重试队列里就别再加了
-        if (retryQueue.some(item => item.entry === entry && item.xml === xml)) return;
-        retryQueue.push({xml, entry, snippetIndex, attempts: 0});
-        if (!retryScheduled) {
-            retryScheduled = true;
-            window.setTimeout(flushRetryQueue, 200);
-        }
-    };
-    const flushRetryQueue = () => {
-        retryScheduled = false;
-        const remaining = [];
-        for (const item of retryQueue) {
-            const {entry, xml, attempts} = item;
-            if (!entries.has(entry.comment)) continue;
-            // 清掉该 xml 的缓存让它能重新渲染
-            snippetSvgCache.delete(xml);
-            const newSvg = renderSnippetSvg(xml);
-            if (newSvg) {
-                // 渲染成功 → 让 buildPreview 重绘 entry（会把片段换成新 svg）
-                refresh(entry);
-            } else if (attempts + 1 < 3) {
-                remaining.push({...item, attempts: attempts + 1});
-            }
-        }
-        retryQueue.length = 0;
-        retryQueue.push(...remaining);
-        if (retryQueue.length) {
-            retryScheduled = true;
-            window.setTimeout(flushRetryQueue, 400);
-        }
     };
 
     const blockToXml = block => {
@@ -620,7 +450,7 @@ export default async function ({addon, console, msg}) {
             broken.textContent = '（这段积木暂时未渲染）';
             wrap.appendChild(broken);
             // 第一次没渲染出来：下一个 tick 再试（opcode 可能晚注册 / 草稿 workspace 刚初始化）
-            scheduleRetry(xml, entry, index);
+            scheduleRetry(xml, entry);
         }
 
         const remove = document.createElement('button');
@@ -838,8 +668,8 @@ export default async function ({addon, console, msg}) {
             broken.className = 'rw-cb-snippet-broken';
             broken.textContent = '（这段积木暂时未渲染）';
             wrap.appendChild(broken);
-            // 编辑态也调度 retry（flushRetryQueue 只做 preview 刷新，但 draft 初始化等一下更稳）
-            scheduleRetry(xml, entry, index);
+            // 编辑态也调度 retry（flushRetryQueue 会 rebuild preview，再切回预览态时就能看到真 svg 了）
+            scheduleRetry(xml, entry);
         }
 
         const remove = document.createElement('button');
@@ -1171,14 +1001,17 @@ export default async function ({addon, console, msg}) {
         const comments = ws.getTopComments(false) || [];
         for (const comment of comments) {
             if (!comment || comment.__rwLinked) continue;
+            // scratch-blocks 原生 API：所有 comment 都有 foreignObject_ 和 textarea_
             let root = null;
             if (comment.foreignObject_) {
                 root = comment.foreignObject_;
-            } else if (comment.textarea_ && comment.textarea_.parentElement) {
+            } else if (comment.textarea_ && comment.textarea_.parentElement && comment.textarea_.parentElement.parentElement) {
                 root = comment.textarea_.parentElement.parentElement;
             }
-            if (!root || typeof root.classList === 'undefined' ||
-                !root.classList.contains('scratchCommentForeignObject')) continue;
+            // 不再硬依赖 scratchCommentForeignObject 这个 class 名：
+            // scratch-gui 可能会改它，scratch-blocks 原生也不加。
+            // 只要有 foreignObject_ 或 textarea_ 就能确定是注释的 DOM。
+            if (!root || root.nodeType !== 1 || root.tagName.toLowerCase() !== 'foreignObject') continue;
             root.__rwComment = comment;
             comment.__rwLinked = true;
         }
@@ -1190,10 +1023,52 @@ export default async function ({addon, console, msg}) {
             if (!entry.root.isConnected) entries.delete(entry.comment);
         }
         linkExistingComments();
-        // 只在气泡画布里找注释，不要每次扫整篇文档
+
+        // 只在气泡画布里找注释。优先用 bubbleCanvas（性能好），找不到就扫 document。
+        // 选择器兼容各种版本：scratch-gui 加的 scratchCommentForeignObject、
+        // scratch-blocks 原生里的 bubble svg 容器、以及最稳妥的 foreignObject 兜底。
         const scope = bubbleCanvas || document;
-        const nodes = scope.querySelectorAll('.scratchCommentForeignObject:not([data-rw-processed])');
+        const selectors = [
+            '.scratchCommentForeignObject:not([data-rw-processed])',
+            'foreignObject.blocklyComment:not([data-rw-processed])',
+            'foreignObject[data-blockly="comment"]:not([data-rw-processed])',
+            'foreignObject:not([data-rw-processed]):has(> body textarea.blocklyCommentTextarea)',
+            // 最终兜底：foreignObject 里面含 textarea 的就是注释（scratch-blocks 原生结构）
+            'foreignObject:not([data-rw-processed]):has(> body > textarea)'
+        ];
+        let nodes = [];
+        for (const sel of selectors) {
+            try {
+                nodes = Array.from(scope.querySelectorAll(sel));
+                if (nodes.length) break;
+            } catch (_e) { /* :has 等选择器可能不被旧浏览器支持，跳过 */ }
+        }
+        // 最最兜底：扫描所有 foreignObject，看里面有没有 textarea
+        if (!nodes.length) {
+            try {
+                const allFO = scope.querySelectorAll('foreignObject:not([data-rw-processed])');
+                nodes = Array.from(allFO).filter(fo => fo.querySelector('textarea'));
+            } catch (_e) { /* ignore */ }
+        }
+
         for (const node of nodes) {
+            // 主动查一次：如果 __rwComment 还没挂上（installEditorPatches 或
+            // linkExistingComments 可能因为时序错过了），就从内部 textarea_
+            // 反查 comment 对象。
+            if (!node.__rwComment) {
+                // 方法 1：遍历主工作区的 comments，找 foreignObject_ === node 的
+                const ws = getMainWorkspace();
+                if (ws && typeof ws.getTopComments === 'function') {
+                    const all = ws.getTopComments(false) || [];
+                    for (const c of all) {
+                        if (c && c.foreignObject_ === node) {
+                            node.__rwComment = c;
+                            c.__rwLinked = true;
+                            break;
+                        }
+                    }
+                }
+            }
             if (!node.__rwComment) continue;
             attachComment(node);
         }
@@ -1387,19 +1262,24 @@ export default async function ({addon, console, msg}) {
     /* ------------------------------------------------------------------ */
 
     const installEditorPatches = () => {
-        const wrap = (proto, isBlockComment) => {
+        const wrap = proto => {
             if (!proto || proto.__rwEditorPatched) return;
             proto.__rwEditorPatched = true;
             const original = proto.createEditor_;
             proto.createEditor_ = function () {
                 const result = original.call(this);
-                const element = isBlockComment ? (result && result.commentEditor) : result;
-                if (element) element.__rwComment = this;
+                // scratch-blocks 里两种 createEditor_ 签名：
+                //   - ScratchBlockComment 返回 {commentEditor: foreignObject, labelText: ...}
+                //   - WorkspaceComment / WorkspaceCommentSvg 直接返回 foreignObject
+                // 统一处理：优先取 result.commentEditor，否则 result 本身就是 foreignObject。
+                const target = (result && result.commentEditor) ? result.commentEditor : result;
+                if (target) target.__rwComment = this;
                 return result;
             };
         };
-        if (Blockly.ScratchBlockComment) wrap(Blockly.ScratchBlockComment.prototype, true);
-        if (Blockly.WorkspaceCommentSvg) wrap(Blockly.WorkspaceCommentSvg.prototype, false);
+        if (Blockly.ScratchBlockComment) wrap(Blockly.ScratchBlockComment.prototype);
+        if (Blockly.WorkspaceCommentSvg) wrap(Blockly.WorkspaceCommentSvg.prototype);
+        if (Blockly.WorkspaceComment) wrap(Blockly.WorkspaceComment.prototype);
     };
 
     const installLabelPatches = () => {
@@ -1517,7 +1397,6 @@ export default async function ({addon, console, msg}) {
         retryQueue.length = 0;
         retryScheduled = false;
         snippetSvgCache.clear();
-        cleanupDraftWorkspace();
         for (const entry of entries.values()) {
             if (entry.syncTimer) window.clearTimeout(entry.syncTimer);
             entry.preview.remove();
