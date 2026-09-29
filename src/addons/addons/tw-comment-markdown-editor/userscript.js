@@ -1268,10 +1268,6 @@ export default async function ({addon, console, msg}) {
             const original = proto.createEditor_;
             proto.createEditor_ = function () {
                 const result = original.call(this);
-                // scratch-blocks 里两种 createEditor_ 签名：
-                //   - ScratchBlockComment 返回 {commentEditor: foreignObject, labelText: ...}
-                //   - WorkspaceComment / WorkspaceCommentSvg 直接返回 foreignObject
-                // 统一处理：优先取 result.commentEditor，否则 result 本身就是 foreignObject。
                 const target = (result && result.commentEditor) ? result.commentEditor : result;
                 if (target) target.__rwComment = this;
                 return result;
@@ -1280,6 +1276,44 @@ export default async function ({addon, console, msg}) {
         if (Blockly.ScratchBlockComment) wrap(Blockly.ScratchBlockComment.prototype);
         if (Blockly.WorkspaceCommentSvg) wrap(Blockly.WorkspaceCommentSvg.prototype);
         if (Blockly.WorkspaceComment) wrap(Blockly.WorkspaceComment.prototype);
+    };
+
+    /**
+     * hook setVisible —— scratch-blocks 里 ScratchBlockComment.setVisible(true)
+     * 是 DOM 最终被创建 + 挂到 bubble_ 树上的唯一入口。不管是：
+     *   a) 运行时右键新建（setCommentText 里直接调）
+     *   b) sb3 反序列化完统一 render（block.rendered 变 true 后间接调）
+     *   c) 双击折叠标题再展开
+     * 这条 hook 全能覆盖。DOM 一挂好，立刻让 processCommentElements 扫一遍，
+     * 避免原来依赖"MutationObserver 扫 bubbleCanvas + 3 秒定时器"的时序误差。
+     */
+    const installVisiblePatches = () => {
+        const wrapSetVisible = proto => {
+            if (!proto || proto.__rwVisiblePatched) return;
+            proto.__rwVisiblePatched = true;
+            const original = proto.setVisible;
+            proto.setVisible = function (visible) {
+                const wasVisible = this.isVisible && this.isVisible();
+                const result = original.call(this, visible);
+                if (visible && !wasVisible) {
+                    // DOM 刚挂好（setVisible(true) → createEditor_ → ScratchBubble 构造 → 挂树）
+                    // 立刻让我们的 attach 流程扫一遍。用 rAF 让 DOM 先进入浏览器布局。
+                    const root = this.foreignObject_ || (this.bubble_ && this.bubble_.foreignObject_);
+                    if (root) {
+                        // 万一之前 attach 过但 DOM 后来被 dispose 重建了：先清掉 processed 标记
+                        if (root.dataset && root.dataset.rwProcessed) delete root.dataset.rwProcessed;
+                        root.__rwComment = this;
+                    }
+                    window.requestAnimationFrame(() => {
+                        processCommentElements();
+                    });
+                }
+                return result;
+            };
+        };
+        if (Blockly.ScratchBlockComment) wrapSetVisible(Blockly.ScratchBlockComment.prototype);
+        if (Blockly.Comment) wrapSetVisible(Blockly.Comment.prototype); // 兜底
+        if (Blockly.WorkspaceComment) wrapSetVisible(Blockly.WorkspaceComment.prototype);
     };
 
     const installLabelPatches = () => {
@@ -1324,6 +1358,7 @@ export default async function ({addon, console, msg}) {
     /* ------------------------------------------------------------------ */
 
     installEditorPatches();
+    installVisiblePatches();
     installLabelPatches();
     installResizePatches();
     installDragPatches();
@@ -1352,6 +1387,54 @@ export default async function ({addon, console, msg}) {
         attempt(40);
     });
 
+    /**
+     * 终极兜底：遍历所有 comment 对象，凡是已经存在但 foreignObject_ 还没挂上的
+     * （保存再打开时最常见，因为 domToWorkspace 反序列化时 block.rendered=false，
+     *  setCommentText 里跳过了 setVisible 分支），主动帮 scratch-blocks 调 setVisible(true)
+     * 让它把 DOM 挂出来。
+     */
+    const ensureAllCommentsHaveDOM = () => {
+        const ws = getMainWorkspace();
+        if (!ws) return;
+
+        const all = [];
+        if (typeof ws.getTopComments === 'function') {
+            try { Array.prototype.push.apply(all, ws.getTopComments(false) || []); } catch (_e) {}
+        }
+        // 同时扫所有 block 上附着的 ScratchBlockComment
+        if (typeof ws.getTopBlocks === 'function') {
+            try {
+                for (const block of (ws.getTopBlocks(false) || [])) {
+                    if (block.comment) all.push(block.comment);
+                    // 也扫子 block（积木链）
+                    let child = block.getNextBlock && block.getNextBlock();
+                    while (child) {
+                        if (child.comment) all.push(child.comment);
+                        child = child.getNextBlock && child.getNextBlock();
+                    }
+                }
+            } catch (_e) { /* ignore */ }
+        }
+
+        for (const c of all) {
+            if (!c) continue;
+            // 已经有 DOM 了就不用管
+            if (c.foreignObject_ && c.foreignObject_.isConnected) continue;
+            // 没 foreignObject_ 或不在 DOM 树里 → 主动调 setVisible(true)
+            if (typeof c.setVisible === 'function') {
+                try {
+                    if (!c.isVisible || !c.isVisible()) {
+                        c.setVisible(true);
+                    } else {
+                        // 可能 visible 但 foreignObject_ 又被 dispose 过，强制重新挂
+                        c.setVisible(false);
+                        c.setVisible(true);
+                    }
+                } catch (_e) { /* ignore */ }
+            }
+        }
+    };
+
     const observer = new MutationObserver(() => {
         if (addon.self.disabled) return;
         window.setTimeout(processCommentElements, 60);
@@ -1360,8 +1443,15 @@ export default async function ({addon, console, msg}) {
         observer.observe(bubbleCanvas, {childList: true, subtree: true});
     }
 
-    const timer = window.setInterval(processCommentElements, 3000);
-    window.setTimeout(processCommentElements, 800);
+    // 加一层 comment 对象级别的扫描兜底，轮询频率提高到 1 秒一次
+    const timer = window.setInterval(() => {
+        ensureAllCommentsHaveDOM();
+        processCommentElements();
+    }, 1000);
+    window.setTimeout(() => {
+        ensureAllCommentsHaveDOM();
+        processCommentElements();
+    }, 400);
 
     const globalClick = event => {
         if (addon.self.disabled) return;
