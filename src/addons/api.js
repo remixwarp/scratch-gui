@@ -845,7 +845,7 @@ class AddonRunner {
         if (handler) {
             translation = handler(translation);
         }
-        const messageFormat = new IntlMessageFormat(translation, language);
+        const messageFormat = new IntlMessageFormat(translation, getLocale());
         this.messageCache[namespacedKey] = messageFormat;
         return messageFormat.format(vars);
     }
