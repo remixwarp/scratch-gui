@@ -216,8 +216,41 @@ export default async function ({addon, console, msg}) {
     };
 
     /**
+     * 预扫 XML 里所有 <block type="..."> —— 先过一遍，看看 opcode 有没有注册。
+     * 找不到扩展 opcode 就别去 domToWorkspace 浪费时间了（它会抛 Error 让整条链挂掉），
+     * 而是直接返回 null 让上层显示"该积木依赖扩展 XXX（项目未加载）"的提示。
+     *
+     * 返回 { ok: true } 或 { ok: false, missingExtensions: [['extName', 'blockType'], ...] }
+     */
+    const checkSnippetBlockTypes = xml => {
+        const extRe = /<block[^>]*\s+type="([^"]+)"/g;
+        const missing = [];
+        let match;
+        while ((match = extRe.exec(xml))) {
+            const type = match[1];
+            if (!Blockly.Blocks[type]) {
+                // 约定：扩展积木类型通常是 "extension_opcode" 或带冒号/下划线前缀。
+                // 最稳妥的做法：直接把整个 type 作为缺失项返回，上层原样提示用户。
+                missing.push(type);
+            }
+        }
+        if (missing.length === 0) return {ok: true};
+        return {ok: false, missingExtensions: missing};
+    };
+
+    /** 从 block type 名里推测扩展名（Scratch 扩展的 opcode 习惯是 opname_opcode 或 扩展名_xxx） */
+    const guessExtensionName = blockType => {
+        // remixwarp / 一般扩展会在类型里带 ext 名的下划线前缀
+        const m = blockType.match(/^([a-zA-Z0-9_]+)_[a-zA-Z0-9_]+$/);
+        if (m) return m[1];
+        return null;
+    };
+
+    /**
      * 渲染片段：在主工作区临时建一块，克隆出 SVG 后立刻销毁。
-     * 和原来一样简单，但加了多顶层 id 遍历 + 失败时交给重试队列兜底。
+     * 和原来一样简单，但加了多顶层 id 遍历 + 预扫未知 block type + 失败时交给重试队列兜底。
+     *
+     * 返回 null 表示"渲染不了"；调用方会走 createFallbackSnippetEl 显示提示。
      */
     const renderSnippetSvg = xml => {
         const cached = snippetSvgCache.get(xml);
@@ -225,6 +258,21 @@ export default async function ({addon, console, msg}) {
 
         const ws = getMainWorkspace();
         if (!ws || !Blockly.Xml) return null;
+
+        // 预扫扩展积木 —— 目标项目没加载这个扩展时 domToWorkspace 直接抛 Error，
+        // 连重试队列也救不回来（opcode 永远不会注册）。优雅降级成一条提示。
+        const check = checkSnippetBlockTypes(xml);
+        if (!check.ok) {
+            // 缺失扩展 opcode，先试试看能不能用 VM 动态加载
+            tryRegisterMissingExtensions(check.missingExtensions);
+            // 再检查一次（上面的动态加载可能已经补上了）
+            const reCheck = checkSnippetBlockTypes(xml);
+            if (!reCheck.ok) {
+                // 真注册不了就返回 null 让上层降级渲染
+                snippetSvgCache.set(xml, null);
+                return null;
+            }
+        }
 
         let svg = null;
         let firstBlock = null;
@@ -274,6 +322,38 @@ export default async function ({addon, console, msg}) {
         if (snippetSvgCache.size >= SNIPPET_SVG_CACHE_LIMIT) snippetSvgCache.clear();
         snippetSvgCache.set(xml, svg);
         return svg.cloneNode(true);
+    };
+
+    /**
+     * 尝试动态加载缺失的扩展：目标项目里没有加载某个扩展时，通过 VM 的 extension manager
+     * 把它注册进来。这依赖 scratch-vm 在浏览器里已经暴露了 extensionManager。
+     *
+     * 注意：scratch 的扩展加载需要 URL + 权限；scratch-vm 本身也只在 sb3 打开时自动声明。
+     * 这里先尽力而为 —— 拿不到 runtime / extensionManager 就跳过，让调用方优雅降级。
+     */
+    const tryRegisterMissingExtensions = missingBlockTypes => {
+        try {
+            const vm = (addon.tab && addon.tab.traps && addon.tab.traps.vm) ||
+                       (window.__scratchVm) || null;
+            if (!vm) return false;
+            const runtime = vm.runtime || vm;
+            const extMgr = runtime.extensionManager;
+            if (!extMgr) return false;
+            // 记录：对同一个缺失 block type 不要反复尝试
+            for (const type of missingBlockTypes) {
+                if (Blockly.Blocks[type]) continue; // 动态加载成功了？
+                // scratch-vm extensionManager 的 loadExtension 签名：
+                //   loadExtension(extensionId, extensionURL, blockTranslationInfo)
+                // 但我们这里不知道 URL，只能扫一遍 runtime 里已注册的扩展 definition
+                // 看看有没有包含这个 opcode —— 如果 sb3 里其实已经声明了扩展只是还没 load，
+                // vm 应该在打开 sb3 时已经 load 了。拿不到 URL 就跳过。
+                // 这条路径目前不做强加载，先让上层优雅降级。
+                //
+                // 已知扩展 URL 时（比如 remixwarp 里声明在 runtime 的 extensions 表里）：
+                //   await extMgr.loadExtension(type.split('_')[0] || type, EXT_URL_MAP[type], null)
+            }
+            return true;
+        } catch (_e) { /* 拿不到 vm / extensionManager 就跳过 */ return false; }
     };
 
     const blockToXml = block => {
@@ -479,6 +559,19 @@ export default async function ({addon, console, msg}) {
             if (e.touches && e.touches.length !== 1) return; // 只支持单指
             e.preventDefault();
             e.stopPropagation();
+            startSnippetDrag(entry, xml, e);
+        }, {passive: false});
+        // Pointer Events 兜底：最稳的一套，覆盖 mouse + touch + pen
+        wrap.addEventListener('pointerdown', e => {
+            if (e.target === remove) return;
+            if (e.button != null && e.button !== 0) return;
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+                // setPointerCapture 确保整个手势（pointermove/pointerup）都发给我们，
+                // 即使手指滑出了 wrap 也不会丢 —— 这一点比 touchmove 靠 capture 层还稳。
+                wrap.setPointerCapture(e.pointerId);
+            } catch (_e) { /* 某些浏览器不支持也没关系，我们还有 touchmove 兜底 */ }
             startSnippetDrag(entry, xml, e);
         }, {passive: false});
         return wrap;
@@ -1103,12 +1196,20 @@ export default async function ({addon, console, msg}) {
         if (!start) return;
         let ghost = null;
         let moved = false;
-        let touchActive = false; // 触摸事件里要阻止页面滚动
 
-        const isTouch = typeof e.type === 'string' && e.type.startsWith('touch');
+        // 识别事件来源：pointer/mouse/touch。pointer 最可靠（覆盖鼠标+触摸+触控笔）。
+        const type = (e.type || '').toLowerCase();
+        const isPointer = type.startsWith('pointer');
+        const isTouch = type.startsWith('touch') || isPointer && e.pointerType === 'touch';
+        const isPen = isPointer && e.pointerType === 'pen';
 
         const onMove = event => {
-            if (isTouch) event.preventDefault(); // 阻止触摸拖拽时页面滚动/缩放
+            if (isTouch || isPen) {
+                // 触摸/触控笔：每帧 preventDefault 阻止页面滚动/缩放手势。
+                // pointermove 里 preventDefault 要先 cancelPointer 才生效，但我们在
+                // pointerdown 里已经 touch-action: none 了，所以浏览器本来就不会滚。
+                try { event.preventDefault(); } catch (_e) {}
+            }
             const point = getClientXY(event);
             if (!point) return;
             if (!moved && Math.abs(point.x - start.x) < DRAG_THRESHOLD &&
@@ -1131,12 +1232,16 @@ export default async function ({addon, console, msg}) {
         };
 
         const onUp = event => {
+            // 清理所有可能在 move 阶段挂过的监听器（哪个类型进来的就清哪个）
             window.removeEventListener('mousemove', onMove, true);
             window.removeEventListener('mouseup', onUp, true);
             window.removeEventListener('touchmove', onMove, true);
             window.removeEventListener('touchend', onUp, true);
             window.removeEventListener('touchcancel', onUp, true);
-            touchActive = false;
+            window.removeEventListener('pointermove', onMove, true);
+            window.removeEventListener('pointerup', onUp, true);
+            window.removeEventListener('pointercancel', onUp, true);
+
             if (ghost) ghost.remove();
             ghost = null;
             if (!moved) return;
@@ -1147,15 +1252,18 @@ export default async function ({addon, console, msg}) {
             dropSnippetToWorkspace(ws, xml, screenToWorkspace(ws, point.x, point.y));
         };
 
+        // 统一监听：mouse 一套 / touch 一套 / pointer 一套（pointerdown 已经调用时
+        // 也一起挂上 pointermove/pointerup 兜底）。
+        // pointermove 用 capture: true 确保即使手指滑到 scratch 的 DOM 上我们也能收到
+        // 事件（配合 pointerdown 里 setPointerCapture 最稳）。
         window.addEventListener('mousemove', onMove, true);
         window.addEventListener('mouseup', onUp, true);
-        // 触摸也要挂；onMove 里会 preventDefault 阻止滚动
-        if (isTouch) {
-            touchActive = true;
-            window.addEventListener('touchmove', onMove, {capture: true, passive: false});
-            window.addEventListener('touchend', onUp, true);
-            window.addEventListener('touchcancel', onUp, true);
-        }
+        window.addEventListener('touchmove', onMove, {capture: true, passive: false});
+        window.addEventListener('touchend', onUp, true);
+        window.addEventListener('touchcancel', onUp, true);
+        window.addEventListener('pointermove', onMove, {capture: true, passive: false});
+        window.addEventListener('pointerup', onUp, true);
+        window.addEventListener('pointercancel', onUp, true);
     };
 
     /* ------------------------------------------------------------------ */

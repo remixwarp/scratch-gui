@@ -315,6 +315,16 @@ body.blocklyMinimalBody:has(> .rw-cb-preview, > .rw-cb-editor) > textarea.blockl
   cursor: grab;
   max-width: 100%;
   overflow: hidden;
+  /* 移动端：阻止浏览器默认的触摸手势（滚动、长按菜单、双击缩放），
+     让 pointer/touch 事件完整地交给我们的拖拽逻辑处理。*/
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.rw-cb-snippet:active {
+  cursor: grabbing;
 }
 
 .rw-cb-snippet:hover {
