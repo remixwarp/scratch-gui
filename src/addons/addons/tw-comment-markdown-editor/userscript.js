@@ -917,6 +917,15 @@ export default async function ({addon, console, msg}) {
         };
         entries.set(comment, entry);
 
+        // 立刻 buildPreview 让注释一挂上来就渲染（包括积木片段），
+        // 再切到预览态 —— 不依赖用户手动点击或 scratch 的默认显示逻辑
+        try {
+            buildPreview(entry);
+            setMode(entry, false);
+        } catch (_e) {
+            console.warn("[comment-blocks] attach 后预览初始化失败", _e);
+        }
+
         preview.addEventListener('click', e => {
             if (addon.self.disabled) return;
             if (e.target.closest('.rw-cb-snippet')) return;
@@ -1388,70 +1397,133 @@ export default async function ({addon, console, msg}) {
     });
 
     /**
-     * 终极兜底：遍历所有 comment 对象，凡是已经存在但 foreignObject_ 还没挂上的
-     * （保存再打开时最常见，因为 domToWorkspace 反序列化时 block.rendered=false，
-     *  setCommentText 里跳过了 setVisible 分支），主动帮 scratch-blocks 调 setVisible(true)
-     * 让它把 DOM 挂出来。
+     * 收集所有 comment 对象：不管是工作区便签（WorkspaceComment）
+     * 还是附着在积木上的气泡（ScratchBlockComment）。
      */
-    const ensureAllCommentsHaveDOM = () => {
+    const collectAllComments = () => {
+        const all = new Set();
         const ws = getMainWorkspace();
-        if (!ws) return;
-
-        const all = [];
-        if (typeof ws.getTopComments === 'function') {
-            try { Array.prototype.push.apply(all, ws.getTopComments(false) || []); } catch (_e) {}
-        }
-        // 同时扫所有 block 上附着的 ScratchBlockComment
-        if (typeof ws.getTopBlocks === 'function') {
-            try {
+        if (!ws) return all;
+        try {
+            if (typeof ws.getTopComments === 'function') {
+                for (const c of (ws.getTopComments(false) || [])) if (c) all.add(c);
+            }
+            if (typeof ws.getTopBlocks === 'function') {
                 for (const block of (ws.getTopBlocks(false) || [])) {
-                    if (block.comment) all.push(block.comment);
-                    // 也扫子 block（积木链）
+                    if (block.comment) all.add(block.comment);
                     let child = block.getNextBlock && block.getNextBlock();
                     while (child) {
-                        if (child.comment) all.push(child.comment);
+                        if (child.comment) all.add(child.comment);
                         child = child.getNextBlock && child.getNextBlock();
                     }
                 }
-            } catch (_e) { /* ignore */ }
-        }
+            }
+        } catch (_e) { /* ignore */ }
+        return all;
+    };
 
-        for (const c of all) {
-            if (!c) continue;
-            // 已经有 DOM 了就不用管
-            if (c.foreignObject_ && c.foreignObject_.isConnected) continue;
-            // 没 foreignObject_ 或不在 DOM 树里 → 主动调 setVisible(true)
-            if (typeof c.setVisible === 'function') {
+    /**
+     * 用户说的"直接检测注释里有没有积木标签" —— 这是核心扫描器：
+     *   1. 遍历所有 comment 对象
+     *   2. 直接从 comment 对象读取 text（不依赖 scratch-blocks DOM）
+     *   3. 用 SNIPPET_REGEX 检测 ```blocks 围栏
+     *   4. 如果检测到 → 立即确保 scratch DOM 挂出来 → 触发 attach + 渲染
+     *
+     * 这样绕开了 scratch-blocks 的反序列化时序 bug：
+     * 无论 setVisible 有没有被调过、block.rendered 是不是 true、foreignObject_
+     * 有没有挂上 DOM 树 —— 只要 comment.text 里有 ```blocks，我们就保证它能被渲染。
+     */
+    const scanCommentsAndEnsureRender = () => {
+        const comments = collectAllComments();
+        for (const c of comments) {
+            let text = '';
+            try {
+                // getText() 在 textarea_ 没挂上时返回 this.text_，挂上后返回 textarea.value
+                // 所以这条路径在反序列化早期也能拿到正确的字符串
+                text = typeof c.getText === 'function' ? c.getText() : (c.text_ || '');
+            } catch (_e) { text = c.text_ || ''; }
+
+            const hasSnippets = SNIPPET_REGEX.test(text);
+            SNIPPET_REGEX.lastIndex = 0;
+
+            if (!hasSnippets) continue;
+
+            // 1) 片段检测到了 → 先确保 scratch DOM 挂出来
+            const needsVisible = !c.foreignObject_ || !c.foreignObject_.isConnected;
+            if (needsVisible && typeof c.setVisible === 'function') {
                 try {
-                    if (!c.isVisible || !c.isVisible()) {
+                    const isVis = c.isVisible && c.isVisible();
+                    if (!isVis) {
                         c.setVisible(true);
                     } else {
-                        // 可能 visible 但 foreignObject_ 又被 dispose 过，强制重新挂
+                        // visible 但 DOM 又没了：强制重挂
                         c.setVisible(false);
                         c.setVisible(true);
                     }
                 } catch (_e) { /* ignore */ }
+            }
+
+            // 2) 如果 DOM 还没完全挂好（刚 setVisible 还没进下一帧），先跳过 attach，
+            //    等下一个 tick 再来 —— DOM 一挂上我们的 processCommentElements 就会接住
+            if (!c.foreignObject_ || !c.foreignObject_.isConnected) continue;
+
+            const root = c.foreignObject_;
+            // 3) attach 我们的预览层（如果还没 attach 过）
+            if (!root.__rwComment) root.__rwComment = c;
+            root.__rwComment = c;
+            if (typeof root.dataset !== 'undefined' && root.dataset.rwProcessed !== 'true') {
+                // 让 processCommentElements 扫到它
+            }
+            // 直接触发一次 attach 尝试 —— 即使刚 setVisible，body/textarea 应该也已经在
+            const ws = getMainWorkspace();
+            if (ws && !entries.has(c)) {
+                // body + textarea 是 scratch-blocks 原生的结构，setVisible 之后肯定有了
+                const body = root.querySelector('body') || root.querySelector('.scratchCommentBody');
+                const textarea = root.querySelector('textarea');
+                if (body && textarea) {
+                    attachComment(root);
+                }
+            }
+
+            // 4) 如果已经 attach 过了（entry 在 entries 里），强制 refresh 一次 ——
+            //    可能之前 renderSnippetSvg 因为 opcode 没加载完失败了，现在重试
+            const entry = entries.get(c);
+            if (entry) {
+                // 先清掉所有片段的缓存让它们强制重绘
+                const matches = text.match(SNIPPET_REGEX);
+                if (matches) {
+                    for (const m of matches) {
+                        const xmlMatch = /```blocks[ \t]*\r?\n([\s\S]*?)\r?\n?```/.exec(m);
+                        if (xmlMatch) snippetSvgCache.delete(xmlMatch[1]);
+                    }
+                }
+                refresh(entry);
             }
         }
     };
 
     const observer = new MutationObserver(() => {
         if (addon.self.disabled) return;
-        window.setTimeout(processCommentElements, 60);
+        window.setTimeout(() => {
+            scanCommentsAndEnsureRender();
+            processCommentElements();
+        }, 40);
     });
     if (bubbleCanvas) {
         observer.observe(bubbleCanvas, {childList: true, subtree: true});
     }
 
-    // 加一层 comment 对象级别的扫描兜底，轮询频率提高到 1 秒一次
+    // 每 500ms 扫一次 comment.text —— 不管 scratch-blocks 的状态怎样，
+    // 只要字符串里有 ```blocks，我们就保证它能被渲染
+    const SCAN_INTERVAL = 500;
     const timer = window.setInterval(() => {
-        ensureAllCommentsHaveDOM();
+        scanCommentsAndEnsureRender();
         processCommentElements();
-    }, 1000);
+    }, SCAN_INTERVAL);
     window.setTimeout(() => {
-        ensureAllCommentsHaveDOM();
+        scanCommentsAndEnsureRender();
         processCommentElements();
-    }, 400);
+    }, 300);
 
     const globalClick = event => {
         if (addon.self.disabled) return;
