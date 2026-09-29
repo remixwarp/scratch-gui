@@ -546,32 +546,56 @@ export default async function ({addon, console, msg}) {
         });
         wrap.appendChild(remove);
 
+        // 浏览器在触摸设备上的事件顺序是：touchstart → pointerdown → mousedown，
+        // 三套事件描述的是**同一次按压**。用一个去重 gate，确保同一个 wrap + 同一次手势
+        // 只会触发 startSnippetDrag 一次 —— 否则每进来一个 start 就 window 上挂一套
+        // move/up，拖一下 dropSnippetToWorkspace 就被调三次，自然多出几块积木。
+        //
+        // 去重策略：
+        //   1. 用 (wrapDomRef + 坐标 + 50ms 时间窗) 判"同一次按压"
+        //   2. startSnippetDrag 自己再持有一个全局 _rwActiveDrag，确保嵌套调用不会叠加
+        let lastStartEventKey = null;
+        let lastStartEventAt = 0;
+        const gateStart = e => {
+            const xy = getClientXY(e);
+            if (!xy) return null;
+            const key = `${wrap}-${Math.round(xy.x)},${Math.round(xy.y)}`;
+            const now = Date.now();
+            if (lastStartEventKey === key && now - lastStartEventAt < 150) {
+                // 同一次按压里的重复 start —— 丢弃（但事件本身不 stopPropagation，
+                // 让 capture 继续）
+                return null;
+            }
+            lastStartEventKey = key;
+            lastStartEventAt = now;
+            return {xy};
+        };
+
         wrap.addEventListener('mousedown', e => {
             if (e.button !== 0 || e.target === remove) return;
+            const g = gateStart(e);
+            if (!g) return;
             e.preventDefault();
             e.stopPropagation();
             startSnippetDrag(entry, xml, e);
         });
-        // 移动端触摸：touchstart 要 preventDefault 阻止浏览器的长按/点击菜单，
-        // 同时告诉 scratch-blocks 的 gesture 系统这不是它要处理的拖拽。
         wrap.addEventListener('touchstart', e => {
             if (e.target === remove) return;
-            if (e.touches && e.touches.length !== 1) return; // 只支持单指
+            if (e.touches && e.touches.length !== 1) return;
+            const g = gateStart(e);
+            if (!g) return;
             e.preventDefault();
             e.stopPropagation();
             startSnippetDrag(entry, xml, e);
         }, {passive: false});
-        // Pointer Events 兜底：最稳的一套，覆盖 mouse + touch + pen
         wrap.addEventListener('pointerdown', e => {
             if (e.target === remove) return;
             if (e.button != null && e.button !== 0) return;
+            const g = gateStart(e);
+            if (!g) return;
             e.preventDefault();
             e.stopPropagation();
-            try {
-                // setPointerCapture 确保整个手势（pointermove/pointerup）都发给我们，
-                // 即使手指滑出了 wrap 也不会丢 —— 这一点比 touchmove 靠 capture 层还稳。
-                wrap.setPointerCapture(e.pointerId);
-            } catch (_e) { /* 某些浏览器不支持也没关系，我们还有 touchmove 兜底 */ }
+            try { wrap.setPointerCapture(e.pointerId); } catch (_e) {}
             startSnippetDrag(entry, xml, e);
         }, {passive: false});
         return wrap;
@@ -1189,11 +1213,19 @@ export default async function ({addon, console, msg}) {
     /* 拖出：注释片段 -> 工作区真积木                                        */
     /* ------------------------------------------------------------------ */
 
+    // 全局活跃拖拽锁：浏览器触摸设备上 touchstart/pointerdown/mousedown 三套事件
+    // 描述的是同一次按压（见上面 gateStart 的注释），gateStart 处理了同一 wrap 的重复；
+    // 这里再在 startSnippetDrag 入口加一道全局锁 —— 任何情况下同一时刻只有一条
+    // 拖拽链能被挂到 window 上，避免 dropSnippetToWorkspace 被多次调用。
+    let _rwActiveDrag = null;
+
     const startSnippetDrag = (entry, xml, e) => {
         const ws = getMainWorkspace();
         if (!ws) return;
+        if (_rwActiveDrag) return; // 已有活跃拖拽，这次丢弃（去重 / 重入保护）
         const start = getClientXY(e);
         if (!start) return;
+        _rwActiveDrag = {entry, xml};
         let ghost = null;
         let moved = false;
 
@@ -1242,12 +1274,15 @@ export default async function ({addon, console, msg}) {
             window.removeEventListener('pointerup', onUp, true);
             window.removeEventListener('pointercancel', onUp, true);
 
+            // 释放全局锁 —— 无论 drop 有没有成功，手势结束就清
+            _rwActiveDrag = null;
+            lastStartEventKey = null; // 顺便让 gateStart 的 150ms 窗关闭，下次新按压能正常触发
+
             if (ghost) ghost.remove();
             ghost = null;
             if (!moved) return;
             const point = getClientXY(event);
             if (!point || !isOverWorkspace(ws, point.x, point.y)) return;
-            // 落在其它注释上则忽略（避免误落）
             if (findCommentAt(point.x, point.y)) return;
             dropSnippetToWorkspace(ws, xml, screenToWorkspace(ws, point.x, point.y));
         };
