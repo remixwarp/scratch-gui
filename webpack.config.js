@@ -214,6 +214,11 @@ const base = {
             'scratch-render$': path.resolve(__dirname, 'node_modules/scratch-render/src/index.js'),
             'scratch-audio$': path.resolve(__dirname, 'node_modules/scratch-audio/src/index.js'),
             'scratch-paint$': path.resolve(__dirname, 'node_modules/scratch-paint/src/index.js'),
+            // scratch-paint's rounded-polygon tool shows a floating vertex editor
+            // using this GUI window system. The package does not exist on its own
+            // (vanilla scratch-paint has no window manager), so map the bare
+            // specifier to the addon implementation that lives here.
+            '@remixwarp/window-manager$': path.resolve(__dirname, 'src/addons/window-system/window-manager.js'),
             // Removed Bilup account system — stub both transitive deps that scratch-vm source still requires.
             'rotur-sdk$': path.resolve(__dirname, 'src/lib/bilup-stub.js'),
             'accounts-sdk$': path.resolve(__dirname, 'src/lib/bilup-stub.js')
