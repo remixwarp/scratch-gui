@@ -1,7 +1,7 @@
 {
     "name": "scratch-gui",
-    "version": "3.2.53",
-    "description": "Graphical User Interface for creating and running Scratch 3.0 projects - rebuild 2026-09-30T10:24Z to retrigger Cloudflare Pages on develop with correct bun.lock tarballs + scratch-paint 19cd313",
+    "version": "3.2.52",
+    "description": "Graphical User Interface for creating and running Scratch 3.0 projects",
     "author": "Massachusetts Institute of Technology",
     "license": "GPL-3.0",
     "homepage": "https://github.com/LLK/scratch-gui#readme",
@@ -115,7 +115,7 @@
         "remark-gfm": "1.0.0",
         "scratch-audio": "github:remixwarp/scratch-audio#main",
         "@remixwarp/scratch-blocks": "https://github.com/remixwarp/scratch-blocks/archive/3234c561bcd9f00d05e5af03008a4faa45599d5a.tar.gz",
-        "scratch-paint": "github:remixwarp/scratch-paint#19cd313",
+        "scratch-paint": "github:remixwarp/scratch-paint#5bd8245",
         "scratch-render": "github:remixwarp/scratch-render#develop",
         "scratch-vm": "github:remixwarp/scratch-vm#41ced887a98c56138ad158530066dcc610ea6ade",
         "style-loader": "^0.23.0",
