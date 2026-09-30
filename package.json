@@ -1,7 +1,7 @@
 {
     "name": "scratch-gui",
-    "version": "3.2.52",
-    "description": "Graphical User Interface for creating and running Scratch 3.0 projects",
+    "version": "3.2.53",
+    "description": "Graphical User Interface for creating and running Scratch 3.0 projects - rebuild 2026-09-30T10:24Z to retrigger Cloudflare Pages on develop with correct bun.lock tarballs + scratch-paint 19cd313",
     "author": "Massachusetts Institute of Technology",
     "license": "GPL-3.0",
     "homepage": "https://github.com/LLK/scratch-gui#readme",
