@@ -214,6 +214,15 @@ const base = {
             'scratch-render$': path.resolve(__dirname, 'node_modules/scratch-render/src/index.js'),
             'scratch-audio$': path.resolve(__dirname, 'node_modules/scratch-audio/src/index.js'),
             'scratch-paint$': path.resolve(__dirname, 'node_modules/scratch-paint/src/index.js'),
+            // scratch-paint 19cd313 里 poly-round-mode.jsx 会尝试 require 一个
+            // GUI 侧的 WindowManager 来弹"顶点坐标"自由窗口。它用的是相对路径：
+            //   require('../../window-system/window-manager.js')
+            // 这条路径在 vanilla scratch-paint 目录下不存在（作者用 try-catch
+            // 静默降级 → WindowManager = null → 自由窗口永远不弹）。
+            // Remix Warp 自己有一套 WindowManager 在 src/addons/window-system/，
+            // 这里把两条相对路径（带/不带 .js 后缀）都 alias 过去。
+            '../../window-system/window-manager.js': path.resolve(__dirname, 'src/addons/window-system/window-manager.js'),
+            '../../window-system/window-manager': path.resolve(__dirname, 'src/addons/window-system/window-manager.js'),
             // Removed Bilup account system — stub both transitive deps that scratch-vm source still requires.
             'rotur-sdk$': path.resolve(__dirname, 'src/lib/bilup-stub.js'),
             'accounts-sdk$': path.resolve(__dirname, 'src/lib/bilup-stub.js')
