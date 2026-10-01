@@ -7,6 +7,7 @@ import spriteCostume from '!raw-loader!./Fox.svg';
 import yuCostume from '!raw-loader!./yu.svg';
 /* eslint-enable import/no-unresolved */
 import {TextEncoder} from '../tw-text-encoder';
+import {defineMessages} from 'react-intl';
 import {
     isCustomDefaultSpriteEnabled,
     getCustomDefaultSprite,
@@ -16,8 +17,6 @@ import {
 // 默认角色池：编辑器和每次打开时随机选择一个
 const defaultSprites = [
     {
-        nameZh: '轻盈狐',
-        nameEn: 'Flick Fox',
         assetId: '927d672925e7b99f7813735c484c6922',
         dataFormat: 'svg',
         rotationCenterX: 49.78,
@@ -25,8 +24,6 @@ const defaultSprites = [
         svgContent: spriteCostume
     },
     {
-        nameZh: '玉米',
-        nameEn: 'Yu',
         assetId: '9273979838f04746e92167f6c4ddb8be',
         dataFormat: 'svg',
         rotationCenterX: 48.79,
@@ -34,6 +31,19 @@ const defaultSprites = [
         svgContent: yuCostume
     }
 ];
+
+const spriteMessages = defineMessages({
+    flickFox: {
+        id: 'gui.defaultProject.sprite.flickFox',
+        defaultMessage: 'Flick Fox',
+        description: 'Localized name for the default sprite "Flick Fox" (used as a fallback name per-locale in LanguageService.FALLBACK_MESSAGES).'
+    },
+    yu: {
+        id: 'gui.defaultProject.sprite.yu',
+        defaultMessage: 'Yu',
+        description: 'Localized name for the default sprite "Yu" (used as a fallback name per-locale in LanguageService.FALLBACK_MESSAGES).'
+    }
+});
 
 const defaultProject = translator => {
     if (overrideDefaultProject.byteLength > 0) {
@@ -104,8 +114,10 @@ const defaultProject = translator => {
     }
 
     // 默认：从角色池中随机选取一个
-    const lang = (navigator.language || navigator.userLanguage || '').toLowerCase();
     const picked = defaultSprites[Math.floor(Math.random() * defaultSprites.length)];
+    const pickedMessageObj = picked.assetId === '927d672925e7b99f7813735c484c6922'
+        ? spriteMessages.flickFox
+        : spriteMessages.yu;
 
     // 更新项目 JSON 中的角色信息
     const spriteTarget = projectJson.targets[1];
@@ -115,7 +127,7 @@ const defaultProject = translator => {
     costume.dataFormat = picked.dataFormat;
     costume.rotationCenterX = picked.rotationCenterX;
     costume.rotationCenterY = picked.rotationCenterY;
-    spriteTarget.name = lang.startsWith('zh') ? picked.nameZh : picked.nameEn;
+    spriteTarget.name = translator(pickedMessageObj);
 
     return [{
         id: 0,

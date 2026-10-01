@@ -52,16 +52,7 @@ const buildDefaultVariables = translator => {
 };
 
 // use the default message if a translation function is not passed
-const defaultTranslator = msgObj => {
-    if (msgObj.id === 'gui.sharedMessages.sprite') {
-        const lang = navigator.language || navigator.userLanguage;
-        if (lang.startsWith('zh')) {
-            return '轻盈狐';
-        }
-        return 'Flick Fox';
-    }
-    return msgObj.defaultMessage;
-};
+const defaultTranslator = msgObj => msgObj.defaultMessage;
 
 /**
  * Generate a localized version of the default project
@@ -95,7 +86,7 @@ const projectData = translateFunction => {
             },
             {
                 isStage: false,
-                name: (navigator.language || navigator.userLanguage || '').toLowerCase().startsWith('zh') ? '轻盈狐' : 'Flick Fox',
+                name: translator(messages.sprite),
                 variables: {},
                 lists: {},
                 broadcasts: {},

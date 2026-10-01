@@ -150,19 +150,31 @@ class LanguageService {
         const FALLBACK_MESSAGES = {
             'zh-cn': {
                 'mw.settings.activityBar': '活动栏',
-                'gui.alerts.twCustomBlockPercent': '自制积木里不允许有百分号'
+                'gui.alerts.twCustomBlockPercent': '自制积木里不允许有百分号',
+                'gui.sharedMessages.sprite': '轻盈狐',
+                'gui.defaultProject.sprite.flickFox': '轻盈狐',
+                'gui.defaultProject.sprite.yu': '玉米'
             },
             'en': {
                 'mw.settings.activityBar': 'Activity Bar',
-                'gui.alerts.twCustomBlockPercent': 'Custom blocks cannot contain a percent sign'
+                'gui.alerts.twCustomBlockPercent': 'Custom blocks cannot contain a percent sign',
+                'gui.sharedMessages.sprite': 'Flick Fox',
+                'gui.defaultProject.sprite.flickFox': 'Flick Fox',
+                'gui.defaultProject.sprite.yu': 'Yu'
             },
             'wenyan': {
                 'mw.settings.activityBar': '活动栏',
-                'gui.alerts.twCustomBlockPercent': '自制积木中不许有百分号'
+                'gui.alerts.twCustomBlockPercent': '自制积木中不许有百分号',
+                'gui.sharedMessages.sprite': '轻狐',
+                'gui.defaultProject.sprite.flickFox': '轻狐',
+                'gui.defaultProject.sprite.yu': '玉蜀黍'
             },
             'geng': {
                 'mw.settings.activityBar': '活动栏',
-                'gui.alerts.twCustomBlockPercent': '自制积木里不能带百分号哈'
+                'gui.alerts.twCustomBlockPercent': '自制积木里不能带百分号哈',
+                'gui.sharedMessages.sprite': '轻盈狐',
+                'gui.defaultProject.sprite.flickFox': '轻盈狐',
+                'gui.defaultProject.sprite.yu': '苞谷'
             }
         };
 
