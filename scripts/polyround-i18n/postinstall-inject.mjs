@@ -41,6 +41,15 @@ const copies = [
         from: 'scripts/polyround-i18n/scratch-l10n/editor/paint-editor/wyw.json',
         to:   'node_modules/@remixwarp/scratch-l10n/editor/paint-editor/wyw.json'
     },
+    // scratch-translate-extension-languages 包的 upstream tarball 在某些
+    // 安装路径（bun / 新版 npm）下 languages.json 会被写成空文件，
+    // 导致 scratch3_text2speech 扩展一加载就把整个 GUI 炸掉（线上表现为
+    // splash 页 "TypeError: e is not a function"）。这里在 postinstall
+    // 里用仓库内保存的正确版本覆盖回去，保证 CF Pages / 本地构建一致。
+    {
+        from: 'scripts/scratch-translate-extension-languages.json',
+        to:   'node_modules/scratch-translate-extension-languages/languages.json'
+    },
 ];
 
 let ok = 0;
