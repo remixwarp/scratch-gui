@@ -374,7 +374,7 @@ const Footer = () => (
                             id="tw.footer.embed"
                         />
                     </a>
-                    <a href="https://rw-do-cs.pages.dev/url-parameters">
+                    <a href="https://rw-do-cs.pages.dev/website/url-parameters/">
                         <FormattedMessage
                             defaultMessage="URL Parameters"
                             description="Link in footer to URL parameters documentation"
