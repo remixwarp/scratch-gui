@@ -4,8 +4,13 @@
 // 这是 scratch-gui 自维护的补丁，不依赖任何额外包管理器特性。
 import fs from 'node:fs';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 
-const root = path.resolve(import.meta.dirname, '..', '..');
+// import.meta.dirname 是 Node 20.11+ 才引入的；CF Pages 目前是 Node 18，
+// 所以用通用的 fileURLToPath(import.meta.url) 推算。
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const root = path.resolve(__dirname, '..', '..');
 
 const copies = [
     {
