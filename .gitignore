@@ -46,3 +46,7 @@ npm-*
 dev-server.log
 devserver.log
 devserver*.log
+
+# Bun lock files — rely on package.json overrides instead of pinning bad indirect versions
+bun.lock
+bun.lockb
