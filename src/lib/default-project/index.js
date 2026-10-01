@@ -45,7 +45,12 @@ const spriteMessages = defineMessages({
     }
 });
 
-const defaultProject = translator => {
+const defaultProject = translateFunction => {
+    // 构造阶段 storage.js 调 cacheDefaultProject() 时 this.translator 还没
+    // 通过 setTranslatorFunction 注入；这里像 project-data.js 一样用一个
+    // 简单 defaultTranslator 兜底，避免 undefined(message) 把整个 GUI 炸掉。
+    const translator = translateFunction || (msgObj => msgObj.defaultMessage);
+
     if (overrideDefaultProject.byteLength > 0) {
         return [{
             id: 0,
