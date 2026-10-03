@@ -33,6 +33,6 @@ const manifest = {
     "new"
   ],
   "enabledByDefault": false,
-  "incompatibleWith": ["cat-blocks"]
+  "incompatibleWith": ["cat-blocks", "santa"]
 };
 export default manifest;
