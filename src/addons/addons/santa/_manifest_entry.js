@@ -28,7 +28,9 @@ const manifest = {
     "theme",
     "new",
     "turbowarp"
-  ]
+  ],
+  "enabledByDefault": false,
+  "incompatibleWith": ["cat-blocks-extended", "santa"]
 };
 
 // Enable by default only on local dates Dec 23rd through Dec 26th (inclusive)
