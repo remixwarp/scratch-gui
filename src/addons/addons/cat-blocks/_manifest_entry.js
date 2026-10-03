@@ -37,6 +37,6 @@ const manifest = {
     "theme"
   ],
   "enabledByDefault": false,
-  "incompatibleWith": ["cat-blocks-extended"]
+  "incompatibleWith": ["cat-blocks-extended", "santa"]
 };
 export default manifest;
