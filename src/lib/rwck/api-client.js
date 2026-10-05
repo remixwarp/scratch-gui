@@ -332,4 +332,5 @@ function toQs(obj) {
 }
 
 export default rwck;
-export {BASE_URL, getToken as _rwckGetToken, setToken as _rwckSetToken, getUser as _rwckGetUser};
+// 注意：BASE_URL 在文件顶部已经 export const 过了，这里不要再 re-export 它。
+export {getToken as _rwckGetToken, setToken as _rwckSetToken, getUser as _rwckGetUser};
