@@ -17,7 +17,29 @@
  *   const projects = await rwck.projects.list();
  */
 
-const BASE_URL = 'https://forum.ctspace.xyz/api';
+/**
+ * 创客次元（极光论坛）前端 API 客户端。
+ * Base URL: https://forum.ctspace.xyz/api  —— 浏览器实际走同源代理
+ *
+ * CORS 策略说明：forum.ctspace.xyz 未回显 Access-Control-Allow-Origin，
+ * 直接跨域 fetch 会被浏览器拦截。本客户端在浏览器环境下自动把 BASE_URL
+ * 重写成同源路由 /__rwck-proxy，再由 dev-server 的 before(app) 或
+ * CF Pages Function 转发到上游，对前端永远同源。
+ *
+ * - 浏览器（scratch-gui 内运行）: BASE_URL = '/__rwck-proxy'
+ * - Node 测试 / SSR:              BASE_URL = 'https://forum.ctspace.xyz/api'
+ *   （可通过 RWCK_DIRECT=1 环境变量强制绕过代理）
+ */
+
+// 运行时判定浏览器 vs Node
+const _isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+const _env = typeof process !== 'undefined' && process.env ? process.env : {};
+export const BASE_URL = _env.RWCK_DIRECT
+    ? 'https://forum.ctspace.xyz/api'
+    : (_isBrowser ? '/__rwck-proxy' : 'https://forum.ctspace.xyz/api');
+export const UPSTREAM_ORIGIN = 'https://forum.ctspace.xyz';
+export const PROXY_PATH      = '/__rwck-proxy';
+export const IS_BROWSER      = _isBrowser;
 const LS_TOKEN = 'rwck:token';
 const LS_USER  = 'rwck:user';
 
