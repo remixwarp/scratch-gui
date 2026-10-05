@@ -155,7 +155,7 @@ const rwck = {
 
     auth: {
         // ---- 人机验证 + 登录 ----
-        getCaptcha:            ()          => _fetch('/captcha'),
+        getCaptcha:            ()          => _fetch('/captcha').then(_normalizeCaptcha),
         login:                 body        => _fetch('/auth/login', {method:'POST', body}).then(r => {
             setToken(r.token); setUser(r.user); return r;
         }),
@@ -329,6 +329,40 @@ function toQs(obj) {
         .filter(k => obj[k] !== undefined && obj[k] !== null && obj[k] !== '')
         .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(obj[k])}`)
         .join('&');
+}
+
+/** 后端 /captcha 可能返回：
+ *   - {image:'data:image/png;base64,...'}  —— 完整 data URL（forum.ctspace.xyz 当前格式）
+ *   - {image:'/static/xxx.png'}           —— 相对 URL
+ *   - {image:'abc123...裸 base64'}        —— 不带 data 前缀
+ *   - {img:'...'} / {captcha:'...'}       —— 字段名换了
+ * 统一归一化成 {image:<浏览器可直接当 img.src 用的字符串>, token, pow}。
+ */
+function _normalizeCaptcha(raw) {
+    if (!raw) return raw;
+    // 字段兼容：image / img / captchaImage / data
+    let img = raw.image || raw.img || raw.captchaImage || (raw.data && (raw.data.image || raw.data.img));
+    if (typeof img !== 'string' || !img) {
+        console.warn('[rwck] captcha 返回里找不到 image 字段，完整响应:', raw);
+        return raw;
+    }
+    let normalized;
+    if (img.startsWith('data:image')) {
+        normalized = img;
+    } else if (/^https?:\/\//.test(img)) {
+        normalized = img;
+    } else if (/^[A-Za-z0-9+/=\s]+$/.test(img) && img.length > 100) {
+        // 看起来是裸 base64：按头部判断 png/jpeg，否则默认 png
+        const type = img.startsWith('iVBORw0KGgo') ? 'png'
+                   : img.startsWith('/9j/')       ? 'jpeg'
+                   : img.startsWith('R0lGOD')     ? 'gif'
+                   : 'png';
+        normalized = `data:image/${type};base64,${img.replace(/\s+/g,'')}`;
+    } else {
+        // 相对 URL（如 /captcha/img?token=xxx），拼成同源代理绝对路径
+        normalized = (img.startsWith('/') ? '' : '/') + img;
+    }
+    return Object.assign({}, raw, {image: normalized});
 }
 
 export default rwck;

@@ -114,8 +114,15 @@ class RwckPublishPanel extends Component {
     async _refreshCaptcha() {
         try {
             const cap = await rwck.auth.getCaptcha();
+            console.debug('[rwck] captcha loaded:', {
+                hasImage: !!(cap && cap.image),
+                imagePrefix: (cap && cap.image && typeof cap.image === 'string') ? cap.image.slice(0, 30) : null,
+                token: cap && cap.token,
+                pow: cap && cap.pow
+            });
             this.setState({captcha: cap, captchaAnswer: '', loginErr: ''});
         } catch (e) {
+            console.error('[rwck] captcha load failed:', e);
             this.setState({captcha: null, loginErr: '验证码加载失败，请检查网络'});
         }
     }
