@@ -43,6 +43,7 @@ import TWNews from './tw-news.jsx';
 import CollaborationContainer from '../../containers/collaboration-container.jsx';
 import openConfigPlazaWindow from '../../lib/mw/open-config-plaza-window.js';
 import openMaterialPlazaWindow from '../../lib/mw/open-material-plaza-window.js';
+import openRwckPublishWindow from '../../lib/mw/open-rwck-publish-window.jsx';
 import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
 import {
     fetchExtensionSource,
@@ -2437,6 +2438,10 @@ class MenuBar extends React.Component {
         openMaterialPlazaWindow();
         this.props.onRequestCloseFile();
     };
+    handleClickRwckPublish = () => {
+        openRwckPublishWindow();
+        this.props.onRequestCloseFile();
+    };
     handleClickSeeCommunity (waitForUpdate) {
         if (this.props.shouldSaveBeforeTransition()) {
             this.props.autoUpdateProject(); // save before transitioning to project page
@@ -3783,6 +3788,20 @@ class MenuBar extends React.Component {
                                                 </g>
                                             </svg>
                                             {this.props.locale === 'zh-cn' ? '素材广场' : 'Material Plaza'}
+                                        </MenuItem>
+                                    </MenuSection>
+                                    <MenuSection>
+                                        <MenuItem onClick={this.handleClickRwckPublish}>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign:'middle',marginRight:4}}>
+                                                <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
+                                                <path d="M16 6l-4-4-4 4"/>
+                                                <path d="M12 2v13"/>
+                                            </svg>
+                                            <FormattedMessage
+                                                defaultMessage="Publish to Rwck"
+                                                description="File menu item that opens the 创客次元 publish window"
+                                                id="gui.menuBar.publishRwck"
+                                            />
                                         </MenuItem>
                                     </MenuSection>
                                     {this.getAutosaveEnabled() && (
