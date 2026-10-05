@@ -13,7 +13,7 @@
     "scripts": {
         "prepare": "node scripts/prepublish.mjs",
         "postinstall": "node scripts/patch-shader-manager.mjs && node scripts/polyround-i18n/postinstall-inject.mjs",
-        "build": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist && NODE_ENV=production webpack --colors --bail && node scripts/build-compression.js",
+        "build": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist && NODE_ENV=production webpack --colors --bail && node scripts/build-compression.js && node scripts/package-cf-functions.mjs",
         "deploy": "NODE_ENV=production npm run build && touch build/.nojekyll && gh-pages -t -d build -m \"Build for $(git log --pretty=format:%H -n1)\"",
         "prepublish": "node scripts/prepublish.mjs",
         "prune": "./prune-gh-pages.sh",
@@ -28,7 +28,7 @@
         "test:smoke": "jest --runInBand test[\\\\/]smoke",
         "watch": "webpack --colors --watch",
         "link": "npm link scratch-vm scratch-blocks scratch-render scratch-paint",
-        "build:cf": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist && NODE_ENV=production webpack --colors --bail",
+        "build:cf": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist && NODE_ENV=production webpack --colors --bail && node scripts/package-cf-functions.mjs",
         "cf-build": "bun install && bun run build",
         "update-l10n": "node scripts/update-l10n.js",
         "generate-files": "node scripts/generate-file-contents.js",
