@@ -16,42 +16,24 @@
  *   const login   = await rwck.auth.login({...});        // 自动存 token
  *   const projects = await rwck.projects.list();
  */
-
 /**
- * 创客次元（极光论坛）前端 API 客户端。
- * Base URL: https://forum.ctspace.xyz/api  —— 浏览器实际走同源代理
- *
- * CORS 策略说明：forum.ctspace.xyz 未回显 Access-Control-Allow-Origin，
- * 创客次元 API 客户端。
- *
- * 请求路由策略（双通道自动回退）：
- *   1) 直连模式（首选）：直接 fetch https://forum.ctspace.xyz/api/...
- *      forum.ctspace.xyz 已经回了
- *        access-control-allow-credentials: true
- *        access-control-allow-methods: GET,POST,PUT,PATCH,DELETE,HEAD
- *        access-control-allow-headers: content-type,authorization
- *      OPTIONS 预检 204。只差一个 Access-Control-Allow-Origin: *，
- *      但近期开发者很可能会补上，届时直连会直接 100% 可用。
- *
- *   2) 代理回退（兜底）：如果直连被浏览器拦（fetch 抛 TypeError），
- *      自动切到同源代理 /__rwck-proxy/...
- *
- *   dev-server 和 CF Pages Function 仍然维护着 /__rwck-proxy 代理，
- *   但不再是主路由，只当 forum 没完整开 CORS 时的保险。
+ * forum.ctspace.xyz 不开 CORS（未回 Access-Control-Allow-Origin），
+ * 浏览器端统一走同源代理 /__rwck-proxy，由 dev-server before() 或
+ * Cloudflare Pages Function 转发到 https://forum.ctspace.xyz/api/。
  */
+
 
 // 运行时判定浏览器 vs Node
 const _isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
 const _env = typeof process !== 'undefined' && process.env ? process.env : {};
-export const BASE_URL = 'https://forum.ctspace.xyz/api';
+export const BASE_URL = _isBrowser
+    ? '/__rwck-proxy'                   // 浏览器强制同源代理（forum 不开 CORS）
+    : 'https://forum.ctspace.xyz/api';   // Node/SSR 直连上游
 export const PROXY_URL = '/__rwck-proxy';
 export const UPSTREAM_ORIGIN = 'https://forum.ctspace.xyz';
 export const PROXY_PATH      = '/__rwck-proxy';
 export const IS_BROWSER      = _isBrowser;
 
-// 内存缓存：上次直连是否成功。首次请求默认尝试直连，失败后自动切代理，
-// 并把下次请求也直接走代理，避免每次都有一次 CORS 失败往返。
-let _directOK = null; // null=未探测, true=直连ok, false=直连失败
 const LS_TOKEN = 'rwck:token';
 const LS_USER  = 'rwck:user';
 
@@ -66,64 +48,44 @@ const authHeaders = () => {
 };
 
 /** 统一 fetch：JSON 请求体 + JSON 响应解析 + 错误归一化 + 直连↔代理双通道回退。 */
+/**
+ * 统一 fetch。浏览器 BASE_URL=/__rwck-proxy（同源代理），Node 直连 forum。
+ */
 async function _fetch(path, options = {}) {
-    // 组装 headers（所有 channel 共用，带 Authorization）
-    const authHdrs = authHeaders();
-    const baseHdrs = Object.assign(
+    const url = BASE_URL + path;
+    const headers = Object.assign(
         {'Accept': 'application/json'},
-        authHdrs,
+        authHeaders(),
         options.headers || {}
     );
-    const jsonHeaders = Object.assign({'Content-Type': 'application/json'}, baseHdrs);
     let body = options.body;
     if (body && typeof body !== 'string' && !(body instanceof FormData)) {
         body = JSON.stringify(body);
+        headers['Content-Type'] = 'application/json';
     }
-
-    const initCommon = { method: options.method || 'GET', headers: baseHdrs };
-    if (body !== undefined && initCommon.method !== 'GET' && initCommon.method !== 'HEAD') {
-        initCommon.body = body instanceof FormData ? body : body;
-        // FormData 不能带 Content-Type（让浏览器写 boundary）
-        if (!(body instanceof FormData)) initCommon.headers = jsonHeaders;
-    } else {
-        initCommon.headers = baseHdrs;
+    const init = {
+        method: options.method || 'GET',
+        headers,
+        ...(body !== undefined ? {body} : {})
+    };
+    let res;
+    try {
+        res = await fetch(url, init);
+    } catch (e) {
+        throw Object.assign(new Error('网络错误，请检查连接后重试'), {cause: e});
     }
-
-    // 尝试顺序：上次成功过的 channel 优先；首次默认直连
-    const tryDirect = _directOK !== false; // null 或 true → 先试直连
-    const tryProxy  = _directOK !== true;  // null 或 false → 准备代理回退
-    const channels  = tryDirect ? [BASE_URL] : [];
-    if (tryProxy) channels.push(PROXY_URL);
-
-    let lastError;
-    for (const root of channels) {
-        const url = root + path;
-        let res;
-        try {
-            res = await fetch(url, initCommon);
-        } catch (e) {
-            // 只有 TypeError 才回退（浏览器 CORS 拦截），其他错误（DNS 404）直接上抛
-            if (!(e instanceof TypeError)) throw e;
-            lastError = e;
-            _directOK = false;
-            continue;
-        }
-        // 直连返回了响应体（不管 HTTP status）都算"通"，下次继续直连
-        if (root === BASE_URL) _directOK = true;
-        let data;
-        try { data = await res.json(); } catch { data = null; }
-        if (!res.ok) {
-            const err = new Error(data && (data.message || data.error) || `HTTP ${res.status}`);
-            err.status = res.status;
-            err.data = data;
-            throw err;
-        }
-        return data;
+    let data;
+    try { data = await res.json(); } catch { data = null; }
+    if (!res.ok) {
+        const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+        const err = new Error(msg);
+        err.status = res.status;
+        err.data   = data;
+        throw err;
     }
-    // 所有 channel 都挂了
-    throw Object.assign(new Error('创客次元 API 暂时不可用，请稍后重试'),
-        {cause: lastError});
+    return data;
 }
+
 
 /** 工作量证明（前端同步计算，几十毫秒）。 */
 function solvePow({challenge, difficulty}) {
