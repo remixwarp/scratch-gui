@@ -17,22 +17,34 @@
  *   const projects = await rwck.projects.list();
  */
 /**
- * forum.ctspace.xyz 不开 CORS（未回 Access-Control-Allow-Origin），
- * 浏览器端统一走同源代理 /__rwck-proxy，由 dev-server before() 或
- * Cloudflare Pages Function 转发到 https://forum.ctspace.xyz/api/。
+ * forum.ctspace.xyz 官方直连（不再走同源代理）。
+ *
+ * ⚠️ 目前 forum 还没回 Access-Control-Allow-Origin —— 浏览器端 fetch
+ * 大概率会被 CORS 挡。一旦 forum 后端加上 ACAO: * 或你的域名，
+ * 这里立刻通。登录注册 / 验证码 / 短链解析等全部官方接口都在同一基
+ * 线。dev-server proxy 和 CF Pages Functions 仍然保留作降级路径，
+ * 但默认不启用。
+ *
+ * 如果你想强制启用代理（forum 还没开 CORS 时的临时方案），在
+ * 前端代码 import 之前：
+ *   window.__RWCK_FORCE_PROXY__ = true;
  */
-
 
 // 运行时判定浏览器 vs Node
 const _isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
-const _env = typeof process !== 'undefined' && process.env ? process.env : {};
-export const BASE_URL = _isBrowser
-    ? '/__rwck-proxy'                   // 浏览器强制同源代理（forum 不开 CORS）
-    : 'https://forum.ctspace.xyz/api';   // Node/SSR 直连上游
-export const PROXY_URL = '/__rwck-proxy';
+const _forceProxy = _isBrowser && !!window.__RWCK_FORCE_PROXY__;
+
+// forum.ctspace.xyz 官方 API 基线
 export const UPSTREAM_ORIGIN = 'https://forum.ctspace.xyz';
-export const PROXY_PATH      = '/__rwck-proxy';
-export const IS_BROWSER      = _isBrowser;
+export const OFFICIAL_BASE   = 'https://forum.ctspace.xyz/api';
+export const PROXY_BASE      = '/__rwck-proxy';           // 降级同源代理（forum 不开 CORS 时）
+
+// 默认直连官方接口
+export const BASE_URL    = _forceProxy ? PROXY_BASE : OFFICIAL_BASE;
+export const IS_PROXY    = _forceProxy;
+export const IS_BROWSER  = _isBrowser;
+
+export const PROXY_PATH  = '/__rwck-proxy';
 
 const LS_TOKEN = 'rwck:token';
 const LS_USER  = 'rwck:user';

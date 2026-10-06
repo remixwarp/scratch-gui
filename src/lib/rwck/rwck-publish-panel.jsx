@@ -112,12 +112,20 @@ class RwckPublishPanel extends Component {
             // ---- 我的作品 ----
             myBusy: false,
             myErr: '',
-            mine: []
+            mine: [],
+
+            // ---- 社区状态 / 连通性自检 ----
+            statsBusy: false,
+            statsErr: '',
+            stats: null            // { users, posts, discussions, todayVisits, hot: [...] }
         };
         this._refreshCaptcha();
     }
 
-    componentDidMount() { this._refreshMine(); }
+    componentDidMount() {
+        this._refreshMine();
+        this._refreshStats();  // 打开窗口就拉一次社区统计（公开接口，免登录）
+    }
 
     // ========== 验证码 ==========
     async _refreshCaptcha() {
@@ -328,6 +336,27 @@ class RwckPublishPanel extends Component {
         }
     }
 
+    // ========== 社区状态（公开，免登录，可用来做连通性自检） ==========
+    async _refreshStats() {
+        this.setState({statsBusy:true, statsErr:''});
+        const t0 = Date.now();
+        try {
+            const data = await rwck.stats.public();
+            this.setState({stats: data, statsBusy:false});
+        } catch (e) {
+            // 把"浏览器直连 forum 被 CORS 挡"的场景翻译成用户能懂的话
+            const msg = (e.message || '').toLowerCase();
+            let friendly = e.message || '社区接口暂时不可用';
+            if (msg.includes('fetch') || msg.includes('failed to fetch')) {
+                friendly = '浏览器直连创客次元接口被 CORS 挡 —— forum.ctspace.xyz 未回 Access-Control-Allow-Origin，前端无法跨域直接 fetch。请联系论坛管理员加上 ACAO: * 或你的站点域名；或临时开启 /__rwck-proxy 同源代理（在控制台执行 window.__RWCK_FORCE_PROXY__=true 后刷新）。';
+            }
+            this.setState({statsErr: friendly, statsBusy:false});
+        } finally {
+            // 记录一次耗时，render 里可用
+            this._statsLatencyMs = Date.now() - t0;
+        }
+    }
+
     // ========== 渲染 ==========
     render() {
         const C = this.props.colors || {primary:'#4c97ff', secondary:'#333'};
@@ -335,6 +364,7 @@ class RwckPublishPanel extends Component {
         const isLoggedIn = !!this.state.user;
         const tabs = [
             {id:'login',    label: this.state.user ? '账户' : '登录'},
+            {id:'community', label: '社区状态'},
             {id:'publish',  label: '发布作品'},
             {id:'disc',     label: '发帖'},
             {id:'mine',     label: '我的作品'}
@@ -371,12 +401,110 @@ class RwckPublishPanel extends Component {
 
     _renderTab(S, C, isLoggedIn) {
         const t = this.state.tab;
+        if (t === 'community') return this._renderCommunity(S, C); // 公开，免登录
         if (t === 'login')    return this._renderLogin(S);
         if (!isLoggedIn)      return this._renderLogin(S);
         if (t === 'publish')  return this._renderPublish(S, C);
         if (t === 'disc')     return this._renderDisc(S);
         if (t === 'mine')     return this._renderMine(S);
         return null;
+    }
+
+    // ========== 社区状态（公开 /stats/public） ==========
+    _renderCommunity(S, C) {
+        const primary = C.primary || '#4c97ff';
+        const st = this.state.stats;
+        const latency = this._statsLatencyMs;
+        return (
+            <div style={S.box}>
+                <div style={S.sectionTitle}>社区状态 · 连通性自检</div>
+                <div style={S.hint}>
+                    公开接口，免登录。<code>GET /api/stats/public</code> ——
+                    这个面板能否显示，直接反映浏览器直连 forum.ctspace.xyz
+                    的跨域策略是否放开。
+                </div>
+
+                {/* 状态行 */}
+                <div style={{display:'flex', gap:10, alignItems:'center', marginTop:8}}>
+                    <button style={cls(S.btn, S.primary, this.state.statsBusy && S.primaryDisabled)}
+                            disabled={this.state.statsBusy}
+                            onClick={()=>this._refreshStats()}>
+                        {this.state.statsBusy ? '正在探测…' : '重新探测连通性'}
+                    </button>
+                    {latency != null && !this.state.statsErr && (
+                        <span style={{...S.hint, color:'#3c9'}}>✓ 连通，耗时 {latency} ms</span>
+                    )}
+                    {this.state.statsErr && (
+                        <span style={{...S.hint, color:'#c0392b'}}>✗ {this.state.statsErr.length > 120 ? this.state.statsErr.slice(0,120)+'…' : this.state.statsErr}</span>
+                    )}
+                </div>
+
+                {this.state.statsErr && (
+                    <details style={{marginTop:8}}>
+                        <summary style={{...S.hint, color:'#c0392b', cursor:'pointer'}}>展开完整错误</summary>
+                        <pre style={{...S.box, background:'#fff7f7', border:'1px solid #ffd6d6', color:'#c0392b',
+                                      fontSize:12, whiteSpace:'pre-wrap', wordBreak:'break-word', marginTop:6}}>
+                            {this.state.statsErr}
+                        </pre>
+                    </details>
+                )}
+
+                {/* 核心数据卡片 */}
+                {st && !this.state.statsErr && (
+                    <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8, marginTop:12}}>
+                        {[
+                            {label:'注册用户',   value: st.users || 0,           icon:'👥'},
+                            {label:'帖子总数',   value: st.posts || 0,           icon:'💬'},
+                            {label:'讨论串',     value: st.discussions || 0,     icon:'📚'},
+                            {label:'今日访问',   value: st.todayVisits || 0,     icon:'📈'}
+                        ].map((c, i) => (
+                            <div key={i} style={{...S.box, background:'#fff', textAlign:'center', padding:'10px 6px'}}>
+                                <div style={{fontSize:22}}>{c.icon}</div>
+                                <div style={{fontSize:20, fontWeight:700, color: primary}}>{c.value}</div>
+                                <div style={{fontSize:11, color:'#666'}}>{c.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* 热门帖列表 */}
+                {st && st.hot && st.hot.length > 0 && (
+                    <div style={{marginTop:14}}>
+                        <div style={{fontSize:12, fontWeight:600, color:'#444', marginBottom:6}}>🔥 热门帖子 Top {st.hot.length}</div>
+                        {st.hot.map((h, i) => (
+                            <div key={h.id || i}
+                                 style={{...S.box, background:'#fff', display:'flex', gap:10,
+                                          alignItems:'flex-start', padding:'8px 10px', marginBottom:6}}>
+                                <div style={{flex:'0 0 auto', width:24, fontSize:13, fontWeight:700,
+                                              color: i<3 ? primary : '#999'}}>#{h.seq || i+1}</div>
+                                {h.author && h.author.avatar && (
+                                    <img src={h.author.avatar} alt='' style={{width:32, height:32, borderRadius:4}} />
+                                )}
+                                <div style={{flex:1, minWidth:0}}>
+                                    <div style={{fontWeight:600, fontSize:13}}>
+                                        <a href={`https://forum.ctspace.xyz/d/${h.seq || ''}`} target='_blank' rel='noreferrer'
+                                           style={{color:'#222', textDecoration:'none'}}>{h.title}</a>
+                                    </div>
+                                    <div style={{...S.hint, marginTop:2}}>
+                                        by <b>{h.author && (h.author.nickname || h.author.username) || '匿名'}</b>
+                                        · 💬 {h.postCount || 0} · 👍 {h.likeCount || 0} · 👁 {h.views || 0}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* API 基线提示 */}
+                <div style={{...S.hint, marginTop:12, borderTop:'1px dashed #ddd', paddingTop:8}}>
+                    当前 API 基线：<code>{rwck.BASE_URL}</code>
+                    {rwck.IS_PROXY
+                        ? <span style={{color:'#3c9'}}>（同源代理模式，绕开了 CORS）</span>
+                        : <span style={{color:'#c0392b'}}>（官方直连 —— forum 需回 ACAO 头才通）</span>
+                    }
+                </div>
+            </div>
+        );
     }
 
     _renderLogin(S) {
