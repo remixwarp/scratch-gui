@@ -424,7 +424,7 @@ class RwckPublishPanel extends Component {
 
                     <input style={{...S.input, maxWidth:150}} value={this.state.captchaAnswer}
                            onChange={e=>this.setState({captchaAnswer:e.target.value})}
-                           placeholder={hasImage ? '输入图中字符' : '先获取验证码'}
+                           placeholder={hasImage ? '输入图中 6 位字符' : '先获取验证码'}
                            maxLength={8} disabled={!hasImage} />
 
                     <button style={cls(S.btn, S.ghost, this.state.captchaLoading && S.ghostDisabled)}
