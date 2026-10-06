@@ -165,12 +165,18 @@ function _normalizeCaptcha(raw) {
 async function _uploadForm(path, file, filename) {
     const url = BASE_URL + path;
     const fd = new FormData();
-    // 文档第 0 节第 5 点：不要把真实文件名放进 multipart 的原始 filename 字段
-    // （multipart 在某些网关下会被 latin1 误解码成乱码）。
-    // 做法：把文件存成稳定 ASCII 名，真实名单独放 name 字段。
-    const safeName = 'upload.bin';
-    fd.append('file', file, safeName);
+    // 关键点：FormData.append 的**第三个参数必须传真实文件名**。
+    // forum.ctspace.xyz 后端靠 multipart 里原始 filename 的扩展名（.sb3 / .html / .png / .mp4…）
+    // 来判定文件类型。如果我们偷懒传个 'upload.bin'，后端就会报
+    // "暂不支持该文件类型（支持 sb3 / html / 图片 / 视频）" —— 哪怕你传的是真正的 sb3。
+    //
+    // 至于文档第 0 节第 5 点说的"中文文件名会被 latin1 误解码" —— 这个风险在
+    // Node.js / CF Pages 网关层确实存在，但浏览器直传 multipart 的实现
+    // （fetch + FormData）用 UTF-8 编码 + filename*= 扩展语法，主流后端
+    // （包括 forum 用的 NestJS multer）已经支持。先保证类型识别对。
     const realName = filename || file.name || 'upload.bin';
+    fd.append('file', file, realName);
+    // 额外再放一份 name 字段（文档约定的"真实文件名"传递通道），两边都走，兜底
     fd.append('name', realName);
     const headers = authHeaders();
     let res;
