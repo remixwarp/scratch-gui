@@ -188,12 +188,23 @@ const rwck = {
     /** 鉴权状态快照（给 UI 读）。 */
     authState() { return {token: getToken(), user: getUser()}; },
 
+    /** 刷新 user 信息（GET /auth/me）。 */
+    async refreshMe() {
+        if (!getToken()) return null;
+        const me = await _fetch('/auth/me');
+        setUser(me);
+        return me;
+    },
+
+    // ========= 2. 人机验证与登录 =========
     auth: {
         async getCaptcha() {
             const raw = await _fetch('/captcha');
             return _normalizeCaptcha(raw);
         },
         solvePow,
+
+        /** 登录 — 成功后自动存 JWT / user 到 localStorage。 */
         async login({username, password, captchaToken, captchaAnswer, captchaPowNonce}) {
             const data = await _fetch('/auth/login', {
                 method:'POST',
@@ -205,34 +216,191 @@ const rwck = {
             setUser(user);
             return {token, user};
         },
+
+        /** 注册 — 前端不会自动登录，得去点激活邮件。 */
+        async register({username, email, password}) {
+            const data = await _fetch('/auth/register', {
+                method:'POST', body: {username, email, password}
+            });
+            return data;
+        },
+
+        /** 拿当前登录用户（需 Bearer）。 */
+        async me() { return _fetch('/auth/me'); },
+
+        /** 改昵称 / 签名 / 头像（PATCH /auth/me）。 */
+        async patchMe(patch) { return _fetch('/auth/me', {method:'PATCH', body: patch}); },
+
+        /** 激活账号（POST /auth/activate，token 来自邮件链接）。 */
+        async activate({token}) { return _fetch('/auth/activate', {method:'POST', body: {token}}); },
+
+        /** 重发激活邮件（POST /auth/resend）。 */
+        async resendActivation({identifier}) {
+            return _fetch('/auth/resend', {method:'POST', body: {identifier}});
+        },
+
+        /** 找回密码，发邮件（POST /auth/forgot-password）。 */
+        async forgotPassword({identifier}) {
+            return _fetch('/auth/forgot-password', {method:'POST', body: {identifier}});
+        },
+
+        /** 重置密码（token 来自邮件 + 新密码）。 */
+        async resetPassword({token, password}) {
+            return _fetch('/auth/reset-password', {method:'POST', body: {token, password}});
+        },
+
+        /** 忘记用户名，发邮件。 */
+        async forgotUsername({email}) {
+            return _fetch('/auth/forgot-username', {method:'POST', body: {email}});
+        },
+
+        /** 改密码（需登录）。 */
+        async changePassword({oldPassword, newPassword}) {
+            return _fetch('/auth/change-password', {method:'POST', body: {oldPassword, newPassword}});
+        },
+
+        /** 改用户名（需登录，有频次限制）。 */
+        async changeUsername({username}) {
+            return _fetch('/auth/change-username', {method:'POST', body: {username}});
+        },
+
+        /** 改邮箱（需登录）。 */
+        async changeEmail({email}) {
+            return _fetch('/auth/change-email', {method:'POST', body: {email}});
+        },
+
         logout() { setToken(null); setUser(null); }
     },
 
+    // ========= 3. 开发者密钥（API Key） =========
+    apiKeys: {
+        async list() { return _fetch('/api-keys'); },
+        async create({name}) { return _fetch('/api-keys', {method:'POST', body: {name}}); },
+        async remove(id) { return _fetch(`/api-keys/${id}`, {method:'DELETE'}); }
+    },
+
+    // ========= 4. 作品广场（公开） =========
     projects: {
+        /** 列表。参数 category/q/sort/page/pageSize（sort: score/new）。 */
+        async list(query = {}) {
+            const qs = new URLSearchParams(query).toString();
+            return _fetch('/projects' + (qs ? '?' + qs : ''));
+        },
+        /** 详情（浏览量 +1）。 */
+        async get(id) { return _fetch(`/projects/${id}`); },
+        /** 我的作品（需登录）。 */
+        async mine() { return _fetch('/projects/mine'); },
+        /** 发布（需登录）。 */
         async create(body) {
             const r = await _fetch('/projects', {method:'POST', body});
             return (r && (r.data || r.project)) || r;
         },
-        async mine() {
-            const r = await _fetch('/projects/mine');
-            return r;
+        /** 编辑 / 上传新版本。 */
+        async update(id, patch) { return _fetch(`/projects/${id}`, {method:'PATCH', body: patch}); },
+        async remove(id) { return _fetch(`/projects/${id}`, {method:'DELETE'}); },
+        async toggleLike(id) { return _fetch(`/projects/${id}/like`, {method:'POST'}); }
+    },
+
+    // ========= 上传资源（multipart，resources/upload + drive/upload 两条） =========
+    resources: {
+        /** 作品资源上传，返回 { id, url, ... }。 */
+        async upload(file, filename) {
+            return _uploadForm('/resources/upload', file, filename);
+        }
+    },
+
+    // ========= 5. 短链（公开） =========
+    shortlink: {
+        /** 占用检测。 */
+        async check(slug) { return _fetch(`/shortlink/check?slug=${encodeURIComponent(slug)}`); },
+        /** 解析短链，返回作品信息（**公开，不登录**）。 */
+        async get(slug) { return _fetch(`/shortlink/${slug}`); },
+        /** 上报一次访问（公开）。 */
+        async view(slug) { return _fetch(`/shortlink/${slug}/view`, {method:'POST'}); },
+        /** 某作品的全部短链（需登录）。 */
+        async mine(projectId) {
+            const q = projectId ? `?projectId=${projectId}` : '';
+            return _fetch(`/shortlink/mine${q}`);
         },
+        /** 创建（需登录）。 */
+        async create({projectId, slug}) {
+            return _fetch('/shortlink', {method:'POST', body: {projectId, slug}});
+        },
+        /** 改名（需登录）。 */
+        async update(slug, patch) { return _fetch(`/shortlink/${slug}`, {method:'PATCH', body: patch}); },
+        /** 停用 / 恢复（需登录）。 */
+        async setDisabled(slug, disabled) {
+            return _fetch(`/shortlink/${slug}/disabled`, {method:'POST', body: {disabled: !!disabled}});
+        }
+    },
+
+    // ========= 6. 云盘（公开 + 需登录混合） =========
+    drive: {
+        async files() { return _fetch('/drive/files'); },
+        async usage() { return _fetch('/drive/usage'); },
+        /** 上传文件，multipart（file + 可选 name）。 */
+        async upload(file, filename) { return _uploadForm('/drive/upload', file, filename); },
+        /** 覆盖上传：换内容不换直链 / shareId。 */
+        async replace(id, file, filename) {
+            return _uploadForm(`/drive/files/${id}/replace`, file, filename);
+        },
+        async patch(id, patch) { return _fetch(`/drive/files/${id}`, {method:'PATCH', body: patch}); },
+        async regenerate(id) { return _fetch(`/drive/files/${id}/regenerate`, {method:'POST'}); },
+        async remove(id) { return _fetch(`/drive/files/${id}`, {method:'DELETE'}); },
+        /** 公开：按 shareId 取元信息（分享页用）。 */
+        async byShare(shareId) { return _fetch(`/drive/share/${shareId}`); },
+        /** 公开：批量取元信息（发帖卡片用）。 */
+        async byShares(shareIds) {
+            if (!Array.isArray(shareIds)) shareIds = [shareIds];
+            return _fetch(`/drive/by-share?shareIds=${shareIds.join(',')}`);
+        },
+        /** 公开：直链 /api/drive/raw/:shareId。浏览器可直接 fetch 或当 img.src。 */
+        rawUrl(shareId, opts = {}) {
+            const q = new URLSearchParams();
+            if (opts.download) q.set('download', '1');
+            if (opts.token)    q.set('token', opts.token);
+            return BASE_URL + '/drive/raw/' + shareId + (q.toString() ? '?' + q.toString() : '');
+        }
+    },
+
+    // ========= 7. 论坛帖子（公开 + 需登录混合） =========
+    discussions: {
+        /** 列表。sort: new，page/pageSize 可选 category/q。 */
         async list(query = {}) {
             const qs = new URLSearchParams(query).toString();
-            return _fetch('/projects' + (qs ? '?' + qs : ''));
-        }
-    },
-
-    resources: {
-        async upload(file, filename) {
-            return _uploadForm('/resources', file, filename);
-        }
-    },
-
-    discussions: {
+            return _fetch('/discussions' + (qs ? '?' + qs : ''));
+        },
+        async get(id) { return _fetch(`/discussions/${id}`); },
+        async getBySeq(seq) { return _fetch(`/discussions/seq/${seq}`); },
+        /** 发帖（限流 4/小时）。 */
         async create(body) {
             const r = await _fetch('/discussions', {method:'POST', body});
             return (r && (r.data || r.discussion)) || r;
+        },
+        async update(id, patch) { return _fetch(`/discussions/${id}`, {method:'PATCH', body: patch}); },
+        async remove(id) { return _fetch(`/discussions/${id}`, {method:'DELETE'}); }
+    },
+    posts: {
+        async create({discussionId, content}) {
+            return _fetch('/posts', {method:'POST', body: {discussionId, content}});
+        },
+        async update(id, patch) { return _fetch(`/posts/${id}`, {method:'PATCH', body: patch}); },
+        async remove(id) { return _fetch(`/posts/${id}`, {method:'DELETE'}); }
+    },
+
+    // ========= 9. 公开统计 / 设置 =========
+    stats: {
+        async public() { return _fetch('/stats/public'); }
+    },
+    settings: {
+        async public() { return _fetch('/settings'); }
+    },
+
+    // ========= 10. 评论（公开） =========
+    comments: {
+        async list(targetType, targetId) {
+            const qs = new URLSearchParams({targetType, targetId}).toString();
+            return _fetch(`/comments?${qs}`);
         }
     }
 };

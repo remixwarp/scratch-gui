@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "include": [
+    "/__rwck-proxy/*",
+    "/__rwck-proxy"
+  ],
+  "exclude": ["/api/*"]
+}
