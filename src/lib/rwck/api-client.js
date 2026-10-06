@@ -97,22 +97,19 @@ async function solvePow({challenge, difficulty}) {
     throw new Error('PoW 求解超时，请换张验证码重试');
 }
 
-// sha256，用 Web Crypto API（浏览器）/ Node crypto.subtle（Node 20+）。
+// sha256，用 Web Crypto API（浏览器端 scratch-gui 只会走这里）。
 // async，结果和 Node crypto.createHash('sha256').digest('hex') 完全一致。
+// 注意：不要在这里写 require('crypto') / import('node:crypto') ——
+// webpack 4 在生产构建时会把动态 import 也当成静态依赖去 resolve，
+// 而 Node 内置模块在浏览器 bundle 里根本不存在，直接抛 ModuleNotFoundError。
 async function sha256Hex(str) {
-    const cryptoObj = globalThis.crypto || globalThis.msCrypto;
+    const cryptoObj = (typeof globalThis !== 'undefined') && (globalThis.crypto || globalThis.msCrypto);
     if (cryptoObj && cryptoObj.subtle) {
         const buf = new TextEncoder().encode(str);
         const digest = await cryptoObj.subtle.digest('SHA-256', buf);
         return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
     }
-    // Node >= 20 的 fallback
-    try {
-        const nodeCrypto = await import('node:crypto');
-        return nodeCrypto.createHash('sha256').update(str).digest('hex');
-    } catch {
-        throw new Error('当前环境不支持 Web Crypto 或 Node crypto');
-    }
+    throw new Error('当前浏览器不支持 Web Crypto API（crypto.subtle），无法完成 PoW 计算');
 }
 
 /** 后端 /captcha 可能返回：
