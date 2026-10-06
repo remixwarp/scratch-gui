@@ -149,6 +149,87 @@ function _normalizeCaptcha(raw) {
     return Object.assign({}, raw, {image: normalized});
 }
 
+/** 表单文件上传（multipart/form-data，绕开 JSON 序列化）。 */
+async function _uploadForm(path, file, filename) {
+    const url = BASE_URL + path;
+    const fd = new FormData();
+    fd.append('file', file, filename || file.name || 'upload.bin');
+    const headers = authHeaders();
+    let res;
+    try {
+        res = await fetch(url, {method:'POST', headers, body: fd});
+    } catch (e) {
+        throw Object.assign(new Error('网络错误，请检查连接后重试'), {cause: e});
+    }
+    let data;
+    try { data = await res.json(); } catch { data = null; }
+    if (!res.ok) {
+        const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+        const err = new Error(msg);
+        err.status = res.status;
+        err.data   = data;
+        throw err;
+    }
+    // 论坛资源上传有的返回 {resourceId}，有的返回 {id}，统一一下
+    if (data && (data.resourceId !== undefined || data.id !== undefined) && !data.id) {
+        data.id = data.resourceId;
+    }
+    return data;
+}
+
+const rwck = {
+    /** 鉴权状态快照（给 UI 读）。 */
+    authState() { return {token: getToken(), user: getUser()}; },
+
+    auth: {
+        async getCaptcha() {
+            const raw = await _fetch('/captcha');
+            return _normalizeCaptcha(raw);
+        },
+        solvePow,
+        async login({username, password, captchaToken, captchaAnswer, captchaPowNonce}) {
+            const data = await _fetch('/auth/login', {
+                method:'POST',
+                body: {username, password, captchaToken, captchaAnswer, captchaPowNonce}
+            });
+            const token = (data && (data.token || data.accessToken || (data.data && data.data.token))) || '';
+            const user  = (data && (data.user  || (data.data && data.data.user))) || null;
+            setToken(token);
+            setUser(user);
+            return {token, user};
+        },
+        logout() { setToken(null); setUser(null); }
+    },
+
+    projects: {
+        async create(body) {
+            const r = await _fetch('/projects', {method:'POST', body});
+            return (r && (r.data || r.project)) || r;
+        },
+        async mine() {
+            const r = await _fetch('/projects/mine');
+            return r;
+        },
+        async list(query = {}) {
+            const qs = new URLSearchParams(query).toString();
+            return _fetch('/projects' + (qs ? '?' + qs : ''));
+        }
+    },
+
+    resources: {
+        async upload(file, filename) {
+            return _uploadForm('/resources', file, filename);
+        }
+    },
+
+    discussions: {
+        async create(body) {
+            const r = await _fetch('/discussions', {method:'POST', body});
+            return (r && (r.data || r.discussion)) || r;
+        }
+    }
+};
+
 export default rwck;
 // 注意：BASE_URL 在文件顶部已经 export const 过了，这里不要再 re-export 它。
 export {getToken as _rwckGetToken, setToken as _rwckSetToken, getUser as _rwckGetUser};

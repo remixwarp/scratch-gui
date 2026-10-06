@@ -70,6 +70,10 @@ class RwckPublishPanel extends Component {
 
             // ---- 登录 ----
             captcha: null,
+            captchaLoadErr: '',   // 自动拉取验证码失败时显示的友好提示
+            showPaste: false,    // 是否显示「手动粘贴 JSON」面板
+            pasteJson: '',       // 用户粘贴的原始 JSON 文本
+            pasteErr: '',        // 粘贴解析错误
             username: '',
             password: '',
             captchaAnswer: '',
@@ -123,8 +127,40 @@ class RwckPublishPanel extends Component {
             this.setState({captcha: cap, captchaAnswer: '', loginErr: ''});
         } catch (e) {
             console.error('[rwck] captcha load failed:', e);
-            this.setState({captcha: null, loginErr: '验证码加载失败，请检查网络'});
+            // 自动拉取失败时不立刻弹致命错误，给用户留「手动粘贴 JSON」兜底入口
+            this.setState({captcha: null, captchaLoadErr: '自动拉取验证码失败（可能是同源代理未生效），请点下方「手动粘贴」链接'});
         }
+    }
+
+    /**
+     * 手动粘贴 forum.ctspace.xyz/api/captcha 返回的 JSON，绕过 CORS / 代理问题。
+     * 用户操作：浏览器开 https://forum.ctspace.xyz/api/captcha → 全选 → 复制 → 粘贴到 textarea → 点「解析」。
+     */
+    _parsePastedCaptcha() {
+        const raw = (this.state.pasteJson || '').trim();
+        if (!raw) {
+            this.setState({pasteErr: '请先粘贴 JSON'}); return;
+        }
+        let data;
+        try { data = JSON.parse(raw); }
+        catch { this.setState({pasteErr: 'JSON 格式不对，请确认复制的是完整 JSON'}); return; }
+        if (!data.token || !data.image) {
+            this.setState({pasteErr: 'JSON 里没找到 token / image 字段'}); return;
+        }
+        // 兜底：有些论坛返回 image 是裸 base64，补上 data:image/png;base64,
+        let image = data.image;
+        if (typeof image === 'string' && !image.startsWith('data:image')) {
+            image = 'data:image/png;base64,' + image;
+        }
+        const cap = {
+            token: data.token,
+            image,
+            pow: data.pow || {challenge: '', difficulty: data.difficulty || 4}
+        };
+        this.setState({
+            captcha: cap, captchaAnswer: '', pasteErr: '',
+            pasteJson: '', showPaste: false, loginErr: ''
+        });
     }
 
     // ========== 登录 ==========
@@ -355,22 +391,70 @@ class RwckPublishPanel extends Component {
                     <input style={S.input} type='password' value={this.state.password}
                            onChange={e=>this.setState({password:e.target.value})} autoComplete='current-password' />
                 </div>
-                <div style={S.row}>
-                    <label style={S.label}>图形验证码（6 位）</label>
-                    <input style={{...S.input, maxWidth:140}} value={this.state.captchaAnswer}
-                           onChange={e=>this.setState({captchaAnswer:e.target.value})}
-                           placeholder='如 ABC123' maxLength={8} />
+
+                {/* ====== 图文验证码区域 ====== */}
+                <div style={{...S.box, background:'#fff', border:'1px dashed #bbb'}}>
+                    <div style={{fontSize:12, fontWeight:600, color:'#444', marginBottom:6}}>
+                        获取图形验证码（因为跨域，需要手动操作一次）
+                    </div>
+
+                    {/* 三步引导 */}
+                    <ol style={{margin:0, paddingLeft:20, ...S.hint}}>
+                        <li>
+                            点这个链接在新标签打开 →
+                            <a href='https://forum.ctspace.xyz/api/captcha' target='_blank' rel='noreferrer'
+                               style={{color: this.props.colors.primary, fontWeight:600}}>
+                               https://forum.ctspace.xyz/api/captcha
+                            </a>
+                        </li>
+                        <li>在新标签页里按 <b>Ctrl+A</b>（全选）再按 <b>Ctrl+C</b>（复制）</li>
+                        <li>回到这里，把 JSON 粘贴到下面的框里，点「确定」</li>
+                    </ol>
+
+                    {/* 粘贴框 */}
+                    <textarea
+                        style={{...S.textarea, minHeight:80, width:'100%', fontFamily:'monospace', fontSize:11, marginTop:8}}
+                        placeholder='在此处粘贴刚才复制的 JSON…例如 {"token":"xxx","image":"data:image/png;base64,...","pow":{...}}'
+                        value={this.state.pasteJson}
+                        onChange={e=>this.setState({pasteJson: e.target.value, pasteErr:''})}
+                    />
+                    {this.state.pasteErr && <div style={S.err}>{this.state.pasteErr}</div>}
+
+                    {/* 操作按钮 */}
+                    <div style={{display:'flex', gap:8, marginTop:8, alignItems:'center'}}>
+                        <button style={cls(S.btn, S.primary)} onClick={()=>this._parsePastedCaptcha()}>
+                            确定（自动显示验证码图片）
+                        </button>
+                        <button style={S.ghost} onClick={()=>this.setState({pasteJson:'', pasteErr:''})}>清空</button>
+                        <button style={S.ghost} onClick={()=>window.open('https://forum.ctspace.xyz/api/captcha', '_blank')}>
+                            再次打开接口
+                        </button>
+                        {this.state.captchaLoadErr && (
+                            <span style={{...S.hint, flex:1, color:'#c0392b'}}>
+                                自动拉取也失败了，麻烦手动粘贴一下 ↑
+                            </span>
+                        )}
+                    </div>
+
+                    {/* 解析成功后：显示图片验证码 + 输入框 */}
                     {captcha && (
-                        <img alt='captcha' style={S.captcha}
-                             src={captcha.image}
-                             onClick={()=>this._refreshCaptcha()}
-                             title='点一下刷新验证码' />
+                        <div style={{marginTop:10, paddingTop:10, borderTop:'1px dashed #ddd'}}>
+                            <div style={S.hint}>验证码已就绪 —— 请看图填写（看不清可以重复上面三步换一张）</div>
+                            <div style={{...S.row, marginTop:8}}>
+                                <img alt='captcha' style={{...S.captcha, height:56}}
+                                     src={captcha.image} />
+                                <input style={{...S.input, maxWidth:160}}
+                                       value={this.state.captchaAnswer}
+                                       onChange={e=>this.setState({captchaAnswer:e.target.value})}
+                                       placeholder='输入图中字符' maxLength={8} />
+                            </div>
+                        </div>
                     )}
-                    <button style={S.ghost} onClick={()=>this._refreshCaptcha()}>换一张</button>
                 </div>
+
                 {captcha && (
                     <div style={{...S.hint, padding:'0 90px'}}>
-                        验证码 PoW 工作量证明将在点击登录时自动计算（约几毫秒）
+                        PoW 工作量证明会在点击登录时自动计算（几毫秒）
                     </div>
                 )}
                 <div style={{...S.row, paddingLeft:90}}>
