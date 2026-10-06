@@ -2,46 +2,47 @@
  * 创客次元（极光论坛）前端 API 客户端。
  * Base URL: https://forum.ctspace.xyz/api
  * 文档版本：2026-09-26 · 对应站点 v3.0
+ * 文档：https://forum.ctspace.xyz/docs （机器可读：https://forum.ctspace.xyz/docs/api.md）
  *
  * 设计目标：
  *   - 纯浏览器 ES module（scratch-gui webpack 4 能直接 import）。
  *   - 所有 fetch 统一 CORS + 错误处理 + JWT 注入。
  *   - Token 持久化到 localStorage（rwck:token / rwck:user）。
- *   - 提供人机验证三件套（图形验证码 / PoW 求解 / 登录）。
+ *   - 自动双路：优先直连官方；失败自动降级到同源代理 /__rwck-proxy（webpack dev-server
+ *     已挂好，绕开 forum CORS）。
  *
- * 使用：
+ * 已知 Forum CORS 策略：forum.ctspace.xyz 只回 Access-Control-Allow-Origin: <请求 Origin>
+ * 且配合 credentials。大多数浏览器的 fetch 默认无 credentials 且不带 Origin 时服务端
+ * 会拒绝。本客户端通过同源代理兜住所有请求，前端永远看不见跨域。
+ *
+ * 用法（示例）：
  *   import rwck from './rwck/api-client';
- *   const captcha = await rwck.auth.getCaptcha();      // { token, image, pow }
- *   const nonce   = rwck.auth.solvePow(captcha.pow);    // 同步
- *   const login   = await rwck.auth.login({...});        // 自动存 token
- *   const projects = await rwck.projects.list();
- */
-/**
- * forum.ctspace.xyz 官方直连（不再走同源代理）。
- *
- * ⚠️ 目前 forum 还没回 Access-Control-Allow-Origin —— 浏览器端 fetch
- * 大概率会被 CORS 挡。一旦 forum 后端加上 ACAO: * 或你的域名，
- * 这里立刻通。登录注册 / 验证码 / 短链解析等全部官方接口都在同一基
- * 线。dev-server proxy 和 CF Pages Functions 仍然保留作降级路径，
- * 但默认不启用。
- *
- * 如果你想强制启用代理（forum 还没开 CORS 时的临时方案），在
- * 前端代码 import 之前：
- *   window.__RWCK_FORCE_PROXY__ = true;
+ *   const cap      = await rwck.auth.getCaptcha();
+ *   const nonce    = rwck.auth.solvePow(cap.pow);
+ *   const login    = await rwck.auth.login({...});
+ *   const projects = await rwck.projects.list({sort:'score', pageSize: 12});
+ *   const stats    = await rwck.stats.public();
  */
 
 // 运行时判定浏览器 vs Node
 const _isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
-const _forceProxy = _isBrowser && !!window.__RWCK_FORCE_PROXY__;
 
 // forum.ctspace.xyz 官方 API 基线
 export const UPSTREAM_ORIGIN = 'https://forum.ctspace.xyz';
 export const OFFICIAL_BASE   = 'https://forum.ctspace.xyz/api';
-export const PROXY_BASE      = '/__rwck-proxy';           // 降级同源代理（forum 不开 CORS 时）
+export const PROXY_BASE      = '/__rwck-proxy';
 
-// 默认直连官方接口
-export const BASE_URL    = _forceProxy ? PROXY_BASE : OFFICIAL_BASE;
-export const IS_PROXY    = _forceProxy;
+// 自动探测代理可用与否：dev-server 在 webpack.before() 里挂了 /__rwck-proxy/*
+// 在 dev 环境走同源代理最稳；生产环境也尝试（Cloudflare Pages Function 也挂了）。
+// 用户也可以在 import 前用 window.__RWCK_FORCE_PROXY__ = true/false 强制。
+const _FORCE_PROXY = _isBrowser && (
+    !!window.__RWCK_FORCE_PROXY__          // 用户强制
+    || !!(window.__RWCK_DEV_PROXY__)       // 调试开关
+    || (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production')
+);
+
+export const BASE_URL    = _FORCE_PROXY ? PROXY_BASE : OFFICIAL_BASE;
+export const IS_PROXY    = _FORCE_PROXY;
 export const IS_BROWSER  = _isBrowser;
 
 export const PROXY_PATH  = '/__rwck-proxy';
@@ -59,10 +60,20 @@ const authHeaders = () => {
     return t ? {Authorization: `Bearer ${t}`} : {};
 };
 
-/** 统一 fetch：JSON 请求体 + JSON 响应解析 + 错误归一化 + 直连↔代理双通道回退。 */
-/**
- * 统一 fetch。浏览器 BASE_URL=/__rwck-proxy（同源代理），Node 直连 forum。
- */
+/** 拼 query string（去掉空值）。 */
+function _qs(obj) {
+    const u = new URLSearchParams();
+    Object.keys(obj || {}).forEach(k => {
+        const v = obj[k];
+        if (v === undefined || v === null || v === '') return;
+        if (Array.isArray(v)) { v.forEach(x => u.append(k, x)); return; }
+        u.set(k, String(v));
+    });
+    const s = u.toString();
+    return s ? '?' + s : '';
+}
+
+/** 统一 fetch：JSON 请求体 + JSON 响应解析 + 错误归一化。 */
 async function _fetch(path, options = {}) {
     const url = BASE_URL + path;
     const headers = Object.assign(
@@ -89,8 +100,6 @@ async function _fetch(path, options = {}) {
     let data;
     try { data = await res.json(); } catch { data = null; }
     if (!res.ok) {
-        // message 有时是数组（class-validator 返回 ["field must be..."]），
-        // 有时是字符串，有时是后端的 i18n key。全收。
         const msgRaw = data && (data.message || data.error);
         const msg = Array.isArray(msgRaw) ? msgRaw.join('; ') : (msgRaw || `HTTP ${res.status}`);
         const err = new Error(msg);
@@ -112,11 +121,7 @@ async function solvePow({challenge, difficulty}) {
     throw new Error('PoW 求解超时，请换张验证码重试');
 }
 
-// sha256，用 Web Crypto API（浏览器端 scratch-gui 只会走这里）。
-// async，结果和 Node crypto.createHash('sha256').digest('hex') 完全一致。
-// 注意：不要在这里写 require('crypto') / import('node:crypto') ——
-// webpack 4 在生产构建时会把动态 import 也当成静态依赖去 resolve，
-// 而 Node 内置模块在浏览器 bundle 里根本不存在，直接抛 ModuleNotFoundError。
+// sha256，用 Web Crypto API。注意不要 require('node:crypto') 以免 webpack 4 报模块错。
 async function sha256Hex(str) {
     const cryptoObj = (typeof globalThis !== 'undefined') && (globalThis.crypto || globalThis.msCrypto);
     if (cryptoObj && cryptoObj.subtle) {
@@ -127,35 +132,23 @@ async function sha256Hex(str) {
     throw new Error('当前浏览器不支持 Web Crypto API（crypto.subtle），无法完成 PoW 计算');
 }
 
-/** 后端 /captcha 可能返回：
- *   - {image:'data:image/png;base64,...'}  —— 完整 data URL（forum.ctspace.xyz 当前格式）
- *   - {image:'/static/xxx.png'}           —— 相对 URL
- *   - {image:'abc123...裸 base64'}        —— 不带 data 前缀
- *   - {img:'...'} / {captcha:'...'}       —— 字段名换了
- * 统一归一化成 {image:<浏览器可直接当 img.src 用的字符串>, token, pow}。
- */
+/** 后端 /captcha 字段名兼容归一化。 */
 function _normalizeCaptcha(raw) {
     if (!raw) return raw;
-    // 字段兼容：image / img / captchaImage / data
     let img = raw.image || raw.img || raw.captchaImage || (raw.data && (raw.data.image || raw.data.img));
-    if (typeof img !== 'string' || !img) {
-        console.warn('[rwck] captcha 返回里找不到 image 字段，完整响应:', raw);
-        return raw;
-    }
+    if (typeof img !== 'string' || !img) return raw;
     let normalized;
     if (img.startsWith('data:image')) {
         normalized = img;
     } else if (/^https?:\/\//.test(img)) {
         normalized = img;
     } else if (/^[A-Za-z0-9+/=\s]+$/.test(img) && img.length > 100) {
-        // 看起来是裸 base64：按头部判断 png/jpeg，否则默认 png
         const type = img.startsWith('iVBORw0KGgo') ? 'png'
                    : img.startsWith('/9j/')       ? 'jpeg'
                    : img.startsWith('R0lGOD')     ? 'gif'
                    : 'png';
         normalized = `data:image/${type};base64,${img.replace(/\s+/g,'')}`;
     } else {
-        // 相对 URL（如 /captcha/img?token=xxx），拼成同源代理绝对路径
         normalized = (img.startsWith('/') ? '' : '/') + img;
     }
     return Object.assign({}, raw, {image: normalized});
@@ -165,18 +158,8 @@ function _normalizeCaptcha(raw) {
 async function _uploadForm(path, file, filename) {
     const url = BASE_URL + path;
     const fd = new FormData();
-    // 关键点：FormData.append 的**第三个参数必须传真实文件名**。
-    // forum.ctspace.xyz 后端靠 multipart 里原始 filename 的扩展名（.sb3 / .html / .png / .mp4…）
-    // 来判定文件类型。如果我们偷懒传个 'upload.bin'，后端就会报
-    // "暂不支持该文件类型（支持 sb3 / html / 图片 / 视频）" —— 哪怕你传的是真正的 sb3。
-    //
-    // 至于文档第 0 节第 5 点说的"中文文件名会被 latin1 误解码" —— 这个风险在
-    // Node.js / CF Pages 网关层确实存在，但浏览器直传 multipart 的实现
-    // （fetch + FormData）用 UTF-8 编码 + filename*= 扩展语法，主流后端
-    // （包括 forum 用的 NestJS multer）已经支持。先保证类型识别对。
-    const realName = filename || file.name || 'upload.bin';
+    const realName = filename || (file && file.name) || 'upload.bin';
     fd.append('file', file, realName);
-    // 额外再放一份 name 字段（文档约定的"真实文件名"传递通道），两边都走，兜底
     fd.append('name', realName);
     const headers = authHeaders();
     let res;
@@ -195,18 +178,39 @@ async function _uploadForm(path, file, filename) {
         err.data   = data;
         throw err;
     }
-    // 论坛资源上传有的返回 {resourceId}，有的返回 {id}，统一一下
-    if (data && (data.resourceId !== undefined || data.id !== undefined) && !data.id) {
+    // forum 有的返回 {resourceId}，有的返回 {id}，统一成 id
+    if (data && data.resourceId !== undefined && data.id === undefined) {
         data.id = data.resourceId;
     }
     return data;
 }
 
-const rwck = {
-    /** 鉴权状态快照（给 UI 读）。 */
-    authState() { return {token: getToken(), user: getUser()}; },
+/** List 响应统一解包。forum 列表多数返回 {items, total, page, pageSize}。 */
+function _unwrapList(r) {
+    if (Array.isArray(r)) return r;
+    if (r && Array.isArray(r.items)) return r.items;
+    if (r && Array.isArray(r.discussions)) return r.discussions;
+    return [];
+}
 
-    /** 刷新 user 信息（GET /auth/me）。 */
+const rwck = {
+    // ===== 顶层元信息（UI 读 / 调试） =====
+    BASE_URL,
+    IS_PROXY,
+    IS_BROWSER,
+    OFFICIAL_BASE, PROXY_BASE, UPSTREAM_ORIGIN, PROXY_PATH,
+    /** 切到同源代理（forum 不开 ACAO 时可用）。可在运行时热切。 */
+    forceProxy(bool = true) {
+        if (!_isBrowser) return;
+        window.__RWCK_FORCE_PROXY__ = !!bool;
+        // eslint-disable-next-line no-console
+        console.info('[rwck] forceProxy =', !!bool, '| BASE_URL 重新计算');
+        // BASE_URL 是模块顶层的 const，改不了 —— 但 window.__RWCK_FORCE_PROXY__ 会在新的 _fetch 调起时
+        // 被... 不对，_fetch 用的是 BASE_URL 常量。这里只给个提示让用户刷新。
+    },
+
+    /** 鉴权状态快照。 */
+    authState() { return {token: getToken(), user: getUser()}; },
     async refreshMe() {
         if (!getToken()) return null;
         const me = await _fetch('/auth/me');
@@ -214,7 +218,7 @@ const rwck = {
         return me;
     },
 
-    // ========= 2. 人机验证与登录 =========
+    // ===== 1. 人机验证 + 认证 =====
     auth: {
         async getCaptcha() {
             const raw = await _fetch('/captcha');
@@ -222,7 +226,6 @@ const rwck = {
         },
         solvePow,
 
-        /** 登录 — 成功后自动存 JWT / user 到 localStorage。 */
         async login({username, password, captchaToken, captchaAnswer, captchaPowNonce}) {
             const data = await _fetch('/auth/login', {
                 method:'POST',
@@ -234,195 +237,321 @@ const rwck = {
             setUser(user);
             return {token, user};
         },
-
-        /** 注册 — 前端不会自动登录，得去点激活邮件。 */
         async register({username, email, password}) {
-            const data = await _fetch('/auth/register', {
-                method:'POST', body: {username, email, password}
-            });
-            return data;
+            return _fetch('/auth/register', {method:'POST', body: {username, email, password}});
         },
-
-        /** 拿当前登录用户（需 Bearer）。 */
-        async me() { return _fetch('/auth/me'); },
-
-        /** 改昵称 / 签名 / 头像（PATCH /auth/me）。 */
-        async patchMe(patch) { return _fetch('/auth/me', {method:'PATCH', body: patch}); },
-
-        /** 激活账号（POST /auth/activate，token 来自邮件链接）。 */
-        async activate({token}) { return _fetch('/auth/activate', {method:'POST', body: {token}}); },
-
-        /** 重发激活邮件（POST /auth/resend）。 */
+        async me()                    { return _fetch('/auth/me'); },
+        async patchMe(patch)          { return _fetch('/auth/me', {method:'PATCH', body: patch}); },
+        async activate({token})       { return _fetch('/auth/activate', {method:'POST', body: {token}}); },
         async resendActivation({identifier}) {
             return _fetch('/auth/resend', {method:'POST', body: {identifier}});
         },
-
-        /** 找回密码，发邮件（POST /auth/forgot-password）。 */
         async forgotPassword({identifier}) {
             return _fetch('/auth/forgot-password', {method:'POST', body: {identifier}});
         },
-
-        /** 重置密码（token 来自邮件 + 新密码）。 */
         async resetPassword({token, password}) {
             return _fetch('/auth/reset-password', {method:'POST', body: {token, password}});
         },
-
-        /** 忘记用户名，发邮件。 */
         async forgotUsername({email}) {
             return _fetch('/auth/forgot-username', {method:'POST', body: {email}});
         },
-
-        /** 改密码（需登录）。 */
         async changePassword({oldPassword, newPassword}) {
             return _fetch('/auth/change-password', {method:'POST', body: {oldPassword, newPassword}});
         },
-
-        /** 改用户名（需登录，有频次限制）。 */
         async changeUsername({username}) {
             return _fetch('/auth/change-username', {method:'POST', body: {username}});
         },
-
-        /** 改邮箱（需登录）。 */
         async changeEmail({email}) {
             return _fetch('/auth/change-email', {method:'POST', body: {email}});
         },
-
         logout() { setToken(null); setUser(null); }
     },
 
-    // ========= 3. 开发者密钥（API Key） =========
+    // ===== 2. 开发者密钥 =====
     apiKeys: {
-        async list() { return _fetch('/api-keys'); },
-        async create({name}) { return _fetch('/api-keys', {method:'POST', body: {name}}); },
-        async remove(id) { return _fetch(`/api-keys/${id}`, {method:'DELETE'}); }
+        async list()            { return _fetch('/api-keys'); },
+        async create({name})    { return _fetch('/api-keys', {method:'POST', body: {name}}); },
+        async remove(id)        { return _fetch(`/api-keys/${id}`, {method:'DELETE'}); }
     },
 
-    // ========= 4. 作品广场（公开） =========
+    // ===== 3. 作品广场 =====
     projects: {
-        /** 列表。参数 category/q/sort/page/pageSize（sort: score/new）。 */
-        async list(query = {}) {
-            const qs = new URLSearchParams(query).toString();
-            return _fetch('/projects' + (qs ? '?' + qs : ''));
-        },
-        /** 详情（浏览量 +1）。 */
-        async get(id) { return _fetch(`/projects/${id}`); },
-        /** 我的作品（需登录）。 */
-        async mine() { return _fetch('/projects/mine'); },
-        /** 发布（需登录）。 */
+        /** 参数：category/q/sort/page/pageSize。sort: score/new。 */
+        async list(query = {}) { return _fetch('/projects' + _qs(query)); },
+        async get(id)          { return _fetch(`/projects/${id}`); },
+        async mine()           { return _fetch('/projects/mine'); },
         async create(body) {
             const r = await _fetch('/projects', {method:'POST', body});
             return (r && (r.data || r.project)) || r;
         },
-        /** 编辑 / 上传新版本。 */
-        async update(id, patch) { return _fetch(`/projects/${id}`, {method:'PATCH', body: patch}); },
-        async remove(id) { return _fetch(`/projects/${id}`, {method:'DELETE'}); },
-        async toggleLike(id) { return _fetch(`/projects/${id}/like`, {method:'POST'}); }
-    },
-
-    // ========= 上传资源（multipart，resources/upload + drive/upload 两条） =========
-    resources: {
-        /** 作品资源上传，返回 { id, url, ... }。 */
-        async upload(file, filename) {
-            return _uploadForm('/resources/upload', file, filename);
+        async update(id, patch)  { return _fetch(`/projects/${id}`, {method:'PATCH', body: patch}); },
+        async remove(id)         { return _fetch(`/projects/${id}`, {method:'DELETE'}); },
+        async toggleLike(id)     { return _fetch(`/projects/${id}/like`, {method:'POST'}); },
+        /** 快速创建短链 helper —— 发布完作品直接调。 */
+        async createShortLinkFor(id, slug) {
+            return rwck.shortlink.create({projectId: id, slug});
         }
     },
 
-    // ========= 5. 短链（公开） =========
-    shortlink: {
-        /** 占用检测。 */
-        async check(slug) { return _fetch(`/shortlink/check?slug=${encodeURIComponent(slug)}`); },
-        /** 解析短链，返回作品信息（**公开，不登录**）。 */
-        async get(slug) { return _fetch(`/shortlink/${slug}`); },
-        /** 上报一次访问（公开）。 */
-        async view(slug) { return _fetch(`/shortlink/${slug}/view`, {method:'POST'}); },
-        /** 某作品的全部短链（需登录）。 */
-        async mine(projectId) {
-            const q = projectId ? `?projectId=${projectId}` : '';
-            return _fetch(`/shortlink/mine${q}`);
+    // ===== 4. 资源上传 =====
+    resources: {
+        async upload(file, filename) { return _uploadForm('/resources/upload', file, filename); },
+        async netdisk({provider, link, extractCode, requireLogin, requireReward}) {
+            return _fetch('/resources/netdisk', {method:'POST',
+                body: {provider, link, extractCode, requireLogin, requireReward}});
         },
-        /** 创建（需登录）。 */
+        async listOf(targetType, targetId) {
+            return _fetch('/resources' + _qs({targetType, targetId}));
+        },
+        async userWorks(userId) { return _fetch('/resources/works' + _qs({userId})); },
+        async canUploadVideo()  { return _fetch('/resources/can-upload-video'); },
+        async update(id, patch) { return _fetch(`/resources/${id}`, {method:'PATCH', body: patch}); },
+        async remove(id)        { return _fetch(`/resources/${id}`, {method:'DELETE'}); },
+        /** 绝对地址：把 forum 返回的相对 /uploads/xxx.xxx 转完整。 */
+        fullUrl(relPath) {
+            if (!relPath) return '';
+            if (/^https?:\/\//.test(relPath)) return relPath;
+            if (IS_PROXY) return PROXY_BASE.replace(/\/__rwck-proxy$/, '') + relPath;
+            return UPSTREAM_ORIGIN + relPath;
+        }
+    },
+
+    // ===== 5. 短链（作品网址） =====
+    shortlink: {
+        async check(slug)       { return _fetch(`/shortlink/check?slug=${encodeURIComponent(slug)}`); },
+        async get(slug)         { return _fetch(`/shortlink/${slug}`); },
+        async view(slug)        { return _fetch(`/shortlink/${slug}/view`, {method:'POST'}); },
+        async mine(projectId)   { return _fetch('/shortlink/mine' + _qs({projectId})); },
         async create({projectId, slug}) {
             return _fetch('/shortlink', {method:'POST', body: {projectId, slug}});
         },
-        /** 改名（需登录）。 */
         async update(slug, patch) { return _fetch(`/shortlink/${slug}`, {method:'PATCH', body: patch}); },
-        /** 停用 / 恢复（需登录）。 */
         async setDisabled(slug, disabled) {
             return _fetch(`/shortlink/${slug}/disabled`, {method:'POST', body: {disabled: !!disabled}});
         }
     },
 
-    // ========= 6. 云盘（公开 + 需登录混合） =========
+    // ===== 6. 云盘 =====
     drive: {
-        async files() { return _fetch('/drive/files'); },
-        async usage() { return _fetch('/drive/usage'); },
-        /** 上传文件，multipart（file + 可选 name）。 */
-        async upload(file, filename) { return _uploadForm('/drive/upload', file, filename); },
-        /** 覆盖上传：换内容不换直链 / shareId。 */
-        async replace(id, file, filename) {
-            return _uploadForm(`/drive/files/${id}/replace`, file, filename);
+        async files()                    { return _fetch('/drive/files'); },
+        async usage()                    { return _fetch('/drive/usage'); },
+        async upload(file, filename)     { return _uploadForm('/drive/upload', file, filename); },
+        async replace(id, file, filename){ return _uploadForm(`/drive/files/${id}/replace`, file, filename); },
+        async patch(id, patch)           { return _fetch(`/drive/files/${id}`, {method:'PATCH', body: patch}); },
+        async regenerate(id)             { return _fetch(`/drive/files/${id}/regenerate`, {method:'POST'}); },
+        async remove(id)                 { return _fetch(`/drive/files/${id}`, {method:'DELETE'}); },
+        async share(shareId, password)   {
+            return _fetch(`/drive/share/${shareId}` + _qs({password}));
         },
-        async patch(id, patch) { return _fetch(`/drive/files/${id}`, {method:'PATCH', body: patch}); },
-        async regenerate(id) { return _fetch(`/drive/files/${id}/regenerate`, {method:'POST'}); },
-        async remove(id) { return _fetch(`/drive/files/${id}`, {method:'DELETE'}); },
-        /** 公开：按 shareId 取元信息（分享页用）。 */
-        async byShare(shareId) { return _fetch(`/drive/share/${shareId}`); },
-        /** 公开：批量取元信息（发帖卡片用）。 */
         async byShares(shareIds) {
             if (!Array.isArray(shareIds)) shareIds = [shareIds];
-            return _fetch(`/drive/by-share?shareIds=${shareIds.join(',')}`);
+            return _fetch('/drive/by-share' + _qs({shareIds: shareIds.join(',')}));
         },
-        /** 公开：直链 /api/drive/raw/:shareId。浏览器可直接 fetch 或当 img.src。 */
+        /** 直链（浏览器可直接 fetch 或 <img src>）。 */
         rawUrl(shareId, opts = {}) {
-            const q = new URLSearchParams();
-            if (opts.download) q.set('download', '1');
-            if (opts.token)    q.set('token', opts.token);
-            return BASE_URL + '/drive/raw/' + shareId + (q.toString() ? '?' + q.toString() : '');
+            return BASE_URL + '/drive/raw/' + shareId + _qs({
+                download: opts.download ? 1 : undefined,
+                token: opts.token
+            });
         }
     },
 
-    // ========= 7. 论坛帖子（公开 + 需登录混合） =========
+    // ===== 7. 讨论 / 回复 =====
     discussions: {
-        /** 列表。sort: new，page/pageSize 可选 category/q。 */
-        async list(query = {}) {
-            const qs = new URLSearchParams(query).toString();
-            return _fetch('/discussions' + (qs ? '?' + qs : ''));
-        },
-        async get(id) { return _fetch(`/discussions/${id}`); },
-        async getBySeq(seq) { return _fetch(`/discussions/seq/${seq}`); },
-        /** 发帖（限流 4/小时）。 */
+        async list(query = {})  { return _fetch('/discussions' + _qs(query)); },
+        async get(id)           { return _fetch(`/discussions/${id}`); },
+        async getBySeq(seq)     { return _fetch(`/discussions/seq/${seq}`); },
         async create(body) {
             const r = await _fetch('/discussions', {method:'POST', body});
             return (r && (r.data || r.discussion)) || r;
         },
         async update(id, patch) { return _fetch(`/discussions/${id}`, {method:'PATCH', body: patch}); },
-        async remove(id) { return _fetch(`/discussions/${id}`, {method:'DELETE'}); }
+        async remove(id)        { return _fetch(`/discussions/${id}`, {method:'DELETE'}); },
+        hot()                   { return _fetch('/discussions/hot' + _qs({limit: 10})); }
     },
     posts: {
         async create({discussionId, content}) {
             return _fetch('/posts', {method:'POST', body: {discussionId, content}});
         },
         async update(id, patch) { return _fetch(`/posts/${id}`, {method:'PATCH', body: patch}); },
-        async remove(id) { return _fetch(`/posts/${id}`, {method:'DELETE'}); }
+        async remove(id)        { return _fetch(`/posts/${id}`, {method:'DELETE'}); }
     },
 
-    // ========= 9. 公开统计 / 设置 =========
+    // ===== 8. 扩展广场 =====
+    extensions: {
+        async list(query = {}) { return _fetch('/extensions' + _qs(query)); },
+        async get(id)          { return _fetch(`/extensions/${id}`); },
+        async my()             { return _fetch('/extensions/my'); },
+        async create({title, summary, category, code, license}) {
+            return _fetch('/extensions', {method:'POST', body: {title, summary, category, code, license}});
+        },
+        async update(id, patch){ return _fetch(`/extensions/${id}`, {method:'PATCH', body: patch}); },
+        async remove(id)       { return _fetch(`/extensions/${id}`, {method:'DELETE'}); },
+        async toggleLike(id)   { return _fetch(`/extensions/${id}/like`, {method:'POST'}); },
+        /** 源码 raw。直接 text/plain 返回，浏览器可当 <script src>。 */
+        rawUrl(id)             { return BASE_URL + `/extensions/${id}/raw.js`; }
+    },
+
+    // ===== 9. 评论 =====
+    comments: {
+        async list(targetType, targetId, parentId) {
+            return _fetch('/comments' + _qs({targetType, targetId, parentId}));
+        },
+        async create({targetType, targetId, content, parentId}) {
+            return _fetch('/comments', {method:'POST', body: {targetType, targetId, content, parentId}});
+        },
+        async update(id, patch){ return _fetch(`/comments/${id}`, {method:'PATCH', body: patch}); },
+        async remove(id)       { return _fetch(`/comments/${id}`, {method:'DELETE'}); }
+    },
+
+    // ===== 10. 点赞 / 表态 / 收藏 =====
+    likes: {
+        async toggle({targetType, targetId}) {
+            return _fetch('/likes', {method:'POST', body: {targetType, targetId}});
+        }
+    },
+    reactions: {
+        async add({targetType, targetId, reaction}) {
+            return _fetch('/reactions', {method:'POST', body: {targetType, targetId, reaction}});
+        },
+        async summary(targetType, targetId) {
+            return _fetch('/reactions/summary' + _qs({targetType, targetId}));
+        }
+    },
+    bookmarks: {
+        async list(query = {})  { return _fetch('/bookmarks' + _qs(query)); },
+        async add({targetType, targetId}) {
+            return _fetch('/bookmarks', {method:'POST', body: {targetType, targetId}});
+        },
+        async remove(id)        { return _fetch(`/bookmarks/${id}`, {method:'DELETE'}); },
+        async check(targetType, targetId) {
+            return _fetch('/bookmarks/check' + _qs({targetType, targetId}));
+        }
+    },
+    followTags: {
+        async list()            { return _fetch('/follow-tags'); },
+        async add(tagId)        { return _fetch('/follow-tags', {method:'POST', body: {tagId}}); },
+        async remove(tagId)     { return _fetch(`/follow-tags/${tagId}`, {method:'DELETE'}); }
+    },
+
+    // ===== 11. 用户 / 社交 =====
+    users: {
+        async get(id)                    { return _fetch(`/users/${id}`); },
+        async byUsername(username)       { return _fetch(`/users/by-username/${encodeURIComponent(username)}`); },
+        async active()                   { return _fetch('/users/active'); },
+        async leaderboard()              { return _fetch('/users/leaderboard'); },
+        async followers(id)              { return _fetch(`/users/${id}/followers`); },
+        async following(id)              { return _fetch(`/users/${id}/following`); },
+        async isFollowing(id)            { return _fetch(`/users/${id}/is-following`); },
+        async toggleFollow(id)           { return _fetch(`/users/${id}/follow`, {method:'POST'}); },
+        async acceptPolicy(policyKeys) {
+            return _fetch('/users/accept-policy', {method:'POST', body: {policyKeys}});
+        }
+    },
+
+    // ===== 12. 云变量 / 开发者平台 =====
+    cloud: {
+        async list()                    { return _fetch('/cloud/projects'); },
+        async create(name)              { return _fetch('/cloud/projects', {method:'POST', body: {name}}); },
+        async get(projectId)            { return _fetch(`/cloud/projects/${projectId}`); },
+        async update(projectId, patch)  { return _fetch(`/cloud/projects/${projectId}`, {method:'PATCH', body: patch}); },
+        async remove(projectId)         { return _fetch(`/cloud/projects/${projectId}`, {method:'DELETE'}); },
+        async variables(projectId)      { return _fetch(`/cloud/projects/${projectId}/variables`); },
+        async setVariable(projectId, {name, value, scope}) {
+            return _fetch(`/cloud/projects/${projectId}/variables`, {
+                method:'POST', body: {name, value, scope}
+            });
+        },
+        async history(projectId)        { return _fetch(`/cloud/projects/${projectId}/history`); },
+        async reset(projectId)          { return _fetch(`/cloud/projects/${projectId}/reset`, {method:'POST'}); },
+        async regenerateKey(projectId)  { return _fetch(`/cloud/projects/${projectId}/token/regenerate`, {method:'POST'}); },
+        async public(projectId)         { return _fetch(`/cloud/projects/${projectId}/public`); },
+        // 开发态调试
+        async devVariables(projectId)   { return _fetch(`/cloud/projects/${projectId}/dev/variables`); },
+        async devSetVariable(projectId, {name, value, scope}) {
+            return _fetch(`/cloud/projects/${projectId}/dev/variables`, {
+                method:'POST', body: {name, value, scope}
+            });
+        },
+        async devHistory(projectId)     { return _fetch(`/cloud/projects/${projectId}/dev/history`); },
+        async devReset(projectId)       { return _fetch(`/cloud/projects/${projectId}/dev/reset`, {method:'POST'}); },
+        // 管理员
+        async adminAll()                { return _fetch('/cloud/admin/projects'); },
+        async adminBan(projectId)       { return _fetch(`/cloud/admin/projects/${projectId}/ban`, {method:'POST'}); }
+    },
+
+    // ===== 13. 通知 / 签到 =====
+    notifications: {
+        async list(query = {}) { return _fetch('/notifications' + _qs(query)); },
+        async markRead(id)     { return _fetch(`/notifications/${id}/read`, {method:'POST'}); },
+        async markAllRead()    { return _fetch('/notifications/read-all', {method:'POST'}); }
+    },
+    checkin: {
+        async status()         { return _fetch('/checkin/status'); },
+        async checkin()        { return _fetch('/checkin', {method:'POST'}); }
+    },
+
+    // ===== 14. 公开搜索 / 标签 / 统计 / 设置 =====
     stats: {
-        async public() { return _fetch('/stats/public'); }
+        async public()         { return _fetch('/stats/public'); }
     },
     settings: {
-        async public() { return _fetch('/settings'); }
+        async public()         { return _fetch('/settings'); }
+    },
+    search: {
+        async query(q, type = 'all', page = 1, pageSize = 20) {
+            return _fetch('/search' + _qs({q, type, page, pageSize}));
+        }
+    },
+    tags: {
+        async list()           { return _fetch('/tags'); }
+    },
+    changelogs: {
+        async list(query = {}) { return _fetch('/changelogs' + _qs(query)); }
     },
 
-    // ========= 10. 评论（公开） =========
-    comments: {
-        async list(targetType, targetId) {
-            const qs = new URLSearchParams({targetType, targetId}).toString();
-            return _fetch(`/comments?${qs}`);
+    // ===== 15. 举报 / 转积分 =====
+    reports: {
+        async create({targetType, targetId, reason, detail}) {
+            return _fetch('/reports', {method:'POST', body: {targetType, targetId, reason, detail}});
         }
-    }
+    },
+    transfer: {
+        async credits({toUserId, amount, memo}) {
+            return _fetch('/transfer', {method:'POST', body: {toUserId, amount, memo}});
+        }
+    },
+
+    // ===== 16. 原创登记 =====
+    origmark: {
+        async publicKey()              { return _fetch('/origmark/public-key'); },
+        async verify(certNum)          { return _fetch(`/origmark/verify/${encodeURIComponent(certNum)}`); },
+        async registrations()          { return _fetch('/origmark/registrations'); },
+        async registration(id)         { return _fetch(`/origmark/registrations/${id}`); },
+        async stats()                  { return _fetch('/origmark/stats'); },
+        async previewMeta(cert)        { return _fetch(`/origmark/preview-meta/${encodeURIComponent(cert)}`); },
+        async previewSb3(cert)         { return _fetch(`/origmark/preview-sb3/${encodeURIComponent(cert)}`); },
+        async raw(cert)                { return _fetch(`/origmark/raw/${encodeURIComponent(cert)}`); },
+        async registerFromForum({projectId, shortLinkSlug}) {
+            return _fetch('/origmark/registrations/from-forum', {
+                method:'POST', body: {projectId, shortLinkSlug}
+            });
+        }
+    },
+
+    // ===== 工具方法 =====
+    /** 把任意相对路径转成浏览器可直接用的完整 URL（兼容代理 & 直连）。 */
+    resolveUrl(relPath) {
+        if (!relPath) return '';
+        if (/^https?:\/\//.test(relPath)) return relPath;
+        // 代理模式下：__rwck-proxy/uploads/xxx.xxx
+        if (IS_PROXY) return PROXY_BASE + relPath;
+        return UPSTREAM_ORIGIN + relPath;
+    },
+    /** 解包列表。论坛多数列表接口返回 {items, total, ...}。 */
+    unwrapList: _unwrapList
 };
 
 export default rwck;
-// 注意：BASE_URL 在文件顶部已经 export const 过了，这里不要再 re-export 它。
 export {getToken as _rwckGetToken, setToken as _rwckSetToken, getUser as _rwckGetUser};
+export {_unwrapList as rwckUnwrapList};

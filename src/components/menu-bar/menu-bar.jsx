@@ -433,6 +433,14 @@ class MenuBar extends React.Component {
                 setTimeout(() => this.updateUndoRedoState(), 100);
             }
         });
+
+        // URL query：?com=true / ?community=1 → 自动弹创客次元窗口，并直接切到 community Tab
+        try {
+            const qs = new URLSearchParams(window.location.search || '');
+            if (qs.get('com') === 'true' || qs.get('community') === '1') {
+                setTimeout(() => openRwckPublishWindow({tab: 'community'}), 300);
+            }
+        } catch (_) {}
     }
     componentWillUnmount () {
         document.removeEventListener('keydown', this.handleKeyPress);

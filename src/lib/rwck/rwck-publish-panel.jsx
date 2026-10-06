@@ -1,8 +1,9 @@
 /**
  * 创客次元发布窗口主界面。
  *
- * 三个 Tab：
- *   [登录] — 图文验证码 + PoW（自动算）+ 账号密码
+ * 五个 Tab：
+ *   [登录]     — 图文验证码 + PoW（自动算）+ 账号密码 + 手动粘贴兜底
+ *   [社区状态] — /stats/public 连通性自检 + /discussions 最新帖预览 + 活跃用户 + 排行榜
  *   [发布作品] — 封面 / sb3 上传 / 分类 / 简介 / 允许下载
  *   [发帖]     — 正文 Markdown / 附件引用
  *   [我的作品] — 快速更新版本 / 删 / 开短链
@@ -14,9 +15,10 @@ import React, {Component} from 'react';
 import rwck from './api-client.js';
 import {
     Users, MessageCircle, BookOpen, BarChart3,
-    UserCircle, Upload, Send, FolderOpen, RefreshCw, ChevronDown, ChevronUp,
-    Image as ImageIcon, FileCode, Link as LinkIcon, Eye, Heart, FileText,
-    AlertCircle, CheckCircle, Info, LogIn, LogOut, Power, CircleUser
+    Upload, FolderOpen, RefreshCw, ChevronDown, ChevronUp,
+    FileCode, Eye, Heart,
+    AlertCircle, CheckCircle, LogIn, LogOut,
+    Activity, Tag, Globe
 } from 'lucide-react';
 
 const PAD = 14;
@@ -30,7 +32,6 @@ const SHADOW_MD = '0 2px 8px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 
 const SHADOW_LG = '0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04)';
 
 const STYLE = colors => {
-    // 用编辑器主题色做主色，如果偏蓝就直接用（forum 本身蓝），否则用 editor primary
     const brand = colors.primary || '#0b57d0';
     return {
         root: {padding: PAD, display:'flex', flexDirection:'column', gap:10, height:'100%', minHeight:0,
@@ -58,24 +59,18 @@ const STYLE = colors => {
                   background:'#fff', transition:'border-color .15s ease', outline:'none',
                   fontFamily:'inherit'},
 
-        // 按钮统一 forum 风格：圆角 + shadow + active translateY
         btn: {padding:'8px 14px', borderRadius: RADIUS_SM, border:'none', fontSize:13, fontWeight:600,
               cursor:'pointer', transition:'all .12s ease', outline:'none',
               display:'inline-flex', alignItems:'center', gap:6,
               boxShadow: SHADOW_SM},
         btnPrimary: {background: brand, color:'#fff',
                      boxShadow:`0 1px 2px ${brand}40`},
-        btnPrimaryHover: {filter:'brightness(1.08)'},
         btnGhost:   {background:'#fff', border:'1px solid #e2e8f0', color:'#334155',
                      boxShadow:'none'},
-        btnGhostHover: {background:'#f8fafc'},
         btnDanger:  {background:'#dc2626', color:'#fff', boxShadow:'0 1px 2px rgba(220,38,38,.4)'},
-        btnDangerHover: {filter:'brightness(1.08)'},
         btnDisabled: {opacity:.55, cursor:'not-allowed', boxShadow:'none', transform:'none !important'},
         btnActive: {transform:'translateY(1px)', boxShadow:'0 1px 0 transparent !important'},
         btnIcon: {padding:'6px 8px', borderRadius: RADIUS_SM},
-
-        danger:  {background:'#dc2626', color:'#fff'},
 
         box:     {border:'1px solid #e5e7eb', borderRadius: RADIUS_MD,
                   padding:12, background:'#fff', boxShadow: SHADOW_SM},
@@ -104,7 +99,9 @@ const STYLE = colors => {
         fileInfo: {fontSize:11, color:'#64748b'},
         sectionTitle:{fontSize:11, fontWeight:700, color:'#334155',
                       marginTop:6, marginBottom:8, letterSpacing:'.04em',
-                      textTransform:'uppercase'}
+                      textTransform:'uppercase'},
+        subGrid: {display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8, marginTop:8},
+        wideGrid:{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8, marginTop:10}
     };
 };
 
@@ -123,17 +120,20 @@ class RwckPublishPanel extends Component {
     constructor(props) {
         super(props);
         const token = rwck.authState().token;
+        // initialTab 来自 open-rwck-publish-window({tab:'community'})
+        const initialTab = (props && props.initialTab) || (token ? 'publish' : 'login');
+
         this.state = {
-            tab: token ? 'publish' : 'login',
+            tab: initialTab,
             user: rwck.authState().user,
 
             // ---- 登录 ----
             captcha: null,
-            captchaLoading: true, // 是否正在自动拉取验证码（用于显示占位）
-            captchaLoadErr: '',   // 自动拉取验证码失败时显示的友好提示
-            showPaste: false,    // 是否显示「手动粘贴 JSON」面板
-            pasteJson: '',       // 用户粘贴的原始 JSON 文本
-            pasteErr: '',        // 粘贴解析错误
+            captchaLoading: true,
+            captchaLoadErr: '',
+            showPaste: false,
+            pasteJson: '',
+            pasteErr: '',
             username: '',
             password: '',
             captchaAnswer: '',
@@ -169,17 +169,124 @@ class RwckPublishPanel extends Component {
             myErr: '',
             mine: [],
 
-            // ---- 社区状态 / 连通性自检 ----
+            // ---- 社区 ----
             statsBusy: false,
             statsErr: '',
-            stats: null            // { users, posts, discussions, todayVisits, hot: [...] }
+            stats: null,
+            discussionsPreview: null,
+            discussionsErr: '',
+            leaderboard: null,
+            leaderboardErr: '',
+            activeUsers: null,
+            activeErr: '',
+            settings: null,
+            tags: null,
+            tagsErr: '',
+
+            termsAcceptedForSession: false
         };
+
         this._refreshCaptcha();
+
+        // 把本组件 ref 挂到 openWin 上，让窗口可以 _rwckSwitchTab
+        if (props && props._onRef) {
+            try { props._onRef(this); } catch (_) {}
+        }
     }
 
     componentDidMount() {
+        // 仅当用户需要这些接口的时候才拉：登录 / community tab 都需要。
+        // 社区 tab 是公开的，立即拉。
+        this._refreshCommunity();
         this._refreshMine();
-        this._refreshStats();  // 打开窗口就拉一次社区统计（公开接口，免登录）
+    }
+
+    /** 供窗口切换 tab 用（open-rwck-publish-window 可能通过 ref 调）。 */
+    _rwckSwitchTab (tab) {
+        if (tab && ['login','community','publish','disc','mine'].includes(tab)) {
+            this.setState({tab});
+        }
+    }
+
+    /**
+     * 警告只在用户真正点击「上传并发布 / 发帖」按钮时弹。
+     * 用 sessionStorage 让同一窗口生命周期里只弹一次。
+     */
+    _ensureTermsAgreed () {
+        if (this.state.termsAcceptedForSession) return true;
+        const alreadySession = sessionStorage.getItem('rwck:terms-agreed-today');
+        if (alreadySession) {
+            this.setState({termsAcceptedForSession: true});
+            return true;
+        }
+        const terms = (this.props && this.props.terms) ||
+`上传即视为您的作品同意被别人下载。
+上传至创客次元社区后，创客次元无法绝对保证您的作品不被别人下载或改编。
+请在发布前确认作品内容符合平台社区公约。`;
+        const ok = window.confirm('【创客次元上传须知】\n\n' + terms +
+            '\n\n点"确定"即表示您已阅读并同意以上条款。\n（同一窗口 / 同一天内只会再提醒一次）');
+        if (ok) {
+            sessionStorage.setItem('rwck:terms-agreed-today', '1');
+            this.setState({termsAcceptedForSession: true});
+        }
+        return ok;
+    }
+
+    /** 拉齐社区面板需要的 6 个公开接口：stats / discussions / leaderboard / active / settings / tags */
+    async _refreshCommunity() {
+        const latencies = {};
+        const t0 = Date.now();
+
+        const pStats = rwck.stats.public().then(r => {
+            this.setState({stats: r});
+            latencies.stats = Date.now();
+        }).catch(e => {
+            this.setState({statsErr: e.message || '获取社区状态失败'});
+        });
+
+        const pDiscs = rwck.discussions.list({page:1, pageSize:8, sort:'new'}).then(r => {
+            this.setState({discussionsPreview: rwck.unwrapList(r)});
+            latencies.disc = Date.now();
+        }).catch(e => {
+            this.setState({discussionsErr: e.message || '获取讨论列表失败'});
+        });
+
+        const pBoard = rwck.users.leaderboard().then(r => {
+            this.setState({leaderboard: Array.isArray(r) ? r.slice(0,10) : (r && Array.isArray(r.items) ? r.items.slice(0,10) : [] )});
+        }).catch(e => { this.setState({leaderboardErr: e.message}); });
+
+        const pActive = rwck.users.active().then(r => {
+            this.setState({activeUsers: Array.isArray(r) ? r.slice(0,8) : (r && Array.isArray(r.items) ? r.items.slice(0,8) : [])});
+        }).catch(e => { this.setState({activeErr: e.message}); });
+
+        const pSettings = rwck.settings.public().then(r => {
+            this.setState({settings: r});
+        }).catch(() => {});
+
+        const pTags = rwck.tags.list().then(r => {
+            this.setState({tags: Array.isArray(r) ? r : (r && r.items) || []});
+        }).catch(e => { this.setState({tagsErr: e.message}); });
+
+        await Promise.all([pStats, pDiscs, pBoard, pActive, pSettings, pTags]);
+        this._communityLatencyMs = Date.now() - t0;
+    }
+
+    async _refreshStatsOnly() {
+        this.setState({statsBusy:true, statsErr:''});
+        try {
+            const data = await rwck.stats.public();
+            this.setState({stats: data, statsBusy:false});
+        } catch (e) {
+            this.setState({statsErr: this._friendlyError(e), statsBusy:false});
+        }
+    }
+
+    _friendlyError(e) {
+        const msg = (e && (e.message || '')).toLowerCase();
+        if (msg.includes('fetch') || msg.includes('failed to fetch') || msg.includes('network')) {
+            return '网络错误：浏览器无法连接 forum.ctspace.xyz 或被 CORS 拦截。可以在控制台执行\n  window.__RWCK_FORCE_PROXY__ = true; location.reload();\n启用同源代理绕开。';
+        }
+        return (e && e.message) || '未知错误';
     }
 
     // ========== 验证码 ==========
@@ -187,49 +294,29 @@ class RwckPublishPanel extends Component {
         this.setState({captchaLoading: true, captchaLoadErr: ''});
         try {
             const cap = await rwck.auth.getCaptcha();
-            console.debug('[rwck] captcha loaded:', {
-                hasImage: !!(cap && cap.image),
-                imagePrefix: (cap && cap.image && typeof cap.image === 'string') ? cap.image.slice(0, 30) : null,
-                token: cap && cap.token,
-                pow: cap && cap.pow
-            });
-            this.setState({captcha: cap, captchaAnswer: '', loginErr: '', captchaLoading: false, captchaLoadErr: ''});
+            this.setState({captcha: cap, captchaAnswer: '', loginErr: '', captchaLoading: false});
         } catch (e) {
-            console.error('[rwck] captcha load failed:', e);
-            // 自动拉取失败时不立刻弹致命错误，给用户留「手动粘贴 JSON」兜底入口
             this.setState({captcha: null, captchaLoading: false,
-                           captchaLoadErr: '自动拉取验证码失败（可能是同源代理未生效），请点下方「手动粘贴」链接'});
+                           captchaLoadErr: '自动拉取验证码失败。可点「手动粘贴」用浏览器另开 https://forum.ctspace.xyz/api/captcha 复制 JSON'});
         }
     }
 
-    /**
-     * 手动粘贴 forum.ctspace.xyz/api/captcha 返回的 JSON，绕过 CORS / 代理问题。
-     * 用户操作：浏览器开 https://forum.ctspace.xyz/api/captcha → 全选 → 复制 → 粘贴到 textarea → 点「解析」。
-     */
     _parsePastedCaptcha() {
         const raw = (this.state.pasteJson || '').trim();
-        if (!raw) {
-            this.setState({pasteErr: '请先粘贴 JSON'}); return;
-        }
+        if (!raw) { this.setState({pasteErr: '请先粘贴 JSON'}); return; }
         let data;
         try { data = JSON.parse(raw); }
-        catch { this.setState({pasteErr: 'JSON 格式不对，请确认复制的是完整 JSON'}); return; }
+        catch { this.setState({pasteErr: 'JSON 格式不对'}); return; }
         if (!data.token || !data.image) {
             this.setState({pasteErr: 'JSON 里没找到 token / image 字段'}); return;
         }
-        // 兜底：有些论坛返回 image 是裸 base64，补上 data:image/png;base64,
         let image = data.image;
         if (typeof image === 'string' && !image.startsWith('data:image')) {
             image = 'data:image/png;base64,' + image;
         }
-        const cap = {
-            token: data.token,
-            image,
-            pow: data.pow || {challenge: '', difficulty: data.difficulty || 4}
-        };
         this.setState({
-            captcha: cap, captchaAnswer: '', pasteErr: '',
-            pasteJson: '', showPaste: false, loginErr: ''
+            captcha: {token: data.token, image, pow: data.pow || {challenge: '', difficulty: data.difficulty || 4}},
+            captchaAnswer: '', pasteErr: '', pasteJson: '', showPaste: false, loginErr: ''
         });
     }
 
@@ -250,8 +337,9 @@ class RwckPublishPanel extends Component {
                 captchaPowNonce
             });
             this.setState({user: r.user, tab:'publish', loginErr:'', username:'', password:'', captchaAnswer:''});
+            this._refreshMine();
         } catch (e) {
-            this.setState({loginErr: e.message || '登录失败', loginBusy:false});
+            this.setState({loginErr: this._friendlyError(e), loginBusy:false});
             this._refreshCaptcha();
         } finally {
             this.setState({loginBusy:false});
@@ -260,17 +348,16 @@ class RwckPublishPanel extends Component {
 
     _logout() {
         rwck.auth.logout();
-        this.setState({user:null, tab:'login', uploadErr:'', uploadOk:'', publishErr:'', publishOk:''});
+        this.setState({user:null, tab:'login', publishErr:'', publishOk:''});
     }
 
     // ========== 作品上传辅助 ==========
     async _loadSb3FromVm () {
         const vm = this.props.getVm && this.props.getVm();
         if (!vm || !vm.saveProjectSb3) {
-            this.setState({publishErr:'当前编辑器环境不支持导出 .sb3（找不到 vm.saveProjectSb3）'});
+            this.setState({publishErr:'当前编辑器环境不支持导出 .sb3'});
             return null;
         }
-        // scratch-gui 里 vm.saveProjectSb3() 或 vm.exportProject() 返回 Blob / Uint8Array
         let blob;
         try {
             const result = await vm.saveProjectSb3();
@@ -310,6 +397,7 @@ class RwckPublishPanel extends Component {
     }
 
     async _upload() {
+        if (!this._ensureTermsAgreed()) return;
         this.setState({uploadBusy:true, publishErr:'', publishOk:'', uploadProgress:'准备中…'});
         try {
             let sb3File = this.state.sb3File;
@@ -338,7 +426,7 @@ class RwckPublishPanel extends Component {
             }
 
             this.setState({uploadProgress:'提交作品信息…'});
-            const body = {
+            const proj = await rwck.projects.create({
                 title: this.state.title,
                 summary: this.state.summary,
                 content: this.state.content,
@@ -348,21 +436,21 @@ class RwckPublishPanel extends Component {
                 allowDownload: this.state.allowDownload,
                 syncToForum: this.state.syncToForum,
                 forumTagIds: []
-            };
-            const proj = await rwck.projects.create(body);
+            });
             this.setState({
-                publishOk: `发布成功！作品编号 ${proj.id}，短链 https://forum.ctspace.xyz/g/${proj.shortLinkSlug || '?'}`,
+                publishOk: `发布成功！作品编号 ${proj.id}，试玩短链 https://forum.ctspace.xyz/g/${proj.shortLinkSlug || ''}`,
                 uploadBusy:false, uploadProgress:'', sb3File:null, sb3ResourceId:null, sb3Name:'',
                 coverFile:null, coverResourceId:null, title:'', summary:'', content:''
             });
             this._refreshMine();
         } catch (e) {
-            this.setState({uploadBusy:false, publishErr: e.message || '发布失败', uploadProgress:''});
+            this.setState({uploadBusy:false, publishErr: this._friendlyError(e), uploadProgress:''});
         }
     }
 
     // ========== 发帖 ==========
     async _postDiscussion() {
+        if (!this._ensureTermsAgreed()) return;
         const {discussionTitle, discussionContent} = this.state;
         if (!discussionTitle.trim() || !discussionContent.trim()) {
             this.setState({discussionErr:'请填标题和内容', discussionOk:''}); return;
@@ -374,8 +462,9 @@ class RwckPublishPanel extends Component {
                 discussionOk:`发帖成功！帖子 #${d.seq || d.id}`,
                 discussionBusy:false, discussionTitle:'', discussionContent:''
             });
+            this._refreshCommunity();
         } catch (e) {
-            this.setState({discussionBusy:false, discussionErr: e.message || '发帖失败'});
+            this.setState({discussionBusy:false, discussionErr: this._friendlyError(e)});
         }
     }
 
@@ -385,30 +474,9 @@ class RwckPublishPanel extends Component {
         this.setState({myBusy:true, myErr:''});
         try {
             const r = await rwck.projects.mine();
-            this.setState({mine: Array.isArray(r) ? r : (r && r.items) || [], myBusy:false});
+            this.setState({mine: rwck.unwrapList(r), myBusy:false});
         } catch (e) {
-            this.setState({myErr: e.message || '获取失败', myBusy:false});
-        }
-    }
-
-    // ========== 社区状态（公开，免登录，可用来做连通性自检） ==========
-    async _refreshStats() {
-        this.setState({statsBusy:true, statsErr:''});
-        const t0 = Date.now();
-        try {
-            const data = await rwck.stats.public();
-            this.setState({stats: data, statsBusy:false});
-        } catch (e) {
-            // 把"浏览器直连 forum 被 CORS 挡"的场景翻译成用户能懂的话
-            const msg = (e.message || '').toLowerCase();
-            let friendly = e.message || '社区接口暂时不可用';
-            if (msg.includes('fetch') || msg.includes('failed to fetch')) {
-                friendly = '浏览器直连创客次元接口被 CORS 挡 —— forum.ctspace.xyz 未回 Access-Control-Allow-Origin，前端无法跨域直接 fetch。请联系论坛管理员加上 ACAO: * 或你的站点域名；或临时开启 /__rwck-proxy 同源代理（在控制台执行 window.__RWCK_FORCE_PROXY__=true 后刷新）。';
-            }
-            this.setState({statsErr: friendly, statsBusy:false});
-        } finally {
-            // 记录一次耗时，render 里可用
-            this._statsLatencyMs = Date.now() - t0;
+            this.setState({myErr: this._friendlyError(e), myBusy:false});
         }
     }
 
@@ -416,7 +484,6 @@ class RwckPublishPanel extends Component {
     render() {
         const C = this.props.colors || {primary:'#4c97ff', secondary:'#333'};
         const S = STYLE(C);
-        const isLoggedIn = !!this.state.user;
         const tabs = [
             {id:'login',     icon: LogIn,          label: this.state.user ? '账户' : '登录'},
             {id:'community', icon: BarChart3,      label: '社区状态'},
@@ -431,10 +498,17 @@ class RwckPublishPanel extends Component {
                     <span style={S.brandDot} />
                     <strong style={{fontSize:15}}>创客次元 · 极光论坛</strong>
                     <span style={{flex:1}} />
+                    <span style={{...S.hint}}>
+                        {rwck.IS_PROXY ? '同源代理' : '官方直连'}
+                        <code style={{marginLeft:4}}>{rwck.BASE_URL}</code>
+                    </span>
                     {this.state.user ? (
                         <span style={{fontSize:12, color:'#666'}}>
                             {this.state.user.username}
-                            <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._logout()} title='退出登录'><LogOut size={14} strokeWidth={2.2} /> 退出</button>
+                            <button style={cls(S.btn, S.btnGhost, {marginLeft:8})}
+                                    onClick={()=>this._logout()} title='退出登录'>
+                                <LogOut size={14} strokeWidth={2.2} /> 退出
+                            </button>
                         </span>
                     ) : null}
                 </div>
@@ -443,140 +517,264 @@ class RwckPublishPanel extends Component {
                     {tabs.map(t => (
                         <button key={t.id}
                                 style={cls(S.tab, this.state.tab===t.id && S.tabActive)}
-                                onClick={()=>this.setState({tab:t.id})}>{t.label}</button>
+                                onClick={()=>this.setState({tab:t.id})}>
+                            <t.icon size={14} strokeWidth={2.2} /> {t.label}
+                        </button>
                     ))}
                 </div>
 
                 <div style={S.body}>
-                    {this._renderTab(S, C, isLoggedIn)}
+                    {this._renderTab(S, C)}
                 </div>
             </div>
         );
     }
 
-    _renderTab(S, C, isLoggedIn) {
+    _renderTab(S, C) {
         const t = this.state.tab;
-        if (t === 'community') return this._renderCommunity(S, C); // 公开，免登录
-        if (t === 'login')    return this._renderLogin(S);
-        if (!isLoggedIn)      return this._renderLogin(S);
+        if (t === 'community') return this._renderCommunity(S, C);
+        if (t === 'login')    return this._renderLogin(S, C);
         if (t === 'publish')  return this._renderPublish(S, C);
         if (t === 'disc')     return this._renderDisc(S);
         if (t === 'mine')     return this._renderMine(S);
         return null;
     }
 
-    // ========== 社区状态（公开 /stats/public） ==========
+    // ========== 社区状态 ==========
     _renderCommunity(S, C) {
         const primary = C.primary || '#4c97ff';
         const st = this.state.stats;
-        const latency = this._statsLatencyMs;
+        const latency = this._communityLatencyMs;
+        const discs = this.state.discussionsPreview || [];
+        const board = this.state.leaderboard || [];
+        const active = this.state.activeUsers || [];
+        const tags = this.state.tags || [];
+
         return (
-            <div style={S.box}>
-                <div style={S.sectionTitle}>社区状态 · 连通性自检</div>
-                <div style={S.hint}>
-                    公开接口，免登录。<code>GET /api/stats/public</code> ——
-                    这个面板能否显示，直接反映浏览器直连 forum.ctspace.xyz
-                    的跨域策略是否放开。
+            <div style={{display:'flex', flexDirection:'column', gap:10}}>
+                {/* 头部：状态行 + 重测 + 切代理 */}
+                <div style={cls(S.box, {display:'flex', flexDirection:'column', gap:8})}>
+                    <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+                        <Activity size={16} strokeWidth={2.2} style={{color: this.state.statsErr ? '#dc2626' : primary}} />
+                        <strong style={{fontSize:14}}>社区状态</strong>
+                        <span style={{flex:1}} />
+                        <button style={cls(S.btn, S.btnGhost)}
+                                onClick={()=>this._refreshCommunity()}>
+                            <RefreshCw size={14} strokeWidth={2.2} /> 重新探测
+                        </button>
+                        <button style={cls(S.btn, S.btnGhost)}
+                                onClick={()=>{ window.__RWCK_FORCE_PROXY__ = !rwck.IS_PROXY; location.reload(); }}
+                                title='forum 未回 ACAO 时切同源代理'>
+                            {rwck.IS_PROXY ? '关闭代理' : '切同源代理'}
+                        </button>
+                    </div>
+                    <div style={{display:'flex', gap:8, alignItems:'center', fontSize:12}}>
+                        {latency != null && !this.state.statsErr && (
+                            <span style={{color:'#15803d'}}>
+                                <CheckCircle size={12} strokeWidth={2.2} style={{verticalAlign:'-2px'}} />
+                                连通，耗时 {latency} ms
+                            </span>
+                        )}
+                        {this.state.statsErr && (
+                            <span style={{color:'#dc2626'}}>
+                                <AlertCircle size={12} strokeWidth={2.2} style={{verticalAlign:'-2px'}} />
+                                {this._friendlyError(this.state.statsErr)}
+                            </span>
+                        )}
+                        {!latency && !this.state.statsErr && !this.state.statsBusy && (
+                            <span style={{color:'#64748b'}}>正在获取…</span>
+                        )}
+                    </div>
                 </div>
 
-                {/* 状态行 */}
-                <div style={{display:'flex', gap:10, alignItems:'center', marginTop:8}}>
-                    <button style={cls(S.btn, S.btnPrimary, this.state.statsBusy && S.btnDisabled)}
-                            disabled={this.state.statsBusy}
-                            onClick={()=>this._refreshStats()}>
-                        {this.state.statsBusy ? '正在探测…' : '重新探测连通性'}
-                    </button>
-                    {latency != null && !this.state.statsErr && (<span style={{...S.hint, color:'#15803d'}}>
-        <CheckCircle size={12} strokeWidth={2.2} style={{verticalAlign:'-2px'}} /> 连通，耗时 {latency} ms</span>
-                    )}
-                    {this.state.statsErr && (<span style={{...S.hint, color:'#b91c1c'}}>
-        <AlertCircle size={12} strokeWidth={2.2} style={{verticalAlign:'-2px'}} />  {this.state.statsErr.length > 120 ? this.state.statsErr.slice(0,120)+'…' : this.state.statsErr}</span>
-                    )}
-                </div>
-
-                {this.state.statsErr && (
-                    <details style={{marginTop:8}}>
-                        <summary style={{...S.hint, color:'#c0392b', cursor:'pointer'}}>展开完整错误</summary>
-                        <pre style={{...S.box, background:'#fff7f7', border:'1px solid #ffd6d6', color:'#c0392b',
-                                      fontSize:12, whiteSpace:'pre-wrap', wordBreak:'break-word', marginTop:6}}>
-                            {this.state.statsErr}
-                        </pre>
-                    </details>
-                )}
-
-                {/* 核心数据卡片 */}
-                {st && !this.state.statsErr && (
-                    <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8, marginTop:12}}>
-                        {[
-                            {label:'注册用户',   value: st.users || 0,           icon: Users},
-                            {label:'帖子总数',   value: st.posts || 0,           icon: MessageCircle},
-                            {label:'讨论串',     value: st.discussions || 0,     icon: BookOpen},
-                            {label:'今日访问',   value: st.todayVisits || 0,     icon: BarChart3}
-                        ].map((c, i) => (
-                            <div key={i} style={{...S.box, background:'#fff', textAlign:'center', padding:'10px 6px'}}>
-                                <div style={{fontSize:22}}>{c.icon}</div>
-                                <div style={{fontSize:20, fontWeight:700, color: primary}}>{c.value}</div>
-                                <div style={{fontSize:11, color:'#666'}}>{c.label}</div>
-                            </div>
-                        ))}
+                {/* 核心指标 */}
+                {st && (
+                    <div style={cls(S.box, {padding:14})}>
+                        <div style={S.sectionTitle}>站点总览</div>
+                        <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:10}}>
+                            {[
+                                {label:'注册用户',   value: st.users || 0,           icon: Users,      color:'#3b82f6'},
+                                {label:'帖子总数',   value: st.posts || 0,           icon: MessageCircle, color:'#10b981'},
+                                {label:'讨论串',     value: st.discussions || 0,     icon: BookOpen,   color:'#f59e0b'},
+                                {label:'今日访问',   value: st.todayVisits || 0,     icon: Activity,   color:'#ef4444'}
+                            ].map((c, i) => (
+                                <div key={i} style={{
+                                    border:'1px solid #e5e7eb', borderRadius: RADIUS_MD,
+                                    padding:10, textAlign:'center', background:'#fff',
+                                    boxShadow: SHADOW_SM
+                                }}>
+                                    <c.icon size={18} strokeWidth={2.2} style={{color: c.color, marginBottom:4}} />
+                                    <div style={{fontSize:20, fontWeight:700, color: primary}}>{c.value}</div>
+                                    <div style={{fontSize:11, color:'#64748b'}}>{c.label}</div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 
-                {/* 热门帖列表 */}
-                {st && st.hot && st.hot.length > 0 && (
-                    <div style={{marginTop:14}}>
-                        <div style={{fontSize:12, fontWeight:600, color:'#444', marginBottom:6}}>热门帖子 Top {st.hot.length}</div>
-                        {st.hot.map((h, i) => (
-                            <div key={h.id || i}
-                                 style={{...S.box, background:'#fff', display:'flex', gap:10,
-                                          alignItems:'flex-start', padding:'8px 10px', marginBottom:6}}>
-                                <div style={{flex:'0 0 auto', width:24, fontSize:13, fontWeight:700,
-                                              color: i<3 ? primary : '#999'}}>#{h.seq || i+1}</div>
-                                {h.author && h.author.avatar && (
-                                    <img src={h.author.avatar} alt='' style={{width:32, height:32, borderRadius:4}} />
-                                )}
-                                <div style={{flex:1, minWidth:0}}>
-                                    <div style={{fontWeight:600, fontSize:13}}>
-                                        <a href={`https://forum.ctspace.xyz/d/${h.seq || ''}`} target='_blank' rel='noreferrer'
-                                           style={{color:'#222', textDecoration:'none'}}>{h.title}</a>
-                                    </div>
-                                    <div style={{...S.hint, marginTop:2}}>
-                                        由 <b>{h.author && (h.author.nickname || h.author.username) || '匿名'}</b>
-                                        · <MessageCircle size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color:'#64748b'}} /> {h.postCount||0} 
-                · <Heart size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color:'#64748b'}} /> {h.likeCount||0} 
-                · <Eye size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color:'#64748b'}} /> {h.views||0}
-                                    </div>
+                {/* 两栏：最新讨论 + 活跃用户 / 排行榜 */}
+                <div style={{display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:10}}>
+                    {/* 最新讨论 */}
+                    <div style={S.box}>
+                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
+                            <div style={S.sectionTitle}>最新讨论</div>
+                            <a href='https://forum.ctspace.xyz/d/new' target='_blank' rel='noreferrer'
+                               style={{...S.hint, color:primary, textDecoration:'none', fontWeight:600}}>
+                                查看全部 →
+                            </a>
+                        </div>
+                        {this.state.discussionsErr && <div style={S.err}>{this.state.discussionsErr}</div>}
+                        {!this.state.discussionsErr && (!discs || discs.length === 0) && (
+                            <div style={S.hint}>暂无讨论，<a href='https://forum.ctspace.xyz/d/new' target='_blank' rel='noreferrer'>去发第一个吧 →</a></div>
+                        )}
+                        <div style={{display:'flex', flexDirection:'column', gap:6}}>
+                            {discs.slice(0, 8).map((d, i) => {
+                                const author = d.author || {nickname: null, username: '匿名', avatar: null};
+                                return (
+                                    <a key={d.id || i}
+                                       href={`https://forum.ctspace.xyz/d/${d.seq || ''}`}
+                                       target='_blank' rel='noreferrer'
+                                       style={{...S.listItem, textDecoration:'none', color:'inherit', padding:'8px 10px'}}>
+                                        <div style={{flex:'0 0 auto', width:24, fontSize:13, fontWeight:700,
+                                                      color: i<3 ? primary : '#999'}}>#{d.seq || i+1}</div>
+                                        {author.avatar && (
+                                            <img src={author.avatar} alt='' style={{width:26, height:26, borderRadius:13, border:'1px solid #eee'}} />
+                                        )}
+                                        <div style={{flex:1, minWidth:0}}>
+                                            <div style={{fontWeight:600, fontSize:13, color:'#222',
+                                                          whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                                                {d.title}
+                                            </div>
+                                            <div style={{...S.hint, marginTop:2}}>
+                                                由 <b>{author.nickname || author.username || '匿名'}</b>
+                                                · <span style={{color:'#475569'}}>{this._fmtTime(d.createdAt)}</span>
+                                            </div>
+                                        </div>
+                                        <span style={{fontSize:11, color:'#888', whiteSpace:'nowrap'}}>
+                                            <MessageCircle size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color:'#64748b'}} /> {d.postCount || 0}
+                                        </span>
+                                        <span style={{fontSize:11, color:'#888', whiteSpace:'nowrap'}}>
+                                            <Eye size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color:'#64748b'}} /> {d.views || 0}
+                                        </span>
+                                    </a>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* 活跃用户 / 排行榜 */}
+                    <div style={{display:'flex', flexDirection:'column', gap:10}}>
+                        <div style={S.box}>
+                            <div style={S.sectionTitle}>排行榜</div>
+                            {this.state.leaderboardErr && <div style={S.hint}>加载失败</div>}
+                            {!this.state.leaderboardErr && board.length === 0 && <div style={S.hint}>暂无数据</div>}
+                            {board.slice(0, 5).map((u, i) => (
+                                <div key={u.id || i}
+                                     style={{display:'flex', alignItems:'center', gap:8, padding:'6px 8px',
+                                             fontSize:13, borderBottom:'1px dashed #e5e7eb'}}>
+                                    <span style={{width:18, fontWeight:700, color: i<3 ? primary : '#999'}}>#{i+1}</span>
+                                    {u.avatar && (
+                                        <img src={u.avatar} alt='' style={{width:22, height:22, borderRadius:11, border:'1px solid #eee'}} />
+                                    )}
+                                    <span style={{flex:1, fontWeight:600}}>
+                                        {u.nickname || u.username || '匿名'}
+                                    </span>
+                                    <span style={{fontSize:11, color:'#64748b'}}>
+                                        +{(u.points ?? u.score ?? 0)}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={S.box}>
+                            <div style={S.sectionTitle}>活跃用户</div>
+                            {this.state.activeErr && <div style={S.hint}>加载失败</div>}
+                            {!this.state.activeErr && active.length === 0 && <div style={S.hint}>暂无数据</div>}
+                            <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
+                                {active.slice(0, 6).map((u, i) => (
+                                    <a key={u.id || i}
+                                       href={`https://forum.ctspace.xyz/u/${u.username || ''}`}
+                                       target='_blank' rel='noreferrer'
+                                       style={{padding:'4px 8px', border:'1px solid #e5e7eb',
+                                               borderRadius:12, fontSize:11, color:'#334155',
+                                               textDecoration:'none', display:'inline-flex', gap:4,
+                                               alignItems:'center', background:'#fff'}}>
+                                        {u.avatar && <img src={u.avatar} alt='' style={{width:14, height:14, borderRadius:7}} />}
+                                        {u.nickname || u.username || '匿名'}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+
+                        {tags && tags.length > 0 && (
+                            <div style={S.box}>
+                                <div style={S.sectionTitle}>热门标签</div>
+                                <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
+                                    {tags.slice(0, 10).map((t, i) => (
+                                        <a key={t.id || i}
+                                           href={`https://forum.ctspace.xyz/tag/${t.slug || t.id || ''}`}
+                                           target='_blank' rel='noreferrer'
+                                           style={{padding:'3px 8px', borderRadius:12, fontSize:11,
+                                                   background:`${primary}14`, color: primary,
+                                                   textDecoration:'none', border:`1px solid ${primary}30`}}>
+                                            #{t.name || t.slug || t.title || `tag${i+1}`}
+                                        </a>
+                                    ))}
                                 </div>
                             </div>
-                        ))}
+                        )}
                     </div>
-                )}
+                </div>
 
-                {/* API 基线提示 */}
-                <div style={{...S.hint, marginTop:12, borderTop:'1px dashed #ddd', paddingTop:8}}>
-                    当前 API 基线：<code>{rwck.BASE_URL}</code>
-                    {rwck.IS_PROXY
-                        ? <span style={{color:'#3c9'}}>（同源代理模式，绕开了 CORS）</span>
-                        : <span style={{color:'#c0392b'}}>（官方直连 —— forum 需回 ACAO 头才通）</span>
-                    }
+                {/* 站内入口 */}
+                <div style={cls(S.box, {display:'flex', gap:8, flexWrap:'wrap', alignItems:'center'})}>
+                    <a href='https://forum.ctspace.xyz' target='_blank' rel='noreferrer'
+                       style={cls(S.btn, S.btnGhost, {textDecoration:'none'})}>
+                        <Globe size={14} strokeWidth={2.2} /> 访问论坛首页
+                    </a>
+                    <a href='https://forum.ctspace.xyz/projects' target='_blank' rel='noreferrer'
+                       style={cls(S.btn, S.btnGhost, {textDecoration:'none'})}>
+                        <FolderOpen size={14} strokeWidth={2.2} /> 作品广场
+                    </a>
+                    <a href='https://forum.ctspace.xyz/d/new' target='_blank' rel='noreferrer'
+                       style={cls(S.btn, S.btnGhost, {textDecoration:'none'})}>
+                        <MessageCircle size={14} strokeWidth={2.2} /> 发新帖
+                    </a>
+                    <a href='https://forum.ctspace.xyz/signup' target='_blank' rel='noreferrer'
+                       style={cls(S.btn, S.btnGhost, {textDecoration:'none'})}>
+                        <LogIn size={14} strokeWidth={2.2} /> 注册账号
+                    </a>
                 </div>
             </div>
         );
     }
 
-    _renderLogin(S) {
-        const {captcha} = this.state;
-        const primary = this.props.colors.primary;
-        const hasImage = !!captcha;
+    _fmtTime(iso) {
+        if (!iso) return '';
+        try {
+            const d = new Date(iso);
+            const now = Date.now();
+            const diff = (now - d.getTime()) / 1000;
+            if (diff < 60) return '刚刚';
+            if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
+            if (diff < 86400 * 7) return Math.floor(diff / 86400) + ' 天前';
+            return d.toLocaleDateString();
+        } catch { return iso; }
+    }
 
-        // 登录按钮是否禁用：正在登录 or 没填全账号/密码/验证码
+    // ========== 登录 ==========
+    _renderLogin(S, C) {
+        const {captcha} = this.state;
+        const primary = C.primary;
+        const hasImage = !!captcha;
         const loginDisabled = this.state.loginBusy || !this.state.username || !this.state.password
                               || !captcha || !this.state.captchaAnswer;
 
         return (
             <div style={S.box}>
                 <div style={S.sectionTitle}>登录 / 注册</div>
-                <div style={S.hint}>首次使用请先去官网注册账号（需验证邮箱）。</div>
+                <div style={S.hint}>首次使用请先去官网注册账号（需验证邮箱）。登录会先通过图形验证码 + 前端自动计算的 PoW 工作量证明。</div>
                 {this.state.loginErr && <div style={S.err}>{this.state.loginErr}</div>}
                 {this.state.loginBusy && <div style={S.ok}>登录中…</div>}
 
@@ -591,11 +789,8 @@ class RwckPublishPanel extends Component {
                            onChange={e=>this.setState({password:e.target.value})} autoComplete='current-password' />
                 </div>
 
-                {/* ====== 图形验证码（默认可见） ====== */}
                 <div style={S.row}>
-                    <label style={S.label}>图形验证码（6 位）</label>
-
-                    {/* 状态占位：加载中 / 已加载出图 / 拉取失败 */}
+                    <label style={S.label}>图形验证码</label>
                     <div style={{...S.captcha, display:'flex', alignItems:'center', justifyContent:'center',
                                   minWidth:140, color:'#888', fontSize:12}}>
                         {this.state.captchaLoading ? '正在加载…'
@@ -609,22 +804,23 @@ class RwckPublishPanel extends Component {
 
                     <input style={{...S.input, maxWidth:150}} value={this.state.captchaAnswer}
                            onChange={e=>this.setState({captchaAnswer:e.target.value})}
-                           placeholder={hasImage ? '输入图中 6 位字符' : '先获取验证码'}
+                           placeholder={hasImage ? '输入图中字符' : '先获取验证码'}
                            maxLength={8} disabled={!hasImage} />
 
                     <button style={cls(S.btn, S.btnGhost, this.state.captchaLoading && S.btnDisabled)}
                             onClick={()=>this._refreshCaptcha()}
                             disabled={this.state.captchaLoading}
                             title='重新获取验证码'>
-                        <RefreshCw size={14} strokeWidth={2.2} style={{animation: this.state.captchaLoading ? "spin 1s linear infinite" : "none"}} /> {this.state.captchaLoading ? '加载中…' : '换一张'}
+                        <RefreshCw size={14} strokeWidth={2.2}
+                                   style={{animation: this.state.captchaLoading ? 'spin 1s linear infinite' : 'none'}} />
                     </button>
                 </div>
 
-                {/* ====== 折叠式「手动粘贴」兜底 ====== */}
                 <div style={{marginTop:2}}>
                     <a role='button' onClick={()=>this.setState(s=>({showPaste: !s.showPaste, pasteErr:''}))}
-                       style={{...S.hint, color: primary, fontWeight:600, cursor:'pointer', textDecoration:'underline', border:'none', background:'transparent', padding:0}}>
-                        <ChevronDown size={12} strokeWidth={2.4} style={{verticalAlign:"-1px", transition:"transform .2s", transform: this.state.showPaste ? "rotate(180deg)" : "none"}} /> {this.state.showPaste ? "收起手动粘贴面板" : "不显示验证码图片？点这里手动粘贴"}
+                       style={{...S.hint, color: primary, fontWeight:600, cursor:'pointer',
+                               textDecoration:'underline', border:'none', background:'transparent', padding:0}}>
+                        {this.state.showPaste ? '▼ 收起手动粘贴面板' : '▶ 手动粘贴（不显示验证码时用）'}
                     </a>
                     {this.state.captchaLoadErr && !hasImage && (
                         <div style={{...S.err, marginTop:6}}>{this.state.captchaLoadErr}</div>
@@ -634,44 +830,30 @@ class RwckPublishPanel extends Component {
                 {this.state.showPaste && (
                     <div style={{...S.box, background:'#fff', border:'1px dashed #bbb', marginTop:6}}>
                         <ol style={{margin:0, paddingLeft:20, ...S.hint}}>
-                            <li>
-                                点链接在新标签打开 →
-                                <a href='https://forum.ctspace.xyz/api/captcha' target='_blank' rel='noreferrer'
-                                   style={{color: primary, fontWeight:600}}>
-                                   https://forum.ctspace.xyz/api/captcha
-                                </a>
-                            </li>
-                            <li>在新标签里按 <b>Ctrl+A</b> 全选 → <b>Ctrl+C</b> 复制</li>
-                            <li>回到这里粘贴到下方 → 点「确定」</li>
+                            <li>打开 <a href='https://forum.ctspace.xyz/api/captcha' target='_blank' rel='noreferrer'
+                                       style={{color: primary, fontWeight:600}}>https://forum.ctspace.xyz/api/captcha</a></li>
+                            <li>全选 → 复制 JSON</li>
+                            <li>回到这里粘贴 → 点「解析」</li>
                         </ol>
-                        <textarea
-                            style={{...S.textarea, minHeight:80, width:'100%', fontFamily:'monospace', fontSize:11, marginTop:8}}
-                            placeholder='粘贴 forum.ctspace.xyz/api/captcha 返回的 JSON…'
-                            value={this.state.pasteJson}
-                            onChange={e=>this.setState({pasteJson: e.target.value, pasteErr:''})}
-                        />
+                        <textarea style={{...S.textarea, minHeight:80, width:'100%', fontFamily:'monospace', fontSize:11, marginTop:8}}
+                                  placeholder='粘贴 forum.ctspace.xyz/api/captcha 返回的 JSON…'
+                                  value={this.state.pasteJson}
+                                  onChange={e=>this.setState({pasteJson: e.target.value, pasteErr:''})} />
                         {this.state.pasteErr && <div style={S.err}>{this.state.pasteErr}</div>}
                         <div style={{display:'flex', gap:8, marginTop:8}}>
-                            <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._parsePastedCaptcha()}>
-                                确定（自动显示图片）
-                            </button>
+                            <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._parsePastedCaptcha()}>确定</button>
                             <button style={cls(S.btn, S.btnGhost)} onClick={()=>this.setState({pasteJson:'', pasteErr:''})}>清空</button>
-                            <button style={cls(S.btn, S.btnGhost)} onClick={()=>window.open('https://forum.ctspace.xyz/api/captcha', '_blank')}><LinkIcon size={14} strokeWidth={2.2} /> 打开接口</button>
                         </div>
                     </div>
                 )}
 
-                {hasImage && (
-                    <div style={{...S.hint, padding:'0 90px'}}>
-                        PoW 工作量证明会在点击登录时自动计算（几毫秒）
-                    </div>
-                )}
-                <div style={{...S.row, paddingLeft:90}}>
+                <div style={{...S.row, paddingLeft:90, marginTop:6}}>
                     <button style={cls(S.btn, S.btnPrimary, loginDisabled && S.btnDisabled)}
                             disabled={loginDisabled}
-                            onClick={()=>this._login()}> <LogIn size={14} strokeWidth={2.2} /> 
-                        {this.state.loginBusy ? '登录中…' : '登录'}
+                            onClick={()=>this._login()}>
+                        <LogIn size={14} strokeWidth={2.2} /> {this.state.loginBusy ? '登录中…' : '登录'}
                     </button>
+                    <span style={S.hint}>PoW 会在点击登录时自动计算（几毫秒）</span>
                 </div>
             </div>
         );
@@ -681,8 +863,11 @@ class RwckPublishPanel extends Component {
         const catLabel = c => `${c.zh} / ${c.en}`;
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
-                <div style={S.hint}>
-                    上传即视为您的作品同意被别人下载，上传至创客次元社区后，创客次元无法绝对保证您的作品不被别人下载或改编。
+                <div style={S.box}>
+                    <div style={S.hint}>
+                        <AlertCircle size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color:'#f59e0b'}} />
+                        发布前确认作品内容符合社区公约。上传即视为您的作品同意被别人下载。
+                    </div>
                 </div>
                 {this.state.publishErr && <div style={S.err}>{this.state.publishErr}</div>}
                 {this.state.publishOk  && <div style={S.ok}>{this.state.publishOk}</div>}
@@ -717,7 +902,9 @@ class RwckPublishPanel extends Component {
                 <div style={S.sectionTitle}>文件</div>
                 <div style={S.row}>
                     <label style={S.label}>.sb3 作品</label>
-                    <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._loadSb3FromVm()}><FileCode size={14} strokeWidth={2.2} /> 从编辑器读取</button>
+                    <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._loadSb3FromVm()}>
+                        <FileCode size={14} strokeWidth={2.2} /> 从编辑器读取
+                    </button>
                     <span style={S.fileInfo}>或</span>
                     <label style={cls(S.btn, S.btnGhost)}>
                         手动选择
@@ -766,7 +953,9 @@ class RwckPublishPanel extends Component {
     _renderDisc(S) {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
-                <div style={S.hint}>发帖限流 4 条/小时。帖子正文支持 Markdown，附件走云盘 / resources 上传后在正文里引用。</div>
+                <div style={S.box}>
+                    <div style={S.hint}>发帖限流 4 条/小时。正文支持 Markdown，可引用云盘资源。</div>
+                </div>
                 {this.state.discussionErr && <div style={S.err}>{this.state.discussionErr}</div>}
                 {this.state.discussionOk  && <div style={S.ok}>{this.state.discussionOk}</div>}
                 <div style={S.row}>
@@ -796,7 +985,9 @@ class RwckPublishPanel extends Component {
                 <div style={S.row}>
                     <strong style={{fontSize:13}}>我发布的作品</strong>
                     <span style={{flex:1}} />
-                    <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._refreshMine()}><RefreshCw size={14} strokeWidth={2.2} /> 刷新</button>
+                    <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._refreshMine()}>
+                        <RefreshCw size={14} strokeWidth={2.2} /> 刷新
+                    </button>
                 </div>
                 {this.state.myErr && <div style={S.err}>{this.state.myErr}</div>}
                 {this.state.myBusy && <div style={S.ok}>加载中…</div>}
@@ -805,8 +996,14 @@ class RwckPublishPanel extends Component {
                 )}
                 {this.state.mine.map(p => (
                     <div key={p.id} style={S.listItem}>
-                        <span style={{flex:1}}>{p.title} <span style={{color:'#999', fontSize:11}}>({p.category})</span></span>
-                        <span style={{fontSize:11, color:'#888'}}><Heart size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color:'#64748b'}} /> {p.likeCount||0} · <Eye size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color:'#64748b'}} /> {p.views||0}</span>
+                        <span style={{flex:1, minWidth:0, fontSize:13}}>
+                            <span style={{fontWeight:600}}>{p.title}</span>
+                            <span style={{color:'#999', fontSize:11, marginLeft:6}}>({p.category})</span>
+                        </span>
+                        <span style={{fontSize:11, color:'#888'}}>
+                            <Heart size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color:'#64748b'}} /> {p.likeCount||0}
+                            · <Eye size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color:'#64748b'}} /> {p.views||0}
+                        </span>
                         {p.shortLinkSlug && (
                             <a href={`https://forum.ctspace.xyz/g/${p.shortLinkSlug}`} target='_blank' rel='noreferrer'
                                style={{fontSize:11}}>试玩</a>

@@ -1,10 +1,14 @@
 /**
  * 创客次元发布窗口。用法：
  *   import openRwckPublishWindow from './mw/open-rwck-publish-window.js';
- *   openRwckPublishWindow();
+ *   openRwckPublishWindow({ tab: 'community' });     // 可选：打开就切到 community Tab
+ *   openRwckPublishWindow();                          // 默认：已登录 → publish，未登录 → login
  *
  * 自动：复用 WindowManager、读取编辑器主题色、自动读取当前 vm 导出 sb3、
  *       先警告弹窗再登录再发布、错误 Toast。
+ *
+ * 警告弹窗**只在用户真正点击「发布作品 / 发帖」按钮时弹**。
+ * openRwckPublishWindow() 本身不再打断窗口打开。
  */
 
 import React from 'react';
@@ -29,15 +33,6 @@ const RWCK_TERMS = [
     '请在发布前确认作品内容符合平台社区公约。'
 ].join('\n');
 
-function warnBeforeUpload(colors, intl) {
-    const ok = window.confirm(RWCK_TERMS + '\n\n' +
-        (intl ? intl.formatMessage({
-            id: 'rwck.publish.terms.confirm',
-            defaultMessage: '点“确定”即表示您已阅读并同意以上条款。'
-        }) : '点“确定”即表示您已阅读并同意以上条款。'));
-    return ok;
-}
-
 function getIntlProps() {
     try {
         const store = window.ReduxStore;
@@ -51,7 +46,6 @@ function getIntlProps() {
 }
 
 function readVm() {
-    // scratch-gui 把 VM 挂在 ReduxStore.getState().scratchGui.vm
     try {
         const store = window.ReduxStore;
         if (store && store.getState) {
@@ -62,24 +56,28 @@ function readVm() {
     return null;
 }
 
-const openRwckPublishWindow = () => {
-    if (openWin) {
-        openWin.show().bringToFront();
-        return openWin;
+/**
+ * 打开创客次元发布窗口。
+ * @param {object} [opts]
+ * @param {string} [opts.tab]  直接打开到哪个 Tab：login | community | publish | disc | mine
+ * @param {boolean} [opts.forceProxy] 是否强制走同源代理（forum 未回 ACAO 时用）
+ */
+const openRwckPublishWindow = (opts = {}) => {
+    const {tab, forceProxy} = opts;
+
+    if (typeof forceProxy === 'boolean') {
+        if (forceProxy) window.__RWCK_FORCE_PROXY__ = true;
+        else delete window.__RWCK_FORCE_PROXY__;
     }
 
-    // 先弹警告（不用 React Modal，简单 confirm 足够，且不会阻塞后续流程）
-    // 注意：警告是每次"打开发布窗口"都弹一次——上传有不可逆性，宁可多一次提醒。
-    // 但为了不打扰，我们让用户可以在首次弹窗里勾选"今天不再提示"。
-    const alreadyAgreed = sessionStorage.getItem('rwck:terms-agreed-today');
-    if (!alreadyAgreed) {
-        const accepted = window.confirm(
-            '【创客次元上传须知】\n\n' + RWCK_TERMS + '\n\n' +
-            '点“确定”即表示您已阅读并同意以上条款。\n' +
-            '（下次打开前若仍想再看一次，请刷新页面）'
-        );
-        if (!accepted) return null;
-        sessionStorage.setItem('rwck:terms-agreed-today', '1');
+    // 如果窗口已经开着：如果请求了不同的 tab，也需要重建（panel 现在没有 switchTab API），
+    // 简单处理：每次 close 再重建都能生效。为了不打扰用户——如果已经在前台了，只改 tab。
+    if (openWin) {
+        openWin.show().bringToFront();
+        if (tab && openWin._rwckPanelRef && typeof openWin._rwckPanelRef._rwckSwitchTab === 'function') {
+            openWin._rwckPanelRef._rwckSwitchTab(tab);
+        }
+        return openWin;
     }
 
     const colors = getEditorColors();
@@ -109,12 +107,16 @@ const openRwckPublishWindow = () => {
 
     openWin.setContent(container);
 
-    const panel = React.createElement(RwckPublishPanel, {
+    const panelProps = {
         colors,
         intl: intlProps,
         getVm: readVm,
+        terms: RWCK_TERMS,
+        initialTab: tab || null,
         onRequestClose: () => openWin && openWin.close()
-    });
+    };
+
+    const panel = React.createElement(RwckPublishPanel, panelProps);
     const node = intlProps
         ? React.createElement(IntlProvider, {locale: intlProps.locale, messages: intlProps.messages},
               React.createElement(IntlBridge, null, panel))
@@ -127,4 +129,3 @@ const openRwckPublishWindow = () => {
 };
 
 export default openRwckPublishWindow;
-export {warnBeforeUpload};
