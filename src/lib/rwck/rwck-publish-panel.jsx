@@ -29,10 +29,14 @@ const STYLE = colors => ({
     label: {fontSize:12, color:'#555', minWidth:90},
     input: {flex:1, padding:'6px 8px', border:'1px solid #ccc', borderRadius:6, fontSize:13},
     textarea:{flex:1, padding:'6px 8px', border:'1px solid #ccc', borderRadius:6, fontSize:13, minHeight:90, resize:'vertical'},
-    btn: {padding:'7px 14px', borderRadius:6, border:'none', fontSize:13, fontWeight:600, cursor:'pointer'},
+    btn: {padding:'7px 14px', borderRadius:6, border:'none', fontSize:13, fontWeight:600, cursor:'pointer',
+          transition:'opacity .15s ease, transform .08s ease', outline:'none'},
+    btnActive: {transform:'translateY(1px)'},
+    btnDisabledBase: {cursor:'not-allowed'},
     primary: {background: colors.primary, color:'#fff'},
-    primaryDisabled: {background:'#aaa', color:'#fff', cursor:'not-allowed'},
+    primaryDisabled: {background: colors.primary, color:'#fff', opacity:.55, cursor:'not-allowed'},
     ghost:   {background:'transparent', border:'1px solid #ccc', color:'#333'},
+    ghostDisabled: {opacity:.55, cursor:'not-allowed'},
     danger:  {background:'#e74c3c', color:'#fff'},
     box:     {border:'1px solid #eee', borderRadius:8, padding:10, background:'#fafafa'},
     captcha: {border:'1px solid #ddd', borderRadius:6, padding:6, background:'#fff', height:52, cursor:'pointer'},
@@ -70,6 +74,7 @@ class RwckPublishPanel extends Component {
 
             // ---- 登录 ----
             captcha: null,
+            captchaLoading: true, // 是否正在自动拉取验证码（用于显示占位）
             captchaLoadErr: '',   // 自动拉取验证码失败时显示的友好提示
             showPaste: false,    // 是否显示「手动粘贴 JSON」面板
             pasteJson: '',       // 用户粘贴的原始 JSON 文本
@@ -116,6 +121,7 @@ class RwckPublishPanel extends Component {
 
     // ========== 验证码 ==========
     async _refreshCaptcha() {
+        this.setState({captchaLoading: true, captchaLoadErr: ''});
         try {
             const cap = await rwck.auth.getCaptcha();
             console.debug('[rwck] captcha loaded:', {
@@ -124,11 +130,12 @@ class RwckPublishPanel extends Component {
                 token: cap && cap.token,
                 pow: cap && cap.pow
             });
-            this.setState({captcha: cap, captchaAnswer: '', loginErr: ''});
+            this.setState({captcha: cap, captchaAnswer: '', loginErr: '', captchaLoading: false, captchaLoadErr: ''});
         } catch (e) {
             console.error('[rwck] captcha load failed:', e);
             // 自动拉取失败时不立刻弹致命错误，给用户留「手动粘贴 JSON」兜底入口
-            this.setState({captcha: null, captchaLoadErr: '自动拉取验证码失败（可能是同源代理未生效），请点下方「手动粘贴」链接'});
+            this.setState({captcha: null, captchaLoading: false,
+                           captchaLoadErr: '自动拉取验证码失败（可能是同源代理未生效），请点下方「手动粘贴」链接'});
         }
     }
 
@@ -374,10 +381,17 @@ class RwckPublishPanel extends Component {
 
     _renderLogin(S) {
         const {captcha} = this.state;
+        const primary = this.props.colors.primary;
+        const hasImage = !!captcha;
+
+        // 登录按钮是否禁用：正在登录 or 没填全账号/密码/验证码
+        const loginDisabled = this.state.loginBusy || !this.state.username || !this.state.password
+                              || !captcha || !this.state.captchaAnswer;
+
         return (
             <div style={S.box}>
                 <div style={S.sectionTitle}>登录 / 注册</div>
-                <div style={S.hint}>首次使用请先去官网注册账号（需验证邮箱），或到开发者平台申请 API Key。</div>
+                <div style={S.hint}>首次使用请先去官网注册账号（需验证邮箱）。</div>
                 {this.state.loginErr && <div style={S.err}>{this.state.loginErr}</div>}
                 {this.state.loginBusy && <div style={S.ok}>登录中…</div>}
 
@@ -392,75 +406,89 @@ class RwckPublishPanel extends Component {
                            onChange={e=>this.setState({password:e.target.value})} autoComplete='current-password' />
                 </div>
 
-                {/* ====== 图文验证码区域 ====== */}
-                <div style={{...S.box, background:'#fff', border:'1px dashed #bbb'}}>
-                    <div style={{fontSize:12, fontWeight:600, color:'#444', marginBottom:6}}>
-                        获取图形验证码（因为跨域，需要手动操作一次）
+                {/* ====== 图形验证码（默认可见） ====== */}
+                <div style={S.row}>
+                    <label style={S.label}>图形验证码（6 位）</label>
+
+                    {/* 状态占位：加载中 / 已加载出图 / 拉取失败 */}
+                    <div style={{...S.captcha, display:'flex', alignItems:'center', justifyContent:'center',
+                                  minWidth:140, color:'#888', fontSize:12}}>
+                        {this.state.captchaLoading ? '正在加载…'
+                         : hasImage ? (
+                            <img alt='captcha' style={{borderRadius:4, height:40, cursor:'pointer'}}
+                                 src={captcha.image}
+                                 onClick={()=>this._refreshCaptcha()}
+                                 title='点一下刷新' />
+                         ) : '等待加载'}
                     </div>
 
-                    {/* 三步引导 */}
-                    <ol style={{margin:0, paddingLeft:20, ...S.hint}}>
-                        <li>
-                            点这个链接在新标签打开 →
-                            <a href='https://forum.ctspace.xyz/api/captcha' target='_blank' rel='noreferrer'
-                               style={{color: this.props.colors.primary, fontWeight:600}}>
-                               https://forum.ctspace.xyz/api/captcha
-                            </a>
-                        </li>
-                        <li>在新标签页里按 <b>Ctrl+A</b>（全选）再按 <b>Ctrl+C</b>（复制）</li>
-                        <li>回到这里，把 JSON 粘贴到下面的框里，点「确定」</li>
-                    </ol>
+                    <input style={{...S.input, maxWidth:150}} value={this.state.captchaAnswer}
+                           onChange={e=>this.setState({captchaAnswer:e.target.value})}
+                           placeholder={hasImage ? '输入图中字符' : '先获取验证码'}
+                           maxLength={8} disabled={!hasImage} />
 
-                    {/* 粘贴框 */}
-                    <textarea
-                        style={{...S.textarea, minHeight:80, width:'100%', fontFamily:'monospace', fontSize:11, marginTop:8}}
-                        placeholder='在此处粘贴刚才复制的 JSON…例如 {"token":"xxx","image":"data:image/png;base64,...","pow":{...}}'
-                        value={this.state.pasteJson}
-                        onChange={e=>this.setState({pasteJson: e.target.value, pasteErr:''})}
-                    />
-                    {this.state.pasteErr && <div style={S.err}>{this.state.pasteErr}</div>}
+                    <button style={cls(S.btn, S.ghost, this.state.captchaLoading && S.ghostDisabled)}
+                            onClick={()=>this._refreshCaptcha()}
+                            disabled={this.state.captchaLoading}
+                            title='重新获取验证码'>
+                        {this.state.captchaLoading ? '加载中…' : '换一张'}
+                    </button>
+                </div>
 
-                    {/* 操作按钮 */}
-                    <div style={{display:'flex', gap:8, marginTop:8, alignItems:'center'}}>
-                        <button style={cls(S.btn, S.primary)} onClick={()=>this._parsePastedCaptcha()}>
-                            确定（自动显示验证码图片）
-                        </button>
-                        <button style={S.ghost} onClick={()=>this.setState({pasteJson:'', pasteErr:''})}>清空</button>
-                        <button style={S.ghost} onClick={()=>window.open('https://forum.ctspace.xyz/api/captcha', '_blank')}>
-                            再次打开接口
-                        </button>
-                        {this.state.captchaLoadErr && (
-                            <span style={{...S.hint, flex:1, color:'#c0392b'}}>
-                                自动拉取也失败了，麻烦手动粘贴一下 ↑
-                            </span>
-                        )}
-                    </div>
-
-                    {/* 解析成功后：显示图片验证码 + 输入框 */}
-                    {captcha && (
-                        <div style={{marginTop:10, paddingTop:10, borderTop:'1px dashed #ddd'}}>
-                            <div style={S.hint}>验证码已就绪 —— 请看图填写（看不清可以重复上面三步换一张）</div>
-                            <div style={{...S.row, marginTop:8}}>
-                                <img alt='captcha' style={{...S.captcha, height:56}}
-                                     src={captcha.image} />
-                                <input style={{...S.input, maxWidth:160}}
-                                       value={this.state.captchaAnswer}
-                                       onChange={e=>this.setState({captchaAnswer:e.target.value})}
-                                       placeholder='输入图中字符' maxLength={8} />
-                            </div>
-                        </div>
+                {/* ====== 折叠式「手动粘贴」兜底 ====== */}
+                <div style={{marginTop:2}}>
+                    <a role='button' onClick={()=>this.setState(s=>({showPaste: !s.showPaste, pasteErr:''}))}
+                       style={{...S.hint, color: primary, fontWeight:600, cursor:'pointer', textDecoration:'underline', border:'none', background:'transparent', padding:0}}>
+                        {this.state.showPaste ? '▲ 收起手动粘贴面板' : '▼ 不显示验证码图片？点这里手动粘贴'}
+                    </a>
+                    {this.state.captchaLoadErr && !hasImage && (
+                        <div style={{...S.err, marginTop:6}}>{this.state.captchaLoadErr}</div>
                     )}
                 </div>
 
-                {captcha && (
+                {this.state.showPaste && (
+                    <div style={{...S.box, background:'#fff', border:'1px dashed #bbb', marginTop:6}}>
+                        <ol style={{margin:0, paddingLeft:20, ...S.hint}}>
+                            <li>
+                                点链接在新标签打开 →
+                                <a href='https://forum.ctspace.xyz/api/captcha' target='_blank' rel='noreferrer'
+                                   style={{color: primary, fontWeight:600}}>
+                                   https://forum.ctspace.xyz/api/captcha
+                                </a>
+                            </li>
+                            <li>在新标签里按 <b>Ctrl+A</b> 全选 → <b>Ctrl+C</b> 复制</li>
+                            <li>回到这里粘贴到下方 → 点「确定」</li>
+                        </ol>
+                        <textarea
+                            style={{...S.textarea, minHeight:80, width:'100%', fontFamily:'monospace', fontSize:11, marginTop:8}}
+                            placeholder='粘贴 forum.ctspace.xyz/api/captcha 返回的 JSON…'
+                            value={this.state.pasteJson}
+                            onChange={e=>this.setState({pasteJson: e.target.value, pasteErr:''})}
+                        />
+                        {this.state.pasteErr && <div style={S.err}>{this.state.pasteErr}</div>}
+                        <div style={{display:'flex', gap:8, marginTop:8}}>
+                            <button style={cls(S.btn, S.primary)} onClick={()=>this._parsePastedCaptcha()}>
+                                确定（自动显示图片）
+                            </button>
+                            <button style={S.ghost} onClick={()=>this.setState({pasteJson:'', pasteErr:''})}>清空</button>
+                            <button style={S.ghost} onClick={()=>window.open('https://forum.ctspace.xyz/api/captcha', '_blank')}>
+                                打开接口
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {hasImage && (
                     <div style={{...S.hint, padding:'0 90px'}}>
                         PoW 工作量证明会在点击登录时自动计算（几毫秒）
                     </div>
                 )}
                 <div style={{...S.row, paddingLeft:90}}>
-                    <button style={cls(S.btn, S.primary, this.state.loginBusy && S.primaryDisabled)}
-                            disabled={this.state.loginBusy}
-                            onClick={()=>this._login()}>{this.state.loginBusy ? '登录中…' : '登录'}</button>
+                    <button style={cls(S.btn, S.primary, loginDisabled && S.primaryDisabled)}
+                            disabled={loginDisabled}
+                            onClick={()=>this._login()}>
+                        {this.state.loginBusy ? '登录中…' : '登录'}
+                    </button>
                 </div>
             </div>
         );
