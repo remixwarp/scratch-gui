@@ -136,7 +136,7 @@ class RwckPublishPanel extends Component {
         }
         this.setState({loginBusy:true, loginErr:''});
         try {
-            const captchaPowNonce = rwck.auth.solvePow(captcha.pow);
+            const captchaPowNonce = await rwck.auth.solvePow(captcha.pow);
             const r = await rwck.auth.login({
                 username, password,
                 captchaToken: captcha.token,
@@ -370,7 +370,7 @@ class RwckPublishPanel extends Component {
                 </div>
                 {captcha && (
                     <div style={{...S.hint, padding:'0 90px'}}>
-                        系统将自动计算工作量证明（PoW nonce = {rwck.auth.solvePow(captcha.pow)}）
+                        验证码 PoW 工作量证明将在点击登录时自动计算（约几毫秒）
                     </div>
                 )}
                 <div style={{...S.row, paddingLeft:90}}>
