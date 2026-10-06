@@ -77,7 +77,10 @@ async function _fetch(path, options = {}) {
     let data;
     try { data = await res.json(); } catch { data = null; }
     if (!res.ok) {
-        const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+        // message 有时是数组（class-validator 返回 ["field must be..."]），
+        // 有时是字符串，有时是后端的 i18n key。全收。
+        const msgRaw = data && (data.message || data.error);
+        const msg = Array.isArray(msgRaw) ? msgRaw.join('; ') : (msgRaw || `HTTP ${res.status}`);
         const err = new Error(msg);
         err.status = res.status;
         err.data   = data;
@@ -150,7 +153,13 @@ function _normalizeCaptcha(raw) {
 async function _uploadForm(path, file, filename) {
     const url = BASE_URL + path;
     const fd = new FormData();
-    fd.append('file', file, filename || file.name || 'upload.bin');
+    // 文档第 0 节第 5 点：不要把真实文件名放进 multipart 的原始 filename 字段
+    // （multipart 在某些网关下会被 latin1 误解码成乱码）。
+    // 做法：把文件存成稳定 ASCII 名，真实名单独放 name 字段。
+    const safeName = 'upload.bin';
+    fd.append('file', file, safeName);
+    const realName = filename || file.name || 'upload.bin';
+    fd.append('name', realName);
     const headers = authHeaders();
     let res;
     try {
@@ -161,7 +170,8 @@ async function _uploadForm(path, file, filename) {
     let data;
     try { data = await res.json(); } catch { data = null; }
     if (!res.ok) {
-        const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+        const msgRaw = data && (data.message || data.error);
+        const msg = Array.isArray(msgRaw) ? msgRaw.join('; ') : (msgRaw || `HTTP ${res.status}`);
         const err = new Error(msg);
         err.status = res.status;
         err.data   = data;
