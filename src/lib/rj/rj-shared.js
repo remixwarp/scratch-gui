@@ -6,10 +6,12 @@
  */
 
 /**
- * 同时解压的文件数量上限。一次性 Promise.all 上百个大资源会把上百 MB
+ * 同时解压 / 读取的文件数量上限。一次性 Promise.all 上百个大资源会把上百 MB
  * 同时压进内存，导致 GC 抖动甚至崩溃；分批读取可以把峰值内存压下来。
+ * 渐进式加载器会按 CPU 核数显式传入更高的并发（见 rj-lazy-loader.js），
+ * 这里的默认值只在未显式指定时（如回退路径）生效。
  */
-export const DEFAULT_CONCURRENCY = 8;
+export const DEFAULT_CONCURRENCY = 16;
 
 /**
  * 让出主线程，让浏览器有机会绘制进度（大作品解析时不会「假死」）

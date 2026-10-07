@@ -9,8 +9,9 @@
  *     每个资源文件，都通过 postMessage 让 worker 在子线程里解压后回传，主线程
  *     只做零拷贝的转发，彻底避免大作品加载时主线程被 DEFLATE 解压拖垮。
  *
- * 任何一步失败都会 reject，由上层 loadRJIntoVM 自动回退到主线程加载路径，
- * 因此即便 Worker 不可用（极老浏览器 / 构建异常）也不会影响正常打开作品。
+ * 任何一步失败都会 reject，由上层 loadRJIntoVM / loadRJIntoVMProgressive 自动
+ * 回退到主线程加载路径，因此即便 Worker 不可用（极老浏览器 / 构建异常）也不会
+ * 影响正常打开作品。
  */
 
 // eslint-disable-next-line import/default
@@ -20,17 +21,21 @@ import {RJ_LOAD_STAGES} from './constants.js';
 import {normalizePlatformName} from './rj-shared.js';
 
 // 当前存活的 .rj Worker。延迟加载（切造型 / 播声音）需要的资源由它在子线程
-// 按需解压；旧 Worker 在「下一次加载 .rj」时被终止（见 loadRJIntoVMViaWorker）。
+// 按需解压；旧 Worker 在「下一次加载 .rj」时被终止（见 decodeRJViaWorker）。
 let activeWorker = null;
 
 /**
- * 通过 Worker 把 .rj 作品装进 VM（并行反序列化快速路径）。
- * @param {object} vm scratch-vm 实例
+ * 建立一次 .rj Worker 会话：把文件交给子线程解码，解析后返回
+ * {projectJSON, zipView, manifest, tables, title}。Worker 在解码成功后**继续存活**
+ * （作为 activeWorker），以便编辑过程中按需在子线程解压资源。任何失败都会
+ * terminate 该 Worker 并 reject。
+ *
+ * @param {object} vm scratch-vm 实例（仅用于对齐平台名）
  * @param {ArrayBuffer|Uint8Array|Blob} input .rj 文件内容
- * @param {object} [options] 同 loadRJProject（onProgress / concurrency）
- * @returns {Promise<object>} {projectJSON, manifest, tables, title}
+ * @param {object} [options] {concurrency, onProgress}
+ * @returns {Promise<object>} 解码结果
  */
-export const loadRJIntoVMViaWorker = (vm, input, options = {}) => new Promise((resolve, reject) => {
+const createRJWorkerSession = (vm, input, options = {}) => new Promise((resolve, reject) => {
     let worker;
     try {
         worker = new RJDeserializeWorker();
@@ -151,35 +156,16 @@ export const loadRJIntoVMViaWorker = (vm, input, options = {}) => new Promise((r
             (msg.assetNames || []).forEach(n => assetNameSet.add(n));
 
             const zipView = {file};
-            const run = async () => {
-                try {
-                    normalizePlatformName(msg.projectJSON, vm);
-                    if (typeof options.onProgress === 'function') {
-                        options.onProgress({stage: RJ_LOAD_STAGES.WRITING_TO_EDITOR});
-                    }
-                    // 连续让出两次事件循环，确保「正在写入编辑器」的进度先绘制出来，
-                    // 再进入同步反序列化，避免主线程看起来像卡死。
-                    await new Promise(yieldDone => setTimeout(yieldDone, 0));
-                    await new Promise(yieldDone => setTimeout(yieldDone, 0));
-
-                    await vm.deserializeProject(msg.projectJSON, zipView);
-                    if (vm.runtime && typeof vm.runtime.handleProjectLoaded === 'function') {
-                        vm.runtime.handleProjectLoaded();
-                    }
-                    // 不在此终止 Worker：延迟加载（切造型 / 播声音）仍需它按需解压。
-                    // 旧 Worker 会在下一次加载 .rj 时由 loadRJIntoVMViaWorker 开头终止。
-                    resolve({
-                        projectJSON: msg.projectJSON,
-                        manifest: msg.manifest,
-                        tables: msg.tables,
-                        title: msg.title
-                    });
-                } catch (err) {
-                    cleanup();
-                    reject(err);
-                }
-            };
-            run();
+            normalizePlatformName(msg.projectJSON, vm);
+            // 仅解码：把 projectJSON + 子线程资源视图交回调用方（如渐进式加载器），
+            // 由调用方决定如何安装。Worker 继续存活，服务后续的延迟资源请求。
+            resolve({
+                projectJSON: msg.projectJSON,
+                zipView,
+                manifest: msg.manifest,
+                tables: msg.tables,
+                title: msg.title
+            });
             return;
         }
     };
@@ -206,3 +192,50 @@ export const loadRJIntoVMViaWorker = (vm, input, options = {}) => new Promise((r
     }
     worker.postMessage({type: 'decode', input: payload, options: {concurrency: options.concurrency}}, transfer || []);
 });
+
+/**
+ * 仅解码 .rj（zip 解包 + 分片解析 + 资源索引全在子线程完成），返回
+ * projectJSON 与一个由 Worker 支撑的「异步资源视图」。Worker 在成功后继续存活，
+ * 用于编辑过程中按需解压资源（切造型 / 播声音）。调用方拿到结果后自行决定如何
+ * 把作品装进 VM（例如渐进式逐角色安装）。失败则 reject（由上层回退主线程）。
+ *
+ * @param {object} vm scratch-vm 实例
+ * @param {ArrayBuffer|Uint8Array|Blob} input .rj 文件内容
+ * @param {object} [options] {concurrency, onProgress}
+ * @returns {Promise<object>} {projectJSON, zipView, manifest, tables, title}
+ */
+export const decodeRJViaWorker = (vm, input, options = {}) => createRJWorkerSession(vm, input, options);
+
+/**
+ * 通过 Worker 把 .rj 作品装进 VM（并行反序列化快速路径，monolithic 安装）。
+ * @param {object} vm scratch-vm 实例
+ * @param {ArrayBuffer|Uint8Array|Blob} input .rj 文件内容
+ * @param {object} [options] 同 loadRJProject（onProgress / concurrency）
+ * @returns {Promise<object>} {projectJSON, manifest, tables, title}
+ */
+export const loadRJIntoVMViaWorker = (vm, input, options = {}) => createRJWorkerSession(vm, input, options)
+    .then(({projectJSON, zipView, manifest, tables, title}) => {
+        const run = async () => {
+            if (typeof options.onProgress === 'function') {
+                options.onProgress({stage: RJ_LOAD_STAGES.WRITING_TO_EDITOR});
+            }
+            // 连续让出两次事件循环，确保「正在写入编辑器」的进度先绘制出来，
+            // 再进入同步反序列化，避免主线程看起来像卡死。
+            await new Promise(yieldDone => setTimeout(yieldDone, 0));
+            await new Promise(yieldDone => setTimeout(yieldDone, 0));
+
+            await vm.deserializeProject(projectJSON, zipView);
+            if (vm.runtime && typeof vm.runtime.handleProjectLoaded === 'function') {
+                vm.runtime.handleProjectLoaded();
+            }
+        };
+        return run()
+            .then(() => ({projectJSON, manifest, tables, title}))
+            .catch(err => {
+                // 解码成功但安装失败：终止 Worker 并由上层回退主线程。
+                if (activeWorker && typeof activeWorker.terminate === 'function') {
+                    activeWorker.terminate();
+                }
+                throw err;
+            });
+    });

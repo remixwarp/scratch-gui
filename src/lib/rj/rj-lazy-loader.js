@@ -3,8 +3,10 @@
  * .rj 作品的「渐进式（分块增量）加载器」。
  *
  * 与 deserialize.js 里「一次性 deserializeProject」的区别：
- *   - 读取装配阶段：把分片读取并发从 8 提到 24，并一次性并行读取全部 json 分片，
- *     更充分地利用磁盘读取 / CPU（见 Q2：调集全部资源提速）。
+ *   - 读取装配阶段：默认走 **Web Worker 子线程** 做 zip 解包 / 分片解析 / 资源解压
+ *     （吃满另一个 CPU 核心，主线程不卡），并把分片读取并发调到很高（按核数自适应，
+ *     见 PROGRESSIVE_CONCURRENCY_*），一次性并行读取全部 json 分片，充分利用磁盘
+ *     读取与多核（见 Q2/Q3：调集全部资源提速）。Worker 不可用时自动回退主线程读取。
  *   - 写入编辑器阶段：不再用 scratch-vm 原生的「一次性把全部角色 addTarget 进
  *     运行时」的同步重活（超大作品会因此阻塞主线程数秒、界面卡死），而是临时把
  *     vm.installTargets 替换为「逐角色 addTarget、每添加一个就让出一次主线程」
@@ -13,20 +15,33 @@
  * 这样：
  *   1) 复用了 scratch-vm 信任的反序列化逻辑（prebuilt-blocks 快速路径、monitors、
  *      broadcasts、变量作用域、extensionIDs 等全部保留，不会丢数据）；
- *   2) 角色一个一个出现在编辑器里（占位框 / 成品逐步可见，对应 Q1）；
- *   3) 每批之间让出主线程，浏览器能持续绘制，彻底消除「导入后界面卡死」（Q4）。
+ *   2) 主线程（逐角色渲染，带 yield）与 Worker 子线程（解压/解析）双核齐用；
+ *   3) 角色一个一个出现在编辑器里（占位框 / 成品逐步可见，对应 Q1）；
+ *   4) 每批之间让出主线程，浏览器能持续绘制，彻底消除「导入后界面卡死」（Q4）。
  *
  * 该文件是新机制的实现，不改动既有的 deserialize.js / worker 路径；调用方（gui.jsx
  * 、sb-file-uploader-hoc.jsx）可无缝切换到本加载器，并在异常时回退到原 loadRJIntoVM。
  */
 
-import {loadRJProject} from './deserialize.js';
+import {loadRJProject, loadRJIntoVM} from './deserialize.js';
+import {decodeRJViaWorker} from './rj-worker-client.js';
 import {normalizePlatformName, yieldToUI} from './rj-shared.js';
 import {RJ_LOAD_STAGES} from './constants.js';
 import {setCurrentRJ, clearCurrentRJ} from './rj-store.js';
 
-/** 分片读取并发上限：从默认的 8 提到 24，更充分地并行读取磁盘（Q2）。 */
-const PROGRESSIVE_CONCURRENCY = 24;
+/** 分片读取并发下限：无论几核都至少这么高（远高于原默认 8）。 */
+const PROGRESSIVE_CONCURRENCY_MIN = 32;
+/** 分片读取并发上限：单 Worker 内的峰值内存（同时 inflate 的分片量）需要被兜住。 */
+const PROGRESSIVE_CONCURRENCY_MAX = 64;
+
+/**
+ * 按 CPU 核数自适应地选择分片读取并发：核越多并发越高，但用上下限兜住峰值内存。
+ * @returns {number} 并发上限
+ */
+const computeConcurrency = () => {
+    const cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 4;
+    return Math.min(PROGRESSIVE_CONCURRENCY_MAX, Math.max(PROGRESSIVE_CONCURRENCY_MIN, cores * 4));
+};
 
 /**
  * 把「标准 installTargets」改写成「逐角色 + 每批让出主线程」的版本。
@@ -115,11 +130,15 @@ const installTargetsProgressively = async (vm, targets, extensions, wholeProject
 /**
  * 渐进式（分块增量）把 .rj 作品装进 VM。
  *
+ * 读取阶段优先用 Worker 子线程（多核），失败回退主线程；安装阶段逐角色增量写入
+ * 并让出主线程（不卡死）。任一环节失败都会回退到既有的 loadRJIntoVM（worker →
+ * 主线程 → 标准 sb3），保证作品一定能打开。
+ *
  * @param {object} vm scratch-vm 实例
  * @param {ArrayBuffer|Uint8Array|Blob} input .rj 文件内容
  * @param {object} options 选项
  * @param {Function} [options.onProgress] 进度回调 ({stage, ...})
- * @param {number} [options.concurrency] 分片读取并发上限（默认 24）
+ * @param {number} [options.concurrency] 分片读取并发上限（默认按核数自适应）
  * @returns {Promise<object>} {projectJSON, zipView}
  */
 export const loadRJIntoVMProgressive = async (vm, input, options = {}) => {
@@ -128,17 +147,25 @@ export const loadRJIntoVMProgressive = async (vm, input, options = {}) => {
     }
 
     const onProgress = typeof options.onProgress === 'function' ? options.onProgress : () => {};
-    const concurrency = options.concurrency || PROGRESSIVE_CONCURRENCY;
+    const concurrency = options.concurrency || computeConcurrency();
 
     // 记录当前打开的 .rj 原始内容（「超级重构」等面板依赖它）
     setCurrentRJ(input);
 
-    // 1) 高并发并行读分片 + 装配成标准 sb3（保留 prebuilt-blocks 快速路径）
-    onProgress({stage: RJ_LOAD_STAGES.MANIFEST});
-    const {projectJSON, zipView, getArrayBuffer} = await loadRJProject(input, {
-        concurrency,
-        onProgress
-    });
+    // 1) 优先用 Worker 子线程读分片（吃满另一核心），失败回退主线程读。
+    let projectJSON;
+    let zipView;
+    try {
+        const decoded = await decodeRJViaWorker(vm, input, {concurrency, onProgress});
+        projectJSON = decoded.projectJSON;
+        zipView = decoded.zipView;
+    } catch (workerErr) {
+        // eslint-disable-next-line no-console
+        console.warn('[rj] Worker 并行读分片失败，回退主线程读分片：', workerErr);
+        const main = await loadRJProject(input, {concurrency, onProgress});
+        projectJSON = main.projectJSON;
+        zipView = main.zipView;
+    }
     normalizePlatformName(projectJSON, vm);
 
     // 2) 临时把 installTargets 换成「逐角色 + 让出主线程」版本，再调用信任的
@@ -157,11 +184,10 @@ export const loadRJIntoVMProgressive = async (vm, input, options = {}) => {
     } catch (error) {
         // 渐进路径失败 → 还原 installTargets 并回退到标准 sb3 流程
         // eslint-disable-next-line no-console
-        console.warn('[rj] 渐进式加载失败，回退到标准 sb3 流程：', error);
+        console.warn('[rj] 渐进式安装失败，回退到标准 sb3 流程：', error);
         vm.installTargets = originalInstall;
         clearCurrentRJ();
-        const arrayBuffer = await getArrayBuffer();
-        await vm.loadProject(arrayBuffer);
+        await loadRJIntoVM(vm, input, options);
         return {projectJSON, zipView};
     } finally {
         // 无论成功失败都还原，避免影响后续的普通加载 / Sprite 上传等流程。

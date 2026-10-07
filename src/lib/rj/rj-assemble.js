@@ -43,7 +43,7 @@ const ASSET_PREFIX = 'assets/';
  */
 export const assembleFromZip = async (zip, options = {}) => {
     const {onProgress} = options;
-    const concurrency = options.concurrency || 8;
+    const concurrency = options.concurrency || 16;
     const report = (stage, payload) => {
         if (typeof onProgress === 'function') {
             onProgress(Object.assign({stage}, payload));
