@@ -19,21 +19,6 @@ export default async function ({addon, console}) {
         }
     };
 
-    const showToast = (message, type) => {
-        try {
-            const store = window.ReduxStore;
-            if (store && typeof store.dispatch === 'function') {
-                store.dispatch({
-                    type: 'scratch-gui/SHOW_TOAST',
-                    message,
-                    toastType: type || 'info'
-                });
-            }
-        } catch (e) {
-            // 拿不到 store 就静默跳过，不影响插件本身
-        }
-    };
-
     // 插件刚被启用：立刻把入口显示出来
     notify();
 
@@ -42,11 +27,10 @@ export default async function ({addon, console}) {
         addon.settings.addEventListener('change', notify);
     }
 
-    // 插件被关闭：收起入口并提示刷新编辑器
+    // 插件被关闭：通知编辑器收起入口（不再弹提示）
     if (addon.self && typeof addon.self.addEventListener === 'function') {
         addon.self.addEventListener('disabled', () => {
             notify();
-            showToast('创客次元社区插件已关闭，请刷新编辑器生效', 'warning');
         });
     }
 

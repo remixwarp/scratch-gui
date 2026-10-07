@@ -48,7 +48,8 @@ import {
     getRwckCommunityAddonState,
     shouldShowFileMenuPublishItem,
     shouldShowTopBarPublishButton,
-    subscribeRwckCommunityAddon
+    subscribeRwckCommunityAddon,
+    enableRwckCommunityAddon
 } from '../../lib/mw/rwck-community-addon.js';
 import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
 import {
@@ -442,10 +443,12 @@ class MenuBar extends React.Component {
             }
         });
 
-        // URL query：?com=true / ?community=1 → 自动弹创客次元窗口，并直接切到 community Tab
+        // URL query：?com=true / ?community=1 → 自动启用创客次元社区插件，
+        // 并自动弹创客次元窗口（直接切到 community Tab）
         try {
             const qs = new URLSearchParams(window.location.search || '');
             if (qs.get('com') === 'true' || qs.get('community') === '1') {
+                enableRwckCommunityAddon();
                 setTimeout(() => openRwckPublishWindow({tab: 'community'}), 300);
             }
         } catch (_) {}
@@ -453,9 +456,6 @@ class MenuBar extends React.Component {
         // 创客次元社区插件：跟随插件开关/复选框实时显示或收起两个入口
         this.unsubscribeRwckCommunity = subscribeRwckCommunityAddon((next, previous) => {
             this.setState({rwckCommunity: next});
-            if (previous && previous.enabled && !next.enabled && typeof this.props.showToast === 'function') {
-                this.props.showToast('创客次元社区插件已关闭，请刷新编辑器生效', 'warning');
-            }
         });
     }
     componentWillUnmount () {

@@ -42,6 +42,44 @@ const authHeaders = () => {
     return t ? {Authorization: `Bearer ${t}`} : {};
 };
 
+// ===== 网络请求日志（调试用）=====
+// 所有经由 _fetch / _uploadForm 的请求与响应都会被记录到 window.__rwckNetLog，
+// 并在界面右下角的「显示日志」按钮中查看 / 复制。密码 / token 会被脱敏。
+const _NET_LOG_MAX = 300;
+const _netLog = [];
+let _reqSeq = 0;
+function _redact(v) {
+    if (v == null || typeof v !== 'object') return v;
+    if (Array.isArray(v)) return v.map(_redact);
+    const out = {};
+    for (const k of Object.keys(v)) {
+        if (/pass|secret|token/i.test(k) && typeof v[k] === 'string') out[k] = '***';
+        else out[k] = _redact(v[k]);
+    }
+    return out;
+}
+function _redactHeaders(h) {
+    const out = {};
+    for (const k of Object.keys(h || {})) {
+        out[k] = /authorization/i.test(k) ? 'Bearer ***' : h[k];
+    }
+    return out;
+}
+function _truncate(v, max = 2000) {
+    if (v == null) return v;
+    let s;
+    try { s = typeof v === 'string' ? v : JSON.stringify(v); } catch { s = String(v); }
+    if (s.length > max) s = s.slice(0, max) + ` …(截断 ${s.length - max} 字符)`;
+    return s;
+}
+function _logNet(entry) {
+    _netLog.push(Object.assign({t: Date.now()}, entry));
+    if (_netLog.length > _NET_LOG_MAX) _netLog.shift();
+    if (_isBrowser) { try { window.__rwckNetLog = _netLog; } catch (_) {} }
+}
+export function getNetLog() { return _netLog; }
+export function clearNetLog() { _netLog.length = 0; }
+
 /** 拼 query string（去掉空值）。 */
 function _qs(obj) {
     const u = new URLSearchParams();
@@ -64,12 +102,21 @@ async function _fetch(path, options = {}) {
         options.headers || {}
     );
     let body = options.body;
+    let sentBody;
     if (body && typeof body !== 'string' && !(body instanceof FormData)) {
+        sentBody = body;
         body = JSON.stringify(body);
         headers['Content-Type'] = 'application/json';
+    } else if (body instanceof FormData) {
+        sentBody = '[FormData]';
+    } else {
+        sentBody = body || null;
     }
+    const method = options.method || 'GET';
+    const reqId = ++_reqSeq;
+    _logNet({id: reqId, dir: '→ 发送', method, url, headers: _redactHeaders(headers), body: _redact(sentBody)});
     const init = {
-        method: options.method || 'GET',
+        method,
         headers,
         ...(body !== undefined ? {body} : {})
     };
@@ -77,6 +124,7 @@ async function _fetch(path, options = {}) {
     try {
         res = await fetch(url, init);
     } catch (e) {
+        _logNet({id: reqId, dir: '✗ 网络错误', method, url, error: String((e && e.message) || e)});
         throw Object.assign(new Error('网络错误，请检查连接后重试'), {cause: e});
     }
     let data;
@@ -84,11 +132,13 @@ async function _fetch(path, options = {}) {
     if (!res.ok) {
         const msgRaw = data && (data.message || data.error);
         const msg = Array.isArray(msgRaw) ? msgRaw.join('; ') : (msgRaw || `HTTP ${res.status}`);
+        _logNet({id: reqId, dir: '← 接收(错误)', method, url, status: res.status, ok: false, error: msg, data: _truncate(data)});
         const err = new Error(msg);
         err.status = res.status;
         err.data   = data;
         throw err;
     }
+    _logNet({id: reqId, dir: '← 接收', method, url, status: res.status, ok: true, data: _truncate(data)});
     return data;
 }
 
@@ -144,10 +194,13 @@ async function _uploadForm(path, file, filename) {
     fd.append('file', file, realName);
     fd.append('name', realName);
     const headers = authHeaders();
+    const reqId = ++_reqSeq;
+    _logNet({id: reqId, dir: '→ 发送(上传)', method: 'POST', url, headers: _redactHeaders(headers), body: {file: realName}});
     let res;
     try {
         res = await fetch(url, {method:'POST', headers, body: fd});
     } catch (e) {
+        _logNet({id: reqId, dir: '✗ 网络错误', method: 'POST', url, error: String((e && e.message) || e)});
         throw Object.assign(new Error('网络错误，请检查连接后重试'), {cause: e});
     }
     let data;
@@ -155,11 +208,13 @@ async function _uploadForm(path, file, filename) {
     if (!res.ok) {
         const msgRaw = data && (data.message || data.error);
         const msg = Array.isArray(msgRaw) ? msgRaw.join('; ') : (msgRaw || `HTTP ${res.status}`);
+        _logNet({id: reqId, dir: '← 接收(错误)', method: 'POST', url, status: res.status, ok: false, error: msg, data: _truncate(data)});
         const err = new Error(msg);
         err.status = res.status;
         err.data   = data;
         throw err;
     }
+    _logNet({id: reqId, dir: '← 接收', method: 'POST', url, status: res.status, ok: true, data: _truncate(data)});
     // forum 有的返回 {resourceId}，有的返回 {id}，统一成 id
     if (data && data.resourceId !== undefined && data.id === undefined) {
         data.id = data.resourceId;
@@ -209,8 +264,14 @@ const rwck = {
             setUser(user);
             return {token, user};
         },
+        /** 注册不需要人机验证（官方前端已移除，见文档 §2.3）。
+         *  注册后账号为「未激活」态，须点邮件激活链接才能登录，故此处不写入会话。 */
         async register({username, email, password}) {
             return _fetch('/auth/register', {method:'POST', body: {username, email, password}});
+        },
+        /** 重发激活邮件（POST /auth/resend，body: { identifier }，identifier 为邮箱或用户名）。 */
+        async resend({identifier}) {
+            return _fetch('/auth/resend', {method:'POST', body: {identifier}});
         },
         async me()                    { return _fetch('/auth/me'); },
         async patchMe(patch)          { return _fetch('/auth/me', {method:'PATCH', body: patch}); },

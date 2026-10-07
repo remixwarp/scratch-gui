@@ -25,6 +25,7 @@
 import React, {Component} from 'react';
 import rwck from './api-client.js';
 import getEditorTheme from './theme-colors.js';
+import {mountNetworkLog} from './network-log-ui.js';
 import {
     Users, MessageCircle, BookOpen, BarChart3,
     Upload, FolderOpen, RefreshCw, ChevronDown, ChevronUp,
@@ -38,6 +39,22 @@ import {
 } from 'lucide-react';
 
 const PAD = 14;
+
+// 这些 Tab 的核心功能需要登录（token）才能用：未登录时隐藏其切换按钮，登录后再显示。
+// 其余 Tab（社区状态 / 作品广场 / 扩展广场 / 登录账户）可匿名访问，始终显示。
+const LOGIN_REQUIRED_TABS = new Set([
+    'publish',   // 发布作品（POST 需鉴权）
+    'disc',      // 发帖/回复（POST 需鉴权）
+    'mine',      // 我的作品（rwck.projects.mine，token 门控）
+    'drive',     // 我的云盘（personal）
+    'res',       // 资源（上传 / 网盘资源需鉴权）
+    'social',    // 互动（follow / like / bookmark 等）
+    'notify',    // 通知 / 签到（personal）
+    'search',    // 搜索（需鉴权或匿名受限）
+    'orig',      // 原创登记（POST 需鉴权）
+    'cloud',     // 云变量（token 门控）
+    'dev'        // 开发者（API 密钥，token 门控）
+]);
 
 // ==== 圆角：沿用 forum.ctspace.xyz 的观感；颜色一律来自编辑器主题（见 theme-colors.js） ====
 const RADIUS_SM = 6;
@@ -231,6 +248,9 @@ class RwckPublishPanel extends Component {
             regUsername: '',
             regEmail: '',
             regPassword: '',
+            regConfirm: '',
+            regDoneEmail: '',        // 注册成功但未激活时，记录发送激活邮件的邮箱
+            regResending: false,
             regBusy: false,
             regErr: '',
             regOk: '',
@@ -647,6 +667,10 @@ class RwckPublishPanel extends Component {
             {id:'cloud',     icon: Database,       label: '云变量'},
             {id:'dev',       icon: Wrench,         label: '开发者'}
         ];
+        // 未登录时，只显示可匿名访问的 Tab，登录后才显示需要鉴权的 Tab
+        const visibleTabs = this.state.user
+            ? tabs
+            : tabs.filter(t => !LOGIN_REQUIRED_TABS.has(t.id));
 
         return (
             <div style={S.root}>
@@ -666,7 +690,7 @@ class RwckPublishPanel extends Component {
                 </div>
 
                 <div style={S.tabs}>
-                    {tabs.map(t => (
+                    {visibleTabs.map(t => (
                         <button key={t.id}
                                 style={cls(S.tab, this.state.tab===t.id && S.tabActive)}
                                 onClick={()=>this._rwckSwitchTab(t.id)}>
@@ -686,6 +710,8 @@ class RwckPublishPanel extends Component {
 
     _renderTab(S, C) {
         const t = this.state.tab;
+        // 未登录却处在需鉴权的 Tab：回退到登录视图（该 Tab 按钮此时已被隐藏）
+        if (!this.state.user && LOGIN_REQUIRED_TABS.has(t)) return this._renderLogin(S, C);
         if (t === 'community') return this._renderCommunity(S, C);
         if (t === 'login')    return this._renderLogin(S, C);
         if (t === 'publish')  return this._renderPublish(S, C);
@@ -998,7 +1024,7 @@ class RwckPublishPanel extends Component {
                               || !captcha || !this.state.captchaAnswer;
 
         return (
-            <React.Fragment>
+            <div style={{position:'relative', display:'flex', flexDirection:'column', gap:10}}>
             <div style={S.box}>
                 <div style={S.sectionTitle}>登录 / 注册</div>
                 <div style={S.hint}>首次使用请先去官网注册账号（需验证邮箱）。登录会先通过图形验证码 + 前端自动计算的 PoW 工作量证明。</div>
@@ -1057,35 +1083,85 @@ class RwckPublishPanel extends Component {
                 </div>
             </div>
             {!this.state.user && this._renderRegister(S, C)}
-            </React.Fragment>
+            {/* 「显示日志」按钮锚定在登录页右下角（调试网络用） */}
+            <div ref={el => { if (el) mountNetworkLog(el); }} />
+            </div>
         );
     }
 
-    /** 编辑器内直接注册（POST /auth/register，之后需去邮箱激活）。 */
+    /** 编辑器内直接注册（POST /auth/register）。
+     *  按官方文档 §2.3：注册本身不需要人机验证（官方前端已移除）；注册后账号为「未激活」态，
+     *  必须点击邮件里的激活链接才能登录，且 30 分钟内未激活会被系统自动清理。故此处不写入会话。 */
     async _register() {
-        const {regUsername, regEmail, regPassword} = this.state;
-        if (!regUsername.trim() || !regEmail.trim() || !regPassword) {
-            this.setState({regErr: '用户名 / 邮箱 / 密码都要填'});
-            return;
-        }
+        const {regUsername, regEmail, regPassword, regConfirm} = this.state;
+        const username = (regUsername || '').trim();
+        const email = (regEmail || '').trim();
+        if (!username) { this.setState({regErr: '请填写用户名'}); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { this.setState({regErr: '邮箱格式不正确'}); return; }
+        if (!regPassword || regPassword.length < 6) { this.setState({regErr: '密码至少 6 位'}); return; }
+        if (regPassword !== regConfirm) { this.setState({regErr: '两次输入的密码不一致'}); return; }
         this.setState({regBusy: true, regErr: '', regOk: ''});
         try {
-            await rwck.auth.register({username: regUsername, email: regEmail, password: regPassword});
+            await rwck.auth.register({username, email, password: regPassword});
+            // 成功：账号已创建但处于未激活态，等待邮件激活。
             this.setState({
                 regBusy: false,
-                regOk: '注册成功！请到邮箱点激活链接后再登录。',
-                regPassword: ''
+                regDoneEmail: email,
+                regUsername: '', regEmail: '', regPassword: '', regConfirm: '',
+                regOk: '', regErr: ''
             });
         } catch (e) {
             this.setState({regErr: this._friendlyError(e), regBusy: false});
         }
     }
 
+    /** 重发激活邮件（POST /auth/resend，body: { identifier }）。 */
+    async _resendActivation() {
+        const {regDoneEmail} = this.state;
+        if (!regDoneEmail) return;
+        this.setState({regResending: true, regErr: '', regOk: ''});
+        try {
+            await rwck.auth.resend({identifier: regDoneEmail});
+            this.setState({
+                regResending: false,
+                regOk: '激活邮件已重新发送到 ' + regDoneEmail + '，请查收（30 分钟内未激活账号会被自动清理）。'
+            });
+        } catch (e) {
+            this.setState({regErr: this._friendlyError(e), regResending: false});
+        }
+    }
+
     _renderRegister(S, C) {
+        // 已提交注册、等待邮件激活：展示激活引导 + 重发 + 去登录
+        if (this.state.regDoneEmail) {
+            return (
+                <div style={S.box}>
+                    <div style={S.sectionTitle}>注册成功，请激活邮箱</div>
+                    <div style={S.hint}>
+                        我们已向 <b>{this.state.regDoneEmail}</b> 发送了一封激活邮件。
+                        请点击邮件里的链接完成激活（账号在 30 分钟内未激活时会被系统自动清理）。激活后即可回到编辑器登录。
+                    </div>
+                    {okBar(S, this.state.regOk)}
+                    {errBar(S, this.state.regErr)}
+                    <div style={{...S.row, marginTop:6, gap:8, flexWrap:'wrap'}}>
+                        <button style={cls(S.btn, S.btnPrimary, this.state.regResending && S.btnDisabled)}
+                                disabled={this.state.regResending}
+                                onClick={()=>this._resendActivation()}>
+                            <RefreshCw size={14} strokeWidth={2.2} /> {this.state.regResending ? '发送中…' : '重发激活邮件'}
+                        </button>
+                        <button style={cls(S.btn, S.btnGhost)}
+                                onClick={()=>this.setState({regDoneEmail: '', regOk: '', regErr: ''})}>
+                            换邮箱重新注册
+                        </button>
+                    </div>
+                    <div style={S.hint}>激活完成后，点上方「登录」按钮即可在编辑器内登录（登录仍需图形验证码 + PoW）。</div>
+                </div>
+            );
+        }
         return (
             <div style={S.box}>
                 <div style={S.sectionTitle}>在编辑器内注册</div>
-                <div style={S.hint}>也可以点上方「登录 / 注册」按钮选择在论坛网页注册。</div>
+                <div style={S.hint}>注册本身不需要图形验证码。注册后账号为「未激活」态，需点击邮件里的激活链接才能登录；30 分钟内未激活会被自动清理。你也可以到论坛网页（forum.ctspace.xyz/auth/register）注册。</div>
                 <div style={S.row}>
                     <label style={S.label}>用户名</label>
                     <input style={S.input} value={this.state.regUsername}
@@ -1099,7 +1175,12 @@ class RwckPublishPanel extends Component {
                 <div style={S.row}>
                     <label style={S.label}>密码</label>
                     <input style={S.input} type='password' value={this.state.regPassword}
-                           onChange={e=>this.setState({regPassword: e.target.value})} />
+                           onChange={e=>this.setState({regPassword: e.target.value})} placeholder='至少 6 位' />
+                </div>
+                <div style={S.row}>
+                    <label style={S.label}>确认密码</label>
+                    <input style={S.input} type='password' value={this.state.regConfirm}
+                           onChange={e=>this.setState({regConfirm: e.target.value})} />
                 </div>
                 {errBar(S, this.state.regErr)}
                 {okBar(S, this.state.regOk)}
@@ -1442,7 +1523,7 @@ class RwckPublishPanel extends Component {
         try {
             await rwck.extensions.create({
                 title: extTitle, summary: extSummary, category: extCategory,
-                code: extCode, license: 'MIT'
+                code: extCode, license: 'mit'
             });
             this.setState({extBusy: false, extOk: '扩展已发布', extTitle: '', extSummary: '', extCode: ''});
             this._loadExtMine();

@@ -367,7 +367,12 @@ const TerminalPanel = () => {
                 fontSize: 13,
                 lineHeight: 1.4
             }}
-            onClick={() => inputRef.current && inputRef.current.focus()}
+            onClick={e => {
+                // 正在用鼠标拖选文本时不抢焦点，否则选区会被输入框夺走
+                const sel = window.getSelection();
+                if (sel && sel.toString().length > 0) return;
+                if (inputRef.current) inputRef.current.focus();
+            }}
         >
             <div
                 ref={listRef}
@@ -378,12 +383,11 @@ const TerminalPanel = () => {
                     padding: '6px 8px',
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
-                    // 允许选中复制终端输出（覆盖编辑器全局 user-select:none）
+                    cursor: 'text',
                     userSelect: 'text',
                     WebkitUserSelect: 'text',
                     MozUserSelect: 'text',
-                    msUserSelect: 'text',
-                    cursor: 'text'
+                    msUserSelect: 'text'
                 }}
             >
                 {lines.map(line => (

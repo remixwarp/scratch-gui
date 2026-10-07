@@ -294,6 +294,13 @@ const HIDE_STAGE_DRAG_SLOP = 80;
 const STAGE_RESIZER_WIDTH = 6;
 const MIN_STAGE_PANEL_WIDTH = (FIXED_WIDTH * 0.5) + 18;
 
+/**
+ * 默认（large）模式下舞台在编辑器内的显示宽度。
+ * 舞台原生分辨率始终为 480×360，这里只是把显示面板放大一点，
+ * 舞台会按容器宽度等比缩放，不会改变作品里的舞台尺寸。
+ */
+const DEFAULT_LARGE_STAGE_WIDTH = Math.round(FIXED_WIDTH * 3.0);
+
 const cachedStyleValues = new WeakMap();
 
 const getCachedBorderWidth = element => {
@@ -917,6 +924,7 @@ const GUIComponent = props => {
     const editorWrapperRef = useRef(null);
     const stageAndTargetWrapperRef = useRef(null);
     const stageResizeRafRef = useRef(null);
+    const stageFirstMeasureRafRef = useRef(null);
     const resizeAfterTransitionRafRef = useRef(null);
     const measureRafRef = useRef(null);
     const syncingModeRef = useRef(false);
@@ -951,12 +959,25 @@ const GUIComponent = props => {
 
     const handleStagePanelResizeDoubleClick = useCallback(() => {
         preferredPanelWidthRef.current = null;
-        setStagePanelWidth(null);
-        setStageContainerWidth(null);
+        // 重置要恢复为当前舞台大小对应的默认宽度；
+        // 若直接把 stagePanelWidth 置为 null，面板列会以 flex-basis:0 塌缩，
+        // 「选择角色 / 选择背景」按钮会浮到窗口底部
         if (isStageHiddenRef.current && typeof props.onSetStageSize === 'function') {
             props.onSetStageSize(STAGE_SIZE_MODES.full);
+            return;
         }
-    }, [props.onSetStageSize]);
+        if (props.stageSizeMode === STAGE_SIZE_MODES.small) {
+            setStageWidth(FIXED_WIDTH * 0.5);
+        } else if (props.stageSizeMode === STAGE_SIZE_MODES.large) {
+            setStageWidth(DEFAULT_LARGE_STAGE_WIDTH);
+        } else {
+            setStagePanelWidth(null);
+            setStageContainerWidth(null);
+        }
+    // setStageWidth 在下方用 const 定义（晚于此处），放入依赖数组会触发 TDZ；
+    // 它基于稳定的 getStageBorderExtraWidth，引用稳定，缺失不影响正确性
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [props.onSetStageSize, props.stageSizeMode]);
 
     const measureStageContainerWidth = useCallback(() => {
         if (!enableStageResize) return;
@@ -1049,6 +1070,31 @@ const GUIComponent = props => {
         if (!enableStageResize) return;
         if (prevStageSizeModeRef.current === null) {
             prevStageSizeModeRef.current = props.stageSizeRequestId;
+            // 首次挂载也要按当前舞台大小设置面板宽度：
+            // 否则 stagePanelWidth 一直为 null，面板列以 flex-basis:0 塌缩，
+            // 「选择角色 / 选择背景」按钮会浮到窗口底部
+            let initialContentWidth = null;
+            if (!props.isFullScreen && props.stageSizeMode === STAGE_SIZE_MODES.small) {
+                initialContentWidth = FIXED_WIDTH * 0.5;
+            } else if (!props.isFullScreen && props.stageSizeMode === STAGE_SIZE_MODES.large) {
+                initialContentWidth = DEFAULT_LARGE_STAGE_WIDTH;
+            }
+            if (initialContentWidth !== null) {
+                setStageWidth(initialContentWidth);
+                // 初次打开时字体、其它侧栏宽度等布局尚未稳定，
+                // 用首次测得的容器宽度算出的面板宽度会有偏差，
+                // 导致「选择角色 / 选择背景」按钮位置偏右。
+                // 等布局稳定后再用真实容器宽度重算一次修正。
+                if (stageFirstMeasureRafRef.current) {
+                    cancelAnimationFrame(stageFirstMeasureRafRef.current);
+                }
+                stageFirstMeasureRafRef.current = window.requestAnimationFrame(() => {
+                    stageFirstMeasureRafRef.current = window.requestAnimationFrame(() => {
+                        stageFirstMeasureRafRef.current = null;
+                        setStageWidth(initialContentWidth);
+                    });
+                });
+            }
             return;
         }
         if (prevStageSizeModeRef.current === props.stageSizeRequestId) return;
@@ -1062,7 +1108,7 @@ const GUIComponent = props => {
         if (props.stageSizeMode === STAGE_SIZE_MODES.small) {
             setStageWidth(FIXED_WIDTH * 0.5);
         } else if (props.stageSizeMode === STAGE_SIZE_MODES.large) {
-            setStageWidth(FIXED_WIDTH);
+            setStageWidth(DEFAULT_LARGE_STAGE_WIDTH);
         } else {
             setStageWidth(null);
         }
@@ -1139,6 +1185,13 @@ const GUIComponent = props => {
             }
         };
     }, [measureStageContainerWidth, enableStageResize]);
+
+    useEffect(() => () => {
+        if (stageFirstMeasureRafRef.current) {
+            cancelAnimationFrame(stageFirstMeasureRafRef.current);
+            stageFirstMeasureRafRef.current = null;
+        }
+    }, []);
 
     useEffect(() => {
         if (!enableStageResize) return;

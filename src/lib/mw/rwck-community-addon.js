@@ -159,6 +159,36 @@ const isEnabled = () => {
     return state.enabled;
 };
 
+/**
+ * 把插件标记为「已启用」并写入持久化设置（localStorage 的 tw:addons）。
+ * 用于 URL 带 ?com=true / ?community=1 时自动启用插件，无需用户手动勾选。
+ * 保留 topBarButton / fileMenuItem 等原有开关值。
+ */
+const enableRwckCommunityAddon = () => {
+    try {
+        let parsed = {};
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw) {
+            try {
+                parsed = JSON.parse(raw);
+            } catch (e) {
+                parsed = {};
+            }
+        }
+        if (typeof parsed !== 'object' || parsed === null) parsed = {};
+        const prev = (parsed[ADDON_ID] && typeof parsed[ADDON_ID] === 'object') ? parsed[ADDON_ID] : {};
+        parsed[ADDON_ID] = {
+            enabled: true,
+            topBarButton: typeof prev.topBarButton === 'boolean' ? prev.topBarButton : DEFAULTS.topBarButton,
+            fileMenuItem: typeof prev.fileMenuItem === 'boolean' ? prev.fileMenuItem : DEFAULTS.fileMenuItem
+        };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(parsed));
+        notifyChange();
+    } catch (e) {
+        // 写入失败就静默跳过，不影响其它逻辑
+    }
+};
+
 /** 顶部菜单栏是否显示「发布作品」按钮 */
 const shouldShowTopBarPublishButton = () => {
     const state = getState();
@@ -179,6 +209,7 @@ const publicAPI = {
     notifyChange,
     subscribeRwckCommunityAddon: subscribe,
     isRwckCommunityAddonEnabled: isEnabled,
+    enableRwckCommunityAddon,
     shouldShowTopBarPublishButton,
     shouldShowFileMenuPublishItem
 };
@@ -195,6 +226,7 @@ export {
     notifyChange,
     subscribe as subscribeRwckCommunityAddon,
     isEnabled as isRwckCommunityAddonEnabled,
+    enableRwckCommunityAddon,
     shouldShowTopBarPublishButton,
     shouldShowFileMenuPublishItem
 };

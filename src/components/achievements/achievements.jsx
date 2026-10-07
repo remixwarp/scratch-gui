@@ -180,6 +180,10 @@ const Achievements = ({intl}) => {
     const categoriesNavRef = useRef(null);
     const dragStateRef = useRef({isDragging: false, startX: 0, scrollLeft: 0, moved: false});
 
+    // 当前页面是 fullscreen.html（全屏播放模式）时不显示欢迎引导界面
+    const isFullscreenPage = typeof window !== 'undefined' &&
+        window.location.pathname.indexOf('fullscreen.html') !== -1;
+
     useEffect(() => {
         const handleUnlock = event => {
             const {achievement, unlockedIds: nextIds} = event.detail;
@@ -313,7 +317,7 @@ const Achievements = ({intl}) => {
 
     return (
         <div className={styles.root}>
-            {!experience && !deviceStep && (
+            {!experience && !deviceStep && !isFullscreenPage && (
                 <div className={styles.backdrop}>
                     <section
                         aria-label={intl.formatMessage(messages.welcomeTitle)}
@@ -367,7 +371,7 @@ const Achievements = ({intl}) => {
                     </section>
                 </div>
             )}
-            {!experience && deviceStep && (
+            {!experience && deviceStep && !isFullscreenPage && (
                 <div className={styles.backdrop}>
                     <section
                         aria-label={intl.formatMessage(messages.selectDeviceTitle)}
@@ -422,7 +426,7 @@ const Achievements = ({intl}) => {
                     </section>
                 </div>
             )}
-            {!experience && layoutStep && (
+            {!experience && layoutStep && !isFullscreenPage && (
                 <div className={styles.backdrop}>
                     <section
                         aria-label={intl.formatMessage(messages.selectLayoutTitle)}
