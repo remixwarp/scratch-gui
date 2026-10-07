@@ -6,7 +6,6 @@ import bindAll from 'lodash.bindall';
 import Box from '../box/box.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
-import {isAchievementsEnabled, setAchievementsEnabled} from '../../lib/achievements.js';
 import Input from '../forms/input.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import DocumentationLink from '../tw-documentation-link/documentation-link.jsx';
@@ -142,42 +141,52 @@ const messages = defineMessages({
     // Editor page settings
     squareStageCorners: {
         defaultMessage: '方形舞台角',
+        description: 'Label for the square stage corners setting',
         id: 'tw.settingsModal.squareStageCorners'
     },
     squareStageCornersHelp: {
         defaultMessage: '将舞台的四角变为直角而不是圆角。',
+        description: 'Help text for the square stage corners setting',
         id: 'tw.settingsModal.squareStageCornersHelp'
     },
     hideExtensionButton: {
         defaultMessage: '隐藏扩展按钮',
+        description: 'Label for the hide extension button setting',
         id: 'tw.settingsModal.hideExtensionButton'
     },
     hideExtensionButtonHelp: {
         defaultMessage: '隐藏积木面板底部的扩展按钮。',
+        description: 'Help text for the hide extension button setting',
         id: 'tw.settingsModal.hideExtensionButtonHelp'
     },
     hideOperatorArrows: {
         defaultMessage: '隐藏运算符箭头',
+        description: 'Label for the hide operator arrows setting',
         id: 'tw.settingsModal.hideOperatorArrows'
     },
     hideOperatorArrowsHelp: {
         defaultMessage: '在数字、字符串和逻辑类积木中隐藏运算符下拉箭头。',
+        description: 'Help text for the hide operator arrows setting',
         id: 'tw.settingsModal.hideOperatorArrowsHelp'
     },
     hideDeleteButton: {
         defaultMessage: '隐藏删除按钮',
+        description: 'Label for the hide delete button setting',
         id: 'tw.settingsModal.hideDeleteButton'
     },
     hideDeleteButtonHelp: {
         defaultMessage: '隐藏选中积木时出现的删除按钮。',
+        description: 'Help text for the hide delete button setting',
         id: 'tw.settingsModal.hideDeleteButtonHelp'
     },
     hideBackpack: {
         defaultMessage: '隐藏背包',
+        description: 'Label for the hide backpack setting',
         id: 'tw.settingsModal.hideBackpack'
     },
     hideBackpackHelp: {
         defaultMessage: '隐藏积木面板底部的背包按钮。',
+        description: 'Help text for the hide backpack setting',
         id: 'tw.settingsModal.hideBackpackHelp'
     },
     // Debugger settings labels (use existing i18n IDs)
@@ -302,16 +311,6 @@ const messages = defineMessages({
         defaultMessage: '项目加载时，无需依次同意每个自定义扩展请求。只需点击一次 \'全部同意\' 即可。',
         description: 'Skip custom extension warning help',
         id: 'tw.settingsModal.skipcustomextwarnhelp'
-    },
-    enableextensionpreview: {
-        defaultMessage: '加载扩展时启用扩展预览（已弃用，需刷新）',
-        description: 'extension preview label',
-        id: 'tw.settingsModal.enableextensionpreview'
-    },
-    enableextensionpreviewhelp: {
-        defaultMessage: '加载自定义扩展前，可以预览要加载的扩展。',
-        description: 'extension preview help',
-        id: 'tw.settingsModal.enableextensionpreviewhelp'
     },
     enablevscodelayout: {
         defaultMessage: '启用 VSCode 布局（需要刷新）',
@@ -647,8 +646,16 @@ const SquareStageCorners = ({value, onChange}) => (
     <BooleanSetting
         value={value}
         onChange={onChange}
-        label="方形舞台角"
-        help="将舞台的四角变为直角而不是圆角。"
+        label={<FormattedMessage
+            defaultMessage="方形舞台角"
+            description="Label for the square stage corners setting"
+            id="tw.settingsModal.squareStageCorners"
+        />}
+        help={<FormattedMessage
+            defaultMessage="将舞台的四角变为直角而不是圆角。"
+            description="Help text for the square stage corners setting"
+            id="tw.settingsModal.squareStageCornersHelp"
+        />}
     />
 );
 SquareStageCorners.propTypes = {
@@ -660,8 +667,16 @@ const HideExtensionButton = ({value, onChange}) => (
     <BooleanSetting
         value={value}
         onChange={onChange}
-        label="隐藏扩展按钮"
-        help="隐藏积木面板底部的扩展按钮。"
+        label={<FormattedMessage
+            defaultMessage="隐藏扩展按钮"
+            description="Label for the hide extension button setting"
+            id="tw.settingsModal.hideExtensionButton"
+        />}
+        help={<FormattedMessage
+            defaultMessage="隐藏积木面板底部的扩展按钮。"
+            description="Help text for the hide extension button setting"
+            id="tw.settingsModal.hideExtensionButtonHelp"
+        />}
     />
 );
 HideExtensionButton.propTypes = {
@@ -673,8 +688,16 @@ const HideOperatorArrows = ({value, onChange}) => (
     <BooleanSetting
         value={value}
         onChange={onChange}
-        label="隐藏运算符箭头"
-        help="在数字、字符串和逻辑类积木中隐藏运算符下拉箭头。"
+        label={<FormattedMessage
+            defaultMessage="隐藏运算符箭头"
+            description="Label for the hide operator arrows setting"
+            id="tw.settingsModal.hideOperatorArrows"
+        />}
+        help={<FormattedMessage
+            defaultMessage="在数字、字符串和逻辑类积木中隐藏运算符下拉箭头。"
+            description="Help text for the hide operator arrows setting"
+            id="tw.settingsModal.hideOperatorArrowsHelp"
+        />}
     />
 );
 HideOperatorArrows.propTypes = {
@@ -686,8 +709,16 @@ const HideDeleteButton = ({value, onChange}) => (
     <BooleanSetting
         value={value}
         onChange={onChange}
-        label="隐藏删除按钮"
-        help="隐藏选中积木时出现的删除按钮。"
+        label={<FormattedMessage
+            defaultMessage="隐藏删除按钮"
+            description="Label for the hide delete button setting"
+            id="tw.settingsModal.hideDeleteButton"
+        />}
+        help={<FormattedMessage
+            defaultMessage="隐藏选中积木时出现的删除按钮。"
+            description="Help text for the hide delete button setting"
+            id="tw.settingsModal.hideDeleteButtonHelp"
+        />}
     />
 );
 HideDeleteButton.propTypes = {
@@ -699,8 +730,16 @@ const HideBackpack = ({value, onChange}) => (
     <BooleanSetting
         value={value}
         onChange={onChange}
-        label="隐藏背包"
-        help="隐藏积木面板底部的背包按钮。"
+        label={<FormattedMessage
+            defaultMessage="隐藏背包"
+            description="Label for the hide backpack setting"
+            id="tw.settingsModal.hideBackpack"
+        />}
+        help={<FormattedMessage
+            defaultMessage="隐藏积木面板底部的背包按钮。"
+            description="Help text for the hide backpack setting"
+            id="tw.settingsModal.hideBackpackHelp"
+        />}
     />
 );
 HideBackpack.propTypes = {
@@ -841,22 +880,6 @@ const SkipCustomExtWarn = props => (
     />
 );
 
-const EnableExtensionPreview = props => (
-    <BooleanSetting
-        {...props}
-        label={
-            <FormattedMessage
-                {...messages.enableextensionpreview}
-            />
-        }
-        help={
-            <FormattedMessage
-                {...messages.enableextensionpreviewhelp}
-            />
-        }
-    />
-);
-
 const EnableVSCodeLayout = props => (
     <BooleanSetting
         {...props}
@@ -870,14 +893,6 @@ const EnableVSCodeLayout = props => (
                 {...messages.enablevscodelayouthelp}
             />
         }
-    />
-);
-
-const EnableAchievements = props => (
-    <BooleanSetting
-        {...props}
-        label="启用成就"
-        help="启用后，可在工具菜单中打开成就窗口。"
     />
 );
 
@@ -1971,7 +1986,9 @@ const StyleOption = ({groupId, option, selected, onSelect, intl}) => (
             />
         </div>
         <span className={styles.styleOptionLabel}>
-            {option.label}
+            {option.labelId ?
+                intl.formatMessage({id: option.labelId, defaultMessage: option.label}) :
+                option.label}
         </span>
     </button>
 );
@@ -2015,7 +2032,11 @@ StyleSelect.propTypes = {
 const TabStyleSelect = props => (
     <StyleSelect
         groupId="tab-style"
-        label="标签页样式"
+        label={<FormattedMessage
+            defaultMessage="标签页样式"
+            description="Label for the tab style setting"
+            id="mw.settingsModal.tabStyleTitle"
+        />}
         value={props.value}
         onChange={props.onChange}
         intl={props.intl}
@@ -2026,7 +2047,11 @@ TabStyleSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func, i
 const TabLooksSelect = props => (
     <StyleSelect
         groupId="tab-looks"
-        label="标签页外观"
+        label={<FormattedMessage
+            defaultMessage="标签页外观"
+            description="Label for the tab looks setting"
+            id="mw.settingsModal.tabLooksTitle"
+        />}
         value={props.value}
         onChange={props.onChange}
         intl={props.intl}
@@ -2037,7 +2062,11 @@ TabLooksSelect.propTypes = {value: PropTypes.string, onChange: PropTypes.func, i
 const WindowStyleSelect = props => (
     <StyleSelect
         groupId="window-style"
-        label="窗口样式"
+        label={<FormattedMessage
+            defaultMessage="窗口样式"
+            description="Label for the window style setting"
+            id="mw.settingsModal.windowStyleTitle"
+        />}
         value={props.value}
         onChange={props.onChange}
         intl={props.intl}
@@ -2119,10 +2148,30 @@ const LayoutOption = ({vscode, selected, onSelect}) => (
             )}
         </div>
         <span className={styles.layoutOptionLabel}>
-            {vscode ? 'VS Code 布局' : 'Scratch 布局'}
+            {vscode ?
+                <FormattedMessage
+                    defaultMessage="VS Code 布局"
+                    description="Label for the VS Code layout option"
+                    id="mw.settingsModal.layout.vscode"
+                /> :
+                <FormattedMessage
+                    defaultMessage="Scratch 布局"
+                    description="Label for the Scratch layout option"
+                    id="mw.settingsModal.layout.scratch"
+                />}
         </span>
         <span className={styles.layoutOptionDesc}>
-            {vscode ? '左侧活动栏 + 右侧多标签工作区' : '经典 Scratch 界面布局'}
+            {vscode ?
+                <FormattedMessage
+                    defaultMessage="左侧活动栏 + 右侧多标签工作区"
+                    description="Description for the VS Code layout option"
+                    id="mw.settingsModal.layout.vscodeDesc"
+                /> :
+                <FormattedMessage
+                    defaultMessage="经典 Scratch 界面布局"
+                    description="Description for the Scratch layout option"
+                    id="mw.settingsModal.layout.scratchDesc"
+                />}
         </span>
     </button>
 );
@@ -2136,7 +2185,11 @@ const LayoutSelect = props => {
     const currentVscode = !!AEsettings.get('EnableVSCodeLayout');
     return (
         <div className={styles.setting}>
-            <div className={styles.label}>{'选择布局后会自动切换相关设置'}</div>
+            <div className={styles.label}><FormattedMessage
+                defaultMessage="选择布局后会自动切换相关设置"
+                description="Hint above the layout picker"
+                id="mw.settingsModal.layoutHint"
+            /></div>
             <div className={styles.layoutPicker}>
                 <LayoutOption
                     vscode={false}
@@ -2202,12 +2255,30 @@ const DeviceLayoutOption = ({device, selected, onSelect}) => (
             )}
         </div>
         <span className={styles.layoutOptionLabel}>
-            {device === 'mobile' ? '移动端布局' : 'PC 端布局'}
+            {device === 'mobile' ?
+                <FormattedMessage
+                    defaultMessage="移动端布局"
+                    description="Label for the mobile layout option"
+                    id="mw.settingsModal.device.mobile"
+                /> :
+                <FormattedMessage
+                    defaultMessage="PC 端布局"
+                    description="Label for the PC layout option"
+                    id="mw.settingsModal.device.pc"
+                />}
         </span>
         <span className={styles.layoutOptionDesc}>
             {device === 'mobile' ?
-                '启用移动布局 + 触屏拖动模式' :
-                '标准桌面布局，关闭移动相关设置'}
+                <FormattedMessage
+                    defaultMessage="启用移动布局 + 触屏拖动模式"
+                    description="Description for the mobile layout option"
+                    id="mw.settingsModal.device.mobileDesc"
+                /> :
+                <FormattedMessage
+                    defaultMessage="标准桌面布局，关闭移动相关设置"
+                    description="Description for the PC layout option"
+                    id="mw.settingsModal.device.pcDesc"
+                />}
         </span>
     </button>
 );
@@ -2223,7 +2294,11 @@ const DeviceLayoutSelect = () => {
     const currentMobile = mobileEnabled && touchDragEnabled;
     return (
         <div className={styles.setting}>
-            <div className={styles.label}>{'设备布局'}</div>
+            <div className={styles.label}><FormattedMessage
+                defaultMessage="设备布局"
+                description="Label for the device layout picker"
+                id="mw.settingsModal.deviceLayout"
+            /></div>
             <div className={styles.layoutPicker}>
                 <DeviceLayoutOption
                     device="mobile"
@@ -2453,18 +2528,6 @@ const pageConfigurations = {
                         })
                     },
                     {
-                        component: EnableAchievements,
-                        props: () => ({
-                            value: isAchievementsEnabled(),
-                            onChange: e => {
-                                setAchievementsEnabled(e.target.checked);
-                                if (e.target.checked) {
-                                    setTimeout(() => location.reload(), 300);
-                                }
-                            }
-                        })
-                    },
-                    {
                         component: CustomDefaultSprite,
                         props: () => ({})
                     },
@@ -2510,13 +2573,6 @@ const pageConfigurations = {
                         props: props => ({
                             value: AEsettings.get('skipExtWarn') || false,
                             onChange: (e) => { AEsettings.set("skipExtWarn", e.target.checked); notifySettingsChange(); location.reload(); }
-                        })
-                    },
-                    {
-                        component: EnableExtensionPreview,
-                        props: props => ({
-                            value: AEsettings.get('EnableExtensionPreview') || false,
-                            onChange: (e) => { AEsettings.set("EnableExtensionPreview", e.target.checked); notifySettingsChange(); location.reload(); }
                         })
                     },
                     {
@@ -3168,7 +3224,6 @@ const SETTINGS_SEARCH_INDEX = [
     {label: '多工作区', keywords: '多工作区 multi workspaces 标签', category: 'general'},
     {label: '帽子积木注释提醒', keywords: '帽子积木 注释 提醒 hat block comment', category: 'general'},
     {label: '云变量服务器', keywords: '云变量 服务器 cloud variable server', category: 'general'},
-    {label: '成就系统', keywords: '成就 achievement 勋章', category: 'general'},
     // 编辑器
     {label: '方形舞台角', keywords: '方形舞台角 square stage corners 直角', category: 'editor'},
     {label: '隐藏扩展按钮', keywords: '隐藏扩展按钮 hide extension button', category: 'editor'},

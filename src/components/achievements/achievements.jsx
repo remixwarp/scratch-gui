@@ -29,7 +29,7 @@ const messages = defineMessages({
         id: 'achievements.welcomeTitle'
     },
     welcomeSubtitle: {
-        defaultMessage: 'Choose your editor experience to decide whether achievements, the tutorial, and similar features are enabled by default.',
+        defaultMessage: 'Choose your editor experience to decide whether the tutorial and similar features are enabled by default.',
         description: 'Welcome subtitle',
         id: 'achievements.welcomeSubtitle'
     },
@@ -44,7 +44,7 @@ const messages = defineMessages({
         id: 'achievements.scratchBeginner'
     },
     scratchBeginnerDesc: {
-        defaultMessage: 'Auto-enable achievements + show onboarding tutorial',
+        defaultMessage: 'Show onboarding tutorial',
         description: 'Description for Scratch beginner button',
         id: 'achievements.scratchBeginnerDesc'
     },
@@ -54,7 +54,7 @@ const messages = defineMessages({
         id: 'achievements.turboWarpExpert'
     },
     turboWarpExpertDesc: {
-        defaultMessage: 'Enable achievements in settings, no onboarding tutorial',
+        defaultMessage: 'No onboarding tutorial',
         description: 'Description for TurboWarp expert button',
         id: 'achievements.turboWarpExpertDesc'
     },

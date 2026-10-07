@@ -7,10 +7,6 @@ import CustomExtensionModalComponent from '../components/tw-custom-extension-mod
 import {closeCustomExtensionModal} from '../reducers/modals';
 import {manuallyTrustExtension, isTrustedExtension} from './tw-security-manager.jsx';
 import {getPersistedUnsandboxed, setPersistedUnsandboxed} from '../lib/persistence/tw-unsandboxed.js';
-import { AESettings } from '../lib/settings.js'
-
-const AEsettings = new AESettings();
-
 /**
  * @param {Blob} blob Blob
  * @returns {Promise<string>} data: uri
@@ -232,7 +228,6 @@ class CustomExtensionModal extends React.Component {
                 onChangeUnsandboxed={this.canChangeUnsandboxed() ? this.handleChangeUnsandboxed : null}
                 onLoadExtension={this.handleLoadExtension}
                 onClose={this.handleClose}
-                showPreview={AEsettings.get('EnableExtensionPreview')}
             />
         );
     }

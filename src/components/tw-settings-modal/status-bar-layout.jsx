@@ -17,14 +17,46 @@ import {
 } from '../../lib/mw-status-bar-layout';
 
 const LABELS = {
-    workspaceMouse: '鼠标在工作区的坐标',
-    stageMouse: '鼠标在舞台上的坐标',
-    zoom: '缩放比例',
-    blockCount: '积木数',
-    spriteName: '当前角色',
-    fps: '帧率 FPS',
-    running: '运行状态',
-    onlineStatus: '在线状态'
+    workspaceMouse: <FormattedMessage
+        defaultMessage="鼠标在工作区的坐标"
+        description="Label for the workspace mouse coordinates status bar segment"
+        id="tw.settingsModal.statusBarItem.workspaceMouse"
+    />,
+    stageMouse: <FormattedMessage
+        defaultMessage="鼠标在舞台上的坐标"
+        description="Label for the stage mouse coordinates status bar segment"
+        id="tw.settingsModal.statusBarItem.stageMouse"
+    />,
+    zoom: <FormattedMessage
+        defaultMessage="缩放比例"
+        description="Label for the zoom status bar segment"
+        id="tw.settingsModal.statusBarItem.zoom"
+    />,
+    blockCount: <FormattedMessage
+        defaultMessage="积木数"
+        description="Label for the block count status bar segment"
+        id="tw.settingsModal.statusBarItem.blockCount"
+    />,
+    spriteName: <FormattedMessage
+        defaultMessage="当前角色"
+        description="Label for the current sprite status bar segment"
+        id="tw.settingsModal.statusBarItem.spriteName"
+    />,
+    fps: <FormattedMessage
+        defaultMessage="帧率 FPS"
+        description="Label for the FPS status bar segment"
+        id="tw.settingsModal.statusBarItem.fps"
+    />,
+    running: <FormattedMessage
+        defaultMessage="运行状态"
+        description="Label for the running state status bar segment"
+        id="tw.settingsModal.statusBarItem.running"
+    />,
+    onlineStatus: <FormattedMessage
+        defaultMessage="在线状态"
+        description="Label for the online status status bar segment"
+        id="tw.settingsModal.statusBarItem.onlineStatus"
+    />
 };
 
 class UnwrappedStatusBarLayoutSetting extends React.Component {
@@ -142,7 +174,11 @@ class UnwrappedStatusBarLayoutSetting extends React.Component {
             <div className={styles.setting}>
                 <div className={styles['layout-header']}>
                     <div className={styles['menu-bar-hint']}>
-                        {'拖动左侧把手以调整状态栏显示内容的顺序，取消勾选以隐藏。'}
+                        <FormattedMessage
+                            defaultMessage="拖动左侧把手以调整状态栏显示内容的顺序，取消勾选以隐藏。"
+                            description="Hint for the status bar layout setting"
+                            id="tw.settingsModal.statusBar.hint"
+                        />
                     </div>
                     <LayoutToolbar
                         onSelectAll={this.handleSelectAll}
@@ -150,7 +186,11 @@ class UnwrappedStatusBarLayoutSetting extends React.Component {
                     />
                 </div>
                 <div className={styles['menu-bar-zone-label']}>
-                    {'状态栏内容'}
+                    <FormattedMessage
+                        defaultMessage="状态栏内容"
+                        description="Label for the status bar contents section"
+                        id="tw.settingsModal.statusBar.contentLabel"
+                    />
                 </div>
                 {draggableIds.map(id => this.renderRow(id))}
                 <div className={styles['menu-bar-zone-label']}>

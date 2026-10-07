@@ -3867,15 +3867,11 @@ class MenuBar extends React.Component {
                                         <MenuSection>
                                             <MenuItem onClick={this.handleClickRwckPublish}>
                                                 <Upload size={20} />
-                                                {/* gui.menuBar.publishRwck 没有中文翻译条目，
-                                                    直接按 locale 显示，避免英文回退 */}
-                                                {this.props.locale === 'zh-cn' ? '发布到创客次元' : (
-                                                    <FormattedMessage
-                                                        defaultMessage="Publish to Rwck"
-                                                        description="File menu item that opens the 创客次元 publish window"
-                                                        id="gui.menuBar.publishRwck"
-                                                    />
-                                                )}
+                                                <FormattedMessage
+                                                    defaultMessage="Publish to Rwck"
+                                                    description="File menu item that opens the 创客次元 publish window"
+                                                    id="gui.menuBar.publishRwck"
+                                                />
                                             </MenuItem>
                                         </MenuSection>
                                     )}
@@ -3953,8 +3949,8 @@ class MenuBar extends React.Component {
                                     >
                                         <Settings />
                                         <FormattedMessage
-                                            defaultMessage="Project Settings"
-                                            description="Menu bar item for settings"
+                                            defaultMessage="Advanced Settings"
+                                            description="Menu bar item that opens the advanced settings modal"
                                             id="tw.menuBar.moreSettings"
                                         />
                                     </MenuItem>

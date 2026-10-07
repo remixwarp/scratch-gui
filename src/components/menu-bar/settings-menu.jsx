@@ -89,7 +89,8 @@ const SettingsMenu = ({
                     >
                         <Settings size={16} />
                         <FormattedMessage
-                            defaultMessage="高级设置"
+                            defaultMessage="Advanced Settings"
+                            description="Menu bar item that opens the advanced settings modal"
                             id="tw.menuBar.moreSettings"
                         />
                     </MenuItem>

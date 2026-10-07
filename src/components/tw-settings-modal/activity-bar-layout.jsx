@@ -1,5 +1,6 @@
 import React from 'react';
 import bindAll from 'lodash.bindall';
+import {FormattedMessage} from 'react-intl';
 import {GripVertical, Lock} from 'lucide-react';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import LayoutToolbar from './layout-toolbar.jsx';
@@ -16,15 +17,35 @@ import {
 } from '../../lib/mw-activity-bar-layout';
 
 const LABELS = {
-    explorer: '资源管理器',
-    addonSettings: '插件设置',
-    addExtension: '添加扩展',
+    explorer: <FormattedMessage
+        defaultMessage="资源管理器"
+        description="Label for the explorer button in activity bar layout settings"
+        id="tw.settingsModal.activityBarItem.explorer"
+    />,
+    addonSettings: <FormattedMessage
+        defaultMessage="插件设置"
+        description="Label for the addon settings button in activity bar layout settings"
+        id="tw.settingsModal.activityBarItem.addonSettings"
+    />,
+    addExtension: <FormattedMessage
+        defaultMessage="添加扩展"
+        description="Label for the add extension button in activity bar layout settings"
+        id="tw.settingsModal.activityBarItem.addExtension"
+    />,
     collaboration: 'Live Collaboration',
     todo: 'Todo',
     git: 'Git',
-    bookmarks: '书签',
+    bookmarks: <FormattedMessage
+        defaultMessage="书签"
+        description="Label for the bookmarks button in activity bar layout settings"
+        id="tw.settingsModal.activityBarItem.bookmarks"
+    />,
     aiAgent: 'AI Agent',
-    achievements: '成就'
+    achievements: <FormattedMessage
+        defaultMessage="成就"
+        description="Label for the achievements button in activity bar layout settings"
+        id="tw.settingsModal.activityBarItem.achievements"
+    />
 };
 
 class UnwrappedActivityBarLayoutSetting extends React.Component {
@@ -115,7 +136,11 @@ class UnwrappedActivityBarLayoutSetting extends React.Component {
         );
     }
     renderFixedRow (id) {
-        const label = '设置（固定）';
+        const label = <FormattedMessage
+            defaultMessage="设置（固定）"
+            description="Label for the pinned settings button in activity bar layout settings"
+            id="tw.settingsModal.activityBar.settingsFixed"
+        />;
         return (
             <div
                 key={id}
@@ -134,7 +159,11 @@ class UnwrappedActivityBarLayoutSetting extends React.Component {
             <div className={styles.setting}>
                 <div className={styles['layout-header']}>
                     <div className={styles['menu-bar-hint']}>
-                        {'拖动左侧把手以调整活动栏按钮顺序，取消勾选以隐藏。设置按钮固定在底部，不可调整。'}
+                        <FormattedMessage
+                            defaultMessage="拖动左侧把手以调整活动栏按钮顺序，取消勾选以隐藏。设置按钮固定在底部，不可调整。"
+                            description="Hint for the activity bar layout setting"
+                            id="tw.settingsModal.activityBar.hint"
+                        />
                     </div>
                     <LayoutToolbar
                         onSelectAll={this.handleSelectAll}
@@ -142,13 +171,21 @@ class UnwrappedActivityBarLayoutSetting extends React.Component {
                     />
                 </div>
                 <div className={styles['menu-bar-zone-label']}>
-                    {'活动栏按钮'}
+                    <FormattedMessage
+                        defaultMessage="活动栏按钮"
+                        description="Label for the activity bar buttons section"
+                        id="tw.settingsModal.activityBar.buttonsLabel"
+                    />
                 </div>
                 {this.state.order
                     .filter(id => BUTTONS.indexOf(id) !== -1)
                     .map(id => this.renderButtonRow(id))}
                 <div className={styles['menu-bar-zone-label']}>
-                    {'固定在底部（不可开关 / 调整）'}
+                    <FormattedMessage
+                        defaultMessage="固定在底部（不可开关 / 调整）"
+                        description="Label for the fixed-at-bottom section in activity bar layout settings"
+                        id="tw.settingsModal.activityBar.fixedBottomLabel"
+                    />
                 </div>
                 {FIXED_BOTTOM.map(id => this.renderFixedRow(id))}
             </div>

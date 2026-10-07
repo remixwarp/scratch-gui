@@ -1,5 +1,6 @@
 import React from 'react';
 import bindAll from 'lodash.bindall';
+import {FormattedMessage} from 'react-intl';
 import {GripVertical} from 'lucide-react';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import LayoutToolbar from './layout-toolbar.jsx';
@@ -16,19 +17,76 @@ import {
 } from '../../lib/mw-menu-bar-layout';
 
 const LABELS = {
-    'file': '文件',
-    'view': '查看',
-    'bookmarks': '书签',
-    'edit': '编辑',
-    'tools': '工具',
-    'mode': '模式',
-    'block-count': '积木数量',
-    'save-status': '保存状态',
-    'addons': '扩展',
-    'settings': '设置',
-    'about': '关于',
-    'project-title': '项目标题',
-    'community': '社区'
+    'file': <FormattedMessage
+        defaultMessage="文件"
+        description="Label for the file menu in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.file"
+    />,
+    'view': <FormattedMessage
+        defaultMessage="查看"
+        description="Label for the view menu in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.view"
+    />,
+    'bookmarks': <FormattedMessage
+        defaultMessage="书签"
+        description="Label for the bookmarks menu in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.bookmarks"
+    />,
+    'edit': <FormattedMessage
+        defaultMessage="编辑"
+        description="Label for the edit menu in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.edit"
+    />,
+    'tools': <FormattedMessage
+        defaultMessage="工具"
+        description="Label for the tools menu in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.tools"
+    />,
+    'mode': <FormattedMessage
+        defaultMessage="模式"
+        description="Label for the mode menu in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.mode"
+    />,
+    'block-count': <FormattedMessage
+        defaultMessage="积木数量"
+        description="Label for the block count item in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.blockCount"
+    />,
+    'save-status': <FormattedMessage
+        defaultMessage="保存状态"
+        description="Label for the save status item in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.saveStatus"
+    />,
+    'addons': <FormattedMessage
+        defaultMessage="扩展"
+        description="Label for the addons menu in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.addons"
+    />,
+    'settings': <FormattedMessage
+        defaultMessage="设置"
+        description="Label for the settings button in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.settings"
+    />,
+    'about': <FormattedMessage
+        defaultMessage="关于"
+        description="Label for the about menu in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.about"
+    />,
+    'project-title': <FormattedMessage
+        defaultMessage="项目标题"
+        description="Label for the project title in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.projectTitle"
+    />,
+    'community': <FormattedMessage
+        defaultMessage="社区"
+        description="Label for the community menu in menu bar layout settings"
+        id="tw.settingsModal.menuBarItem.community"
+    />,
+    'rwck-publish': <FormattedMessage
+        defaultMessage="发布到创客次元"
+        description="Label for the Rwck publish item in menu bar layout settings"
+        id="gui.menuBar.publishRwck"
+    />
 };
 
 const isVisibleItem = id => !id.startsWith('__');
@@ -144,7 +202,11 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
             <div className={styles.setting}>
                 <div className={styles['layout-header']}>
                     <div className={styles['menu-bar-hint']}>
-                        {'拖动以重新排序每组中的项目。取消勾选以隐藏。'}
+                        <FormattedMessage
+                            defaultMessage="拖动以重新排序每组中的项目。取消勾选以隐藏。"
+                            description="Hint for the menu bar layout setting"
+                            id="mw.settingsModal.menuBarHint"
+                        />
                     </div>
                     <LayoutToolbar
                         onSelectAll={this.handleSelectAll}
@@ -152,14 +214,22 @@ class UnwrappedMenuBarLayoutSetting extends React.Component {
                     />
                 </div>
                 {[
-                    {labelText: '左侧菜单', zones: ['left']},
-                    {labelText: '右上角按钮', zones: ['right']}
+                    {id: 'left', label: <FormattedMessage
+                        defaultMessage="左侧菜单"
+                        description="Label for the left menus section in menu bar layout settings"
+                        id="mw.settingsModal.leftMenus"
+                    />, zones: ['left']},
+                    {id: 'right', label: <FormattedMessage
+                        defaultMessage="右上角按钮"
+                        description="Label for the top-right buttons section in menu bar layout settings"
+                        id="mw.settingsModal.topRightButtons"
+                    />, zones: ['right']}
                 ].map(section => {
                     if (this.sectionRowCount(section) === 0) return null;
                     return (
-                        <div key={section.labelText}>
+                        <div key={section.id}>
                             <div className={styles['menu-bar-zone-label']}>
-                                {section.labelText}
+                                {section.label}
                             </div>
                             {section.zones.map(zoneId => this.renderZone(zoneId))}
                         </div>
