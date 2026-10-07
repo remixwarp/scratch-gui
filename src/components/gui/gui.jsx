@@ -16,6 +16,9 @@ import SoundTab from '../../containers/sound-tab.jsx';
 const ExtensionLibrary = React.lazy(() => import('../../containers/extension-library.jsx'));
 import TargetPane from '../../containers/target-pane.jsx';
 import StageWrapper from '../../containers/stage-wrapper.jsx';
+import StageInWindow from '../stage/stage-in-window.jsx';
+import AddonWindow from '../../addons/window-system/window.jsx';
+import {setStageDetached} from '../../reducers/stage-detach';
 import Loader from '../loader/loader.jsx';
 import Box from '../box/box.jsx';
 import MenuBar from '../menu-bar/menu-bar.jsx';
@@ -89,7 +92,13 @@ import {recordSponsorIntent, isAchievementsEnabled} from '../../lib/achievements
 import AchievementTracker from '../achievements/achievement-tracker.jsx';
 import Achievements from '../achievements/achievements.jsx';
 
-import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
+import {
+    STAGE_SIZE_MODES,
+    STAGE_DISPLAY_SIZES,
+    STAGE_DISPLAY_SCALE_METADATA,
+    FIXED_WIDTH,
+    UNCONSTRAINED_NON_STAGE_WIDTH
+} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
 import {Theme} from '../../lib/themes';
 
@@ -670,12 +679,12 @@ const GUIComponent = props => {
                             // .rj = RemixWarp 分片式作品文件，直接装进 VM（资源按需解压）
                             console.log('RJ file detected, loading into VM');
                             Promise.all([
-                                import('../../lib/rj/deserialize.js'),
+                                import('../../lib/rj/rj-lazy-loader.js'),
                                 import('../../lib/rj/progress.js')
                             ])
-                                .then(([{loadRJIntoVM}, {createRJProgressReporter}]) => {
+                                .then(([{loadRJIntoVMProgressive}, {createRJProgressReporter}]) => {
                                     const report = payload => dispatch(setLoadingProgress(payload));
-                                    return loadRJIntoVM(vm, projectData, {
+                                    return loadRJIntoVMProgressive(vm, projectData, {
                                         onProgress: progress => {
                                             console.log('[rj]', progress.stage);
                                             createRJProgressReporter(locale, report)(progress);
@@ -1059,8 +1068,15 @@ const GUIComponent = props => {
             containerEl.getBoundingClientRect().width :
             window.innerWidth;
         const maxOuterWidth = containerWidth - MIN_EDITOR_PANE_WIDTH - 6;
-        if (Number.isFinite(maxOuterWidth) && maxOuterWidth > 0) {
-            outerWidth = Math.min(outerWidth, maxOuterWidth);
+        if (Number.isFinite(maxOuterWidth) && maxOuterWidth > 0 && outerWidth > maxOuterWidth) {
+            outerWidth = maxOuterWidth;
+            // 面板宽度被可用空间截断时，舞台画布宽度必须同步截断；
+            // 否则画布会比面板宽，下方的「选择角色 / 选择背景」按钮
+            // 会偏到画布左侧并被面板边缘裁切
+            contentWidth = Math.max(
+                0,
+                outerWidth - 2 - paddingLeft - paddingRight - borderExtra
+            );
         }
         setStagePanelWidth(outerWidth);
         setStageContainerWidth(contentWidth + 2);
@@ -1078,6 +1094,11 @@ const GUIComponent = props => {
                 initialContentWidth = FIXED_WIDTH * 0.5;
             } else if (!props.isFullScreen && props.stageSizeMode === STAGE_SIZE_MODES.large) {
                 initialContentWidth = DEFAULT_LARGE_STAGE_WIDTH;
+            } else if (!props.isFullScreen && props.stageSizeMode === STAGE_SIZE_MODES.full) {
+                const baseWidth = (props.customStageSize && props.customStageSize.width) || FIXED_WIDTH;
+                initialContentWidth = Math.round(
+                    baseWidth * STAGE_DISPLAY_SCALE_METADATA[STAGE_DISPLAY_SIZES.full].scale
+                );
             }
             if (initialContentWidth !== null) {
                 setStageWidth(initialContentWidth);
@@ -1109,6 +1130,12 @@ const GUIComponent = props => {
             setStageWidth(FIXED_WIDTH * 0.5);
         } else if (props.stageSizeMode === STAGE_SIZE_MODES.large) {
             setStageWidth(DEFAULT_LARGE_STAGE_WIDTH);
+        } else if (props.stageSizeMode === STAGE_SIZE_MODES.full) {
+            // 完整大小模式：舞台按 0.85 倍显示。显式设置与舞台一致的面板宽度，
+            // 避免面板退化为 min-content（被头部按钮撑宽或超出窗口），
+            // 导致下方「选择角色 / 选择背景」按钮偏移甚至被裁切
+            const baseWidth = (props.customStageSize && props.customStageSize.width) || FIXED_WIDTH;
+            setStageWidth(Math.round(baseWidth * STAGE_DISPLAY_SCALE_METADATA[STAGE_DISPLAY_SIZES.full].scale));
         } else {
             setStageWidth(null);
         }
@@ -1772,7 +1799,7 @@ const GUIComponent = props => {
     return (<MediaQuery minWidth={unconstrainedWidth}>{isUnconstrained => {
         const stageSize = resolveStageSize(stageSizeMode, isUnconstrained);
 
-        return isPlayerOnly ? (
+        return (<React.Fragment>{isPlayerOnly ? (
             <React.Fragment>
                 {isWindowFullScreen ? (
                     <div
@@ -1789,6 +1816,7 @@ const GUIComponent = props => {
                     isRtl={isRtl}
                     loading={loading}
                     stageSize={STAGE_SIZE_MODES.full}
+                    stageDetached={isStageDetached}
                     vm={vm}
                 >
                     {alertsVisible ? (
@@ -2201,7 +2229,22 @@ const GUIComponent = props => {
             {enableBlockCounter && <BlockCounter theme={theme} />}
 
         </Box>
-        );
+        )}{isStageDetached ? (
+            <AddonWindow
+                id="split-stage-window"
+                title={'舞台'}
+                width={520}
+                height={460}
+                minWidth={320}
+                minHeight={300}
+                onClose={() => props.onSetStageDetached(false)}
+            >
+                <StageInWindow
+                    vm={vm}
+                    isRendererSupported={isRendererSupported()}
+                />
+            </AddonWindow>
+        ) : null}</React.Fragment>);
     }}</MediaQuery>);
 };
 
@@ -2370,6 +2413,7 @@ const mapStateToProps = state => ({
     helpModalVisible: state.scratchGui.modals.helpModal,
     projectMetadataModalVisible: state.scratchGui.modals.projectMetadataModal,
     debuggerModalVisible: state.scratchGui.modals.debuggerModal,
+    isStageDetached: state.scratchGui.stageDetach.isStageDetached,
     settingsModalVisible: state.scratchGui.modals.settingsModal
 });
 
@@ -2377,7 +2421,8 @@ const mapDispatchToProps = dispatch => ({
     dispatch: dispatch,
     onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
     onOpenOnboarding: () => dispatch(showOnboarding()),
-    onOpenReadme: () => dispatch(openReadme())
+    onOpenReadme: () => dispatch(openReadme()),
+    onSetStageDetached: value => dispatch(setStageDetached(value))
 });
 
 export default injectIntl(connect(

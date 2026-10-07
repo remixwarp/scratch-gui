@@ -7,7 +7,7 @@ import log from '../utils/log';
 import sharedMessages from '../constants/shared-messages';
 import {setFileHandle, setProjectError} from '../../reducers/tw';
 import unpackage from '../unpackager';
-import {loadRJIntoVM} from '../rj/deserialize.js';
+import {loadRJIntoVMProgressive} from '../rj/rj-lazy-loader.js';
 import {isRJFilename} from '../rj/constants.js';
 import {createRJProgressReporter} from '../rj/progress.js';
 import {clearCurrentRJ} from '../rj/rj-store.js';
@@ -242,7 +242,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                     try {
                         const locale = this.props.locale;
                         const report = this.props.onLoadingProgress;
-                        await loadRJIntoVM(this.props.vm, projectData, {
+                        await loadRJIntoVMProgressive(this.props.vm, projectData, {
                             onProgress: progress => {
                                 log.info(`[rj] ${progress.stage}`, progress);
                                 createRJProgressReporter(locale, report)(progress);

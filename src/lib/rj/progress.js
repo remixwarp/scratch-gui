@@ -34,8 +34,8 @@ const TEXT = {
         zh: '正在并行载入积木（共 {blockCount} 个）……'
     },
     [RJ_LOAD_STAGES.WRITING_TO_EDITOR]: {
-        en: 'Writing targets and blocks into the editor …',
-        zh: '正在把角色与积木写入编辑器……'
+        en: 'Writing targets and blocks into the editor ({done}/{total}) …',
+        zh: '正在把角色与积木写入编辑器（{done}/{total}）……'
     },
     [RJ_LOAD_STAGES.FINISHED]: {
         en: 'Assembling project data and building the editor …',
