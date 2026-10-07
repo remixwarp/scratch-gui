@@ -614,3 +614,77 @@
   min-height: 0;
   flex-direction: column;
 }
+
+/* ============ 自由窗口（积木盒）内部布局 ============ */
+.floatingWindowContent {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--ui-primary, #fff);
+}
+
+.floatingWindowHeader {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--ui-secondary, rgba(245, 245, 245, 1));
+  border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+}
+
+.floatingTargetBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--text-primary, inherit);
+  font-size: 12px;
+  transition: background 0.12s;
+}
+.floatingTargetBtn:hover {
+  background: rgba(76, 151, 255, 0.08);
+}
+
+.floatingBlocksWrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ============ 拆分列已拆出占位 ============ */
+.detachedPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 10px;
+  color: var(--text-primary, rgba(0, 0, 0, 0.6));
+  font-size: 13px;
+  background: var(--ui-secondary, var(--ui-primary, #fff));
+}
+.detachedPlaceholderText {
+  opacity: 0.75;
+}
+.detachedRestoreBtn {
+  padding: 4px 14px;
+  background: transparent;
+  border: 1px solid var(--looks-secondary, #4C97FF);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--looks-secondary, #4C97FF);
+  font-size: 12px;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.detachedRestoreBtn:hover {
+  background: color-mix(in srgb, var(--looks-secondary, #4C97FF) 12%, transparent);
+}

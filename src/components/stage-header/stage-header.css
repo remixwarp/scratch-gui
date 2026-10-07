@@ -60,6 +60,16 @@
     margin-left: 0.2rem;
 }
 
+/* 拆分舞台按钮移到「缩小舞台」按钮左侧时，与右侧切换组之间留出间距 */
+.splitStageButton {
+    margin-right: 0.2rem;
+}
+
+[dir="rtl"] .splitStageButton {
+    margin-right: 0;
+    margin-left: 0.2rem;
+}
+
 [dir="rtl"] .stageButtonsGroup > * {
     margin-left: 0;
     margin-right: 0.2rem;

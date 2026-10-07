@@ -167,6 +167,13 @@ class GUI extends React.Component {
             }
 
             this.props.onProjectLoaded();
+
+            // 项目（新作品 / .rj / sb3 / html）加载完成后强制刷新舞台渲染，
+            // 避免加载结束时舞台仍停留在旧画面或空白。放在 isShowingProject
+            // 由 false -> true 的瞬间，可统一覆盖所有加载路径。
+            if (this.props.vm && this.props.vm.renderer) {
+                this.props.vm.renderer.draw();
+            }
         }
 
         // Sync costume when tab changes from costumes tab

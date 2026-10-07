@@ -22,7 +22,14 @@ class DOMElementRenderer extends React.Component {
         this.container.appendChild(this.props.domElement);
     }
     componentWillUnmount () {
-        this.container.removeChild(this.props.domElement);
+        // The same DOM element (e.g. the shared stage canvas) can be moved
+        // between two DOMElementRenderer instances within a single commit
+        // (splitting / merging the stage window). Only remove it when it is
+        // still a child of this container, otherwise removeChild would throw
+        // a NotFoundError and crash the whole app.
+        if (this.container && this.props.domElement.parentNode === this.container) {
+            this.container.removeChild(this.props.domElement);
+        }
     }
     setContainer (c) {
         this.container = c;

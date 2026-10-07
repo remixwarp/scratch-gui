@@ -111,7 +111,10 @@ let windowCount = 0;
 const activeWindows = new Map();
 
 const IN_PAGE_WINDOW_IDS = new Set([
-    'customProceduresModal'
+    'customProceduresModal',
+    // 拆分舞台必须落在应用内的自由窗口里（而不是原生浏览器弹出窗口），
+    // 这样唯一的渲染画布才能在同一个文档内被搬运、且窗口始终可见。
+    'split-stage-window'
 ]);
 
 const canUseNativeWindows = () =>

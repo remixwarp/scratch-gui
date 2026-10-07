@@ -99,6 +99,7 @@ import {
     FIXED_WIDTH,
     UNCONSTRAINED_NON_STAGE_WIDTH
 } from '../../lib/constants/layout-constants';
+import {getIsShowingProject} from '../../reducers/project-state';
 import {resolveStageSize} from '../../lib/utils/screen';
 import {Theme} from '../../lib/themes';
 
@@ -309,6 +310,25 @@ const MIN_STAGE_PANEL_WIDTH = (FIXED_WIDTH * 0.5) + 18;
  * 舞台会按容器宽度等比缩放，不会改变作品里的舞台尺寸。
  */
 const DEFAULT_LARGE_STAGE_WIDTH = Math.round(FIXED_WIDTH * 3.0);
+
+// VS Code 布局下，活动栏（约 41px）占用在积木区内部；
+// 这里大幅减少「积木区」保留宽度，让舞台面板可以更大（舞台左移并放大，挤压积木区）。
+// 需要挤压得更多就调小这个值（同时把 gui.css 里 .editor-wrapper.vscodeLayout
+// 的 flex-basis 偏移量改成 598 - 该值）。
+const MIN_EDITOR_PANE_WIDTH_VSCODE = 360;
+
+// 根据当前舞台尺寸模式计算舞台面板内容宽度。
+// 初次挂载与 VS Code 布局切换时会用它按新的可用宽度重算舞台面板，
+// 使舞台在 VS Code 布局下更大、在正常布局下恢复。
+const computeStageContentWidth = (mode, customStageSize) => {
+    if (mode === STAGE_SIZE_MODES.small) return FIXED_WIDTH * 0.5;
+    if (mode === STAGE_SIZE_MODES.large) return DEFAULT_LARGE_STAGE_WIDTH;
+    if (mode === STAGE_SIZE_MODES.full) {
+        const baseWidth = (customStageSize && customStageSize.width) || FIXED_WIDTH;
+        return Math.round(baseWidth * STAGE_DISPLAY_SCALE_METADATA[STAGE_DISPLAY_SIZES.full].scale);
+    }
+    return null;
+};
 
 const cachedStyleValues = new WeakMap();
 
@@ -783,6 +803,22 @@ const GUIComponent = props => {
         };
     }, []);
 
+    // VS Code 布局切换会改变积木区的保留宽度（活动栏占位），从而改变舞台面板
+    // 可用的最大宽度。重新按当前舞台模式计算面板宽度，让舞台在 VS Code 布局下
+    // 更大（左移并放大，挤压积木区），在正常布局下恢复；同时通知 Blockly 重新测量。
+    useEffect(() => {
+        if (enableStageResize && !props.isFullScreen) {
+            const contentWidth = computeStageContentWidth(props.stageSizeMode, props.customStageSize);
+            if (contentWidth !== null) {
+                setStageWidth(contentWidth);
+            }
+        }
+        const raf = requestAnimationFrame(() => {
+            window.dispatchEvent(new Event('resize'));
+        });
+        return () => cancelAnimationFrame(raf);
+    }, [vscodeLayout]);
+
     // 监听积木计数器设置变化
     useEffect(() => {
         const updateBlockCounter = () => {
@@ -1067,7 +1103,8 @@ const GUIComponent = props => {
         const containerWidth = containerEl ?
             containerEl.getBoundingClientRect().width :
             window.innerWidth;
-        const maxOuterWidth = containerWidth - MIN_EDITOR_PANE_WIDTH - 6;
+        const maxOuterWidth = containerWidth -
+            (vscodeLayout ? MIN_EDITOR_PANE_WIDTH_VSCODE : MIN_EDITOR_PANE_WIDTH) - 6;
         if (Number.isFinite(maxOuterWidth) && maxOuterWidth > 0 && outerWidth > maxOuterWidth) {
             outerWidth = maxOuterWidth;
             // 面板宽度被可用空间截断时，舞台画布宽度必须同步截断；
@@ -1080,7 +1117,52 @@ const GUIComponent = props => {
         }
         setStagePanelWidth(outerWidth);
         setStageContainerWidth(contentWidth + 2);
-    }, [getStageBorderExtraWidth]);
+    }, [getStageBorderExtraWidth, vscodeLayout]);
+
+    // 编辑器（非播放器/落地页）真正显示出来后，舞台面板宽度要在最终布局上重算一次：
+    // 首次挂载时往往还处在加载界面或落地页，此时按（尚未稳定的）容器宽度算出的
+    // 面板宽度会让面板底部「选择角色 / 选择背景」两个按钮定位错误（偏移或被裁切）。
+    // 这里在编辑器可见时按当前舞台模式重算面板宽度并通知布局，让那两个按钮重新定位。
+    const editorBecameVisibleRef = useRef(false);
+    useEffect(() => {
+        if (isEmbedded || isPlayerOnly) {
+            // 播放器/落地页/嵌入模式：重置标记，下次进入编辑器会再次重算
+            editorBecameVisibleRef.current = false;
+            return;
+        }
+        const editorVisible =
+            !props.isFullScreen && getIsShowingProject(props.loadingState);
+        if (editorVisible && !editorBecameVisibleRef.current) {
+            editorBecameVisibleRef.current = true;
+            if (enableStageResize) {
+                const contentWidth = computeStageContentWidth(
+                    props.stageSizeMode,
+                    props.customStageSize
+                );
+                if (contentWidth !== null) {
+                    setStageWidth(contentWidth);
+                }
+                measureStageContainerWidth();
+            }
+            const raf = requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+            });
+            return () => cancelAnimationFrame(raf);
+        }
+        if (!editorVisible) {
+            editorBecameVisibleRef.current = false;
+        }
+    }, [
+        isEmbedded,
+        isPlayerOnly,
+        props.isFullScreen,
+        props.loadingState,
+        props.stageSizeMode,
+        props.customStageSize,
+        enableStageResize,
+        setStageWidth,
+        measureStageContainerWidth
+    ]);
 
     useLayoutEffect(() => {
         if (!enableStageResize) return;
@@ -1292,7 +1374,11 @@ const GUIComponent = props => {
             e.currentTarget.getBoundingClientRect() : null;
         const resizerWidth = (resizerRect && Number.isFinite(resizerRect.width)) ? resizerRect.width : 6;
 
-        const maxWidthByEditor = Math.max(minWidth, containerWidth - MIN_EDITOR_PANE_WIDTH - resizerWidth);
+        const maxWidthByEditor = Math.max(
+            minWidth,
+            containerWidth -
+                (vscodeLayout ? MIN_EDITOR_PANE_WIDTH_VSCODE : MIN_EDITOR_PANE_WIDTH) - resizerWidth
+        );
 
         let stageWrapperEl = el.querySelector('[class*="stage-wrapper_stage-wrapper"]');
         if (!stageWrapperEl) {
@@ -1403,7 +1489,8 @@ const GUIComponent = props => {
         getStageBorderExtraWidth,
         measureStageContainerWidth,
         props.customStageSize,
-        enableStageResize
+        enableStageResize,
+        vscodeLayout
     ]);
 
     const updateCanShowReadme = () => {
@@ -1660,10 +1747,11 @@ const GUIComponent = props => {
 
     const minDimensions = useMemo(() => ({
         minWidth: typeof stagePanelWidth === 'number' ?
-            MIN_EDITOR_PANE_WIDTH + stagePanelWidth + 6 + 16 :
+            (vscodeLayout ? MIN_EDITOR_PANE_WIDTH_VSCODE : MIN_EDITOR_PANE_WIDTH) +
+                stagePanelWidth + 6 + 16 :
             1024 + Math.max(0, customStageSize.width - 480),
         minHeight: 640 + Math.max(0, customStageSize.height - 360)
-    }), [customStageSize.width, customStageSize.height, stagePanelWidth]);
+    }), [vscodeLayout, customStageSize.width, customStageSize.height, stagePanelWidth]);
 
     const stagePanelStyle = useMemo(() => {
         if (!stagePanelWidth) return null;
@@ -1816,7 +1904,7 @@ const GUIComponent = props => {
                     isRtl={isRtl}
                     loading={loading}
                     stageSize={STAGE_SIZE_MODES.full}
-                    stageDetached={isStageDetached}
+                    stageDetached={props.isStageDetached}
                     vm={vm}
                 >
                     {alertsVisible ? (
@@ -2194,6 +2282,7 @@ const GUIComponent = props => {
                                 stageContainerWidth={
                                     typeof stageContainerWidth === 'number' ? stageContainerWidth : null
                                 }
+                                stageDetached={props.isStageDetached}
                                 vm={vm}
                             />
                             <Box className={styles.targetWrapper}>
@@ -2229,15 +2318,18 @@ const GUIComponent = props => {
             {enableBlockCounter && <BlockCounter theme={theme} />}
 
         </Box>
-        )}{isStageDetached ? (
+        )}{props.isStageDetached ? (
             <AddonWindow
                 id="split-stage-window"
                 title={'舞台'}
-                width={520}
-                height={460}
-                minWidth={320}
-                minHeight={300}
+                width={480}
+                height={405}
+                minWidth={240}
+                minHeight={180}
+                x={typeof window !== 'undefined' ? Math.max(16, window.innerWidth - 480 - 24) : undefined}
+                y={80}
                 onClose={() => props.onSetStageDetached(false)}
+                onMinimize={() => props.onSetStageDetached(false)}
             >
                 <StageInWindow
                     vm={vm}

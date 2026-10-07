@@ -64,8 +64,17 @@ const SpriteSelectorItem = props => {
                     onClick={props.onDeleteButtonClick}
                 />
             ) : null }
-            {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick || props.onAddToFolder ? (
+            {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick || props.onAddToFolder || props.onEditBlocksClick ? (
                 <ContextMenu id={menuId}>
+                    {props.onEditBlocksClick ? (
+                        <MenuItem onClick={() => props.onEditBlocksClick(props.id)}>
+                            <FormattedMessage
+                                defaultMessage="编辑积木"
+                                description="Menu item to open the sprite's blocks in a floating window"
+                                id="gui.spriteSelectorItem.contextMenuEditBlocks"
+                            />
+                        </MenuItem>
+                    ) : null}
                     {props.onDuplicateButtonClick ? (
                         <MenuItem onClick={props.onDuplicateButtonClick}>
                             <FormattedMessage
@@ -133,6 +142,7 @@ SpriteSelectorItem.propTypes = {
     onAddToFolder: PropTypes.func,
     onDeleteButtonClick: PropTypes.func,
     onDuplicateButtonClick: PropTypes.func,
+    onEditBlocksClick: PropTypes.func,
     onExportButtonClick: PropTypes.func,
     onRenameButtonClick: PropTypes.func,
     onMouseDown: PropTypes.func,

@@ -388,6 +388,11 @@ const messages = defineMessages({
         description: 'EnableStatusBar help',
         id: 'tw.settingsModal.enablestatusbarhelp'
     },
+    splitStage: {
+        defaultMessage: '拆分舞台',
+        description: 'Experimental setting to detach the stage into a free window',
+        id: 'mw.settings.splitStage'
+    },
     enablecommandpalette: {
         defaultMessage: '启用命令面板',
         description: 'EnableCommandPalette label',
@@ -972,6 +977,17 @@ const EnableStatusBar = props => (
     />
 );
 
+const EnableSplitStage = props => (
+    <BooleanSetting
+        {...props}
+        label={
+            <FormattedMessage
+                {...messages.splitStage}
+            />
+        }
+    />
+);
+
 const EnableCommandPalette = props => (
     <BooleanSetting
         {...props}
@@ -1549,7 +1565,7 @@ const settingDefinitions = {
             description: 'Unclip palette setting help',
             id: 'mw.settingsModal.unclipPaletteHelp'
         }
-    },
+    }
 };
 
 const createBooleanSetting = (key, definition) => {
@@ -2420,6 +2436,13 @@ const pageConfigurations = {
                         props: props => ({
                             value: AEsettings.get('EnableStatusBar') || false,
                             onChange: (e) => { AEsettings.set("EnableStatusBar", e.target.checked); notifySettingsChange(); }
+                        })
+                    },
+                    {
+                        component: EnableSplitStage,
+                        props: props => ({
+                            value: AEsettings.get('EnableSplitStage') || false,
+                            onChange: (e) => { AEsettings.set("EnableSplitStage", e.target.checked); notifySettingsChange(); }
                         })
                     },
                     {

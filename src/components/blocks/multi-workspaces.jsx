@@ -1,14 +1,19 @@
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useState, useCallback, useRef} from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {connect} from 'react-redux';
 import {defineMessages, injectIntl} from 'react-intl';
 import Blocks from '../../containers/blocks.jsx';
+import AddonWindow from '../../addons/window-system/window.jsx';
+import WindowManager from '../../addons/window-system/window-manager.js';
 import {
     togglePanelViaEvent,
     PANEL_STATE_EVENT,
     getPanelState
 } from '../../lib/mw-panels-store.js';
+import {
+    registerFloatingBlocksOpener
+} from '../../lib/mw-floating-blocks-store.js';
 import styles from './multi-workspaces.css';
 
 const messages = defineMessages({
@@ -18,6 +23,138 @@ const messages = defineMessages({
         description: 'Toolbar button title for opening the problems/runtime console panel'
     }
 });
+
+/**
+ * FloatingBlocksWindow 组件
+ * 把某个角色/造型的积木盒嵌入到自由窗口引擎（AddonWindow）中。
+ * 窗口内部顶部带一个角色选择器，可把该窗口切换到其它角色/造型，
+ * 因此可以同时打开多个窗口，分别承载不同角色或造型的积木盒。
+ */
+const FloatingBlocksWindow = ({
+    winKey,
+    targetId,
+    title,
+    x,
+    y,
+    targets,
+    targetNames,
+    vm,
+    theme,
+    canUseCloud,
+    stageSize,
+    onOpenCustomExtensionModal,
+    onChangeTarget,
+    onClose
+}) => {
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+
+    useEffect(() => {
+        if (!dropdownOpen) return undefined;
+        const handler = (e) => {
+            if (!e.target.closest || !e.target.closest('[data-fw-target-dropdown]')) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [dropdownOpen]);
+
+    return (
+        <AddonWindow
+            id={`mw-floating-blocks-${winKey}`}
+            title={title}
+            width={440}
+            height={560}
+            minWidth={320}
+            minHeight={320}
+            x={x}
+            y={y}
+            className="mw-floating-blocks-window"
+            onMinimize={onClose}
+            onClose={onClose}
+        >
+            <div className={styles.floatingWindowContent}>
+                {/* 窗口内角色选择器：把该窗口切换到其它角色/造型 */}
+                <div
+                    className={styles.floatingWindowHeader}
+                    data-fw-target-dropdown
+                >
+                    <button
+                        type="button"
+                        className={styles.floatingTargetBtn}
+                        onClick={() => setDropdownOpen(o => !o)}
+                        title={targetNames[targetId] || targetId || '选择角色/背景'}
+                    >
+                        <span className={styles.splitTargetName}>
+                            {targetNames[targetId] || (targetId ? '未选择' : '未设置')}
+                        </span>
+                        <svg width="10" height="6" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0 0 L5 6 L10 0 Z" fill="currentColor" />
+                        </svg>
+                    </button>
+                    {dropdownOpen ? (
+                        <ul
+                            className={styles.splitTargetMenu}
+                            onClick={(e) => e.stopPropagation()}
+                            role="menu"
+                        >
+                            {targets && targets.map(t => (
+                                <li
+                                    key={t.id}
+                                    role="menuitem"
+                                    className={classNames(styles.splitTargetMenuItem, {
+                                        [styles.splitTargetMenuItemSelected]: t.id === targetId
+                                    })}
+                                    onClick={() => {
+                                        onChangeTarget(t.id);
+                                        setDropdownOpen(false);
+                                    }}
+                                >
+                                    <span className={styles.splitTargetMenuItemIcon}>
+                                        {t.isStage ? '舞台' : '角色'}
+                                    </span>
+                                    <span className={styles.splitTargetMenuItemLabel}>
+                                        {targetNames[t.id] || t.id}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : null}
+                </div>
+                {/* 积木盒（独立工作区，绑定到 targetId） */}
+                <div className={styles.floatingBlocksWrapper}>
+                    <Blocks
+                        key={`float-blocks-${winKey}-${targetId}`}
+                        canUseCloud={canUseCloud}
+                        grow={1}
+                        isVisible
+                        options={{media: `static/${theme.getBlocksMediaFolder()}/`}}
+                        stageSize={stageSize}
+                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                        theme={theme}
+                        vm={vm}
+                        workspaceTargetId={targetId}
+                    />
+                </div>
+            </div>
+        </AddonWindow>
+    );
+};
+
+FloatingBlocksWindow.propTypes = {
+    winKey: PropTypes.string.isRequired,
+    targetId: PropTypes.string,
+    title: PropTypes.string,
+    targets: PropTypes.array,
+    targetNames: PropTypes.object,
+    vm: PropTypes.object.isRequired,
+    theme: PropTypes.object.isRequired,
+    canUseCloud: PropTypes.bool,
+    stageSize: PropTypes.string,
+    onOpenCustomExtensionModal: PropTypes.func,
+    onChangeTarget: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired
+};
 
 /**
  * MultiWorkspaces 组件
@@ -46,6 +183,62 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
     // 拆分模式下，左右两侧各自绑定的 targetId
     const [leftTargetId, setLeftTargetId] = useState(null);
     const [rightTargetId, setRightTargetId] = useState(null);
+
+    // ========== 自由窗口：已嵌入积木盒的浮动窗口列表 ==========
+    // 每个元素 {winKey, targetId}，winKey 唯一标识窗口，targetId 为绑定的角色/造型
+    const [floatingWindows, setFloatingWindows] = useState([]);
+    const winSeqRef = useRef(0);
+    // 把指定角色/造型的积木盒拆进一个自由窗口（按目标去重，已开则置顶）
+    const openFloatingWindow = useCallback((targetId) => {
+        if (!targetId) return;
+        const existing = floatingWindows.find(w => w.targetId === targetId);
+        if (existing) {
+            WindowManager.bringToFront(`mw-floating-blocks-${existing.winKey}`);
+            return;
+        }
+        winSeqRef.current += 1;
+        const winKey = `fw-${winSeqRef.current}`;
+        const cascade = floatingWindows.length;
+        // 仅维护状态，真正的窗口由 FloatingBlocksWindow（AddonWindow）负责创建
+        setFloatingWindows(prev => prev.concat({
+            winKey,
+            targetId,
+            x: 70 + (cascade % 6) * 32,
+            y: 70 + (cascade % 6) * 32
+        }));
+    }, [floatingWindows]);
+
+    // 切换某个浮动窗口绑定的角色/造型（禁止与其它窗口重复）
+    const changeFloatingTarget = useCallback((winKey, newTargetId) => {
+        setFloatingWindows(prev => {
+            const targetExists = prev.some(w => w.winKey !== winKey && w.targetId === newTargetId);
+            if (targetExists) {
+                showConflictToast('该角色/造型的积木盒已在其它窗口中打开');
+                return prev;
+            }
+            return prev.map(w => (w.winKey === winKey ? {...w, targetId: newTargetId} : w));
+        });
+    }, []);
+
+    // 关闭某个浮动窗口
+    // 注意：不要在此调用 WindowManager.closeWindow，否则会再次触发 AddonWindow 的
+    // onClose → closeFloatingWindow 造成无限递归（React 报 Maximum update depth exceeded）。
+    // 仅需更新状态，FloatingBlocksWindow 卸载时由 AddonWindow.componentWillUnmount 关闭真实窗口。
+    const closeFloatingWindow = useCallback((winKey) => {
+        setFloatingWindows(prev => prev.filter(w => w.winKey !== winKey));
+    }, []);
+
+    // 按目标关闭浮动窗口（用于列头「恢复」按钮）
+    const closeFloatingWindowByTarget = useCallback((targetId) => {
+        const fw = floatingWindows.find(w => w.targetId === targetId);
+        if (fw) closeFloatingWindow(fw.winKey);
+    }, [floatingWindows, closeFloatingWindow]);
+
+    // 已被拆到自由窗口的目标集合：这些目标在主视图（拆分列）里的积木盒应隐藏
+    const detachedTargetIds = new Set(floatingWindows.map(w => w.targetId));
+
+    // 订阅「角色右键菜单 → 编辑积木」事件，自动打开对应角色的积木盒自由窗口
+    useEffect(() => registerFloatingBlocksOpener(openFloatingWindow), [openFloatingWindow]);
 
     // ========== 切换 activeIndex → vm.setEditingTarget ==========
     useEffect(() => {
@@ -312,6 +505,20 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
         );
     };
 
+    // ========== 渲染「已拆分到自由窗口」占位（配色跟随当前主题） ==========
+    const renderDetachedPlaceholder = (targetId) => (
+        <div className={styles.detachedPlaceholder}>
+            <span className={styles.detachedPlaceholderText}>已拆分到自由窗口</span>
+            <button
+                type="button"
+                className={styles.detachedRestoreBtn}
+                onClick={() => closeFloatingWindowByTarget(targetId)}
+            >
+                恢复
+            </button>
+        </div>
+    );
+
     // ========== 渲染拆分模式下的单列 ==========
     const renderSplitColumn = (side, targetId) => {
         const runtime = vm && vm.runtime;
@@ -368,20 +575,24 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                         ) : null}
                     </div>
                 </div>
-                {/* 积木盒 */}
+                {/* 积木盒：若已拆分到自由窗口则隐藏，显示占位与恢复按钮 */}
                 <div className={styles.splitBlocksWrapper}>
-                    <Blocks
-                        key={`split-blocks-${splitMode}-${side}-${targetId || 'null'}`}
-                        canUseCloud={canUseCloud}
-                        grow={1}
-                        isVisible
-                        options={{media: `static/${theme.getBlocksMediaFolder()}/`}}
-                        stageSize={stageSize}
-                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
-                        theme={theme}
-                        vm={vm}
-                        workspaceTargetId={targetId}
-                    />
+                    {detachedTargetIds.has(targetId) ? (
+                        renderDetachedPlaceholder(targetId)
+                    ) : (
+                        <Blocks
+                            key={`split-blocks-${splitMode}-${side}-${targetId || 'null'}`}
+                            canUseCloud={canUseCloud}
+                            grow={1}
+                            isVisible
+                            options={{media: `static/${theme.getBlocksMediaFolder()}/`}}
+                            stageSize={stageSize}
+                            onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                            theme={theme}
+                            vm={vm}
+                            workspaceTargetId={targetId}
+                        />
+                    )}
                 </div>
             </div>
         );
@@ -545,6 +756,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                             <path d="M487.879111 102.741333h56.888889v113.777778h-56.888889v-113.777778z m0 227.555556h56.888889v113.777778h-56.888889v-113.777778z m0 227.555555h56.888889v113.777778h-56.888889v-113.777778z m0 227.555556h56.888889v113.777778h-56.888889v-113.777778z" />
                         </svg>
                     </button>
+
                     {/* 作品问题/控制台按钮：位于添加按钮左侧一个位置 */}
                     <button
                         className={classNames(styles.problemsBtn, {
@@ -595,7 +807,9 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                 </div>
             ) : (
                 <div className={styles.blocksContainer}>
-                    {renderBlocks(activeIndex)}
+                    {detachedTargetIds.has(workspaces[activeIndex] && workspaces[activeIndex].id) ? (
+                        renderDetachedPlaceholder(workspaces[activeIndex] && workspaces[activeIndex].id)
+                    ) : renderBlocks(activeIndex)}
                 </div>
             )}
 
@@ -610,6 +824,17 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                     onContextMenu={(e) => e.stopPropagation()}
                     role="menu"
                 >
+                    <li
+                        role="menuitem"
+                        className={styles.contextMenuItem}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={() => {
+                            openFloatingWindow(workspaces[contextMenu.index] && workspaces[contextMenu.index].id);
+                            setContextMenu(null);
+                        }}
+                    >
+                        <span className={styles.contextMenuIcon}>拆分积木</span>
+                    </li>
                     <li
                         role="menuitem"
                         className={styles.contextMenuItem}
@@ -639,6 +864,27 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                     ) : null}
                 </ul>
             ) : null}
+
+            {/* 自由窗口：把积木盒嵌进可拖拽/可缩放的浮动窗口，支持多个角色/造型 */}
+            {floatingWindows.map(fw => (
+                <FloatingBlocksWindow
+                    key={fw.winKey}
+                    winKey={fw.winKey}
+                    targetId={fw.targetId}
+                    x={fw.x}
+                    y={fw.y}
+                    title={targetNames[fw.targetId] || '积木盒'}
+                    targets={vm && vm.runtime ? vm.runtime.targets : []}
+                    targetNames={targetNames}
+                    vm={vm}
+                    theme={theme}
+                    canUseCloud={canUseCloud}
+                    stageSize={stageSize}
+                    onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                    onChangeTarget={(newTargetId) => changeFloatingTarget(fw.winKey, newTargetId)}
+                    onClose={() => closeFloatingWindow(fw.winKey)}
+                />
+            ))}
         </div>
     );
 };

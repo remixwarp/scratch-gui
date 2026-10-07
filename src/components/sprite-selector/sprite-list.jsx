@@ -23,6 +23,7 @@ const SpriteList = function (props) {
         hoveredTarget,
         onDeleteSprite,
         onDuplicateSprite,
+        onEditBlocksClick,
         onExportSprite,
         onSelectSprite,
         onAddSortable,
@@ -93,6 +94,7 @@ const SpriteList = function (props) {
                                 onClick={onSelectSprite}
                                 onDeleteButtonClick={onDeleteSprite}
                                 onDuplicateButtonClick={onDuplicateSprite}
+                                onEditBlocksClick={onEditBlocksClick}
                                 onExportButtonClick={onExportSprite}
                             />
                         </SortableAsset>
@@ -127,6 +129,7 @@ SpriteList.propTypes = {
     onAddSortable: PropTypes.func,
     onDeleteSprite: PropTypes.func,
     onDuplicateSprite: PropTypes.func,
+    onEditBlocksClick: PropTypes.func,
     onExportSprite: PropTypes.func,
     onRemoveSortable: PropTypes.func,
     onSelectSprite: PropTypes.func,

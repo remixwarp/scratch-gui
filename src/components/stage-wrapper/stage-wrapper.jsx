@@ -68,7 +68,8 @@ const StageWrapperComponent = function (props) {
         loading,
         stageContainerWidth,
         stageSize,
-        vm
+        vm,
+        stageDetached
     } = props;
 
     // Box.componentRef expects a callback, not a ref object.
@@ -191,7 +192,11 @@ const StageWrapperComponent = function (props) {
                 />
             </Box>
             <Box className={styles.stageCanvasWrapper}>
-                {
+                {stageDetached ? (
+                    <div className={styles.stageDetachedPlaceholder}>
+                        <span>{'舞台已拆分到自由窗口'}</span>
+                    </div>
+                ) : (
                     isRendererSupported ?
                         <Stage
                             stageContainerWidth={stageContainerWidth}
@@ -199,7 +204,7 @@ const StageWrapperComponent = function (props) {
                             vm={vm}
                         /> :
                         null
-                }
+                )}
             </Box>
             {loading ? (
                 <Loader isFullScreen={isFullScreen} />
@@ -216,7 +221,8 @@ StageWrapperComponent.propTypes = {
     loading: PropTypes.bool,
     stageContainerWidth: PropTypes.number,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,
-    vm: PropTypes.instanceOf(VM).isRequired
+    vm: PropTypes.instanceOf(VM).isRequired,
+    stageDetached: PropTypes.bool
 };
 
 export default StageWrapperComponent;

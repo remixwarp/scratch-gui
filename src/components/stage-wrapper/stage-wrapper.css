@@ -20,6 +20,17 @@
     user-select: none;
 }
 
+.stage-detached-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px;
+    color: var(--text-primary, rgba(0, 0, 0, 0.6));
+    font-size: 13px;
+    background: var(--ui-secondary, #f0f0f0);
+}
+
 .offset-controls .stage-canvas-wrapper {
     padding-top: 44px;
 }

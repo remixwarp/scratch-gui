@@ -4,6 +4,9 @@
 
 .sprite-selector {
     flex-grow: 1;
+    /* 与 .target-pane 同理：允许本项收缩到面板宽度内，否则其 min-content
+       会把右侧的舞台选择器（选择背景按钮）顶出窗口而被裁切。 */
+    min-width: 0;
     position: relative;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     margin-right: calc($space / 2);

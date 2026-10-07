@@ -6,6 +6,7 @@ import {STAGE_DISPLAY_SCALE_METADATA, STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES} fro
 import {setStageSize} from '../reducers/stage-size';
 import {setFullScreen} from '../reducers/mode';
 import {openSettingsModal} from '../reducers/modals';
+import {setStageDetached, toggleStageDetached} from '../reducers/stage-detach';
 import {unlockAchievement} from '../lib/achievements.js';
 
 import {connect} from 'react-redux';
@@ -85,6 +86,7 @@ StageHeader.propTypes = {
 const mapStateToProps = state => ({
     customStageSize: state.scratchGui.customStageSize,
     stageSizeMode: state.scratchGui.stageSize.stageSize,
+    isStageDetached: state.scratchGui.stageDetach.isStageDetached,
     // tw: replace showBranding
     isEmbedded: state.scratchGui.mode.isEmbedded,
     isFullScreen: state.scratchGui.mode.isFullScreen,
@@ -101,7 +103,8 @@ const mapDispatchToProps = dispatch => ({
     onSetStageFull: () => dispatch(setStageSize(STAGE_SIZE_MODES.full)),
     onSetStageFullScreen: () => dispatch(setFullScreen(true)),
     onSetStageUnFullScreen: () => dispatch(setFullScreen(false)),
-    onOpenSettings: () => dispatch(openSettingsModal())
+    onOpenSettings: () => dispatch(openSettingsModal()),
+    onToggleStageDetached: () => dispatch(toggleStageDetached())
 });
 
 export default connect(

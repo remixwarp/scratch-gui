@@ -21,12 +21,16 @@ import settingsIcon from './icon--settings.svg';
 
 import {
     Minimize,
-    Maximize
+    Maximize,
+    PanelRightOpen,
+    PanelRightClose
 } from 'lucide-react';
 
 import styles from './stage-header.css';
 
 import FullscreenAPI from '../../lib/api/fullscreen';
+import {AESettings} from '../../lib/settings.js';
+import {setStageDetached} from '../../reducers/stage-detach';
 
 const messages = defineMessages({
     largeStageSizeMessage: {
@@ -73,6 +77,16 @@ const messages = defineMessages({
         defaultMessage: 'Virtual Keyboard',
         description: 'Button to open virtual keyboard',
         id: 'tw.virtualKeyboard'
+    },
+    splitStageTitle: {
+        defaultMessage: '拆分舞台到自由窗口',
+        description: 'Button to detach the stage into a free window',
+        id: 'tw.stageHeader.splitStage'
+    },
+    mergeStage: {
+        defaultMessage: '合并舞台',
+        description: 'Button to merge the detached stage back',
+        id: 'tw.stageHeader.mergeStage'
     }
 });
 
@@ -95,7 +109,9 @@ const StageHeaderComponent = function (props) {
         stageContainerWidth,
         stageSize,
         stageSizeMode,
-        vm
+        vm,
+        isStageDetached,
+        onSetStageDetached
     } = props;
 
     const [showKeyboard, setShowKeyboard] = useState(false);
@@ -124,6 +140,22 @@ const StageHeaderComponent = function (props) {
             window.removeEventListener('blockCounterClosed', handleBlockCounterClosed);
         };
     }, []);
+
+    // 实验性：拆分舞台到自由窗口（随设置实时开关）
+    const [splitStageEnabled, setSplitStageEnabled] = useState(() =>
+        AESettings.get('EnableSplitStage') === true);
+    React.useEffect(() => {
+        const onSettingsChange = () => setSplitStageEnabled(AESettings.get('EnableSplitStage') === true);
+        window.addEventListener('ae-settings-changed', onSettingsChange);
+        return () => window.removeEventListener('ae-settings-changed', onSettingsChange);
+    }, []);
+
+    // 关闭「拆分舞台」开关时，若舞台已拆分则自动合并回去
+    React.useEffect(() => {
+        if (!splitStageEnabled && isStageDetached) {
+            onSetStageDetached(false);
+        }
+    }, [splitStageEnabled, isStageDetached, onSetStageDetached]);
 
     const toggleBlockCounter = () => {
         const newValue = !showBlockCounter;
@@ -271,10 +303,26 @@ const StageHeaderComponent = function (props) {
                         className={styles.stageSizeRow}
                         key="editor" // addons require the HTML element to be not be re-used by in-editor buttons
                     >
+                        {/* 拆分舞台按钮：开启后放在「缩小舞台」按钮的左侧 */}
+                        {splitStageEnabled ? (
+                            <Button
+                                className={`${styles.stageButton} ${styles.splitStageButton}`}
+                                onClick={() => onSetStageDetached(!isStageDetached)}
+                                title={props.intl.formatMessage(
+                                    isStageDetached ? messages.mergeStage : messages.splitStageTitle
+                                )}
+                            >
+                                {isStageDetached ? (
+                                    <PanelRightClose className={styles.icon} />
+                                ) : (
+                                    <PanelRightOpen className={styles.icon} />
+                                )}
+                            </Button>
+                        ) : null}
                         {stageControls}
                         <div className={styles.stageButtonsGroup}>
                             {isBlockCounterEnabled ? (
-                                <BlockCounterToggle 
+                                <BlockCounterToggle
                                     active={showBlockCounter}
                                     onClick={() => {
                                         localStorage.setItem('blockCounterClosed', 'false');
@@ -325,7 +373,12 @@ const StageHeaderComponent = function (props) {
 
 const mapStateToProps = state => ({
     // This is the button's mode, as opposed to the actual current state
-    stageSizeMode: state.scratchGui.stageSize.stageSize
+    stageSizeMode: state.scratchGui.stageSize.stageSize,
+    isStageDetached: state.scratchGui.stageDetach.isStageDetached
+});
+
+const mapDispatchToProps = dispatch => ({
+    onSetStageDetached: value => dispatch(setStageDetached(value))
 });
 
 StageHeaderComponent.propTypes = {
@@ -348,13 +401,17 @@ StageHeaderComponent.propTypes = {
     stageContainerWidth: PropTypes.number,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)),
     stageSizeMode: PropTypes.oneOf(Object.keys(STAGE_SIZE_MODES)),
-    vm: PropTypes.instanceOf(VM).isRequired
+    vm: PropTypes.instanceOf(VM).isRequired,
+    isStageDetached: PropTypes.bool,
+    onSetStageDetached: PropTypes.func.isRequired
 };
 
 StageHeaderComponent.defaultProps = {
-    stageSizeMode: STAGE_SIZE_MODES.large
+    stageSizeMode: STAGE_SIZE_MODES.large,
+    isStageDetached: false
 };
 
 export default injectIntl(connect(
-    mapStateToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(StageHeaderComponent));

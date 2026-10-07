@@ -1,7 +1,9 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import {injectIntl} from 'react-intl';
+import {injectIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
+import {ContextMenuTrigger} from 'react-contextmenu';
+import {ContextMenu, MenuItem} from '../context-menu/context-menu.jsx';
 import {
     ChevronDown,
     ChevronRight,
@@ -15,6 +17,7 @@ import {
     Code2,
     FolderOpen
 } from 'lucide-react';
+import {openFloatingBlocksForTarget} from '../../lib/mw-floating-blocks-store.js';
 import styles from './workspace-tree.css';
 
 const VAR_TYPE_ICONS = {
@@ -117,30 +120,43 @@ class TargetNode extends React.Component {
             target.broadcasts.length > 0 ||
             target.procedures.length > 0;
 
+        const menuId = `target-node-${target.id}`;
+
         return (
             <div className={styles.targetNode}>
-                <button
-                    type="button"
-                    className={classNames(styles.treeRow, styles.targetRow, {
-                        [styles.treeRowSelected]: selected
-                    })}
-                    style={{paddingLeft: `${12 + depth * 14}px`}}
-                    onClick={() => {
-                        if (hasChildren) {
-                            this.setState({expanded: !expanded});
-                        }
-                        onSelectTarget(target.id);
-                    }}
-                    title={target.name}
-                >
-                    {hasChildren ?
-                        (expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />) :
-                        <span className={styles.spacerIcon} />}
-                    {target.isStage ?
-                        <Globe size={15} className={classNames(styles.targetIcon, styles.stageIcon)} /> :
-                        <Code2 size={15} className={styles.targetIcon} />}
-                    <span className={styles.leafName}>{target.name}</span>
-                </button>
+                <ContextMenuTrigger id={menuId} attributes={{className: styles.targetNodeTrigger}}>
+                    <button
+                        type="button"
+                        className={classNames(styles.treeRow, styles.targetRow, {
+                            [styles.treeRowSelected]: selected
+                        })}
+                        style={{paddingLeft: `${12 + depth * 14}px`}}
+                        onClick={() => {
+                            if (hasChildren) {
+                                this.setState({expanded: !expanded});
+                            }
+                            onSelectTarget(target.id);
+                        }}
+                        title={target.name}
+                    >
+                        {hasChildren ?
+                            (expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />) :
+                            <span className={styles.spacerIcon} />}
+                        {target.isStage ?
+                            <Globe size={15} className={classNames(styles.targetIcon, styles.stageIcon)} /> :
+                            <Code2 size={15} className={styles.targetIcon} />}
+                        <span className={styles.leafName}>{target.name}</span>
+                    </button>
+                </ContextMenuTrigger>
+                <ContextMenu id={menuId}>
+                    <MenuItem onClick={() => openFloatingBlocksForTarget(target.id)}>
+                        <FormattedMessage
+                            defaultMessage="编辑积木"
+                            description="Menu item to open the target's blocks in a floating window"
+                            id="gui.spriteSelectorItem.contextMenuEditBlocks"
+                        />
+                    </MenuItem>
+                </ContextMenu>
                 {expanded && (
                     <div className={styles.targetBody}>
                         {target.costumes.length > 0 && (

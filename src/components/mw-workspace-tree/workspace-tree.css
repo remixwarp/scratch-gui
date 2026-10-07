@@ -222,6 +222,11 @@
     flex-direction: column;
 }
 
+/* 右键菜单触发器包裹层：用 contents 避免破坏原有布局 */
+.targetNodeTrigger {
+    display: contents;
+}
+
 .empty {
     padding: 16px;
     color: var(--tree-empty-fg);

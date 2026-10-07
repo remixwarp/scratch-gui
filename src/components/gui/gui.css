@@ -58,15 +58,31 @@
 
 /* VS Code Layout */
 .editor-wrapper.vscodeLayout {
-    flex-basis: calc(1024px - 408px - (($space + $stage-standard-border-width) * 2));
+    /*
+        在 VS Code 布局下，积木区的保留宽度从默认 598 压缩到 360
+        （见 gui.jsx 的 MIN_EDITOR_PANE_WIDTH_VSCODE），好让舞台面板更大、
+        左移并挤压积木区。这里把积木区基准宽度同步减小到同一个值，
+        并允许其收缩（min-width:0），否则积木区（flex-shrink:0）会把右侧
+        舞台面板挤出窗口（.flex-wrapper 是 overflow:hidden），
+        导致面板底部的「选择角色 / 选择背景」按钮被裁掉一半。
+    */
+    flex-basis: calc(1024px - 408px - (($space + $stage-standard-border-width) * 2) - 238px);
     flex-grow: 1;
     flex-shrink: 0;
+    min-width: 0;
     position: relative;
 
     display: flex;
     flex-direction: column;
     background-color: $page-background;
     color: $text-primary;
+}
+
+/* VS Code 布局：允许积木区内部在空间不足时收缩，避免撑出容器宽度 */
+.editor-wrapper.vscodeLayout .vscodeList,
+.editor-wrapper.vscodeLayout .tab-panel,
+.editor-wrapper.vscodeLayout .blocks-wrapper {
+    min-width: 0;
 }
 
 .editor-wrapper.vscodeLayout .tab-list {

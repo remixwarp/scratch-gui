@@ -5,6 +5,13 @@
     display: flex;
     flex-direction: row;
     flex-grow: 1;
+    /*
+        Flex 项目默认 min-width:auto，无法收缩到内容最小宽度以下。
+        舞台面板宽度是按舞台画布宽度算的，可能比这一行内容的 min-content 窄，
+        于是「选择角色 / 选择背景」这两个按钮会被顶到窗口外、被裁掉一半。
+        允许收缩后，按钮会重新排到面板内。
+    */
+    min-width: 0;
 }
 
 .stage-selector-wrapper {

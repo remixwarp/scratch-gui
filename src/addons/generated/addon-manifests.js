@@ -91,7 +91,6 @@ import _no_category_text from "../addons/no-category-text/_manifest_entry.js";
 import _green_flag_order from "../addons/green-flag-order/_manifest_entry.js";
 import _remove_extension_button from "../addons/remove-extension-button/_manifest_entry.js";
 import _daily_quote from "../addons/daily-quote/_manifest_entry.js";
-import _stage_camera from "../addons/stage-camera/_manifest_entry.js";
 import _sprite_folders from "../addons/sprite-folders/_manifest_entry.js";
 import _tab_styles from "../addons/tab-styles/_manifest_entry.js";
 import _window_theme from "../addons/window-theme/_manifest_entry.js";
@@ -212,7 +211,6 @@ export default {
   "green-flag-order": _green_flag_order,
   "remove-extension-button": _remove_extension_button,
   "daily-quote": _daily_quote,
-  "stage-camera": _stage_camera,
   "sprite-folders": _sprite_folders,
   "tab-styles": _tab_styles,
   "window-theme": _window_theme,

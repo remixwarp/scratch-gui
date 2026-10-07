@@ -7,6 +7,7 @@ import SpriteLibrary from '../../containers/sprite-library.jsx';
 import SpriteSelectorComponent from '../sprite-selector/sprite-selector.jsx';
 import StageSelector from '../../containers/stage-selector.jsx';
 import {STAGE_DISPLAY_SIZES} from '../../lib/constants/layout-constants';
+import {openFloatingBlocksForTarget} from '../../lib/mw-floating-blocks-store.js';
 
 import styles from './target-pane.css';
 
@@ -16,92 +17,100 @@ import styles from './target-pane.css';
  * @param {object} props Props for the component
  * @returns {React.Component} rendered component
  */
-const TargetPane = ({
-    editingTarget,
-    fileInputRef,
-    hoveredTarget,
-    spriteLibraryVisible,
-    onActivateBlocksTab,
-    onChangeSpriteDirection,
-    onChangeSpriteName,
-    onChangeSpriteRotationStyle,
-    onChangeSpriteSize,
-    onChangeSpriteVisibility,
-    onChangeSpriteX,
-    onChangeSpriteY,
-    onDeleteSprite,
-    onDrop,
-    onDuplicateSprite,
-    onExportSprite,
-    onFileUploadClick,
-    onNewSpriteClick,
-    onPaintSpriteClick,
-    onRequestCloseSpriteLibrary,
-    onSelectSprite,
-    onSpriteUpload,
-    onSurpriseSpriteClick,
-    raiseSprites,
-    stage,
-    stageSize,
-    sprites,
-    vm,
-    getWorkspaceMetrics, // eslint-disable-line no-unused-vars
-    ...componentProps
-}) => (
-    <div
-        className={styles.targetPane}
-        {...componentProps}
-    >
+const TargetPane = props => {
+    const {
+        editingTarget,
+        fileInputRef,
+        hoveredTarget,
+        spriteLibraryVisible,
+        onActivateBlocksTab,
+        onChangeSpriteDirection,
+        onChangeSpriteName,
+        onChangeSpriteRotationStyle,
+        onChangeSpriteSize,
+        onChangeSpriteVisibility,
+        onChangeSpriteX,
+        onChangeSpriteY,
+        onDeleteSprite,
+        onDrop,
+        onDuplicateSprite,
+        onExportSprite,
+        onFileUploadClick,
+        onNewSpriteClick,
+        onPaintSpriteClick,
+        onRequestCloseSpriteLibrary,
+        onSelectSprite,
+        onSpriteUpload,
+        onSurpriseSpriteClick,
+        raiseSprites,
+        stage,
+        stageSize,
+        sprites,
+        vm,
+        getWorkspaceMetrics, // eslint-disable-line no-unused-vars
+        ...componentProps
+    } = props;
 
-        <SpriteSelectorComponent
-            editingTarget={editingTarget}
-            hoveredTarget={hoveredTarget}
-            raised={raiseSprites}
-            selectedId={editingTarget}
-            spriteFileInput={fileInputRef}
-            sprites={sprites}
-            stageSize={stageSize}
-            onChangeSpriteDirection={onChangeSpriteDirection}
-            onChangeSpriteName={onChangeSpriteName}
-            onChangeSpriteRotationStyle={onChangeSpriteRotationStyle}
-            onChangeSpriteSize={onChangeSpriteSize}
-            onChangeSpriteVisibility={onChangeSpriteVisibility}
-            onChangeSpriteX={onChangeSpriteX}
-            onChangeSpriteY={onChangeSpriteY}
-            onDeleteSprite={onDeleteSprite}
-            onDrop={onDrop}
-            onDuplicateSprite={onDuplicateSprite}
-            onExportSprite={onExportSprite}
-            onFileUploadClick={onFileUploadClick}
-            onNewSpriteClick={onNewSpriteClick}
-            onPaintSpriteClick={onPaintSpriteClick}
-            onSelectSprite={onSelectSprite}
-            onSpriteUpload={onSpriteUpload}
-            onSurpriseSpriteClick={onSurpriseSpriteClick}
-        />
-        <div className={styles.stageSelectorWrapper}>
-            {stage.id && <StageSelector
-                asset={
-                    stage.costume &&
-                    stage.costume.asset
-                }
-                backdropCount={stage.costumeCount}
-                id={stage.id}
-                selected={stage.id === editingTarget}
-                onSelect={onSelectSprite}
-            />}
-            <div>
-                {spriteLibraryVisible ? (
-                    <SpriteLibrary
-                        vm={vm}
-                        onActivateBlocksTab={onActivateBlocksTab}
-                        onRequestClose={onRequestCloseSpriteLibrary}
-                    />
-                ) : null}
+    // 角色右键「编辑积木」：打开该角色的积木盒自由窗口
+    const handleEditBlocksClick = id => openFloatingBlocksForTarget(id);
+
+    return (
+        <div
+            className={styles.targetPane}
+            {...componentProps}
+        >
+
+            <SpriteSelectorComponent
+                editingTarget={editingTarget}
+                hoveredTarget={hoveredTarget}
+                raised={raiseSprites}
+                selectedId={editingTarget}
+                spriteFileInput={fileInputRef}
+                sprites={sprites}
+                stageSize={stageSize}
+                onChangeSpriteDirection={onChangeSpriteDirection}
+                onChangeSpriteName={onChangeSpriteName}
+                onChangeSpriteRotationStyle={onChangeSpriteRotationStyle}
+                onChangeSpriteSize={onChangeSpriteSize}
+                onChangeSpriteVisibility={onChangeSpriteVisibility}
+                onChangeSpriteX={onChangeSpriteX}
+                onChangeSpriteY={onChangeSpriteY}
+                onDeleteSprite={onDeleteSprite}
+                onDrop={onDrop}
+                onDuplicateSprite={onDuplicateSprite}
+                onExportSprite={onExportSprite}
+                onEditBlocksClick={handleEditBlocksClick}
+                onFileUploadClick={onFileUploadClick}
+                onNewSpriteClick={onNewSpriteClick}
+                onPaintSpriteClick={onPaintSpriteClick}
+                onSelectSprite={onSelectSprite}
+                onSpriteUpload={onSpriteUpload}
+                onSurpriseSpriteClick={onSurpriseSpriteClick}
+            />
+            <div className={styles.stageSelectorWrapper}>
+                {stage.id && <StageSelector
+                    asset={
+                        stage.costume &&
+                        stage.costume.asset
+                    }
+                    backdropCount={stage.costumeCount}
+                    id={stage.id}
+                    selected={stage.id === editingTarget}
+                    onSelect={onSelectSprite}
+                />}
+                <div>
+                    {spriteLibraryVisible ? (
+                        <SpriteLibrary
+                            vm={vm}
+                            onActivateBlocksTab={onActivateBlocksTab}
+                            onRequestClose={onRequestCloseSpriteLibrary}
+                        />
+                    ) : null}
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const spriteShape = PropTypes.shape({
     costume: PropTypes.shape({

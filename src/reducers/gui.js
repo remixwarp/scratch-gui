@@ -23,6 +23,7 @@ import fontsLoadedReducer, {fontsLoadedInitialState} from './fonts-loaded';
 import loadingProgressReducer, {loadingProgressInitialState} from './loading-progress';
 import restoreDeletionReducer, {restoreDeletionInitialState} from './restore-deletion';
 import stageSizeReducer, {stageSizeInitialState} from './stage-size';
+import stageDetachReducer, {stageDetachInitialState} from './stage-detach';
 import targetReducer, {targetsInitialState} from './targets';
 import themeReducer, {themeInitialState} from './theme';
 import timeoutReducer, {timeoutInitialState} from './timeout';
@@ -60,6 +61,7 @@ const guiInitialState = {
     mode: modeInitialState,
     hoveredTarget: hoveredTargetInitialState,
     stageSize: stageSizeInitialState,
+    stageDetach: stageDetachInitialState,
     menus: menuInitialState,
     micIndicator: micIndicatorInitialState,
     modals: modalsInitialState,
@@ -191,6 +193,7 @@ const guiReducer = combineReducers({
     mode: modeReducer,
     hoveredTarget: hoveredTargetReducer,
     stageSize: stageSizeReducer,
+    stageDetach: stageDetachReducer,
     menus: menuReducer,
     micIndicator: micIndicatorReducer,
     modals: modalReducer,
