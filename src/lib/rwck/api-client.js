@@ -8,12 +8,7 @@
  *   - 纯浏览器 ES module（scratch-gui webpack 4 能直接 import）。
  *   - 所有 fetch 统一 CORS + 错误处理 + JWT 注入。
  *   - Token 持久化到 localStorage（rwck:token / rwck:user）。
- *   - 自动双路：优先直连官方；失败自动降级到同源代理 /__rwck-proxy（webpack dev-server
- *     已挂好，绕开 forum CORS）。
- *
- * 已知 Forum CORS 策略：forum.ctspace.xyz 只回 Access-Control-Allow-Origin: <请求 Origin>
- * 且配合 credentials。大多数浏览器的 fetch 默认无 credentials 且不带 Origin 时服务端
- * 会拒绝。本客户端通过同源代理兜住所有请求，前端永远看不见跨域。
+ *   - 全部请求直连官方 https://forum.ctspace.xyz/api（不再有同源代理）。
  *
  * 用法（示例）：
  *   import rwck from './rwck/api-client';
@@ -30,22 +25,9 @@ const _isBrowser = typeof window !== 'undefined' && typeof window.document !== '
 // forum.ctspace.xyz 官方 API 基线
 export const UPSTREAM_ORIGIN = 'https://forum.ctspace.xyz';
 export const OFFICIAL_BASE   = 'https://forum.ctspace.xyz/api';
-export const PROXY_BASE      = '/__rwck-proxy';
 
-// 自动探测代理可用与否：dev-server 在 webpack.before() 里挂了 /__rwck-proxy/*
-// 在 dev 环境走同源代理最稳；生产环境也尝试（Cloudflare Pages Function 也挂了）。
-// 用户也可以在 import 前用 window.__RWCK_FORCE_PROXY__ = true/false 强制。
-const _FORCE_PROXY = _isBrowser && (
-    !!window.__RWCK_FORCE_PROXY__          // 用户强制
-    || !!(window.__RWCK_DEV_PROXY__)       // 调试开关
-    || (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production')
-);
-
-export const BASE_URL    = _FORCE_PROXY ? PROXY_BASE : OFFICIAL_BASE;
-export const IS_PROXY    = _FORCE_PROXY;
+export const BASE_URL    = OFFICIAL_BASE;
 export const IS_BROWSER  = _isBrowser;
-
-export const PROXY_PATH  = '/__rwck-proxy';
 
 const LS_TOKEN = 'rwck:token';
 const LS_USER  = 'rwck:user';
@@ -196,18 +178,8 @@ function _unwrapList(r) {
 const rwck = {
     // ===== 顶层元信息（UI 读 / 调试） =====
     BASE_URL,
-    IS_PROXY,
     IS_BROWSER,
-    OFFICIAL_BASE, PROXY_BASE, UPSTREAM_ORIGIN, PROXY_PATH,
-    /** 切到同源代理（forum 不开 ACAO 时可用）。可在运行时热切。 */
-    forceProxy(bool = true) {
-        if (!_isBrowser) return;
-        window.__RWCK_FORCE_PROXY__ = !!bool;
-        // eslint-disable-next-line no-console
-        console.info('[rwck] forceProxy =', !!bool, '| BASE_URL 重新计算');
-        // BASE_URL 是模块顶层的 const，改不了 —— 但 window.__RWCK_FORCE_PROXY__ 会在新的 _fetch 调起时
-        // 被... 不对，_fetch 用的是 BASE_URL 常量。这里只给个提示让用户刷新。
-    },
+    OFFICIAL_BASE, UPSTREAM_ORIGIN,
 
     /** 鉴权状态快照。 */
     authState() { return {token: getToken(), user: getUser()}; },
@@ -271,7 +243,10 @@ const rwck = {
     apiKeys: {
         async list()            { return _fetch('/api-keys'); },
         async create({name})    { return _fetch('/api-keys', {method:'POST', body: {name}}); },
-        async remove(id)        { return _fetch(`/api-keys/${id}`, {method:'DELETE'}); }
+        async remove(id)        { return _fetch(`/api-keys/${id}`, {method:'DELETE'}); },
+        async setScopes(id, scopes) {
+            return _fetch(`/api-keys/${id}/scopes`, {method:'PATCH', body: {scopes}});
+        }
     },
 
     // ===== 3. 作品广场 =====
@@ -279,7 +254,8 @@ const rwck = {
         /** 参数：category/q/sort/page/pageSize。sort: score/new。 */
         async list(query = {}) { return _fetch('/projects' + _qs(query)); },
         async get(id)          { return _fetch(`/projects/${id}`); },
-        async mine()           { return _fetch('/projects/mine'); },
+        /** 文档里的路径是 /projects/my（不是 /mine）。 */
+        async mine()           { return _fetch('/projects/my'); },
         async create(body) {
             const r = await _fetch('/projects', {method:'POST', body});
             return (r && (r.data || r.project)) || r;
@@ -304,6 +280,7 @@ const rwck = {
             return _fetch('/resources' + _qs({targetType, targetId}));
         },
         async userWorks(userId) { return _fetch('/resources/works' + _qs({userId})); },
+        async rewarded()        { return _fetch('/resources/rewarded'); },
         async canUploadVideo()  { return _fetch('/resources/can-upload-video'); },
         async update(id, patch) { return _fetch(`/resources/${id}`, {method:'PATCH', body: patch}); },
         async remove(id)        { return _fetch(`/resources/${id}`, {method:'DELETE'}); },
@@ -311,7 +288,6 @@ const rwck = {
         fullUrl(relPath) {
             if (!relPath) return '';
             if (/^https?:\/\//.test(relPath)) return relPath;
-            if (IS_PROXY) return PROXY_BASE.replace(/\/__rwck-proxy$/, '') + relPath;
             return UPSTREAM_ORIGIN + relPath;
         }
     },
@@ -431,7 +407,8 @@ const rwck = {
     followTags: {
         async list()            { return _fetch('/follow-tags'); },
         async add(tagId)        { return _fetch('/follow-tags', {method:'POST', body: {tagId}}); },
-        async remove(tagId)     { return _fetch(`/follow-tags/${tagId}`, {method:'DELETE'}); }
+        async remove(tagId)     { return _fetch(`/follow-tags/${tagId}`, {method:'DELETE'}); },
+        async check(tagId)      { return _fetch('/follow-tags/check' + _qs({tagId})); }
     },
 
     // ===== 11. 用户 / 社交 =====
@@ -493,7 +470,9 @@ const rwck = {
 
     // ===== 14. 公开搜索 / 标签 / 统计 / 设置 =====
     stats: {
-        async public()         { return _fetch('/stats/public'); }
+        async public()         { return _fetch('/stats/public'); },
+        /** 上报一次访问。 */
+        async visit()          { return _fetch('/stats/visit', {method:'POST'}); }
     },
     settings: {
         async public()         { return _fetch('/settings'); }
@@ -504,10 +483,41 @@ const rwck = {
         }
     },
     tags: {
-        async list()           { return _fetch('/tags'); }
+        async list()           { return _fetch('/tags'); },
+        async create({name, slug, description}) {
+            return _fetch('/tags', {method:'POST', body: {name, slug, description}});
+        },
+        async update(id, patch) { return _fetch(`/tags/${id}`, {method:'PATCH', body: patch}); },
+        async remove(id)        { return _fetch(`/tags/${id}`, {method:'DELETE'}); }
     },
     changelogs: {
-        async list(query = {}) { return _fetch('/changelogs' + _qs(query)); }
+        async list(query = {}) { return _fetch('/changelogs' + _qs(query)); },
+        async create(body)      { return _fetch('/changelogs', {method:'POST', body}); },
+        async remove(id)        { return _fetch(`/changelogs/${id}`, {method:'DELETE'}); }
+    },
+    /** 在线状态（presence）。 */
+    presence: {
+        async heartbeat()      { return _fetch('/presence/heartbeat', {method:'POST'}); },
+        async online()         { return _fetch('/presence/online'); }
+    },
+    /** 投票（polls）。 */
+    polls: {
+        async list(query = {}) { return _fetch('/polls' + _qs(query)); },
+        async create(body)     { return _fetch('/polls', {method:'POST', body}); },
+        async vote(id, optionIds) {
+            return _fetch(`/polls/${id}/vote`, {method:'POST', body: {optionIds}});
+        },
+        async remove(id)       { return _fetch(`/polls/${id}`, {method:'DELETE'}); }
+    },
+    /** 站内信 / 客服会话（chat）。 */
+    chat: {
+        async conversations()  { return _fetch('/chat/conversations'); },
+        async createConversation(body) {
+            return _fetch('/chat/conversations', {method:'POST', body});
+        },
+        async messages(id)     { return _fetch(`/chat/conversations/${id}/messages`); },
+        async send(id, body)   { return _fetch(`/chat/conversations/${id}/messages`, {method:'POST', body}); },
+        async close(id)        { return _fetch(`/chat/conversations/${id}/close`, {method:'PATCH'}); }
     },
 
     // ===== 15. 举报 / 转积分 =====
@@ -536,16 +546,44 @@ const rwck = {
             return _fetch('/origmark/registrations/from-forum', {
                 method:'POST', body: {projectId, shortLinkSlug}
             });
+        },
+        async registerExternal(body) {
+            return _fetch('/origmark/registrations/external', {method:'POST', body});
+        },
+        async mine()                   { return _fetch('/origmark/me/registrations'); },
+        async report(id, body)         {
+            return _fetch(`/origmark/registrations/${id}/report`, {method:'POST', body});
+        },
+        async requestDownload(id, body) {
+            return _fetch(`/origmark/registrations/${id}/download-request`, {method:'POST', body});
+        },
+        async requestSync(id, body)    {
+            return _fetch(`/origmark/registrations/${id}/sync-request`, {method:'POST', body});
+        },
+        async syncRequests()           { return _fetch('/origmark/me/sync-requests'); },
+        async approveSync(id)          {
+            return _fetch(`/origmark/me/sync-requests/${id}/approve`, {method:'POST'});
+        },
+        async rejectSync(id)           {
+            return _fetch(`/origmark/me/sync-requests/${id}/reject`, {method:'POST'});
+        },
+        async downloadRequests()       { return _fetch('/origmark/me/download-requests'); },
+        async approveDownload(id)      {
+            return _fetch(`/origmark/me/download-requests/${id}/approve`, {method:'POST'});
+        },
+        async rejectDownload(id)       {
+            return _fetch(`/origmark/me/download-requests/${id}/reject`, {method:'POST'});
+        },
+        async updatePreview(id, patch) {
+            return _fetch(`/origmark/me/registrations/${id}/preview`, {method:'PATCH', body: patch});
         }
     },
 
     // ===== 工具方法 =====
-    /** 把任意相对路径转成浏览器可直接用的完整 URL（兼容代理 & 直连）。 */
+    /** 把任意相对路径转成浏览器可直接用的完整 URL。 */
     resolveUrl(relPath) {
         if (!relPath) return '';
         if (/^https?:\/\//.test(relPath)) return relPath;
-        // 代理模式下：__rwck-proxy/uploads/xxx.xxx
-        if (IS_PROXY) return PROXY_BASE + relPath;
         return UPSTREAM_ORIGIN + relPath;
     },
     /** 解包列表。论坛多数列表接口返回 {items, total, ...}。 */

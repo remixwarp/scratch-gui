@@ -44,6 +44,12 @@ import CollaborationContainer from '../../containers/collaboration-container.jsx
 import openConfigPlazaWindow from '../../lib/mw/open-config-plaza-window.js';
 import openMaterialPlazaWindow from '../../lib/mw/open-material-plaza-window.js';
 import openRwckPublishWindow from '../../lib/mw/open-rwck-publish-window.jsx';
+import {
+    getRwckCommunityAddonState,
+    shouldShowFileMenuPublishItem,
+    shouldShowTopBarPublishButton,
+    subscribeRwckCommunityAddon
+} from '../../lib/mw/rwck-community-addon.js';
 import {isAchievementsEnabled, unlockAchievement} from '../../lib/achievements.js';
 import {
     fetchExtensionSource,
@@ -329,8 +335,10 @@ class MenuBar extends React.Component {
             workspaceBookmarksCollapsedCategories: [],
             canUndo: true,
             canRedo: true,
-            variousToolsOpen: false
+            variousToolsOpen: false,
+            rwckCommunity: getRwckCommunityAddonState()
         };
+        this.unsubscribeRwckCommunity = null;
         this.workspaceBookmarksProjectListener = null;
         this.autosaveCountdownInterval = null;
         this.undoRedoChangeListener = null;
@@ -441,6 +449,14 @@ class MenuBar extends React.Component {
                 setTimeout(() => openRwckPublishWindow({tab: 'community'}), 300);
             }
         } catch (_) {}
+
+        // 创客次元社区插件：跟随插件开关/复选框实时显示或收起两个入口
+        this.unsubscribeRwckCommunity = subscribeRwckCommunityAddon((next, previous) => {
+            this.setState({rwckCommunity: next});
+            if (previous && previous.enabled && !next.enabled && typeof this.props.showToast === 'function') {
+                this.props.showToast('创客次元社区插件已关闭，请刷新编辑器生效', 'warning');
+            }
+        });
     }
     componentWillUnmount () {
         document.removeEventListener('keydown', this.handleKeyPress);
@@ -448,6 +464,11 @@ class MenuBar extends React.Component {
         if (this.menuLayoutObserver) {
             this.menuLayoutObserver.disconnect();
             this.menuLayoutObserver = null;
+        }
+
+        if (this.unsubscribeRwckCommunity) {
+            this.unsubscribeRwckCommunity();
+            this.unsubscribeRwckCommunity = null;
         }
         
         if (this.autosaveCountdownInterval) {
@@ -3703,6 +3724,7 @@ class MenuBar extends React.Component {
                                             isRtl={this.props.isRtl}
                                             onClick={this.openCompatibilityModalDialog}
                                         >
+                                            <FileCog size={20} />
                                             <FormattedMessage
                                                 defaultMessage="Compatibility Convert"
                                                 description="Convert project to different editor formats"
@@ -3766,6 +3788,7 @@ class MenuBar extends React.Component {
                                             expanded={false}
                                         >
                                             <div className={styles.menuItemContent}>
+                                                <Settings size={20} />
                                                 {this.props.locale === 'zh-cn' ? '配置迁移' : 'Config Migration'}
                                                 <ChevronDown size={8} />
                                             </div>
@@ -3788,7 +3811,7 @@ class MenuBar extends React.Component {
                                     </MenuSection>
                                     <MenuSection>
                                         <MenuItem onClick={this.handleClickMaterialPlaza}>
-                                            <svg width="20" height="20" viewBox="0,0,22.62854,23.85627" version="1.1" xmlns="http://www.w3.org/2000/svg" style={{verticalAlign:'middle'}}>
+                                            <svg width="20" height="20" viewBox="0,0,22.62854,23.85627" version="1.1" xmlns="http://www.w3.org/2000/svg" style={{verticalAlign:'middle', marginRight: '0.5rem'}}>
                                                 <g transform="translate(-228.28592,-168.07187)">
                                                     <g fill="none" stroke="currentColor" strokeWidth={2} strokeMiterlimit={10}>
                                                         <path d="M247.53476,182.01817c0.98179,0 1.78917,0.80806 1.77529,1.79019v5.34584c-0.00009,0.47063 -0.18715,0.92193 -0.52003,1.25462c-0.33288,0.33269 -0.78429,0.51949 -1.25492,0.51931h-5.356c-0.47065,-0.00045 -0.92184,-0.18791 -1.25422,-0.52113c-0.33239,-0.33321 -0.51873,-0.78486 -0.51802,-1.25551v-5.35939c0.00009,-0.47063 0.18715,-0.92193 0.52003,-1.25462c0.33288,-0.33269 0.78429,-0.51949 1.25492,-0.51931h5.35296M236.41416,182.01817c0.98179,0 1.77529,0.80806 1.77529,1.79019v5.34618c-0.00009,0.47065 -0.18721,0.92198 -0.52017,1.25462c-0.33296,0.33264 -0.78446,0.51933 -1.25512,0.51897h-5.356c-0.47065,-0.00045 -0.92184,-0.18791 -1.25422,-0.52113c-0.33239,-0.33321 -0.51873,-0.78486 -0.51802,-1.25551v-5.35939c0.00009,-0.47063 0.18715,-0.92193 0.52003,-1.25462c0.33288,-0.33269 0.78429,-0.51949 1.25492,-0.51931h5.3533M250.18775,173.37894c0.69633,0.69228 0.70253,1.81705 0.01389,2.51697l-0.52493,0.52493l-3.26847,3.2705l-0.01287,0.01287c-0.69443,0.68718 -1.81441,0.68142 -2.50173,-0.01287l-0.52493,-0.52493l-2.74319,-2.74557l-0.52493,-0.52493c-0.33571,-0.33274 -0.52456,-0.78581 -0.52456,-1.25848c0,-0.47267 0.18885,-0.92575 0.52456,-1.25848l3.26813,-3.25729l0.52493,-0.52527l0.01287,-0.01287c0.69443,-0.68718 1.81441,-0.68142 2.50173,0.01287l3.77918,3.78222M236.41416,170.88944h0.01151c0.98147,0.00745 1.7711,0.80906 1.76377,1.79053v5.34686c-0.00018,0.47063 -0.18733,0.9219 -0.52027,1.25452c-0.33294,0.33262 -0.78439,0.51934 -1.25502,0.51907h-5.356c-0.47066,-0.00063 -0.92179,-0.1882 -1.25415,-0.52145c-0.33236,-0.33325 -0.51872,-0.78488 -0.51809,-1.25553v-5.35871c-0.00027,-0.47086 0.18664,-0.92252 0.51955,-1.2555c0.33292,-0.33298 0.78454,-0.51997 1.2554,-0.51979h5.3533" strokeLinecap="butt" strokeLinejoin="miter"/>
@@ -3796,20 +3819,6 @@ class MenuBar extends React.Component {
                                                 </g>
                                             </svg>
                                             {this.props.locale === 'zh-cn' ? '素材广场' : 'Material Plaza'}
-                                        </MenuItem>
-                                    </MenuSection>
-                                    <MenuSection>
-                                        <MenuItem onClick={this.handleClickRwckPublish}>
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign:'middle',marginRight:4}}>
-                                                <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
-                                                <path d="M16 6l-4-4-4 4"/>
-                                                <path d="M12 2v13"/>
-                                            </svg>
-                                            <FormattedMessage
-                                                defaultMessage="Publish to Rwck"
-                                                description="File menu item that opens the 创客次元 publish window"
-                                                id="gui.menuBar.publishRwck"
-                                            />
                                         </MenuItem>
                                     </MenuSection>
                                     {this.getAutosaveEnabled() && (
@@ -3850,6 +3859,19 @@ class MenuBar extends React.Component {
                                                         {this.state.autosavePaused && ' ⏸'}
                                                     </span>
                                                 )}
+                                            </MenuItem>
+                                        </MenuSection>
+                                    )}
+                                    {/* 创客次元社区插件：文件菜单最后一项 */}
+                                    {shouldShowFileMenuPublishItem() && (
+                                        <MenuSection>
+                                            <MenuItem onClick={this.handleClickRwckPublish}>
+                                                <Upload size={20} />
+                                                <FormattedMessage
+                                                    defaultMessage="Publish to Rwck"
+                                                    description="File menu item that opens the 创客次元 publish window"
+                                                    id="gui.menuBar.publishRwck"
+                                                />
                                             </MenuItem>
                                         </MenuSection>
                                     )}
@@ -4173,17 +4195,13 @@ class MenuBar extends React.Component {
                                     <MenuItem
                                         onClick={() => {
                                             import('../../lib/mw/open-fractch-terminal-window.js')
-                                                .then(module => module.default({vm: this.props.vm}))
+                                                .then(module => module.default())
                                                 .catch(e => console.error(e));
                                             this.props.onRequestCloseTools();
                                         }}
                                     >
                                         <TerminalSquare />
-                                        <FormattedMessage
-                                            defaultMessage="Terminal"
-                                            description="Menu bar item that opens the shell in a window"
-                                            id="mw.menuBar.terminal"
-                                        />
+                                        {this.props.locale === 'zh-cn' ? '终端' : 'Terminal'}
                                     </MenuItem>
                                     <MenuItem
                                         onClick={() => {
@@ -4599,6 +4617,19 @@ class MenuBar extends React.Component {
                             />
                         ) : []))}
                     </div>
+                    {/* 创客次元社区插件：顶部菜单栏「发布作品」按钮 */}
+                    {shouldShowTopBarPublishButton() && (
+                        <div className={classNames(styles.menuBarItem)} data-mw-item="rwck-publish">
+                            <Button
+                                className={styles.menuBarButton}
+                                iconClassName={styles.remixButtonIcon}
+                                iconElem={Upload}
+                                onClick={this.handleClickRwckPublish}
+                            >
+                                {this.props.locale === 'zh-cn' ? '发布作品' : 'Publish'}
+                            </Button>
+                        </div>
+                    )}
                     {/* tw: add a feedback button */}
                     <div className={styles.menuBarItem} data-mw-item="feedback">
                         <a

@@ -110,7 +110,8 @@ const addons = [
     'script-tabs',
     'merge-operators',
     'resize-selected-item',
-    'bilup-sample'
+    'bilup-sample',
+    'rwck-community'
 ];
 
 const newAddons = [
@@ -125,7 +126,8 @@ const newAddons = [
     'project-size-display',
     'project-health-dashboard',
     'lint-system',
-    'script-tabs'
+    'script-tabs',
+    'rwck-community'
 ];
 
 // eslint-disable-next-line import/no-commonjs

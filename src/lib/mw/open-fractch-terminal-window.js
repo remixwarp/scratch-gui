@@ -1,14 +1,26 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import FractchTerminal from '../../components/mw-fractch-workspace/fractch-terminal.jsx';
+import ConsoleWindow from '../../components/mw-panels/console-window.jsx';
 import WindowManager from '../../addons/window-system/window-manager';
-import {applyFractchWorkspace, getPendingMerge, prepareFractchWorkspace} from '../git/browser-git';
 
 let terminalWindow = null;
 let container = null;
 
-const openFractchTerminalWindow = ({vm}) => {
+const getLocale = () => {
+    try {
+        const store = window.ReduxStore;
+        if (store && store.getState) {
+            const locale = store.getState().locales && store.getState().locales.locale;
+            if (locale) return locale;
+        }
+    } catch (e) {
+        // ignore
+    }
+    return 'en';
+};
+
+const openFractchTerminalWindow = () => {
     if (terminalWindow) {
         terminalWindow.show().bringToFront();
         return;
@@ -19,7 +31,7 @@ const openFractchTerminalWindow = ({vm}) => {
 
     terminalWindow = WindowManager.createWindow({
         id: 'mw-fractch-terminal-window',
-        title: 'Terminal',
+        title: getLocale() === 'zh-cn' ? '终端' : 'Terminal',
         width: 640,
         height: 430,
         minWidth: 360,
@@ -34,21 +46,11 @@ const openFractchTerminalWindow = ({vm}) => {
 
     terminalWindow.setContent(container);
 
-    // The shell works on the fractch worktree, so make sure the project has been written to it.
-    const ready = getPendingMerge() ? Promise.resolve() : prepareFractchWorkspace(vm);
-    const handleWorktreeChanged = () => applyFractchWorkspace(vm);
-
-    ready.then(() => {
-        if (!container) return;
-        ReactDOM.render(
-            React.createElement(FractchTerminal, {
-                onWorktreeChanged: handleWorktreeChanged,
-                style: {flex: '1 1 auto', minHeight: 0, padding: '0.35rem 0.5rem 0'},
-                vm
-            }),
-            container
-        );
-    });
+    // 工具菜单的「终端」窗口显示与多工作区「控制台」一致的运行时日志
+    ReactDOM.render(
+        React.createElement(ConsoleWindow, {locale: getLocale()}),
+        container
+    );
 
     terminalWindow.center();
     terminalWindow.show();

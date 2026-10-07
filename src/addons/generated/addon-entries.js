@@ -119,4 +119,5 @@ export default {
   "resize-selected-item": () => import(/* webpackChunkName: "addon-entry-resize-selected-item" */ "../addons/resize-selected-item/_runtime_entry.js"),
   "bilup-sample": () => import(/* webpackChunkName: "addon-entry-bilup-sample" */ "../addons/bilup-sample/_runtime_entry.js"),
   "merge-operators": () => import(/* webpackChunkName: "addon-entry-merge-operators" */ "../addons/merge-operators/_runtime_entry.js"),
+  "rwck-community": () => import(/* webpackChunkName: "addon-entry-rwck-community" */ "../addons/rwck-community/_runtime_entry.js"),
 };

@@ -118,6 +118,7 @@ import _event_tracer from "../addons/event-tracer/_manifest_entry.js";
 import _resize_selected_item from "../addons/resize-selected-item/_manifest_entry.js";
 import _bilup_sample from "../addons/bilup-sample/_manifest_entry.js";
 import _merge_operators from "../addons/merge-operators/_manifest_entry.js";
+import _rwck_community from "../addons/rwck-community/_manifest_entry.js";
 export default {
   "calculator": _calculator,
   "cn-code": _cn_code,
@@ -238,4 +239,5 @@ export default {
   "resize-selected-item": _resize_selected_item,
   "bilup-sample": _bilup_sample,
   "merge-operators": _merge_operators,
+  "rwck-community": _rwck_community,
 };

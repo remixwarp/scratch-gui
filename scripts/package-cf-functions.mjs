@@ -1,9 +1,8 @@
 /**
  * Cloudflare Pages Functions 准备脚本。
  *
- * CF Pages 规则：项目根的 functions/ 目录和 _routes.json 会被自动识别。
+ * CF Pages 规则：项目根的 functions/ 目录会被自动识别。
  * 这里什么都不用做——我们不生成 _routes.json，纯靠文件路由匹配。
- *   functions/__rwck-proxy/index.js  →  /__rwck-proxy/** 所有子路径
  *   functions/api/project-proxy.js   →  /api/project-proxy
  *
  * 保留这个脚本只是为了在 build 脚本里有个稳定的钩子点，

@@ -18,8 +18,7 @@ import {localeData} from '@remixwarp/scratch-l10n';
 
 import WindowManager from '../../addons/window-system/window-manager';
 import IntlBridge from '../tw-use-intl.jsx';
-import rwck from '../rwck/api-client.js';
-import getEditorColors from '../rwck/theme-colors.js';
+import getEditorColors, {subscribeThemeChange} from '../rwck/theme-colors.js';
 import RwckPublishPanel from '../rwck/rwck-publish-panel.jsx';
 
 addLocaleData(localeData);
@@ -60,15 +59,9 @@ function readVm() {
  * 打开创客次元发布窗口。
  * @param {object} [opts]
  * @param {string} [opts.tab]  直接打开到哪个 Tab：login | community | publish | disc | mine
- * @param {boolean} [opts.forceProxy] 是否强制走同源代理（forum 未回 ACAO 时用）
  */
 const openRwckPublishWindow = (opts = {}) => {
-    const {tab, forceProxy} = opts;
-
-    if (typeof forceProxy === 'boolean') {
-        if (forceProxy) window.__RWCK_FORCE_PROXY__ = true;
-        else delete window.__RWCK_FORCE_PROXY__;
-    }
+    const {tab} = opts;
 
     // 如果窗口已经开着：如果请求了不同的 tab，也需要重建（panel 现在没有 switchTab API），
     // 简单处理：每次 close 再重建都能生效。为了不打扰用户——如果已经在前台了，只改 tab。
@@ -80,7 +73,6 @@ const openRwckPublishWindow = (opts = {}) => {
         return openWin;
     }
 
-    const colors = getEditorColors();
     const intlProps = getIntlProps();
 
     const container = document.createElement('div');
@@ -90,6 +82,8 @@ const openRwckPublishWindow = (opts = {}) => {
         ? intlProps.messages['gui.rwck.publishWindow.title'] || '发布到创客次元'
         : '发布到创客次元';
 
+    let unsubscribeTheme = null;
+
     openWin = WindowManager.createWindow({
         id: WIN_ID,
         title,
@@ -98,6 +92,8 @@ const openRwckPublishWindow = (opts = {}) => {
         minWidth: 520,
         minHeight: 520,
         onClose: () => {
+            if (unsubscribeTheme) unsubscribeTheme();
+            unsubscribeTheme = null;
             setTimeout(() => {
                 ReactDOM.unmountComponentAtNode(container);
                 openWin = null;
@@ -107,22 +103,32 @@ const openRwckPublishWindow = (opts = {}) => {
 
     openWin.setContent(container);
 
-    const panelProps = {
-        colors,
-        intl: intlProps,
-        getVm: readVm,
-        terms: RWCK_TERMS,
-        initialTab: tab || null,
-        onRequestClose: () => openWin && openWin.close()
+    /** 用给定色板（重）渲染面板。ReactDOM.render 到同一容器会保留组件 state。 */
+    const renderPanel = colors => {
+        const panelProps = {
+            colors,
+            intl: intlProps,
+            getVm: readVm,
+            terms: RWCK_TERMS,
+            initialTab: tab || null,
+            onRequestClose: () => openWin && openWin.close(),
+            // 把面板实例挂到窗口上，便于「窗口已打开时切换 Tab」（见下方 openWin 复用逻辑）
+            _onRef: ref => { openWin._rwckPanelRef = ref; }
+        };
+
+        const panel = React.createElement(RwckPublishPanel, panelProps);
+        const node = intlProps
+            ? React.createElement(IntlProvider, {locale: intlProps.locale, messages: intlProps.messages},
+                  React.createElement(IntlBridge, null, panel))
+            : panel;
+
+        ReactDOM.render(node, container);
     };
 
-    const panel = React.createElement(RwckPublishPanel, panelProps);
-    const node = intlProps
-        ? React.createElement(IntlProvider, {locale: intlProps.locale, messages: intlProps.messages},
-              React.createElement(IntlBridge, null, panel))
-        : panel;
+    renderPanel(getEditorColors());
+    // 用户在编辑器里切换主题 / 强调色时，窗口配色跟着更新
+    unsubscribeTheme = subscribeThemeChange(next => renderPanel(next));
 
-    ReactDOM.render(node, container);
     openWin.center();
     openWin.show();
     return openWin;

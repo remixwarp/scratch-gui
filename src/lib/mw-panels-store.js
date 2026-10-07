@@ -89,3 +89,35 @@ export const setProblemCount = count => {
     currentProblemCount = n;
     window.dispatchEvent(new CustomEvent(PROBLEM_COUNT_EVENT, {detail: n}));
 };
+
+// ---------------------------------------------------------------------------
+// 运行控制台日志（跨组件共享，供底部面板「控制台」tab 与工具菜单的终端窗口共用）
+// 旧版工具菜单的终端窗口（FractchTerminal）目前是空实现，这里让它与多工作区
+// 里的「控制台」显示完全一致的运行日志。
+// ---------------------------------------------------------------------------
+
+export const CONSOLE_ENTRIES_EVENT = 'mw-console-entries-changed';
+
+const MAX_SHARED_CONSOLE_ENTRIES = 500;
+let sharedConsoleEntries = [];
+let sharedConsoleIdCounter = 0;
+
+export const getConsoleEntries = () => sharedConsoleEntries;
+
+export const appendConsoleEntry = (method, args) => {
+    const entry = {
+        id: `shared-${Date.now()}-${++sharedConsoleIdCounter}`,
+        method: method === 'debug' ? 'debug' : method,
+        args,
+        time: Date.now()
+    };
+    sharedConsoleEntries = [...sharedConsoleEntries, entry].slice(-MAX_SHARED_CONSOLE_ENTRIES);
+    window.dispatchEvent(new CustomEvent(CONSOLE_ENTRIES_EVENT));
+    return entry;
+};
+
+export const clearConsoleEntries = () => {
+    if (sharedConsoleEntries.length === 0) return;
+    sharedConsoleEntries = [];
+    window.dispatchEvent(new CustomEvent(CONSOLE_ENTRIES_EVENT));
+};

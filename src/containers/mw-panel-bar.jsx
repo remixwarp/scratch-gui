@@ -5,7 +5,7 @@ import {defineMessages, injectIntl} from 'react-intl';
 import VM from 'scratch-vm';
 import MWPanelBar from '../components/mw-panels/mw-panel-bar.jsx';
 import {inspectProject} from '../lib/mw-project-inspector.js';
-import {setProblemCount} from '../lib/mw-panels-store.js';
+import {setProblemCount, appendConsoleEntry, clearConsoleEntries} from '../lib/mw-panels-store.js';
 
 const MAX_CONSOLE_ENTRIES = 500;
 const MAX_PROBLEMS = 200;
@@ -134,6 +134,7 @@ class MWPanelBarContainer extends React.Component {
         this.setState(prev => ({
             consoleEntries: [...prev.consoleEntries, entry].slice(-MAX_CONSOLE_ENTRIES)
         }));
+        appendConsoleEntry(entry.method, entry.args);
     }
     addProblem (problem) {
         const entry = Object.assign({
@@ -242,6 +243,7 @@ class MWPanelBarContainer extends React.Component {
     }
     handleClearConsole () {
         this.setState({consoleEntries: []});
+        clearConsoleEntries();
     }
     handleJumpToProblem (problem) {
         if (this.props.vm && problem.targetId) {

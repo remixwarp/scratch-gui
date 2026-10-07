@@ -7,7 +7,6 @@ import spriteCostume from '!raw-loader!./Fox.svg';
 import yuCostume from '!raw-loader!./yu.svg';
 /* eslint-enable import/no-unresolved */
 import {TextEncoder} from '../tw-text-encoder';
-import {defineMessages} from 'react-intl';
 import {
     isCustomDefaultSpriteEnabled,
     getCustomDefaultSprite,
@@ -32,18 +31,41 @@ const defaultSprites = [
     }
 ];
 
-const spriteMessages = defineMessages({
+// 这些角色名是本项目自定义的，上游语言包里没有对应翻译，
+// 直接按语言映射，避免 react-intl 的 "Missing message" 警告。
+const SPRITE_LOCAL_NAMES = {
     flickFox: {
-        id: 'gui.defaultProject.sprite.flickFox',
-        defaultMessage: 'Flick Fox',
-        description: 'Localized name for the default sprite "Flick Fox" (used as a fallback name per-locale in LanguageService.FALLBACK_MESSAGES).'
+        en: 'Flick Fox',
+        'zh-cn': '轻盈狐',
+        wenyan: '轻狐',
+        geng: '轻盈狐'
     },
     yu: {
-        id: 'gui.defaultProject.sprite.yu',
-        defaultMessage: 'Yu',
-        description: 'Localized name for the default sprite "Yu" (used as a fallback name per-locale in LanguageService.FALLBACK_MESSAGES).'
+        en: 'Yu',
+        'zh-cn': '玉米',
+        wenyan: '玉蜀黍',
+        geng: '苞谷'
     }
-});
+};
+
+const getCurrentLocale = () => {
+    try {
+        const store = window.ReduxStore;
+        if (store && store.getState) {
+            const locale = store.getState().locales && store.getState().locales.locale;
+            if (locale) return locale;
+        }
+    } catch (e) {
+        // ignore
+    }
+    return 'en';
+};
+
+const localSpriteName = key => {
+    const names = SPRITE_LOCAL_NAMES[key];
+    if (!names) return key;
+    return names[getCurrentLocale()] || names.en;
+};
 
 const defaultProject = translateFunction => {
     // 构造阶段 storage.js 调 cacheDefaultProject() 时 this.translator 还没
@@ -120,9 +142,9 @@ const defaultProject = translateFunction => {
 
     // 默认：从角色池中随机选取一个
     const picked = defaultSprites[Math.floor(Math.random() * defaultSprites.length)];
-    const pickedMessageObj = picked.assetId === '927d672925e7b99f7813735c484c6922'
-        ? spriteMessages.flickFox
-        : spriteMessages.yu;
+    const pickedNameKey = picked.assetId === '927d672925e7b99f7813735c484c6922' ?
+        'flickFox' :
+        'yu';
 
     // 更新项目 JSON 中的角色信息
     const spriteTarget = projectJson.targets[1];
@@ -132,7 +154,7 @@ const defaultProject = translateFunction => {
     costume.dataFormat = picked.dataFormat;
     costume.rotationCenterX = picked.rotationCenterX;
     costume.rotationCenterY = picked.rotationCenterY;
-    spriteTarget.name = translator(pickedMessageObj);
+    spriteTarget.name = localSpriteName(pickedNameKey);
 
     return [{
         id: 0,

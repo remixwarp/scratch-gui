@@ -179,46 +179,6 @@ const base = {
                 }
             });
 
-            // 创客次元同源代理：/__rwck-proxy/<path...> → https://forum.ctspace.xyz/api/<path...>
-            // 用于绕开 forum.ctspace.xyz 未回显 Access-Control-Allow-Origin 导致浏览器 CORS 失败。
-            // 前端请求所有 Rwck 接口时自动切到同源路由，浏览器看不到跨域。
-            app.all('/__rwck-proxy/*', async (req, res) => {
-                const suffix = req.params[0] || '';
-                const path = suffix.startsWith('/') ? suffix : `/${suffix}`;
-                const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-                const targetUrl = `https://forum.ctspace.xyz/api${path}${query}`;
-
-                // 透传常见头：Authorization / Content-Type（含 multipart boundary）/ Accept / Content-Length
-                const headers = {};
-                const copyHeaders = ['authorization', 'content-type', 'accept', 'content-length', 'x-requested-with'];
-                for (const h of copyHeaders) {
-                    const v = req.headers[h];
-                    if (v) headers[h] = Array.isArray(v) ? v.join(', ') : v;
-                }
-
-                try {
-                    const upstreamResp = await fetch(targetUrl, {
-                        method: req.method,
-                        headers,
-                        body: (req.method === 'GET' || req.method === 'HEAD') ? undefined : req,
-                        redirect: 'follow'
-                    });
-                    res.status(upstreamResp.status);
-                    for (const [k, v] of upstreamResp.headers.entries()) {
-                        // 去掉 Cookie / Set-Cookie（开发者浏览器会话不应被 Rwck cookie 干扰）
-                        if (/^(set-cookie|cookie)$/i.test(k)) continue;
-                        // 重写 CORS 头 → 对前端永远同源
-                        if (/^access-control-allow-origin$/i.test(k)) continue;
-                        if (/^access-control-allow-credentials$/i.test(k)) continue;
-                        res.set(k, v);
-                    }
-                    res.set('Access-Control-Allow-Origin', '*');
-                    const buffer = await upstreamResp.arrayBuffer();
-                    res.send(Buffer.from(buffer));
-                } catch (err) {
-                    res.status(502).json({error: '创客次元服务暂时不可用'});
-                }
-            });
         }
     },
     output: {
