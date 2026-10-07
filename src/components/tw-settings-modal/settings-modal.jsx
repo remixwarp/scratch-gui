@@ -3285,6 +3285,20 @@ class SettingsModalComponent extends React.Component {
         };
     }
 
+    componentDidMount () {
+        // 设置变更（如勾选“拆分舞台”）后，AE 设置已写入 localStorage，
+        // 但本弹窗不会自动重渲染，导致受控复选框被强制取消勾选（只剩焦点）。
+        // 监听 ae-settings-changed 并强制重渲染，使各开关的 value 实时同步。
+        this._onAeSettingsChanged = () => this.forceUpdate();
+        window.addEventListener('ae-settings-changed', this._onAeSettingsChanged);
+    }
+
+    componentWillUnmount () {
+        if (this._onAeSettingsChanged) {
+            window.removeEventListener('ae-settings-changed', this._onAeSettingsChanged);
+        }
+    }
+
     handleNavigate (category) {
         this.setState({currentView: category});
     }
