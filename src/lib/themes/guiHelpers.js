@@ -292,6 +292,9 @@ const applyWallpaper = wallpaper => {
 const applyGuiColors = theme => {
     const doc = document.documentElement;
 
+    // 标记当前 GUI 主题，便于 global-styles.css 针对特定主题（如新拟物浅）做专属样式
+    doc.setAttribute('data-gui-theme', theme.gui);
+
     const defaultGuiColors = (Theme.light && typeof Theme.light.getGuiColors === 'function') ?
         Theme.light.getGuiColors() :
         (GUI_MAP && GUI_MAP.light && GUI_MAP.light.guiColors) || {};

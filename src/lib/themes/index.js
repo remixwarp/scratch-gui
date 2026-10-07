@@ -9,6 +9,8 @@ import * as guiDeepDark  from './gui/deep_dark';
 import * as guiMidnight from './gui/midnight';
 import * as guiColorblindLight from './gui/colorblind-light';
 import * as guiColorblindDark from './gui/colorblind-dark';
+import * as guiNeumorphismLight from './gui/neumorphism_light';
+import * as guiNeumorphismDark from './gui/neumorphism_dark';
 
 import * as blocksThree from './blocks/three';
 import * as blocksHighContrast from './blocks/high-contrast';
@@ -49,6 +51,8 @@ const GUI_DEEPDARK = 'deepdark';
 const GUI_MIDNIGHT = 'midnight';
 const GUI_COLORBLIND_LIGHT = 'colorblind-light';
 const GUI_COLORBLIND_DARK = 'colorblind-dark';
+const GUI_NEUMORPHISM_LIGHT = 'neumorphism-light';
+const GUI_NEUMORPHISM_DARK = 'neumorphism-dark';
 const GUI_MAP = {
     [GUI_LIGHT]: guiLight,
     [GUI_GENESIS_LIGHT]: guiGenesisLight,
@@ -58,7 +62,9 @@ const GUI_MAP = {
     [GUI_DEEPDARK]: guiDeepDark,
     [GUI_MIDNIGHT]: guiMidnight,
     [GUI_COLORBLIND_LIGHT]: guiColorblindLight,
-    [GUI_COLORBLIND_DARK]: guiColorblindDark
+    [GUI_COLORBLIND_DARK]: guiColorblindDark,
+    [GUI_NEUMORPHISM_LIGHT]: guiNeumorphismLight,
+    [GUI_NEUMORPHISM_DARK]: guiNeumorphismDark
 };
 const GUI_DEFAULT = GUI_LIGHT;
 
@@ -225,6 +231,8 @@ export {
     GUI_MIDNIGHT,
     GUI_COLORBLIND_LIGHT,
     GUI_COLORBLIND_DARK,
+    GUI_NEUMORPHISM_LIGHT,
+    GUI_NEUMORPHISM_DARK,
     GUI_MAP,
 
     BLOCKS_THREE,

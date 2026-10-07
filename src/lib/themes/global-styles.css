@@ -162,3 +162,435 @@
 .no-window-animation :global(.stage-overlays) {
     transition: none !important;
 }
+
+/* ============================================================
+   新拟物浅 (Neumorphism Light) 主题专属样式
+   仅当 <html data-gui-theme="neumorphism-light"> 时生效。
+   设计令牌：同色系浅灰背景 + 双重柔和阴影（左上亮 / 右下暗）。
+   规则遵循新拟物风格：光源固定左上，凸起用外阴影、凹陷用内阴影，
+   按下从外凸转为内凹，hover 减小阴影，过渡 duration-300 ease-in-out。
+   ============================================================ */
+:root[data-gui-theme='neumorphism-light'] {
+    --neu-bg: #e0e5ec;
+    --neu-bg-secondary: #f0f0f3;
+    --neu-shadow-dark: #b8bcc2;
+    --neu-shadow-light: #ffffff;
+
+    --neu-raised-sm: 2px 2px 5px var(--neu-shadow-dark), -2px -2px 5px var(--neu-shadow-light);
+    --neu-raised: 3px 3px 7px var(--neu-shadow-dark), -3px -3px 7px var(--neu-shadow-light);
+    --neu-raised-md: 5px 5px 12px var(--neu-shadow-dark), -5px -5px 12px var(--neu-shadow-light);
+    --neu-inset-sm: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+    --neu-inset: inset 3px 3px 7px var(--neu-shadow-dark), inset -3px -3px 7px var(--neu-shadow-light);
+    /* 输入框聚焦时减小内阴影深度（惰性收缩，通道开放） */
+    --neu-inset-focus: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+    --neu-accent: #6d5dfc;
+}
+
+/* 整体页面背景保持同色系 */
+:root[data-gui-theme='neumorphism-light'] body,
+:root[data-gui-theme='neumorphism-light'] .gui,
+:root[data-gui-theme='neumorphism-light'] [class*='gui_'] {
+    background-color: var(--neu-bg) !important;
+}
+
+/* 浮层（弹窗遮罩等）：柔和半透明，不施加凸起阴影 */
+:root[data-gui-theme='neumorphism-light'] [class*='overlay_'] {
+    background-color: rgba(184, 188, 194, 0.5) !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(2px);
+}
+
+/* 顶部菜单栏：与背景同色，仅底部轻投影，圆角收口 */
+:root[data-gui-theme='neumorphism-light'] [class*='menu-bar_'] {
+    background-color: var(--neu-bg) !important;
+    border-radius: 0 0 18px 18px !important;
+    box-shadow: 0 6px 12px var(--neu-shadow-dark) !important;
+}
+
+/* 下拉菜单容器：凸起大阴影 + 圆角，去除原有的描边渐变 */
+:root[data-gui-theme='neumorphism-light'] [class*='menu_']:not([class*='menu-bar_']):not([class*='menu-item_']),
+:root[data-gui-theme='neumorphism-light'] [class*='submenu_'] {
+    background-color: var(--neu-bg) !important;
+    border: none !important;
+    border-radius: 16px !important;
+    box-shadow: var(--neu-raised-md) !important;
+}
+:root[data-gui-theme='neumorphism-light'] [class*='menu_']::before,
+:root[data-gui-theme='neumorphism-light'] [class*='submenu_']::before {
+    content: none !important;
+}
+
+/* 下拉菜单项：默认平整，悬停时凸起（手指靠近，阴影缩小） */
+:root[data-gui-theme='neumorphism-light'] [class*='menu-item_'] {
+    background-color: transparent !important;
+    border-radius: 12px !important;
+    transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out !important;
+}
+:root[data-gui-theme='neumorphism-light'] [class*='menu-item_']:hover,
+:root[data-gui-theme='neumorphism-light'] [class*='menu-item_'].active,
+:root[data-gui-theme='neumorphism-light'] [class*='menu-item_'].expanded {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    box-shadow: none !important;
+}
+
+/* 通用按钮：凸起 + 圆角，按下转为凹陷（Extrude to Intrude） */
+:root[data-gui-theme='neumorphism-light'] button,
+:root[data-gui-theme='neumorphism-light'] [class*='button_'],
+:root[data-gui-theme='neumorphism-light'] [role='button'] {
+    background-color: var(--neu-bg) !important;
+    color: #4b5563 !important;
+    border: none !important;
+    border-radius: 14px !important;
+    box-shadow: var(--neu-raised) !important;
+    transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out !important;
+}
+:root[data-gui-theme='neumorphism-light'] button:hover:not(:disabled),
+:root[data-gui-theme='neumorphism-light'] [class*='button_']:hover:not(:disabled),
+:root[data-gui-theme='neumorphism-light'] [role='button']:hover:not(:disabled) {
+    box-shadow: var(--neu-raised-sm) !important;
+}
+:root[data-gui-theme='neumorphism-light'] button:active:not(:disabled),
+:root[data-gui-theme='neumorphism-light'] [class*='button_']:active:not(:disabled),
+:root[data-gui-theme='neumorphism-light'] [role='button']:active:not(:disabled) {
+    box-shadow: var(--neu-inset) !important;
+}
+:root[data-gui-theme='neumorphism-light'] button:disabled,
+:root[data-gui-theme='neumorphism-light'] [class*='button_']:disabled,
+:root[data-gui-theme='neumorphism-light'] [role='button'][aria-disabled='true'] {
+    opacity: 0.55 !important;
+    box-shadow: var(--neu-inset-sm) !important;
+}
+
+/* 输入框 / 文本域 / 下拉：凹陷（Inset） */
+:root[data-gui-theme='neumorphism-light'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+:root[data-gui-theme='neumorphism-light'] textarea,
+:root[data-gui-theme='neumorphism-light'] select,
+:root[data-gui-theme='neumorphism-light'] [class*='input_'],
+:root[data-gui-theme='neumorphism-light'] [class*='text-input_'],
+:root[data-gui-theme='neumorphism-light'] [class*='field_'] {
+    background-color: var(--neu-bg) !important;
+    color: #374151 !important;
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: var(--neu-inset) !important;
+    transition: box-shadow 0.3s ease-in-out !important;
+}
+:root[data-gui-theme='neumorphism-light'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
+:root[data-gui-theme='neumorphism-light'] textarea:focus,
+:root[data-gui-theme='neumorphism-light'] select:focus,
+:root[data-gui-theme='neumorphism-light'] [class*='input_']:focus,
+:root[data-gui-theme='neumorphism-light'] [class*='text-input_']:focus {
+    box-shadow: var(--neu-inset-focus) !important;
+    outline: none !important;
+}
+
+/* 卡片 / 弹窗主体 / 浮层：凸起大阴影 + 大圆角 */
+/* 注意：舞台(.stage)刻意不在此列——它是画布内容区，需保持透明背景，
+   否则会被不透明背景遮盖而看不到舞台画面。 */
+:root[data-gui-theme='neumorphism-light'] [class*='card_'],
+:root[data-gui-theme='neumorphism-light'] [class*='modal_']:not([class*='overlay_']),
+:root[data-gui-theme='neumorphism-light'] [class*='popover_'] {
+    background-color: var(--neu-bg) !important;
+    border: none !important;
+    border-radius: 20px !important;
+    box-shadow: var(--neu-raised-md) !important;
+}
+
+/* 开关 / 复选框 / 切换：凸起小控件 */
+:root[data-gui-theme='neumorphism-light'] input[type='checkbox'],
+:root[data-gui-theme='neumorphism-light'] input[type='radio'],
+:root[data-gui-theme='neumorphism-light'] [class*='toggle_'],
+:root[data-gui-theme='neumorphism-light'] [class*='checkbox_'],
+:root[data-gui-theme='neumorphism-light'] [class*='switch_'] {
+    background-color: var(--neu-bg) !important;
+    border: none !important;
+    box-shadow: var(--neu-raised-sm) !important;
+    transition: box-shadow 0.3s ease-in-out !important;
+}
+:root[data-gui-theme='neumorphism-light'] input[type='checkbox']:checked,
+:root[data-gui-theme='neumorphism-light'] input[type='radio']:checked {
+    box-shadow: var(--neu-inset-sm) !important;
+}
+
+/* 弹窗关闭按钮等圆形控件：保持圆形凸起 */
+:root[data-gui-theme='neumorphism-light'] [class*='close_'],
+:root[data-gui-theme='neumorphism-light'] [class*='icon-button_'] {
+    background-color: var(--neu-bg) !important;
+    border: none !important;
+    box-shadow: var(--neu-raised-sm) !important;
+}
+:root[data-gui-theme='neumorphism-light'] [class*='close_']:active,
+:root[data-gui-theme='neumorphism-light'] [class*='icon-button_']:active {
+    box-shadow: var(--neu-inset-sm) !important;
+}
+
+/* 舞台外壳(stage-wrapper)：新拟物画框。仅作用于外层容器，
+   绝不影响内部的画布(.stage)与舞台内容。 */
+:root[data-gui-theme='neumorphism-light'] [class*='stage-wrapper_'] {
+    border-radius: 20px !important;
+    box-shadow: var(--neu-raised-md) !important;
+}
+
+/* —— 以下元素是"可点击"但不应做成新拟物凸起按钮，单独重置 —— */
+/* 图标型/工具型按钮（快捷键编辑、重置等）：保持透明无背景 */
+:root[data-gui-theme='neumorphism-light'] [class*='editIcon_'],
+:root[data-gui-theme='neumorphism-light'] [class*='resetIcon_'],
+:root[data-gui-theme='neumorphism-light'] [class*='shortcut_'] {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+:root[data-gui-theme='neumorphism-light'] [class*='editIcon_']:hover,
+:root[data-gui-theme='neumorphism-light'] [class*='editIcon_']:active,
+:root[data-gui-theme='neumorphism-light'] [class*='resetIcon_']:hover,
+:root[data-gui-theme='neumorphism-light'] [class*='resetIcon_']:active {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+/* 快捷键按键标签：保留原有样式，仅去除新拟物阴影 */
+:root[data-gui-theme='neumorphism-light'] [class*='keyDisplay_'] {
+    box-shadow: none !important;
+}
+/* 顶部菜单栏按钮与下拉菜单：不做凸起，避免"按钮挤在一起" */
+:root[data-gui-theme='neumorphism-light'] [class*='menu-bar-item_'],
+:root[data-gui-theme='neumorphism-light'] [class*='menu-bar-button_'] {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+:root[data-gui-theme='neumorphism-light'] [class*='menu-bar-item_']:hover,
+:root[data-gui-theme='neumorphism-light'] [class*='menu-bar-button_']:hover {
+    background-color: var(--ui-black-transparent) !important;
+    box-shadow: none !important;
+}
+/* 关于/鸣谢等页面里的文字链接：保持链接外观，不加按钮样式 */
+:root[data-gui-theme='neumorphism-light'] a {
+    box-shadow: none !important;
+}
+/* 自由窗口标题栏控制按钮（最小化/最大化/关闭）：透明无背景 */
+:root[data-gui-theme='neumorphism-light'] .addon-window-btn {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+}
+:root[data-gui-theme='neumorphism-light'] .addon-window-btn:hover {
+    background-color: var(--ui-black-transparent) !important;
+    box-shadow: none !important;
+}
+:root[data-gui-theme='neumorphism-light'] .addon-window-btn-close:hover {
+    background-color: var(--red-primary) !important;
+    color: #ffffff !important;
+}
+
+/* ============================================================
+   新拟物深 (Neumorphism Dark) 主题专属样式
+   仅当 <html data-gui-theme="neumorphism-dark"> 时生效。
+   与浅色版共享同一套新拟物规则结构，仅替换设计令牌与文字颜色：
+   同色系深灰蓝背景 + 双重柔和阴影（左上亮 / 右下暗）。
+   ============================================================ */
+:root[data-gui-theme='neumorphism-dark'] {
+    --neu-bg: #2b2f36;
+    --neu-bg-secondary: #343a42;
+    --neu-shadow-dark: #1b1e23;
+    --neu-shadow-light: #3b424c;
+
+    --neu-raised-sm: 2px 2px 5px var(--neu-shadow-dark), -2px -2px 5px var(--neu-shadow-light);
+    --neu-raised: 3px 3px 7px var(--neu-shadow-dark), -3px -3px 7px var(--neu-shadow-light);
+    --neu-raised-md: 5px 5px 12px var(--neu-shadow-dark), -5px -5px 12px var(--neu-shadow-light);
+    --neu-inset-sm: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+    --neu-inset: inset 3px 3px 7px var(--neu-shadow-dark), inset -3px -3px 7px var(--neu-shadow-light);
+    --neu-inset-focus: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+    --neu-accent: #7c6dff;
+}
+
+/* 整体页面背景保持同色系 */
+:root[data-gui-theme='neumorphism-dark'] body,
+:root[data-gui-theme='neumorphism-dark'] .gui,
+:root[data-gui-theme='neumorphism-dark'] [class*='gui_'] {
+    background-color: var(--neu-bg) !important;
+}
+
+/* 浮层（弹窗遮罩等）：深色半透明，不施加凸起阴影 */
+:root[data-gui-theme='neumorphism-dark'] [class*='overlay_'] {
+    background-color: rgba(10, 12, 14, 0.5) !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(2px);
+}
+
+/* 顶部菜单栏：与背景同色，仅底部轻投影，圆角收口 */
+:root[data-gui-theme='neumorphism-dark'] [class*='menu-bar_'] {
+    background-color: var(--neu-bg) !important;
+    border-radius: 0 0 18px 18px !important;
+    box-shadow: 0 6px 12px var(--neu-shadow-dark) !important;
+}
+
+/* 下拉菜单容器：凸起大阴影 + 圆角，去除原有的描边渐变 */
+:root[data-gui-theme='neumorphism-dark'] [class*='menu_']:not([class*='menu-bar_']):not([class*='menu-item_']),
+:root[data-gui-theme='neumorphism-dark'] [class*='submenu_'] {
+    background-color: var(--neu-bg) !important;
+    border: none !important;
+    border-radius: 16px !important;
+    box-shadow: var(--neu-raised-md) !important;
+}
+:root[data-gui-theme='neumorphism-dark'] [class*='menu_']::before,
+:root[data-gui-theme='neumorphism-dark'] [class*='submenu_']::before {
+    content: none !important;
+}
+
+/* 下拉菜单项：默认平整，悬停时凸起（手指靠近，阴影缩小） */
+:root[data-gui-theme='neumorphism-dark'] [class*='menu-item_'] {
+    background-color: transparent !important;
+    border-radius: 12px !important;
+    transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out !important;
+}
+:root[data-gui-theme='neumorphism-dark'] [class*='menu-item_']:hover,
+:root[data-gui-theme='neumorphism-dark'] [class*='menu-item_'].active,
+:root[data-gui-theme='neumorphism-dark'] [class*='menu-item_'].expanded {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    box-shadow: none !important;
+}
+
+/* 通用按钮：凸起 + 圆角，按下转为凹陷（Extrude to Intrude） */
+:root[data-gui-theme='neumorphism-dark'] button,
+:root[data-gui-theme='neumorphism-dark'] [class*='button_'],
+:root[data-gui-theme='neumorphism-dark'] [role='button'] {
+    background-color: var(--neu-bg) !important;
+    color: #d8dce3 !important;
+    border: none !important;
+    border-radius: 14px !important;
+    box-shadow: var(--neu-raised) !important;
+    transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out !important;
+}
+:root[data-gui-theme='neumorphism-dark'] button:hover:not(:disabled),
+:root[data-gui-theme='neumorphism-dark'] [class*='button_']:hover:not(:disabled),
+:root[data-gui-theme='neumorphism-dark'] [role='button']:hover:not(:disabled) {
+    box-shadow: var(--neu-raised-sm) !important;
+}
+:root[data-gui-theme='neumorphism-dark'] button:active:not(:disabled),
+:root[data-gui-theme='neumorphism-dark'] [class*='button_']:active:not(:disabled),
+:root[data-gui-theme='neumorphism-dark'] [role='button']:active:not(:disabled) {
+    box-shadow: var(--neu-inset) !important;
+}
+:root[data-gui-theme='neumorphism-dark'] button:disabled,
+:root[data-gui-theme='neumorphism-dark'] [class*='button_']:disabled,
+:root[data-gui-theme='neumorphism-dark'] [role='button'][aria-disabled='true'] {
+    opacity: 0.55 !important;
+    box-shadow: var(--neu-inset-sm) !important;
+}
+
+/* 输入框 / 文本域 / 下拉：凹陷（Inset） */
+:root[data-gui-theme='neumorphism-dark'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+:root[data-gui-theme='neumorphism-dark'] textarea,
+:root[data-gui-theme='neumorphism-dark'] select,
+:root[data-gui-theme='neumorphism-dark'] [class*='input_'],
+:root[data-gui-theme='neumorphism-dark'] [class*='text-input_'],
+:root[data-gui-theme='neumorphism-dark'] [class*='field_'] {
+    background-color: var(--neu-bg) !important;
+    color: #eef1f6 !important;
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: var(--neu-inset) !important;
+    transition: box-shadow 0.3s ease-in-out !important;
+}
+:root[data-gui-theme='neumorphism-dark'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
+:root[data-gui-theme='neumorphism-dark'] textarea:focus,
+:root[data-gui-theme='neumorphism-dark'] select:focus,
+:root[data-gui-theme='neumorphism-dark'] [class*='input_']:focus,
+:root[data-gui-theme='neumorphism-dark'] [class*='text-input_']:focus {
+    box-shadow: var(--neu-inset-focus) !important;
+    outline: none !important;
+}
+
+/* 卡片 / 弹窗主体 / 浮层：凸起大阴影 + 大圆角 */
+/* 注意：舞台(.stage)刻意不在此列——它是画布内容区，需保持透明背景，
+   否则会被不透明背景遮盖而看不到舞台画面。 */
+:root[data-gui-theme='neumorphism-dark'] [class*='card_'],
+:root[data-gui-theme='neumorphism-dark'] [class*='modal_']:not([class*='overlay_']),
+:root[data-gui-theme='neumorphism-dark'] [class*='popover_'] {
+    background-color: var(--neu-bg) !important;
+    border: none !important;
+    border-radius: 20px !important;
+    box-shadow: var(--neu-raised-md) !important;
+}
+
+/* 开关 / 复选框 / 切换：凸起小控件 */
+:root[data-gui-theme='neumorphism-dark'] input[type='checkbox'],
+:root[data-gui-theme='neumorphism-dark'] input[type='radio'],
+:root[data-gui-theme='neumorphism-dark'] [class*='toggle_'],
+:root[data-gui-theme='neumorphism-dark'] [class*='checkbox_'],
+:root[data-gui-theme='neumorphism-dark'] [class*='switch_'] {
+    background-color: var(--neu-bg) !important;
+    border: none !important;
+    box-shadow: var(--neu-raised-sm) !important;
+    transition: box-shadow 0.3s ease-in-out !important;
+}
+:root[data-gui-theme='neumorphism-dark'] input[type='checkbox']:checked,
+:root[data-gui-theme='neumorphism-dark'] input[type='radio']:checked {
+    box-shadow: var(--neu-inset-sm) !important;
+}
+
+/* 弹窗关闭按钮等圆形控件：保持圆形凸起 */
+:root[data-gui-theme='neumorphism-dark'] [class*='close_'],
+:root[data-gui-theme='neumorphism-dark'] [class*='icon-button_'] {
+    background-color: var(--neu-bg) !important;
+    border: none !important;
+    box-shadow: var(--neu-raised-sm) !important;
+}
+:root[data-gui-theme='neumorphism-dark'] [class*='close_']:active,
+:root[data-gui-theme='neumorphism-dark'] [class*='icon-button_']:active {
+    box-shadow: var(--neu-inset-sm) !important;
+}
+
+/* 舞台外壳(stage-wrapper)：新拟物画框。仅作用于外层容器，
+   绝不影响内部的画布(.stage)与舞台内容。 */
+:root[data-gui-theme='neumorphism-dark'] [class*='stage-wrapper_'] {
+    border-radius: 20px !important;
+    box-shadow: var(--neu-raised-md) !important;
+}
+
+/* —— 以下元素是"可点击"但不应做成新拟物凸起按钮，单独重置 —— */
+/* 图标型/工具型按钮（快捷键编辑、重置等）：保持透明无背景 */
+:root[data-gui-theme='neumorphism-dark'] [class*='editIcon_'],
+:root[data-gui-theme='neumorphism-dark'] [class*='resetIcon_'],
+:root[data-gui-theme='neumorphism-dark'] [class*='shortcut_'] {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+:root[data-gui-theme='neumorphism-dark'] [class*='editIcon_']:hover,
+:root[data-gui-theme='neumorphism-dark'] [class*='editIcon_']:active,
+:root[data-gui-theme='neumorphism-dark'] [class*='resetIcon_']:hover,
+:root[data-gui-theme='neumorphism-dark'] [class*='resetIcon_']:active {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+/* 快捷键按键标签：保留原有样式，仅去除新拟物阴影 */
+:root[data-gui-theme='neumorphism-dark'] [class*='keyDisplay_'] {
+    box-shadow: none !important;
+}
+/* 顶部菜单栏按钮与下拉菜单：不做凸起，避免"按钮挤在一起" */
+:root[data-gui-theme='neumorphism-dark'] [class*='menu-bar-item_'],
+:root[data-gui-theme='neumorphism-dark'] [class*='menu-bar-button_'] {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+:root[data-gui-theme='neumorphism-dark'] [class*='menu-bar-item_']:hover,
+:root[data-gui-theme='neumorphism-dark'] [class*='menu-bar-button_']:hover {
+    background-color: var(--ui-black-transparent) !important;
+    box-shadow: none !important;
+}
+/* 关于/鸣谢等页面里的文字链接：保持链接外观，不加按钮样式 */
+:root[data-gui-theme='neumorphism-dark'] a {
+    box-shadow: none !important;
+}
+/* 自由窗口标题栏控制按钮（最小化/最大化/关闭）：透明无背景 */
+:root[data-gui-theme='neumorphism-dark'] .addon-window-btn {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+}
+:root[data-gui-theme='neumorphism-dark'] .addon-window-btn:hover {
+    background-color: var(--ui-black-transparent) !important;
+    box-shadow: none !important;
+}
+:root[data-gui-theme='neumorphism-dark'] .addon-window-btn-close:hover {
+    background-color: var(--red-primary) !important;
+    color: #ffffff !important;
+}

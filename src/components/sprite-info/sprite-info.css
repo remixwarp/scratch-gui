@@ -10,15 +10,32 @@
     border-top-left-radius: $space;
     border-top-right-radius: $space;
     border-bottom: 1px solid $ui-black-transparent;
+    /* 面板可能比内容窄，允许内部收缩而不是溢出被裁切 */
+    min-width: 0;
 }
 
 .row {
     display: flex;
     justify-content: space-between;
+    min-width: 0;
 }
 
 .row-primary {
     margin-bottom: 0.5rem;
+}
+
+/*
+   第一行的角色名输入是全行最宽的元素。默认（large）舞台尺寸下，角色选择面板
+   比「名称 + x + y」的总宽更窄，固定 8rem 的名称输入会把 x / y 顶出面板被裁切。
+   让名称组可收缩、x / y 组不收缩，窄面板下自动压缩名称输入而不是溢出。
+*/
+.row-primary > .group {
+    flex-shrink: 0;
+}
+
+.row-primary > .group:first-child {
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .label { opacity: 0.8; }
@@ -27,6 +44,7 @@
     display: inline-flex;
     flex-direction: row; /* makes columns, for each label/form group */
     align-items: center;
+    min-width: 0;
 }
 
 .column {
