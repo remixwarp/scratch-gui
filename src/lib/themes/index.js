@@ -133,11 +133,13 @@ class Theme {
         const isColorblindGui = g => g === GUI_COLORBLIND_LIGHT || g === GUI_COLORBLIND_DARK;
         // When switching to a colorblind GUI theme, automatically apply the
         // pure black accent so every emphasized UI element stays monochrome.
-        const accentFor = gui => isColorblindGui(gui) ? 'black' : this.accent;
+        // 注意：强调色在 ACCENT_MAP 里的 key 是 name.toLowerCase()，
+        // 即 'Pure Black' -> 'pure black'，必须用这个值才能解析到对应强调色。
+        const accentFor = gui => isColorblindGui(gui) ? 'pure black' : this.accent;
 
         if (what === 'accent') {
             // Prevent accent changes from overriding colorblind monochrome look.
-            const nextAccent = isColorblindGui(this.gui) ? 'black' : to;
+            const nextAccent = isColorblindGui(this.gui) ? 'pure black' : to;
             return new Theme(nextAccent, this.gui, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts);
         } else if (what === 'gui') {
             return new Theme(accentFor(to), to, this.blocks, this.menuBarAlign, this.wallpaper, this.fonts);

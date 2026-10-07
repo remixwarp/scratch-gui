@@ -1,178 +1,36 @@
-// 纯黑主题色 —— 整个 UI 全部换成黑/白两色.
-// 用户切换到色盲主题(gui 是 colorblind-dark / colorblind-light)时
-// 自动锁死 accent='black', 而 black accent 就是让所有强调元素
-// 统一成黑色的最终落点.
+// 纯黑强调色 —— 只替换强调色（accent）相关的变量，与 Red 一样只改点缀色，
+// 不再整窗换肤（不动背景 / 文字 / 菜单栏 / page 等）。
+// 所有强调色统一为纯黑 #000000（带透明度的也用 rgba(0,0,0,…)）。
 //
-// defaultsDeep 合并优先级:
-//   getGuiColors = accent → GUI → light
-//   getBlockColors = accent → GUI.blocks → three.js
-// 所以只要 black.js 覆盖了足够多的属性, 整个 UI 就是纯黑的.
+// 历史说明：旧版 black 是一套完整皮肤，会强制 color-scheme=dark 并把整窗
+// UI 改成黑/白；同时被色盲 GUI（colorblind-light / colorblind-dark）锁定为
+// 强调色来保持单色观感。现改为纯 accent 后：
+//   - 在普通 GUI 下，只把运动/外观/扩展等分类强调色变成纯黑，底色保持不变；
+//   - 在色盲 GUI 下，红/错误等状态色不再被强制压黑（由 colorblind GUI 自身控制）。
 
 const guiColors = {
-    'color-scheme': 'dark',
-
-    // 所有 motion/looks/extensions/pen/drop-highlight 等 accent 变量统一成黑
     'motion-primary': '#000000',
     'motion-primary-transparent': 'rgba(0, 0, 0, 0.9)',
-    'motion-secondary': '#000000',
     'motion-tertiary': '#000000',
 
     'looks-secondary': '#000000',
-    'looks-tertiary': '#000000',
+    'looks-tertiary': 'rgba(0, 0, 0, 0.6)',
     'looks-transparent': 'rgba(0, 0, 0, 0.35)',
     'looks-light-transparent': 'rgba(0, 0, 0, 0.15)',
-    'looks-secondary-dark': '#111111',
+    'looks-secondary-dark': '#000000',
 
     'extensions-primary': '#000000',
-    'extensions-secondary': '#000000',
     'extensions-tertiary': '#000000',
     'extensions-transparent': 'rgba(0, 0, 0, 0.35)',
-    'extensions-light': '#111111',
+    'extensions-light': '#000000',
 
-    'drop-highlight': '#000000',
-
-    // UI 背景全部纯黑
-    'ui-primary': '#000000',
-    'ui-secondary': '#000000',
-    'ui-tertiary': '#000000',
-
-    'ui-modal-overlay': '#000000',
-    'ui-modal-background': '#000000',
-    'ui-modal-foreground': '#ffffff',
-    'ui-modal-header-background': '#000000',
-    'ui-modal-header-foreground': '#ffffff',
-
-    'ui-white': '#000000',
-    'ui-white-dim': 'rgba(0, 0, 0, 0.75)',
-    'ui-white-transparent': 'rgba(0, 0, 0, 0.25)',
-    'ui-transparent': 'rgba(0, 0, 0, 0)',
-
-    'ui-black-transparent': 'rgba(255, 255, 255, 0.15)',
-
-    'text-primary': '#ffffff',
-    'text-primary-transparent': 'rgba(255, 255, 255, 0.75)',
-
-    // 菜单栏
-    'menu-bar-background': '#000000',
-    'menu-bar-background-image': 'none',
-    'menu-bar-foreground': '#ffffff',
-
-    // 其他 UI 元素
-    'assets-background': '#000000',
-    'input-background': '#000000',
-    'popover-background': '#000000',
-    'shadow': 'rgba(0, 0, 0, 0)',
-    'badge-background': '#000000',
-    'badge-border': '#000000',
-
-    'fullscreen-background': '#000000',
-    'fullscreen-accent': '#000000',
-
-    'page-background': '#000000',
-    'page-foreground': '#ffffff',
-
-    'project-title-inactive': 'rgba(255, 255, 255, 0.25)',
-    'project-title-hover': 'rgba(255, 255, 255, 0.15)',
-
-    'link-color': '#ffffff',
-
-    // Paint 相关
-    'paint-ui-pane-border': '#000000',
-    'paint-text-primary': '#ffffff',
-    'paint-form-border': '#000000',
-    'paint-looks-secondary': '#000000',
-    'paint-looks-transparent': 'rgba(0, 0, 0, 0.25)',
-    'paint-input-background': '#000000',
-    'paint-popover-background': '#000000',
-    'paint-filter-icon-gray': 'brightness(1.7)',
-
-    // 红色/紫色等错误或特殊元素也统一掉
-    'red-primary': '#000000',
-    'red-tertiary': '#000000',
-    'error-primary': '#000000',
-    'error-light': '#111111',
-    'error-transparent': 'rgba(0, 0, 0, 0.25)',
-    'pen-primary': '#000000',
-    'pen-tertiary': '#000000',
-    'pen-transparent': 'rgba(0, 0, 0, 0.25)',
-    'sound-primary': '#000000',
-    'sound-tertiary': '#000000',
-    'control-primary': '#000000',
-    'data-primary': '#000000',
-
-    // 图标过滤 — 反转白底图标, 让它们在黑底上变成白底黑图
-    'filter-icon-black': 'invert(100%)',
-    'filter-icon-gray': 'grayscale(100%) brightness(1.7)',
-    'filter-icon-white': 'brightness(0) invert(100%)'
+    'drop-highlight': '#000000'
 };
 
-// 积木主体填充 = primary/#000000 纯黑
-// 积木边框 = tertiary/#FFFFFF 纯白细边（scratch-blocks 里 stroke 用 tertiary）
-// secondary / quaternary 也设成黑，在 glowing 状态下作为填充 fallback
-const BLACK_BODY_WHITE_BORDER = {
-    primary: '#000000',
-    secondary: '#000000',
-    tertiary: '#FFFFFF',
-    quaternary: '#000000'
-};
-
+// 复选框激活态用纯黑填充（与 Red 结构一致）
 const blockColors = {
-    motion:     BLACK_BODY_WHITE_BORDER,
-    looks:      BLACK_BODY_WHITE_BORDER,
-    sounds:     BLACK_BODY_WHITE_BORDER,
-    event:      BLACK_BODY_WHITE_BORDER,
-    control:    BLACK_BODY_WHITE_BORDER,
-    sensing:    BLACK_BODY_WHITE_BORDER,
-    pen:        BLACK_BODY_WHITE_BORDER,
-    operators:  BLACK_BODY_WHITE_BORDER,
-    data:       BLACK_BODY_WHITE_BORDER,
-    data_lists: BLACK_BODY_WHITE_BORDER,
-    more:       BLACK_BODY_WHITE_BORDER,
-    addons:     BLACK_BODY_WHITE_BORDER,
-    patch:      BLACK_BODY_WHITE_BORDER,
-    strings:    BLACK_BODY_WHITE_BORDER,
-    assets:     BLACK_BODY_WHITE_BORDER,
-
-    // 积木文字白色, 在黑积木上清晰可读
-    // 输入框背景 + 文字都用黑+白 (scratch-blocks textinput: background=textField, color=textFieldText)
-    text: '#FFFFFF',
-    blackText: '#575E75',
-    textFieldText: '#FFFFFF',
-    textField: '#000000',
-
-    // Blockly 容器背景统一成深灰/纯黑保持对比
-    workspace: '#000000',
-    toolbox: '#000000',
-    toolboxSelected: '#000000',
-    toolboxText: '#ffffff',
-    flyout: '#000000',
-    insertionMarker: '#cccccc',
-    scrollbar: '#444444',
-    scrollbarHover: '#444444',
-    valueReportBackground: '#000000',
-    valueReportBorder: '#222222',
-    valueReportForeground: '#ffffff',
-    contextMenuBackground: '#000000',
-    contextMenuBorder: '#ffffff26',
-    contextMenuForeground: '#ffffff',
-    contextMenuActiveBackground: '#1a1a1a',
-    contextMenuDisabledForeground: '#666666',
-    flyoutLabelColor: '#cccccc',
-    checkboxInactiveBackground: '#111111',
-    checkboxInactiveBorder: '#c8c8c8',
     checkboxActiveBackground: '#000000',
-    checkboxActiveBorder: '#222222',
-    checkboxCheck: '#ffffff',
-    buttonBorder: '#444444',
-    buttonActiveBackground: '#000000',
-    buttonForeground: '#ffffff',
-    zoomIconFilter: 'invert(100%)',
-    gridColor: '#222222',
-    fieldShadow: 'rgba(0,0,0,0.3)',
-    numPadBackground: '#111111',
-    numPadBorder: '#222222',
-    numPadActiveBackground: '#222222',
-    numPadText: '#ffffff'
+    checkboxActiveBorder: '#000000'
 };
 
 export {

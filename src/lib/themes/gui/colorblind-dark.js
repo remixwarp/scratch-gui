@@ -58,33 +58,7 @@ const guiColors = {
     'paint-filter-icon-gray': 'brightness(1.7)'
 };
 
-// 色盲色弱深主题: 按用户指定顺序 1黑 2白 3黑 4白 ... 奇偶交替
-//
-// 用户指定顺序:
-//   1 运动 motion      -> 奇 -> BLACK
-//   2 外观 looks       -> 偶 -> LIGHT
-//   3 声音 sounds      -> 奇 -> BLACK
-//   4 事件 event       -> 偶 -> LIGHT
-//   5 控制 control     -> 奇 -> BLACK
-//   6 侦测 sensing     -> 偶 -> LIGHT
-//   7 运算 operators   -> 奇 -> BLACK
-//   8 字符串 strings   -> 偶 -> LIGHT
-//   9 素材 assets      -> 奇 -> BLACK
-//   10 变量 data       -> 偶 -> LIGHT
-//   11 函数 more       -> 奇 -> BLACK
-//
-// pen / data_lists / addons / patch 不在用户列表, 就近对齐:
-//   pen        -> 7 奇 -> BLACK (sensing 后紧邻 operators)
-//   data_lists -> 10 偶 -> LIGHT (跟 data 一起)
-//   addons     -> 11 奇 -> BLACK (more 附近)
-//   patch      -> 11 奇 -> BLACK
-//
-// 注意: Blockly 的积木文字颜色是全局单一值 (blockColors.text),
-// 不能按分类设置不同颜色. 所以这里"白色"不用纯 #FFFFFF, 而是
-// 很浅的浅灰 #E8E8E8, 让全局白字 (#FFFFFF) 在浅灰积木上还能看清.
-// 黑色积木保持纯黑 #000000, 白字在纯黑上完美可读.
-
-// 所有积木分类统一纯黑 (实际颜色由 black accent 最终覆盖)
+// 所有积木分类统一纯黑（由本 GUI 主题自身的 blockColors 决定，不依赖 black 强调色）
 const BLACK_BODY_WHITE_BORDER = { primary: '#000000', secondary: '#000000', tertiary: '#FFFFFF', quaternary: '#000000' };
 const blockColors = {
     motion:       BLACK_BODY_WHITE_BORDER,

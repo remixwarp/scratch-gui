@@ -92,11 +92,13 @@ const detectTheme = () => {
         }
 
         const gui = parsed.gui || systemPreferences.gui;
-        // 与 Theme.set('gui', ...) 保持一致: 色盲 GUI 强制 accent='black'，
+        // 与 Theme.set('gui', ...) 保持一致: 色盲 GUI 强制 accent='pure black'，
         // 否则 localStorage 里残留的旧 accent (如 pale-blue) 会在刷新后
         // 继续给 UI 注入 #75C1C4 这种强调色。
+        // 注意：强调色 key 是 'pure black'（ACCENT_MAP 按 name.toLowerCase() 生成），
+        // 不能用字面量 'black'，否则 ACCENT_MAP['black'] 为 undefined，纯黑强调色不生效。
         const isColorblindGui = g => g === GUI_COLORBLIND_LIGHT || g === GUI_COLORBLIND_DARK;
-        const accent = isColorblindGui(gui) ? 'black' : (parsed.accent || systemPreferences.accent);
+        const accent = isColorblindGui(gui) ? 'pure black' : (parsed.accent || systemPreferences.accent);
 
         return new Theme(
             accent,
