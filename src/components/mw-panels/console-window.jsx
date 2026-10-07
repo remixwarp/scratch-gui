@@ -98,7 +98,10 @@ class ConsoleWindow extends React.Component {
                 <div
                     className={styles.panelBody}
                     ref={this.listRef}
-                    style={{flex: '1 1 auto', minHeight: 0, overflow: 'auto'}}
+                    style={{flex: '1 1 auto', minHeight: 0, overflow: 'auto',
+                        // 允许选中复制控制台输出（覆盖编辑器全局 user-select:none）
+                        userSelect: 'text', WebkitUserSelect: 'text',
+                        MozUserSelect: 'text', msUserSelect: 'text', cursor: 'text'}}
                 >
                     {entries.length === 0 ? (
                         <div className={styles.panelEmpty}>
