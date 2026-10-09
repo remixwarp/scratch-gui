@@ -35,7 +35,7 @@ import {
     Search, Bell, Key, ShieldCheck, Package, HardDrive,
     ThumbsUp, Smile, Bookmark, UserPlus, Send, ExternalLink,
     Plus, Trash2, Star, Hash, Compass, Layers,
-    Database, Zap, FileText, Wrench
+    Database, Zap, FileText, Wrench, XCircle
 } from 'lucide-react';
 
 const PAD = 14;
@@ -136,6 +136,25 @@ const STYLE = C => ({
     // 社区统计卡片 / 排行榜前三名用的强调色，同样从主题里取
     statColors: [C.accent, C.success, C.warning, C.danger],
     link: {color: C.link, textDecoration:'none', fontWeight:600},
+
+    // 顶部 CORS 警告横幅（黄橙色，不阻塞操作）
+    corsBanner: {
+        display:'flex', alignItems:'flex-start', gap:10,
+        padding:'10px 12px', marginBottom:4,
+        borderRadius: RADIUS_MD,
+        border:`1px solid ${C.warningBorder || C.warning}`,
+        background: C.warningSoft || `rgba(255, 170, 0, 0.14)`,
+        color: C.text,
+        fontSize: 12, lineHeight: 1.5,
+        boxShadow: C.shadowSm
+    },
+    corsBannerText: {flex:1, minWidth:0},
+    corsBannerTitle: {fontWeight:700, color: C.warning || '#e08a00', marginBottom:2},
+    corsBannerClose: {
+        background:'transparent', border:'none', cursor:'pointer',
+        color: C.textSubtle, padding:'2px 4px', borderRadius:4,
+        fontSize:14, lineHeight:1
+    },
 
     // 编辑器内弹窗
     modalMask: {position:'fixed', left:0, top:0, right:0, bottom:0, zIndex:100000,
@@ -263,6 +282,9 @@ class RwckPublishPanel extends Component {
             replyOk: '',
 
             termsAcceptedForSession: false,
+
+            // ---- CORS 顶部警告 ----
+            corsBannerHidden: localStorage.getItem('rwck:cors-banner-hidden') === '1',
 
             // ---- 弹窗 ----
             authModal: null,          // 'login' | 'register' | null
@@ -689,6 +711,10 @@ class RwckPublishPanel extends Component {
                     ) : null}
                 </div>
 
+                {/* 顶部 CORS 警告横幅 —— 只要面板不使用同源代理（直连 forum.ctspace.xyz）就显示。
+                    用户点右上角关闭 × 会记住到 localStorage，下次不再弹。 */}
+                {this._renderCorsBanner(S, C)}
+
                 <div style={S.tabs}>
                     {visibleTabs.map(t => (
                         <button key={t.id}
@@ -704,6 +730,43 @@ class RwckPublishPanel extends Component {
                 </div>
 
                 {this._renderAuthModal(S, C)}
+            </div>
+        );
+    }
+
+    /** 顶部 CORS 警告横幅 —— 仅在直连 forum.ctspace.xyz（不使用同源代理）时显示。
+        forum 后端不会回 Access-Control-Allow-Origin，浏览器跨域 fetch 会被挡。
+        用户可以装 "CORS Unblock" 之类浏览器插件绕过；或点面板里"切同源代理"按钮走 dev-server / CF Pages Function。 */
+    _renderCorsBanner (S, C) {
+        if (rwck.IS_PROXY) return null;          // 同源代理已启用，CORS 问题被完全绕开，不必再弹
+        if (this.state.corsBannerHidden) return null;
+
+        const open = (e, url) => { e.preventDefault(); e.stopPropagation(); window.open(url, '_blank', 'noopener,noreferrer'); };
+
+        return (
+            <div style={S.corsBanner}>
+                <AlertCircle size={16} strokeWidth={2.2} style={{flex:'0 0 auto', marginTop:1, color: C.warning || '#e08a00'}} />
+                <div style={S.corsBannerText}>
+                    <div style={S.corsBannerTitle}>跨域请求（CORS）提示</div>
+                    <div>
+                        由于创客次元 API 未回 <code>Access-Control-Allow-Origin</code>，浏览器可能拦截部分功能的请求。
+                        如果某 Tab 一直 loading / 报错，请先在浏览器里装一个
+                        <a href='#' onClick={e => open(e, 'https://chromewebstore.google.com/search/CORS%20unblock')}
+                           style={{...S.link, margin:'0 2px'}}>CORS 解除插件</a>
+                        （如 CORS Unblock），或把本站加入插件的"允许列表"；也可以在控制台执行
+                        <code style={{background:C.surfaceAlt, padding:'1px 5px', borderRadius:3, fontFamily:'monospace', fontSize:11, margin:'0 2px'}}>
+                            window.__RWCK_FORCE_PROXY__ = true; location.reload();
+                        </code>
+                        走同源代理绕开。
+                    </div>
+                </div>
+                <button style={S.corsBannerClose} title='我知道了，不再显示'
+                        onClick={() => {
+                            localStorage.setItem('rwck:cors-banner-hidden', '1');
+                            this.setState({corsBannerHidden: true});
+                        }}>
+                    <XCircle size={16} strokeWidth={2.2} />
+                </button>
             </div>
         );
     }
