@@ -149,7 +149,6 @@ const STYLE = C => ({
         boxShadow: C.shadowSm
     },
     corsBannerText: {flex:1, minWidth:0},
-    corsBannerTitle: {fontWeight:700, color: C.warning || '#e08a00', marginBottom:2},
     corsBannerClose: {
         background:'transparent', border:'none', cursor:'pointer',
         color: C.textSubtle, padding:'2px 4px', borderRadius:4,
@@ -738,7 +737,7 @@ class RwckPublishPanel extends Component {
         forum 后端不会回 Access-Control-Allow-Origin，浏览器跨域 fetch 会被挡。
         用户可以装 "CORS Unblock" 之类浏览器插件绕过；或点面板里"切同源代理"按钮走 dev-server / CF Pages Function。 */
     _renderCorsBanner (S, C) {
-        if (rwck.IS_PROXY) return null;          // 同源代理已启用，CORS 问题被完全绕开，不必再弹
+        if (rwck.IS_PROXY) return null;
         if (this.state.corsBannerHidden) return null;
 
         const open = (e, url) => { e.preventDefault(); e.stopPropagation(); window.open(url, '_blank', 'noopener,noreferrer'); };
@@ -747,18 +746,10 @@ class RwckPublishPanel extends Component {
             <div style={S.corsBanner}>
                 <AlertCircle size={16} strokeWidth={2.2} style={{flex:'0 0 auto', marginTop:1, color: C.warning || '#e08a00'}} />
                 <div style={S.corsBannerText}>
-                    <div style={S.corsBannerTitle}>跨域请求（CORS）提示</div>
-                    <div>
-                        由于创客次元 API 未回 <code>Access-Control-Allow-Origin</code>，浏览器可能拦截部分功能的请求。
-                        如果某 Tab 一直 loading / 报错，请先在浏览器里装一个
-                        <a href='#' onClick={e => open(e, 'https://chromewebstore.google.com/search/CORS%20unblock')}
-                           style={{...S.link, margin:'0 2px'}}>CORS 解除插件</a>
-                        （如 CORS Unblock），或把本站加入插件的"允许列表"；也可以在控制台执行
-                        <code style={{background:C.surfaceAlt, padding:'1px 5px', borderRadius:3, fontFamily:'monospace', fontSize:11, margin:'0 2px'}}>
-                            window.__RWCK_FORCE_PROXY__ = true; location.reload();
-                        </code>
-                        走同源代理绕开。
-                    </div>
+                    由于创客次元 API 接口的 CORS 跨域请求问题，有些功能可能需要使用
+                    <a href='#' onClick={e => open(e, 'https://chromewebstore.google.com/search/CORS%20unblock')}
+                       style={{...S.link, margin:'0 2px'}}>CORS 解除插件</a>
+                    之后才能正常使用。
                 </div>
                 <button style={S.corsBannerClose} title='我知道了，不再显示'
                         onClick={() => {
