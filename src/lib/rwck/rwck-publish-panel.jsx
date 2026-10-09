@@ -740,15 +740,12 @@ class RwckPublishPanel extends Component {
         if (rwck.IS_PROXY) return null;
         if (this.state.corsBannerHidden) return null;
 
-        const open = (e, url) => { e.preventDefault(); e.stopPropagation(); window.open(url, '_blank', 'noopener,noreferrer'); };
-
         return (
             <div style={S.corsBanner}>
                 <AlertCircle size={16} strokeWidth={2.2} style={{flex:'0 0 auto', marginTop:1, color: C.warning || '#e08a00'}} />
                 <div style={S.corsBannerText}>
                     由于创客次元 API 接口的 CORS 跨域请求问题，有些功能可能需要使用
-                    <a href='#' onClick={e => open(e, 'https://chromewebstore.google.com/search/CORS%20unblock')}
-                       style={{...S.link, margin:'0 2px'}}>CORS 解除插件</a>
+                    <span style={{color: C.link || C.accent, fontWeight:700}}>CORS 解除插件</span>
                     之后才能正常使用。
                 </div>
                 <button style={S.corsBannerClose} title='我知道了，不再显示'
