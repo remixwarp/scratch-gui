@@ -26,7 +26,35 @@ const _isBrowser = typeof window !== 'undefined' && typeof window.document !== '
 export const UPSTREAM_ORIGIN = 'https://forum.ctspace.xyz';
 export const OFFICIAL_BASE   = 'https://forum.ctspace.xyz/api';
 
-export const BASE_URL    = OFFICIAL_BASE;
+// 用户自部署的 cors-anywhere（Cloudflare Worker）。
+// 用法：
+//   https://cors-api.rewp.de5.net/?url=<完整目标URL>
+// 代理会原样转发 method / headers / body，回 Access-Control-Allow-Origin: *。
+// 详见 https://github.com/remixwarp/cors-anywhere 。
+export const CORS_ANYWHERE  = 'https://cors-api.rewp.de5.net';
+
+/** 构造经 cors-anywhere 代理的完整目标 URL。
+ *  比如 `_proxyUrl('https://forum.ctspace.xyz/api/stats/public')`
+ *  → `https://cors-api.rewp.de5.net/?url=https%3A%2F%2Fforum.ctspace.xyz%2Fapi%2Fstats%2Fpublic`
+ *
+ *  `force=false` 时：浏览器环境下默认走 cors-anywhere（绕开 forum 未回 ACAO 的跨域），
+ *  但当 window.__RWCK_DIRECT_API__ === true 时退回官方直连。
+ *  可在控制台 `window.__RWCK_DIRECT_API__ = true; location.reload();` 临时直连调试。
+ */
+export function _proxyUrl(targetFullUrl, force /*?: boolean*/) {
+    if (!targetFullUrl) return '';
+    if (!/^https?:\/\//.test(targetFullUrl)) return targetFullUrl;
+
+    // 直连开关：用户强制直连 / 已有代理前缀就不再包
+    if (force === false) return targetFullUrl;
+    if (targetFullUrl.startsWith(CORS_ANYWHERE)) return targetFullUrl;
+    if (_isBrowser && window.__RWCK_DIRECT_API__) return targetFullUrl;
+
+    return CORS_ANYWHERE + '/?url=' + encodeURIComponent(targetFullUrl);
+}
+
+export const BASE_URL    = CORS_ANYWHERE + '/?url=' + encodeURIComponent(OFFICIAL_BASE);
+export const IS_PROXY    = true;  // 始终经由 cors-anywhere 转发
 export const IS_BROWSER  = _isBrowser;
 
 const LS_TOKEN = 'rwck:token';
@@ -230,6 +258,18 @@ function _unwrapList(r) {
     return [];
 }
 
+/** 把 forum 返回的相对路径 / 绝对路径统一成完整的 forum URL。
+ *  /uploads/a.png → https://forum.ctspace.xyz/uploads/a.png
+ *  https://xxx.com/a.png  → 原样
+ */
+function resolveFull(path) {
+    if (!path) return '';
+    if (/^https?:\/\//.test(path)) return path;
+    if (path.startsWith('data:') || path.startsWith('//')) return path;
+    const normalized = path.startsWith('/') ? path : '/' + path;
+    return UPSTREAM_ORIGIN + normalized;
+}
+
 const rwck = {
     // ===== 顶层元信息（UI 读 / 调试） =====
     BASE_URL,
@@ -348,8 +388,7 @@ const rwck = {
         /** 绝对地址：把 forum 返回的相对 /uploads/xxx.xxx 转完整。 */
         fullUrl(relPath) {
             if (!relPath) return '';
-            if (/^https?:\/\//.test(relPath)) return relPath;
-            return UPSTREAM_ORIGIN + relPath;
+            return _proxyUrl(resolveFull(relPath));
         }
     },
 
@@ -386,10 +425,11 @@ const rwck = {
         },
         /** 直链（浏览器可直接 fetch 或 <img src>）。 */
         rawUrl(shareId, opts = {}) {
-            return BASE_URL + '/drive/raw/' + shareId + _qs({
+            const upstream = OFFICIAL_BASE.replace(/\/$/, '') + '/drive/raw/' + shareId + _qs({
                 download: opts.download ? 1 : undefined,
                 token: opts.token
             });
+            return _proxyUrl(upstream);
         }
     },
 
@@ -426,7 +466,7 @@ const rwck = {
         async remove(id)       { return _fetch(`/extensions/${id}`, {method:'DELETE'}); },
         async toggleLike(id)   { return _fetch(`/extensions/${id}/like`, {method:'POST'}); },
         /** 源码 raw。直接 text/plain 返回，浏览器可当 <script src>。 */
-        rawUrl(id)             { return BASE_URL + `/extensions/${id}/raw.js`; }
+        rawUrl(id)             { return _proxyUrl(OFFICIAL_BASE.replace(/\/$/, '') + `/extensions/${id}/raw.js`); }
     },
 
     // ===== 9. 评论 =====
@@ -641,11 +681,10 @@ const rwck = {
     },
 
     // ===== 工具方法 =====
-    /** 把任意相对路径转成浏览器可直接用的完整 URL。 */
+    /** 把任意相对路径转成完整 forum URL（浏览器侧还会再套一层 cors-anywhere 代理）。 */
     resolveUrl(relPath) {
         if (!relPath) return '';
-        if (/^https?:\/\//.test(relPath)) return relPath;
-        return UPSTREAM_ORIGIN + relPath;
+        return _proxyUrl(resolveFull(relPath));
     },
     /** 解包列表。论坛多数列表接口返回 {items, total, ...}。 */
     unwrapList: _unwrapList
