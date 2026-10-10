@@ -710,7 +710,6 @@ class RwckPublishPanel extends Component {
                             </button>
                         </span>
                     ) : null}
-                </div>
                     <button style={cls(S.btn, S.btnIcon, S.btnGhost)}
                             title='创客次元设置（CORS 代理 / 网络日志）'
                             onClick={() => this._openSettings()}>
