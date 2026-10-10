@@ -23,9 +23,9 @@
  */
 
 import React, {Component} from 'react';
+import ReactDOM from 'react-dom';
 import rwck from './api-client.js';
 import getEditorTheme from './theme-colors.js';
-import {mountNetworkLog} from './network-log-ui.js';
 import {
     Users, MessageCircle, BookOpen, BarChart3,
     Upload, FolderOpen, RefreshCw, ChevronDown, ChevronUp,
@@ -35,7 +35,7 @@ import {
     Search, Bell, Key, ShieldCheck, Package, HardDrive,
     ThumbsUp, Smile, Bookmark, UserPlus, Send, ExternalLink,
     Plus, Trash2, Star, Hash, Compass, Layers,
-    Database, Zap, FileText, Wrench, XCircle
+    Database, Zap, FileText, Wrench, XCircle, Settings
 } from 'lucide-react';
 
 const PAD = 14;
@@ -138,23 +138,6 @@ const STYLE = C => ({
     link: {color: C.link, textDecoration:'none', fontWeight:600},
 
     // 顶部 CORS 警告横幅（黄橙色，不阻塞操作）
-    corsBanner: {
-        display:'flex', alignItems:'flex-start', gap:10,
-        padding:'10px 12px', marginBottom:4,
-        borderRadius: RADIUS_MD,
-        border:`1px solid ${C.warningBorder || C.warning}`,
-        background: C.warningSoft || `rgba(255, 170, 0, 0.14)`,
-        color: C.text,
-        fontSize: 12, lineHeight: 1.5,
-        boxShadow: C.shadowSm
-    },
-    corsBannerText: {flex:1, minWidth:0},
-    corsBannerClose: {
-        background:'transparent', border:'none', cursor:'pointer',
-        color: C.textSubtle, padding:'2px 4px', borderRadius:4,
-        fontSize:14, lineHeight:1
-    },
-
     // 编辑器内弹窗
     modalMask: {position:'fixed', left:0, top:0, right:0, bottom:0, zIndex:100000,
                 background: C.overlay, display:'flex', alignItems:'center', justifyContent:'center',
@@ -262,16 +245,6 @@ class RwckPublishPanel extends Component {
             tagsErr: '',
             onlineCount: null,
 
-            // ---- 注册 ----
-            regUsername: '',
-            regEmail: '',
-            regPassword: '',
-            regConfirm: '',
-            regDoneEmail: '',        // 注册成功但未激活时，记录发送激活邮件的邮箱
-            regResending: false,
-            regBusy: false,
-            regErr: '',
-            regOk: '',
 
             // ---- 回复 ----
             replyDiscussionId: '',
@@ -281,9 +254,6 @@ class RwckPublishPanel extends Component {
             replyOk: '',
 
             termsAcceptedForSession: false,
-
-            // ---- CORS 顶部警告 ----
-            corsBannerHidden: localStorage.getItem('rwck:cors-banner-hidden') === '1',
 
             // ---- 弹窗 ----
             authModal: null,          // 'login' | 'register' | null
@@ -389,6 +359,11 @@ class RwckPublishPanel extends Component {
     }
 
     componentDidMount() {
+        // 已登录用户若因父级 openRwckPublishWindow 硬指定了 tab:'login'，
+        // 由于 visibleTabs 已不包含 login tab，这里必须把 tab 重定向。
+        if (this.state.user && this.state.tab === 'login') {
+            this.setState({tab: 'community'});
+        }
         // 注意：所有 setState 的异步拉取都必须放到挂载之后，
         // 在 constructor 里调会触发 "Can't call setState on a component that is not yet mounted"。
         this._refreshCaptcha();
@@ -523,7 +498,7 @@ class RwckPublishPanel extends Component {
                 captchaAnswer,
                 captchaPowNonce
             });
-            this.setState({user: r.user, tab:'publish', loginErr:'', username:'', password:'', captchaAnswer:''});
+            this.setState({user: r.user, tab:'community', loginErr:'', username:'', password:'', captchaAnswer:''});
             this._refreshMine();
         } catch (e) {
             this.setState({loginErr: this._friendlyError(e), loginBusy:false});
@@ -536,6 +511,31 @@ class RwckPublishPanel extends Component {
     _logout() {
         rwck.auth.logout();
         this.setState({user:null, tab:'login', publishErr:'', publishOk:''});
+    }
+
+    /** 打开「创客次元设置」自由窗口（CORS 代理 + 网络日志）。 */
+    _openSettings() {
+        if (typeof document === 'undefined') return;
+        let WM;
+        try { WM = require('../../addons/window-system/window-manager').default; }
+        catch (e) { console.warn('[rwck] WindowManager not found:', e); return; }
+        const container = document.createElement('div');
+        container.style.cssText = 'height:100%;display:flex;flex-direction:column;min-height:0;overflow:auto;';
+        const win = WM.createWindow({
+            id: 'rwck-settings',
+            title: '创客次元设置',
+            width: 640, height: 560, minWidth: 520, minHeight: 460,
+            onClose: () => { try { ReactDOM.unmountComponentAtNode(container); } catch (_) {} }
+        });
+        win.setContent(container);
+        const colors = this.props.colors || getEditorTheme();
+        ReactDOM.render(React.createElement(RwckSettingsPanel, {
+            colors,
+            getApiClient: () => rwck,
+            closeMe: () => { try { win.close(); } catch (_) {} }
+        }), container);
+        win.center();
+        win.show();
     }
 
     // ========== 作品上传辅助 ==========
@@ -672,7 +672,7 @@ class RwckPublishPanel extends Component {
         const C = this.props.colors || getEditorTheme();
         const S = STYLE(C);
         const tabs = [
-            {id:'login',     icon: LogIn,          label: this.state.user ? '账户' : '登录/注册'},
+            {id:'login',     icon: LogIn,          label: '登录'},
             {id:'community', icon: BarChart3,      label: '社区状态'},
             {id:'publish',   icon: Upload,         label: '发布作品'},
             {id:'disc',      icon: MessageCircle,  label: '发帖/回复'},
@@ -689,8 +689,10 @@ class RwckPublishPanel extends Component {
             {id:'dev',       icon: Wrench,         label: '开发者'}
         ];
         // 未登录时，只显示可匿名访问的 Tab，登录后才显示需要鉴权的 Tab
+        // 已登录：隐藏「登录」Tab（右上角用户栏 + 设置窗口承担所有账号相关入口）。
+        // 未登录：按原逻辑只隐藏需鉴权的 Tab。
         const visibleTabs = this.state.user
-            ? tabs
+            ? tabs.filter(t => t.id !== 'login')
             : tabs.filter(t => !LOGIN_REQUIRED_TABS.has(t.id));
 
         return (
@@ -709,11 +711,14 @@ class RwckPublishPanel extends Component {
                         </span>
                     ) : null}
                 </div>
+                    <button style={cls(S.btn, S.btnIcon, S.btnGhost)}
+                            title='创客次元设置（CORS 代理 / 网络日志）'
+                            onClick={() => this._openSettings()}>
+                        <Settings size={16} strokeWidth={2.2} />
+                    </button>
+                </div>
 
-                {/* 顶部 CORS 警告横幅 —— 只要面板不使用同源代理（直连 forum.ctspace.xyz）就显示。
-                    用户点右上角关闭 × 会记住到 localStorage，下次不再弹。 */}
-                {this._renderCorsBanner(S, C)}
-
+                {/* 顶部 CORS 横幅已挪到「设置」自由窗口 —— 点右上角齿轮图标打开 */}
                 <div style={S.tabs}>
                     {visibleTabs.map(t => (
                         <button key={t.id}
@@ -732,33 +737,6 @@ class RwckPublishPanel extends Component {
             </div>
         );
     }
-
-    /** 顶部 CORS 警告横幅 —— 仅在直连 forum.ctspace.xyz（不使用同源代理）时显示。
-        forum 后端不会回 Access-Control-Allow-Origin，浏览器跨域 fetch 会被挡。
-        用户可以装 "CORS Unblock" 之类浏览器插件绕过；或点面板里"切同源代理"按钮走 dev-server / CF Pages Function。 */
-    _renderCorsBanner (S, C) {
-        if (rwck.IS_PROXY) return null;
-        if (this.state.corsBannerHidden) return null;
-
-        return (
-            <div style={S.corsBanner}>
-                <AlertCircle size={16} strokeWidth={2.2} style={{flex:'0 0 auto', marginTop:1, color: C.warning || '#e08a00'}} />
-                <div style={S.corsBannerText}>
-                    由于创客次元 API 接口的 CORS 跨域请求问题，有些功能可能需要使用
-                    <span style={{color: C.link || C.accent, fontWeight:700}}>CORS 解除插件</span>
-                    之后才能正常使用。
-                </div>
-                <button style={S.corsBannerClose} title='我知道了，不再显示'
-                        onClick={() => {
-                            localStorage.setItem('rwck:cors-banner-hidden', '1');
-                            this.setState({corsBannerHidden: true});
-                        }}>
-                    <XCircle size={16} strokeWidth={2.2} />
-                </button>
-            </div>
-        );
-    }
-
     _renderTab(S, C) {
         const t = this.state.tab;
         // 未登录却处在需鉴权的 Tab：回退到登录视图（该 Tab 按钮此时已被隐藏）
@@ -1003,7 +981,7 @@ class RwckPublishPanel extends Component {
                         <LogIn size={14} strokeWidth={2.2} /> 登录
                     </button>
                     <button style={cls(S.btn, S.btnGhost)}
-                            onClick={()=>this.setState({authModal:'register'})}>
+                            onClick={e => { e.preventDefault(); window.open('https://forum.ctspace.xyz/?register=1','_blank','noopener,noreferrer'); }}>
                         <UserPlus size={14} strokeWidth={2.2} /> 注册
                     </button>
                 </div>
@@ -1011,12 +989,9 @@ class RwckPublishPanel extends Component {
         );
     }
 
-    /** 登录 / 注册入口弹窗：选择在编辑器内操作还是跳到论坛网页。 */
+    /** 登录入口弹窗：选择在编辑器内登录还是跳到论坛网页。 */
     _renderAuthModal(S, C) {
-        const mode = this.state.authModal;
-        if (!mode) return null;
-        const isLogin = mode === 'login';
-        const forumUrl = isLogin ? FORUM.login : FORUM.register;
+        if (this.state.authModal !== 'login') return null;
 
         return (
             <div style={S.modalMask}
@@ -1024,22 +999,22 @@ class RwckPublishPanel extends Component {
                 <div style={S.modalCard}
                      onClick={e=>e.stopPropagation()}>
                     <div style={S.modalTitle}>
-                        {isLogin ? <LogIn size={16} strokeWidth={2.2} /> : <UserPlus size={16} strokeWidth={2.2} />}
-                        {isLogin ? '登录创客次元' : '注册创客次元账号'}
+                        <LogIn size={16} strokeWidth={2.2} />
+                        登录创客次元
                     </div>
                     <div style={S.hint}>
-                        想在哪里{isLogin ? '登录' : '注册'}？在编辑器内可以直接填账号密码；
-                        也可以跳到论坛网页{isLogin ? '登录' : '注册'}（会带好对应入口参数）。
+                        想在哪里登录？在编辑器内可以直接填账号密码；
+                        也可以跳到论坛网页登录（会带好对应入口参数）。
                     </div>
                     <div style={S.modalActions}>
                         <button style={cls(S.btn, S.btnPrimary)}
                                 onClick={()=>this.setState({authModal:null, tab:'login'})}>
-                            <LogIn size={14} strokeWidth={2.2} /> 在编辑器内{isLogin ? '登录' : '注册'}
+                            <LogIn size={14} strokeWidth={2.2} /> 在编辑器内登录
                         </button>
-                        <a href={forumUrl} target='_blank' rel='noreferrer'
+                        <a href={FORUM.login} target='_blank' rel='noreferrer'
                            style={cls(S.btn, S.btnGhost, {textDecoration:'none'})}
                            onClick={()=>this.setState({authModal:null})}>
-                            <ExternalLink size={14} strokeWidth={2.2} /> 在论坛中{isLogin ? '登录' : '注册'}
+                            <ExternalLink size={14} strokeWidth={2.2} /> 在论坛中登录
                         </a>
                     </div>
                     <div style={S.modalRow}>
@@ -1077,7 +1052,7 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{position:'relative', display:'flex', flexDirection:'column', gap:10}}>
             <div style={S.box}>
-                <div style={S.sectionTitle}>登录 / 注册</div>
+                <div style={S.sectionTitle}>登录</div>
                 <div style={S.hint}>首次使用请先去官网注册账号（需验证邮箱）。登录会先通过图形验证码 + 前端自动计算的 PoW 工作量证明。</div>
                 {this.state.loginErr && <div style={S.err}>{this.state.loginErr}</div>}
                 {this.state.loginBusy && <div style={S.ok}>登录中…</div>}
@@ -1133,115 +1108,29 @@ class RwckPublishPanel extends Component {
                     <span style={S.hint}>PoW 会在点击登录时自动计算（几毫秒）</span>
                 </div>
             </div>
-            {!this.state.user && this._renderRegister(S, C)}
-            {/* 「显示日志」按钮锚定在登录页右下角（调试网络用） */}
-            <div ref={el => { if (el) mountNetworkLog(el); }} />
-            </div>
-        );
-    }
-
-    /** 编辑器内直接注册（POST /auth/register）。
-     *  按官方文档 §2.3：注册本身不需要人机验证（官方前端已移除）；注册后账号为「未激活」态，
-     *  必须点击邮件里的激活链接才能登录，且 30 分钟内未激活会被系统自动清理。故此处不写入会话。 */
-    async _register() {
-        const {regUsername, regEmail, regPassword, regConfirm} = this.state;
-        const username = (regUsername || '').trim();
-        const email = (regEmail || '').trim();
-        if (!username) { this.setState({regErr: '请填写用户名'}); return; }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { this.setState({regErr: '邮箱格式不正确'}); return; }
-        if (!regPassword || regPassword.length < 6) { this.setState({regErr: '密码至少 6 位'}); return; }
-        if (regPassword !== regConfirm) { this.setState({regErr: '两次输入的密码不一致'}); return; }
-        this.setState({regBusy: true, regErr: '', regOk: ''});
-        try {
-            await rwck.auth.register({username, email, password: regPassword});
-            // 成功：账号已创建但处于未激活态，等待邮件激活。
-            this.setState({
-                regBusy: false,
-                regDoneEmail: email,
-                regUsername: '', regEmail: '', regPassword: '', regConfirm: '',
-                regOk: '', regErr: ''
-            });
-        } catch (e) {
-            this.setState({regErr: this._friendlyError(e), regBusy: false});
-        }
-    }
-
-    /** 重发激活邮件（POST /auth/resend，body: { identifier }）。 */
-    async _resendActivation() {
-        const {regDoneEmail} = this.state;
-        if (!regDoneEmail) return;
-        this.setState({regResending: true, regErr: '', regOk: ''});
-        try {
-            await rwck.auth.resend({identifier: regDoneEmail});
-            this.setState({
-                regResending: false,
-                regOk: '激活邮件已重新发送到 ' + regDoneEmail + '，请查收（30 分钟内未激活账号会被自动清理）。'
-            });
-        } catch (e) {
-            this.setState({regErr: this._friendlyError(e), regResending: false});
-        }
-    }
-
-    _renderRegister(S, C) {
-        // 已提交注册、等待邮件激活：展示激活引导 + 重发 + 去登录
-        if (this.state.regDoneEmail) {
-            return (
-                <div style={S.box}>
-                    <div style={S.sectionTitle}>注册成功，请激活邮箱</div>
-                    <div style={S.hint}>
-                        我们已向 <b>{this.state.regDoneEmail}</b> 发送了一封激活邮件。
-                        请点击邮件里的链接完成激活（账号在 30 分钟内未激活时会被系统自动清理）。激活后即可回到编辑器登录。
-                    </div>
-                    {okBar(S, this.state.regOk)}
-                    {errBar(S, this.state.regErr)}
-                    <div style={{...S.row, marginTop:6, gap:8, flexWrap:'wrap'}}>
-                        <button style={cls(S.btn, S.btnPrimary, this.state.regResending && S.btnDisabled)}
-                                disabled={this.state.regResending}
-                                onClick={()=>this._resendActivation()}>
-                            <RefreshCw size={14} strokeWidth={2.2} /> {this.state.regResending ? '发送中…' : '重发激活邮件'}
-                        </button>
-                        <button style={cls(S.btn, S.btnGhost)}
-                                onClick={()=>this.setState({regDoneEmail: '', regOk: '', regErr: ''})}>
-                            换邮箱重新注册
-                        </button>
-                    </div>
-                    <div style={S.hint}>激活完成后，点上方「登录」按钮即可在编辑器内登录（登录仍需图形验证码 + PoW）。</div>
-                </div>
-            );
-        }
-        return (
             <div style={S.box}>
-                <div style={S.sectionTitle}>在编辑器内注册</div>
-                <div style={S.hint}>注册本身不需要图形验证码。注册后账号为「未激活」态，需点击邮件里的激活链接才能登录；30 分钟内未激活会被自动清理。你也可以到论坛网页（forum.ctspace.xyz/auth/register）注册。</div>
-                <div style={S.row}>
-                    <label style={S.label}>用户名</label>
-                    <input style={S.input} value={this.state.regUsername}
-                           onChange={e=>this.setState({regUsername: e.target.value})} />
+                <div style={S.hint}>
+                    还没有账号？注册需要转到社区官网
+                    <a href='https://forum.ctspace.xyz/?register=1'
+                       target='_blank' rel='noreferrer'
+                       style={{...S.link, marginLeft:3}}>https://forum.ctspace.xyz/?register=1</a>
+                    页面注册。
                 </div>
-                <div style={S.row}>
-                    <label style={S.label}>邮箱</label>
-                    <input style={S.input} type='email' value={this.state.regEmail}
-                           onChange={e=>this.setState({regEmail: e.target.value})} />
-                </div>
-                <div style={S.row}>
-                    <label style={S.label}>密码</label>
-                    <input style={S.input} type='password' value={this.state.regPassword}
-                           onChange={e=>this.setState({regPassword: e.target.value})} placeholder='至少 6 位' />
-                </div>
-                <div style={S.row}>
-                    <label style={S.label}>确认密码</label>
-                    <input style={S.input} type='password' value={this.state.regConfirm}
-                           onChange={e=>this.setState({regConfirm: e.target.value})} />
-                </div>
-                {errBar(S, this.state.regErr)}
-                {okBar(S, this.state.regOk)}
-                <div style={{...S.row, marginTop:6}}>
-                    <button style={cls(S.btn, S.btnPrimary, this.state.regBusy && S.btnDisabled)}
-                            disabled={this.state.regBusy}
-                            onClick={()=>this._register()}>
-                        <UserPlus size={14} strokeWidth={2.2} /> {this.state.regBusy ? '注册中…' : '注册'}
-                    </button>
-                </div>
+            </div>
+            <div style={{height:44}} />
+            {/* 登录页右下角设置入口（未登录时显示，已登录通过顶部设置按钮进入） */}
+            {!this.state.user && (
+                <button style={{
+                    position:'absolute', right:12, bottom:12, zIndex:50,
+                    padding:'7px 12px', borderRadius:18, border:'none',
+                    background:C.accent, color:'#fff', cursor:'pointer',
+                    font:'12px/1.2 system-ui,sans-serif', boxShadow:S.shadowSm,
+                    display:'inline-flex', gap:6, alignItems:'center'
+                }}
+                        onClick={() => this._openSettings()}>
+                    <Settings size={13} strokeWidth={2.2} /> 设置
+                </button>
+            )}
             </div>
         );
     }
@@ -2512,3 +2401,192 @@ class RwckPublishPanel extends Component {
 
 export default RwckPublishPanel;
 export {CATEGORIES};
+
+
+/**
+ * 创客次元设置自由窗口面板。
+ *   ① 顶部 CORS 横幅（原主面板横幅挪到这里）
+ *   ② CORS 代理前缀输入 + 确认修改 / 恢复默认（默认 https://cors-api.rewp.de5.net）
+ *   ③ 下方大网络日志窗口（颜色 + 复制 + 清空按钮）。
+ */
+class RwckSettingsPanel extends Component {
+    constructor (props) {
+        super(props);
+        const saved = (typeof localStorage !== 'undefined') && localStorage.getItem('rwck:cors-anywhere');
+        this.state = {
+            proxyInput: saved || (props && props.getApiClient && props.getApiClient().CORS_ANYWHERE)
+                || 'https://cors-api.rewp.de5.net',
+            applyBusy: false, applyMsg: ''
+        };
+        this._bodyRef = React.createRef();
+        this._logRender = this._logRender.bind(this);
+    }
+    componentDidMount () {
+        // 直接 require api-client 拿到 getNetLog / clearNetLog（都是 api-client.js 里已导出的）
+        try {
+            const mod = require('./api-client.js');
+            this._getNetLog = mod.getNetLog;
+            this._clearNetLog = mod.clearNetLog;
+        } catch (_) {}
+        this._timer = setInterval(this._logRender, 700);
+        this._logRender();
+    }
+    componentWillUnmount () { if (this._timer) clearInterval(this._timer); }
+
+    _logRender () {
+        const body = this._bodyRef && this._bodyRef.current;
+        if (!body) return;
+        const logs = (this._getNetLog && this._getNetLog()) || [];
+        if (!logs.length) {
+            body.innerHTML = '<div style="color:#7a8290;padding:12px">暂无请求。触发登录 / 发布 / 发帖后，这里会显示所有发送与接收。</div>';
+            return;
+        }
+        body.innerHTML = '';
+        logs.forEach(e => {
+            const row = document.createElement('div');
+            row.style.cssText = 'border-bottom:1px solid #1d222c;padding:6px 0;word-break:break-all;';
+            const dirColor = e.dir.startsWith('→') ? '#7fd1ff'
+                : e.dir.startsWith('✗') ? '#ff7a7a'
+                : (e.ok ? '#8ce99a' : '#ffd479');
+            const t = new Date(e.t).toLocaleTimeString();
+            row.innerHTML =
+                `<div><span style="color:#7a8290">${t}</span> ` +
+                `<span style="color:${dirColor};font-weight:bold">${e.dir}</span> ` +
+                `<span style="color:#fff">${e.method || 'GET'}</span> ` +
+                `<span style="color:#cdd6e4">${e.url}</span>` +
+                (e.status ? ` <span style="color:${e.ok ? '#8ce99a' : '#ffd479'}">[${e.status}]</span>` : '') +
+                (e.error ? `<div style="color:#ff9a9a">错误: ${e.error}</div>` : '') +
+                '</div>';
+            body.appendChild(row);
+        });
+        body.scrollTop = body.scrollHeight;
+    }
+
+    _asyncApply () {
+        const v = (this.state.proxyInput || '').trim().replace(/\/$/, '');
+        if (!v) return this.setState({applyMsg: '代理前缀不能为空'});
+        if (!/^https?:\/\//.test(v)) return this.setState({applyMsg: '代理前缀必须以 http:// 或 https:// 开头'});
+        this.setState({applyBusy: true, applyMsg: '正在应用…'});
+        try {
+            localStorage.setItem('rwck:cors-anywhere', v);
+            if (typeof window !== 'undefined') window.__RWCK_CORS_ANYWHERE__ = v;
+            setTimeout(() => this.setState({applyBusy: false,
+                applyMsg: '已保存。大部分接口会立即生效；\n如需完全切换（含 BASE_URL），请刷新页面。'}), 250);
+        } catch (e) {
+            this.setState({applyBusy: false, applyMsg: '保存失败：' + (e.message || e)});
+        }
+    }
+
+    _restoreDefault () {
+        if (!window.confirm('恢复默认 https://cors-api.rewp.de5.net ？')) return;
+        localStorage.removeItem('rwck:cors-anywhere');
+        if (typeof window !== 'undefined') window.__RWCK_CORS_ANYWHERE__ = undefined;
+        this.setState({proxyInput: 'https://cors-api.rewp.de5.net', applyMsg: '已恢复默认'});
+    }
+
+    async _copyLog () {
+        const logs = (this._getNetLog && this._getNetLog()) || [];
+        const text = logs.map(e => {
+            let s = `[${new Date(e.t).toLocaleTimeString()}] ${e.dir} ${e.method || 'GET'} ${e.url}`;
+            if (e.status) s += ` [${e.status}]`;
+            if (e.error) s += ` ⚠ ${e.error}`;
+            return s;
+        }).join('\n');
+        try { await navigator.clipboard.writeText(text); this.setState({applyMsg: '日志已复制到剪贴板'}); }
+        catch (_) { this.setState({applyMsg: '复制失败，请手动选文本'}); }
+    }
+    _clearLog () {
+        if (this._clearNetLog) { this._clearNetLog(); this._logRender(); this.setState({applyMsg: '日志已清空'}); }
+    }
+
+    render () {
+        const C = this.props.colors || {accent:'#2b6cff', surface:'#fff', text:'#222', textMuted:'#666',
+            textSubtle:'#999', border:'#e5e7eb', shadowSm:'0 1px 2px rgba(0,0,0,.08)'};
+        const S = {
+            root: {display:'flex', flexDirection:'column', gap:12, padding:14, height:'100%', minHeight:0, boxSizing:'border-box', fontSize:13},
+            sectionTitle: {fontSize:11, fontWeight:700, color:C.textMuted, marginTop:4, marginBottom:6,
+                letterSpacing:'.04em', textTransform:'uppercase'},
+            box: {border:'1px solid ' + C.border, borderRadius:10, padding:12, background:C.surface || '#fff'},
+            row: {display:'flex', gap:8, alignItems:'center', marginBottom:6},
+            label: {fontSize:12, color:C.textMuted, fontWeight:500, minWidth:120},
+            input: {flex:1, padding:'8px 10px', border:'1px solid ' + C.border, borderRadius:6, fontSize:13,
+                background:'#fff', outline:'none', fontFamily:'ui-monospace, Menlo, Consolas, monospace'},
+            hint: {fontSize:11, color:C.textSubtle, lineHeight:1.5},
+            btn: {padding:'7px 14px', borderRadius:6, border:'none', fontSize:12, fontWeight:600, cursor:'pointer',
+                display:'inline-flex', gap:6, alignItems:'center', boxShadow:'0 1px 2px rgba(0,0,0,.08)'},
+            btnPrimary: {background: C.accent, color:'#fff'},
+            btnGhost: {background:'#fff', border:'1px solid ' + C.border, color:C.text},
+            btnDisabled: {opacity:.5, cursor:'not-allowed'},
+            msg: {fontSize:12, padding:'6px 10px', borderRadius:6, background:'#f1f5f9', color:'#334155',
+                border:'1px solid #e2e8f0', marginTop:4, whiteSpace:'pre-line'},
+            corsBanner: {display:'flex', gap:10, padding:'10px 12px', borderRadius:10, border:'1px solid #fbbf24',
+                background:'#fff7ed', color:'#78350f', fontSize:12, lineHeight:1.5},
+            logBox: {flex:1, minHeight:220, background:'#11151c', color:'#e6e6e6', borderRadius:10,
+                border:'1px solid #2a2f3a', overflow:'hidden', display:'flex', flexDirection:'column'},
+            logHeader: {display:'flex', alignItems:'center', gap:8, padding:'8px 10px',
+                borderBottom:'1px solid #2a2f3a', background:'#0c0f14'},
+            logBody: {flex:1, overflow:'auto', padding:'8px 10px',
+                fontFamily:'ui-monospace, Menlo, Consolas, monospace', fontSize:12, lineHeight:1.45}
+        };
+        return (
+            <div style={S.root}>
+                {/* 顶部 CORS 横幅（原主面板横幅挪到这里） */}
+                <div style={S.corsBanner}>
+                    <AlertCircle size={15} strokeWidth={2.2} style={{flex:'0 0 auto', marginTop:1, color:'#d97706'}} />
+                    <div style={{flex:1, minWidth:0}}>
+                        <b>CORS 代理说明：</b> 创客次元 API 未回
+                        <code style={{background:'#fef3c7', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>
+                            Access-Control-Allow-Origin
+                        </code>
+                        。如果某 Tab 一直 loading / 报错，请把「CORS 代理前缀」指向一个 cors-anywhere 类服务
+                        （Cloudflare Worker / Pages 部署即可）。
+                    </div>
+                </div>
+
+                {/* 设置：CORS 代理前缀 */}
+                <div style={S.box}>
+                    <div style={S.sectionTitle}>CORS 代理前缀</div>
+                    <div style={S.row}>
+                        <label style={S.label}>代理前缀</label>
+                        <input style={S.input} value={this.state.proxyInput}
+                               onChange={e => this.setState({proxyInput: e.target.value})}
+                               placeholder='https://your-cors-anywhere.workers.dev' />
+                    </div>
+                    <div style={S.hint}>
+                        形如 <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>https://your-cors-anywhere.workers.dev</code>
+                        ，会自动追加 <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>?url=https://forum.ctspace.xyz/api/xxx</code>。
+                        当前默认值（用户自部署）：
+                        <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>
+                            {(this.props.getApiClient && this.props.getApiClient().CORS_ANYWHERE)
+                                || 'https://cors-api.rewp.de5.net'}
+                        </code>
+                    </div>
+                    <div style={{...S.row, marginTop:8}}>
+                        <button style={{...S.btn, ...S.btnPrimary, ...(this.state.applyBusy && S.btnDisabled)}}
+                                disabled={this.state.applyBusy}
+                                onClick={() => this._asyncApply()}>
+                            <CheckCircle size={13} strokeWidth={2.2} /> {this.state.applyBusy ? '应用中…' : '确认修改'}
+                        </button>
+                        <button style={{...S.btn, ...S.btnGhost}} onClick={() => this._restoreDefault()}>
+                            <Trash2 size={13} strokeWidth={2.2} /> 恢复默认
+                        </button>
+                    </div>
+                    {this.state.applyMsg && <div style={S.msg}>{this.state.applyMsg}</div>}
+                </div>
+
+                {/* 网络日志大窗口 */}
+                <div style={S.logBox}>
+                    <div style={S.logHeader}>
+                        <span style={{fontWeight:700, color:'#e6e6e6'}}>网络请求日志（发送 / 接收 / 错误）</span>
+                        <span style={{flex:1}} />
+                        <button style={{...S.btn, ...S.btnGhost, fontSize:11, padding:'3px 10px'}}
+                                onClick={() => this._copyLog()}>复制</button>
+                        <button style={{...S.btn, ...S.btnGhost, fontSize:11, padding:'3px 10px'}}
+                                onClick={() => this._clearLog()}>清空</button>
+                    </div>
+                    <div style={S.logBody} ref={this._bodyRef} />
+                </div>
+            </div>
+        );
+    }
+}
