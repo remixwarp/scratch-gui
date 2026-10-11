@@ -2537,8 +2537,9 @@ class RwckSettingsPanel extends Component {
                         <code style={{background:'#fef3c7', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>
                             Access-Control-Allow-Origin
                         </code>
-                        。如果某 Tab 一直 loading / 报错，请把「CORS 代理前缀」指向一个 cors-anywhere 类服务
-                        （Cloudflare Worker / Pages 部署即可）。
+                        ，编辑器已默认通过官方 CORS 代理转发所有请求。
+                        一般保持默认即可，遇到某 Tab 一直 loading / 报错时，
+                        再把下方「CORS 代理前缀」换回官方地址或填你自己的代理。
                     </div>
                 </div>
 
@@ -2549,16 +2550,17 @@ class RwckSettingsPanel extends Component {
                         <label style={S.label}>代理前缀</label>
                         <input style={S.input} value={this.state.proxyInput}
                                onChange={e => this.setState({proxyInput: e.target.value})}
-                               placeholder='https://your-cors-anywhere.workers.dev' />
+                               placeholder='https://cors-api.rewp.de5.net' />
                     </div>
                     <div style={S.hint}>
-                        形如 <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>https://your-cors-anywhere.workers.dev</code>
+                        形如 <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>https://cors-api.rewp.de5.net</code>
                         ，会自动追加 <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>?url=https://forum.ctspace.xyz/api/xxx</code>。
-                        当前默认值（用户自部署）：
+                        官方默认：
                         <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>
                             {(this.props.getApiClient && this.props.getApiClient().CORS_ANYWHERE)
                                 || 'https://cors-api.rewp.de5.net'}
                         </code>
+                        。一般保持默认即可，遇到跨域时再换成你自己部署的 cors-anywhere 实例。
                     </div>
                     <div style={{...S.row, marginTop:8}}>
                         <button style={{...S.btn, ...S.btnPrimary, ...(this.state.applyBusy && S.btnDisabled)}}
