@@ -295,6 +295,7 @@ If you run into npm install errors, try these steps:
 4. run `npm install` again
 
 ## Publishing to GitHub Pages
+我是象棋脑，我放了个彩蛋在这里，你猜有啥用
 You can publish the GUI to github.io so that others on the Internet can view it.
 [Read the wiki for a step-by-step guide.](https://github.com/LLK/scratch-gui/wiki/Publishing-to-GitHub-Pages)
 
