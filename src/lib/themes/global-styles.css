@@ -636,43 +636,24 @@
     filter: none !important;
 }
 
-/* 4. 主题子菜单（右伸展开的整列 ThemeMenuItem）—— 每一项不再单独凸起。
-      规则仿照编辑菜单（menu-bar-item）：整块纯色平整，
-      hover / active / expanded 用轻量半透明覆盖。
-      这里覆盖的是 Theme 子菜单下的 .submenu > .menu-item 链。 */
-:root[data-gui-theme='neumorphism-light'] [class*='menu_']:not([class*='menu-bar_']):not([class*='menu-item_']),
-:root[data-gui-theme='neumorphism-light'] [class*='submenu_'] > .menu-item,
-:root[data-gui-theme='neumorphism-light'] [class*='submenu_'] > li,
-:root[data-gui-theme='neumorphism-dark']  [class*='menu_']:not([class*='menu-bar_']):not([class*='menu-item_']),
-:root[data-gui-theme='neumorphism-dark']  [class*='submenu_'] > .menu-item,
-:root[data-gui-theme='neumorphism-dark']  [class*='submenu_'] > li {
-    background-color: transparent !important;
+/* 4. 主题子菜单（Theme 下拉）：每项纯平、无独立凸起。
+      范围收窄到"菜单顶部 Theme 按钮展开的那个 submenu"——
+      用 Submenu 组件挂的 .submenu 类 + 直接 li > .menu-item 链；
+      不影响编辑菜单、文件菜单等其他所有下拉菜单。
+      只去掉 box-shadow / border，hover/active 背景（半透明 alpha）保留。 */
+:root[data-gui-theme='neumorphism-light'] .submenu > .menu-item,
+:root[data-gui-theme='neumorphism-light'] .submenu > li,
+:root[data-gui-theme='neumorphism-dark']  .submenu > .menu-item,
+:root[data-gui-theme='neumorphism-dark']  .submenu > li {
     box-shadow: none !important;
     border: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
 }
-:root[data-gui-theme='neumorphism-light'] [class*='submenu_'] .menu-item:hover,
-:root[data-gui-theme='neumorphism-light'] [class*='submenu_'] .menu-item.active,
-:root[data-gui-theme='neumorphism-light'] [class*='submenu_'] .menu-item.expanded,
-:root[data-gui-theme='neumorphism-dark']  [class*='submenu_'] .menu-item:hover,
-:root[data-gui-theme='neumorphism-dark']  [class*='submenu_'] .menu-item.active,
-:root[data-gui-theme='neumorphism-dark']  [class*='submenu_'] .menu-item.expanded {
-    background-color: transparent !important;
-    box-shadow: none !important;
-}
-/* 子菜单整体容器依然保留一层凸起（整列统一），上面已写 var(--neu-raised-md)，不动。 */
-
-/* ThemeMenuItem 内部 option flex 结构：整行纯平，无额外描边/阴影/分隔线 */
-:root[data-gui-theme='neumorphism-light'] .menu-item .option,
-:root[data-gui-theme='neumorphism-dark']  .menu-item .option {
+/* ThemeMenuItem 内部 .option 纯平，无额外描边/阴影/分隔线 */
+:root[data-gui-theme='neumorphism-light'] .submenu .menu-item .option,
+:root[data-gui-theme='neumorphism-dark']  .submenu .menu-item .option {
     box-shadow: none !important;
     border: none !important;
-    border-radius: 0 !important;
 }
+/* 子菜单整体容器保留一层大凸起（整列统一），hover/active 半透明背景保留。 */
 
-/* 5. 顶部 Theme 父菜单按钮里的下箭头（expandCaret）—— ThemeMenuItem 里的子项本身
-      没有 expandCaret，所以这里只兜底：保留真正的可展开父项（Theme 按钮本身）的箭头，
-      但 theme submenu 里 ThemeMenuItem 的选项不应该有箭头，确认它没渲染。 */
-
-/* —— 按钮级的凸起（顶部菜单栏 button / 弹窗 button）保留，不动 —— */
+/* —— 按钮级凸起（顶部菜单栏 button / 弹窗 button）保留，不动 —— */
