@@ -753,8 +753,15 @@ class RwckPublishPanel extends Component {
                             <span style={{flex:1}}><strong>创客次元 社区</strong>会不定时的进行暂停服务、更新，请注意谅解。</span>
                             <button title='关闭' aria-label='关闭提示'
                                     style={{background:'transparent',border:'none',cursor:'pointer',
-                                            padding:2, color: C.warning || '#d46b08', lineHeight:1}}
-                                    onClick={this._hideFooter}>
+                                            padding:6, marginLeft:4, minWidth:32, minHeight:32,
+                                            display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                            color: C.warning || '#d46b08', lineHeight:1,
+                                            borderRadius:4, touchAction:'manipulation'}}
+                                    onClick={this._hideFooter}
+                                    onTouchEnd={(e) => {
+                                        e.preventDefault();
+                                        this._hideFooter();
+                                    }}>
                                 <XCircle size={14} strokeWidth={2.2} />
                             </button>
                         </div>

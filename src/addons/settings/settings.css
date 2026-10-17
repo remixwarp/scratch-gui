@@ -230,124 +230,135 @@ a:active, a:focus {
 }
 
 .dropdown-level {
-    padding: 10px 0;
+    padding: 10px 8px;
 }
 
-.dropdown-item {
-    margin-bottom: 5px;
+/* —— ModalSidebarItem / 角色库 风格（编辑器条目 + 分类子项共用） ——
+   整条、flex、padding / border-radius / 选中背景 跟 ModalSidebarItem 同源。 */
+.dropdown-group {
+    margin-bottom: 4px;
 }
 
-.dropdown-button {
-    width: 100%;
-    padding: 8px 15px;
-    background: $ui-tertiary;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 4px;
-    text-align: left;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
-    margin-bottom: 5px;
-}
-
-.dropdown-button:hover {
-    background-color: $ui-white;
-    border-color: var(--looks-secondary);
-}
-
-.dropdown-button-active {
-    background-color: var(--looks-secondary);
-    color: white;
-    border-color: var(--looks-secondary);
-}
-
-/* —— 新内联展开（2026-10-17 角色库风格） —— */
-/* 一整条 flex 容器：主按钮占满 + 右侧三角小按钮，视觉上就是"按钮右侧有个箭头"，
-   不再像旧版那样 submenu 是下面单独一大块。 */
-.dropdown-row {
+/* 整条按钮（主按钮 + trailingAction 三角按钮）的包裹层 —— button 里不能嵌 button，
+   所以把两者放进一个非 button 容器 */
+.multiItemWrap {
     display: flex;
     align-items: stretch;
-    gap: 0;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 4px;
+    border-radius: 8px;
     overflow: hidden;
-    background: $ui-tertiary;
-    margin-bottom: 5px;
-    transition: all 0.2s ease;
+    background: transparent;
+    transition: background-color 0.2s ease;
 }
 
-.dropdown-row:hover {
-    background-color: $ui-white;
-    border-color: var(--looks-secondary);
+/* 整条本体（ModalSidebarItem 同款视觉） */
+.multiItem {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin: 0.25rem 0;
+    padding: 0.75rem 1rem;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: $text-primary;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.dropdown-button-fill {
+.multiItem:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.multiItemSelected {
+    background: var(--looks-secondary) !important;
+    color: #fff !important;
+}
+
+.multiLabel {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     flex: 1;
-    margin-bottom: 0;  /* 被 row 外层管了 */
-    border: none;
-    border-radius: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.dropdown-button-fill.dropdown-button-active {
-    border-right: none;  /* 三角按钮那一侧本来就是同选中色，消除缝 */
+.multiHint {
+    font-size: 0.75rem;
+    font-weight: 400;
+    opacity: 0.7;
+    margin-left: 4px;
 }
 
-/* 右侧三角小按钮（ChevronDown / ChevronRight） —— 和主按钮同高同选中色背景 */
-.dropdown-caret-button {
-    flex: 0 0 28px;
+/* trailingAction —— 右侧内嵌三角图标按钮。
+   跟整条 item 同高度、同选中色背景；hover 有背景反馈。 */
+.multiTrail {
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0 0.65rem;
+    margin: 0.25rem 0;
+    border: 0;
+    border-radius: 8px;
     background: transparent;
-    border: none;
-    border-left: 1px solid $ui-black-transparent;
     color: currentColor;
     cursor: pointer;
-    padding: 0;
-    transition: background-color 0.2s ease, transform 0.2s ease;
+    transition: background-color 0.15s ease, transform 0.2s ease;
 }
 
-.dropdown-row:hover .dropdown-caret-button {
-    background-color: rgba(0, 0, 0, 0.04);
+.multiTrail:hover {
+    background: rgba(0, 0, 0, 0.06);
 }
 
-.dropdown-caret-button-active {
-    background-color: var(--looks-secondary) !important;
-    color: white !important;
+/* 展开时三角稍微向下转，让它视觉上更"展开" */
+.multiTrail svg {
+    transition: transform 0.2s ease;
 }
 
-/* 选中编辑器的按钮里，展示当前选中的分类（"· 主题" 小字灰色） */
-.dropdown-current-tag {
-    margin-left: 6px;
-    opacity: 0.7;
-    font-size: 12px;
+/* 缩进子项容器（分类） */
+.multiChildren {
+    margin-left: 0.75rem;
+    padding-left: 0.75rem;
+    border-left: 2px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 0.25rem;
+}
+
+/* 分类条目 —— 比主项更小 padding / 更轻字号，视觉上明确是子项 */
+.multiChild {
+    padding: 0.55rem 0.85rem;
+    font-size: 0.8125rem;
     font-weight: 500;
+    margin: 0.125rem 0;
 }
 
-/* 内联分类面板 —— 在 .dropdown-item 这个 position:relative 容器里
-   绝对贴到按钮正下方，视觉上像按钮的延伸；不是独立 submenu */
-.dropdown-submenu-inline {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    margin-top: 3px;
-    padding: 8px;
-    background-color: $ui-secondary;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    z-index: 10;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
+.multiChild:hover {
+    background: rgba(0, 0, 0, 0.04);
 }
 
-.dropdown-submenu-inline .dropdown-button {
-    margin-bottom: 0;
-    padding: 6px 10px;
-    font-size: 13px;
-    flex: 0 0 auto;
+.multiChild.multiItemSelected {
+    background: var(--looks-secondary) !important;
+    color: #fff !important;
+}
+
+/* —— 深色主题适配（$dark 变量 / color-scheme） —— */
+@media (prefers-color-scheme: dark) {
+    .multiItem:hover,
+    .multiTrail:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .multiChildren {
+        border-left-color: rgba(255, 255, 255, 0.12);
+    }
+    .multiChild:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
 }
 
 @media (max-width: 1024px) {

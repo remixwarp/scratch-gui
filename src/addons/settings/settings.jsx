@@ -156,58 +156,46 @@ const allTags = getAllTags();
 
 // 多级下拉菜单组件
 class MultiLevelDropdown extends React.Component {
-    constructor(props) {
+    constructor (props) {
         super(props);
         this.state = {
             open: false,
             selectedEditor: this.props.selectedEditor || 'remixwarp',
             selectedCategory: this.props.selectedCategory || 'all',
-            // 右侧三角展开哪个编辑器的分类层 —— 独立于"选中哪个编辑器"，
-            // 视觉上跟按钮一体，不再在选中编辑器下方硬塞一块 submenu。
-            expandedEditor: null
+            expandedEditor: this.props.selectedEditor || 'remixwarp'
         };
         this.handleToggleDropdown = this.handleToggleDropdown.bind(this);
-        this.handleEditorSelect = this.handleEditorSelect.bind(this);
+        this.handleEditorSelect   = this.handleEditorSelect.bind(this);
         this.handleCategorySelect = this.handleCategorySelect.bind(this);
         this.handleContainerClick = this.handleContainerClick.bind(this);
-        this.toggleEditorExpand = this.toggleEditorExpand.bind(this);
+        this.toggleEditorExpand   = this.toggleEditorExpand.bind(this);
     }
 
-    componentDidUpdate(prevProps) {
-        if (prevProps.selectedEditor !== this.props.selectedEditor) {
-            this.setState({selectedEditor: this.props.selectedEditor});
-        }
-        if (prevProps.selectedCategory !== this.props.selectedCategory) {
+    componentDidUpdate (prevProps) {
+        if (prevProps.selectedEditor   !== this.props.selectedEditor)
+            this.setState({selectedEditor: this.props.selectedEditor,
+                            expandedEditor: this.props.selectedEditor});
+        if (prevProps.selectedCategory !== this.props.selectedCategory)
             this.setState({selectedCategory: this.props.selectedCategory});
-        }
     }
 
     handleContainerClick (e) { e.stopPropagation(); }
-
     handleToggleDropdown (e) {
         e.stopPropagation();
         this.setState(prev => ({open: !prev.open}));
     }
-
     handleEditorSelect (editorId) {
-        this.setState({
-            selectedEditor: editorId,
-            selectedCategory: 'all',
-            // 点文字区域 → 选中 + 顺手展开
-            expandedEditor: editorId
-        });
+        this.setState({selectedEditor: editorId, selectedCategory: 'all',
+                        expandedEditor: editorId});
         if (this.props.onEditorSelect) this.props.onEditorSelect(editorId);
     }
-
     handleCategorySelect (categoryId) {
         this.setState({selectedCategory: categoryId});
         if (this.props.onCategorySelect) this.props.onCategorySelect(categoryId);
     }
-
     toggleEditorExpand (editorId, e) {
         e.stopPropagation();
         this.setState(prev => ({
-            // 只展开一个；点已展开的那个 = 收起
             expandedEditor: prev.expandedEditor === editorId ? null : editorId
         }));
     }
@@ -216,23 +204,23 @@ class MultiLevelDropdown extends React.Component {
         const {open, selectedEditor, selectedCategory, expandedEditor} = this.state;
         const editors = [
             {id: 'remixwarp', name: 'RemixWarp'},
-            {id: '02engine', name: '02Engine'},
+            {id: '02engine',  name: '02Engine'},
             {id: 'astraeditor', name: 'AstraEditor'},
             {id: 'turbowarp', name: 'TurboWarp'},
-            {id: 'bilup', name: 'Bilup'}
+            {id: 'bilup',     name: 'Bilup'}
         ];
         const categories = [
-            {id: 'all',     name: '全部插件'},
-            {id: 'new',     name: '新插件'},
-            {id: 'theme',   name: '主题'},
-            {id: 'editor',  name: '编辑器'},
-            {id: 'debug',   name: '调试'},
-            {id: 'utility', name: '实用工具'},
-            {id: 'sprites', name: '角色'},
-            {id: 'stage',   name: '舞台'},
-            {id: 'workflow',name: '工作流'},
-            {id: 'ui',      name: '界面'},
-            {id: 'toolbox', name: '工具箱'}
+            {id: 'all',      name: '全部插件'},
+            {id: 'new',      name: '新插件'},
+            {id: 'theme',    name: '主题'},
+            {id: 'editor',   name: '编辑器'},
+            {id: 'debug',    name: '调试'},
+            {id: 'utility',  name: '实用工具'},
+            {id: 'sprites',  name: '角色'},
+            {id: 'stage',    name: '舞台'},
+            {id: 'workflow', name: '工作流'},
+            {id: 'ui',       name: '界面'},
+            {id: 'toolbox',  name: '工具箱'}
         ];
 
         return (
@@ -244,66 +232,76 @@ class MultiLevelDropdown extends React.Component {
                 {open && (
                     <div className={styles.dropdownMenu}>
                         <div className={styles.dropdownLevel}>
-                            {editors.map(editor => (
-                                // relative 容器：让分类面板可以 absolute 贴到按钮正下方
-                                <div key={editor.id}
-                                     className={styles.dropdownItem}
-                                     style={{position:'relative'}}>
-                                    {/* 外层 flex：按钮文字区 + 右侧三角图标按钮，
-                                        一整条、没有断裂 */}
-                                    <div className={styles.dropdownRow}>
-                                        <button
-                                            className={classNames(styles.dropdownButton, styles.dropdownButtonFill, {
-                                                [styles.dropdownButtonActive]: selectedEditor === editor.id
-                                            })}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                this.handleEditorSelect(editor.id);
-                                            }}
-                                        >
-                                            {editor.name}
-                                            {selectedCategory !== 'all' && selectedEditor === editor.id && (
-                                                <span className={styles.dropdownCurrentTag}>
-                                                    · {categories.find(c => c.id === selectedCategory)?.name || ''}
+                            {editors.map(editor => {
+                                const isSel  = selectedEditor   === editor.id;
+                                const isOpen = expandedEditor  === editor.id;
+                                return (
+                                    <div key={editor.id} className={styles.dropdownGroup}>
+                                        {/* 编辑器整条 —— 用 ModalSidebarItem 同款视觉：
+                                            flex + 内嵌 trailingAction 三角，不是两段割裂。 */}
+                                        <div className={styles.multiItemWrap}>
+                                            <button
+                                                type='button'
+                                                className={classNames(
+                                                    styles.multiItem,
+                                                    {[styles.multiItemSelected]: isSel}
+                                                )}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    this.handleEditorSelect(editor.id);
+                                                }}
+                                            >
+                                                <span className={styles.multiLabel}>
+                                                    {editor.name}
+                                                    {isSel && selectedCategory !== 'all' && (
+                                                        <span className={styles.multiHint}>
+                                                            · {categories.find(c => c.id === selectedCategory)?.name}
+                                                        </span>
+                                                    )}
                                                 </span>
-                                            )}
-                                        </button>
-                                        <button
-                                            title='展开分类'
-                                            aria-label={`展开 ${editor.name} 的分类`}
-                                            className={classNames(styles.dropdownCaretButton, {
-                                                [styles.dropdownCaretButtonActive]: expandedEditor === editor.id
-                                            })}
-                                            onClick={(e) => this.toggleEditorExpand(editor.id, e)}
-                                        >
-                                            {expandedEditor === editor.id
-                                                ? <ChevronDown size={14} strokeWidth={2.2} />
-                                                : <ChevronRight size={14} strokeWidth={2.2} />}
-                                        </button>
-                                    </div>
-
-                                    {/* 分类面板：absolute 贴到按钮正下方，
-                                        与按钮是视觉上的"一行延伸"关系，不是独立 submenu */}
-                                    {expandedEditor === editor.id && (
-                                        <div className={styles.dropdownSubmenuInline}>
-                                            {categories.map(category => (
-                                                <button
-                                                    key={category.id}
-                                                    className={classNames(styles.dropdownButton, {
-                                                        [styles.dropdownButtonActive]: selectedCategory === category.id
-                                                    })}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        this.handleCategorySelect(category.id);
-                                                    }}
-                                                >
-                                                    {category.name}
-                                                </button>
-                                            ))}
+                                            </button>
+                                            <button
+                                                type='button'
+                                                title='展开分类'
+                                                aria-label={`展开 ${editor.name} 的分类`}
+                                                className={styles.multiTrail}
+                                                onClick={(e) => this.toggleEditorExpand(editor.id, e)}
+                                            >
+                                                {isOpen
+                                                    ? <ChevronDown  size={14} strokeWidth={2.2} />
+                                                    : <ChevronRight size={14} strokeWidth={2.2} />}
+                                            </button>
                                         </div>
-                                    )}
-                                </div>
-                            ))}
+
+                                        {/* 缩进子项 —— 不做浮层，直接在这条下方铺：
+                                            margin-left + 更小 padding + 更小字号，跟编辑器条目
+                                            共用 .multiItem / .multiItemSelected 样式，保持一致。 */}
+                                        {isOpen && (
+                                            <div className={styles.multiChildren}>
+                                                {categories.map(category => (
+                                                    <button
+                                                        key={category.id}
+                                                        type='button'
+                                                        className={classNames(
+                                                            styles.multiItem,
+                                                            styles.multiChild,
+                                                            {[styles.multiItemSelected]: isSel && selectedCategory === category.id}
+                                                        )}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            this.handleCategorySelect(category.id);
+                                                        }}
+                                                    >
+                                                        <span className={styles.multiLabel}>
+                                                            {category.name}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
