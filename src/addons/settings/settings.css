@@ -261,11 +261,93 @@ a:active, a:focus {
     border-color: var(--looks-secondary);
 }
 
-.dropdown-submenu {
-    margin-top: 5px;
-    padding: 10px 15px;
-    background-color: $ui-tertiary;
-    border-top: 1px solid $ui-black-transparent;
+/* —— 新内联展开（2026-10-17 角色库风格） —— */
+/* 一整条 flex 容器：主按钮占满 + 右侧三角小按钮，视觉上就是"按钮右侧有个箭头"，
+   不再像旧版那样 submenu 是下面单独一大块。 */
+.dropdown-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    overflow: hidden;
+    background: $ui-tertiary;
+    margin-bottom: 5px;
+    transition: all 0.2s ease;
+}
+
+.dropdown-row:hover {
+    background-color: $ui-white;
+    border-color: var(--looks-secondary);
+}
+
+.dropdown-button-fill {
+    flex: 1;
+    margin-bottom: 0;  /* 被 row 外层管了 */
+    border: none;
+    border-radius: 0;
+}
+
+.dropdown-button-fill.dropdown-button-active {
+    border-right: none;  /* 三角按钮那一侧本来就是同选中色，消除缝 */
+}
+
+/* 右侧三角小按钮（ChevronDown / ChevronRight） —— 和主按钮同高同选中色背景 */
+.dropdown-caret-button {
+    flex: 0 0 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-left: 1px solid $ui-black-transparent;
+    color: currentColor;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.dropdown-row:hover .dropdown-caret-button {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.dropdown-caret-button-active {
+    background-color: var(--looks-secondary) !important;
+    color: white !important;
+}
+
+/* 选中编辑器的按钮里，展示当前选中的分类（"· 主题" 小字灰色） */
+.dropdown-current-tag {
+    margin-left: 6px;
+    opacity: 0.7;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* 内联分类面板 —— 在 .dropdown-item 这个 position:relative 容器里
+   绝对贴到按钮正下方，视觉上像按钮的延伸；不是独立 submenu */
+.dropdown-submenu-inline {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 3px;
+    padding: 8px;
+    background-color: $ui-secondary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.dropdown-submenu-inline .dropdown-button {
+    margin-bottom: 0;
+    padding: 6px 10px;
+    font-size: 13px;
+    flex: 0 0 auto;
 }
 
 @media (max-width: 1024px) {

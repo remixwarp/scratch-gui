@@ -197,6 +197,8 @@ class RwckPublishPanel extends Component {
         this.state = {
             tab: initialTab,
             user: rwck.authState().user,
+            // 底部服务状态横幅允许用户一键隐藏（会话级）
+            footerHidden: sessionStorage.getItem('rwck:footer-hidden') === '1',
 
             // ---- 登录 ----
             captcha: null,
@@ -675,6 +677,11 @@ class RwckPublishPanel extends Component {
     }
 
     // ========== 渲染 ==========
+    _hideFooter() {
+        sessionStorage.setItem('rwck:footer-hidden', '1');
+        this.setState({footerHidden: true});
+    }
+
     render() {
         const C = this.props.colors || getEditorTheme();
         const S = STYLE(C);
@@ -739,12 +746,20 @@ class RwckPublishPanel extends Component {
                     {this._renderTab(S, C)}
                 </div>
 
-                <div style={S.footer}>
-                    <div style={S.footerBanner}>
-                        <AlertTriangle size={14} strokeWidth={2.2} style={S.footerBannerIcon} />
-                        <span><strong>创客次元 社区</strong>会不定时的进行暂停服务、更新，请注意谅解。</span>
+                {!this.state.footerHidden && (
+                    <div style={S.footer}>
+                        <div style={S.footerBanner}>
+                            <AlertTriangle size={14} strokeWidth={2.2} style={S.footerBannerIcon} />
+                            <span style={{flex:1}}><strong>创客次元 社区</strong>会不定时的进行暂停服务、更新，请注意谅解。</span>
+                            <button title='关闭' aria-label='关闭提示'
+                                    style={{background:'transparent',border:'none',cursor:'pointer',
+                                            padding:2, color: C.warning || '#d46b08', lineHeight:1}}
+                                    onClick={this._hideFooter}>
+                                <XCircle size={14} strokeWidth={2.2} />
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {this._renderAuthModal(S, C)}
             </div>
