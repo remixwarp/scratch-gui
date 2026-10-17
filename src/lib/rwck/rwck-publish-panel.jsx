@@ -30,7 +30,7 @@ import {
     Users, MessageCircle, BookOpen, BarChart3,
     Upload, FolderOpen, RefreshCw, ChevronDown, ChevronUp,
     FileCode, Eye, Heart,
-    AlertCircle, CheckCircle, LogIn, LogOut,
+    AlertCircle, CheckCircle, LogIn, LogOut, AlertTriangle,
     Activity, Tag, Globe,
     Search, Bell, Key, ShieldCheck, Package, HardDrive,
     ThumbsUp, Smile, Bookmark, UserPlus, Send, ExternalLink,
@@ -77,6 +77,13 @@ const STYLE = C => ({
     tabActive: {background: C.surfaceRaised, color: C.accent, boxShadow: C.shadowSm},
     body: {flex:1, overflow:'auto', padding:'12px 2px', display:'flex', flexDirection:'column', gap:10,
            scrollbarColor:`${C.scrollbarThumb} transparent`},
+    footer: {paddingTop:8, display:'flex', flexDirection:'column', gap:6, flexShrink:0},
+    footerBanner: {display:'flex', alignItems:'center', gap:8, padding:'8px 12px',
+                   borderRadius: RADIUS_SM, fontSize:12, lineHeight:1.45,
+                   background: C.warningSoft || '#fff7e6',
+                   border:`1px solid ${C.warningBorder || '#ffd591'}`,
+                   color: C.warning || '#d46b08'},
+    footerBannerIcon: {flexShrink:0},
 
     row: {display:'flex', gap:8, alignItems:'center'},
     label: {fontSize:12, color: C.textMuted, minWidth:92, fontWeight:500},
@@ -730,6 +737,13 @@ class RwckPublishPanel extends Component {
 
                 <div style={S.body}>
                     {this._renderTab(S, C)}
+                </div>
+
+                <div style={S.footer}>
+                    <div style={S.footerBanner}>
+                        <AlertTriangle size={14} strokeWidth={2.2} style={S.footerBannerIcon} />
+                        <span><strong>创客次元 社区</strong>会不定时的进行暂停服务、更新，请注意谅解。</span>
+                    </div>
                 </div>
 
                 {this._renderAuthModal(S, C)}
