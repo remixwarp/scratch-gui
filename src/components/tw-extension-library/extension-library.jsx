@@ -427,7 +427,7 @@ class TWExtensionLibrary extends React.Component {
             ['cy-scr-ext-hub', 'CY ScrExt Hub']
         ];
         const sections = sources.map(([source, sourceTitle]) => ({
-            title: sourceTitle,
+            title: typeof sourceTitle === 'string' ? sourceTitle : intl.formatMessage(sourceTitle),
             items: visible.filter(item =>
                 !topExtensionIds.has(item.extensionId) && sourceOf(item) === source
             )

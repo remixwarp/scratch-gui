@@ -22,57 +22,57 @@ import {setCursor} from '../reducers/cursor';
 const VM = defineMessages({
     windowTitle: {
         id: 'paint.polyRoundMode.vertexWindow.title',
-        defaultMessage: '顶点坐标',
+        defaultMessage: 'Vertex Coordinates',
         description: 'Title bar of the floating vertex-editing window'
     },
     headerCount: {
         id: 'paint.polyRoundMode.vertexWindow.headerCount',
-        defaultMessage: '顶点坐标 ({count})',
+        defaultMessage: 'Vertex Coordinates ({count})',
         description: 'Header of the vertex list showing current vertex count',
     },
     hint: {
         id: 'paint.polyRoundMode.vertexWindow.hint',
-        defaultMessage: '在画板上点一下添加顶点，双向实时同步',
+        defaultMessage: 'Click on the canvas to add a vertex — canvas and window stay in sync',
         description: 'Short hint under the vertex-window header'
     },
     empty: {
         id: 'paint.polyRoundMode.vertexWindow.empty',
-        defaultMessage: '在画板上点一下开始选点',
+        defaultMessage: 'Click on the canvas to start placing vertices',
         description: 'Placeholder shown when no vertices have been placed yet'
     },
     btnMid: {
         id: 'paint.polyRoundMode.vertexWindow.btnMid',
-        defaultMessage: '添加中间点',
+        defaultMessage: 'Add Midpoint',
         description: 'Label of the "add midpoint" button in the vertex window'
     },
     btnMidTip: {
         id: 'paint.polyRoundMode.vertexWindow.btnMidTip',
-        defaultMessage: '在最后两点之间插入一个顶点',
+        defaultMessage: 'Insert a vertex between the last two points',
         description: 'Tooltip for the "add midpoint" button'
     },
     btnClear: {
         id: 'paint.polyRoundMode.vertexWindow.btnClear',
-        defaultMessage: '清空',
+        defaultMessage: 'Clear',
         description: 'Label of the "clear all vertices" button'
     },
     btnClearTip: {
         id: 'paint.polyRoundMode.vertexWindow.btnClearTip',
-        defaultMessage: '删除所有顶点',
+        defaultMessage: 'Delete all vertices',
         description: 'Tooltip for the "clear all vertices" button'
     },
     btnFinish: {
         id: 'paint.polyRoundMode.vertexWindow.btnFinish',
-        defaultMessage: '完成',
+        defaultMessage: 'Finish',
         description: 'Label of the "finish / commit shape" button in the vertex window'
     },
     btnFinishTip: {
         id: 'paint.polyRoundMode.vertexWindow.btnFinishTip',
-        defaultMessage: '提交为图形',
+        defaultMessage: 'Commit as shape',
         description: 'Tooltip for the "finish shape" button'
     },
     deleteVertexTip: {
         id: 'paint.polyRoundMode.vertexWindow.deleteVertexTip',
-        defaultMessage: '删除此顶点',
+        defaultMessage: 'Delete this vertex',
         description: 'Tooltip for the per-row vertex delete (✕) button'
     }
 });

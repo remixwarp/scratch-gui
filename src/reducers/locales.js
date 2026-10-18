@@ -2,11 +2,20 @@ import {addLocaleData} from 'react-intl';
 
 import {localeData, isRtl} from '@remixwarp/scratch-l10n';
 import editorMessages from '@remixwarp/scratch-l10n/locales/editor-msgs';
+import paintEditorMessages from '@remixwarp/scratch-l10n/locales/paint-editor-msgs';
 import addAdditionalTranslations from '../lib/tw-translations/index.js';
 
 import {LANGUAGE_KEY} from '../lib/utils/detect-locale.js';
 
 addAdditionalTranslations(editorMessages);
+// Merge paint-editor keys (paint.paintEditor.*, paint.modeTools.*, …) into the same
+// flat messages bundle that react-intl reads from. The upstream scratch-l10n package
+// ships them as a separate bundle; without this merge react-intl falls back to each
+// defineMessage's defaultMessage whenever a paint.* key is missing.
+for (const locale of Object.keys(paintEditorMessages)) {
+    if (!editorMessages[locale]) editorMessages[locale] = {};
+    Object.assign(editorMessages[locale], paintEditorMessages[locale]);
+}
 addLocaleData(localeData);
 
 // 梗体中文（geng / zh-geng）是自定义扩展 locale，上游 @remixwarp/scratch-l10n
