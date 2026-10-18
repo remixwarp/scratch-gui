@@ -1,0 +1,62 @@
+2026-10-18T10:02:02.555753Z	Cloning repository...
+2026-10-18T10:02:05.233267Z	From https://github.com/remixwarp/scratch-gui
+2026-10-18T10:02:05.233551Z	 * branch            dc95dea0a2868d92a63ce82e3c05300ac1e98142 -> FETCH_HEAD
+2026-10-18T10:02:05.233638Z	
+2026-10-18T10:02:05.824264Z	HEAD is now at dc95dea fix(i18n): postinstall 合成 paint-editor-msgs.js — polyRound 翻译不再 fallback defaultMessage
+2026-10-18T10:02:05.824598Z	
+2026-10-18T10:02:06.131133Z	
+2026-10-18T10:02:06.131494Z	Using v2 root directory strategy
+2026-10-18T10:02:06.140252Z	Success: Finished cloning repository files
+2026-10-18T10:02:07.657487Z	Checking for configuration in a Wrangler configuration file (BETA)
+2026-10-18T10:02:07.657813Z	
+2026-10-18T10:02:07.776588Z	No Wrangler configuration file found. Continuing.
+2026-10-18T10:02:08.454292Z	Updating bun to main
+2026-10-18T10:02:08.454669Z	Already on 'main'
+2026-10-18T10:02:08.454748Z	Your branch is up to date with 'origin/main'.
+2026-10-18T10:02:09.825749Z	Detected the following tools from environment: nodejs@18.20.8, bun@1.3.13
+2026-10-18T10:02:09.826173Z	Installing nodejs 18.20.8
+2026-10-18T10:02:10.407565Z	Trying to update node-build... ok
+2026-10-18T10:02:10.449Z	To follow progress, use 'tail -f /tmp/node-build.20261018100210.923.log' or pass --verbose
+2026-10-18T10:02:10.485901Z	Downloading node-v18.20.8-linux-x64.tar.gz...
+2026-10-18T10:02:10.533437Z	-> https://nodejs.org/dist/v18.20.8/node-v18.20.8-linux-x64.tar.gz
+2026-10-18T10:02:12.234774Z	
+2026-10-18T10:02:12.235228Z	WARNING: node-v18.20.8-linux-x64 is past its end of life and is now unsupported.
+2026-10-18T10:02:12.235296Z	It no longer receives bug fixes or security updates.
+2026-10-18T10:02:12.235337Z	
+2026-10-18T10:02:12.235374Z	Installing node-v18.20.8-linux-x64...
+2026-10-18T10:02:12.574896Z	Installed node-v18.20.8-linux-x64 to /opt/buildhome/.asdf/installs/nodejs/18.20.8
+2026-10-18T10:02:12.575343Z	
+2026-10-18T10:02:13.006415Z	Installing bun 1.3.13
+2026-10-18T10:02:13.048925Z	Downloading Bun v1.3.13...
+2026-10-18T10:02:13.850328Z	Archive:  /tmp/asdf-bun.wADs/bun.zip
+2026-10-18T10:02:14.504384Z	  inflating: /opt/buildhome/.asdf/downloads/bun/1.3.13/bun  
+2026-10-18T10:02:14.528034Z	Installing Bun v1.3.13...
+2026-10-18T10:02:14.619035Z	Bun v1.3.13 is installed successfully!
+2026-10-18T10:02:14.718412Z	Executing user command: npm run cf-build
+2026-10-18T10:02:14.957938Z	
+2026-10-18T10:02:14.95817Z	> scratch-gui@3.2.52 cf-build
+2026-10-18T10:02:14.958221Z	> bun install && bun run build
+2026-10-18T10:02:14.958261Z	
+2026-10-18T10:02:15.032503Z	bun install v1.3.13 (bf2e2cec)
+2026-10-18T10:02:15.035134Z	Resolving dependencies
+2026-10-18T10:02:19.610432Z	Resolved, downloaded and extracted [6315]
+2026-10-18T10:02:19.610784Z	warn: incorrect peer dependency "react-responsive@5.0.0"
+2026-10-18T10:02:21.131118Z	Saved lockfile
+2026-10-18T10:02:21.131765Z	
+2026-10-18T10:02:21.131849Z	$ node scripts/patch-shader-manager.mjs && node scripts/polyround-i18n/postinstall-inject.mjs
+2026-10-18T10:02:21.172117Z	[patch-shader-manager] Patched raw-loader: ESM -> CJS output
+2026-10-18T10:02:21.172651Z	[patch-shader-manager] Patched ShaderManager.js: removed inline raw-loader! prefix
+2026-10-18T10:02:21.212772Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-paint/containers/poly-round-mode.jsx -> node_modules/scratch-paint/src/containers/poly-round-mode.jsx
+2026-10-18T10:02:21.213354Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/en.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/en.json
+2026-10-18T10:02:21.21357Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/zh-cn.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/zh-cn.json
+2026-10-18T10:02:21.213809Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/geng.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/geng.json
+2026-10-18T10:02:21.214003Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/gdzx.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/gdzx.json
+2026-10-18T10:02:21.214159Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/wenyan.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/wenyan.json
+2026-10-18T10:02:21.214328Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/wyw.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/wyw.json
+2026-10-18T10:02:21.214791Z	[polyround-i18n] injected scripts/scratch-translate-extension-languages.json -> node_modules/scratch-translate-extension-languages/languages.json
+2026-10-18T10:02:21.217625Z	[polyround-i18n] done: ok=8 skip=0 fail=1
+2026-10-18T10:02:21.217714Z	[polyround-i18n] paint-editor-msgs merge FAIL: Unexpected token ';'
+2026-10-18T10:02:21.219907Z	error: postinstall script from "scratch-gui" exited with 1
+2026-10-18T10:02:21.243326Z	Failed: Error while executing user command. Exited with error code: 1
+2026-10-18T10:02:21.247621Z	Failed: build command exited with code: 1
+2026-10-18T10:02:21.874623Z	Failed: error occurred while running build command

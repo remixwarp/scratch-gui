@@ -103,7 +103,7 @@ try {
         if (!msgsMatch) {
             console.warn('[polyround-i18n] paint-editor-msgs.js 格式异常，跳过 merge');
         } else {
-            const msgsObj = eval('(' + msgsMatch[1].trim() + ')');
+            const msgsObj = JSON.parse(msgsMatch[1].trim().replace(/[;\s]+$/, ''));
             let added = 0;
             // 2. 遍历 inject json（已在第一步 copyFileSync 到 node_modules 里）
             for (const loc of polyRoundLocales) {
