@@ -1,8 +1,8 @@
 import paper from '@turbowarp/paper';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import bindAll from 'lodash.bindall';
 import Modes from '../lib/modes';
 import {MIXED} from '../helper/style-path';
@@ -14,11 +14,42 @@ import {changeStrokeColor, clearStrokeGradient} from '../reducers/stroke-style';
 import {changeMode} from '../reducers/modes';
 import {clearSelectedItems, setSelectedItems} from '../reducers/selected-items';
 import {setCursor} from '../reducers/cursor';
-// Translatable strings for the floating 顶点坐标 (vertex-coordinates) window.
-// They are consumed imperatively inside DOM-building code that bypasses React
-// render (we construct <div>s via document.createElement so the window can live
-// outside React's tree inside WindowManager). So we can't use <FormattedMessage>
-// JSX — instead we call intl.formatMessage() on these descriptors directly.
+import {
+    changePolyRoundRadius,
+    changePolyRoundCornerStyle,
+    changePolyRoundLimitRadius,
+    changePolyRoundShowItems,
+    setPolyRoundPoints,
+    editPolyRoundPoint,
+    removePolyRoundPoint,
+    triggerPolyRoundAction,
+    consumePolyRoundAction
+} from '../reducers/poly-round-mode';
+
+import {clearSelection, getSelectedLeafItems} from '../helper/selection';
+import PolyRoundTool from '../helper/tools/poly-round-tool';
+import PolyRoundModeComponent from '../components/poly-round-mode/poly-round-mode.jsx';
+
+// Optional: GUI-side window-manager. It only exists when scratch-paint is
+// built inside the GUI, whose webpack config aliases '@remixwarp/window-manager'
+// to the addon window system (src/addons/window-system/window-manager.js).
+// Vanilla scratch-paint builds don't have that alias, so degrade to the inline
+// toolbar UI instead of crashing the module.
+let WindowManager = null;
+try {
+    // eslint-disable-next-line global-require
+    const windowManagerModule = require('@remixwarp/window-manager');
+    WindowManager = (windowManagerModule && windowManagerModule.default) || windowManagerModule || null;
+} catch (_e) {
+    WindowManager = null;
+}
+
+
+
+// Translatable strings for the floating vertex-coordinates window.
+// DOM is built imperatively via document.createElement (so the window can
+// live outside React's tree inside WindowManager), so we call intl.formatMessage()
+// directly instead of using <FormattedMessage>.
 const VM = defineMessages({
     windowTitle: {
         id: 'paint.polyRoundMode.vertexWindow.title',
@@ -28,7 +59,7 @@ const VM = defineMessages({
     headerCount: {
         id: 'paint.polyRoundMode.vertexWindow.headerCount',
         defaultMessage: 'Vertex Coordinates ({count})',
-        description: 'Header of the vertex list showing current vertex count',
+        description: 'Header of the vertex list showing current vertex count'
     },
     hint: {
         id: 'paint.polyRoundMode.vertexWindow.hint',
@@ -73,40 +104,9 @@ const VM = defineMessages({
     deleteVertexTip: {
         id: 'paint.polyRoundMode.vertexWindow.deleteVertexTip',
         defaultMessage: 'Delete this vertex',
-        description: 'Tooltip for the per-row vertex delete (✕) button'
+        description: 'Tooltip for the per-row vertex delete button'
     }
 });
-
-import {
-    changePolyRoundRadius,
-    changePolyRoundCornerStyle,
-    changePolyRoundLimitRadius,
-    changePolyRoundShowItems,
-    setPolyRoundPoints,
-    editPolyRoundPoint,
-    removePolyRoundPoint,
-    triggerPolyRoundAction,
-    consumePolyRoundAction
-} from '../reducers/poly-round-mode';
-
-import {clearSelection, getSelectedLeafItems} from '../helper/selection';
-import PolyRoundTool from '../helper/tools/poly-round-tool';
-import PolyRoundModeComponent from '../components/poly-round-mode/poly-round-mode.jsx';
-
-// Optional: GUI-side window-manager. It only exists when scratch-paint is
-// built inside the GUI, whose webpack config aliases '@remixwarp/window-manager'
-// to the addon window system (src/addons/window-system/window-manager.js).
-// Vanilla scratch-paint builds don't have that alias, so degrade to the inline
-// toolbar UI instead of crashing the module.
-let WindowManager = null;
-try {
-    // eslint-disable-next-line global-require
-    const windowManagerModule = require('@remixwarp/window-manager');
-    WindowManager = (windowManagerModule && windowManagerModule.default) || windowManagerModule || null;
-} catch (_e) {
-    WindowManager = null;
-}
-
 
 class PolyRoundMode extends React.Component {
     constructor (props) {
@@ -568,6 +568,7 @@ PolyRoundMode.propTypes = {
     setCursor: PropTypes.func.isRequired,
     setSelectedItems: PropTypes.func.isRequired
 };
+    intl: intlShape.isRequired
 
 const mapStateToProps = state => ({
     colorState: state.scratchPaint.color,
