@@ -125,7 +125,7 @@ export default [
     {
         name: (
             <FormattedMessage
-                defaultMessage="自定义扩展库"
+                defaultMessage="Custom Extension Gallery"
                 description="Name of library item to load a custom extension gallery from a URL"
                 id="tw.customExtensionGallery.name"
             />
@@ -134,7 +134,7 @@ export default [
         iconURL: customURLIcon,
         description: (
             <FormattedMessage
-                defaultMessage="从 URL 加载自定义扩展库。"
+                defaultMessage="Load a custom extension gallery from a URL."
                 description="Description of library item to load extensions from a custom gallery source"
                 id="tw.customExtensionGallery.description"
             />
