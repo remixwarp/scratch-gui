@@ -86,6 +86,21 @@ const selectLocale = function (locale) {
     try {
         localStorage.setItem(LANGUAGE_KEY, locale);
     } catch (e) { /* ignore */ }
+
+    // 切语言后强制刷新整个标签页 —— Redux 内刷新会漏掉很多模块
+    // （paper.js / scratch-blocks / window 自由窗口 / 插件面板 等）
+    // 里硬编码的或在 init 时一次性读的文案。整页 reload 最彻底。
+    // 同步 dispatch SELECT_LOCALE → 下一轮事件循环 window.location.reload()
+    // 这样 localStorage 已经更新，initLocale 会读到用户选的新语言。
+    if (typeof window !== 'undefined') {
+        try {
+            clearTimeout(selectLocale.__reloadTimer);
+            selectLocale.__reloadTimer = setTimeout(() => {
+                window.location.reload();
+            }, 50);
+        } catch (_e) { /* SSR / 测试环境无 window */ }
+    }
+
     return {
         type: SELECT_LOCALE,
         locale: locale
