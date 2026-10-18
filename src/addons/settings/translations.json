@@ -60,6 +60,22 @@
     "customPluginsUrlError": "从网址获取插件失败:",
     "customPluginsDelete": "删除此自定义插件",
     "customPluginsDeleteConfirm": "删除此自定义插件?将从当前浏览器中移除。",
-    "customPluginsNoDescription": "未提供描述。"
+    "customPluginsNoDescription": "未提供描述。",
+    "settings.categories.all": "全部插件",
+    "settings.categories.new": "新插件",
+    "settings.categories.theme": "主题",
+    "settings.categories.editor": "编辑器",
+    "settings.categories.debug": "调试",
+    "settings.categories.utility": "实用工具",
+    "settings.categories.sprites": "角色",
+    "settings.categories.stage": "舞台",
+    "settings.categories.workflow": "工作流",
+    "settings.categories.ui": "界面",
+    "settings.categories.toolbox": "工具箱",
+    "settings.editors.remixWarp": "RemixWarp",
+    "settings.editors.zeroTwoEngine": "02Engine",
+    "settings.editors.astraEditor": "AstraEditor",
+    "settings.editors.turboWarp": "TurboWarp",
+    "settings.editors.bilup": "Bilup"
   }
 }

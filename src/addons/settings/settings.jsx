@@ -203,24 +203,24 @@ class MultiLevelDropdown extends React.Component {
     render () {
         const {open, selectedEditor, selectedCategory, expandedEditor} = this.state;
         const editors = [
-            {id: 'remixwarp', name: 'RemixWarp'},
-            {id: '02engine',  name: '02Engine'},
-            {id: 'astraeditor', name: 'AstraEditor'},
-            {id: 'turbowarp', name: 'TurboWarp'},
-            {id: 'bilup',     name: 'Bilup'}
+            {id: 'remixwarp', name: settingsTranslations['settings.editors.remixWarp'] || 'RemixWarp'},
+            {id: '02engine', name: settingsTranslations['settings.editors.zeroTwoEngine'] || '02Engine'},
+            {id: 'astraeditor', name: settingsTranslations['settings.editors.astraEditor'] || 'AstraEditor'},
+            {id: 'turbowarp', name: settingsTranslations['settings.editors.turboWarp'] || 'TurboWarp'},
+            {id: 'bilup', name: settingsTranslations['settings.editors.bilup'] || 'Bilup'}
         ];
         const categories = [
-            {id: 'all',      name: '全部插件'},
-            {id: 'new',      name: '新插件'},
-            {id: 'theme',    name: '主题'},
-            {id: 'editor',   name: '编辑器'},
-            {id: 'debug',    name: '调试'},
-            {id: 'utility',  name: '实用工具'},
-            {id: 'sprites',  name: '角色'},
-            {id: 'stage',    name: '舞台'},
-            {id: 'workflow', name: '工作流'},
-            {id: 'ui',       name: '界面'},
-            {id: 'toolbox',  name: '工具箱'}
+            {id: 'all', name: settingsTranslations['settings.categories.all'] || '全部插件'},
+            {id: 'new', name: settingsTranslations['settings.categories.new'] || '新插件'},
+            {id: 'theme', name: settingsTranslations['settings.categories.theme'] || '主题'},
+            {id: 'editor', name: settingsTranslations['settings.categories.editor'] || '编辑器'},
+            {id: 'debug', name: settingsTranslations['settings.categories.debug'] || '调试'},
+            {id: 'utility', name: settingsTranslations['settings.categories.utility'] || '实用工具'},
+            {id: 'sprites', name: settingsTranslations['settings.categories.sprites'] || '角色'},
+            {id: 'stage', name: settingsTranslations['settings.categories.stage'] || '舞台'},
+            {id: 'workflow', name: settingsTranslations['settings.categories.workflow'] || '工作流'},
+            {id: 'ui', name: settingsTranslations['settings.categories.ui'] || '界面'},
+            {id: 'toolbox', name: settingsTranslations['settings.categories.toolbox'] || '工具箱'}
         ];
 
         return (
@@ -1998,11 +1998,11 @@ class AddonSettingsComponent extends React.Component {
                                 </div>
                                 {
                                     [
-                                        { id: 'remixwarp', name: 'RemixWarp' },
-                                        { id: '02engine', name: '02Engine' },
-                                        { id: 'astraeditor', name: 'AstraEditor' },
-                                        { id: 'turbowarp', name: 'TurboWarp' },
-                                        { id: 'bilup', name: 'Bilup' }
+                                        { id: 'remixwarp', name: settingsTranslations['settings.editors.remixWarp'] || 'RemixWarp' },
+                                        { id: '02engine', name: settingsTranslations['settings.editors.zeroTwoEngine'] || '02Engine' },
+                                        { id: 'astraeditor', name: settingsTranslations['settings.editors.astraEditor'] || 'AstraEditor' },
+                                        { id: 'turbowarp', name: settingsTranslations['settings.editors.turboWarp'] || 'TurboWarp' },
+                                        { id: 'bilup', name: settingsTranslations['settings.editors.bilup'] || 'Bilup' }
                                     ].map(editor => (
                                         <div key={editor.id} className={classNames(styles.editorButtonContainer, {
                                             [styles.alignLeft]: this.state.align === 'left',
@@ -2036,17 +2036,17 @@ class AddonSettingsComponent extends React.Component {
                                                     <div className={styles.categoryButtons}>
                                                         {
                                                             [
-                                                                { id: 'all', name: '全部插件' },
-                                                                { id: 'new', name: '新插件' },
-                                                                { id: 'theme', name: '主题' },
-                                                                { id: 'editor', name: '编辑器' },
-                                                                { id: 'debug', name: '调试' },
-                                                                { id: 'utility', name: '实用工具' },
-                                                                { id: 'sprites', name: '角色' },
-                                                                { id: 'stage', name: '舞台' },
-                                                                { id: 'workflow', name: '工作流' },
-                                                                { id: 'ui', name: '界面' },
-                                                                { id: 'toolbox', name: '工具箱' }
+                                                                { id: 'all', name: settingsTranslations['settings.categories.all'] || '全部插件' },
+                                                                { id: 'new', name: settingsTranslations['settings.categories.new'] || '新插件' },
+                                                                { id: 'theme', name: settingsTranslations['settings.categories.theme'] || '主题' },
+                                                                { id: 'editor', name: settingsTranslations['settings.categories.editor'] || '编辑器' },
+                                                                { id: 'debug', name: settingsTranslations['settings.categories.debug'] || '调试' },
+                                                                { id: 'utility', name: settingsTranslations['settings.categories.utility'] || '实用工具' },
+                                                                { id: 'sprites', name: settingsTranslations['settings.categories.sprites'] || '角色' },
+                                                                { id: 'stage', name: settingsTranslations['settings.categories.stage'] || '舞台' },
+                                                                { id: 'workflow', name: settingsTranslations['settings.categories.workflow'] || '工作流' },
+                                                                { id: 'ui', name: settingsTranslations['settings.categories.ui'] || '界面' },
+                                                                { id: 'toolbox', name: settingsTranslations['settings.categories.toolbox'] || '工具箱' }
                                                             ].map(category => (
                                                                 <button
                                                                     key={category.id}

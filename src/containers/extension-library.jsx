@@ -55,6 +55,21 @@ const messages = defineMessages({
         defaultMessage: 'Enter custom extension gallery URL:',
         description: 'Prompt for entering custom extension gallery URL',
         id: 'tw.customExtensionGallery.prompt'
+    },
+    sourceScratch: {
+        defaultMessage: 'Scratch',
+        description: 'Label for Scratch category in extension library',
+        id: 'tw.extensionSource.scratch'
+    },
+    sourceTurboWarp: {
+        defaultMessage: 'TurboWarp',
+        description: 'Label for TurboWarp category in extension library',
+        id: 'tw.extensionSource.turboWarp'
+    },
+    sourceMistium: {
+        defaultMessage: 'Mistium',
+        description: 'Label for Mistium category in extension library',
+        id: 'tw.extensionSource.mistium'
     }
 });
 
@@ -1118,9 +1133,9 @@ class ExtensionLibrary extends React.PureComponent {
         }));
         const tags = [...extensionTags, ...customTags];
         const sources = [
-            ['scratch', 'Scratch'],
-            ['tw', 'TurboWarp'],
-            ['mistium', 'Mistium'],
+            ['scratch', messages.sourceScratch],
+            ['tw', messages.sourceTurboWarp],
+            ['mistium', messages.sourceMistium],
             ...this.state.customSources.map(source => [source.id, source.name])
         ];
         // 可删除（自定义）的标签 id 集合，用于侧边栏渲染删除按钮
