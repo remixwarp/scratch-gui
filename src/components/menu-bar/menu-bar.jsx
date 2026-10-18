@@ -3761,7 +3761,10 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                         <MenuItem onClick={this.props.onClickTutorial}>
                                             <BookOpen size={20} />
-                                            {FormattedMessage({id: 'tw.menuBar.videoTutorial', defaultMessage: 'Video Tutorial'})}
+                                            <FormattedMessage
+                                                id="tw.menuBar.videoTutorial"
+                                                defaultMessage="Video Tutorial"
+                                            />
                                         </MenuItem>
                                     </MenuSection>
                                     <MenuSection>
@@ -3791,22 +3794,37 @@ class MenuBar extends React.Component {
                                         >
                                             <div className={styles.menuItemContent}>
                                                 <Settings size={20} />
-                                                {FormattedMessage({id: 'tw.menuBar.configMigration', defaultMessage: 'Config Migration'})}
+                                                <FormattedMessage
+                                                id="tw.menuBar.configMigration"
+                                                defaultMessage="Config Migration"
+                                            />
                                                 <ChevronDown size={8} />
                                             </div>
                                             <Submenu place={this.props.isRtl ? 'left' : 'right'}>
                                                 <MenuItem onClick={this.handleExportSettings}>
-                                                    {FormattedMessage({id: 'tw.menuBar.exportAllConfig', defaultMessage: 'Export All Config'})}
+                                                    <FormattedMessage
+                                                id="tw.menuBar.exportAllConfig"
+                                                defaultMessage="Export All Config"
+                                            />
                                                 </MenuItem>
                                                 <MenuItem onClick={this.handleImportSettings}>
-                                                    {FormattedMessage({id: 'tw.menuBar.importAllConfig', defaultMessage: 'Import All Config'})}
+                                                    <FormattedMessage
+                                                id="tw.menuBar.importAllConfig"
+                                                defaultMessage="Import All Config"
+                                            />
                                                 </MenuItem>
                                                 <MenuItem onClick={this.handleClickConfigPlaza}>
                                                     <Store size={20} />
-                                                    {FormattedMessage({id: 'tw.menuBar.configPlaza', defaultMessage: 'Config Plaza'})}
+                                                    <FormattedMessage
+                                                id="tw.menuBar.configPlaza"
+                                                defaultMessage="Config Plaza"
+                                            />
                                                 </MenuItem>
                                                 <MenuItem onClick={this.handleResetAllConfig}>
-                                                    {FormattedMessage({id: 'tw.menuBar.resetAllConfig', defaultMessage: 'Reset All Config'})}
+                                                    <FormattedMessage
+                                                id="tw.menuBar.resetAllConfig"
+                                                defaultMessage="Reset All Config"
+                                            />
                                                 </MenuItem>
                                             </Submenu>
                                         </MenuItem>
@@ -3820,7 +3838,10 @@ class MenuBar extends React.Component {
                                                     </g>
                                                 </g>
                                             </svg>
-                                            {FormattedMessage({id: 'tw.menuBar.materialPlaza', defaultMessage: 'Material Plaza'})}
+                                            <FormattedMessage
+                                                id="tw.menuBar.materialPlaza"
+                                                defaultMessage="Material Plaza"
+                                            />
                                         </MenuItem>
                                     </MenuSection>
                                     {this.getAutosaveEnabled() && (
@@ -4203,7 +4224,10 @@ class MenuBar extends React.Component {
                                         }}
                                     >
                                         <TerminalSquare />
-                                        {FormattedMessage({id: 'tw.menuBar.terminal', defaultMessage: 'Terminal'})}
+                                        <FormattedMessage
+                                                id="tw.menuBar.terminal"
+                                                defaultMessage="Terminal"
+                                            />
                                     </MenuItem>
                                     <MenuItem
                                         onClick={() => {
@@ -4628,7 +4652,10 @@ class MenuBar extends React.Component {
                                 iconElem={Upload}
                                 onClick={this.handleClickRwckPublish}
                             >
-                                {FormattedMessage({id: 'tw.menuBar.publish', defaultMessage: 'Publish'})}
+                                <FormattedMessage
+                                                id="tw.menuBar.publish"
+                                                defaultMessage="Publish"
+                                            />
                             </Button>
                         </div>
                     )}
