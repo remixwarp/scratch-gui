@@ -59,16 +59,16 @@
 /* VS Code Layout */
 .editor-wrapper.vscodeLayout {
     /*
-        在 VS Code 布局下，积木区的保留宽度从默认 598 压缩到 360
-        （见 gui.jsx 的 MIN_EDITOR_PANE_WIDTH_VSCODE），好让舞台面板更大、
-        左移并挤压积木区。这里把积木区基准宽度同步减小到同一个值，
-        并允许其收缩（min-width:0），否则积木区（flex-shrink:0）会把右侧
-        舞台面板挤出窗口（.flex-wrapper 是 overflow:hidden），
-        导致面板底部的「选择角色 / 选择背景」按钮被裁掉一半。
+        VS Code 布局：编辑器基准宽度与 MIN_EDITOR_PANE_WIDTH_VSCODE（360px）对齐。
+        关键改动：flex-shrink:1 —— 允许编辑器在窄视口（手机 ~360px）下收缩，
+        不再用 flex-shrink:0 把右侧 .stage-and-target-wrapper 挤出窗口
+        导致舞台/TargetPane 直接叠到画板正上方。
+        flex-basis 用硬值 360px（MIN_EDITOR_PANE_WIDTH_VSCODE），
+        让 jsx 和 CSS 的基准完全一致。
     */
-    flex-basis: calc(1024px - 408px - (($space + $stage-standard-border-width) * 2) - 238px);
+    flex-basis: 360px;
     flex-grow: 1;
-    flex-shrink: 0;
+    flex-shrink: 1;
     min-width: 0;
     position: relative;
 
@@ -119,43 +119,6 @@
 
 .editor-wrapper.vscodeLayout .extension-button {
     color: #ffffff;
-}
-
-/*
-    VS Code 布局 + 移动端布局叠加时，JSX 外层 flex-wrapper 已切成
-    flex-direction: column（见 gui.jsx 里 EnableMobileLayout 分支），
-    但 VS Code 布局下 .editor-wrapper.vscodeLayout 还保留着固定 flex-basis
-    计算值（见 L65），在手机视口（~360px）下会把右侧 .stage-and-target-wrapper
-    顶到画板正上方发生叠加 —— 用户看到角色列表 + 舞台叠在画板里。
-    
-    参考 Scratch 布局在移动端的处理：EnableMobileLayout=true 时整个 GUI
-    切成上下排，但 VS Code 布局下还需要额外把编辑器宽度放开、
-    隐藏分隔条和右侧 TargetPane（手机上空间不够放也看不清）。
-*/
-.enableMobileLayout .editor-wrapper.vscodeLayout {
-    flex-basis: auto !important;
-    flex-grow: 0 !important;
-    flex-shrink: 0 !important;
-    min-width: 0;
-    width: 100% !important;
-}
-
-.enableMobileLayout .editor-wrapper.vscodeLayout + .stage-pane-resizer {
-    display: none !important;
-}
-
-.enableMobileLayout .stage-and-target-wrapper {
-    flex-basis: auto !important;
-    width: 100% !important;
-    max-width: none !important;
-    padding-top: 0;
-    padding-bottom: $space;
-}
-
-.enableMobileLayout .stage-and-target-wrapper .target-wrapper,
-.enableMobileLayout .stage-and-target-wrapper .sprite-selector,
-.enableMobileLayout .stage-and-target-wrapper .stage-selector {
-    display: none !important;
 }
 
 /* VS Code Layout */

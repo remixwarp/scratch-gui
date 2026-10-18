@@ -2062,7 +2062,7 @@ const GUIComponent = props => {
                     onToggleLoginOpen={onToggleLoginOpen}
                 />
                 <Box className={styles.bodyWrapper}>
-                    <Box className={classNames(styles.flexWrapper, AESettings.get('EnableMobileLayout') && 'enableMobileLayout')} style={AESettings.get('EnableMobileLayout') ? {
+                    <Box className={styles.flexWrapper} style={AESettings.get('EnableMobileLayout') ? {
                         flexDirection: 'column'
                     } : {}}>
                         <Box
