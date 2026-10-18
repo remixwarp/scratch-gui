@@ -18,7 +18,7 @@ import {
     assetFile
 } from './constants.js';
 
-const APP_NAME = 'RemixWarp';
+const APP_NAME = 'TurboWarp';
 
 const decodeText = data => {
     if (typeof data === 'string') return data;

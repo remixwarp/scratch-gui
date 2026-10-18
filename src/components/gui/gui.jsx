@@ -210,9 +210,31 @@ const DonationModal = ({visible, onClose, count}) => {
                     ×
                 </button>
                 
-                <h2 style={{marginTop: 0, color: '#333', textAlign: 'center'}}>感谢使用 RemixWarp！</h2>
-                <p style={{color: '#555', lineHeight: '1.5'}}>您已经启动了 <strong>{count}</strong> 次编辑器。</p>
-                <p style={{color: '#555', lineHeight: '1.5'}}>如果您喜欢这个编辑器，考虑通过捐款来支持我们的开发工作。</p>
+                <h2 style={{marginTop: 0, color: '#333', textAlign: 'center'}}>
+                    <FormattedMessage
+                        id="tw.donationModal.title"
+                        defaultMessage="Thanks for using TurboWarp!"
+                        description="Donation modal title"
+                    />
+                </h2>
+                <p style={{color: '#555', lineHeight: '1.5'}}>
+                    <FormattedMessage
+                        id="tw.donationModal.startupCount"
+                        defaultMessage="You've opened the editor <strong>{count}</strong> times."
+                        description="Donation modal: how many times user opened the editor"
+                        values={{
+                            count,
+                            strong: chunks => <strong>{chunks}</strong>
+                        }}
+                    />
+                </p>
+                <p style={{color: '#555', lineHeight: '1.5'}}>
+                    <FormattedMessage
+                        id="tw.donationModal.prompt"
+                        defaultMessage="If you enjoy this editor, please consider donating to support our development."
+                        description="Donation modal: ask for support"
+                    />
+                </p>
                 
                 <div style={{margin: '30px 0', textAlign: 'center'}}>
                     <a 
@@ -234,7 +256,11 @@ const DonationModal = ({visible, onClose, count}) => {
                         onMouseOver={(e) => e.target.style.backgroundColor = '#5a9ea1'}
                         onMouseOut={(e) => e.target.style.backgroundColor = '#75C1C4'}
                     >
-                        立即捐款
+                        <FormattedMessage
+                            id="tw.donationModal.donateNow"
+                            defaultMessage="Donate Now"
+                            description="Primary donation button"
+                        />
                     </a>
                 </div>
                 
@@ -260,7 +286,11 @@ const DonationModal = ({visible, onClose, count}) => {
                             e.target.style.borderColor = '#ddd';
                         }}
                     >
-                        但我不要
+                        <FormattedMessage
+                            id="tw.donationModal.notNow"
+                            defaultMessage="Not now"
+                            description="Secondary button to dismiss donation modal"
+                        />
                     </button>
                 </div>
             </div>
