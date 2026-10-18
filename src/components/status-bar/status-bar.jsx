@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
+import {defineMessages, intlShape, injectIntl} from 'react-intl';
 import VM from 'scratch-vm';
 import {
     MousePointer2,
@@ -21,7 +22,25 @@ import {
     RIGHT_FIXED
 } from '../../lib/mw-status-bar-layout';
 
-const StatusBar = ({vm, theme}) => {
+const messages = defineMessages({
+    ready:       {id: 'tw.statusBar.ready',       defaultMessage: 'Ready'},
+    offline:     {id: 'tw.statusBar.offline',     defaultMessage: 'Offline'},
+    stopped:     {id: 'tw.statusBar.stopped',     defaultMessage: 'Stopped'},
+    running:     {id: 'tw.statusBar.running',     defaultMessage: 'Running'},
+    blocks:      {id: 'tw.statusBar.blocks',      defaultMessage: '{count} blocks'},
+    fps:         {id: 'tw.statusBar.fps',         defaultMessage: '{value} FPS'},
+    noNetwork:   {id: 'tw.statusBar.noNetwork',   defaultMessage: 'No network'},
+    connected:   {id: 'tw.statusBar.connected',   defaultMessage: 'Network connected'},
+    totalBlocks: {id: 'tw.statusBar.totalBlocks', defaultMessage: 'Total project blocks'},
+    spriteCoord: {id: 'tw.statusBar.spriteCoord', defaultMessage: 'Mouse coord in sprite'},
+    stageCoord:  {id: 'tw.statusBar.stageCoord',  defaultMessage: 'Mouse coord in stage'},
+    resetZoom:   {id: 'tw.statusBar.resetZoom',   defaultMessage: 'Click to reset zoom to 100%'},
+    editingSprite:{id: 'tw.statusBar.editingSprite',defaultMessage: 'Current editing sprite'},
+    renderFps:   {id: 'tw.statusBar.renderFps',   defaultMessage: 'Rendering FPS'},
+    runState:    {id: 'tw.statusBar.runState',    defaultMessage: 'Project run state'}
+});
+
+const StatusBar = ({vm, theme, intl}) => {
     const [blockCount, setBlockCount] = useState(0);
     const [fps, setFps] = useState(0);
     const [spriteName, setSpriteName] = useState('');
@@ -29,7 +48,7 @@ const StatusBar = ({vm, theme}) => {
     const [mouseCoords, setMouseCoords] = useState({x: 0, y: 0});
     const [stageMouseCoords, setStageMouseCoords] = useState({x: 0, y: 0});
     const [zoomLevel, setZoomLevel] = useState(100);
-    const [onlineStatus, setOnlineStatus] = useState(navigator.onLine ? '就绪' : '无网络');
+    const [onlineStatus, setOnlineStatus] = useState(navigator.onLine ? 'ready' : 'offline');
     // 由高级设置中的状态栏布局决定的可见段顺序
     const [visibleIds, setVisibleIds] = useState(getVisibleOrderedIds);
 
@@ -162,9 +181,9 @@ const StatusBar = ({vm, theme}) => {
 
     // 在线状态：监听 navigator.onLine + online/offline 事件
     useEffect(() => {
-        const onOnline = () => setOnlineStatus('就绪');
-        const onOffline = () => setOnlineStatus('无网络');
-        setOnlineStatus(navigator.onLine ? '就绪' : '无网络');
+        const onOnline = () => setOnlineStatus('ready');
+        const onOffline = () => setOnlineStatus('offline');
+        setOnlineStatus(navigator.onLine ? 'ready' : 'offline');
         window.addEventListener('online', onOnline);
         window.addEventListener('offline', onOffline);
         return () => {
@@ -179,7 +198,7 @@ const StatusBar = ({vm, theme}) => {
         switch (id) {
         case 'workspaceMouse':
             return (
-                <div className={styles.segment} data-mw-item="workspaceMouse" title="鼠标在工作区中的坐标">
+                <div className={styles.segment} data-mw-item="workspaceMouse" title={intl.formatMessage(messages.spriteCoord)}>
                     <MousePointer2 size={13} className={styles.icon} />
                     <span className={styles.label}>x: {mouseCoords.x}</span>
                     <span className={styles.label}>y: {mouseCoords.y}</span>
@@ -187,7 +206,7 @@ const StatusBar = ({vm, theme}) => {
             );
         case 'stageMouse':
             return (
-                <div className={styles.segment} data-mw-item="stageMouse" title="鼠标在舞台上的坐标">
+                <div className={styles.segment} data-mw-item="stageMouse" title={intl.formatMessage(messages.stageCoord)}>
                     <Monitor size={13} className={styles.icon} />
                     <span className={styles.label}>x: {stageMouseCoords.x}</span>
                     <span className={styles.label}>y: {stageMouseCoords.y}</span>
@@ -198,7 +217,7 @@ const StatusBar = ({vm, theme}) => {
                 <div
                     className={`${styles.segment} ${styles.clickable}`}
                     data-mw-item="zoom"
-                    title="点击重置缩放到 100% 并居中"
+                    title={intl.formatMessage(messages.resetZoom)}
                     onClick={handleResetZoom}
                 >
                     <ZoomIn size={13} className={styles.icon} />
@@ -207,45 +226,45 @@ const StatusBar = ({vm, theme}) => {
             );
         case 'blockCount':
             return (
-                <div className={styles.segment} data-mw-item="blockCount" title="项目积木总数">
+                <div className={styles.segment} data-mw-item="blockCount" title={intl.formatMessage(messages.totalBlocks)}>
                     <Boxes size={13} className={styles.icon} />
-                    <span className={styles.label}>{blockCount} 个积木</span>
+                    <span className={styles.label}>{intl.formatMessage(messages.blocks, {count: blockCount})}</span>
                 </div>
             );
         case 'spriteName':
             return (
-                <div className={styles.segment} data-mw-item="spriteName" title="当前编辑角色">
+                <div className={styles.segment} data-mw-item="spriteName" title={intl.formatMessage(messages.editingSprite)}>
                     <Layers size={13} className={styles.icon} />
                     <span className={styles.label}>{spriteName || '—'}</span>
                 </div>
             );
         case 'fps':
             return (
-                <div className={styles.segment} data-mw-item="fps" title="渲染帧率">
+                <div className={styles.segment} data-mw-item="fps" title={intl.formatMessage(messages.renderFps)}>
                     <Gauge size={13} className={styles.icon} />
-                    <span className={styles.label}>{fps} FPS</span>
+                    <span className={styles.label}>{intl.formatMessage(messages.fps, {value: fps})}</span>
                 </div>
             );
         case 'running':
             return (
-                <div className={styles.segment} data-mw-item="running" title="项目运行状态">
+                <div className={styles.segment} data-mw-item="running" title={intl.formatMessage(messages.runState)}>
                     {isRunning ? (
                         <Play size={13} className={`${styles.icon} ${styles.running}`} />
                     ) : (
                         <Square size={11} className={styles.icon} />
                     )}
-                    <span className={styles.label}>{isRunning ? '运行中' : '已停止'}</span>
+                    <span className={styles.label}>{isRunning ? intl.formatMessage(messages.running) : intl.formatMessage(messages.stopped)}</span>
                 </div>
             );
         case 'onlineStatus':
             return (
                 <div
-                    className={`${styles.segment} ${onlineStatus === '无网络' ? styles.aiBusy : ''}`}
+                    className={`${styles.segment} ${onlineStatus === 'offline' ? styles.aiBusy : ''}`}
                     data-mw-item="onlineStatus"
-                    title={onlineStatus === '就绪' ? '网络已连接' : '网络未连接'}
+                    title={intl.formatMessage(onlineStatus === 'ready' ? messages.connected : messages.noNetwork)}
                 >
                     <Wifi size={13} className={styles.icon} />
-                    <span className={styles.label}>{onlineStatus}</span>
+                    <span className={styles.label}>{intl.formatMessage(onlineStatus === 'ready' ? messages.ready : messages.offline)}</span>
                 </div>
             );
         default:
@@ -282,13 +301,12 @@ const StatusBar = ({vm, theme}) => {
 
 StatusBar.propTypes = {
     vm: PropTypes.instanceOf(VM),
-    theme: PropTypes.shape({
-        isDark: PropTypes.func
-    })
+    theme: PropTypes.shape({isDark: PropTypes.func}),
+    intl: intlShape.isRequired
 };
 
 const mapStateToProps = state => ({
     theme: state.scratchGui.theme.theme
 });
 
-export default connect(mapStateToProps)(StatusBar);
+export default injectIntl(connect(mapStateToProps)(StatusBar));

@@ -55,8 +55,16 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     onChangeLanguage: locale => {
+        const prev = document.documentElement.lang;
         dispatch(selectLocale(locale));
         dispatch(closeLanguageMenu());
+        // 语言切换后强制刷新一次 —— 保证所有模块、扩展、
+        // free-window 标题、动态 intl.FormattedMessage 全部用上新语言。
+        // 这里只在 locale 真的变了才 reload，避免初始挂载时误刷新。
+        if (prev && prev !== locale) {
+            // 给 Redux dispatch 一点时间落盘（languages 偏好会自动持久化）
+            setTimeout(() => { window.location.reload(); }, 50);
+        }
     }
 });
 

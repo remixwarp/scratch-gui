@@ -7,8 +7,8 @@ import icon from '!!raw-loader!../icons/neumorphism-dark.svg';
  */
 
 const name = {
-    defaultMessage: '新拟物深',
-    description: 'Label for the neumorphism dark GUI theme',
+    defaultMessage: 'Neumorphism Dark',
+    description: 'Label for the Neumorphism Dark GUI theme',
     id: 'tw.theme.gui.neumorphism-dark'
 };
 

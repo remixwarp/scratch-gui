@@ -3712,9 +3712,11 @@ class MenuBar extends React.Component {
                                                     onClick={this.getSaveToComputerHandler(saveAsRJ)}
                                                 >
                                                     <FileDown size={20} />
-                                                    {this.props.locale === 'zh-cn' ?
-                                                        '保存为 .rj 作品文件' :
-                                                        'Save as .rj project file'}
+                                                    <FormattedMessage
+                                                        defaultMessage="Save as .rj project file"
+                                                        description="Menu item to save the project as .rj"
+                                                        id="tw.menuBar.saveAsRJ"
+                                                    />
                                                 </MenuItem>
                                             )}
                                         </RJDownloader>
@@ -3759,7 +3761,7 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                         <MenuItem onClick={this.props.onClickTutorial}>
                                             <BookOpen size={20} />
-                                            {this.props.locale === 'zh-cn' ? '视频教程' : 'Video Tutorial'}
+                                            {FormattedMessage({id: 'tw.menuBar.videoTutorial', defaultMessage: 'Video Tutorial'})}
                                         </MenuItem>
                                     </MenuSection>
                                     <MenuSection>
@@ -3789,22 +3791,22 @@ class MenuBar extends React.Component {
                                         >
                                             <div className={styles.menuItemContent}>
                                                 <Settings size={20} />
-                                                {this.props.locale === 'zh-cn' ? '配置迁移' : 'Config Migration'}
+                                                {FormattedMessage({id: 'tw.menuBar.configMigration', defaultMessage: 'Config Migration'})}
                                                 <ChevronDown size={8} />
                                             </div>
                                             <Submenu place={this.props.isRtl ? 'left' : 'right'}>
                                                 <MenuItem onClick={this.handleExportSettings}>
-                                                    {this.props.locale === 'zh-cn' ? '导出全部配置' : 'Export All Config'}
+                                                    {FormattedMessage({id: 'tw.menuBar.exportAllConfig', defaultMessage: 'Export All Config'})}
                                                 </MenuItem>
                                                 <MenuItem onClick={this.handleImportSettings}>
-                                                    {this.props.locale === 'zh-cn' ? '导入全部配置' : 'Import All Config'}
+                                                    {FormattedMessage({id: 'tw.menuBar.importAllConfig', defaultMessage: 'Import All Config'})}
                                                 </MenuItem>
                                                 <MenuItem onClick={this.handleClickConfigPlaza}>
                                                     <Store size={20} />
-                                                    {this.props.locale === 'zh-cn' ? '配置广场' : 'Config Plaza'}
+                                                    {FormattedMessage({id: 'tw.menuBar.configPlaza', defaultMessage: 'Config Plaza'})}
                                                 </MenuItem>
                                                 <MenuItem onClick={this.handleResetAllConfig}>
-                                                    {this.props.locale === 'zh-cn' ? '重置全部配置' : 'Reset All Config'}
+                                                    {FormattedMessage({id: 'tw.menuBar.resetAllConfig', defaultMessage: 'Reset All Config'})}
                                                 </MenuItem>
                                             </Submenu>
                                         </MenuItem>
@@ -3818,7 +3820,7 @@ class MenuBar extends React.Component {
                                                     </g>
                                                 </g>
                                             </svg>
-                                            {this.props.locale === 'zh-cn' ? '素材广场' : 'Material Plaza'}
+                                            {FormattedMessage({id: 'tw.menuBar.materialPlaza', defaultMessage: 'Material Plaza'})}
                                         </MenuItem>
                                     </MenuSection>
                                     {this.getAutosaveEnabled() && (
@@ -4201,7 +4203,7 @@ class MenuBar extends React.Component {
                                         }}
                                     >
                                         <TerminalSquare />
-                                        {this.props.locale === 'zh-cn' ? '终端' : 'Terminal'}
+                                        {FormattedMessage({id: 'tw.menuBar.terminal', defaultMessage: 'Terminal'})}
                                     </MenuItem>
                                     <MenuItem
                                         onClick={() => {
@@ -4626,7 +4628,7 @@ class MenuBar extends React.Component {
                                 iconElem={Upload}
                                 onClick={this.handleClickRwckPublish}
                             >
-                                {this.props.locale === 'zh-cn' ? '发布作品' : 'Publish'}
+                                {FormattedMessage({id: 'tw.menuBar.publish', defaultMessage: 'Publish'})}
                             </Button>
                         </div>
                     )}

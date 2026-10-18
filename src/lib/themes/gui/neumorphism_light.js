@@ -6,8 +6,8 @@ import icon from '!!raw-loader!../icons/neumorphism-light.svg';
  */
 
 const name = {
-    defaultMessage: '新拟物浅',
-    description: 'Label for the neumorphism light GUI theme',
+    defaultMessage: 'Neumorphism Light',
+    description: 'Label for the Neumorphism Light GUI theme',
     id: 'tw.theme.gui.neumorphism-light'
 };
 
