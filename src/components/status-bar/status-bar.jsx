@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import {defineMessages, intlShape, injectIntl} from 'react-intl';
+
 import VM from 'scratch-vm';
 import {
     MousePointer2,
@@ -22,25 +22,7 @@ import {
     RIGHT_FIXED
 } from '../../lib/mw-status-bar-layout';
 
-const messages = defineMessages({
-    ready:       {id: 'tw.statusBar.ready',       defaultMessage: 'Ready'},
-    offline:     {id: 'tw.statusBar.offline',     defaultMessage: 'Offline'},
-    stopped:     {id: 'tw.statusBar.stopped',     defaultMessage: 'Stopped'},
-    running:     {id: 'tw.statusBar.running',     defaultMessage: 'Running'},
-    blocks:      {id: 'tw.statusBar.blocks',      defaultMessage: '{count} blocks'},
-    fps:         {id: 'tw.statusBar.fps',         defaultMessage: '{value} FPS'},
-    noNetwork:   {id: 'tw.statusBar.noNetwork',   defaultMessage: 'No network'},
-    connected:   {id: 'tw.statusBar.connected',   defaultMessage: 'Network connected'},
-    totalBlocks: {id: 'tw.statusBar.totalBlocks', defaultMessage: 'Total project blocks'},
-    spriteCoord: {id: 'tw.statusBar.spriteCoord', defaultMessage: 'Mouse coord in sprite'},
-    stageCoord:  {id: 'tw.statusBar.stageCoord',  defaultMessage: 'Mouse coord in stage'},
-    resetZoom:   {id: 'tw.statusBar.resetZoom',   defaultMessage: 'Click to reset zoom to 100%'},
-    editingSprite:{id: 'tw.statusBar.editingSprite',defaultMessage: 'Current editing sprite'},
-    renderFps:   {id: 'tw.statusBar.renderFps',   defaultMessage: 'Rendering FPS'},
-    runState:    {id: 'tw.statusBar.runState',    defaultMessage: 'Project run state'}
-});
-
-const StatusBar = ({vm, theme, intl}) => {
+const StatusBar = ({vm, theme, messages}) => {
     const [blockCount, setBlockCount] = useState(0);
     const [fps, setFps] = useState(0);
     const [spriteName, setSpriteName] = useState('');
@@ -198,7 +180,7 @@ const StatusBar = ({vm, theme, intl}) => {
         switch (id) {
         case 'workspaceMouse':
             return (
-                <div className={styles.segment} data-mw-item="workspaceMouse" title={intl.formatMessage(messages.spriteCoord)}>
+                <div className={styles.segment} data-mw-item="workspaceMouse" title={messages['tw.statusBar.spriteCoord']}>
                     <MousePointer2 size={13} className={styles.icon} />
                     <span className={styles.label}>x: {mouseCoords.x}</span>
                     <span className={styles.label}>y: {mouseCoords.y}</span>
@@ -206,7 +188,7 @@ const StatusBar = ({vm, theme, intl}) => {
             );
         case 'stageMouse':
             return (
-                <div className={styles.segment} data-mw-item="stageMouse" title={intl.formatMessage(messages.stageCoord)}>
+                <div className={styles.segment} data-mw-item="stageMouse" title={messages['tw.statusBar.stageCoord']}>
                     <Monitor size={13} className={styles.icon} />
                     <span className={styles.label}>x: {stageMouseCoords.x}</span>
                     <span className={styles.label}>y: {stageMouseCoords.y}</span>
@@ -217,7 +199,7 @@ const StatusBar = ({vm, theme, intl}) => {
                 <div
                     className={`${styles.segment} ${styles.clickable}`}
                     data-mw-item="zoom"
-                    title={intl.formatMessage(messages.resetZoom)}
+                    title={messages['tw.statusBar.resetZoom']}
                     onClick={handleResetZoom}
                 >
                     <ZoomIn size={13} className={styles.icon} />
@@ -226,34 +208,34 @@ const StatusBar = ({vm, theme, intl}) => {
             );
         case 'blockCount':
             return (
-                <div className={styles.segment} data-mw-item="blockCount" title={intl.formatMessage(messages.totalBlocks)}>
+                <div className={styles.segment} data-mw-item="blockCount" title={messages['tw.statusBar.totalBlocks']}>
                     <Boxes size={13} className={styles.icon} />
-                    <span className={styles.label}>{intl.formatMessage(messages.blocks, {count: blockCount})}</span>
+                    <span className={styles.label}>{(messages['tw.statusBar.blocks'] || '{count} blocks').replace('{count}', blockCount)}</span>
                 </div>
             );
         case 'spriteName':
             return (
-                <div className={styles.segment} data-mw-item="spriteName" title={intl.formatMessage(messages.editingSprite)}>
+                <div className={styles.segment} data-mw-item="spriteName" title={messages['tw.statusBar.editingSprite']}>
                     <Layers size={13} className={styles.icon} />
                     <span className={styles.label}>{spriteName || '—'}</span>
                 </div>
             );
         case 'fps':
             return (
-                <div className={styles.segment} data-mw-item="fps" title={intl.formatMessage(messages.renderFps)}>
+                <div className={styles.segment} data-mw-item="fps" title={messages['tw.statusBar.renderFps']}>
                     <Gauge size={13} className={styles.icon} />
-                    <span className={styles.label}>{intl.formatMessage(messages.fps, {value: fps})}</span>
+                    <span className={styles.label}>{(messages['tw.statusBar.fps'] || '{value} FPS').replace('{value}', fps)}</span>
                 </div>
             );
         case 'running':
             return (
-                <div className={styles.segment} data-mw-item="running" title={intl.formatMessage(messages.runState)}>
+                <div className={styles.segment} data-mw-item="running" title={messages['tw.statusBar.runState']}>
                     {isRunning ? (
                         <Play size={13} className={`${styles.icon} ${styles.running}`} />
                     ) : (
                         <Square size={11} className={styles.icon} />
                     )}
-                    <span className={styles.label}>{isRunning ? intl.formatMessage(messages.running) : intl.formatMessage(messages.stopped)}</span>
+                    <span className={styles.label}>{isRunning ? messages['tw.statusBar.running'] : messages['tw.statusBar.stopped']}</span>
                 </div>
             );
         case 'onlineStatus':
@@ -261,10 +243,10 @@ const StatusBar = ({vm, theme, intl}) => {
                 <div
                     className={`${styles.segment} ${onlineStatus === 'offline' ? styles.aiBusy : ''}`}
                     data-mw-item="onlineStatus"
-                    title={intl.formatMessage(onlineStatus === 'ready' ? messages.connected : messages.noNetwork)}
+                    title={onlineStatus === 'ready' ? messages['tw.statusBar.connected'] : messages['tw.statusBar.noNetwork']}
                 >
                     <Wifi size={13} className={styles.icon} />
-                    <span className={styles.label}>{intl.formatMessage(onlineStatus === 'ready' ? messages.ready : messages.offline)}</span>
+                    <span className={styles.label}>{onlineStatus === 'ready' ? messages['tw.statusBar.ready'] : messages['tw.statusBar.offline']}</span>
                 </div>
             );
         default:
@@ -302,11 +284,12 @@ const StatusBar = ({vm, theme, intl}) => {
 StatusBar.propTypes = {
     vm: PropTypes.instanceOf(VM),
     theme: PropTypes.shape({isDark: PropTypes.func}),
-    intl: intlShape.isRequired
+    messages: PropTypes.object
 };
 
 const mapStateToProps = state => ({
-    theme: state.scratchGui.theme.theme
+    theme: state.scratchGui.theme.theme,
+    messages: state.locales.messages || {}
 });
 
-export default injectIntl(connect(mapStateToProps)(StatusBar));
+export default connect(mapStateToProps)(StatusBar);
