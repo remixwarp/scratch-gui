@@ -2351,6 +2351,7 @@ const GUIComponent = props => {
         )}{props.isStageDetached ? (
             <AddonWindow
                 id="split-stage-window"
+                className="split-stage-window"
                 title={'舞台'}
                 width={480}
                 height={405}

@@ -1,0 +1,40 @@
+.container {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transform-origin: center center;
+}
+
+/* 自由窗口的内容通过 portal 挂在 document.body 下（不在 .body-wrapper 内），
+   框架全局的 border-box 规则不会命中，这里自行补上，保证舞台顶栏的尺寸
+   与编辑器内一致。 */
+.content,
+.content * {
+    box-sizing: border-box;
+}
+
+/* 舞台顶栏（绿旗/暂停那一栏）在编辑器里是绝对定位、覆盖在舞台上方的；
+   放到自由窗口里让它回归普通文档流，按自身高度占据窗口顶部。 */
+.header-host {
+    position: relative;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.header-host [class*="stage-header_stage-header-wrapper"] {
+    position: static;
+}
+
+.stage-host {
+    flex-shrink: 0;
+}

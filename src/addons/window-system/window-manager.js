@@ -58,7 +58,10 @@ const css = `
 }
 
 @media only screen and (max-width: 900px) {
-  .addon-window {
+  /* 小屏下页内窗口默认铺满整屏（这些窗口多为模态内容）。但拆分舞台窗口是一个
+     需要自由拖动的浮动窗口，不能套用这套“铺满屏幕且不可移动”的样式，因此用
+     :not() 排除它，并在下面单独保留其可拖动行为。 */
+  .addon-window:not(.split-stage-window) {
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
@@ -73,6 +76,12 @@ const css = `
     transform: none !important;
   }
 
+  /* 拆分舞台窗口：移动端也保持浮动可拖动，只是限制不超过视口 */
+  .addon-window.split-stage-window {
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100vh - 16px) !important;
+  }
+
   .addon-window .resize-handle {
     display: none !important;
   }
@@ -80,6 +89,14 @@ const css = `
   .addon-window-header {
     cursor: default !important;
     touch-action: auto !important;
+  }
+
+  /* 拆分舞台窗口的标题栏必须保持 touch-action: none，否则移动端浏览器会把
+     手指拖拽判定为页面/容器滚动手势并触发 pointercancel，拖拽会立刻中断
+     （表现为“用手指拖不动”）。 */
+  .addon-window.split-stage-window .addon-window-header {
+    cursor: move !important;
+    touch-action: none !important;
   }
 
   .addon-window-btn-maximize,
