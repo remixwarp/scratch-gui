@@ -176,20 +176,24 @@ const StageWrapperComponent = function (props) {
                     [styles.embedded]: isEmbedded,
                     [styles.fullScreen]: isFullScreenLayout,
                     [styles.loading]: loading,
-                    [styles.offsetControls]: !(isEmbedded || isFullScreenLayout)
+                    [styles.offsetControls]: !(isEmbedded || isFullScreenLayout) && !stageDetached
                 }
             )}
             dir={isRtl ? 'rtl' : 'ltr'}
             componentRef={handleWrapperRef}
         >
             <Box className={styles.stageMenuWrapper}>
-                <StageHeader
-                    isFullScreen={isFullScreen}
-                    isEmbedded={isEmbedded}
-                    stageContainerWidth={stageContainerWidth}
-                    stageSize={stageSize}
-                    vm={vm}
-                />
+                {/* 舞台被拆分到自由窗口后，顶栏（绿旗/暂停那一栏）整体移入
+                    该窗口，编辑器这边不再保留一份，避免出现两套控件。 */}
+                {stageDetached ? null : (
+                    <StageHeader
+                        isFullScreen={isFullScreen}
+                        isEmbedded={isEmbedded}
+                        stageContainerWidth={stageContainerWidth}
+                        stageSize={stageSize}
+                        vm={vm}
+                    />
+                )}
             </Box>
             <Box className={styles.stageCanvasWrapper}>
                 {stageDetached ? (
