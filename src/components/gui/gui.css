@@ -85,6 +85,29 @@
     min-width: 0;
 }
 
+/* VS Code 布局：造型/背景、声音选项卡与积木选项卡同理。
+   这两个选项卡的右侧编辑器由 AssetPanel（左侧素材列表 + 右侧 detail-area）承载，
+   内部渲染 scratch-paint 画板 / 声音编辑器。与积木区一样，需要允许这一整条链路
+   在空间不足时收缩，否则内部写死的硬 min-width 会把内容撑到编辑器可视宽度之外，
+   向右溢出并盖在舞台、角色列表上（穿模）。 */
+.editor-wrapper.vscodeLayout [class*="asset-panel_wrapper"],
+.editor-wrapper.vscodeLayout [class*="asset-panel_detail-area"] {
+    min-width: 0;
+}
+
+/* detail-area 承载实际编辑器内容，overflow visible 会让溢出的画板直接盖住舞台。
+   在 VS Code 布局下裁掉溢出部分，作为收缩之外的兜底，彻底避免穿模。 */
+.editor-wrapper.vscodeLayout [class*="asset-panel_detail-area"] {
+    overflow: hidden;
+}
+
+/* scratch-paint 针对普通布局写死的硬最小宽度，在 VS Code 布局下放开，
+   让画板随容器收缩（画布本身是百分比宽度，会自动缩放）。 */
+.editor-wrapper.vscodeLayout [class*="paint-editor_top-align-row"],
+.editor-wrapper.vscodeLayout [class*="paint-editor_canvas-container"] {
+    min-width: 0;
+}
+
 .editor-wrapper.vscodeLayout .tab-list {
     background-color: $ui-tertiary;
     border-bottom: 1px solid $ui-black-transparent;
