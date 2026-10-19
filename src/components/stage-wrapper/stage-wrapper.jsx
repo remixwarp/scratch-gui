@@ -182,18 +182,22 @@ const StageWrapperComponent = function (props) {
             dir={isRtl ? 'rtl' : 'ltr'}
             componentRef={handleWrapperRef}
         >
-            <Box className={styles.stageMenuWrapper}>
-                {/* 舞台被拆分到自由窗口后，顶栏（绿旗/暂停那一栏）整体移入
-                    该窗口，编辑器这边不再保留一份，避免出现两套控件。 */}
-                {stageDetached ? null : (
-                    <StageHeader
-                        isFullScreen={isFullScreen}
-                        isEmbedded={isEmbedded}
-                        stageContainerWidth={stageContainerWidth}
-                        stageSize={stageSize}
-                        vm={vm}
-                    />
-                )}
+            <Box
+                className={styles.stageMenuWrapper}
+                // 拆分舞台时，顶栏的 DOM 会被 StageInWindow 整体搬进自由窗口显示，
+                // 编辑器这边先把它藏起来，避免在窗口尚未接管的瞬间出现两套控件。
+                style={stageDetached ? {display: 'none'} : undefined}
+            >
+                {/* 顶栏（绿旗/暂停那一栏，含插件注入的按钮）始终挂载：拆分时由
+                    StageInWindow 把它整体“移动”到自由窗口里，而不是在窗口内再渲染
+                    一份。这样插件添加的按钮不会丢失，也不会出现重复的控件。 */}
+                <StageHeader
+                    isFullScreen={isFullScreen}
+                    isEmbedded={isEmbedded}
+                    stageContainerWidth={stageContainerWidth}
+                    stageSize={stageSize}
+                    vm={vm}
+                />
             </Box>
             <Box className={styles.stageCanvasWrapper}>
                 {stageDetached ? (

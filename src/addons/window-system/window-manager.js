@@ -86,6 +86,30 @@ const css = `
     display: none !important;
   }
 
+  /* 拆分舞台窗口在移动端依然允许缩放：普通窗口在小屏下铺满整屏、不需要缩放手柄，
+     但拆分舞台是浮动窗口，必须把手柄恢复出来，并把触摸热区加大到手指能点的尺寸。 */
+  .addon-window.split-stage-window .resize-handle {
+    display: block !important;
+  }
+
+  .addon-window.split-stage-window .resize-n,
+  .addon-window.split-stage-window .resize-s {
+    height: 18px !important;
+  }
+
+  .addon-window.split-stage-window .resize-e,
+  .addon-window.split-stage-window .resize-w {
+    width: 18px !important;
+  }
+
+  .addon-window.split-stage-window .resize-ne,
+  .addon-window.split-stage-window .resize-nw,
+  .addon-window.split-stage-window .resize-se,
+  .addon-window.split-stage-window .resize-sw {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
   .addon-window-header {
     cursor: default !important;
     touch-action: auto !important;
@@ -234,6 +258,8 @@ class AddonWindow {
         this.contentElement = null;
         this.isDragging = false;
         this.isResizing = false;
+        this.isTouchDragging = false;
+        this.isTouchResizing = false;
         this.dragOffset = {x: 0, y: 0};
         this.dragPointerId = null;
         this.resizePointerId = null;
@@ -461,13 +487,9 @@ class AddonWindow {
     }
 
     addDragFunctionality () {
-        this.headerElement.addEventListener('pointerdown', e => {
-            // Only primary button / primary touch; ignore control buttons
-            if (e.button !== 0) return;
-            if (e.target.closest('button')) return;
-
+        // 记录一次拖拽的起点（鼠标指针与触摸共用）
+        const beginDrag = (clientX, clientY) => {
             this.isDragging = true;
-            this.dragPointerId = e.pointerId;
             this.bringToFront();
 
             // Get the current position of the window
@@ -476,9 +498,21 @@ class AddonWindow {
 
             // Calculate offset relative to current window position
             this.dragOffset = {
-                x: e.clientX - currentX,
-                y: e.clientY - currentY
+                x: clientX - currentX,
+                y: clientY - currentY
             };
+        };
+
+        // 鼠标 / 触控笔：使用 Pointer Events
+        this.headerElement.addEventListener('pointerdown', e => {
+            // 触摸由下面的 touch 事件统一处理，避免两套事件互相打断
+            if (e.pointerType === 'touch') return;
+            // Only primary button; ignore control buttons
+            if (e.button !== 0) return;
+            if (e.target.closest('button')) return;
+
+            this.dragPointerId = e.pointerId;
+            beginDrag(e.clientX, e.clientY);
 
             try {
                 this.headerElement.setPointerCapture(e.pointerId);
@@ -492,14 +526,40 @@ class AddonWindow {
 
             e.preventDefault();
         });
+
+        // 触摸：部分移动端浏览器会在手指拖拽过程中触发 pointercancel（即使已经设置了
+        // touch-action: none），导致基于 Pointer Events 的拖拽被中途打断、看起来“拖不动”。
+        // 因此移动端改用 touch 事件作为拖拽通道，保证手指能稳定拖动窗口。
+        this.headerElement.addEventListener('touchstart', e => {
+            if (e.target.closest('button')) return;
+            const touch = e.touches[0];
+            if (!touch) return;
+            this.isTouchDragging = true;
+            beginDrag(touch.clientX, touch.clientY);
+            e.preventDefault();
+        }, {passive: false});
+
+        this.headerElement.addEventListener('touchmove', e => {
+            if (!this.isTouchDragging) return;
+            const touch = e.touches[0];
+            if (!touch) return;
+            this.handleDragTo(touch.clientX, touch.clientY);
+            e.preventDefault();
+        }, {passive: false});
+
+        const endTouchDrag = e => {
+            if (!this.isTouchDragging) return;
+            this.isTouchDragging = false;
+            this.isDragging = false;
+            if (e && e.cancelable) e.preventDefault();
+        };
+        this.headerElement.addEventListener('touchend', endTouchDrag);
+        this.headerElement.addEventListener('touchcancel', endTouchDrag);
     }
     
-    handleDrag = e => {
-        if (!this.isDragging) return;
-        if (this.dragPointerId !== null && e.pointerId !== this.dragPointerId) return;
-        
-        const newX = e.clientX - this.dragOffset.x;
-        const newY = e.clientY - this.dragOffset.y;
+    handleDragTo (clientX, clientY) {
+        const newX = clientX - this.dragOffset.x;
+        const newY = clientY - this.dragOffset.y;
         
         // Allow window to move mostly off-screen but keep 50px visible
         const minVisiblePixels = 50;
@@ -515,12 +575,20 @@ class AddonWindow {
         this.element.style.top = `${this.y}px`;
         
         this.onMove(this.x, this.y);
+    }
+    
+    handleDrag = e => {
+        if (!this.isDragging) return;
+        if (this.dragPointerId !== null && e.pointerId !== this.dragPointerId) return;
+
+        this.handleDragTo(e.clientX, e.clientY);
     };
     
     handleDragEnd = e => {
         if (e && this.dragPointerId !== null && e.pointerId !== this.dragPointerId) return;
 
         this.isDragging = false;
+        this.isTouchDragging = false;
         if (this.dragPointerId !== null) {
             try {
                 this.headerElement.releasePointerCapture(this.dragPointerId);
@@ -627,11 +695,47 @@ class AddonWindow {
             handle.style.touchAction = 'none';
             
             handle.addEventListener('pointerdown', e => {
+                // 触摸由下面的 touch 事件统一处理，避免两套事件互相打断
+                if (e.pointerType === 'touch') return;
                 if (e.button !== 0) return;
                 e.stopPropagation();
                 this.startResize(e, direction, handle);
             });
-            
+
+            // 与拖动同理：移动端部分浏览器会在手指缩放过程中触发 pointercancel，
+            // 导致基于 Pointer Events 的缩放被中断（表现为“缩放不了”）。因此触摸
+            // 走 touch 事件通道，保证手指能稳定缩放窗口。
+            handle.addEventListener('touchstart', e => {
+                const touch = e.touches[0];
+                if (!touch) return;
+                e.stopPropagation();
+                this.isTouchResizing = true;
+                this.startResize({
+                    pointerId: null,
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    preventDefault: () => {}
+                }, direction, handle);
+                e.preventDefault();
+            }, {passive: false});
+
+            handle.addEventListener('touchmove', e => {
+                if (!this.isTouchResizing) return;
+                const touch = e.touches[0];
+                if (!touch) return;
+                this.resizeTo(touch.clientX, touch.clientY);
+                e.preventDefault();
+            }, {passive: false});
+
+            const endTouchResize = e => {
+                if (!this.isTouchResizing) return;
+                this.isTouchResizing = false;
+                this.handleResizeEnd();
+                if (e && e.cancelable) e.preventDefault();
+            };
+            handle.addEventListener('touchend', endTouchResize);
+            handle.addEventListener('touchcancel', endTouchResize);
+
             this.element.appendChild(handle);
         });
     }
@@ -653,25 +757,26 @@ class AddonWindow {
             top: rect.top
         };
 
-        try {
-            handle.setPointerCapture(e.pointerId);
-        } catch (err) {
-            // setPointerCapture can throw if the pointer is already released
+        // 触摸路径（pointerId 为 null）不注册指针事件监听，改为由 handle 上的
+        // touchmove/touchend 驱动，避免两套事件重复触发。
+        if (e.pointerId !== null) {
+            try {
+                handle.setPointerCapture(e.pointerId);
+            } catch (err) {
+                // setPointerCapture can throw if the pointer is already released
+            }
+
+            handle.addEventListener('pointermove', this.handleResize);
+            handle.addEventListener('pointerup', this.handleResizeEnd);
+            handle.addEventListener('pointercancel', this.handleResizeEnd);
         }
-        
-        handle.addEventListener('pointermove', this.handleResize);
-        handle.addEventListener('pointerup', this.handleResizeEnd);
-        handle.addEventListener('pointercancel', this.handleResizeEnd);
-        
-        e.preventDefault();
+
+        if (e.preventDefault) e.preventDefault();
     }
     
-    handleResize = e => {
-        if (!this.isResizing) return;
-        if (this.resizePointerId !== null && e.pointerId !== this.resizePointerId) return;
-        
-        const deltaX = e.clientX - this.resizeStart.x;
-        const deltaY = e.clientY - this.resizeStart.y;
+    resizeTo (clientX, clientY) {
+        const deltaX = clientX - this.resizeStart.x;
+        const deltaY = clientY - this.resizeStart.y;
         const direction = this.resizeDirection;
         
         let newWidth = this.resizeStart.width;
@@ -721,12 +826,20 @@ class AddonWindow {
         this.element.style.top = `${newY}px`;
         
         this.onResize(newWidth, newHeight);
+    }
+    
+    handleResize = e => {
+        if (!this.isResizing) return;
+        if (this.resizePointerId !== null && e.pointerId !== this.resizePointerId) return;
+
+        this.resizeTo(e.clientX, e.clientY);
     };
     
     handleResizeEnd = e => {
         if (e && this.resizePointerId !== null && e.pointerId !== this.resizePointerId) return;
 
         this.isResizing = false;
+        this.isTouchResizing = false;
         const handle = this.resizeHandle;
         if (handle && this.resizePointerId !== null) {
             try {

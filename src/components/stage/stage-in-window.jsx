@@ -3,7 +3,6 @@ import React, {useLayoutEffect, useRef, useState} from 'react';
 import {connect} from 'react-redux';
 
 import Stage from '../../containers/stage.jsx';
-import StageHeader from '../../containers/stage-header.jsx';
 import {STAGE_SIZE_MODES} from '../../lib/constants/layout-constants';
 import {getStageDimensions} from '../../lib/utils/screen.js';
 
@@ -17,12 +16,14 @@ import styles from './stage-in-window.css';
  *    “真实渲染尺寸”（large 模式下会乘以 0.85）。因此这里的包装盒必须使用与之
  *    完全相同的尺寸，再整体等比缩放到窗口内容区；否则就会发生双重缩放，舞台缩在
  *    窗口中间、四周露出窗口底色（也就是“舞台和窗口不贴合”）。
- * 2. 顶栏（`StageHeader`，绿旗/暂停那一栏）与舞台等宽，所以它与舞台放在同一个
- *    缩放容器里一起等比缩放，既不会溢出窗口，比例也和编辑器内一致。
+ * 2. 顶栏（绿旗/暂停那一栏）与舞台等宽：窗口把编辑器里那个真实的顶栏 DOM 节点
+ *    搬过来（见下方 useLayoutEffect），与舞台放在同一个缩放容器里一起等比缩放，
+ *    既不会溢出窗口，比例也和编辑器内一致。
  */
 const StageInWindow = ({customStageSize, isRendererSupported, vm}) => {
     const containerRef = useRef(null);
     const contentRef = useRef(null);
+    const headerHostRef = useRef(null);
     const [scale, setScale] = useState(1);
 
     // 与编辑器内舞台保持一致的渲染尺寸（large 模式 0.85 缩放后）
@@ -32,6 +33,49 @@ const StageInWindow = ({customStageSize, isRendererSupported, vm}) => {
     // `.stage` 带 1px 边框且 box-sizing: content-box，两侧各多 1px
     const boxWidth = stageDimensions.width + 2;
     const boxHeight = stageDimensions.height + 2;
+
+    // 顶栏（绿旗/暂停那一栏，含高级设置与插件注入的按钮）在编辑器里由 StageHeader
+    // 渲染。这里不做第二份渲染，而是把编辑器里那个真实的 DOM 节点整体“搬”进窗口：
+    //   * 插件按钮是在应用启动时注入到该节点内部的，搬动节点即可原样保留它们；
+    //   * 拆分时编辑器不再保留一份，避免出现两套控件（移动而非复制）。
+    // 关闭窗口（合并舞台）时再把它放回原来的位置。
+    useLayoutEffect(() => {
+        const host = headerHostRef.current;
+        if (!host) return undefined;
+
+        let header = null;
+        let originalParent = null;
+        let originalNextSibling = null;
+        let rafId = null;
+
+        const attach = () => {
+            // 同时匹配编辑器里的普通顶栏（..._stage-header-wrapper_xxx）与全屏顶栏
+            // （..._stage-header-wrapper-overlay_xxx，二者由同一个组件按全屏状态择一
+            // 渲染，不会同时存在）。类名前缀来自 webpack 的 CSS Modules 命名规则。
+            const el = document.querySelector('[class^="stage-header_stage-header-wrapper"]');
+            if (!el) {
+                rafId = requestAnimationFrame(attach);
+                return;
+            }
+            header = el;
+            originalParent = el.parentNode;
+            originalNextSibling = el.nextSibling;
+            host.appendChild(el);
+        };
+        attach();
+
+        return () => {
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            if (header && originalParent) {
+                try {
+                    originalParent.insertBefore(header, originalNextSibling);
+                } catch (err) {
+                    // 原位置的下一个兄弟节点可能已经被 React 卸载，退化为追加即可
+                    originalParent.appendChild(header);
+                }
+            }
+        };
+    }, []);
 
     useLayoutEffect(() => {
         const container = containerRef.current;
@@ -81,13 +125,10 @@ const StageInWindow = ({customStageSize, isRendererSupported, vm}) => {
                     transform: `scale(${scale})`
                 }}
             >
-                <div className={styles.headerHost}>
-                    <StageHeader
-                        stageContainerWidth={null}
-                        stageSize={STAGE_SIZE_MODES.large}
-                        vm={vm}
-                    />
-                </div>
+                <div
+                    ref={headerHostRef}
+                    className={styles.headerHost}
+                />
                 <div
                     className={styles.stageHost}
                     style={{width: boxWidth, height: boxHeight}}

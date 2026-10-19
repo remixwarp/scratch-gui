@@ -24,15 +24,18 @@
 }
 
 /* 舞台顶栏（绿旗/暂停那一栏）在编辑器里是绝对定位、覆盖在舞台上方的；
-   放到自由窗口里让它回归普通文档流，按自身高度占据窗口顶部。 */
+   被搬进自由窗口后让它回归普通文档流，按自身高度占据窗口顶部。 */
 .header-host {
     position: relative;
     width: 100%;
     flex-shrink: 0;
 }
 
-.header-host [class*="stage-header_stage-header-wrapper"] {
+.header-host [class^="stage-header_stage-header-wrapper"] {
     position: static;
+    /* 顶栏在编辑器里带有基于舞台宽度的内联 min-width，进入窗口后要让它铺满容器宽度 */
+    width: 100%;
+    min-width: 0 !important;
 }
 
 .stage-host {
