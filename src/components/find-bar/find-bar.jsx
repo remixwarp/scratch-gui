@@ -12,6 +12,12 @@ import inputStyles from '../forms/input.css';
 
 import './find-bar.css';
 
+// 标签栏 <ul> 的类名：经典布局是 gui_tab-list_*；VS Code 布局下标签栏被渲染成
+// 活动栏，类名是 gui_vscode_*。查找栏必须在这两种布局下都能找到同一个 <ul>。
+const TAB_LIST_SELECTOR = 'ul[class*=gui_tab-list_], ul[class*=gui_vscode]';
+const TAB_LIST_FIND_BAR_SELECTOR =
+    'ul[class*=gui_tab-list_] .mw-native-find-bar, ul[class*=gui_vscode] .mw-native-find-bar';
+
 /**
  * The find bar component
  * @param {object} props the props for the component
@@ -131,17 +137,22 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
             const ensureInjected = async () => {
                 if (didUnmount || isPlayerOnlyRef.current) return;
 
-                const root = await waitForElement('ul[class*=gui_tab-list_]', {
+                const tabList = await waitForElement(TAB_LIST_SELECTOR, {
                     signal: abortController.signal}
                 ).catch(() => null);
-                if (!root || didUnmount) return;
+                if (!tabList || didUnmount) return;
 
-                if (root.querySelector('.mw-native-find-bar')) {
+                if (findBar.findBarOuter) {
+                    findBar.syncHost();
                     findBar.tabChanged();
                     return;
                 }
 
-                findBar.createDom(root);
+                // VS Code 布局下这个 ul 就是 41px 宽的活动栏：查找栏的 li 若挂进去会被
+                // 当成绝对定位浮层裁剪，还会撑出横向滚动条。该布局下查找栏只显示在搜索
+                // 面板里，因此先创建在游离容器中，等面板打开时再由 syncHost 搬进面板。
+                const isActivityBar = String(tabList.className).includes('gui_vscode');
+                findBar.createDom(isActivityBar ? document.createElement('div') : tabList);
                 findBar.tabChanged();
             };
 
@@ -151,7 +162,7 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
                 if (didUnmount) return;
                 // 查找栏被搬进 VS Code 布局的搜索面板时，它不在标签栏内，此时不要重复注入
                 if (document.querySelector('[data-mw-find-bar-host] .mw-native-find-bar')) return;
-                if (!document.querySelector('ul[class*=gui_tab-list_] .mw-native-find-bar')) {
+                if (!document.querySelector(TAB_LIST_FIND_BAR_SELECTOR)) {
                     ensureInjected();
                 }
             });
