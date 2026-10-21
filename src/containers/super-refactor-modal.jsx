@@ -3,6 +3,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {injectIntl} from 'react-intl';
 import bindAll from 'lodash.bindall';
+import {ChevronDown, ChevronRight, Folder, FolderOpen, Settings} from 'lucide-react';
 import {closeSuperRefactorModal} from '../reducers/modals';
 import Modal from './windowed-modal.jsx';
 import Button from '../components/button/button.jsx';
@@ -13,6 +14,36 @@ import './super-refactor-modal.css';
 
 // 超过该字节数的文件不做逐 token 语法高亮与逐行行号渲染，避免打开卡顿
 const LARGE_CONTENT_THRESHOLD = 150000;
+
+// 超级重构窗口的界面偏好（文件树/旧版列表、编辑器版本、Monaco 选项）
+const SUPER_REFACTOR_SETTINGS_KEY = 'mw-super-refactor-settings';
+
+const DEFAULT_EDITOR_OPTIONS = {
+    minimap: true,
+    folding: true,
+    foldingControls: 'always',
+    breadcrumbs: true,
+    stickyScroll: true,
+    lineNumbers: true,
+    indentationGuides: true,
+    highlightActiveLine: true,
+    smoothScrolling: true,
+    mouseWheelZoom: true,
+    fontSize: 13,
+    tabSize: 4,
+    renderWhitespace: 'selection'
+};
+
+const loadSuperRefactorSettings = () => {
+    try {
+        const raw = localStorage.getItem(SUPER_REFACTOR_SETTINGS_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+        return {};
+    }
+};
 
 // ---------------------------------------------------------------------------
 // .rj 分片视图辅助函数：当前作品是 .rj 时，文件面板直接列出 .rj 内部
@@ -81,11 +112,19 @@ class SuperRefactorModalContainer extends React.Component {
             'handleEditorScroll',
             'handleEditorKeyDown',
             'handleWordWrapToggle',
-            'toggleMonacoEditor',
             'handleMonacoMessage',
             'sendToMonacoIframe',
-            'handleWindowResize'
+            'handleWindowResize',
+            'openSettings',
+            'closeSettings',
+            'setFileViewMode',
+            'setEditorVersion',
+            'setEditorOption',
+            'resetEditorOptions',
+            'toggleFolder'
         ]);
+
+        const savedSettings = loadSuperRefactorSettings();
 
         this.state = {
             files: [],
@@ -96,13 +135,21 @@ class SuperRefactorModalContainer extends React.Component {
             filteredFiles: [],
             viewMode: 'code', // code or preview for SVG
             wordWrap: true, // 自动换行
-            useMonacoEditor: true, // 是否使用 Monaco 编辑器（默认新版）
+            // 文件面板显示方式：tree = 新版树状结构，list = 旧版平铺列表
+            fileViewMode: savedSettings.fileViewMode === 'list' ? 'list' : 'tree',
+            // 编辑器版本：新版 Monaco / 旧版内置编辑器（默认新版）
+            useMonacoEditor: savedSettings.useMonacoEditor !== false,
+            editorOptions: Object.assign({}, DEFAULT_EDITOR_OPTIONS, savedSettings.editorOptions || {}),
             monacoIframeReady: false, // iframe 中的 Monaco 是否就绪
+            monacoIframeKey: 0, // 重新打开窗口时强制重建 iframe
+            settingsVisible: false, // 设置自由窗口是否打开
+            collapsedFolders: {}, // 树状结构中已折叠的文件夹路径
             modalWidth: Math.min(1100, window.innerWidth - 60),
             modalHeight: Math.min(700, window.innerHeight - 80)
         };
         
         this.monacoIframeRef = React.createRef();
+        this._monacoReadySource = null;
     }
 
     componentDidMount () {
@@ -113,13 +160,16 @@ class SuperRefactorModalContainer extends React.Component {
     }
 
     componentDidUpdate (prevProps) {
-        // 每次打开时默认重置为新版 Monaco 编辑器，避免状态跨打开残留（点击“旧版编辑器”才会切回）
+        // 关闭主窗口时同步收起设置窗口，重新打开时按已保存的偏好渲染
+        if (prevProps.visible === true && this.props.visible === false && this.state.settingsVisible) {
+            this.setState({settingsVisible: false});
+        }
         if (prevProps.visible === false && this.props.visible === true) {
-            this.setState({
-                useMonacoEditor: true,
+            // 重新打开时重建 Monaco iframe，确保内容是最新文件
+            this.setState(prevState => ({
                 monacoIframeReady: false,
-                wordWrap: true
-            });
+                monacoIframeKey: prevState.monacoIframeKey + 1
+            }));
         }
 
         if (prevProps.theme !== this.props.theme) {
@@ -460,13 +510,95 @@ class SuperRefactorModalContainer extends React.Component {
     }
 
     // 切换到 Monaco 编辑器（iframe 方式）
-    toggleMonacoEditor () {
-        const newValue = !this.state.useMonacoEditor;
-        this.setState({ 
-            useMonacoEditor: newValue,
-            monacoIframeReady: false
+    setEditorVersion (useMonacoEditor) {
+        if (useMonacoEditor === this.state.useMonacoEditor) return;
+        this.setState(prevState => ({
+            useMonacoEditor,
+            monacoIframeReady: false,
+            monacoIframeKey: useMonacoEditor ? prevState.monacoIframeKey + 1 : prevState.monacoIframeKey
+        }), () => this.saveSettings());
+    }
+
+    openSettings () {
+        this.setState({settingsVisible: true});
+    }
+
+    closeSettings () {
+        this.setState({settingsVisible: false});
+    }
+
+    saveSettings () {
+        try {
+            localStorage.setItem(SUPER_REFACTOR_SETTINGS_KEY, JSON.stringify({
+                fileViewMode: this.state.fileViewMode,
+                useMonacoEditor: this.state.useMonacoEditor,
+                editorOptions: this.state.editorOptions
+            }));
+        } catch (e) {
+            // 隐私模式下 localStorage 可能不可用，忽略即可
+        }
+    }
+
+    setFileViewMode (fileViewMode) {
+        if (fileViewMode === this.state.fileViewMode) return;
+        this.setState({fileViewMode}, () => this.saveSettings());
+    }
+
+    setEditorOption (key, value) {
+        this.setState(prevState => ({
+            editorOptions: Object.assign({}, prevState.editorOptions, {[key]: value})
+        }), () => {
+            this.saveSettings();
+            this.sendMonacoOptions();
         });
-        // 初始化由 iframe 的 monaco-ready 消息触发，无需手动延迟发送
+    }
+
+    resetEditorOptions () {
+        this.setState({editorOptions: Object.assign({}, DEFAULT_EDITOR_OPTIONS)}, () => {
+            this.saveSettings();
+            this.sendMonacoOptions();
+        });
+    }
+
+    // 把界面选项转换成 Monaco 的 updateOptions 参数
+    getMonacoOptionPayload () {
+        const options = this.state.editorOptions;
+        return {
+            minimap: {
+                enabled: !!options.minimap,
+                renderCharacters: true,
+                maxColumn: 120
+            },
+            breadcrumbs: {
+                enabled: !!options.breadcrumbs,
+                showFileKind: true,
+                showSymbol: true
+            },
+            stickyScroll: {enabled: !!options.stickyScroll},
+            guides: {
+                indentation: !!options.indentationGuides,
+                highlightActiveIndentation: !!options.indentationGuides
+            },
+            folding: !!options.folding,
+            foldingHighlight: !!options.folding,
+            showFoldingControls: options.folding ? options.foldingControls : 'never',
+            lineNumbers: options.lineNumbers ? 'on' : 'off',
+            renderLineHighlight: options.highlightActiveLine ? 'all' : 'none',
+            smoothScrolling: !!options.smoothScrolling,
+            mouseWheelZoom: !!options.mouseWheelZoom,
+            fontSize: Number(options.fontSize) || DEFAULT_EDITOR_OPTIONS.fontSize,
+            tabSize: Number(options.tabSize) || DEFAULT_EDITOR_OPTIONS.tabSize,
+            renderWhitespace: options.renderWhitespace || 'selection',
+            wordWrap: this.state.wordWrap ? 'on' : 'off'
+        };
+    }
+
+    sendMonacoOptions () {
+        if (!this.state.useMonacoEditor || !this.state.monacoIframeReady) return;
+        this.sendToMonacoIframe({
+            type: 'monaco-set-options',
+            options: this.getMonacoOptionPayload()
+        });
     }
 
     // 向 Monaco iframe 发送初始化消息
@@ -490,7 +622,8 @@ class SuperRefactorModalContainer extends React.Component {
             content: content || '',
             language: language,
             theme: isDarkTheme ? 'vs-dark' : 'vs-light',
-            wordWrap: wordWrap ? 'on' : 'off'
+            wordWrap: wordWrap ? 'on' : 'off',
+            options: this.getMonacoOptionPayload()
         });
     }
 
@@ -507,14 +640,19 @@ class SuperRefactorModalContainer extends React.Component {
         if (!data || !data.type) return;
 
         switch (data.type) {
-            case 'monaco-ready':
-                // 只在首次就绪时发送初始化，避免重复创建编辑器
-                if (!this.state.monacoIframeReady) {
-                    this.setState({ monacoIframeReady: true }, () => {
-                        this.sendMonacoInit();
-                    });
-                }
+            case 'monaco-ready': {
+                // 不同 iframe 实例（切换文件类型/切换编辑器版本）会重新就绪，
+                // 用 message source 区分，避免同一个 iframe 重复初始化。
+                const iframeWindow = this.monacoIframeRef.current &&
+                    this.monacoIframeRef.current.contentWindow;
+                if (iframeWindow && event.source !== iframeWindow) break;
+                if (this._monacoReadySource === event.source) break;
+                this._monacoReadySource = event.source;
+                this.setState({ monacoIframeReady: true }, () => {
+                    this.sendMonacoInit();
+                });
                 break;
+            }
 
             case 'monaco-content-change':
                 if (data.content !== undefined) {
@@ -963,9 +1101,397 @@ class SuperRefactorModalContainer extends React.Component {
         }));
     }
 
+    // -----------------------------------------------------------------------
+    // 文件树（.rj / .sb3 的文件名本身就是用 / 分隔的路径）
+    // -----------------------------------------------------------------------
+    buildFileTree (files) {
+        const root = {name: '', path: '', folders: new Map(), files: []};
+
+        files.forEach((file, index) => {
+            const parts = String(file.name || '').split('/').filter(part => part.length > 0);
+            let node = root;
+
+            for (let i = 0; i < parts.length - 1; i++) {
+                const folderName = parts[i];
+                const folderPath = parts.slice(0, i + 1).join('/');
+                let child = node.folders.get(folderName);
+                if (!child) {
+                    child = {name: folderName, path: folderPath, folders: new Map(), files: []};
+                    node.folders.set(folderName, child);
+                }
+                node = child;
+            }
+
+            node.files.push({
+                name: parts.length > 0 ? parts[parts.length - 1] : String(file.name || ''),
+                file,
+                index
+            });
+        });
+
+        return root;
+    }
+
+    toggleFolder (path) {
+        this.setState(prevState => ({
+            collapsedFolders: Object.assign({}, prevState.collapsedFolders, {
+                [path]: !prevState.collapsedFolders[path]
+            })
+        }));
+    }
+
+    renderFileTreeNodes (node, depth, forceExpand, currentFileObj, colors) {
+        const rows = [];
+
+        const folders = Array.from(node.folders.values()).sort((a, b) => {
+            const rankDiff = rjPathRank(a.path) - rjPathRank(b.path);
+            if (rankDiff !== 0) return rankDiff;
+            return a.name.localeCompare(b.name);
+        });
+
+        folders.forEach(folder => {
+            const collapsed = !forceExpand && !!this.state.collapsedFolders[folder.path];
+            rows.push(
+                <div
+                    key={`folder:${folder.path}`}
+                    onClick={() => this.toggleFolder(folder.path)}
+                    title={folder.path}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: `6px 10px 6px ${10 + (depth * 14)}px`,
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        color: colors.textSecondary,
+                        userSelect: 'none'
+                    }}
+                >
+                    {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                    {collapsed ? <Folder size={14} /> : <FolderOpen size={14} />}
+                    <span style={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                    }}>
+                        {folder.name}
+                    </span>
+                </div>
+            );
+
+            if (!collapsed) {
+                rows.push(...this.renderFileTreeNodes(
+                    folder, depth + 1, forceExpand, currentFileObj, colors
+                ));
+            }
+        });
+
+        const indent = 10 + (depth * 14) + (node.path ? 16 : 0);
+        node.files.forEach(leaf => {
+            const {file, index, name} = leaf;
+            const isSelected = !!(currentFileObj && file.id === currentFileObj.id);
+            rows.push(
+                <div
+                    key={`file:${file.id}:${index}`}
+                    onClick={() => this.selectFile(index)}
+                    title={file.name}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: `7px 10px 7px ${indent}px`,
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        background: isSelected ? '#4d97ff' : 'transparent',
+                        color: isSelected ? 'white' : colors.text,
+                        borderBottom: `1px solid ${colors.border}`,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden'
+                    }}
+                >
+                    <span>{this.getFileIcon(file.type)}</span>
+                    <span style={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                    }}>{name}</span>
+                </div>
+            );
+        });
+
+        return rows;
+    }
+
+    renderFileTree (colors) {
+        const {filteredFiles, currentFile, files, searchQuery} = this.state;
+        const currentFileObj = files[currentFile];
+
+        if (filteredFiles.length === 0) {
+            return (
+                <div style={{
+                    padding: '20px',
+                    textAlign: 'center',
+                    color: '#999',
+                    fontSize: '13px'
+                }}>
+                    没有找到匹配的文件
+                </div>
+            );
+        }
+
+        const root = this.buildFileTree(filteredFiles);
+        // 搜索时强制展开所有目录，保证命中的文件可见
+        const forceExpand = searchQuery.length > 0;
+
+        return this.renderFileTreeNodes(root, 0, forceExpand, currentFileObj, colors);
+    }
+
+    // -----------------------------------------------------------------------
+    // 设置自由窗口
+    // -----------------------------------------------------------------------
+    renderSettingRadio (name, label, checked, onSelect) {
+        return (
+            <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '7px 0',
+                fontSize: '13px',
+                cursor: 'pointer'
+            }}>
+                <input
+                    type="radio"
+                    name={name}
+                    checked={checked}
+                    onChange={onSelect}
+                    style={{cursor: 'pointer'}}
+                />
+                <span>{label}</span>
+            </label>
+        );
+    }
+
+    renderSettingToggle (label, checked, onChange) {
+        return (
+            <label key={label} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                padding: '7px 0',
+                fontSize: '13px',
+                cursor: 'pointer'
+            }}>
+                <span>{label}</span>
+                <input
+                    type="checkbox"
+                    checked={!!checked}
+                    onChange={e => onChange(e.target.checked)}
+                    style={{width: '16px', height: '16px', cursor: 'pointer'}}
+                />
+            </label>
+        );
+    }
+
+    renderSettingSelect (label, value, options, onChange, colors) {
+        return (
+            <label key={label} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                padding: '7px 0',
+                fontSize: '13px'
+            }}>
+                <span>{label}</span>
+                <select
+                    value={value}
+                    onChange={e => onChange(e.target.value)}
+                    style={{
+                        padding: '4px 8px',
+                        border: `1px solid ${colors.inputBorder}`,
+                        borderRadius: '3px',
+                        background: colors.inputBg,
+                        color: colors.text,
+                        fontSize: '12px'
+                    }}
+                >
+                    {options.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                </select>
+            </label>
+        );
+    }
+
+    renderSettingsWindow () {
+        const {theme} = this.props;
+        const isDarkTheme = theme && typeof theme.isDark === 'function' ? theme.isDark() : false;
+        const colors = {
+            background: isDarkTheme ? '#2d2d2d' : '#ffffff',
+            text: isDarkTheme ? '#e0e0e0' : '#333333',
+            textSecondary: isDarkTheme ? '#a0a0a0' : '#666666',
+            border: isDarkTheme ? '#444444' : '#cccccc',
+            headerBg: isDarkTheme ? '#3a3a3a' : '#f5f5f5',
+            inputBg: isDarkTheme ? '#3a3a3a' : '#ffffff',
+            inputBorder: isDarkTheme ? '#555555' : '#cccccc'
+        };
+        const {fileViewMode, useMonacoEditor, editorOptions} = this.state;
+
+        const sectionStyle = {
+            border: `1px solid ${colors.border}`,
+            borderRadius: '6px',
+            padding: '10px 14px',
+            marginBottom: '14px',
+            background: colors.headerBg
+        };
+        const sectionTitleStyle = {
+            fontSize: '13px',
+            fontWeight: 'bold',
+            marginBottom: '4px',
+            color: colors.text
+        };
+
+        return (
+            <Modal
+                id="superRefactorSettingsModal"
+                contentLabel="超级重构设置"
+                visible={!!this.props.visible && this.state.settingsVisible}
+                className={`super-refactor-modal ${isDarkTheme ? 'dark-theme' : ''}`}
+                onRequestClose={this.closeSettings}
+                showHeader
+                width={460}
+                height={Math.min(620, window.innerHeight - 100)}
+            >
+                <div style={{
+                    height: 'calc(100% - 40px)',
+                    overflow: 'auto',
+                    padding: '16px 20px',
+                    boxSizing: 'border-box',
+                    background: colors.background,
+                    color: colors.text
+                }}>
+                    <div style={sectionStyle}>
+                        <div style={sectionTitleStyle}>文件列表显示</div>
+                        {this.renderSettingRadio('tree-file-view', '树状结构（新版）',
+                            fileViewMode === 'tree', () => this.setFileViewMode('tree'))}
+                        {this.renderSettingRadio('tree-file-view', '平铺列表（旧版）',
+                            fileViewMode === 'list', () => this.setFileViewMode('list'))}
+                    </div>
+
+                    <div style={sectionStyle}>
+                        <div style={sectionTitleStyle}>编辑器版本</div>
+                        {this.renderSettingRadio('editor-version', '新版编辑器（Monaco）',
+                            useMonacoEditor, () => this.setEditorVersion(true))}
+                        {this.renderSettingRadio('editor-version', '旧版编辑器（内置）',
+                            !useMonacoEditor, () => this.setEditorVersion(false))}
+                    </div>
+
+                    {useMonacoEditor && (
+                        <div style={sectionStyle}>
+                            <div style={sectionTitleStyle}>新版编辑器选项</div>
+                            {this.renderSettingToggle('侧边代码预览（小地图）',
+                                editorOptions.minimap,
+                                value => this.setEditorOption('minimap', value))}
+                            {this.renderSettingToggle('代码折叠',
+                                editorOptions.folding,
+                                value => this.setEditorOption('folding', value))}
+                            {editorOptions.folding && this.renderSettingSelect('折叠控件',
+                                editorOptions.foldingControls,
+                                [
+                                    {value: 'always', label: '始终显示'},
+                                    {value: 'mouseover', label: '悬停显示'}
+                                ],
+                                value => this.setEditorOption('foldingControls', value),
+                                colors)}
+                            {this.renderSettingToggle('顶部面包屑导航',
+                                editorOptions.breadcrumbs,
+                                value => this.setEditorOption('breadcrumbs', value))}
+                            {this.renderSettingToggle('吸顶滚动（固定当前作用域）',
+                                editorOptions.stickyScroll,
+                                value => this.setEditorOption('stickyScroll', value))}
+                            {this.renderSettingToggle('显示行号',
+                                editorOptions.lineNumbers,
+                                value => this.setEditorOption('lineNumbers', value))}
+                            {this.renderSettingToggle('缩进参考线',
+                                editorOptions.indentationGuides,
+                                value => this.setEditorOption('indentationGuides', value))}
+                            {this.renderSettingToggle('高亮当前行',
+                                editorOptions.highlightActiveLine,
+                                value => this.setEditorOption('highlightActiveLine', value))}
+                            {this.renderSettingToggle('平滑滚动',
+                                editorOptions.smoothScrolling,
+                                value => this.setEditorOption('smoothScrolling', value))}
+                            {this.renderSettingToggle('Ctrl + 滚轮缩放字号',
+                                editorOptions.mouseWheelZoom,
+                                value => this.setEditorOption('mouseWheelZoom', value))}
+                            {this.renderSettingSelect('字号',
+                                String(editorOptions.fontSize),
+                                [
+                                    {value: '12', label: '12'},
+                                    {value: '13', label: '13'},
+                                    {value: '14', label: '14'},
+                                    {value: '16', label: '16'},
+                                    {value: '18', label: '18'},
+                                    {value: '20', label: '20'}
+                                ],
+                                value => this.setEditorOption('fontSize', Number(value)),
+                                colors)}
+                            {this.renderSettingSelect('Tab 宽度',
+                                String(editorOptions.tabSize),
+                                [
+                                    {value: '2', label: '2'},
+                                    {value: '4', label: '4'},
+                                    {value: '8', label: '8'}
+                                ],
+                                value => this.setEditorOption('tabSize', Number(value)),
+                                colors)}
+                            {this.renderSettingSelect('空白字符',
+                                editorOptions.renderWhitespace,
+                                [
+                                    {value: 'none', label: '不显示'},
+                                    {value: 'selection', label: '选中区域'},
+                                    {value: 'all', label: '全部'}
+                                ],
+                                value => this.setEditorOption('renderWhitespace', value),
+                                colors)}
+                            <div style={{display: 'flex', justifyContent: 'flex-end', marginTop: '6px'}}>
+                                <button
+                                    onClick={this.resetEditorOptions}
+                                    style={{
+                                        padding: '4px 10px',
+                                        background: 'transparent',
+                                        color: colors.textSecondary,
+                                        border: `1px solid ${colors.border}`,
+                                        borderRadius: '3px',
+                                        cursor: 'pointer',
+                                        fontSize: '12px'
+                                    }}
+                                >
+                                    恢复默认
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{display: 'flex', justifyContent: 'flex-end'}}>
+                        <Button onClick={this.closeSettings}>
+                            完成
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+        );
+    }
+
     render () {
         const {visible, theme} = this.props;
-        const {files, currentFile, content, message, searchQuery, filteredFiles, viewMode, wordWrap} = this.state;
+        const {files, currentFile, content, message, searchQuery, filteredFiles, viewMode, wordWrap, fileViewMode} = this.state;
         const currentFileObj = files[currentFile];
         const currentFileName = currentFileObj ? currentFileObj.name : '';
         const currentFileType = currentFileObj ? currentFileObj.type : '';
@@ -1007,6 +1533,28 @@ class SuperRefactorModalContainer extends React.Component {
                 showHeader={true}
                 width={this.state.modalWidth}
                 height={this.state.modalHeight}
+                headerActions={(
+                    <button
+                        className="super-refactor-settings-button"
+                        onClick={this.openSettings}
+                        title="超级重构设置"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '28px',
+                            height: '28px',
+                            padding: 0,
+                            border: 'none',
+                            borderRadius: '4px',
+                            background: 'transparent',
+                            color: colors.textSecondary,
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <Settings size={17} />
+                    </button>
+                )}
             >
                 <div style={{
                     display: 'flex',
@@ -1109,52 +1657,54 @@ class SuperRefactorModalContainer extends React.Component {
                                 </div>
                             </div>
 
-                            {/* 文件列表 */}
+                            {/* 文件列表：树状结构 / 旧版平铺列表 */}
                             <div style={{
                                 flex: 1,
                                 overflow: 'auto'
                             }}>
-                                {filteredFiles.length === 0 ? (
-                                    <div style={{
-                                        padding: '20px',
-                                        textAlign: 'center',
-                                        color: '#999',
-                                        fontSize: '13px'
-                                    }}>
-                                        没有找到匹配的文件
-                                    </div>
-                                ) : (
-                                    filteredFiles.map((file, index) => {
-                                        const isSelected = !!(currentFileObj && file.id === currentFileObj.id);
+                                {fileViewMode === 'tree' ? this.renderFileTree(colors) : (
+                                    filteredFiles.length === 0 ? (
+                                        <div style={{
+                                            padding: '20px',
+                                            textAlign: 'center',
+                                            color: '#999',
+                                            fontSize: '13px'
+                                        }}>
+                                            没有找到匹配的文件
+                                        </div>
+                                    ) : (
+                                        filteredFiles.map((file, index) => {
+                                            const isSelected = !!(currentFileObj && file.id === currentFileObj.id);
 
-                                        return (
-                                            <div
-                                            key={index}
-                                            onClick={() => this.selectFile(index)}
-                                            style={{
-                                                padding: '10px 12px',
-                                                cursor: 'pointer',
-                                                background: isSelected ? '#4d97ff' : colors.background,
-                                                color: isSelected ? 'white' : colors.text,
-                                                borderBottom: `1px solid ${colors.border}`,
-                                                fontSize: '12px',
-                                                fontFamily: 'monospace',
-                                                whiteSpace: 'nowrap',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px'
-                                            }}
-                                            title={file.name}
-                                        >
-                                                <span>{this.getFileIcon(file.type)}</span>
-                                                <span style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
-                                                    {file.name}
-                                                </span>
-                                            </div>
-                                        );
-                                    })
+                                            return (
+                                                <div
+                                                key={index}
+                                                onClick={() => this.selectFile(index)}
+                                                style={{
+                                                    padding: '10px 12px',
+                                                    cursor: 'pointer',
+                                                    background: isSelected ? '#4d97ff' : colors.background,
+                                                    color: isSelected ? 'white' : colors.text,
+                                                    borderBottom: `1px solid ${colors.border}`,
+                                                    fontSize: '12px',
+                                                    fontFamily: 'monospace',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px'
+                                                }}
+                                                title={file.name}
+                                            >
+                                                    <span>{this.getFileIcon(file.type)}</span>
+                                                    <span style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                                                        {file.name}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })
+                                    )
                                 )}
                             </div>
                         </div>
@@ -1224,25 +1774,6 @@ class SuperRefactorModalContainer extends React.Component {
                                             {wordWrap ? '自动换行' : '禁用换行'}
                                         </button>
                                     )}
-                                    {/* Monaco 编辑器切换按钮 */}
-                                    {canEdit && (
-                                        <button
-                                            onClick={this.toggleMonacoEditor}
-                                            style={{
-                                                padding: '4px 8px',
-                                                background: this.state.useMonacoEditor ? '#4d97ff' : colors.buttonBg,
-                                                color: this.state.useMonacoEditor ? 'white' : colors.text,
-                                                border: `1px solid ${colors.border}`,
-                                                borderRadius: '3px',
-                                                cursor: 'pointer',
-                                                fontSize: '10px',
-                                                fontWeight: this.state.useMonacoEditor ? 'bold' : 'normal'
-                                            }}
-                                            title={this.state.useMonacoEditor ? '切换到旧版编辑器' : '切换到新版编辑器'}
-                                        >
-                                            {this.state.useMonacoEditor ? '旧版编辑器' : '新版编辑器'}
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                             
@@ -1251,6 +1782,7 @@ class SuperRefactorModalContainer extends React.Component {
                                     this.state.useMonacoEditor ? (
                                         // Monaco 编辑器 iframe
                                         <iframe
+                                            key={`monaco-svg-${this.state.monacoIframeKey}`}
                                             ref={this.monacoIframeRef}
                                             src="/monaco-editor-iframe.html"
                                             style={{
@@ -1390,6 +1922,7 @@ class SuperRefactorModalContainer extends React.Component {
                                 this.state.useMonacoEditor ? (
                                     // Monaco 编辑器 iframe
                                     <iframe
+                                        key={`monaco-file-${this.state.monacoIframeKey}`}
                                         ref={this.monacoIframeRef}
                                         src="/monaco-editor-iframe.html"
                                         style={{
@@ -1563,6 +2096,9 @@ class SuperRefactorModalContainer extends React.Component {
                         </Button>
                     </div>
                 </div>
+
+                {/* 设置自由窗口（独立浮动窗口） */}
+                {this.state.settingsVisible && this.renderSettingsWindow()}
             </Modal>
         );
     }

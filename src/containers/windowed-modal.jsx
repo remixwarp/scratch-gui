@@ -287,6 +287,7 @@ class WindowedModal extends React.Component {
         const {
             children,
             headerImage,
+            headerActions,
             contentLabel,
             onHelp,
             isRtl,
@@ -355,6 +356,20 @@ class WindowedModal extends React.Component {
                         }
                     },
                     typeof contentLabel === 'string' ? contentLabel : contentLabel
+                ),
+                // 标题栏右侧自定义操作（例如设置按钮）
+                headerActions && React.createElement(
+                    'div',
+                    {
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            marginLeft: '1rem',
+                            flexShrink: 0
+                        }
+                    },
+                    headerActions
                 )
             ),
             // Content
@@ -460,6 +475,7 @@ WindowedModal.propTypes = {
     ]).isRequired,
     fullScreen: PropTypes.bool,
     headerImage: PropTypes.string,
+    headerActions: PropTypes.node,
     onHelp: PropTypes.func,
     showHeader: PropTypes.bool,
     visible: PropTypes.bool,

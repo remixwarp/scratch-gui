@@ -321,6 +321,15 @@
     background: #f44336;
 }
 
+/* 标题栏右侧的设置按钮 */
+.super-refactor-modal .super-refactor-settings-button:hover {
+    background: rgba(77, 151, 255, 0.16);
+}
+
+.super-refactor-modal.dark-theme .super-refactor-settings-button:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
 /* 滚动条样式 */
 .super-refactor-modal ::-webkit-scrollbar {
     width: 8px;
