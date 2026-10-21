@@ -78,6 +78,13 @@ export default class FindBarController {
         this._onDocumentKeyDown = e => this.eventKeyDown(e);
         document.addEventListener('keydown', this._onDocumentKeyDown, true);
 
+        // VS Code 布局的搜索面板开合时，由外部派发此事件，把查找栏搬进 / 搬出面板
+        this._onHostRequest = () => {
+            this.syncHost();
+            this.tabChanged();
+        };
+        document.addEventListener('mw-find-bar-host-request', this._onHostRequest);
+
         this._cachedScratchBlocks = null;
         this._cachedScratchCostumes = null;
         this._cachedScratchSounds = null;
@@ -203,11 +210,43 @@ export default class FindBarController {
 
         this.bindEvents();
         this._setupWorkspaceListener();
+        this.syncHost();
         this.tabChanged();
+    }
+
+    /**
+     * 把查找栏本体（.sa-find-bar）整体「移动」到指定宿主容器里，而不是复制一份。
+     * 传入 null 时移回它在标签栏里的原容器（.mw-native-find-bar-container）。
+     * 只移动 .sa-find-bar 本身：外层 li 始终留在标签栏，避免 VS Code 布局下
+     * 针对 .mw-native-find-bar-container 写的绝对定位样式被一起带进搜索面板。
+     */
+    reparent (host) {
+        if (!this.findBarOuter) return;
+        const target = host || (this.findBarContainer && this.findBarContainer.parentNode);
+        if (!target) return;
+        if (this.findBarOuter.parentNode !== target) {
+            target.appendChild(this.findBarOuter);
+        }
+        if (host) this.findBarOuter.hidden = false;
+    }
+
+    /**
+     * 依据当前 DOM 中是否存在搜索面板宿主（[data-mw-find-bar-host]）来同步查找栏位置。
+     * 存在则搬进搜索面板，不存在则搬回标签栏原位置。
+     */
+    syncHost () {
+        this.reparent(document.querySelector('[data-mw-find-bar-host]'));
+    }
+
+    /** 查找栏当前是否被搬进了搜索面板。 */
+    isInPanel () {
+        const parent = this.findBarOuter && this.findBarOuter.parentNode;
+        return !!(parent && parent.hasAttribute && parent.hasAttribute('data-mw-find-bar-host'));
     }
 
     destroy () {
         document.removeEventListener('keydown', this._onDocumentKeyDown, true);
+        document.removeEventListener('mw-find-bar-host-request', this._onHostRequest);
         this._removeWorkspaceListener();
         if (this._debounceTimer) {
             clearTimeout(this._debounceTimer);
@@ -264,6 +303,11 @@ export default class FindBarController {
 
     tabChanged () {
         if (!this.findBarOuter) return;
+        // 在搜索面板里时始终可见，不受标签页类型限制
+        if (this.isInPanel()) {
+            this.findBarOuter.hidden = false;
+            return;
+        }
         const tab = this.activeTabIndexRef.current;
         const visible = tab === 0 || tab === 1 || tab === 2;
         this.findBarOuter.hidden = !visible;

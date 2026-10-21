@@ -149,6 +149,8 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
 
             const observer = new MutationObserver(() => {
                 if (didUnmount) return;
+                // 查找栏被搬进 VS Code 布局的搜索面板时，它不在标签栏内，此时不要重复注入
+                if (document.querySelector('[data-mw-find-bar-host] .mw-native-find-bar')) return;
                 if (!document.querySelector('ul[class*=gui_tab-list_] .mw-native-find-bar')) {
                     ensureInjected();
                 }
@@ -178,12 +180,14 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
 
     useEffect(() => {
         const el = document.querySelector('.mw-native-find-bar');
-        if (el) {
-            const visible = activeTabIndex === 0 ||
-                            activeTabIndex === 1 ||
-                            activeTabIndex === 2;
-            el.hidden = !visible;
-        }
+        if (!el) return;
+        // 被搬进 VS Code 布局的搜索面板时，可见性由面板控制，不随标签页显隐
+        const parent = el.parentNode;
+        if (parent && parent.hasAttribute && parent.hasAttribute('data-mw-find-bar-host')) return;
+        const visible = activeTabIndex === 0 ||
+                        activeTabIndex === 1 ||
+                        activeTabIndex === 2;
+        el.hidden = !visible;
     }, [activeTabIndex]);
     return null;
 }

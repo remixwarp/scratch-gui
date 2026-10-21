@@ -3,6 +3,7 @@
 
 const BUTTONS = [
     'explorer',
+    'search',
     'addonSettings',
     'addExtension',
     'collaboration',

@@ -349,7 +349,8 @@
 .zen-mode .panel-bar,
 .zen-mode .status-bar,
 .zen-mode .vscode-backpack-host,
-.zen-mode .explorer-host {
+.zen-mode .explorer-host,
+.zen-mode .search-panel-host {
     display: none !important;
 }
 
@@ -373,6 +374,171 @@
 
 .editor-wrapper.vscodeLayout .sa-find-bar[hidden] {
     display: none !important;
+}
+
+/* ── VS Code 布局：搜索（Search）侧边栏 ──
+ * 与资源管理器同位置、同尺寸；内部直接复用现有查找栏（find-bar）。
+ * 主题变量挂在宿主上，供面板自身与内部查找栏控件共用，保证暗色适配。
+ */
+.search-panel-host {
+    position: absolute;
+    top: 0;
+    left: 41px;
+    bottom: 0;
+    z-index: 200;
+    pointer-events: auto;
+    overflow: visible;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+    background: var(--search-panel-bg);
+    border-right: 1px solid var(--search-panel-border);
+    color: var(--search-panel-fg);
+}
+
+.search-panel-host,
+.search-panel-host[data-panel-theme="dark"] {
+    --search-panel-bg: rgba(30, 30, 30, 0.95);
+    --search-panel-fg: #cccccc;
+    --search-panel-header-fg: #bbbbbb;
+    --search-panel-border: #3c3c3c;
+    --search-panel-input-bg: #3c3c3c;
+    --search-panel-input-fg: #cccccc;
+    --search-panel-input-dim: #8a8a8a;
+    --search-panel-focus: #007fd4;
+    --search-panel-menu-bg: #252526;
+}
+
+.search-panel-host[data-panel-theme="light"] {
+    --search-panel-bg: #ffffff;
+    --search-panel-fg: #1a1a1a;
+    --search-panel-header-fg: #555555;
+    --search-panel-border: #e5e5e5;
+    --search-panel-input-bg: #f3f3f3;
+    --search-panel-input-fg: #1a1a1a;
+    --search-panel-input-dim: #6a6a6a;
+    --search-panel-focus: #007acc;
+    --search-panel-menu-bg: #ffffff;
+}
+
+.search-panel {
+    width: 240px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+}
+
+.search-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--search-panel-header-fg);
+    border-bottom: 1px solid var(--search-panel-border);
+    user-select: none;
+    flex: 0 0 auto;
+}
+
+.search-panel-header-icon {
+    color: var(--search-panel-header-fg);
+}
+
+.search-panel-body {
+    position: relative;
+    flex: 1 1 auto;
+    overflow: visible;
+    padding: 10px 10px 0;
+}
+
+.search-find-host {
+    position: relative;
+}
+
+/* 面板内查找栏：压缩宽度以适配 240px 面板，让 Aa / .* 与输入框同一行显示 */
+.search-find-host :global(.sa-find-bar) {
+    margin: 0;
+    width: 100%;
+    gap: 4px;
+}
+
+.search-find-host :global(.sa-find-wrapper) {
+    min-width: 0;
+    height: 2rem;
+}
+
+.search-find-host :global(.sa-find-input) {
+    padding: 0 40px 0 2.1rem;
+    font-size: 0.75rem;
+}
+
+.search-find-host :global(.sa-find-icon) {
+    left: 8px;
+}
+
+.search-find-host :global(.sa-find-toggle) {
+    min-width: 24px;
+    height: 24px;
+    padding: 2px 4px;
+    font-size: 10px;
+}
+
+/* 面板内查找结果下拉：直接叠加在面板内容之上（下方） */
+.search-find-host :global(.sa-find-dropdown) {
+    min-height: 128px;
+    max-height: 60vh;
+}
+
+/* 暗色 / 亮色主题适配：覆盖查找栏内部控件颜色 */
+.search-panel-host :global(.sa-find-input) {
+    background: var(--search-panel-input-bg);
+    color: var(--search-panel-input-fg);
+    border-color: var(--search-panel-border);
+}
+
+.search-panel-host :global(.sa-find-input::placeholder) {
+    color: var(--search-panel-input-dim);
+}
+
+.search-panel-host :global(.sa-find-input:focus) {
+    background: var(--search-panel-input-bg);
+    color: var(--search-panel-input-fg);
+    border-color: var(--search-panel-focus);
+    box-shadow: 0 0 0 1px var(--search-panel-focus);
+}
+
+.search-panel-host :global(.sa-find-icon) {
+    color: var(--search-panel-input-dim);
+}
+
+.search-panel-host :global(.sa-find-toggle) {
+    background: var(--search-panel-input-bg);
+    color: var(--search-panel-fg);
+    border-color: var(--search-panel-border);
+}
+
+.search-panel-host :global(.sa-find-toggle:hover) {
+    background: var(--search-panel-menu-bg);
+    border-color: var(--search-panel-focus);
+}
+
+.search-panel-host :global(.sa-find-toggle-active) {
+    background: var(--search-panel-focus);
+    color: #ffffff;
+    border-color: var(--search-panel-focus);
+}
+
+.search-panel-host :global(.sa-find-dropdown) {
+    background-color: var(--search-panel-menu-bg);
+    color: var(--search-panel-fg);
+    outline: 1px solid var(--search-panel-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.search-panel-host :global(.sa-find-stats) {
+    color: var(--search-panel-header-fg);
 }
 
 .stage-pane-resizer {

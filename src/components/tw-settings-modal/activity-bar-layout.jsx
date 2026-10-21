@@ -22,6 +22,11 @@ const LABELS = {
         description="Label for the explorer button in activity bar layout settings"
         id="tw.settingsModal.activityBarItem.explorer"
     />,
+    search: <FormattedMessage
+        defaultMessage="搜索"
+        description="Label for the search button in activity bar layout settings"
+        id="tw.settingsModal.activityBarItem.search"
+    />,
     addonSettings: <FormattedMessage
         defaultMessage="插件设置"
         description="Label for the addon settings button in activity bar layout settings"

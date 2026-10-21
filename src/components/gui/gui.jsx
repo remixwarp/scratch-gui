@@ -147,6 +147,7 @@ import {
     CircleAlert,
     Terminal,
     Files,
+    Search,
     ExternalLink
 } from 'lucide-react';
 
@@ -400,6 +401,15 @@ const GUIComponent = props => {
     const [explorerVisible, setExplorerVisible] = useState(false);
     // Git 仓库侧边栏显隐（VS Code 布局下 activity bar Git 按钮点击）
     const [gitVisible, setGitVisible] = useState(false);
+    // 搜索（Search）侧边栏显隐（VS Code 布局下 activity bar 搜索按钮点击）
+    const [searchVisible, setSearchVisible] = useState(false);
+    // 搜索面板开合 / 退出 VS Code 布局时，通知现有查找栏（find-bar）搬入 / 搬出面板
+    useEffect(() => {
+        const id = requestAnimationFrame(() => {
+            document.dispatchEvent(new Event('mw-find-bar-host-request'));
+        });
+        return () => cancelAnimationFrame(id);
+    }, [searchVisible, vscodeLayout]);
     useEffect(() => {
         const handleExplorerToggle = () => setExplorerVisible(prev => !prev);
         window.addEventListener('rw-explorer-toggle', handleExplorerToggle);
@@ -1866,6 +1876,7 @@ const GUIComponent = props => {
                 setGitVisible(prev => !prev);
                 // activity bar 面板在同一位置显示，互斥一下
                 setExplorerVisible(false);
+                setSearchVisible(false);
             },
             icon: <GitBranch size={20} />,
             active: gitVisible
@@ -1875,9 +1886,20 @@ const GUIComponent = props => {
             onClick: () => {
                 toggleExplorer();
                 setGitVisible(false);
+                setSearchVisible(false);
             },
             icon: <Files size={20} />,
             active: explorerVisible
+        },
+        search: {
+            title: intl.formatMessage({defaultMessage: '搜索', id: 'mw.search.title'}),
+            onClick: () => {
+                setSearchVisible(prev => !prev);
+                setExplorerVisible(false);
+                setGitVisible(false);
+            },
+            icon: <Search size={20} />,
+            active: searchVisible
         },
         bookmarks: {
             title: intl.formatMessage({defaultMessage: 'Bookmarks', id: 'tw.workspaceBookmarks.menuLabel'}),
@@ -2265,6 +2287,23 @@ const GUIComponent = props => {
                                         onOpenFull={() => props.dispatch(openGitModal())}
                                         isDark={!(theme && typeof theme.isDark === 'function') || theme.isDark()}
                                     />
+                                </Box>
+                            )}
+                            {vscodeLayout && searchVisible && (
+                                <Box
+                                    className={styles.searchPanelHost}
+                                    data-panel-theme={theme && typeof theme.isDark === 'function' && theme.isDark() ? 'dark' : 'light'}
+                                >
+                                    <div className={styles.searchPanel}>
+                                        <div className={styles.searchPanelHeader}>
+                                            <Search size={16} className={styles.searchPanelHeaderIcon} />
+                                            <span>{intl.formatMessage({defaultMessage: '搜索', id: 'mw.search.title'})}</span>
+                                        </div>
+                                        <div className={styles.searchPanelBody}>
+                                            {/* 现有查找栏（find-bar）会被整体搬进这里，完全复用其逻辑而非模拟 */}
+                                            <div className={styles.searchFindHost} data-mw-find-bar-host="search" />
+                                        </div>
+                                    </div>
                                 </Box>
                             )}
                             {backpackVisible && activeTabIndex !== COSTUMES_TAB_INDEX && activeTabIndex !== SOUNDS_TAB_INDEX ? (
