@@ -43,13 +43,21 @@ export default class Dropdown {
     }
 
     get workspace () {
+        if (this.utils && typeof this.utils.getWorkspace === 'function') {
+            const workspace = this.utils.getWorkspace();
+            if (workspace) return workspace;
+        }
         return this.ScratchBlocks.getMainWorkspace();
     }
 
     _getWorkspaceVersion () {
         const workspace = this.workspace;
         if (!workspace) return null;
-        return workspace.id || (workspace.getAllBlocks && JSON.stringify(workspace.getAllBlocks().map(b => b.id)));
+        // workspace.id 在生命周期内恒定，必须带上编辑目标与积木数量才能感知内容变化
+        const target = this.utils && this.utils.getEditingTarget ? this.utils.getEditingTarget() : null;
+        const targetId = target ? target.id : '';
+        const blockCount = workspace.getAllBlocks ? workspace.getAllBlocks().length : 0;
+        return `${workspace.id}:${targetId}:${blockCount}`;
     }
 
     _shouldInvalidateCache () {
@@ -328,6 +336,8 @@ export default class Dropdown {
         }
 
         const procBlock = this.workspace.getBlockById(id);
+        // 延迟加载（视口裁剪/懒渲染）的脚本可能还没实例化，点不到就不跳转
+        if (!procBlock) return [];
         const label = procBlock.getChildren()[0];
         const procCode = label.getProcCode();
 

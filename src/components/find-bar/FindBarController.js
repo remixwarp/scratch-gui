@@ -3,6 +3,18 @@ import {unlockAchievement} from '../../lib/achievements.js';
 
 import Dropdown from './Dropdown';
 
+// 这些工作区事件只影响视图/选中状态，不影响搜索结果；忽略它们，
+// 避免点击结果、平移缩放时反复重建下拉列表（会打断结果轮播）。
+const IGNORED_WORKSPACE_EVENTS = new Set([
+    'ui',
+    'select',
+    'click',
+    'drag',
+    'zoom',
+    'scroll',
+    'viewport_change'
+]);
+
 const normalizeType = type => {
     const upper = type.toUpperCase();
     if (upper.startsWith('OPERATOR'))  return 'OPERATORS' + upper.slice(8);
@@ -82,6 +94,11 @@ export default class FindBarController {
         this._onHostRequest = () => {
             this.syncHost();
             this.tabChanged();
+            if (this.isInPanel() && this.findInput) {
+                // 与 VS Code 的搜索面板一致：打开面板后直接聚焦输入框并立即展示结果
+                this.findInput.focus();
+                this.findInput.select();
+            }
         };
         document.addEventListener('mw-find-bar-host-request', this._onHostRequest);
 
@@ -90,11 +107,19 @@ export default class FindBarController {
         this._cachedScratchSounds = null;
         this._lastWorkspaceVersion = null;
         this._debounceTimer = null;
+        this._workspaceRefreshTimer = null;
         this._workspaceChangeListener = null;
+        this._listenedWorkspace = null;
         this._invalidSearchTimer = null;
     }
 
     get workspace () {
+        // 与 Scratch 布局的查找栏保持一致：getMainWorkspace() 不一定是真正的编辑工作区
+        // （多工作区/拆分/自由窗口下可能是浮层工作区），优先使用带工具箱的工作区。
+        if (this.utils && typeof this.utils.getWorkspace === 'function') {
+            const workspace = this.utils.getWorkspace();
+            if (workspace) return workspace;
+        }
         return this.ScratchBlocks.getMainWorkspace();
     }
 
@@ -112,32 +137,108 @@ export default class FindBarController {
         this._lastWorkspaceVersion = null;
     }
 
+    /**
+     * 工作区版本号：用于判断缓存是否失效。
+     * 不能只用 workspace.id（它在工作区生命周期内恒定），需要把当前编辑目标、
+     * 积木数量、变量/列表数量和注释数量都算进去，否则新增积木后仍会命中旧缓存。
+     * @returns {?string} version string
+     */
     _getWorkspaceVersion () {
         const workspace = this.workspace;
         if (!workspace) return null;
-        return workspace.id || (workspace.getAllBlocks && workspace.getAllBlocks().length);
+
+        const target = this.utils && this.utils.getEditingTarget ? this.utils.getEditingTarget() : null;
+        const targetId = target ? target.id : '';
+        const blockCount = workspace.getAllBlocks ? workspace.getAllBlocks().length : 0;
+
+        let variableCount = 0;
+        try {
+            const map = workspace.getVariableMap && workspace.getVariableMap();
+            if (map && map.getAllVariables) variableCount = map.getAllVariables().length;
+        } catch (e) {
+            // ignore
+        }
+
+        let commentCount = 0;
+        try {
+            if (workspace.getTopComments) commentCount = workspace.getTopComments(false).length;
+        } catch (e) {
+            // ignore
+        }
+
+        return `${workspace.id}:${targetId}:${blockCount}:${variableCount}:${commentCount}`;
     }
 
+    /**
+     * 把变更监听绑定到当前真正在编辑的工作区上。
+     * 多工作区 / 拆分模式下工作区可能切换，所以每次展示下拉时都检查并重新绑定。
+     */
     _setupWorkspaceListener () {
-        if (this._workspaceChangeListener) return;
-
-        this._workspaceChangeListener = () => {
-            this._invalidateCache();
-            this.dropdown.empty();
-        };
-
         const workspace = this.workspace;
+
+        if (!this._workspaceChangeListener) {
+            this._workspaceChangeListener = event => this._onWorkspaceChanged(event);
+        }
+
+        if (this._listenedWorkspace === workspace) return;
+
+        if (this._listenedWorkspace && this._listenedWorkspace.removeChangeListener) {
+            this._listenedWorkspace.removeChangeListener(this._workspaceChangeListener);
+        }
+
+        this._listenedWorkspace = workspace;
         if (workspace && workspace.addChangeListener) {
             workspace.addChangeListener(this._workspaceChangeListener);
         }
     }
 
     _removeWorkspaceListener () {
-        const workspace = this.workspace;
-        if (workspace && workspace.removeChangeListener && this._workspaceChangeListener) {
-            workspace.removeChangeListener(this._workspaceChangeListener);
+        if (this._listenedWorkspace && this._listenedWorkspace.removeChangeListener && this._workspaceChangeListener) {
+            this._listenedWorkspace.removeChangeListener(this._workspaceChangeListener);
         }
+        this._listenedWorkspace = null;
         this._workspaceChangeListener = null;
+    }
+
+    /**
+     * 工作区内容变化（拖入/删除积木、改变量、改注释等）时实时刷新搜索结果，
+     * 与 Scratch 布局查找栏的行为一致：结果列表始终反映当前工作区的最新内容。
+     */
+    _onWorkspaceChanged (event) {
+        if (event && IGNORED_WORKSPACE_EVENTS.has(event.type)) return;
+
+        this._invalidateCache();
+
+        if (!this.findInput) return;
+
+        // 下拉未展开时只需让缓存失效，等下次展示时重新收集即可
+        if (!this.dropdownOut || !this.dropdownOut.classList.contains('visible')) {
+            this.dropdown.empty();
+            return;
+        }
+
+        if (this._workspaceRefreshTimer) clearTimeout(this._workspaceRefreshTimer);
+        this._workspaceRefreshTimer = setTimeout(() => {
+            this._workspaceRefreshTimer = null;
+            this._refreshDropdown();
+        }, 60);
+    }
+
+    /**
+     * 依据当前输入值重建并重新过滤下拉结果。
+     */
+    _refreshDropdown () {
+        if (!this.findInput) return;
+
+        const value = this.findInput.value;
+        this.dropdown.empty();
+
+        if (!value) {
+            this.showAllItems();
+            return;
+        }
+
+        this._performSearch(this.isCaseSensitive ? value : value.toLowerCase(), value);
     }
 
     createDom (root) {
@@ -256,6 +357,10 @@ export default class FindBarController {
             clearTimeout(this._invalidSearchTimer);
             this._invalidSearchTimer = null;
         }
+        if (this._workspaceRefreshTimer) {
+            clearTimeout(this._workspaceRefreshTimer);
+            this._workspaceRefreshTimer = null;
+        }
         if (this.findBarOuter) {
             this.findBarOuter.remove();
             this.findBarOuter = null;
@@ -303,6 +408,7 @@ export default class FindBarController {
 
     tabChanged () {
         if (!this.findBarOuter) return;
+        this._setupWorkspaceListener();
         // 在搜索面板里时始终可见，不受标签页类型限制
         if (this.isInPanel()) {
             this.findBarOuter.hidden = false;
@@ -630,6 +736,9 @@ export default class FindBarController {
 
         this.prevValue = focusID ? '' : null;
 
+        // 工作区可能已经切换（多工作区/拆分），把监听重新绑定到当前工作区
+        this._setupWorkspaceListener();
+
         this.dropdownOut.classList.add('visible');
 
         let scratchBlocks;
@@ -802,8 +911,51 @@ export default class FindBarController {
             }
         }
 
+        // 与 Scratch 布局的查找栏保持一致：以 VM 中的积木数据为准，把工作区里
+        // 还没有渲染出来的脚本（延迟加载 / 视口裁剪）也纳入搜索。
+        const editingTarget = this.utils.getEditingTarget();
+        const vmBlocks = editingTarget && editingTarget.blocks && editingTarget.blocks._blocks;
+        const pendingScripts =
+            typeof workspace.getDeferredScripts === 'function' ? workspace.getDeferredScripts() : [];
+        const setPendingY = (item, y) => {
+            if (item && (item.y === null || item.y === undefined)) item.y = y;
+        };
+        for (const deferred of pendingScripts) {
+            const block = vmBlocks && deferred.id ? vmBlocks[deferred.id] : null;
+            if (!block) continue;
+            if (block.opcode === 'procedures_definition') {
+                const protoId = block.inputs && block.inputs.custom_block && block.inputs.custom_block.block;
+                const proto = protoId && vmBlocks[protoId];
+                const procCode = (proto && proto.mutation && proto.mutation.proccode) || 'custom block';
+                setPendingY(addBlock('define', `define ${procCode}`, {id: deferred.id}, block.opcode), deferred.y);
+            } else if (block.opcode === 'event_whenflagclicked') {
+                setPendingY(
+                    addBlock(
+                        'flag',
+                        `when ${this.msgAny('_general/blocks/green-flag')} clicked`,
+                        {id: deferred.id},
+                        block.opcode
+                    ),
+                    deferred.y
+                );
+            } else if (block.opcode === 'event_whenbroadcastreceived') {
+                const eventName = (block.fields && block.fields.BROADCAST_OPTION &&
+                    block.fields.BROADCAST_OPTION.value) || 'message';
+                const item = addBlock(
+                    'receive',
+                    this.msg('event', {name: eventName}),
+                    {id: deferred.id},
+                    block.opcode
+                );
+                item.eventName = eventName;
+                setPendingY(item, deferred.y);
+            } else if (block.opcode.startsWith('event_when') || block.opcode === 'control_start_as_clone') {
+                const text = block.opcode.replace('event_when', 'when ').replace(/_/g, ' ');
+                setPendingY(addBlock('event', text, {id: deferred.id}, block.opcode), deferred.y);
+            }
+        }
+
         const allBlocks = this.workspace.getAllBlocks();
-        const nonShadowBlocks = new Set();
         const textInputsByBlockId = new Map();
 
         const isTextInputField = field => {
@@ -833,10 +985,6 @@ export default class FindBarController {
 
         for (const block of allBlocks) {
             if (!block) continue;
-            if (!block.isShadow_) {
-                nonShadowBlocks.add(block);
-            }
-
             if (block.id) {
                 const values = collectTextInputsFromBlock(block);
                 if (values.length > 0) {
@@ -850,17 +998,31 @@ export default class FindBarController {
             }
         }
 
-        for (const block of nonShadowBlocks) {
-            const blockType = block.type;
-            if (
-                !blockType.startsWith('data_') &&
-                !blockType.startsWith('event_') &&
-                !blockType.startsWith('procedures_') &&
-                blockType !== 'control_start_as_clone' &&
-                blockType !== 'event_broadcast' &&
-                blockType !== 'event_broadcastandwait'
-            ) {
-                addBlock(blockType, blockType, block, blockType);
+        const shouldListOpcode = blockType => (
+            typeof blockType === 'string' &&
+            !blockType.startsWith('data_') &&
+            !blockType.startsWith('event_') &&
+            !blockType.startsWith('procedures_') &&
+            blockType !== 'control_start_as_clone' &&
+            blockType !== 'event_broadcast' &&
+            blockType !== 'event_broadcastandwait'
+        );
+
+        if (vmBlocks) {
+            // 使用 VM 的完整积木表，而不是工作区里已渲染的那部分
+            for (const blockId of Object.keys(vmBlocks)) {
+                const block = vmBlocks[blockId];
+                if (!block || block.shadow) continue;
+                if (shouldListOpcode(block.opcode)) {
+                    addBlock(block.opcode, block.opcode, {id: blockId}, block.opcode);
+                }
+            }
+        } else {
+            for (const block of allBlocks) {
+                if (!block || block.isShadow_) continue;
+                if (shouldListOpcode(block.type)) {
+                    addBlock(block.type, block.type, block, block.type);
+                }
             }
         }
 

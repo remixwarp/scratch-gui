@@ -530,6 +530,26 @@
     border-color: var(--search-panel-focus);
 }
 
+/* 浅色模式：Aa / .* 按钮未选中为灰色，选中为黑色（深色模式保持上面的现有配色） */
+.search-panel-host[data-panel-theme="light"] :global(.sa-find-toggle) {
+    color: var(--search-panel-input-dim);
+}
+
+.search-panel-host[data-panel-theme="light"] :global(.sa-find-toggle:hover) {
+    color: var(--search-panel-fg);
+}
+
+.search-panel-host[data-panel-theme="light"] :global(.sa-find-toggle-active) {
+    background: rgba(0, 122, 204, 0.16);
+    color: var(--search-panel-input-fg);
+    border-color: rgba(0, 122, 204, 0.45);
+}
+
+.search-panel-host[data-panel-theme="light"] :global(.sa-find-toggle-active:hover) {
+    color: var(--search-panel-input-fg);
+    background: rgba(0, 122, 204, 0.24);
+}
+
 .search-panel-host :global(.sa-find-dropdown) {
     background-color: var(--search-panel-menu-bg);
     color: var(--search-panel-fg);
