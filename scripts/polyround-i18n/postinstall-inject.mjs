@@ -97,13 +97,17 @@ try {
     if (!fs.existsSync(PAINT_EDITOR_MSGS_ABS)) {
         console.warn('[polyround-i18n] paint-editor-msgs.js 不存在，跳过 merge');
     } else {
-        // 1. 读原始 paint-editor-msgs.js，提取 { "en": {...}, "zh-cn": {...} }
+        // 1. 读原始 paint-editor-msgs.js，取出 `export default { ... };` 里的对象字面量。
+        // 不能用 /export\s+default\s+([\s\S]*)/ + JSON.parse：上游文件尾部只要多一个
+        // `;`、注释或额外语句，JSON.parse 就会抛 "Unexpected token ';'"。
+        // 这里改成截取第一个 `{` 到最后一个 `}` 之间的内容，对尾部噪音免疫。
         const rawMsgs = fs.readFileSync(PAINT_EDITOR_MSGS_ABS, 'utf8');
-        const msgsMatch = rawMsgs.match(/export\s+default\s+([\s\S]*)/);
-        if (!msgsMatch) {
+        const firstBrace = rawMsgs.indexOf('{');
+        const lastBrace = rawMsgs.lastIndexOf('}');
+        if (firstBrace === -1 || lastBrace <= firstBrace) {
             console.warn('[polyround-i18n] paint-editor-msgs.js 格式异常，跳过 merge');
         } else {
-            const msgsObj = JSON.parse(msgsMatch[1].trim().replace(/[;\s]+$/, ''));
+            const msgsObj = JSON.parse(rawMsgs.slice(firstBrace, lastBrace + 1));
             let added = 0;
             // 2. 遍历 inject json（已在第一步 copyFileSync 到 node_modules 里）
             for (const loc of polyRoundLocales) {
@@ -130,8 +134,9 @@ try {
         }
     }
 } catch (e) {
-    console.error(`[polyround-i18n] paint-editor-msgs merge FAIL: ${e.message}`);
-    fail++;
+    // 这一步只是补 i18n 文案，缺了最多让 polyRound 文案 fallback 到英文；
+    // 绝不能因为文案合成失败就让 CF Pages 整个构建挂掉（之前就是这里 exit 1 导致部署失败）。
+    console.warn(`[polyround-i18n] paint-editor-msgs merge 跳过（非致命）: ${e.message}`);
 }
 
 console.log(`[polyround-i18n] done: ok=${ok} skip=${skip} fail=${fail}`);

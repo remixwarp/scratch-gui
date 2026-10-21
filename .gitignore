@@ -47,6 +47,9 @@ dev-server.log
 devserver.log
 devserver*.log
 
-# Bun lock files — rely on package.json overrides instead of pinning bad indirect versions
-bun.lock
+# Bun lock 文件：必须提交 bun.lock（文本），CF Pages 靠它才能识别出包管理器是 bun。
+# 一旦检测不到，CF 会回退到 `npm install --progress=false`，而 npm 会为 git 依赖
+# scratch-render#develop 安装 devDependencies 并触发 playwright-chromium 下载浏览器
+# （playwright.download.prss.microsoft.com 在 CF 环境 DNS 被墙），导致构建失败。
+# 只忽略旧的二进制锁文件 bun.lockb。
 bun.lockb
