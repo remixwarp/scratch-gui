@@ -1,51 +1,9 @@
 // Mini Map addon：在自由窗口中显示脚本缩略图导航
-// 通过 VM.toJSON() 获取项目积木数据，按比例缩放绘制到 canvas
-// 点击或拖动缩略图 → 滚动 workspace 到对应位置
+// 直接读取 Blockly 工作区中每个积木的真实路径（含 C 型口、帽子、凹槽），
+// 绘制到离屏画布缓存；平移/缩放时只贴图 + 描边，开销与积木数量无关。
+// 点击或拖动缩略图 → 平移 workspace（不改变缩放），点哪里视野中心到哪里。
 
 import WindowManager from '../../window-system/window-manager.js';
-
-// Scratch Blockly 积木类别颜色映射（用于缩略图着色）
-const CATEGORY_COLORS = {
-    'motion': '#4C97FF',
-    'looks': '#9966FF',
-    'sound': '#CF63CF',
-    'event': '#FFBF00',
-    'control': '#FFAB19',
-    'sensing': '#5CB1D6',
-    'operator': '#59C059',
-    'data': '#FF8C1A',
-    'procedures': '#FF6680',
-    'argument': '#FF6680',
-    'video': '#868DA5',
-    'pen': '#0FBD8C',
-    'music': '#999999',
-    'text2speech': '#59C059',
-    'translate': '#CF63CF',
-    'makeymakey': '#FF8C1A',
-    'microbit': '#FFBF00',
-    'ev3': '#FF6680',
-    'wedo2': '#4C97FF',
-    'boost': '#59C059'
-};
-
-const getCategoryColor = opcode => {
-    try {
-        if (!opcode) return '#888888';
-        const parts = opcode.split('_');
-        const prefix = parts[0];
-        if (CATEGORY_COLORS[prefix]) return CATEGORY_COLORS[prefix];
-        // 检查是否是标准积木类别
-        const standardPrefixes = ['motion', 'looks', 'sound', 'event', 'control',
-            'sensing', 'operator', 'data', 'procedures', 'argument', 'video'];
-        if (standardPrefixes.includes(prefix)) {
-            return CATEGORY_COLORS[prefix] || '#888888';
-        }
-        // 扩展积木使用默认颜色
-        return '#888888';
-    } catch (e) {
-        return '#888888';
-    }
-};
 
 export default async function ({addon}) {
     let enabled = true;
@@ -67,10 +25,10 @@ export default async function ({addon}) {
         // ignore
     }
 
-    // 提前获取 Blockly workspace
+    let Blockly = null;
     let workspace = null;
     try {
-        const Blockly = await addon.tab.traps.getBlockly();
+        Blockly = await addon.tab.traps.getBlockly();
         if (Blockly) {
             workspace = Blockly.getMainWorkspace();
         }
@@ -79,65 +37,36 @@ export default async function ({addon}) {
     }
 
     let canvas = null;
-    let collapsed = false;
+    let contentEl = null;
     let dragging = false;
-    let lastDrawTime = 0;
     let drawScheduled = false;
+    let lastDrawTime = 0;
     let eventsBound = false;
 
-    // 从 VM JSON 数据获取所有积木信息
-    const getBlocksBounds = () => {
-        let vm = null;
+    // 缩略图几何缓存：只有积木真的变化时才重建
+    let cacheDirty = true;
+    let cachedLayer = null;
+    let lastDrawKey = '';
+    let resizeObserver = null;
+    let changeListenerWorkspace = null;
+
+    const getMainWorkspace = () => {
+        if (workspace) return workspace;
         try {
-            vm = addon.tab.traps.vm;
+            if (Blockly) workspace = Blockly.getMainWorkspace();
         } catch (e) {
-            return null;
+            // ignore
         }
-        if (!vm) return null;
-
-        let projectJSON;
-        try {
-            projectJSON = JSON.parse(vm.toJSON());
-        } catch (e) {
-            return null;
-        }
-        if (!projectJSON || !projectJSON.targets) return null;
-
-        const targets = projectJSON.targets;
-        const blocks = [];
-        let minX = Infinity;
-        let minY = Infinity;
-        let maxX = -Infinity;
-        let maxY = -Infinity;
-
-        for (const target of targets) {
-            const targetBlocks = target.blocks || {};
-            for (const blockId in targetBlocks) {
-                const block = targetBlocks[blockId];
-                if (!block.opcode) continue;
-
-                const x = block.x || 0;
-                const y = block.y || 0;
-                const color = getCategoryColor(block.opcode);
-
-                blocks.push({x, y, w: 60, h: 30, color});
-                if (x < minX) minX = x;
-                if (y < minY) minY = y;
-                if (x + 60 > maxX) maxX = x + 60;
-                if (y + 30 > maxY) maxY = y + 30;
-            }
-        }
-
-        if (blocks.length === 0) return null;
-        return {blocks, minX, minY, maxX, maxY, contentWidth: maxX - minX, contentHeight: maxY - minY};
+        return workspace;
     };
 
     // 获取当前视口在 workspace 坐标系的位置
     const getViewport = () => {
-        if (!workspace) return null;
+        const ws = getMainWorkspace();
+        if (!ws) return null;
         let m;
         try {
-            m = workspace.getMetrics();
+            m = ws.getMetrics();
         } catch (e) {
             return null;
         }
@@ -150,121 +79,276 @@ export default async function ({addon}) {
         };
     };
 
-    // 绘制缩略图
-    const draw = () => {
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const W = canvas.width;
-        const H = canvas.height;
+    // 读取积木的真实外形路径与颜色
+    const collectBlocks = () => {
+        const ws = getMainWorkspace();
+        if (!ws) return null;
 
-        // 清空
-        ctx.clearRect(0, 0, W, H);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-        ctx.fillRect(0, 0, W, H);
+        let all = [];
+        try {
+            all = ws.getAllBlocks(false) || [];
+        } catch (e) {
+            return null;
+        }
 
-        const bounds = getBlocksBounds();
-        if (!bounds) {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.font = '10px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('暂无积木', W / 2, H / 2);
+        const blocks = [];
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        for (const block of all) {
+            try {
+                if (!block || block.workspace !== ws) continue;
+                // 影子块（输入槽里的数字块）在缩略图尺寸下只是噪点，跳过
+                if (typeof block.isShadow === 'function' && block.isShadow()) continue;
+
+                const root = typeof block.getSvgRoot === 'function' ? block.getSvgRoot() : null;
+                if (!root) continue;
+                const pathEl = root.querySelector('.blocklyPath');
+                if (!pathEl) continue;
+                const d = pathEl.getAttribute('d');
+                if (!d) continue;
+
+                // getBBox 返回积木本地坐标（workspace 单位），不受缩放/滚动影响
+                const bbox = pathEl.getBBox();
+                if (!bbox || !(bbox.width > 0) || !(bbox.height > 0)) continue;
+
+                const pos = block.getRelativeToSurfaceXY();
+                if (!pos) continue;
+
+                let color = '';
+                try {
+                    if (typeof block.getColour === 'function') {
+                        const c = block.getColour();
+                        if (typeof c === 'string' && c) color = c;
+                    }
+                } catch (e) {
+                    // ignore
+                }
+                if (!color) {
+                    const fill = window.getComputedStyle(pathEl).fill;
+                    if (fill && fill !== 'none') color = fill;
+                }
+                if (!color) color = '#888888';
+
+                blocks.push({
+                    // 积木外层 <g> 的位置；路径 d 是积木本地坐标
+                    px: pos.x,
+                    py: pos.y,
+                    bx: bbox.x,
+                    by: bbox.y,
+                    bw: bbox.width,
+                    bh: bbox.height,
+                    color,
+                    path: new Path2D(d)
+                });
+
+                const x0 = pos.x + bbox.x;
+                const y0 = pos.y + bbox.y;
+                if (x0 < minX) minX = x0;
+                if (y0 < minY) minY = y0;
+                if (x0 + bbox.width > maxX) maxX = x0 + bbox.width;
+                if (y0 + bbox.height > maxY) maxY = y0 + bbox.height;
+            } catch (e) {
+                // 单个积木异常不影响整张图
+            }
+        }
+
+        if (blocks.length === 0) return null;
+        return {blocks, minX, minY, maxX, maxY};
+    };
+
+    // 重建离屏缓存
+    const buildLayer = () => {
+        cacheDirty = false;
+        const data = collectBlocks();
+        if (!data) {
+            cachedLayer = null;
             return;
         }
 
-        // 计算缩放：包含所有积木 + 一定的 padding
-        const padding = 4;
-        const scaleX = (W - padding * 2) / Math.max(1, bounds.contentWidth);
-        const scaleY = (H - padding * 2) / Math.max(1, bounds.contentHeight);
-        const scale = Math.min(scaleX, scaleY);
+        // 留一圈空白，点击范围也包含这一点留白
+        const pad = 12;
+        const minX = data.minX - pad;
+        const minY = data.minY - pad;
+        const maxX = data.maxX + pad;
+        const maxY = data.maxY + pad;
+        const contentW = Math.max(1, maxX - minX);
+        const contentH = Math.max(1, maxY - minY);
 
-        // 居中偏移
-        const offsetX = padding + (W - padding * 2 - bounds.contentWidth * scale) / 2;
-        const offsetY = padding + (H - padding * 2 - bounds.contentHeight * scale) / 2;
+        // 离屏分辨率最多 2048，避免大作品占用过多内存
+        const resolution = Math.min(1, 2048 / Math.max(contentW, contentH));
+        const layer = document.createElement('canvas');
+        layer.width = Math.max(1, Math.ceil(contentW * resolution));
+        layer.height = Math.max(1, Math.ceil(contentH * resolution));
+        const lctx = layer.getContext('2d');
+        lctx.setTransform(resolution, 0, 0, resolution, -minX * resolution, -minY * resolution);
 
-        // 绘制每个积木
-        for (const b of bounds.blocks) {
-            const x = offsetX + (b.x - bounds.minX) * scale;
-            const y = offsetY + (b.y - bounds.minY) * scale;
-            const w = Math.max(1, b.w * scale);
-            const h = Math.max(1, b.h * scale);
-            ctx.fillStyle = b.color;
-            ctx.globalAlpha = 0.85;
-            ctx.fillRect(x, y, w, h);
+        for (const b of data.blocks) {
+            try {
+                lctx.save();
+                lctx.translate(b.px, b.py);
+                lctx.fillStyle = b.color;
+                lctx.fill(b.path);
+                lctx.restore();
+            } catch (e) {
+                // ignore
+            }
         }
-        ctx.globalAlpha = 1;
 
-        // 绘制视口框
+        cachedLayer = {canvas: layer, minX, minY, contentW, contentH};
+    };
+
+    // 绘制缩略图
+    const draw = () => {
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const W = rect.width;
+        const H = rect.height;
+        if (W < 2 || H < 2) return;
+
         const vp = getViewport();
+        const vpKey = vp ? `${vp.x.toFixed(1)},${vp.y.toFixed(1)},${vp.w.toFixed(1)},${vp.h.toFixed(1)}` : 'none';
+        const drawKey = `${Math.round(W)}x${Math.round(H)}|${vpKey}`;
+        if (!cacheDirty && drawKey === lastDrawKey) return;
+        lastDrawKey = drawKey;
+
+        const dpr = window.devicePixelRatio || 1;
+        const pixelW = Math.round(W * dpr);
+        const pixelH = Math.round(H * dpr);
+        if (canvas.width !== pixelW || canvas.height !== pixelH) {
+            canvas.width = pixelW;
+            canvas.height = pixelH;
+        }
+
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.fillRect(0, 0, W, H);
+
+        if (cacheDirty) buildLayer();
+
+        const layer = cachedLayer;
+
+        // 空工作区：只画视野方框
+        if (!layer) {
+            canvas._rwView = null;
+            if (vp) {
+                const pad = 24;
+                const minX = vp.x - pad;
+                const minY = vp.y - pad;
+                const contentW = Math.max(1, vp.w + pad * 2);
+                const contentH = Math.max(1, vp.h + pad * 2);
+                const scale = Math.min((W - 8) / contentW, (H - 8) / contentH);
+                const ox = (W - contentW * scale) / 2;
+                const oy = (H - contentH * scale) / 2;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(ox + (vp.x - minX) * scale, oy + (vp.y - minY) * scale,
+                    vp.w * scale, vp.h * scale);
+            }
+            return;
+        }
+
+        // 等比适配窗口，居中
+        const padPx = 4;
+        const scale = Math.min(
+            (W - padPx * 2) / layer.contentW,
+            (H - padPx * 2) / layer.contentH
+        );
+        const offsetX = padPx + (W - padPx * 2 - layer.contentW * scale) / 2;
+        const offsetY = padPx + (H - padPx * 2 - layer.contentH * scale) / 2;
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(
+            layer.canvas,
+            offsetX, offsetY,
+            layer.contentW * scale, layer.contentH * scale
+        );
+
+        // 视野框
         if (vp) {
-            const vx = offsetX + (vp.x - bounds.minX) * scale;
-            const vy = offsetY + (vp.y - bounds.minY) * scale;
+            const vx = offsetX + (vp.x - layer.minX) * scale;
+            const vy = offsetY + (vp.y - layer.minY) * scale;
             const vw = vp.w * scale;
             const vh = vp.h * scale;
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(vx - 1, vy - 1, vw + 2, vh + 2);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.lineWidth = 1;
             ctx.strokeRect(vx, vy, vw, vh);
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.strokeRect(vx - 1, vy - 1, vw + 2, vh + 2);
         }
 
-        // 保存当前缩放参数用于点击定位
-        canvas._rwBounds = bounds;
-        canvas._rwScale = scale;
-        canvas._rwOffsetX = offsetX;
-        canvas._rwOffsetY = offsetY;
+        // 保存当前变换用于点击定位
+        canvas._rwView = {
+            minX: layer.minX,
+            minY: layer.minY,
+            maxX: layer.minX + layer.contentW,
+            maxY: layer.minY + layer.contentH,
+            scale,
+            offsetX,
+            offsetY
+        };
     };
 
     // 节流绘制
     const scheduleDraw = () => {
         const now = Date.now();
         if (drawScheduled) return;
-        if (now - lastDrawTime < 200) {
+        if (now - lastDrawTime < 80) {
             drawScheduled = true;
             setTimeout(() => {
                 drawScheduled = false;
                 lastDrawTime = Date.now();
                 draw();
-            }, 200 - (now - lastDrawTime));
+            }, 80 - (now - lastDrawTime));
         } else {
             lastDrawTime = now;
             draw();
         }
     };
 
-    // 点击/拖动 → 滚动 workspace
+    // 点击/拖动 → 平移 workspace，点哪里视野中心到哪里，不改变缩放
     const scrollTo = (clientX, clientY) => {
-        if (!canvas || !canvas._rwBounds || !workspace) return;
+        const ws = getMainWorkspace();
+        const view = canvas && canvas._rwView;
+        if (!canvas || !view || !ws) return;
+
         const rect = canvas.getBoundingClientRect();
         const px = clientX - rect.left;
         const py = clientY - rect.top;
-        const bounds = canvas._rwBounds;
-        const scale = canvas._rwScale;
-        const offsetX = canvas._rwOffsetX;
-        const offsetY = canvas._rwOffsetY;
+
         // 缩略图坐标 → workspace 坐标
-        const wx = (px - offsetX) / scale + bounds.minX;
-        const wy = (py - offsetY) / scale + bounds.minY;
-        // 使 (wx, wy) 居中于视口
+        let wx = (px - view.offsetX) / view.scale + view.minX;
+        let wy = (py - view.offsetY) / view.scale + view.minY;
+
+        // 只在脚本范围（含留白）内定位，空白角落点不过去
+        wx = Math.max(view.minX, Math.min(view.maxX, wx));
+        wy = Math.max(view.minY, Math.min(view.maxY, wy));
+
         const vp = getViewport();
         if (!vp) return;
         const targetViewLeft = wx - vp.w / 2;
         const targetViewTop = wy - vp.h / 2;
-        // 通过 scrollbar 滚动
+
         try {
-            if (workspace.scrollbar) {
-                if (workspace.scrollbar.hScroll && workspace.scrollbar.vScroll) {
-                    workspace.scrollbar.hScroll.set(targetViewLeft);
-                    workspace.scrollbar.vScroll.set(targetViewTop);
-                } else if (typeof workspace.scrollbar.set === 'function') {
-                    workspace.scrollbar.set(targetViewLeft, targetViewTop);
+            if (ws.scrollbar) {
+                if (ws.scrollbar.hScroll && ws.scrollbar.vScroll) {
+                    ws.scrollbar.hScroll.set(targetViewLeft);
+                    ws.scrollbar.vScroll.set(targetViewTop);
+                } else if (typeof ws.scrollbar.set === 'function') {
+                    ws.scrollbar.set(targetViewLeft, targetViewTop);
                 }
-            } else if (workspace.scrollbar_ && workspace.scrollbar_.set) {
-                workspace.scrollbar_.set(targetViewLeft, targetViewTop);
+            } else if (ws.scrollbar_ && ws.scrollbar_.set) {
+                ws.scrollbar_.set(targetViewLeft, targetViewTop);
             }
         } catch (e) {
             try {
-                if (typeof workspace.scroll === 'function') {
-                    workspace.scroll(-targetViewLeft, -targetViewTop);
+                if (typeof ws.scroll === 'function') {
+                    ws.scroll(-targetViewLeft, -targetViewTop);
                 }
             } catch (e2) {
                 // ignore
@@ -278,15 +362,57 @@ export default async function ({addon}) {
 
     const handleCanvasDown = e => {
         dragging = true;
+        try {
+            canvas.setPointerCapture(e.pointerId);
+        } catch (err) {
+            // ignore
+        }
         scrollTo(e.clientX, e.clientY);
         e.preventDefault();
+        e.stopPropagation();
     };
     const handleCanvasMove = e => {
         if (!dragging) return;
         scrollTo(e.clientX, e.clientY);
+        e.preventDefault();
     };
-    const handleCanvasUp = () => {
+    const handleCanvasUp = e => {
         dragging = false;
+        try {
+            if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+        } catch (err) {
+            // ignore
+        }
+    };
+
+    // 监听工作区变化：积木增删改 → 标记缓存失效
+    const attachWorkspaceListener = () => {
+        const ws = getMainWorkspace();
+        if (!ws || changeListenerWorkspace === ws) return;
+        try {
+            ws.addChangeListener(() => {
+                cacheDirty = true;
+                if (miniMapWindow && miniMapWindow.isVisible) scheduleDraw();
+            });
+            // 滚轮平移/缩放时视野框立即跟随
+            const svg = typeof ws.getParentSvg === 'function' ? ws.getParentSvg() : null;
+            if (svg && !svg._rwMinimapWheelBound) {
+                svg._rwMinimapWheelBound = true;
+                svg.addEventListener('wheel', () => {
+                    if (miniMapWindow && miniMapWindow.isVisible) scheduleDraw();
+                }, {passive: true});
+            }
+            changeListenerWorkspace = ws;
+        } catch (e) {
+            // ignore
+        }
+    };
+
+    const observeSize = () => {
+        if (!contentEl || typeof ResizeObserver === 'undefined') return;
+        if (resizeObserver) resizeObserver.disconnect();
+        resizeObserver = new ResizeObserver(() => scheduleDraw());
+        resizeObserver.observe(contentEl);
     };
 
     const createUI = () => {
@@ -301,24 +427,29 @@ export default async function ({addon}) {
             onClose: () => {}
         });
 
-        const content = document.createElement('div');
-        content.className = 'rw-minimap-content';
+        contentEl = document.createElement('div');
+        contentEl.className = 'rw-minimap-content';
         canvas = document.createElement('canvas');
         canvas.className = 'rw-minimap-canvas';
         canvas.width = mapWidth;
         canvas.height = mapHeight;
-        content.appendChild(canvas);
-        miniMapWindow.setContent(content);
+        contentEl.appendChild(canvas);
+        miniMapWindow.setContent(contentEl);
 
-        // 绑定画布事件
-        canvas.addEventListener('mousedown', handleCanvasDown);
+        // 指针事件同时兼容鼠标和手指
+        canvas.addEventListener('pointerdown', handleCanvasDown);
+        canvas.addEventListener('pointermove', handleCanvasMove);
+        canvas.addEventListener('pointerup', handleCanvasUp);
+        canvas.addEventListener('pointercancel', handleCanvasUp);
+        canvas.addEventListener('lostpointercapture', () => {
+            dragging = false;
+        });
 
-        // 只绑定一次全局拖动事件
-        if (!eventsBound) {
-            document.addEventListener('mousemove', handleCanvasMove);
-            document.addEventListener('mouseup', handleCanvasUp);
-            eventsBound = true;
-        }
+        eventsBound = true;
+        attachWorkspaceListener();
+        observeSize();
+        cacheDirty = true;
+        scheduleDraw();
     };
 
     // 检测窗口是否仍然存活（未销毁）
@@ -327,9 +458,22 @@ export default async function ({addon}) {
     // 初始化窗口
     createUI();
 
-    // 定时重绘（捕获积木变化）
+    // 定时清理事件绑定（窗口销毁后不再需要）
+    window.addEventListener('beforeunload', () => {
+        if (eventsBound && canvas) {
+            canvas.removeEventListener('pointerdown', handleCanvasDown);
+            canvas.removeEventListener('pointermove', handleCanvasMove);
+            canvas.removeEventListener('pointerup', handleCanvasUp);
+            canvas.removeEventListener('pointercancel', handleCanvasUp);
+        }
+        if (resizeObserver) resizeObserver.disconnect();
+    });
+
+    // 定时重绘：只在视野变化时真正重绘，空闲时不占用帧
     setInterval(() => {
-        if (isWindowAlive() && miniMapWindow.isVisible) {
+        if (!isWindowAlive()) return;
+        attachWorkspaceListener();
+        if (miniMapWindow.isVisible) {
             scheduleDraw();
         }
     }, 300);

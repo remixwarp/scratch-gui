@@ -609,7 +609,7 @@ class AddonWindow {
             if (e.target.closest && e.target.closest('.addon-window-controls')) return;
             // 按钮、输入框等交互控件优先响应点击，不能把边缘缩放误判成拖拽
             if (e.target.closest && e.target.closest(
-                'button, a, input, select, textarea, [role="button"]'
+                'button, a, input, select, textarea, canvas, [role="button"]'
             )) return;
 
             const touch = e.touches[0];
