@@ -4,7 +4,7 @@
 }
 
 .super-refactor-modal.dark-theme {
-    background: #2d2d2d;
+    background: #000000;
     color: #e0e0e0;
 }
 
@@ -29,7 +29,7 @@
 }
 
 .super-refactor-modal.dark-theme .file-list {
-    background: #2d2d2d;
+    background: #000000;
     border-color: #444;
 }
 
@@ -40,7 +40,7 @@
 }
 
 .super-refactor-modal.dark-theme .file-list-header {
-    background: #3a3a3a;
+    background: #000000;
     border-bottom-color: #444;
 }
 
@@ -58,7 +58,7 @@
 }
 
 .super-refactor-modal.dark-theme .search-box input {
-    background: #3a3a3a;
+    background: #000000;
     color: #e0e0e0;
     border-color: #555;
 }
@@ -95,7 +95,7 @@
 }
 
 .super-refactor-modal.dark-theme .file-item {
-    background: #2d2d2d;
+    background: #000000;
     color: #e0e0e0;
     border-bottom-color: #444;
 }
@@ -105,7 +105,7 @@
 }
 
 .super-refactor-modal.dark-theme .file-item:hover {
-    background: #3a3a3a;
+    background: #1a1a1a;
 }
 
 .super-refactor-modal .file-item.selected {
@@ -135,7 +135,7 @@
 }
 
 .super-refactor-modal.dark-theme .editor-header {
-    background: #3a3a3a;
+    background: #000000;
     color: #e0e0e0;
     border-color: #444;
 }
@@ -157,7 +157,7 @@
 }
 
 .super-refactor-modal.dark-theme .editor-actions button {
-    background: #4a4a4a;
+    background: #000000;
     color: #e0e0e0;
     border-color: #555;
 }
@@ -266,7 +266,7 @@
 }
 
 .super-refactor-modal.dark-theme .preview-container {
-    background: #3a3a3a;
+    background: #000000;
     border-color: #444;
 }
 
@@ -341,7 +341,7 @@
 }
 
 .super-refactor-modal.dark-theme ::-webkit-scrollbar-track {
-    background: #3a3a3a;
+    background: #000000;
 }
 
 .super-refactor-modal ::-webkit-scrollbar-thumb {

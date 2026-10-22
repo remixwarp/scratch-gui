@@ -3,7 +3,17 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {injectIntl} from 'react-intl';
 import bindAll from 'lodash.bindall';
-import {ChevronDown, ChevronRight, Folder, FolderOpen, Settings} from 'lucide-react';
+import {
+    ChevronDown,
+    ChevronRight,
+    File,
+    FileAudio,
+    FileCode,
+    FileImage,
+    Folder,
+    FolderOpen,
+    Settings
+} from 'lucide-react';
 import {closeSuperRefactorModal} from '../reducers/modals';
 import Modal from './windowed-modal.jsx';
 import Button from '../components/button/button.jsx';
@@ -111,7 +121,6 @@ class SuperRefactorModalContainer extends React.Component {
             'toggleViewMode',
             'handleEditorScroll',
             'handleEditorKeyDown',
-            'handleWordWrapToggle',
             'handleMonacoMessage',
             'sendToMonacoIframe',
             'handleWindowResize',
@@ -206,38 +215,61 @@ class SuperRefactorModalContainer extends React.Component {
         
         // 延迟执行以确保窗口已创建
         setTimeout(() => {
-            const windowElement = document.querySelector('#superRefactorModal');
-            if (windowElement) {
+            const windowElements = document.querySelectorAll(
+                '#superRefactorModal, #superRefactorSettingsModal'
+            );
+            windowElements.forEach(windowElement => {
                 if (isDarkTheme) {
                     windowElement.classList.add('dark-theme');
-                    windowElement.style.background = '#2d2d2d';
+                    windowElement.style.background = '#000000';
                     windowElement.style.color = '#e0e0e0';
-                    
+
+                    // 标题栏也变成纯黑，避免窗口顶部仍是灰色
+                    const headerElement = windowElement.querySelector('.addon-window-header');
+                    if (headerElement) {
+                        headerElement.style.background = '#000000';
+                        headerElement.style.borderBottomColor = '#3a3a3a';
+                    }
+
                     // 同时也设置内部元素的样式
                     const contentElement = windowElement.querySelector('.addon-window-content');
                     if (contentElement) {
-                        contentElement.style.background = '#2d2d2d';
+                        contentElement.style.background = '#000000';
                         contentElement.style.color = '#e0e0e0';
                     }
-                    
-                    // 设置输入框和文本区域的样式
+                    const modalContentElement = windowElement.querySelector('.modal-window-content');
+                    if (modalContentElement) {
+                        modalContentElement.style.background = '#000000';
+                    }
+
+                    // 设置输入框和文本区域的样式（文本编辑器区域保持原有深色）
                     const inputs = windowElement.querySelectorAll('input, textarea');
                     inputs.forEach(input => {
-                        input.style.background = '#3a3a3a';
+                        input.style.background = input.tagName === 'TEXTAREA' ? '#1e1e1e' : '#000000';
                         input.style.color = '#e0e0e0';
                         input.style.borderColor = '#555555';
                     });
-                    
+
                 } else {
                     windowElement.classList.remove('dark-theme');
                     windowElement.style.background = '';
                     windowElement.style.color = '';
+
+                    const headerElement = windowElement.querySelector('.addon-window-header');
+                    if (headerElement) {
+                        headerElement.style.background = '';
+                        headerElement.style.borderBottomColor = '';
+                    }
                     
                     // 移除内部元素的样式
                     const contentElement = windowElement.querySelector('.addon-window-content');
                     if (contentElement) {
                         contentElement.style.background = '';
                         contentElement.style.color = '';
+                    }
+                    const modalContentElement = windowElement.querySelector('.modal-window-content');
+                    if (modalContentElement) {
+                        modalContentElement.style.background = '';
                     }
                     
                     // 移除输入框和文本区域的样式
@@ -248,7 +280,7 @@ class SuperRefactorModalContainer extends React.Component {
                         input.style.borderColor = '';
                     });
                 }
-            }
+            });
         }, 100);
     }
 
@@ -494,19 +526,6 @@ class SuperRefactorModalContainer extends React.Component {
             
             this.handleFileChange({target: e.target});
         }
-    }
-
-    handleWordWrapToggle () {
-        const newWordWrap = !this.state.wordWrap;
-        this.setState({ wordWrap: newWordWrap }, () => {
-            // 更新 Monaco iframe 的 wordWrap 设置
-            if (this.state.useMonacoEditor && this.state.monacoIframeReady) {
-                this.sendToMonacoIframe({
-                    type: 'monaco-set-wordwrap',
-                    wordWrap: newWordWrap
-                });
-            }
-        });
     }
 
     // 切换到 Monaco 编辑器（iframe 方式）
@@ -1083,14 +1102,14 @@ class SuperRefactorModalContainer extends React.Component {
         }
     }
 
-    // 获取文件图标
+    // 获取文件图标（复用编辑器图标库 lucide-react）
     getFileIcon (type) {
         switch (type) {
-            case 'json': return '▤';
-            case 'image': return '▣';
-            case 'svg': return '◇';
-            case 'sound': return '♪';
-            default: return '▢';
+            case 'json': return <FileCode size={14} />;
+            case 'image': return <FileImage size={14} />;
+            case 'svg': return <FileImage size={14} />;
+            case 'sound': return <FileAudio size={14} />;
+            default: return <File size={14} />;
         }
     }
 
@@ -1213,7 +1232,9 @@ class SuperRefactorModalContainer extends React.Component {
                         overflow: 'hidden'
                     }}
                 >
-                    <span>{this.getFileIcon(file.type)}</span>
+                    <span style={{display: 'flex', alignItems: 'center', flexShrink: 0}}>
+                        {this.getFileIcon(file.type)}
+                    </span>
                     <span style={{
                         flex: 1,
                         minWidth: 0,
@@ -1333,12 +1354,12 @@ class SuperRefactorModalContainer extends React.Component {
         const {theme} = this.props;
         const isDarkTheme = theme && typeof theme.isDark === 'function' ? theme.isDark() : false;
         const colors = {
-            background: isDarkTheme ? '#2d2d2d' : '#ffffff',
+            background: isDarkTheme ? '#000000' : '#ffffff',
             text: isDarkTheme ? '#e0e0e0' : '#333333',
             textSecondary: isDarkTheme ? '#a0a0a0' : '#666666',
             border: isDarkTheme ? '#444444' : '#cccccc',
-            headerBg: isDarkTheme ? '#3a3a3a' : '#f5f5f5',
-            inputBg: isDarkTheme ? '#3a3a3a' : '#ffffff',
+            headerBg: isDarkTheme ? '#000000' : '#f5f5f5',
+            inputBg: isDarkTheme ? '#000000' : '#ffffff',
             inputBorder: isDarkTheme ? '#555555' : '#cccccc'
         };
         const {fileViewMode, useMonacoEditor, editorOptions} = this.state;
@@ -1503,15 +1524,17 @@ class SuperRefactorModalContainer extends React.Component {
         
         // 主题颜色
         const colors = {
-            background: isDarkTheme ? '#2d2d2d' : '#ffffff',
+            background: isDarkTheme ? '#000000' : '#ffffff',
             text: isDarkTheme ? '#e0e0e0' : '#333333',
             textSecondary: isDarkTheme ? '#a0a0a0' : '#666666',
-            border: isDarkTheme ? '#444444' : '#cccccc',
-            headerBg: isDarkTheme ? '#3a3a3a' : '#f5f5f5',
-            inputBg: isDarkTheme ? '#3a3a3a' : '#ffffff',
+            border: isDarkTheme ? '#3a3a3a' : '#cccccc',
+            headerBg: isDarkTheme ? '#000000' : '#f5f5f5',
+            inputBg: isDarkTheme ? '#000000' : '#ffffff',
             inputBorder: isDarkTheme ? '#555555' : '#cccccc',
-            buttonBg: isDarkTheme ? '#4a4a4a' : '#f5f5f5',
-            buttonHover: isDarkTheme ? '#5a5a5a' : '#e0e0e0'
+            buttonBg: isDarkTheme ? '#000000' : '#f5f5f5',
+            buttonHover: isDarkTheme ? '#1a1a1a' : '#e0e0e0',
+            // 文本编辑器区域保持原有深色，不跟随窗口变成纯黑
+            editorBg: isDarkTheme ? '#1e1e1e' : '#ffffff'
         };
 
         // 是否可以编辑
@@ -1697,7 +1720,9 @@ class SuperRefactorModalContainer extends React.Component {
                                                 }}
                                                 title={file.name}
                                             >
-                                                    <span>{this.getFileIcon(file.type)}</span>
+                                                    <span style={{display: 'flex', alignItems: 'center', flexShrink: 0}}>
+                        {this.getFileIcon(file.type)}
+                    </span>
                                                     <span style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
                                                         {file.name}
                                                     </span>
@@ -1757,23 +1782,6 @@ class SuperRefactorModalContainer extends React.Component {
                                             {viewMode === 'preview' ? '显示代码' : '显示预览'}
                                         </button>
                                     )}
-                                    {canEdit && (
-                                        <button
-                                            onClick={this.handleWordWrapToggle}
-                                            style={{
-                                                padding: '4px 8px',
-                                                background: wordWrap ? '#4d97ff' : colors.buttonBg,
-                                                color: wordWrap ? 'white' : colors.text,
-                                                border: `1px solid ${colors.border}`,
-                                                borderRadius: '3px',
-                                                cursor: 'pointer',
-                                                fontSize: '10px',
-                                                fontWeight: wordWrap ? 'bold' : 'normal'
-                                            }}
-                                        >
-                                            {wordWrap ? '自动换行' : '禁用换行'}
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                             
@@ -1813,7 +1821,7 @@ class SuperRefactorModalContainer extends React.Component {
                                                 outline: 'none',
                                                 border: `1px solid ${colors.border}`,
                                                 borderRadius: '0 0 4px 4px',
-                                                background: colors.inputBg,
+                                                background: colors.editorBg,
                                                 color: colors.text,
                                                 whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
                                                 wordWrap: wordWrap ? 'break-word' : 'normal',
@@ -1831,7 +1839,7 @@ class SuperRefactorModalContainer extends React.Component {
                                         }}>
                                             <div style={{
                                                 width: '40px',
-                                                background: colors.headerBg,
+                                                background: colors.editorBg,
                                                 borderRight: `1px solid ${colors.border}`,
                                                 overflow: 'hidden'
                                             }} dangerouslySetInnerHTML={{ __html: this.getLineNumbers(content) }} />
