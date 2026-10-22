@@ -155,7 +155,10 @@ const IN_PAGE_WINDOW_IDS = new Set([
     'customProceduresModal',
     // 拆分舞台必须落在应用内的自由窗口里（而不是原生浏览器弹出窗口），
     // 这样唯一的渲染画布才能在同一个文档内被搬运、且窗口始终可见。
-    'split-stage-window'
+    'split-stage-window',
+    // Mini Map 的内容由主文档里的 canvas 实时绘制，且移动端原生弹窗
+    // 常被浏览器拦截/加载失败（只剩一个空白窗口），必须渲染在应用内。
+    'rw-minimap-window'
 ]);
 
 const canUseNativeWindows = () =>
