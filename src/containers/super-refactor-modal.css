@@ -4,7 +4,7 @@
 }
 
 .super-refactor-modal.dark-theme {
-    background: #000000;
+    background: #1E1E1E;
     color: #e0e0e0;
 }
 
@@ -29,7 +29,7 @@
 }
 
 .super-refactor-modal.dark-theme .file-list {
-    background: #000000;
+    background: #1E1E1E;
     border-color: #444;
 }
 
@@ -40,7 +40,7 @@
 }
 
 .super-refactor-modal.dark-theme .file-list-header {
-    background: #000000;
+    background: #1E1E1E;
     border-bottom-color: #444;
 }
 
@@ -58,7 +58,7 @@
 }
 
 .super-refactor-modal.dark-theme .search-box input {
-    background: #000000;
+    background: #1E1E1E;
     color: #e0e0e0;
     border-color: #555;
 }
@@ -95,7 +95,7 @@
 }
 
 .super-refactor-modal.dark-theme .file-item {
-    background: #000000;
+    background: #1E1E1E;
     color: #e0e0e0;
     border-bottom-color: #444;
 }
@@ -135,7 +135,7 @@
 }
 
 .super-refactor-modal.dark-theme .editor-header {
-    background: #000000;
+    background: #1E1E1E;
     color: #e0e0e0;
     border-color: #444;
 }
@@ -157,7 +157,7 @@
 }
 
 .super-refactor-modal.dark-theme .editor-actions button {
-    background: #000000;
+    background: #1E1E1E;
     color: #e0e0e0;
     border-color: #555;
 }
@@ -266,7 +266,7 @@
 }
 
 .super-refactor-modal.dark-theme .preview-container {
-    background: #000000;
+    background: #1E1E1E;
     border-color: #444;
 }
 
@@ -321,12 +321,81 @@
     background: #f44336;
 }
 
-/* 标题栏右侧的设置按钮 */
-.super-refactor-modal .super-refactor-settings-button:hover {
+/* 底部按钮区：固定在窗口下方，带真实边框和足够的触控面积 */
+.super-refactor-modal .super-refactor-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    margin-top: 10px;
+    padding: 10px 0 12px;
+    border-top: 1px solid #cccccc;
+}
+
+.super-refactor-modal .super-refactor-footer-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 7px 14px;
+    box-sizing: border-box;
+    border: 1px solid #b9b9b9;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #333333;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.super-refactor-modal .super-refactor-footer-button:hover {
+    background: #f0f0f0;
+}
+
+.super-refactor-modal .super-refactor-footer-settings {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    box-sizing: border-box;
+    border: 1px solid #b9b9b9;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #666666;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.super-refactor-modal .super-refactor-footer-settings:hover {
     background: rgba(77, 151, 255, 0.16);
 }
 
-.super-refactor-modal.dark-theme .super-refactor-settings-button:hover {
+.super-refactor-modal.dark-theme .super-refactor-footer {
+    border-top-color: #3a3a3a;
+}
+
+.super-refactor-modal.dark-theme .super-refactor-footer-button {
+    border-color: #4a4a4a;
+    background: #1E1E1E;
+    color: #e0e0e0;
+}
+
+.super-refactor-modal.dark-theme .super-refactor-footer-button:hover {
+    background: #2a2a2a;
+}
+
+.super-refactor-modal.dark-theme .super-refactor-footer-settings {
+    border-color: #4a4a4a;
+    background: #1E1E1E;
+    color: #a0a0a0;
+}
+
+.super-refactor-modal.dark-theme .super-refactor-footer-settings:hover {
     background: rgba(255, 255, 255, 0.12);
 }
 
@@ -341,7 +410,7 @@
 }
 
 .super-refactor-modal.dark-theme ::-webkit-scrollbar-track {
-    background: #000000;
+    background: #1E1E1E;
 }
 
 .super-refactor-modal ::-webkit-scrollbar-thumb {

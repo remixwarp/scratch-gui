@@ -221,31 +221,31 @@ class SuperRefactorModalContainer extends React.Component {
             windowElements.forEach(windowElement => {
                 if (isDarkTheme) {
                     windowElement.classList.add('dark-theme');
-                    windowElement.style.background = '#000000';
+                    windowElement.style.background = '#1E1E1E';
                     windowElement.style.color = '#e0e0e0';
 
                     // 标题栏也变成纯黑，避免窗口顶部仍是灰色
                     const headerElement = windowElement.querySelector('.addon-window-header');
                     if (headerElement) {
-                        headerElement.style.background = '#000000';
+                        headerElement.style.background = '#1E1E1E';
                         headerElement.style.borderBottomColor = '#3a3a3a';
                     }
 
                     // 同时也设置内部元素的样式
                     const contentElement = windowElement.querySelector('.addon-window-content');
                     if (contentElement) {
-                        contentElement.style.background = '#000000';
+                        contentElement.style.background = '#1E1E1E';
                         contentElement.style.color = '#e0e0e0';
                     }
                     const modalContentElement = windowElement.querySelector('.modal-window-content');
                     if (modalContentElement) {
-                        modalContentElement.style.background = '#000000';
+                        modalContentElement.style.background = '#1E1E1E';
                     }
 
                     // 设置输入框和文本区域的样式（文本编辑器区域保持原有深色）
                     const inputs = windowElement.querySelectorAll('input, textarea');
                     inputs.forEach(input => {
-                        input.style.background = input.tagName === 'TEXTAREA' ? '#1e1e1e' : '#000000';
+                        input.style.background = input.tagName === 'TEXTAREA' ? '#1e1e1e' : '#1E1E1E';
                         input.style.color = '#e0e0e0';
                         input.style.borderColor = '#555555';
                     });
@@ -1354,12 +1354,12 @@ class SuperRefactorModalContainer extends React.Component {
         const {theme} = this.props;
         const isDarkTheme = theme && typeof theme.isDark === 'function' ? theme.isDark() : false;
         const colors = {
-            background: isDarkTheme ? '#000000' : '#ffffff',
+            background: isDarkTheme ? '#1E1E1E' : '#ffffff',
             text: isDarkTheme ? '#e0e0e0' : '#333333',
             textSecondary: isDarkTheme ? '#a0a0a0' : '#666666',
             border: isDarkTheme ? '#444444' : '#cccccc',
-            headerBg: isDarkTheme ? '#000000' : '#f5f5f5',
-            inputBg: isDarkTheme ? '#000000' : '#ffffff',
+            headerBg: isDarkTheme ? '#1E1E1E' : '#f5f5f5',
+            inputBg: isDarkTheme ? '#1E1E1E' : '#ffffff',
             inputBorder: isDarkTheme ? '#555555' : '#cccccc'
         };
         const {fileViewMode, useMonacoEditor, editorOptions} = this.state;
@@ -1524,14 +1524,14 @@ class SuperRefactorModalContainer extends React.Component {
         
         // 主题颜色
         const colors = {
-            background: isDarkTheme ? '#000000' : '#ffffff',
+            background: isDarkTheme ? '#1E1E1E' : '#ffffff',
             text: isDarkTheme ? '#e0e0e0' : '#333333',
             textSecondary: isDarkTheme ? '#a0a0a0' : '#666666',
             border: isDarkTheme ? '#3a3a3a' : '#cccccc',
-            headerBg: isDarkTheme ? '#000000' : '#f5f5f5',
-            inputBg: isDarkTheme ? '#000000' : '#ffffff',
+            headerBg: isDarkTheme ? '#1E1E1E' : '#f5f5f5',
+            inputBg: isDarkTheme ? '#1E1E1E' : '#ffffff',
             inputBorder: isDarkTheme ? '#555555' : '#cccccc',
-            buttonBg: isDarkTheme ? '#000000' : '#f5f5f5',
+            buttonBg: isDarkTheme ? '#1E1E1E' : '#f5f5f5',
             buttonHover: isDarkTheme ? '#1a1a1a' : '#e0e0e0',
             // 文本编辑器区域保持原有深色，不跟随窗口变成纯黑
             editorBg: isDarkTheme ? '#1e1e1e' : '#ffffff'
@@ -1553,36 +1553,14 @@ class SuperRefactorModalContainer extends React.Component {
                 visible={!!visible}
                 className={`super-refactor-modal ${isDarkTheme ? 'dark-theme' : ''}`}
                 onRequestClose={this.handleClose}
-                showHeader={true}
+                showHeader={false}
                 width={this.state.modalWidth}
                 height={this.state.modalHeight}
-                headerActions={(
-                    <button
-                        className="super-refactor-settings-button"
-                        onClick={this.openSettings}
-                        title="超级重构设置"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '28px',
-                            height: '28px',
-                            padding: 0,
-                            border: 'none',
-                            borderRadius: '4px',
-                            background: 'transparent',
-                            color: colors.textSecondary,
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <Settings size={17} />
-                    </button>
-                )}
             >
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    height: 'calc(100% - 40px)',
+                    height: '100%',
                     padding: '20px',
                     boxSizing: 'border-box',
                     overflow: 'hidden',
@@ -2076,32 +2054,40 @@ class SuperRefactorModalContainer extends React.Component {
                         </div>
                     </div>
 
-                    {/* 按钮 */}
-                    <div style={{
-                        marginTop: '10px',
-                        paddingTop: '10px',
-                        borderTop: `1px solid ${colors.border}`,
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        gap: '10px',
-                        flexShrink: 0,
-                        flexWrap: 'wrap'
-                    }}>
-                        <Button onClick={this.handleRefresh}>
+                    {/* 按钮：固定在窗口底部 */}
+                    <div className="super-refactor-footer">
+                        <Button
+                            className="super-refactor-footer-button"
+                            onClick={this.handleRefresh}
+                        >
                             刷新
                         </Button>
-                        <Button 
+                        <Button
+                            className="super-refactor-footer-button"
                             onClick={this.applyChanges}
                             disabled={!canApply}
                         >
                             {canApply ? '应用到作品' : '不可应用'}
                         </Button>
-                        <Button onClick={this.downloadProject}>
+                        <Button
+                            className="super-refactor-footer-button"
+                            onClick={this.downloadProject}
+                        >
                             下载项目
                         </Button>
-                        <Button onClick={this.handleClose}>
+                        <Button
+                            className="super-refactor-footer-button"
+                            onClick={this.handleClose}
+                        >
                             关闭
                         </Button>
+                        <button
+                            className="super-refactor-footer-settings"
+                            onClick={this.openSettings}
+                            title="超级重构设置"
+                        >
+                            <Settings size={17} />
+                        </button>
                     </div>
                 </div>
 

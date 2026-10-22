@@ -607,6 +607,10 @@ class AddonWindow {
             // 已有的缩放手柄会自行处理，避免两套逻辑重复触发
             if (e.target.closest && e.target.closest('.resize-handle')) return;
             if (e.target.closest && e.target.closest('.addon-window-controls')) return;
+            // 按钮、输入框等交互控件优先响应点击，不能把边缘缩放误判成拖拽
+            if (e.target.closest && e.target.closest(
+                'button, a, input, select, textarea, [role="button"]'
+            )) return;
 
             const touch = e.touches[0];
             if (!touch) return;
