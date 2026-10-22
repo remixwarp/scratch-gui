@@ -1546,6 +1546,57 @@ class SuperRefactorModalContainer extends React.Component {
         // 是否显示切换按钮
         const showToggleButton = isSvg;
 
+        // 底部按钮区样式（内联样式，避免 CSS Modules 作用域影响）
+        const footerStyle = {
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+            flexShrink: 0,
+            marginTop: '10px',
+            paddingTop: '10px',
+            paddingBottom: '12px',
+            borderTop: `1px solid ${colors.border}`
+        };
+        const footerButtonStyle = {
+            display: 'inline-flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+            minHeight: '34px',
+            padding: '7px 14px',
+            boxSizing: 'border-box',
+            border: `1px solid ${isDarkTheme ? '#4a4a4a' : '#b9b9b9'}`,
+            borderRadius: '4px',
+            background: colors.buttonBg,
+            color: colors.text,
+            fontSize: '13px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            touchAction: 'manipulation'
+        };
+        const footerSettingsStyle = {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            width: '36px',
+            height: '36px',
+            padding: 0,
+            boxSizing: 'border-box',
+            border: `1px solid ${isDarkTheme ? '#4a4a4a' : '#b9b9b9'}`,
+            borderRadius: '4px',
+            background: colors.buttonBg,
+            color: colors.textSecondary,
+            cursor: 'pointer',
+            touchAction: 'manipulation'
+        };
+
         return (
             <Modal
                 id="superRefactorModal"
@@ -2055,15 +2106,22 @@ class SuperRefactorModalContainer extends React.Component {
                     </div>
 
                     {/* 按钮：固定在窗口底部 */}
-                    <div className="super-refactor-footer">
+                    <div
+                        className="super-refactor-footer"
+                        style={footerStyle}
+                    >
                         <Button
                             className="super-refactor-footer-button"
+                            style={footerButtonStyle}
                             onClick={this.handleRefresh}
                         >
                             刷新
                         </Button>
                         <Button
                             className="super-refactor-footer-button"
+                            style={Object.assign({}, footerButtonStyle, {
+                                opacity: canApply ? 1 : 0.5
+                            })}
                             onClick={this.applyChanges}
                             disabled={!canApply}
                         >
@@ -2071,12 +2129,14 @@ class SuperRefactorModalContainer extends React.Component {
                         </Button>
                         <Button
                             className="super-refactor-footer-button"
+                            style={footerButtonStyle}
                             onClick={this.downloadProject}
                         >
                             下载项目
                         </Button>
                         <Button
                             className="super-refactor-footer-button"
+                            style={footerButtonStyle}
                             onClick={this.handleClose}
                         >
                             关闭
@@ -2085,6 +2145,7 @@ class SuperRefactorModalContainer extends React.Component {
                             className="super-refactor-footer-settings"
                             onClick={this.openSettings}
                             title="超级重构设置"
+                            style={footerSettingsStyle}
                         >
                             <Settings size={17} />
                         </button>
