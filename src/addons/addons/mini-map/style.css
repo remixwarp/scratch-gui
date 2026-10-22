@@ -11,7 +11,7 @@
     border-radius: 0 0 12px 12px;
 }
 
-.rw-minimap-canvas {
+.rw-minimap-svg {
     display: block;
     flex: 1;
     min-height: 0;
@@ -22,4 +22,21 @@
     touch-action: none;
     -webkit-user-select: none;
     user-select: none;
+}
+
+/* 克隆进来的积木只负责显示，不接收指针事件 */
+.rw-minimap-blocks {
+    pointer-events: none;
+}
+
+.rw-minimap-blocks text {
+    pointer-events: none;
+}
+
+.rw-minimap-viewport {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.9);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
 }

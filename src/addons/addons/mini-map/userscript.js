@@ -1,9 +1,12 @@
 // Mini Map addon：在自由窗口中显示脚本缩略图导航
-// 直接读取 Blockly 工作区中每个积木的真实路径（含 C 型口、帽子、凹槽），
-// 绘制到离屏画布缓存；平移/缩放时只贴图 + 描边，开销与积木数量无关。
+// 预览逻辑：把工作区里每个积木的真实 <g> 节点克隆到窗口内的 <svg> 中，
+// 用 viewBox 直接等比缩放。这样 C 型口、帽子、凹槽、文字都是编辑器里
+// 本来的形状，不再依赖 canvas / Path2D 之类的解析。
 // 点击或拖动缩略图 → 平移 workspace（不改变缩放），点哪里视野中心到哪里。
 
 import WindowManager from '../../window-system/window-manager.js';
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export default async function ({addon}) {
     let enabled = true;
@@ -36,17 +39,19 @@ export default async function ({addon}) {
         // ignore
     }
 
-    let canvas = null;
     let contentEl = null;
+    let svgEl = null;
+    let blocksGroup = null;
+    let viewportRect = null;
     let dragging = false;
     let drawScheduled = false;
     let lastDrawTime = 0;
-    let eventsBound = false;
-
-    // 缩略图几何缓存：只有积木真的变化时才重建
-    let cacheDirty = true;
-    let cachedLayer = null;
     let lastDrawKey = '';
+
+    // 快照：只有积木真的变化时才重建
+    let cacheDirty = true;
+    let snapshot = null;
+    let lastBuildTime = 0;
     let resizeObserver = null;
     let changeListenerWorkspace = null;
 
@@ -79,23 +84,27 @@ export default async function ({addon}) {
         };
     };
 
-    // 读取积木的真实外形路径与颜色
-    const collectBlocks = () => {
+    // 重建预览快照：克隆每个非影子积木的真实 SVG 节点
+    const buildSnapshot = () => {
+        cacheDirty = false;
         const ws = getMainWorkspace();
-        if (!ws) return null;
+        if (!ws || !blocksGroup || !svgEl) {
+            snapshot = null;
+            return;
+        }
 
         let all = [];
         try {
             all = ws.getAllBlocks(false) || [];
         } catch (e) {
-            return null;
+            all = [];
         }
 
-        const blocks = [];
         let minX = Infinity;
         let minY = Infinity;
         let maxX = -Infinity;
         let maxY = -Infinity;
+        const fragment = document.createDocumentFragment();
 
         for (const block of all) {
             try {
@@ -105,44 +114,14 @@ export default async function ({addon}) {
 
                 const root = typeof block.getSvgRoot === 'function' ? block.getSvgRoot() : null;
                 if (!root) continue;
-                const pathEl = root.querySelector('.blocklyPath');
-                if (!pathEl) continue;
-                const d = pathEl.getAttribute('d');
-                if (!d) continue;
-
-                // getBBox 返回积木本地坐标（workspace 单位），不受缩放/滚动影响
-                const bbox = pathEl.getBBox();
+                const bbox = root.getBBox();
                 if (!bbox || !(bbox.width > 0) || !(bbox.height > 0)) continue;
-
                 const pos = block.getRelativeToSurfaceXY();
                 if (!pos) continue;
 
-                let color = '';
-                try {
-                    if (typeof block.getColour === 'function') {
-                        const c = block.getColour();
-                        if (typeof c === 'string' && c) color = c;
-                    }
-                } catch (e) {
-                    // ignore
-                }
-                if (!color) {
-                    const fill = window.getComputedStyle(pathEl).fill;
-                    if (fill && fill !== 'none') color = fill;
-                }
-                if (!color) color = '#888888';
-
-                blocks.push({
-                    // 积木外层 <g> 的位置；路径 d 是积木本地坐标
-                    px: pos.x,
-                    py: pos.y,
-                    bx: bbox.x,
-                    by: bbox.y,
-                    bw: bbox.width,
-                    bh: bbox.height,
-                    color,
-                    path: new Path2D(d)
-                });
+                const clone = root.cloneNode(true);
+                clone.removeAttribute('id');
+                fragment.appendChild(clone);
 
                 const x0 = pos.x + bbox.x;
                 const y0 = pos.y + bbox.y;
@@ -155,143 +134,68 @@ export default async function ({addon}) {
             }
         }
 
-        if (blocks.length === 0) return null;
-        return {blocks, minX, minY, maxX, maxY};
-    };
+        // 清空旧的预览节点
+        while (blocksGroup.firstChild) blocksGroup.removeChild(blocksGroup.firstChild);
 
-    // 重建离屏缓存
-    const buildLayer = () => {
-        cacheDirty = false;
-        const data = collectBlocks();
-        if (!data) {
-            cachedLayer = null;
+        if (!(maxX > minX) || !(maxY > minY)) {
+            snapshot = null;
             return;
         }
+
+        blocksGroup.appendChild(fragment);
 
         // 留一圈空白，点击范围也包含这一点留白
         const pad = 12;
-        const minX = data.minX - pad;
-        const minY = data.minY - pad;
-        const maxX = data.maxX + pad;
-        const maxY = data.maxY + pad;
-        const contentW = Math.max(1, maxX - minX);
-        const contentH = Math.max(1, maxY - minY);
+        minX -= pad;
+        minY -= pad;
+        maxX += pad;
+        maxY += pad;
+        const w = Math.max(1, maxX - minX);
+        const h = Math.max(1, maxY - minY);
 
-        // 离屏分辨率最多 2048，避免大作品占用过多内存
-        const resolution = Math.min(1, 2048 / Math.max(contentW, contentH));
-        const layer = document.createElement('canvas');
-        layer.width = Math.max(1, Math.ceil(contentW * resolution));
-        layer.height = Math.max(1, Math.ceil(contentH * resolution));
-        const lctx = layer.getContext('2d');
-        lctx.setTransform(resolution, 0, 0, resolution, -minX * resolution, -minY * resolution);
-
-        for (const b of data.blocks) {
-            try {
-                lctx.save();
-                lctx.translate(b.px, b.py);
-                lctx.fillStyle = b.color;
-                lctx.fill(b.path);
-                lctx.restore();
-            } catch (e) {
-                // ignore
-            }
-        }
-
-        cachedLayer = {canvas: layer, minX, minY, contentW, contentH};
+        snapshot = {minX, minY, w, h};
+        svgEl.setAttribute('viewBox', `${minX} ${minY} ${w} ${h}`);
     };
 
-    // 绘制缩略图
+    // 更新视野框（始终在积木图层之上）
+    const updateViewportRect = () => {
+        if (!viewportRect) return;
+        const vp = getViewport();
+        if (!snapshot || !vp) {
+            viewportRect.setAttribute('display', 'none');
+            return;
+        }
+        viewportRect.removeAttribute('display');
+        viewportRect.setAttribute('x', vp.x);
+        viewportRect.setAttribute('y', vp.y);
+        viewportRect.setAttribute('width', Math.max(1, vp.w));
+        viewportRect.setAttribute('height', Math.max(1, vp.h));
+    };
+
+    // 绘制（SVG 自身负责缩放，这里只处理快照和视野框）
     const draw = () => {
-        if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        const W = rect.width;
-        const H = rect.height;
-        if (W < 2 || H < 2) return;
+        if (!svgEl) return;
+
+        const rect = svgEl.getBoundingClientRect();
+        if (rect.width < 2 || rect.height < 2) return;
 
         const vp = getViewport();
         const vpKey = vp ? `${vp.x.toFixed(1)},${vp.y.toFixed(1)},${vp.w.toFixed(1)},${vp.h.toFixed(1)}` : 'none';
-        const drawKey = `${Math.round(W)}x${Math.round(H)}|${vpKey}`;
+        const drawKey = `${Math.round(rect.width)}x${Math.round(rect.height)}|${vpKey}`;
         if (!cacheDirty && drawKey === lastDrawKey) return;
         lastDrawKey = drawKey;
 
-        const dpr = window.devicePixelRatio || 1;
-        const pixelW = Math.round(W * dpr);
-        const pixelH = Math.round(H * dpr);
-        if (canvas.width !== pixelW || canvas.height !== pixelH) {
-            canvas.width = pixelW;
-            canvas.height = pixelH;
-        }
-
-        const ctx = canvas.getContext('2d');
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, W, H);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-        ctx.fillRect(0, 0, W, H);
-
-        if (cacheDirty) buildLayer();
-
-        const layer = cachedLayer;
-
-        // 空工作区：只画视野方框
-        if (!layer) {
-            canvas._rwView = null;
-            if (vp) {
-                const pad = 24;
-                const minX = vp.x - pad;
-                const minY = vp.y - pad;
-                const contentW = Math.max(1, vp.w + pad * 2);
-                const contentH = Math.max(1, vp.h + pad * 2);
-                const scale = Math.min((W - 8) / contentW, (H - 8) / contentH);
-                const ox = (W - contentW * scale) / 2;
-                const oy = (H - contentH * scale) / 2;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(ox + (vp.x - minX) * scale, oy + (vp.y - minY) * scale,
-                    vp.w * scale, vp.h * scale);
+        if (cacheDirty) {
+            // 拖动积木时事件很密集，快照重建至少间隔 250ms，避免拖影卡顿
+            const now = Date.now();
+            if (now - lastBuildTime < 250) {
+                setTimeout(scheduleDraw, 250);
+                return;
             }
-            return;
+            lastBuildTime = now;
+            buildSnapshot();
         }
-
-        // 等比适配窗口，居中
-        const padPx = 4;
-        const scale = Math.min(
-            (W - padPx * 2) / layer.contentW,
-            (H - padPx * 2) / layer.contentH
-        );
-        const offsetX = padPx + (W - padPx * 2 - layer.contentW * scale) / 2;
-        const offsetY = padPx + (H - padPx * 2 - layer.contentH * scale) / 2;
-
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(
-            layer.canvas,
-            offsetX, offsetY,
-            layer.contentW * scale, layer.contentH * scale
-        );
-
-        // 视野框
-        if (vp) {
-            const vx = offsetX + (vp.x - layer.minX) * scale;
-            const vy = offsetY + (vp.y - layer.minY) * scale;
-            const vw = vp.w * scale;
-            const vh = vp.h * scale;
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(vx - 1, vy - 1, vw + 2, vh + 2);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(vx, vy, vw, vh);
-        }
-
-        // 保存当前变换用于点击定位
-        canvas._rwView = {
-            minX: layer.minX,
-            minY: layer.minY,
-            maxX: layer.minX + layer.contentW,
-            maxY: layer.minY + layer.contentH,
-            scale,
-            offsetX,
-            offsetY
-        };
+        updateViewportRect();
     };
 
     // 节流绘制
@@ -311,23 +215,28 @@ export default async function ({addon}) {
         }
     };
 
+    // 缩略图坐标 → workspace 坐标（按 preserveAspectRatio="xMidYMid meet" 反算）
+    const clientToWorkspace = (clientX, clientY) => {
+        if (!svgEl || !snapshot) return null;
+        const rect = svgEl.getBoundingClientRect();
+        const scale = Math.min(rect.width / snapshot.w, rect.height / snapshot.h);
+        const offsetX = (rect.width - snapshot.w * scale) / 2;
+        const offsetY = (rect.height - snapshot.h * scale) / 2;
+        return {
+            x: snapshot.minX + (clientX - rect.left - offsetX) / scale,
+            y: snapshot.minY + (clientY - rect.top - offsetY) / scale
+        };
+    };
+
     // 点击/拖动 → 平移 workspace，点哪里视野中心到哪里，不改变缩放
     const scrollTo = (clientX, clientY) => {
         const ws = getMainWorkspace();
-        const view = canvas && canvas._rwView;
-        if (!canvas || !view || !ws) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const px = clientX - rect.left;
-        const py = clientY - rect.top;
-
-        // 缩略图坐标 → workspace 坐标
-        let wx = (px - view.offsetX) / view.scale + view.minX;
-        let wy = (py - view.offsetY) / view.scale + view.minY;
+        const point = clientToWorkspace(clientX, clientY);
+        if (!point || !ws) return;
 
         // 只在脚本范围（含留白）内定位，空白角落点不过去
-        wx = Math.max(view.minX, Math.min(view.maxX, wx));
-        wy = Math.max(view.minY, Math.min(view.maxY, wy));
+        const wx = Math.max(snapshot.minX, Math.min(snapshot.minX + snapshot.w, point.x));
+        const wy = Math.max(snapshot.minY, Math.min(snapshot.minY + snapshot.h, point.y));
 
         const vp = getViewport();
         if (!vp) return;
@@ -360,10 +269,10 @@ export default async function ({addon}) {
     // 创建自由窗口
     let miniMapWindow = null;
 
-    const handleCanvasDown = e => {
+    const handlePointerDown = e => {
         dragging = true;
         try {
-            canvas.setPointerCapture(e.pointerId);
+            svgEl.setPointerCapture(e.pointerId);
         } catch (err) {
             // ignore
         }
@@ -371,15 +280,15 @@ export default async function ({addon}) {
         e.preventDefault();
         e.stopPropagation();
     };
-    const handleCanvasMove = e => {
+    const handlePointerMove = e => {
         if (!dragging) return;
         scrollTo(e.clientX, e.clientY);
         e.preventDefault();
     };
-    const handleCanvasUp = e => {
+    const handlePointerUp = e => {
         dragging = false;
         try {
-            if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+            if (svgEl.hasPointerCapture(e.pointerId)) svgEl.releasePointerCapture(e.pointerId);
         } catch (err) {
             // ignore
         }
@@ -411,8 +320,23 @@ export default async function ({addon}) {
     const observeSize = () => {
         if (!contentEl || typeof ResizeObserver === 'undefined') return;
         if (resizeObserver) resizeObserver.disconnect();
-        resizeObserver = new ResizeObserver(() => scheduleDraw());
+        resizeObserver = new ResizeObserver(() => {
+            lastDrawKey = '';
+            scheduleDraw();
+        });
         resizeObserver.observe(contentEl);
+    };
+
+    // 复制工作区里的 <defs>（滤镜/裁剪等引用）
+    const copyDefs = ws => {
+        try {
+            const sourceSvg = typeof ws.getParentSvg === 'function' ? ws.getParentSvg() : null;
+            if (!sourceSvg) return;
+            const defs = sourceSvg.querySelector('defs');
+            if (defs && svgEl) svgEl.insertBefore(defs.cloneNode(true), svgEl.firstChild);
+        } catch (e) {
+            // ignore
+        }
     };
 
     const createUI = () => {
@@ -429,23 +353,35 @@ export default async function ({addon}) {
 
         contentEl = document.createElement('div');
         contentEl.className = 'rw-minimap-content';
-        canvas = document.createElement('canvas');
-        canvas.className = 'rw-minimap-canvas';
-        canvas.width = mapWidth;
-        canvas.height = mapHeight;
-        contentEl.appendChild(canvas);
+
+        svgEl = document.createElementNS(SVG_NS, 'svg');
+        svgEl.setAttribute('class', 'rw-minimap-svg');
+        svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+        blocksGroup = document.createElementNS(SVG_NS, 'g');
+        blocksGroup.setAttribute('class', 'rw-minimap-blocks');
+        svgEl.appendChild(blocksGroup);
+
+        viewportRect = document.createElementNS(SVG_NS, 'rect');
+        viewportRect.setAttribute('class', 'rw-minimap-viewport');
+        viewportRect.setAttribute('display', 'none');
+        svgEl.appendChild(viewportRect);
+
+        contentEl.appendChild(svgEl);
         miniMapWindow.setContent(contentEl);
 
+        const ws = getMainWorkspace();
+        if (ws) copyDefs(ws);
+
         // 指针事件同时兼容鼠标和手指
-        canvas.addEventListener('pointerdown', handleCanvasDown);
-        canvas.addEventListener('pointermove', handleCanvasMove);
-        canvas.addEventListener('pointerup', handleCanvasUp);
-        canvas.addEventListener('pointercancel', handleCanvasUp);
-        canvas.addEventListener('lostpointercapture', () => {
+        svgEl.addEventListener('pointerdown', handlePointerDown);
+        svgEl.addEventListener('pointermove', handlePointerMove);
+        svgEl.addEventListener('pointerup', handlePointerUp);
+        svgEl.addEventListener('pointercancel', handlePointerUp);
+        svgEl.addEventListener('lostpointercapture', () => {
             dragging = false;
         });
 
-        eventsBound = true;
         attachWorkspaceListener();
         observeSize();
         cacheDirty = true;
@@ -458,18 +394,7 @@ export default async function ({addon}) {
     // 初始化窗口
     createUI();
 
-    // 定时清理事件绑定（窗口销毁后不再需要）
-    window.addEventListener('beforeunload', () => {
-        if (eventsBound && canvas) {
-            canvas.removeEventListener('pointerdown', handleCanvasDown);
-            canvas.removeEventListener('pointermove', handleCanvasMove);
-            canvas.removeEventListener('pointerup', handleCanvasUp);
-            canvas.removeEventListener('pointercancel', handleCanvasUp);
-        }
-        if (resizeObserver) resizeObserver.disconnect();
-    });
-
-    // 定时重绘：只在视野变化时真正重绘，空闲时不占用帧
+    // 定时刷新：只在视野变化时更新，空闲时不重绘
     setInterval(() => {
         if (!isWindowAlive()) return;
         attachWorkspaceListener();
