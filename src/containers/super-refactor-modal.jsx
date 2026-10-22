@@ -939,9 +939,13 @@ class SuperRefactorModalContainer extends React.Component {
         const file = files[currentFile];
         if (!file) return;
 
-        // .rj 分片文件是只读预览：直接改分片内容无法安全地同步回 VM
-        // （积木已反序列化、资源已加载），需要用「保存 .rj」重新生成。
+        // .rj 分片文件：把修改写回 .rj 压缩包后重新载入 VM。
+        // 分片不是 sb3 形态，无法像 project.json 那样直接 loadProject。
         if (file.readOnly) {
+            if (hasCurrentRJ() && (file.type === 'json' || file.type === 'svg')) {
+                this.applyRJShard(file);
+                return;
+            }
             this.setState({message: '.rj 分片文件为只读预览，请用「保存 .rj」重新生成'});
             setTimeout(() => this.setState({message: ''}), 3000);
             return;
@@ -1048,6 +1052,33 @@ class SuperRefactorModalContainer extends React.Component {
         } catch (e) {
             this.setState({ message: '✗ 格式错误: ' + e.message });
             setTimeout(() => this.setState({ message: '' }), 5000);
+        }
+    }
+
+    // 把 .rj 分片的修改写回压缩包，并用 .rj 加载器重新载入作品
+    async applyRJShard (file) {
+        if (!this.props.vm) return;
+        try {
+            // JSON 先校验，避免把损坏的分片写回后整个作品无法载入
+            if (file.type === 'json') JSON.parse(file.content);
+
+            const zip = await getCurrentRJZip();
+            if (!zip) throw new Error('.rj 数据不可用');
+
+            zip.file(file.name, file.content);
+            const buffer = await zip.generateAsync({
+                type: 'arraybuffer',
+                compression: 'DEFLATE'
+            });
+
+            const {loadRJIntoVMProgressive} = await import('../lib/rj/rj-lazy-loader.js');
+            await loadRJIntoVMProgressive(this.props.vm, buffer, {});
+
+            this.setState({message: '✓ 分片已应用到作品！'});
+            setTimeout(() => this.setState({message: ''}), 3000);
+        } catch (e) {
+            this.setState({message: '✗ 应用失败: ' + e.message});
+            setTimeout(() => this.setState({message: ''}), 5000);
         }
     }
 
@@ -1539,8 +1570,10 @@ class SuperRefactorModalContainer extends React.Component {
 
         // 是否可以编辑
         const canEdit = currentFileType === 'json' || currentFileType === 'svg';
-        // 是否可以应用
-        const canApply = currentFileName === 'project.json' || currentFileType === 'svg';
+        // 是否可以应用（.rj 的 JSON 分片可写回压缩包后重新载入）
+        const canApply = currentFileName === 'project.json' ||
+            currentFileType === 'svg' ||
+            (hasCurrentRJ() && currentFileType === 'json');
         // 是否是SVG文件
         const isSvg = currentFileType === 'svg';
         // 是否显示切换按钮
