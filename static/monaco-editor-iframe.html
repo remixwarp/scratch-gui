@@ -33,20 +33,10 @@
         var currentWordWrap = 'on';
         var monacoLoaded = false;
         var pendingInit = null; // 缓存 monaco 加载完成前收到的 init 消息
-        var containerObserver = null;
-        var layoutListenerAdded = false;
 
         // 可由父窗口（超级重构设置）动态调整的编辑器选项
         var currentOptions = {
-            minimap: {
-                enabled: true,
-                side: 'right',
-                size: 'proportional',
-                showSlider: 'mouseover',
-                renderCharacters: true,
-                maxColumn: 120,
-                scale: 1
-            },
+            minimap: {enabled: true, renderCharacters: true, maxColumn: 120},
             breadcrumbs: {enabled: true, showFileKind: true, showSymbol: true},
             stickyScroll: {enabled: true},
             guides: {indentation: true, highlightActiveIndentation: true},
@@ -155,13 +145,6 @@
                         editor.focus();
                     }
                     break;
-
-                case 'monaco-relayout':
-                    // 自由窗口缩放时由父窗口通知，让小地图/编辑器重新适配可用尺寸
-                    if (editor) {
-                        editor.layout();
-                    }
-                    break;
             }
         });
 
@@ -221,22 +204,6 @@
             mergeOptions(editorOptions, currentOptions);
 
             editor = monaco.editor.create(document.getElementById('container'), editorOptions);
-
-            // 自由窗口缩放时 iframe 尺寸会变化，主动重新布局，
-            // 保证小地图和正文按新的可用宽度重新排布
-            if (typeof ResizeObserver !== 'undefined') {
-                if (containerObserver) containerObserver.disconnect();
-                containerObserver = new ResizeObserver(function() {
-                    if (editor) editor.layout();
-                });
-                containerObserver.observe(document.getElementById('container'));
-            }
-            if (!layoutListenerAdded) {
-                layoutListenerAdded = true;
-                window.addEventListener('resize', function() {
-                    if (editor) editor.layout();
-                });
-            }
 
             editor.onDidChangeModelContent(function() {
                 var content = editor.getValue();

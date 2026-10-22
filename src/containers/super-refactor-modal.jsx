@@ -30,10 +30,6 @@ const SUPER_REFACTOR_SETTINGS_KEY = 'mw-super-refactor-settings';
 
 const DEFAULT_EDITOR_OPTIONS = {
     minimap: true,
-    minimapSide: 'right',
-    minimapMaxColumn: 120,
-    minimapAlwaysShowSlider: false,
-    minimapRenderCharacters: true,
     folding: true,
     foldingControls: 'always',
     breadcrumbs: true,
@@ -202,10 +198,6 @@ class SuperRefactorModalContainer extends React.Component {
     componentWillUnmount () {
         window.removeEventListener('resize', this.handleWindowResize);
         window.removeEventListener('message', this.handleMonacoMessage);
-        if (this._monacoResizeObserver) {
-            this._monacoResizeObserver.disconnect();
-            this._monacoResizeObserver = null;
-        }
     }
 
     handleWindowResize () {
@@ -593,13 +585,8 @@ class SuperRefactorModalContainer extends React.Component {
         return {
             minimap: {
                 enabled: !!options.minimap,
-                side: options.minimapSide === 'left' ? 'left' : 'right',
-                size: 'proportional',
-                // 与文档一致：滑块（视野框）可悬停显示或常显
-                showSlider: options.minimapAlwaysShowSlider ? 'always' : 'mouseover',
-                renderCharacters: !!options.minimapRenderCharacters,
-                maxColumn: Number(options.minimapMaxColumn) || 120,
-                scale: 1
+                renderCharacters: true,
+                maxColumn: 120
             },
             breadcrumbs: {
                 enabled: !!options.breadcrumbs,
@@ -659,28 +646,6 @@ class SuperRefactorModalContainer extends React.Component {
         });
     }
 
-    // 监听 Monaco iframe 的尺寸变化（自由窗口拖拽缩放时触发），
-    // 让编辑器和小地图按新的窗口大小重新布局
-    observeMonacoResize () {
-        if (typeof ResizeObserver === 'undefined') return;
-        if (this._monacoResizeObserver) {
-            this._monacoResizeObserver.disconnect();
-            this._monacoResizeObserver = null;
-        }
-        const iframe = this.monacoIframeRef.current;
-        if (!iframe) return;
-        let pending = false;
-        this._monacoResizeObserver = new ResizeObserver(() => {
-            if (pending) return;
-            pending = true;
-            window.requestAnimationFrame(() => {
-                pending = false;
-                this.sendToMonacoIframe({type: 'monaco-relayout'});
-            });
-        });
-        this._monacoResizeObserver.observe(iframe);
-    }
-
     // 向 Monaco iframe 发送消息
     sendToMonacoIframe (data) {
         if (this.monacoIframeRef.current && this.monacoIframeRef.current.contentWindow) {
@@ -704,7 +669,6 @@ class SuperRefactorModalContainer extends React.Component {
                 this._monacoReadySource = event.source;
                 this.setState({ monacoIframeReady: true }, () => {
                     this.sendMonacoInit();
-                    this.observeMonacoResize();
                 });
                 break;
             }
@@ -1486,30 +1450,6 @@ class SuperRefactorModalContainer extends React.Component {
                             {this.renderSettingToggle('侧边代码预览（小地图）',
                                 editorOptions.minimap,
                                 value => this.setEditorOption('minimap', value))}
-                            {editorOptions.minimap && this.renderSettingSelect('小地图位置',
-                                editorOptions.minimapSide,
-                                [
-                                    {value: 'right', label: '右侧'},
-                                    {value: 'left', label: '左侧'}
-                                ],
-                                value => this.setEditorOption('minimapSide', value),
-                                colors)}
-                            {editorOptions.minimap && this.renderSettingSelect('小地图大小',
-                                String(editorOptions.minimapMaxColumn),
-                                [
-                                    {value: '80', label: '小'},
-                                    {value: '120', label: '标准'},
-                                    {value: '160', label: '大'},
-                                    {value: '200', label: '特大'}
-                                ],
-                                value => this.setEditorOption('minimapMaxColumn', Number(value)),
-                                colors)}
-                            {editorOptions.minimap && this.renderSettingToggle('始终显示视野滑块',
-                                editorOptions.minimapAlwaysShowSlider,
-                                value => this.setEditorOption('minimapAlwaysShowSlider', value))}
-                            {editorOptions.minimap && this.renderSettingToggle('小地图显示字符',
-                                editorOptions.minimapRenderCharacters,
-                                value => this.setEditorOption('minimapRenderCharacters', value))}
                             {this.renderSettingToggle('代码折叠',
                                 editorOptions.folding,
                                 value => this.setEditorOption('folding', value))}
