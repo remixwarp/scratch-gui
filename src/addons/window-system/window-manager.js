@@ -390,6 +390,9 @@ class AddonWindow {
         
         // Add drag functionality
         this.addDragFunctionality();
+
+        // 移动端：即使缩放手柄被舞台内容遮挡/未显示，也能从窗口四边用手指缩放
+        this.addTouchEdgeResize();
         
         // Add to DOM
         document.body.appendChild(this.element);
@@ -534,6 +537,9 @@ class AddonWindow {
             if (e.target.closest('button')) return;
             const touch = e.touches[0];
             if (!touch) return;
+            // 顶部边缘留给缩放，避免和拖动窗口互相抢占
+            const rect = this.element.getBoundingClientRect();
+            if (touch.clientY - rect.top <= 20) return;
             this.isTouchDragging = true;
             beginDrag(touch.clientX, touch.clientY);
             e.preventDefault();
@@ -557,6 +563,75 @@ class AddonWindow {
         this.headerElement.addEventListener('touchcancel', endTouchDrag);
     }
     
+    // 触摸缩放兜底：直接监听窗口元素，根据手指落在窗口四边的位置判断缩放方向。
+    // 这样即使缩放手柄被舞台画布等内容盖住、或在小屏下被样式隐藏，也仍能用手指缩放。
+    addTouchEdgeResize () {
+        if (!this.resizable) return;
+        const EDGE = 24;
+
+        const directionAt = (clientX, clientY) => {
+            const rect = this.element.getBoundingClientRect();
+            if (!rect.width || !rect.height) return null;
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            const nearLeft = x <= EDGE;
+            const nearRight = x >= rect.width - EDGE;
+            const nearTop = y <= EDGE;
+            const nearBottom = y >= rect.height - EDGE;
+            if (!nearLeft && !nearRight && !nearTop && !nearBottom) return null;
+            return `${nearTop ? 'n' : ''}${nearBottom ? 's' : ''}` +
+                `${nearLeft ? 'w' : ''}${nearRight ? 'e' : ''}`;
+        };
+
+        const handleTouchMove = e => {
+            if (!this.isTouchResizing) return;
+            const touch = e.touches[0];
+            if (!touch) return;
+            this.resizeTo(touch.clientX, touch.clientY);
+            e.preventDefault();
+        };
+
+        const handleTouchEnd = e => {
+            if (!this.isTouchResizing) return;
+            this.isTouchResizing = false;
+            this.handleResizeEnd();
+            document.removeEventListener('touchmove', handleTouchMove, {passive: false});
+            document.removeEventListener('touchend', handleTouchEnd);
+            document.removeEventListener('touchcancel', handleTouchEnd);
+            if (e && e.cancelable) e.preventDefault();
+        };
+
+        this.element.addEventListener('touchstart', e => {
+            if (this.isTouchResizing || this.isTouchDragging) return;
+            if (e.touches.length !== 1) return;
+            // 已有的缩放手柄会自行处理，避免两套逻辑重复触发
+            if (e.target.closest && e.target.closest('.resize-handle')) return;
+            if (e.target.closest && e.target.closest('.addon-window-controls')) return;
+
+            const touch = e.touches[0];
+            if (!touch) return;
+            const direction = directionAt(touch.clientX, touch.clientY);
+            if (!direction) return;
+
+            this.isTouchResizing = true;
+            this.startResize({
+                pointerId: null,
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                preventDefault: () => {}
+            }, direction, null);
+
+            // 触摸事件始终回传给起始元素，但把监听挂在 document 上，
+            // 即使手指滑出窗口边缘也能持续缩放。
+            document.addEventListener('touchmove', handleTouchMove, {passive: false});
+            document.addEventListener('touchend', handleTouchEnd);
+            document.addEventListener('touchcancel', handleTouchEnd);
+
+            e.preventDefault();
+            e.stopPropagation();
+        }, {passive: false});
+    }
+
     handleDragTo (clientX, clientY) {
         const newX = clientX - this.dragOffset.x;
         const newY = clientY - this.dragOffset.y;
@@ -612,7 +687,9 @@ class AddonWindow {
             const styles = {
                 position: 'absolute',
                 backgroundColor: 'transparent',
-                zIndex: '10'
+                // 高于舞台里的监视器/取色器等覆盖层，保证手柄始终能被手指点到
+                zIndex: '9999',
+                pointerEvents: 'auto'
             };
             
             // Set position and cursor for each handle
