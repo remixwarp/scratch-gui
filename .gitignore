@@ -10,6 +10,7 @@ npm-*
 
 # 本地临时目录（排查/临时安装用）
 /.tmp-test
+/.tmp-*/
 
 # Environment variables
 .env
