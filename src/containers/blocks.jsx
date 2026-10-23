@@ -478,6 +478,7 @@ class Blocks extends React.Component {
             // editor; the blocks area will be re-mounted when the user
             // re-selects the blocks tab.
             console.error('[Blocks] Failed to inject ScratchBlocks workspace:', injectError);
+            if (injectError && injectError.stack) console.error(injectError.stack);
             this.workspace = null;
             return;
         }

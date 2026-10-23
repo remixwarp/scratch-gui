@@ -190,11 +190,27 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
         ScratchBlocks.__rwWorkspaceTagInstalled = true;
         if (typeof ScratchBlocks.inject === 'function') {
             const originalInject = ScratchBlocks.inject;
-            ScratchBlocks.inject = function (...args) {
+            const wrappedInject = function (...args) {
                 const workspace = originalInject.apply(this, args);
-                tagWorkspaceSvg(workspace);
+                try {
+                    tagWorkspaceSvg(workspace);
+                } catch (e) {
+                    /* 打标记失败不影响注入 */
+                }
                 return workspace;
             };
+            // scratch-blocks 会把 bindDocumentEvents_ 等挂在 inject 函数自身上，
+            // Blockly.init_ 里会调用 Blockly.inject.bindDocumentEvents_()。
+            // 直接替换 inject 会让这些属性丢失，导致注入中途抛错、积木盒不出现。
+            for (const key of Object.getOwnPropertyNames(originalInject)) {
+                if (key === 'length' || key === 'name' || key === 'prototype' || key === 'arguments' || key === 'caller') continue;
+                try {
+                    wrappedInject[key] = originalInject[key];
+                } catch (e) {
+                    /* 只读属性忽略 */
+                }
+            }
+            ScratchBlocks.inject = wrappedInject;
         }
     }
 
