@@ -452,6 +452,27 @@ export default async function ({addon}) {
             button.textContent = label;
             button.title = title;
             button.setAttribute('aria-label', title);
+            // 同样内联，避免 style.css 未注入时按钮变成没有尺寸的默认按钮
+            button.style.cssText = [
+                'width: 30px',
+                'height: 30px',
+                'padding: 0',
+                'display: flex',
+                'align-items: center',
+                'justify-content: center',
+                'font-size: 18px',
+                'line-height: 1',
+                'font-weight: bold',
+                'color: #1E1E1E',
+                'background: rgba(255, 255, 255, 0.92)',
+                'border: 1px solid rgba(0, 0, 0, 0.35)',
+                'border-radius: 6px',
+                'box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35)',
+                'cursor: pointer',
+                'touch-action: manipulation',
+                '-webkit-user-select: none',
+                'user-select: none'
+            ].join(';');
             const stop = e => e.stopPropagation();
             button.addEventListener('pointerdown', stop);
             button.addEventListener('click', e => {
@@ -487,18 +508,51 @@ export default async function ({addon}) {
 
         contentEl = document.createElement('div');
         contentEl.className = 'rw-minimap-content';
+        // 关键样式全部内联：addon 的 style.css 在某些构建/部署里可能没注入，
+        // 只依赖 class 会导致 SVG 用默认黑色填充、按钮掉到左下角
+        contentEl.style.cssText = [
+            'display: flex',
+            'flex-direction: column',
+            'position: relative',
+            'flex: 1',
+            'min-height: 0',
+            'padding: 8px',
+            'box-sizing: border-box',
+            'background: #1E1E1E',
+            'overflow: hidden',
+            'border-radius: 0 0 12px 12px'
+        ].join(';');
 
         svgEl = document.createElementNS(SVG_NS, 'svg');
         svgEl.setAttribute('class', 'rw-minimap-svg');
         svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        svgEl.style.cssText = [
+            'display: block',
+            'flex: 1',
+            'min-height: 0',
+            'width: 100%',
+            'height: 100%',
+            'border-radius: 3px',
+            'cursor: crosshair',
+            'background: rgba(0, 0, 0, 0.25)',
+            'touch-action: none',
+            '-webkit-user-select: none',
+            'user-select: none'
+        ].join(';');
 
         blocksGroup = document.createElementNS(SVG_NS, 'g');
         blocksGroup.setAttribute('class', 'rw-minimap-blocks');
+        blocksGroup.style.pointerEvents = 'none';
         svgEl.appendChild(blocksGroup);
 
-        // 视野框只画边框，不填充，避免遮挡积木
+        // 视野框只画边框，不填充，避免遮挡积木（直接写 SVG 属性，不依赖 CSS）
         viewportRect = document.createElementNS(SVG_NS, 'rect');
         viewportRect.setAttribute('class', 'rw-minimap-viewport');
+        viewportRect.setAttribute('fill', 'none');
+        viewportRect.setAttribute('stroke', 'rgba(0, 0, 0, 0.9)');
+        viewportRect.setAttribute('stroke-width', '1.5');
+        viewportRect.setAttribute('vector-effect', 'non-scaling-stroke');
+        viewportRect.setAttribute('pointer-events', 'none');
         viewportRect.setAttribute('display', 'none');
         svgEl.appendChild(viewportRect);
 
@@ -507,6 +561,20 @@ export default async function ({addon}) {
         emptyEl = document.createElement('div');
         emptyEl.className = 'rw-minimap-empty';
         emptyEl.textContent = '暂无积木';
+        emptyEl.style.cssText = [
+            'position: absolute',
+            'left: 0',
+            'top: 0',
+            'right: 0',
+            'bottom: 0',
+            'display: none',
+            'align-items: center',
+            'justify-content: center',
+            'color: rgba(255, 255, 255, 0.55)',
+            'font-size: 12px',
+            'pointer-events: none',
+            'z-index: 1'
+        ].join(';');
         contentEl.appendChild(emptyEl);
 
         miniMapWindow.setContent(contentEl);
