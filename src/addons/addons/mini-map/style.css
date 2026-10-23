@@ -34,23 +34,42 @@
     pointer-events: none;
 }
 
+.rw-minimap-viewport-fill {
+    fill: rgba(150, 150, 150, 0.16);
+    stroke: none;
+    pointer-events: none;
+}
+
 .rw-minimap-viewport {
-    fill: rgba(128, 128, 128, 0.28);
+    fill: none;
     stroke: rgba(0, 0, 0, 0.9);
     stroke-width: 1.5;
     vector-effect: non-scaling-stroke;
     pointer-events: none;
 }
 
-/* 右下角悬浮缩放按钮 */
+/* 空工作区提示 */
+.rw-minimap-empty {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* 右下角悬浮缩放按钮：挂在窗口根节点上，始终跟随窗口右下角 */
 .rw-minimap-controls {
     position: absolute;
-    right: 14px;
-    bottom: 14px;
+    right: 12px;
+    bottom: 12px;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    z-index: 3;
+    z-index: 30;
 }
 
 .rw-minimap-zoom-btn {

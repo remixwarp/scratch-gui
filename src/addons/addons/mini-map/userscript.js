@@ -43,6 +43,8 @@ export default async function ({addon}) {
     let svgEl = null;
     let blocksGroup = null;
     let viewportRect = null;
+    let viewportFill = null;
+    let emptyEl = null;
     let dragging = false;
     let drawScheduled = false;
     let lastDrawTime = 0;
@@ -61,6 +63,7 @@ export default async function ({addon}) {
     const MAX_ZOOM = 3;
     let viewBoxState = null;
     let rafPending = false;
+    let emptySince = 0;
 
     const getMainWorkspace = () => {
         if (workspace) return workspace;
@@ -175,17 +178,21 @@ export default async function ({addon}) {
             }
         }
 
-        // 清空旧的预览节点
-        while (blocksGroup.firstChild) blocksGroup.removeChild(blocksGroup.firstChild);
-
-        // 还没画出任何积木：可能是工作区尚未渲染，标记为脏等待下一轮重试
+        // 还没画出任何积木：可能是切换角色、工作区重绘的瞬间
         if (!drawn) {
+            cacheDirty = true;
+            if (!emptySince) emptySince = Date.now();
+            // 短暂保留上一张图，避免闪成空白；超过 1.5s 才认为是真的空工作区
+            if (snapshot && Date.now() - emptySince < 1500) return;
+            while (blocksGroup.firstChild) blocksGroup.removeChild(blocksGroup.firstChild);
             snapshot = null;
             viewBoxState = null;
-            cacheDirty = true;
             return;
         }
+        emptySince = 0;
 
+        // 清空旧的预览节点并换上新的快照
+        while (blocksGroup.firstChild) blocksGroup.removeChild(blocksGroup.firstChild);
         blocksGroup.appendChild(fragment);
 
         // 留一圈空白，点击范围也包含这一点留白
@@ -227,13 +234,25 @@ export default async function ({addon}) {
         const vp = getViewport();
         if (!snapshot || !vp) {
             viewportRect.setAttribute('display', 'none');
+            if (viewportFill) viewportFill.setAttribute('display', 'none');
             return;
         }
+        const x = vp.x;
+        const y = vp.y;
+        const w = Math.max(1, vp.w);
+        const h = Math.max(1, vp.h);
         viewportRect.removeAttribute('display');
-        viewportRect.setAttribute('x', vp.x);
-        viewportRect.setAttribute('y', vp.y);
-        viewportRect.setAttribute('width', Math.max(1, vp.w));
-        viewportRect.setAttribute('height', Math.max(1, vp.h));
+        viewportRect.setAttribute('x', x);
+        viewportRect.setAttribute('y', y);
+        viewportRect.setAttribute('width', w);
+        viewportRect.setAttribute('height', h);
+        if (viewportFill) {
+            viewportFill.removeAttribute('display');
+            viewportFill.setAttribute('x', x);
+            viewportFill.setAttribute('y', y);
+            viewportFill.setAttribute('width', w);
+            viewportFill.setAttribute('height', h);
+        }
     };
 
     // 绘制（SVG 自身负责缩放，这里只处理快照和视野框）
@@ -260,6 +279,7 @@ export default async function ({addon}) {
             buildSnapshot();
         }
         updateViewportRect();
+        if (emptyEl) emptyEl.style.display = snapshot ? 'none' : 'flex';
     };
 
     // 节流绘制
@@ -441,7 +461,13 @@ export default async function ({addon}) {
 
         controls.appendChild(makeButton('+', '放大', 1.25));
         controls.appendChild(makeButton('−', '缩小', 0.8));
-        contentEl.appendChild(controls);
+        // 挂在窗口根节点上（而不是内容区），这样无论内容如何布局、
+        // 窗口怎么拖拽缩放，按钮始终固定在窗口右下角
+        if (miniMapWindow && miniMapWindow.element) {
+            miniMapWindow.element.appendChild(controls);
+        } else {
+            contentEl.appendChild(controls);
+        }
     };
 
     const createUI = () => {
@@ -467,14 +493,27 @@ export default async function ({addon}) {
         blocksGroup.setAttribute('class', 'rw-minimap-blocks');
         svgEl.appendChild(blocksGroup);
 
+        // 视野底色放在积木图层下面，积木不会被灰色压暗；
+        // 描边单独一层放在最上面，保证边框始终可见
+        viewportFill = document.createElementNS(SVG_NS, 'rect');
+        viewportFill.setAttribute('class', 'rw-minimap-viewport-fill');
+        viewportFill.setAttribute('display', 'none');
+        svgEl.insertBefore(viewportFill, blocksGroup);
+
         viewportRect = document.createElementNS(SVG_NS, 'rect');
         viewportRect.setAttribute('class', 'rw-minimap-viewport');
         viewportRect.setAttribute('display', 'none');
         svgEl.appendChild(viewportRect);
 
         contentEl.appendChild(svgEl);
-        createZoomControls();
+
+        emptyEl = document.createElement('div');
+        emptyEl.className = 'rw-minimap-empty';
+        emptyEl.textContent = '暂无积木';
+        contentEl.appendChild(emptyEl);
+
         miniMapWindow.setContent(contentEl);
+        createZoomControls();
 
         const ws = getMainWorkspace();
         if (ws) copyDefs(ws);
@@ -508,6 +547,13 @@ export default async function ({addon}) {
         scheduleDraw();
     }, 300);
 
+    // 重新显示时强制刷新一次，避免窗口隐藏期间工作区变化却没重建
+    const forceRefresh = () => {
+        cacheDirty = true;
+        lastDrawKey = '';
+        scheduleDraw();
+    };
+
     // 暴露全局 API：toggle 显示/隐藏
     window.RWMiniMap = {
         toggle: () => {
@@ -515,14 +561,14 @@ export default async function ({addon}) {
             if (!isWindowAlive()) {
                 createUI();
                 miniMapWindow.show();
-                scheduleDraw();
+                forceRefresh();
                 return;
             }
             if (miniMapWindow.isVisible) {
                 miniMapWindow.hide();
             } else {
                 miniMapWindow.show();
-                scheduleDraw();
+                forceRefresh();
             }
         },
         show: () => {
@@ -530,12 +576,13 @@ export default async function ({addon}) {
                 createUI();
             }
             miniMapWindow.show();
-            scheduleDraw();
+            forceRefresh();
         },
         hide: () => {
             if (!isWindowAlive()) return;
             miniMapWindow.hide();
-        }
+        },
+        refresh: forceRefresh
     };
 
     // 首次绘制延迟一点
