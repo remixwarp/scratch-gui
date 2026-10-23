@@ -34,12 +34,6 @@
     pointer-events: none;
 }
 
-.rw-minimap-viewport-fill {
-    fill: rgba(150, 150, 150, 0.16);
-    stroke: none;
-    pointer-events: none;
-}
-
 .rw-minimap-viewport {
     fill: none;
     stroke: rgba(0, 0, 0, 0.9);

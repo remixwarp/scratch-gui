@@ -43,7 +43,6 @@ export default async function ({addon}) {
     let svgEl = null;
     let blocksGroup = null;
     let viewportRect = null;
-    let viewportFill = null;
     let emptyEl = null;
     let dragging = false;
     let drawScheduled = false;
@@ -234,7 +233,6 @@ export default async function ({addon}) {
         const vp = getViewport();
         if (!snapshot || !vp) {
             viewportRect.setAttribute('display', 'none');
-            if (viewportFill) viewportFill.setAttribute('display', 'none');
             return;
         }
         const x = vp.x;
@@ -246,13 +244,6 @@ export default async function ({addon}) {
         viewportRect.setAttribute('y', y);
         viewportRect.setAttribute('width', w);
         viewportRect.setAttribute('height', h);
-        if (viewportFill) {
-            viewportFill.removeAttribute('display');
-            viewportFill.setAttribute('x', x);
-            viewportFill.setAttribute('y', y);
-            viewportFill.setAttribute('width', w);
-            viewportFill.setAttribute('height', h);
-        }
     };
 
     // 绘制（SVG 自身负责缩放，这里只处理快照和视野框）
@@ -440,6 +431,18 @@ export default async function ({addon}) {
     // 右下角悬浮缩放按钮
     const createZoomControls = () => {
         const controls = document.createElement('div');
+        // 直接写内联样式，确保锚定在窗口右下角（CSS 若被其它样式覆盖也不会失效）
+        controls.style.cssText = [
+            'position: absolute',
+            'right: 28px',
+            'bottom: 28px',
+            'left: auto',
+            'top: auto',
+            'display: flex',
+            'flex-direction: column',
+            'gap: 6px',
+            'z-index: 30'
+        ].join(';');
         controls.className = 'rw-minimap-controls';
 
         const makeButton = (label, title, factor) => {
@@ -493,13 +496,7 @@ export default async function ({addon}) {
         blocksGroup.setAttribute('class', 'rw-minimap-blocks');
         svgEl.appendChild(blocksGroup);
 
-        // 视野底色放在积木图层下面，积木不会被灰色压暗；
-        // 描边单独一层放在最上面，保证边框始终可见
-        viewportFill = document.createElementNS(SVG_NS, 'rect');
-        viewportFill.setAttribute('class', 'rw-minimap-viewport-fill');
-        viewportFill.setAttribute('display', 'none');
-        svgEl.insertBefore(viewportFill, blocksGroup);
-
+        // 视野框只画边框，不填充，避免遮挡积木
         viewportRect = document.createElementNS(SVG_NS, 'rect');
         viewportRect.setAttribute('class', 'rw-minimap-viewport');
         viewportRect.setAttribute('display', 'none');
