@@ -60,6 +60,7 @@ export default async function ({addon}) {
     const MIN_ZOOM = 0.25;
     const MAX_ZOOM = 3;
     let viewBoxState = null;
+    let rafPending = false;
 
     const getMainWorkspace = () => {
         if (workspace) return workspace;
@@ -94,8 +95,10 @@ export default async function ({addon}) {
     const buildSnapshot = () => {
         cacheDirty = false;
         const ws = getMainWorkspace();
+        // 工作区还没准备好（例如打开窗口时编辑器仍在加载）：保留脏标记，下一轮重试
         if (!ws || !blocksGroup || !svgEl) {
             snapshot = null;
+            cacheDirty = true;
             return;
         }
 
@@ -110,31 +113,63 @@ export default async function ({addon}) {
         let minY = Infinity;
         let maxX = -Infinity;
         let maxY = -Infinity;
+        let drawn = 0;
         const fragment = document.createDocumentFragment();
 
         for (const block of all) {
             try {
-                if (!block || block.workspace !== ws) continue;
+                // getAllBlocks 已经限定在当前工作区内，这里只排除工具箱里的预览块
+                if (!block) continue;
+                if (block.workspace && block.workspace.isFlyout) continue;
                 // 影子块（输入槽里的数字块）在缩略图尺寸下只是噪点，跳过
                 if (typeof block.isShadow === 'function' && block.isShadow()) continue;
 
                 const root = typeof block.getSvgRoot === 'function' ? block.getSvgRoot() : null;
                 if (!root) continue;
-                const bbox = root.getBBox();
-                if (!bbox || !(bbox.width > 0) || !(bbox.height > 0)) continue;
                 const pos = block.getRelativeToSurfaceXY();
                 if (!pos) continue;
+
+                // 设备/时机不同，块可能还没完成渲染，getBBox 会返回 0；
+                // 此时退回 Blockly 记录的宽高，避免整张图空白
+                let width = 0;
+                let height = 0;
+                let offsetX = 0;
+                let offsetY = 0;
+                try {
+                    const bbox = root.getBBox();
+                    if (bbox && bbox.width > 0 && bbox.height > 0) {
+                        width = bbox.width;
+                        height = bbox.height;
+                        offsetX = bbox.x;
+                        offsetY = bbox.y;
+                    }
+                } catch (e) {
+                    // ignore
+                }
+                if (!(width > 0) || !(height > 0)) {
+                    try {
+                        const hw = typeof block.getHeightWidth === 'function' ? block.getHeightWidth() : null;
+                        if (hw && hw.width > 0 && hw.height > 0) {
+                            width = hw.width;
+                            height = hw.height;
+                        }
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+                if (!(width > 0) || !(height > 0)) continue;
 
                 const clone = root.cloneNode(true);
                 clone.removeAttribute('id');
                 fragment.appendChild(clone);
+                drawn++;
 
-                const x0 = pos.x + bbox.x;
-                const y0 = pos.y + bbox.y;
+                const x0 = pos.x + offsetX;
+                const y0 = pos.y + offsetY;
                 if (x0 < minX) minX = x0;
                 if (y0 < minY) minY = y0;
-                if (x0 + bbox.width > maxX) maxX = x0 + bbox.width;
-                if (y0 + bbox.height > maxY) maxY = y0 + bbox.height;
+                if (x0 + width > maxX) maxX = x0 + width;
+                if (y0 + height > maxY) maxY = y0 + height;
             } catch (e) {
                 // 单个积木异常不影响整张图
             }
@@ -143,8 +178,11 @@ export default async function ({addon}) {
         // 清空旧的预览节点
         while (blocksGroup.firstChild) blocksGroup.removeChild(blocksGroup.firstChild);
 
-        if (!(maxX > minX) || !(maxY > minY)) {
+        // 还没画出任何积木：可能是工作区尚未渲染，标记为脏等待下一轮重试
+        if (!drawn) {
             snapshot = null;
+            viewBoxState = null;
+            cacheDirty = true;
             return;
         }
 
@@ -327,7 +365,7 @@ export default async function ({addon}) {
         try {
             ws.addChangeListener(() => {
                 cacheDirty = true;
-                if (miniMapWindow && miniMapWindow.isVisible) scheduleDraw();
+                scheduleDraw();
             });
             // 滚轮平移/缩放时视野框立即跟随
             const svg = typeof ws.getParentSvg === 'function' ? ws.getParentSvg() : null;
@@ -348,7 +386,13 @@ export default async function ({addon}) {
         if (resizeObserver) resizeObserver.disconnect();
         resizeObserver = new ResizeObserver(() => {
             lastDrawKey = '';
-            scheduleDraw();
+            // 放到下一帧再处理，避免在 ResizeObserver 回调里同步改布局
+            if (rafPending) return;
+            rafPending = true;
+            requestAnimationFrame(() => {
+                rafPending = false;
+                scheduleDraw();
+            });
         });
         resizeObserver.observe(contentEl);
     };
@@ -456,13 +500,12 @@ export default async function ({addon}) {
     // 初始化窗口
     createUI();
 
-    // 定时刷新：只在视野变化时更新，空闲时不重绘
+    // 定时刷新：工作区/窗口尺寸/视野变化都会在这里补一次绘制，
+    // 空闲时 draw() 会自行提前返回，不产生重绘
     setInterval(() => {
         if (!isWindowAlive()) return;
         attachWorkspaceListener();
-        if (miniMapWindow.isVisible) {
-            scheduleDraw();
-        }
+        scheduleDraw();
     }, 300);
 
     // 暴露全局 API：toggle 显示/隐藏
