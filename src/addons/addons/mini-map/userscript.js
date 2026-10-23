@@ -55,6 +55,12 @@ export default async function ({addon}) {
     let resizeObserver = null;
     let changeListenerWorkspace = null;
 
+    // 小地图缩放：1 = 内容刚好铺满窗口；小于 1 时展示更大范围
+    let viewZoom = 0.7;
+    const MIN_ZOOM = 0.25;
+    const MAX_ZOOM = 3;
+    let viewBoxState = null;
+
     const getMainWorkspace = () => {
         if (workspace) return workspace;
         try {
@@ -154,7 +160,27 @@ export default async function ({addon}) {
         const h = Math.max(1, maxY - minY);
 
         snapshot = {minX, minY, w, h};
-        svgEl.setAttribute('viewBox', `${minX} ${minY} ${w} ${h}`);
+        applyViewBox();
+    };
+
+    // 按当前缩放比例计算并应用 viewBox（以内容中心为锚点）
+    const applyViewBox = () => {
+        if (!svgEl) return;
+        if (!snapshot) {
+            viewBoxState = null;
+            svgEl.removeAttribute('viewBox');
+            return;
+        }
+        const w = snapshot.w / viewZoom;
+        const h = snapshot.h / viewZoom;
+        viewBoxState = {
+            x: snapshot.minX + (snapshot.w - w) / 2,
+            y: snapshot.minY + (snapshot.h - h) / 2,
+            w,
+            h
+        };
+        svgEl.setAttribute('viewBox',
+            `${viewBoxState.x} ${viewBoxState.y} ${viewBoxState.w} ${viewBoxState.h}`);
     };
 
     // 更新视野框（始终在积木图层之上）
@@ -217,14 +243,14 @@ export default async function ({addon}) {
 
     // 缩略图坐标 → workspace 坐标（按 preserveAspectRatio="xMidYMid meet" 反算）
     const clientToWorkspace = (clientX, clientY) => {
-        if (!svgEl || !snapshot) return null;
+        if (!svgEl || !viewBoxState) return null;
         const rect = svgEl.getBoundingClientRect();
-        const scale = Math.min(rect.width / snapshot.w, rect.height / snapshot.h);
-        const offsetX = (rect.width - snapshot.w * scale) / 2;
-        const offsetY = (rect.height - snapshot.h * scale) / 2;
+        const scale = Math.min(rect.width / viewBoxState.w, rect.height / viewBoxState.h);
+        const offsetX = (rect.width - viewBoxState.w * scale) / 2;
+        const offsetY = (rect.height - viewBoxState.h * scale) / 2;
         return {
-            x: snapshot.minX + (clientX - rect.left - offsetX) / scale,
-            y: snapshot.minY + (clientY - rect.top - offsetY) / scale
+            x: viewBoxState.x + (clientX - rect.left - offsetX) / scale,
+            y: viewBoxState.y + (clientY - rect.top - offsetY) / scale
         };
     };
 
@@ -232,7 +258,7 @@ export default async function ({addon}) {
     const scrollTo = (clientX, clientY) => {
         const ws = getMainWorkspace();
         const point = clientToWorkspace(clientX, clientY);
-        if (!point || !ws) return;
+        if (!point || !ws || !snapshot) return;
 
         // 只在脚本范围（含留白）内定位，空白角落点不过去
         const wx = Math.max(snapshot.minX, Math.min(snapshot.minX + snapshot.w, point.x));
@@ -339,6 +365,41 @@ export default async function ({addon}) {
         }
     };
 
+    // 缩放小地图：只改变 viewBox，不重建积木快照
+    const zoomBy = factor => {
+        viewZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, viewZoom * factor));
+        applyViewBox();
+        lastDrawKey = '';
+        scheduleDraw();
+    };
+
+    // 右下角悬浮缩放按钮
+    const createZoomControls = () => {
+        const controls = document.createElement('div');
+        controls.className = 'rw-minimap-controls';
+
+        const makeButton = (label, title, factor) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'rw-minimap-zoom-btn';
+            button.textContent = label;
+            button.title = title;
+            button.setAttribute('aria-label', title);
+            const stop = e => e.stopPropagation();
+            button.addEventListener('pointerdown', stop);
+            button.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                zoomBy(factor);
+            });
+            return button;
+        };
+
+        controls.appendChild(makeButton('+', '放大', 1.25));
+        controls.appendChild(makeButton('−', '缩小', 0.8));
+        contentEl.appendChild(controls);
+    };
+
     const createUI = () => {
         miniMapWindow = WindowManager.createWindow({
             id: 'rw-minimap-window',
@@ -368,6 +429,7 @@ export default async function ({addon}) {
         svgEl.appendChild(viewportRect);
 
         contentEl.appendChild(svgEl);
+        createZoomControls();
         miniMapWindow.setContent(contentEl);
 
         const ws = getMainWorkspace();
