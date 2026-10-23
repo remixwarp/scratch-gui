@@ -1212,7 +1212,15 @@
         "gui.menuBar.restore": "Restore",
         "gui.menuBar.restoreSprite": "Restore Sprite",
         "gui.menuBar.restoreCostume": "Restore Costume",
-        "gui.menuBar.restoreSound": "Restore Sound"
+        "gui.menuBar.restoreSound": "Restore Sound",
+        "mw.clipboard.ext-confirm": "The copied blocks use the \"{id}\" extension, which is not loaded. Add it?",
+        "mw.clipboard.ext-confirm-unknown": "The copied blocks use an extension that is not loaded. Add it?",
+        "tw.donationModal.title": "Thanks for using this editor!",
+        "tw.donationModal.startupCount": "You've opened the editor {count} times.",
+        "tw.donationModal.prompt": "If you enjoy this editor, please consider donating to support our development.",
+        "tw.donationModal.donateNow": "Donate Now",
+        "tw.donationModal.notNow": "Not now",
+        "tw.donationModal.close": "Close"
     },
     "zh-geng": {
         "gui.backpack.searchPlaceholder": "搜索书包...",
@@ -4906,7 +4914,15 @@
         "tw.extensionTag.experimentPlaza": "扩展实验广场",
         "tw.extensionSource.scratch": "Scratch",
         "tw.extensionSource.turboWarp": "TurboWarp",
-        "tw.extensionSource.mistium": "Mistium"
+        "tw.extensionSource.mistium": "Mistium",
+        "mw.clipboard.ext-confirm": "粘贴的积木使用了编辑器中未加载的“{id}”扩展，是否添加该扩展？",
+        "mw.clipboard.ext-confirm-unknown": "粘贴的积木使用了编辑器中未加载的扩展，是否添加该扩展？",
+        "tw.donationModal.title": "感谢使用本编辑器！",
+        "tw.donationModal.startupCount": "你已经打开了编辑器 {count} 次。",
+        "tw.donationModal.prompt": "如果你喜欢这个编辑器，欢迎捐赠支持我们的开发。",
+        "tw.donationModal.donateNow": "立即捐赠",
+        "tw.donationModal.notNow": "暂不",
+        "tw.donationModal.close": "关闭"
     },
     "wenyan": {
         "mw.tree.explorer": "资源管理器",

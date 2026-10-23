@@ -746,5 +746,13 @@
     "resize-selected-item/x": "X",
     "resize-selected-item/y": "Y",
     "resize-selected-item/direction": "方向",
-    "tw-comment-markdown-editor/default-comment": "单击编写注释，或拖入积木"
+    "tw-comment-markdown-editor/default-comment": "单击编写注释，或拖入积木",
+    "tw-comment-markdown-editor/snippet-drag-hint": "拖到工作区即可变成真正的积木",
+    "tw-comment-markdown-editor/snippet-edit-hint": "编辑态下不可拖动；切回预览即可拖到工作区",
+    "tw-comment-markdown-editor/snippet-broken": "（这段积木暂时未渲染）",
+    "tw-comment-markdown-editor/snippet-delete": "删除这一段积木",
+    "tw-comment-markdown-editor/snippet-extension-missing": "该积木依赖扩展“{id}”，当前项目未加载",
+    "tw-comment-markdown-editor/snippet-label": "⟨{count} 段积木⟩",
+    "tw-comment-markdown-editor/ext-confirm-title": "添加扩展",
+    "tw-comment-markdown-editor/ext-confirm-message": "在注释中使用了编辑器中不包含的“{id}”扩展积木，是否添加该扩展？"
 }

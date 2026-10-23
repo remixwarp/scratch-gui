@@ -11,6 +11,15 @@
  * 因此不需要修改 sb3 的 comment 结构，也不会引入 HTML 注入风险。
  */
 
+import {
+    installExtensionUrlRecorder,
+    buildExtensionMetaForXmlText,
+    composePayloadText,
+    parsePayloadText,
+    getMissingExtensionDefinitions,
+    loadExtensionDefinition
+} from '../../../lib/mw/block-payload.js';
+
 const FENCE_OPEN = '```blocks';
 const FENCE_CLOSE = '```';
 const SNIPPET_REGEX = /```blocks[ \t]*\r?\n([\s\S]*?)\r?\n?```/g;
@@ -18,6 +27,13 @@ const DRAG_THRESHOLD = 5;
 
 export default async function ({addon, console, msg}) {
     const Blockly = await addon.tab.traps.getBlockly();
+    const vm = (addon.tab.traps && addon.tab.traps.vm) || null;
+    if (vm) installExtensionUrlRecorder(vm);
+
+    /** 已经询问过的扩展 ID（用户拒绝后不再反复弹窗） */
+    const askedExtensionIds = new Set();
+    /** 正在加载 / 已经处理过的扩展 ID */
+    const pendingExtensionIds = new Set();
 
     /** comment 对象 -> entry */
     const entries = new Map();
@@ -270,17 +286,11 @@ export default async function ({addon, console, msg}) {
 
         // 预扫扩展积木 —— 目标项目没加载这个扩展时 domToWorkspace 直接抛 Error，
         // 连重试队列也救不回来（opcode 永远不会注册）。优雅降级成一条提示。
+        // 扩展本身由上层 ensureExtensionsForMeta() 询问并加载，加载成功后会自动 refresh。
         const check = checkSnippetBlockTypes(xml);
         if (!check.ok) {
-            // 缺失扩展 opcode，先试试看能不能用 VM 动态加载
-            tryRegisterMissingExtensions(check.missingExtensions);
-            // 再检查一次（上面的动态加载可能已经补上了）
-            const reCheck = checkSnippetBlockTypes(xml);
-            if (!reCheck.ok) {
-                // 真注册不了就返回 null 让上层降级渲染
-                snippetSvgCache.set(xml, null);
-                return null;
-            }
+            snippetSvgCache.set(xml, null);
+            return null;
         }
 
         let svg = null;
@@ -334,35 +344,69 @@ export default async function ({addon, console, msg}) {
     };
 
     /**
-     * 尝试动态加载缺失的扩展：目标项目里没有加载某个扩展时，通过 VM 的 extension manager
-     * 把它注册进来。这依赖 scratch-vm 在浏览器里已经暴露了 extensionManager。
+     * 按注释里携带的扩展信息（URL / base64 文件内容 / 内置 ID）补装扩展。
+     * 加载前会弹窗询问用户：注释里用了编辑器中不包含的扩展，是否添加 <id> 扩展？
+     * 同一个扩展 ID 只询问一次，用户拒绝后不再反复弹窗。
      *
-     * 注意：scratch 的扩展加载需要 URL + 权限；scratch-vm 本身也只在 sb3 打开时自动声明。
-     * 这里先尽力而为 —— 拿不到 runtime / extensionManager 就跳过，让调用方优雅降级。
+     * @returns {Promise<boolean>} 是否加载了至少一个扩展
      */
-    const tryRegisterMissingExtensions = missingBlockTypes => {
-        try {
-            const vm = (addon.tab && addon.tab.traps && addon.tab.traps.vm) ||
-                       (window.__scratchVm) || null;
-            if (!vm) return false;
-            const runtime = vm.runtime || vm;
-            const extMgr = runtime.extensionManager;
-            if (!extMgr) return false;
-            // 记录：对同一个缺失 block type 不要反复尝试
-            for (const type of missingBlockTypes) {
-                if (Blockly.Blocks[type]) continue; // 动态加载成功了？
-                // scratch-vm extensionManager 的 loadExtension 签名：
-                //   loadExtension(extensionId, extensionURL, blockTranslationInfo)
-                // 但我们这里不知道 URL，只能扫一遍 runtime 里已注册的扩展 definition
-                // 看看有没有包含这个 opcode —— 如果 sb3 里其实已经声明了扩展只是还没 load，
-                // vm 应该在打开 sb3 时已经 load 了。拿不到 URL 就跳过。
-                // 这条路径目前不做强加载，先让上层优雅降级。
-                //
-                // 已知扩展 URL 时（比如 remixwarp 里声明在 runtime 的 extensions 表里）：
-                //   await extMgr.loadExtension(type.split('_')[0] || type, EXT_URL_MAP[type], null)
+    const ensureExtensionsForMeta = async meta => {
+        if (!vm || !vm.extensionManager || !meta || !Array.isArray(meta.exts)) return false;
+        const missing = getMissingExtensionDefinitions(vm, meta);
+        if (!missing.length) return false;
+
+        let loadedAny = false;
+        for (const def of missing) {
+            const id = def && def.id;
+            if (!id || pendingExtensionIds.has(id)) continue;
+
+            if (!askedExtensionIds.has(id)) {
+                askedExtensionIds.add(id);
+                let accepted = false;
+                try {
+                    accepted = await addon.tab.confirm(
+                        msg('ext-confirm-title'),
+                        msg('ext-confirm-message', {id}),
+                        {useEditorClasses: true}
+                    );
+                } catch (err) {
+                    accepted = false;
+                }
+                if (!accepted) continue;
             }
-            return true;
-        } catch (_e) { /* 拿不到 vm / extensionManager 就跳过 */ return false; }
+
+            pendingExtensionIds.add(id);
+            try {
+                const ok = await loadExtensionDefinition(vm, def);
+                if (ok) {
+                    loadedAny = true;
+                    // 扩展加载会注册新 opcode，之前缓存的「渲染不了」全部作废
+                    snippetSvgCache.clear();
+                }
+            } catch (err) {
+                console.warn('[comment-blocks] 加载注释中的扩展失败', id, err);
+            } finally {
+                pendingExtensionIds.delete(id);
+            }
+        }
+        return loadedAny;
+    };
+
+    /** 从一段注释文本中解析出所有扩展定义 */
+    const collectMetaFromCommentText = text => {
+        const exts = [];
+        const seen = new Set();
+        for (const part of splitParts(text)) {
+            if (part.type !== 'blocks') continue;
+            const parsed = parsePayloadText(part.content);
+            if (!parsed.meta || !Array.isArray(parsed.meta.exts)) continue;
+            for (const def of parsed.meta.exts) {
+                if (!def || !def.id || seen.has(def.id)) continue;
+                seen.add(def.id);
+                exts.push(def);
+            }
+        }
+        return exts.length ? {v: 1, exts} : null;
     };
 
     const blockToXml = block => {
@@ -508,7 +552,14 @@ export default async function ({addon, console, msg}) {
         for (const part of splitParts(entry.comment.getText())) {
             if (part.type === 'blocks') {
                 snippetIndex += 1;
-                preview.appendChild(createSnippetEl(entry, part.content, snippetIndex));
+                const parsed = parsePayloadText(part.content);
+                // 注释里带着扩展信息但项目里没加载：询问并补装，装好后再重绘
+                if (parsed.meta) {
+                    ensureExtensionsForMeta(parsed.meta).then(loaded => {
+                        if (loaded && entries.has(entry.comment)) refresh(entry);
+                    });
+                }
+                preview.appendChild(createSnippetEl(entry, part.content, snippetIndex, parsed));
             } else if (part.content.trim()) {
                 renderMarkdown(preview, part.content);
             }
@@ -525,18 +576,28 @@ export default async function ({addon, console, msg}) {
         }
     };
 
-    const createSnippetEl = (entry, xml, index) => {
+    const createSnippetEl = (entry, payload, index, parsedPayload) => {
+        const parsed = parsedPayload || parsePayloadText(payload);
+        const xml = parsed.xmlText || payload;
         const wrap = document.createElement('div');
         wrap.className = 'rw-cb-snippet';
         wrap.dataset.snippetIndex = String(index);
-        wrap.title = '拖到工作区即可变成真正的积木';
+        wrap.title = msg('snippet-drag-hint');
 
         const svg = renderSnippetSvg(xml);
         if (svg) wrap.appendChild(svg);
         else {
             const broken = document.createElement('span');
             broken.className = 'rw-cb-snippet-broken';
-            broken.textContent = '（这段积木暂时未渲染）';
+            const check = checkSnippetBlockTypes(xml);
+            if (!check.ok) {
+                const missingId = guessExtensionName(check.missingExtensions[0]);
+                broken.textContent = missingId ?
+                    msg('snippet-extension-missing', {id: missingId}) :
+                    msg('snippet-broken');
+            } else {
+                broken.textContent = msg('snippet-broken');
+            }
             wrap.appendChild(broken);
             // 第一次没渲染出来：下一个 tick 再试（opcode 可能晚注册 / 草稿 workspace 刚初始化）
             scheduleRetry(xml, entry);
@@ -546,7 +607,7 @@ export default async function ({addon, console, msg}) {
         remove.className = 'rw-cb-snippet-delete';
         remove.type = 'button';
         remove.textContent = '✕';
-        remove.title = '删除这一段积木';
+        remove.title = msg('snippet-delete');
         remove.addEventListener('mousedown', e => e.stopPropagation());
         remove.addEventListener('click', e => {
             e.stopPropagation();
@@ -586,7 +647,7 @@ export default async function ({addon, console, msg}) {
             if (!g) return;
             e.preventDefault();
             e.stopPropagation();
-            startSnippetDrag(entry, xml, e, wrap);
+            startSnippetDrag(entry, payload, e, wrap);
         });
         wrap.addEventListener('touchstart', e => {
             if (e.target === remove) return;
@@ -595,7 +656,7 @@ export default async function ({addon, console, msg}) {
             if (!g) return;
             e.preventDefault();
             e.stopPropagation();
-            startSnippetDrag(entry, xml, e, wrap);
+            startSnippetDrag(entry, payload, e, wrap);
         }, {passive: false});
         wrap.addEventListener('pointerdown', e => {
             if (e.target === remove) return;
@@ -605,7 +666,7 @@ export default async function ({addon, console, msg}) {
             e.preventDefault();
             e.stopPropagation();
             try { wrap.setPointerCapture(e.pointerId); } catch (_e) {}
-            startSnippetDrag(entry, xml, e, wrap);
+            startSnippetDrag(entry, payload, e, wrap);
         }, {passive: false});
         return wrap;
     };
@@ -787,13 +848,16 @@ export default async function ({addon, console, msg}) {
      * 内联的 contenteditable=false 元素会把光标卡在一侧、方向键直接跳过它；
      * 当成独立一行之后，前后各有一处可输入，上下键和鼠标都能自由切换。
      */
-    const createEditorSnippetEl = (entry, xml, index) => {
+    const createEditorSnippetEl = (entry, payload, index) => {
+        const parsed = parsePayloadText(payload);
+        const xml = parsed.xmlText || payload;
         const wrap = document.createElement('div');
         wrap.className = 'rw-cb-snippet rw-cb-snippet-editing';
         wrap.contentEditable = 'false';
         wrap.dataset.rwSnippet = String(index);
-        wrap.__rwXml = xml;
-        wrap.title = '编辑态下不可拖动；切回预览即可拖到工作区';
+        // 保留带扩展头的完整文本，编辑 -> 保存时才不会丢掉扩展信息
+        wrap.__rwXml = payload;
+        wrap.title = msg('snippet-edit-hint');
 
         const svg = renderSnippetSvg(xml);
         if (svg) {
@@ -801,7 +865,11 @@ export default async function ({addon, console, msg}) {
         } else {
             const broken = document.createElement('span');
             broken.className = 'rw-cb-snippet-broken';
-            broken.textContent = '（这段积木暂时未渲染）';
+            const check = checkSnippetBlockTypes(xml);
+            const missingId = !check.ok ? guessExtensionName(check.missingExtensions[0]) : null;
+            broken.textContent = missingId ?
+                msg('snippet-extension-missing', {id: missingId}) :
+                msg('snippet-broken');
             wrap.appendChild(broken);
             // 编辑态也调度 retry（flushRetryQueue 会 rebuild preview，再切回预览态时就能看到真 svg 了）
             scheduleRetry(xml, entry);
@@ -811,7 +879,7 @@ export default async function ({addon, console, msg}) {
         remove.className = 'rw-cb-snippet-delete';
         remove.type = 'button';
         remove.textContent = '✕';
-        remove.title = '删除这一段积木';
+        remove.title = msg('snippet-delete');
         remove.addEventListener('mousedown', e => {
             e.preventDefault();
             e.stopPropagation();
@@ -1228,12 +1296,17 @@ export default async function ({addon, console, msg}) {
     // 拖拽链能被挂到 window 上，避免 dropSnippetToWorkspace 被多次调用。
     let _rwActiveDrag = null;
 
-    const startSnippetDrag = (entry, xml, e, dragHost) => {
+    const startSnippetDrag = (entry, payload, e, dragHost) => {
         const ws = getMainWorkspace();
         if (!ws) return;
         if (_rwActiveDrag) return; // 已有活跃拖拽，这次丢弃（去重 / 重入保护）
         const start = getClientXY(e);
         if (!start) return;
+
+        // 围栏里可能带着扩展信息头；渲染 / 落板只用 xml，扩展单独按需加载
+        const parsedPayload = parsePayloadText(payload);
+        const xml = parsedPayload.xmlText || payload;
+        const meta = parsedPayload.meta;
 
         let cleanedUp = false;
         const cleanup = () => {
@@ -1290,14 +1363,16 @@ export default async function ({addon, console, msg}) {
         };
 
         const onUp = event => {
+            const point = moved ? (getClientXY(event) || lastValidPoint) : null;
+            const insideWorkspace = point && isOverWorkspace(ws, point.x, point.y) &&
+                !findCommentAt(point.x, point.y);
             try {
-                if (!moved) return; // 没真拖过，cleanup 交给 finally
-                const point = getClientXY(event);
-                const finalPoint = point || lastValidPoint;
-                if (!finalPoint) return;
-                if (!isOverWorkspace(ws, finalPoint.x, finalPoint.y)) return;
-                if (findCommentAt(finalPoint.x, finalPoint.y)) return;
-                dropSnippetToWorkspace(ws, xml, screenToWorkspace(ws, finalPoint.x, finalPoint.y));
+                if (!moved || !insideWorkspace) return;
+                const target = screenToWorkspace(ws, point.x, point.y);
+                // 先把注释里携带的扩展补上，再落板；否则 domToWorkspace 会因 opcode 缺失失败
+                ensureExtensionsForMeta(meta).then(() => {
+                    dropSnippetToWorkspace(ws, xml, target);
+                });
             } finally {
                 cleanup();
             }
@@ -1360,22 +1435,6 @@ export default async function ({addon, console, msg}) {
         return -1;
     };
 
-    const restoreDraggedBlock = (block, startXY, restore) => {
-        try {
-            if (restore && restore.out && block.outputConnection) {
-                restore.out.connect(block.outputConnection);
-                return;
-            }
-            if (restore && restore.prev && block.previousConnection) {
-                restore.prev.connect(block.previousConnection);
-                return;
-            }
-            if (startXY) block.moveTo(startXY.x, startXY.y);
-        } catch (err) {
-            /* 还原失败时保持现状即可 */
-        }
-    };
-
     const installDragPatches = () => {
         const Dragger = Blockly.BlockDragger;
         if (!Dragger || Dragger.prototype.__rwPatched) return;
@@ -1397,25 +1456,9 @@ export default async function ({addon, console, msg}) {
             };
         }
 
-        const originalStart = Dragger.prototype.startBlockDrag;
-        Dragger.prototype.startBlockDrag = function (delta) {
-            const block = this.draggingBlock_;
-            try {
-                this.__rwRestore = block ? {
-                    prev: block.previousConnection ? block.previousConnection.targetConnection : null,
-                    out: block.outputConnection ? block.outputConnection.targetConnection : null
-                } : null;
-            } catch (err) {
-                this.__rwRestore = null;
-            }
-            return originalStart.call(this, delta);
-        };
-
         const originalEnd = Dragger.prototype.endBlockDrag;
         Dragger.prototype.endBlockDrag = function (e, delta) {
             const block = this.draggingBlock_;
-            const startXY = this.startXY_;
-            const restore = this.__rwRestore;
             let hit = null;
             let xml = null;
             if (block && !this.wouldDeleteBlock_) {
@@ -1427,22 +1470,15 @@ export default async function ({addon, console, msg}) {
             }
             const result = originalEnd.call(this, e, delta);
             if (hit && xml) {
-                // 只有「刚从积木栏拿出来的孤立方块」才收进注释（工作区不留）。
-                // 其它一律保留原积木：一整条积木链、或者从脚本中间拖出来的，
-                // 都只是在注释里存一份副本，原样留在工作区。
-                const gesture = this.workspace_ ? this.workspace_.currentGesture_ : null;
-                const fromFlyout = !!(block.__rwFromFlyout || (gesture && gesture.flyout_));
-                const isLoose = !block.getParent() && !block.getNextBlock();
-                if (fromFlyout && isLoose) {
-                    try {
-                        block.dispose(false);
-                    } catch (err) {
-                        console.warn('[comment-blocks] 收进注释时删除原积木失败', err);
-                    }
-                } else {
-                    restoreDraggedBlock(block, startXY, restore);
+                // 拖进注释后：工作区里不再保留原积木，只留下注释中的片段。
+                try {
+                    block.dispose(false);
+                } catch (err) {
+                    console.warn('[comment-blocks] 收进注释时删除原积木失败', err);
                 }
-                insertSnippet(hit.comment, xml, hit.index);
+                // 扩展加载信息（URL / base64 文件内容）放在积木链文本最前面一起带进注释
+                const meta = buildExtensionMetaForXmlText(vm, xml);
+                insertSnippet(hit.comment, composePayloadText(xml, meta), hit.index);
             }
             return result;
         };
@@ -1520,7 +1556,7 @@ export default async function ({addon, console, msg}) {
                 } catch (err) {
                     count = 0;
                 }
-                return count > 0 ? `${label} ⟨${count} 段积木⟩` : label;
+                return count > 0 ? `${label} ${msg('snippet-label', {count})}` : label;
             };
         };
         if (Blockly.ScratchBlockComment) wrap(Blockly.ScratchBlockComment.prototype);
@@ -1629,6 +1665,18 @@ export default async function ({addon, console, msg}) {
             SNIPPET_REGEX.lastIndex = 0;
 
             if (!hasSnippets) continue;
+
+            // 作品刚打开 / 注释刚出现时，先根据注释里携带的扩展信息补装扩展。
+            // 这一步不依赖注释 DOM 是否挂好，所以即使注释是折叠的也能触发。
+            const commentMeta = collectMetaFromCommentText(text);
+            if (commentMeta) {
+                ensureExtensionsForMeta(commentMeta).then(loaded => {
+                    if (!loaded) return;
+                    snippetSvgCache.clear();
+                    const current = entries.get(c);
+                    if (current) refresh(current);
+                });
+            }
 
             // 1) 片段检测到了 → 先确保 scratch DOM 挂出来
             const needsVisible = !c.foreignObject_ || !c.foreignObject_.isConnected;

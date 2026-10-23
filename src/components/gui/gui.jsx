@@ -208,7 +208,11 @@ const DonationModal = ({visible, onClose, count}) => {
                         color: '#666'
                     }}
                 >
-                    ×
+                    <FormattedMessage
+                        id="tw.donationModal.close"
+                        defaultMessage="Close"
+                        description="Accessible label for the donation modal close button"
+                    />
                 </button>
                 
                 <h2 style={{marginTop: 0, color: '#333', textAlign: 'center'}}>

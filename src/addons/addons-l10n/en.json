@@ -483,5 +483,13 @@
     "resize-selected-item/x": "X",
     "resize-selected-item/y": "Y",
     "resize-selected-item/direction": "Direction",
-    "tw-comment-markdown-editor/default-comment": "Click to write a comment, or drag in blocks"
+    "tw-comment-markdown-editor/default-comment": "Click to write a comment, or drag in blocks",
+    "tw-comment-markdown-editor/snippet-drag-hint": "Drag to the workspace to turn it into real blocks",
+    "tw-comment-markdown-editor/snippet-edit-hint": "Not draggable while editing; switch back to preview to drag it out",
+    "tw-comment-markdown-editor/snippet-broken": "(This block snippet cannot be rendered yet)",
+    "tw-comment-markdown-editor/snippet-delete": "Delete this block snippet",
+    "tw-comment-markdown-editor/snippet-extension-missing": "These blocks need the \"{id}\" extension, which is not loaded in this project",
+    "tw-comment-markdown-editor/snippet-label": "⟨{count} block snippets⟩",
+    "tw-comment-markdown-editor/ext-confirm-title": "Add extension",
+    "tw-comment-markdown-editor/ext-confirm-message": "Blocks in this comment use the \"{id}\" extension, which is not included in this editor. Add it?"
 }
