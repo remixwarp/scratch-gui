@@ -10,6 +10,8 @@ npm-*
 
 # 本地临时目录（排查/临时安装用）
 /.tmp-test
+# 任意 .tmp-* 目录（例如临时 clone 的 scratch-blocks）都不能进仓库，
+# 否则会被 git 记成无 .gitmodules 条目的子模块，导致 CI 部署失败。
 /.tmp-*/
 
 # Environment variables
