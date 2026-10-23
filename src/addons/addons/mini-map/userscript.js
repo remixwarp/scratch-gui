@@ -545,10 +545,11 @@ export default async function ({addon}) {
         blocksGroup.style.pointerEvents = 'none';
         svgEl.appendChild(blocksGroup);
 
-        // 视野框只画边框，不填充，避免遮挡积木（直接写 SVG 属性，不依赖 CSS）
+        // 视野框：半透明灰色填充 + 黑色描边（直接写 SVG 属性，不依赖 CSS）
         viewportRect = document.createElementNS(SVG_NS, 'rect');
         viewportRect.setAttribute('class', 'rw-minimap-viewport');
-        viewportRect.setAttribute('fill', 'none');
+        viewportRect.setAttribute('fill', '#8A8A8A');
+        viewportRect.setAttribute('fill-opacity', '0.22');
         viewportRect.setAttribute('stroke', 'rgba(0, 0, 0, 0.9)');
         viewportRect.setAttribute('stroke-width', '1.5');
         viewportRect.setAttribute('vector-effect', 'non-scaling-stroke');

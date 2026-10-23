@@ -35,7 +35,8 @@
 }
 
 .rw-minimap-viewport {
-    fill: none;
+    fill: #8A8A8A;
+    fill-opacity: 0.22;
     stroke: rgba(0, 0, 0, 0.9);
     stroke-width: 1.5;
     vector-effect: non-scaling-stroke;
