@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import JSZip from '@turbowarp/jszip';
 import {closeSuperRefactorModal} from '../reducers/modals';
 import Modal from './windowed-modal.jsx';
 import Button from '../components/button/button.jsx';
@@ -172,6 +173,7 @@ class SuperRefactorModalContainer extends React.Component {
             'handleRefresh',
             'applyChanges',
             'downloadProject',
+            'saveBlobAs',
             'getProjectFiles',
             'toggleViewMode',
             'handleEditorScroll',
@@ -1399,6 +1401,12 @@ class SuperRefactorModalContainer extends React.Component {
             return;
         }
 
+        // 新建的本地文件：写入作品压缩包（.rj 立即写入；sb3 在下载项目时打包）
+        if (file.custom) {
+            this.applyCustomFile(file);
+            return;
+        }
+
         try {
             if ((file.originalName || file.name) === 'project.json') {
                 // 压缩JSON回一行
@@ -1530,53 +1538,106 @@ class SuperRefactorModalContainer extends React.Component {
         }
     }
 
-    // 下载项目
-    downloadProject () {
-        // .rj 模式：直接下载当前 .rj 原始文件，保持分片结构不变
+    // 触发浏览器下载
+    saveBlobAs (blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // 新建的本地文件写入作品压缩包
+    async applyCustomFile (file) {
         if (hasCurrentRJ()) {
-            const raw = getCurrentRJRaw();
-            if (raw) {
-                try {
-                    const blob = new Blob([raw], {type: 'application/octet-stream'});
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'project.rj';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
+            try {
+                const zip = await getCurrentRJZip();
+                if (zip) {
+                    zip.file(file.name, file.content);
+                    this.saveExtraFiles();
+                    this.setState({message: '✓ 已写入 .rj 作品，下载时会一并打包'});
+                    setTimeout(() => this.setState({message: ''}), 3000);
+                    return;
+                }
+            } catch (e) {
+                // 写入压缩包失败时退回仅本地保存
+            }
+        }
+        this.saveExtraFiles();
+        this.setState({message: '✓ 已写入作品，下载项目时会一并打包'});
+        setTimeout(() => this.setState({message: ''}), 3000);
+    }
+
+    // 下载项目
+    async downloadProject () {
+        const customFiles = this.state.files.filter(file => file.custom);
+
+        // .rj 模式：有新建文件时从 zip 重新生成，保证新文件一并打包
+        if (hasCurrentRJ()) {
+            try {
+                if (customFiles.length > 0) {
+                    const zip = await getCurrentRJZip();
+                    if (zip) {
+                        customFiles.forEach(file => zip.file(file.name, file.content));
+                        const blob = await zip.generateAsync({type: 'blob', compression: 'DEFLATE'});
+                        this.saveBlobAs(blob, 'project.rj');
+                        this.setState({message: '已下载 .rj 文件（含新建文件）！'});
+                        setTimeout(() => this.setState({message: ''}), 3000);
+                        return;
+                    }
+                }
+                // 没有新建文件时直接下载当前 .rj 原始文件，保持分片结构不变
+                const raw = getCurrentRJRaw();
+                if (raw) {
+                    this.saveBlobAs(new Blob([raw], {type: 'application/octet-stream'}), 'project.rj');
                     this.setState({message: '已下载 .rj 文件！'});
                     setTimeout(() => this.setState({message: ''}), 3000);
-                } catch (e) {
-                    this.setState({message: '下载 .rj 失败'});
-                    setTimeout(() => this.setState({message: ''}), 5000);
                 }
+            } catch (e) {
+                this.setState({message: '下载 .rj 失败'});
+                setTimeout(() => this.setState({message: ''}), 5000);
+            }
+            return;
+        }
+
+        // sb3：有新建文件时打包成完整作品，新文件作为额外条目写入
+        if (customFiles.length > 0 && this.props.vm && typeof this.props.vm.saveProjectSb3 === 'function') {
+            try {
+                const buffer = await this.props.vm.saveProjectSb3('arraybuffer');
+                const zip = await JSZip.loadAsync(buffer);
+                customFiles.forEach(file => zip.file(file.name, file.content));
+                const blob = await zip.generateAsync({
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    mimeType: 'application/x.scratch.sb3'
+                });
+                this.saveBlobAs(blob, 'project.sb3');
+                this.setState({message: '已下载作品（含新建文件）！'});
+                setTimeout(() => this.setState({message: ''}), 3000);
                 return;
+            } catch (e) {
+                // 打包失败时继续按原来的方式下载 project.json
             }
         }
 
         const {files} = this.state;
         const projectFile = files.find(f => (f.originalName || f.name) === 'project.json');
-        
+
         if (projectFile) {
             try {
                 const data = JSON.parse(projectFile.content);
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'project.json';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                this.setState({ message: '已下载项目文件！' });
-                setTimeout(() => this.setState({ message: '' }), 3000);
+                this.saveBlobAs(
+                    new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}),
+                    'project.json'
+                );
+                this.setState({message: '已下载项目文件！'});
+                setTimeout(() => this.setState({message: ''}), 3000);
             } catch (e) {
-                this.setState({ message: 'JSON格式错误，无法下载' });
-                setTimeout(() => this.setState({ message: '' }), 5000);
+                this.setState({message: 'JSON格式错误，无法下载'});
+                setTimeout(() => this.setState({message: ''}), 5000);
             }
         }
     }
@@ -2376,8 +2437,9 @@ class SuperRefactorModalContainer extends React.Component {
         // 是否可以编辑
         const canEdit = currentFileType === 'json' || currentFileType === 'svg' ||
             currentFileType === 'rfd' || currentFileType === 'md';
-        // 是否可以应用（.rj 的 JSON 分片可写回压缩包后重新载入；新建的独立 SVG 无造型可应用）
-        const canApply = currentOriginalName === 'project.json' ||
+        // 是否可以应用（.rj 的 JSON 分片可写回压缩包后重新载入；新建的本地文件写入作品压缩包）
+        const canApply = (!!currentFileObj && !!currentFileObj.custom) ||
+            currentOriginalName === 'project.json' ||
             (currentFileType === 'svg' && !!currentFileObj &&
                 (!!currentFileObj.costume || (currentFileObj.readOnly && hasCurrentRJ()))) ||
             (hasCurrentRJ() && currentFileType === 'json');

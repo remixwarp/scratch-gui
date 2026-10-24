@@ -20,20 +20,21 @@ import {openCustomTheme} from '../../reducers/modals.js';
 import {closeEditMenu} from '../../reducers/menus.js';
 
 import mcThemeCircle from '../../lib/themes/pixel-presets/MC风格主题_○_pixel_theme.json';
-import mcThemeRight from '../../lib/themes/pixel-presets/MC风格主题_→_pixel_theme.json';
 import mcThemeLeft from '../../lib/themes/pixel-presets/MC风格主题_←_pixel_theme.json';
 
-import cysoThemeCircle from '../../lib/themes/pixel-presets/cyso_○_pixel_theme.json';
 import cysoThemeLeft from '../../lib/themes/pixel-presets/cyso_←_pixel_theme.json';
 import cysoThemeN from '../../lib/themes/pixel-presets/cyso_n_pixel_theme.json';
 
+import startThemeN from '../../lib/themes/pixel-presets/start_n_pixel_theme.json';
+import startThemeLeft from '../../lib/themes/pixel-presets/start_left_pixel_theme.json';
+
 const PIXEL_PRESETS = [
     {id: 'pixel-mc-circle', name: mcThemeCircle.themes[0].name, data: mcThemeCircle},
-    {id: 'pixel-mc-right', name: mcThemeRight.themes[0].name, data: mcThemeRight},
     {id: 'pixel-mc-left', name: mcThemeLeft.themes[0].name, data: mcThemeLeft},
-    {id: 'pixel-cyso-circle', name: cysoThemeCircle.themes[0].name, data: cysoThemeCircle},
     {id: 'pixel-cyso-left', name: cysoThemeLeft.themes[0].name, data: cysoThemeLeft},
-    {id: 'pixel-cyso-n', name: cysoThemeN.themes[0].name, data: cysoThemeN}
+    {id: 'pixel-cyso-n', name: cysoThemeN.themes[0].name, data: cysoThemeN},
+    {id: 'pixel-start-n', name: startThemeN.themes[0].name, data: startThemeN},
+    {id: 'pixel-start-left', name: startThemeLeft.themes[0].name, data: startThemeLeft}
 ];
 
 const SECTION_MESSAGES = defineMessages({
@@ -107,11 +108,18 @@ const ColorIcon = props => {
     const accent = ACCENT_MAP[accentId] && ACCENT_MAP[accentId].accent;
 
     if (accentId && accentId.startsWith('pixel-')) {
+        let pixelIconColor = '#3c8527';
+        if (accentId.startsWith('pixel-cyso-')) {
+            pixelIconColor = '#4e8dc1';
+        } else if (accentId.startsWith('pixel-start-')) {
+            // Start 系列是黑白像素风格，用中性灰做缩略色块
+            pixelIconColor = '#7d7d7d';
+        }
         return (
             <div
                 className={styles.accentIconOuter}
                 style={{
-                    backgroundColor: accentId.startsWith('pixel-cyso-') ? '#4e8dc1' : '#3c8527',
+                    backgroundColor: pixelIconColor,
                     backgroundImage: 'none'
                 }}
             />
