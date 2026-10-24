@@ -10,10 +10,13 @@ import {
     FileAudio,
     FileCode,
     FileImage,
+    FileText,
     Folder,
     FolderOpen,
     Settings
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {closeSuperRefactorModal} from '../reducers/modals';
 import Modal from './windowed-modal.jsx';
 import Button from '../components/button/button.jsx';
@@ -37,8 +40,48 @@ const LARGE_CONTENT_THRESHOLD = 150000;
 // 超级重构窗口的界面偏好（文件树/旧版列表、编辑器版本、Monaco 选项）
 const SUPER_REFACTOR_SETTINGS_KEY = 'mw-super-refactor-settings';
 
-// 超级重构里新建的 .rfd 文件不属于 sb3 / .rj 结构，按作品 id 存在本地
-const RFD_STORAGE_PREFIX = 'mw-super-refactor-rfd:';
+// 超级重构里新建的文件不属于 sb3 / .rj 结构，按作品 id 存在本地
+const EXTRA_STORAGE_PREFIX = 'mw-super-refactor-extra:';
+
+// 「+」新建菜单的四种文件类型
+const CREATE_FILE_TYPES = [
+    {ext: 'svg', label: 'SVG', desc: '可缩放矢量图形，适合角色造型与图标，支持代码与预览切换'},
+    {ext: 'json', label: 'JSON', desc: '结构化数据文件，适合配置、作品数据与 .rj 分片'},
+    {ext: 'md', label: 'Markdown', desc: '文档说明文件，支持 Markdown 渲染预览'},
+    {ext: 'rfd', label: 'RFD', desc: '流程图描述文件，支持代码编辑与图形预览'}
+];
+
+const CREATE_FILE_DEFAULTS = {
+    svg: {
+        prefix: '新建图形',
+        content: '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">\n' +
+            '    <rect x="10" y="10" width="80" height="80" fill="#4d97ff"/>\n' +
+            '</svg>\n'
+    },
+    json: {
+        prefix: '新建数据',
+        content: '{}'
+    },
+    md: {
+        prefix: '新建文档',
+        content: '# 新文档\n\n在这里编写 Markdown 内容。\n'
+    },
+    rfd: {
+        prefix: '新建流程图',
+        content: RFD_DEFAULT_TEXT
+    }
+};
+
+const splitFileName = name => {
+    const path = String(name || '');
+    const slash = path.lastIndexOf('/');
+    return {
+        dir: slash === -1 ? '' : path.substring(0, slash + 1),
+        base: slash === -1 ? path : path.substring(slash + 1)
+    };
+};
+
+const filePrefixOf = name => splitFileName(name).base.replace(/\.[^.]+$/, '');
 
 const DEFAULT_EDITOR_OPTIONS = {
     minimap: true,
@@ -143,18 +186,27 @@ class SuperRefactorModalContainer extends React.Component {
             'setEditorOption',
             'resetEditorOptions',
             'toggleFolder',
-            'handleCreateRfdFile',
+            'openCreateMenu',
+            'closeCreateMenu',
+            'handleCreateFileOfType',
+            'startRenameFile',
+            'handleRenameValueChange',
+            'handleRenameKeyDown',
+            'commitRename',
+            'openFileContextMenu',
+            'closeFileContextMenu',
+            'renderFileLabel',
             'setRfdMode',
+            'handleRfdDisplayChange',
             'toggleRfdLegend',
-            'toggleRfdHotspots',
             'handleRfdPreviewClick',
             'handleRfdAddFlow',
             'handleRfdClearConnections',
             'handleRfdDownloadSvg',
             'updateRfdContent',
-            'saveRfdFiles',
-            'loadStoredRfdFiles',
-            'withStoredRfdFiles'
+            'saveExtraFiles',
+            'loadStoredExtraFiles',
+            'withStoredExtraFiles'
         ]);
 
         const savedSettings = loadSuperRefactorSettings();
@@ -177,16 +229,22 @@ class SuperRefactorModalContainer extends React.Component {
             monacoIframeKey: 0, // 重新打开窗口时强制重建 iframe
             settingsVisible: false, // 设置自由窗口是否打开
             collapsedFolders: {}, // 树状结构中已折叠的文件夹路径
-            // .rfd 流程图：编辑 / 预览 / 编辑+预览，以及描述面板、热点连线的显示状态
+            // .rfd 流程图：编辑 / 预览 / 编辑+预览，以及描述面板、热点连线的显示范围
             rfdMode: 'both',
             rfdLegendOpen: true,
-            rfdShowHotspots: true,
+            rfdDisplay: 'both', // both | id | hotspot | none
             rfdPending: null, // 已点选的起点热点 {blockId, side}
+            // 新建文件的类型选择弹窗、文件重命名、右键菜单
+            createMenuVisible: false,
+            renamingFileId: null,
+            renameValue: '',
+            fileContextMenu: null, // {x, y, fileId}
             modalWidth: Math.min(1100, window.innerWidth - 60),
             modalHeight: Math.min(700, window.innerHeight - 80)
         };
         
         this.monacoIframeRef = React.createRef();
+        this.modalRootRef = React.createRef();
         this._monacoReadySource = null;
     }
 
@@ -433,7 +491,7 @@ class SuperRefactorModalContainer extends React.Component {
             }
         }
 
-        const files = this.withStoredRfdFiles(this.getProjectFiles());
+        const files = this.withStoredExtraFiles(this.getProjectFiles());
         
         if (files.length > 0) {
             let content = files[0].content;
@@ -494,7 +552,7 @@ class SuperRefactorModalContainer extends React.Component {
 
         // 分批并行读取，避免超大作品一次性解压全部资源把内存打爆
         const results = await mapLimit(paths, 8, buildFile);
-        const files = this.withStoredRfdFiles(results.filter(Boolean));
+        const files = this.withStoredExtraFiles(results.filter(Boolean));
 
         if (files.length > 0) {
             let content = files[0].content;
@@ -525,125 +583,291 @@ class SuperRefactorModalContainer extends React.Component {
         const files = [...this.state.files];
         files[this.state.currentFile].content = content;
         this.setState({files, content}, () => {
-            if (files[this.state.currentFile].type === 'rfd') this.saveRfdFiles();
+            if (files[this.state.currentFile].custom) this.saveExtraFiles();
         });
     }
 
     // -----------------------------------------------------------------------
-    // .rfd 流程图
+    // 新建 / 重命名文件
     // -----------------------------------------------------------------------
-    getRfdStorageKey () {
+    getExtraStorageKey () {
         const projectId = this.props.projectId;
         const key = (typeof projectId === 'undefined' || projectId === null) ? 'default' : projectId;
-        return `${RFD_STORAGE_PREFIX}${key}`;
+        return `${EXTRA_STORAGE_PREFIX}${key}`;
     }
 
-    // 新建的 .rfd 不属于 sb3 / .rj 结构，按作品 id 存到本地，刷新后仍能找回
-    loadStoredRfdFiles () {
-        try {
-            const raw = localStorage.getItem(this.getRfdStorageKey());
-            if (!raw) return [];
-            const parsed = JSON.parse(raw);
-            if (!Array.isArray(parsed)) return [];
-            return parsed
-                .filter(item => item && typeof item.name === 'string' && isRfdFileName(item.name))
+    // 新建的文件不属于 sb3 / .rj 结构，按作品 id 存到本地，刷新后仍能找回
+    loadStoredExtraFiles () {
+        const normalize = list => {
+            if (!Array.isArray(list)) return [];
+            return list
+                .filter(item => item && typeof item.name === 'string')
                 .map((item, index) => {
                     const content = typeof item.content === 'string' ? item.content : '';
                     return {
-                        id: `rfd:${item.name}:${index}`,
+                        id: `extra:${item.name}:${index}`,
                         name: item.name,
-                        type: 'rfd',
+                        // 旧版本只存 .rfd，没有 type 字段
+                        type: typeof item.type === 'string' ? item.type : 'rfd',
                         content,
-                        size: content.length
+                        size: content.length,
+                        custom: true
                     };
                 });
+        };
+        try {
+            const raw = localStorage.getItem(this.getExtraStorageKey());
+            if (raw) return normalize(JSON.parse(raw));
+            // 兼容旧版本的 .rfd 存储键，升级后本地文件不丢失
+            const projectId = this.props.projectId;
+            const key = (typeof projectId === 'undefined' || projectId === null) ? 'default' : projectId;
+            const legacy = localStorage.getItem(`mw-super-refactor-rfd:${key}`);
+            return legacy ? normalize(JSON.parse(legacy)) : [];
         } catch (e) {
             return [];
         }
     }
 
-    withStoredRfdFiles (files) {
+    withStoredExtraFiles (files) {
         const list = Array.isArray(files) ? files.slice() : [];
         const existing = {};
         list.forEach(file => {
             existing[file.name] = true;
         });
-        this.loadStoredRfdFiles().forEach(file => {
+        this.loadStoredExtraFiles().forEach(file => {
             if (!existing[file.name]) list.push(file);
         });
         return list;
     }
 
-    saveRfdFiles () {
+    saveExtraFiles () {
         try {
             const stored = this.state.files
-                .filter(file => file.type === 'rfd')
-                .map(file => ({name: file.name, content: file.content}));
-            localStorage.setItem(this.getRfdStorageKey(), JSON.stringify(stored));
+                .filter(file => file.custom)
+                .map(file => ({name: file.name, type: file.type, content: file.content}));
+            localStorage.setItem(this.getExtraStorageKey(), JSON.stringify(stored));
         } catch (e) {
             // 隐私模式下 localStorage 可能不可用，忽略即可
         }
     }
 
-    // 在选中文件的相同目录下新建 .rfd，默认内容是一份可直接预览的流程图
-    handleCreateRfdFile () {
-        const {files, currentFile, searchQuery} = this.state;
-        const current = files[currentFile];
-        const currentPath = current ? String(current.name || '') : '';
-        const slash = currentPath.lastIndexOf('/');
-        const dir = slash === -1 ? '' : currentPath.substring(0, slash + 1);
-        const baseName = slash === -1 ? currentPath : currentPath.substring(slash + 1);
-        const stem = baseName.replace(/\.[^.]+$/, '') || '流程图';
+    filterFiles (files, query) {
+        const keyword = String(query || '').toLowerCase();
+        return files.filter(file => file.name.toLowerCase().includes(keyword));
+    }
 
-        let name = `${dir}${stem}.rfd`;
-        let seq = 2;
+    // 新建文件的目录：与当前选中文件同目录
+    getCurrentDirectory () {
+        const current = this.state.files[this.state.currentFile];
+        return splitFileName(current ? current.name : '').dir;
+    }
+
+    openCreateMenu () {
+        this.setState({createMenuVisible: true});
+    }
+
+    closeCreateMenu () {
+        this.setState({createMenuVisible: false});
+    }
+
+    // 按类型在当前目录下创建文件，随后文件名变成输入框等待用户命名
+    handleCreateFileOfType (ext) {
+        const defaults = CREATE_FILE_DEFAULTS[ext];
+        if (!defaults) return;
+
+        const files = this.state.files;
+        const dir = this.getCurrentDirectory();
         const usedNames = {};
         files.forEach(file => {
             usedNames[file.name] = true;
         });
+        let prefix = defaults.prefix;
+        let name = `${dir}${prefix}.${ext}`;
+        let seq = 2;
         while (usedNames[name]) {
-            name = `${dir}${stem}-${seq}.rfd`;
+            prefix = `${defaults.prefix}${seq}`;
+            name = `${dir}${prefix}.${ext}`;
             seq++;
         }
 
-        const content = RFD_DEFAULT_TEXT;
+        const content = defaults.content;
         const newFile = {
-            id: `rfd:${name}:${Date.now()}`,
+            id: `extra:${name}:${Date.now()}`,
             name,
-            type: 'rfd',
+            type: ext,
             content,
-            size: content.length
+            size: content.length,
+            custom: true
         };
         const nextFiles = files.concat(newFile).map(file => Object.assign({}, file, {
             selected: file.id === newFile.id
         }));
-        const query = String(searchQuery || '').toLowerCase();
-        const nextFiltered = nextFiles.filter(file => file.name.toLowerCase().includes(query));
-        const newIndex = nextFiles.findIndex(file => file.id === newFile.id);
 
         this.setState({
             files: nextFiles,
-            filteredFiles: nextFiltered,
-            currentFile: newIndex,
+            filteredFiles: nextFiles,
+            searchQuery: '',
+            currentFile: nextFiles.findIndex(file => file.id === newFile.id),
             content,
-            rfdPending: null
+            rfdPending: null,
+            createMenuVisible: false,
+            renamingFileId: newFile.id,
+            renameValue: prefix
         }, () => {
-            this.saveRfdFiles();
+            this.saveExtraFiles();
             if (this.state.useMonacoEditor && this.state.monacoIframeReady) this.sendMonacoInit();
         });
     }
 
+    startRenameFile (fileId) {
+        const file = this.state.files.find(item => item.id === fileId);
+        if (!file) return;
+        this.setState({
+            fileContextMenu: null,
+            renamingFileId: fileId,
+            renameValue: filePrefixOf(file.name)
+        });
+    }
+
+    handleRenameValueChange (e) {
+        this.setState({renameValue: e.target.value});
+    }
+
+    handleRenameKeyDown (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.commitRename();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            this.setState({renamingFileId: null, renameValue: ''});
+        }
+    }
+
+    // 失焦或回车提交：只改前缀，目录与扩展名保持不变
+    commitRename () {
+        const {renamingFileId, renameValue, files} = this.state;
+        if (!renamingFileId) return;
+        const index = files.findIndex(file => file.id === renamingFileId);
+        if (index === -1) {
+            this.setState({renamingFileId: null, renameValue: ''});
+            return;
+        }
+
+        const file = files[index];
+        const {dir, base} = splitFileName(file.name);
+        const dotIndex = base.lastIndexOf('.');
+        const ext = dotIndex > 0 ? base.substring(dotIndex + 1) : '';
+        const prefix = renameValue.replace(/[\\/]/g, '').trim();
+        if (!prefix || prefix === filePrefixOf(file.name)) {
+            this.setState({renamingFileId: null, renameValue: ''});
+            return;
+        }
+
+        const usedNames = {};
+        files.forEach(item => {
+            if (item.id !== file.id) usedNames[item.name] = true;
+        });
+        const suffix = ext ? `.${ext}` : '';
+        let name = `${dir}${prefix}${suffix}`;
+        let seq = 2;
+        while (usedNames[name]) {
+            name = `${dir}${prefix}-${seq}${suffix}`;
+            seq++;
+        }
+
+        // 记住原始路径：project.json / .rj 分片改名后仍要写回原位
+        const nextFiles = files.map(item => (item.id === file.id
+            ? Object.assign({}, item, {name, originalName: item.originalName || item.name})
+            : item));
+        this.setState({
+            files: nextFiles,
+            filteredFiles: this.filterFiles(nextFiles, this.state.searchQuery),
+            renamingFileId: null,
+            renameValue: ''
+        }, () => {
+            if (file.custom) this.saveExtraFiles();
+        });
+    }
+
+    openFileContextMenu (e, fileId) {
+        e.preventDefault();
+        e.stopPropagation();
+        const root = this.modalRootRef.current;
+        let x = e.clientX;
+        let y = e.clientY;
+        if (root) {
+            const rect = root.getBoundingClientRect();
+            x = Math.max(4, Math.min(e.clientX - rect.left, rect.width - 130));
+            y = Math.max(4, Math.min(e.clientY - rect.top, rect.height - 50));
+        }
+        this.setState({fileContextMenu: {x, y, fileId}});
+    }
+
+    closeFileContextMenu () {
+        this.setState({fileContextMenu: null});
+    }
+
+    // 文件名（重命名时变成前缀输入框 + 固定扩展名）
+    // showPath：扁平列表显示完整路径，树状结构只显示文件名
+    renderFileLabel (file, colors, showPath) {
+        const {dir, base} = splitFileName(file.name);
+        if (this.state.renamingFileId !== file.id) {
+            return (
+                <span style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                    {showPath ? file.name : base}
+                </span>
+            );
+        }
+
+        const dotIndex = base.lastIndexOf('.');
+        const ext = dotIndex > 0 ? base.substring(dotIndex) : '';
+        return (
+            <span style={{display: 'inline-flex', alignItems: 'center', gap: '2px', minWidth: 0}}>
+                {showPath && dir && (
+                    <span style={{flexShrink: 0, fontSize: '11px', color: colors.textSecondary}}>{dir}</span>
+                )}
+                <input
+                    autoFocus
+                    value={this.state.renameValue}
+                    onClick={e => e.stopPropagation()}
+                    onChange={this.handleRenameValueChange}
+                    onBlur={this.commitRename}
+                    onKeyDown={this.handleRenameKeyDown}
+                    onFocus={e => e.target.select()}
+                    style={{
+                        width: '110px',
+                        minWidth: 0,
+                        padding: '1px 4px',
+                        fontFamily: 'monospace',
+                        fontSize: '12px',
+                        color: colors.text,
+                        background: colors.editorBg,
+                        border: '1px solid #4d97ff',
+                        borderRadius: '3px',
+                        outline: 'none'
+                    }}
+                />
+                <span style={{flexShrink: 0, fontSize: '11px', color: colors.textSecondary}}>{ext}</span>
+            </span>
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // .rfd 流程图
+    // -----------------------------------------------------------------------
     setRfdMode (rfdMode) {
         if (rfdMode === this.state.rfdMode) return;
         this.setState({rfdMode, rfdPending: null});
     }
 
-    toggleRfdLegend () {
-        this.setState(prevState => ({rfdLegendOpen: !prevState.rfdLegendOpen}));
+    handleRfdDisplayChange (e) {
+        const rfdDisplay = e.target.value;
+        const canConnect = rfdDisplay === 'both' || rfdDisplay === 'hotspot';
+        this.setState({rfdDisplay, rfdPending: canConnect ? this.state.rfdPending : null});
     }
 
-    toggleRfdHotspots () {
-        this.setState(prevState => ({rfdShowHotspots: !prevState.rfdShowHotspots, rfdPending: null}));
+    toggleRfdLegend () {
+        this.setState(prevState => ({rfdLegendOpen: !prevState.rfdLegendOpen}));
     }
 
     // 写回 .rfd 文本：同步内存文件、本地存储和 Monaco 内容
@@ -652,7 +876,7 @@ class SuperRefactorModalContainer extends React.Component {
         if (!files[this.state.currentFile]) return;
         files[this.state.currentFile].content = nextText;
         this.setState({files, content: nextText}, () => {
-            this.saveRfdFiles();
+            this.saveExtraFiles();
             if (this.state.useMonacoEditor && this.state.monacoIframeReady) {
                 this.sendToMonacoIframe({type: 'monaco-set-content', content: nextText});
             }
@@ -847,6 +1071,7 @@ class SuperRefactorModalContainer extends React.Component {
         if (currentFileObj) {
             if (currentFileObj.type === 'json') language = 'json';
             else if (currentFileObj.type === 'svg') language = 'xml';
+            else if (currentFileObj.type === 'md') language = 'markdown';
             else if (currentFileObj.name.endsWith('.js') || currentFileObj.name.endsWith('.jsx')) language = 'javascript';
             else if (currentFileObj.name.endsWith('.ts') || currentFileObj.name.endsWith('.tsx')) language = 'typescript';
             else if (currentFileObj.name.endsWith('.css')) language = 'css';
@@ -898,8 +1123,8 @@ class SuperRefactorModalContainer extends React.Component {
                         files[this.state.currentFile].content = data.content;
                     }
                     this.setState({ content: data.content, files }, () => {
-                        if (files[this.state.currentFile] && files[this.state.currentFile].type === 'rfd') {
-                            this.saveRfdFiles();
+                        if (files[this.state.currentFile] && files[this.state.currentFile].custom) {
+                            this.saveExtraFiles();
                         }
                     });
                 }
@@ -1175,7 +1400,7 @@ class SuperRefactorModalContainer extends React.Component {
         }
 
         try {
-            if (file.name === 'project.json') {
+            if ((file.originalName || file.name) === 'project.json') {
                 // 压缩JSON回一行
                 const compressedContent = this.compressJSON(file.content);
                 const newData = JSON.parse(compressedContent);
@@ -1288,7 +1513,7 @@ class SuperRefactorModalContainer extends React.Component {
             const zip = await getCurrentRJZip();
             if (!zip) throw new Error('.rj 数据不可用');
 
-            zip.file(file.name, file.content);
+            zip.file(file.originalName || file.name, file.content);
             const buffer = await zip.generateAsync({
                 type: 'arraybuffer',
                 compression: 'DEFLATE'
@@ -1332,7 +1557,7 @@ class SuperRefactorModalContainer extends React.Component {
         }
 
         const {files} = this.state;
-        const projectFile = files.find(f => f.name === 'project.json');
+        const projectFile = files.find(f => (f.originalName || f.name) === 'project.json');
         
         if (projectFile) {
             try {
@@ -1361,6 +1586,7 @@ class SuperRefactorModalContainer extends React.Component {
         switch (type) {
             case 'json': return <FileCode size={14} />;
             case 'rfd': return <FileCode size={14} />;
+            case 'md': return <FileText size={14} />;
             case 'image': return <FileImage size={14} />;
             case 'svg': return <FileImage size={14} />;
             case 'sound': return <FileAudio size={14} />;
@@ -1465,12 +1691,13 @@ class SuperRefactorModalContainer extends React.Component {
 
         const indent = 10 + (depth * 14) + (node.path ? 16 : 0);
         node.files.forEach(leaf => {
-            const {file, index, name} = leaf;
+            const {file, index} = leaf;
             const isSelected = !!(currentFileObj && file.id === currentFileObj.id);
             rows.push(
                 <div
                     key={`file:${file.id}:${index}`}
                     onClick={() => this.selectFile(index)}
+                    onContextMenu={e => this.openFileContextMenu(e, file.id)}
                     title={file.name}
                     style={{
                         display: 'flex',
@@ -1494,8 +1721,10 @@ class SuperRefactorModalContainer extends React.Component {
                         flex: 1,
                         minWidth: 0,
                         overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                    }}>{name}</span>
+                        textOverflow: 'ellipsis',
+                        display: 'flex',
+                        alignItems: 'center'
+                    }}>{this.renderFileLabel(file, colors)}</span>
                 </div>
             );
         });
@@ -1765,13 +1994,13 @@ class SuperRefactorModalContainer extends React.Component {
         );
     }
 
-    // .rfd 的代码区：沿用超级重构当前选用的编辑器（Monaco / 内置）
-    renderRfdCodeEditor (colors) {
+    // 纯文本编辑区：沿用超级重构当前选用的编辑器（Monaco / 内置）
+    renderTextEditorPane (colors, keyPrefix) {
         const {content, wordWrap} = this.state;
         if (this.state.useMonacoEditor) {
             return (
                 <iframe
-                    key={`monaco-rfd-${this.state.monacoIframeKey}`}
+                    key={`${keyPrefix}-${this.state.monacoIframeKey}`}
                     ref={this.monacoIframeRef}
                     src="/monaco-editor-iframe.html"
                     style={{
@@ -1815,13 +2044,15 @@ class SuperRefactorModalContainer extends React.Component {
 
     // .rfd 的预览区：直接渲染 SVG，点击热点可以连线
     renderRfdPreview (colors, isDarkTheme) {
-        const {content, rfdShowHotspots, rfdPending} = this.state;
+        const {content, rfdDisplay, rfdPending} = this.state;
+        const showHotspot = rfdDisplay === 'both' || rfdDisplay === 'hotspot';
+        const showId = rfdDisplay === 'both' || rfdDisplay === 'id';
         let rendered = {svg: '', width: 0, height: 0};
         try {
             rendered = renderRfdSvg(content, {
                 dark: isDarkTheme,
-                showHotspot: rfdShowHotspots,
-                showId: true,
+                showHotspot,
+                showId,
                 pending: rfdPending
             });
         } catch (e) {
@@ -1857,15 +2088,25 @@ class SuperRefactorModalContainer extends React.Component {
                     background: colors.headerBg,
                     flexShrink: 0
                 }}>
-                    <button
-                        onClick={this.toggleRfdHotspots}
-                        style={Object.assign({}, toolbarButtonStyle, {
-                            background: rfdShowHotspots ? '#4d97ff' : colors.buttonBg,
-                            color: rfdShowHotspots ? 'white' : colors.text
-                        })}
+                    <select
+                        value={rfdDisplay}
+                        onChange={this.handleRfdDisplayChange}
+                        title="调整预览中显示的内容范围"
+                        style={{
+                            padding: '4px 6px',
+                            background: colors.inputBg,
+                            color: colors.text,
+                            border: `1px solid ${colors.inputBorder}`,
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            fontSize: '10px'
+                        }}
                     >
-                        显示连线
-                    </button>
+                        <option value="both">点ID 连接点</option>
+                        <option value="id">点ID</option>
+                        <option value="hotspot">连接点</option>
+                        <option value="none">均不显示</option>
+                    </select>
                     <button onClick={this.handleRfdAddFlow} style={toolbarButtonStyle}>新增流程</button>
                     <button onClick={this.handleRfdClearConnections} style={toolbarButtonStyle}>清除连线</button>
                     <button onClick={this.handleRfdDownloadSvg} style={toolbarButtonStyle}>下载 SVG</button>
@@ -1961,7 +2202,7 @@ class SuperRefactorModalContainer extends React.Component {
                 display: 'flex',
                 flexDirection: 'column'
             }}>
-                {this.renderRfdCodeEditor(colors)}
+                {this.renderTextEditorPane(colors, 'monaco-rfd')}
             </div>
         );
 
@@ -2005,11 +2246,111 @@ class SuperRefactorModalContainer extends React.Component {
         );
     }
 
+    // Markdown 预览：复用项目里已有的 react-markdown + remark-gfm
+    renderMarkdownPreview (colors, isDarkTheme) {
+        const {content} = this.state;
+        const codeBg = isDarkTheme ? '#2a2a2a' : '#f5f5f5';
+        const borderColor = isDarkTheme ? '#3c3c3c' : '#dddddd';
+        const components = {
+            h1: ({children}) => (
+                <h1 style={{
+                    fontSize: '1.8em',
+                    borderBottom: `2px solid ${borderColor}`,
+                    paddingBottom: '8px',
+                    margin: '0.6em 0'
+                }}>{children}</h1>
+            ),
+            h2: ({children}) => (
+                <h2 style={{
+                    fontSize: '1.5em',
+                    borderBottom: `1px solid ${borderColor}`,
+                    paddingBottom: '6px',
+                    margin: '0.6em 0'
+                }}>{children}</h2>
+            ),
+            h3: ({children}) => <h3 style={{fontSize: '1.25em', margin: '0.6em 0'}}>{children}</h3>,
+            p: ({children}) => <p style={{margin: '0.8em 0', lineHeight: 1.7}}>{children}</p>,
+            code: ({inline, children}) => inline ? (
+                <code style={{
+                    background: codeBg,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontFamily: 'monospace',
+                    fontSize: '0.92em'
+                }}>{children}</code>
+            ) : (
+                <code style={{fontFamily: 'monospace'}}>{children}</code>
+            ),
+            pre: ({children}) => (
+                <pre style={{
+                    background: codeBg,
+                    padding: '12px',
+                    borderRadius: '6px',
+                    overflow: 'auto'
+                }}>{children}</pre>
+            ),
+            ul: ({children}) => <ul style={{margin: '0.8em 0', paddingLeft: '24px'}}>{children}</ul>,
+            ol: ({children}) => <ol style={{margin: '0.8em 0', paddingLeft: '24px'}}>{children}</ol>,
+            li: ({children}) => <li style={{margin: '4px 0'}}>{children}</li>,
+            blockquote: ({children}) => (
+                <blockquote style={{
+                    borderLeft: '4px solid #4c97ff',
+                    margin: '0.8em 0',
+                    padding: '8px 16px',
+                    background: isDarkTheme ? '#233044' : '#f5f9ff',
+                    color: colors.textSecondary
+                }}>{children}</blockquote>
+            ),
+            a: ({href, children}) => (
+                <a href={href} style={{color: '#4d97ff'}} target="_blank" rel="noopener noreferrer">{children}</a>
+            ),
+            table: ({children}) => (
+                <table style={{borderCollapse: 'collapse', margin: '0.8em 0'}}>{children}</table>
+            ),
+            th: ({children}) => (
+                <th style={{
+                    border: `1px solid ${borderColor}`,
+                    padding: '6px 10px',
+                    background: codeBg
+                }}>{children}</th>
+            ),
+            td: ({children}) => (
+                <td style={{border: `1px solid ${borderColor}`, padding: '6px 10px'}}>{children}</td>
+            ),
+            hr: () => <hr style={{border: 'none', borderTop: `1px solid ${borderColor}`, margin: '1em 0'}} />
+        };
+
+        return (
+            <div style={{
+                flex: 1,
+                minHeight: 0,
+                overflow: 'auto',
+                padding: '20px 24px',
+                border: `1px solid ${colors.border}`,
+                borderRadius: '0 0 4px 4px',
+                background: colors.background,
+                color: colors.text,
+                fontSize: '13px',
+                lineHeight: 1.7
+            }}>
+                {content ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+                        {content}
+                    </ReactMarkdown>
+                ) : (
+                    <div style={{color: colors.textSecondary}}>暂无内容</div>
+                )}
+            </div>
+        );
+    }
+
     render () {
         const {visible, theme} = this.props;
         const {files, currentFile, content, message, searchQuery, filteredFiles, viewMode, wordWrap, fileViewMode} = this.state;
         const currentFileObj = files[currentFile];
         const currentFileName = currentFileObj ? currentFileObj.name : '';
+        // 重命名后仍按原始路径判断是否可以应用
+        const currentOriginalName = currentFileObj ? (currentFileObj.originalName || currentFileObj.name) : '';
         const currentFileType = currentFileObj ? currentFileObj.type : '';
         // 大文件使用纯文本编辑器，避免高亮/行号 DOM 过多导致卡顿
         const largeContent = typeof content === 'string' && content.length > LARGE_CONTENT_THRESHOLD;
@@ -2033,17 +2374,21 @@ class SuperRefactorModalContainer extends React.Component {
         };
 
         // 是否可以编辑
-        const canEdit = currentFileType === 'json' || currentFileType === 'svg' || currentFileType === 'rfd';
-        // 是否可以应用（.rj 的 JSON 分片可写回压缩包后重新载入）
-        const canApply = currentFileName === 'project.json' ||
-            currentFileType === 'svg' ||
+        const canEdit = currentFileType === 'json' || currentFileType === 'svg' ||
+            currentFileType === 'rfd' || currentFileType === 'md';
+        // 是否可以应用（.rj 的 JSON 分片可写回压缩包后重新载入；新建的独立 SVG 无造型可应用）
+        const canApply = currentOriginalName === 'project.json' ||
+            (currentFileType === 'svg' && !!currentFileObj &&
+                (!!currentFileObj.costume || (currentFileObj.readOnly && hasCurrentRJ()))) ||
             (hasCurrentRJ() && currentFileType === 'json');
         // 是否是SVG文件
         const isSvg = currentFileType === 'svg';
+        // 是否是 Markdown 文件
+        const isMd = currentFileType === 'md' || /\.md$/i.test(currentFileName);
         // 是否是 .rfd 流程图描述文件
         const isRfd = currentFileType === 'rfd' || isRfdFileName(currentFileName);
         // 是否显示切换按钮
-        const showToggleButton = isSvg;
+        const showToggleButton = isSvg || isMd;
 
         // 底部按钮区样式（内联样式，避免 CSS Modules 作用域影响）
         const footerStyle = {
@@ -2107,13 +2452,16 @@ class SuperRefactorModalContainer extends React.Component {
                 width={this.state.modalWidth}
                 height={this.state.modalHeight}
             >
-                <div style={{
+                <div
+                    ref={this.modalRootRef}
+                    style={{
                     display: 'flex',
                     flexDirection: 'column',
                     height: '100%',
                     padding: '20px',
                     boxSizing: 'border-box',
                     overflow: 'hidden',
+                    position: 'relative',
                     background: colors.background,
                     color: colors.text
                 }}>
@@ -2183,8 +2531,8 @@ class SuperRefactorModalContainer extends React.Component {
                                         }}
                                     />
                                     <button
-                                        onClick={this.handleCreateRfdFile}
-                                        title="在选中文件所在目录新建 .rfd 流程图文件"
+                                        onClick={this.openCreateMenu}
+                                        title="在选中文件所在目录新建文件"
                                         style={{
                                             flexShrink: 0,
                                             width: '30px',
@@ -2249,6 +2597,7 @@ class SuperRefactorModalContainer extends React.Component {
                                                 <div
                                                 key={index}
                                                 onClick={() => this.selectFile(index)}
+                                                onContextMenu={e => this.openFileContextMenu(e, file.id)}
                                                 style={{
                                                     padding: '10px 12px',
                                                     cursor: 'pointer',
@@ -2270,7 +2619,7 @@ class SuperRefactorModalContainer extends React.Component {
                         {this.getFileIcon(file.type)}
                     </span>
                                                     <span style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
-                                                        {file.name}
+                                                        {this.renderFileLabel(file, colors, true)}
                                                     </span>
                                                 </div>
                                             );
@@ -2307,6 +2656,7 @@ class SuperRefactorModalContainer extends React.Component {
                                             {currentFileObj.type === 'json' ? 'JSON' : 
                                              currentFileObj.type === 'svg' ? 'SVG' :
                                              currentFileObj.type === 'rfd' ? 'RFD' :
+                                             currentFileObj.type === 'md' ? 'MD' :
                                              currentFileObj.type === 'image' ? '图片' : 
                                              currentFileObj.type === 'sound' ? '声音' : '文件'}
                                             {currentFileObj.size ? ` (${Math.round(currentFileObj.size / 1024)} KB)` : ''}
@@ -2359,6 +2709,22 @@ class SuperRefactorModalContainer extends React.Component {
                             
                             {isRfd ? (
                                 this.renderRfdEditor(colors, isDarkTheme)
+                            ) : isMd ? (
+                                viewMode === 'code' ? (
+                                    <div style={{
+                                        flex: 1,
+                                        minHeight: 0,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        border: `1px solid ${colors.border}`,
+                                        borderRadius: '0 0 4px 4px',
+                                        overflow: 'hidden'
+                                    }}>
+                                        {this.renderTextEditorPane(colors, 'monaco-md')}
+                                    </div>
+                                ) : (
+                                    this.renderMarkdownPreview(colors, isDarkTheme)
+                                )
                             ) : isSvg ? (
                                 viewMode === 'code' ? (
                                     this.state.useMonacoEditor ? (
@@ -2695,6 +3061,129 @@ class SuperRefactorModalContainer extends React.Component {
                             <Settings size={17} />
                         </button>
                     </div>
+                    {/* 新建文件：类型选择卡片 */}
+                    {this.state.createMenuVisible && (
+                        <div
+                            onClick={this.closeCreateMenu}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(0,0,0,0.35)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 60
+                            }}
+                        >
+                            <div
+                                onClick={e => e.stopPropagation()}
+                                style={{
+                                    width: '520px',
+                                    maxWidth: '92%',
+                                    background: colors.background,
+                                    color: colors.text,
+                                    border: `1px solid ${colors.border}`,
+                                    borderRadius: '8px',
+                                    padding: '18px',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+                                }}
+                            >
+                                <div style={{fontSize: '14px', fontWeight: 'bold', marginBottom: '4px'}}>
+                                    新建文件
+                                </div>
+                                <div style={{fontSize: '12px', color: colors.textSecondary, marginBottom: '14px'}}>
+                                    将在当前目录 {this.getCurrentDirectory() || '（根目录）'} 下创建
+                                </div>
+                                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                                    {CREATE_FILE_TYPES.map(item => (
+                                        <button
+                                            key={item.ext}
+                                            onClick={() => this.handleCreateFileOfType(item.ext)}
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '6px',
+                                                padding: '12px',
+                                                textAlign: 'left',
+                                                background: colors.headerBg,
+                                                color: colors.text,
+                                                border: `1px solid ${colors.border}`,
+                                                borderRadius: '6px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <span style={{display: 'flex', alignItems: 'baseline', gap: '6px'}}>
+                                                <span style={{fontSize: '14px', fontWeight: 'bold'}}>{item.label}</span>
+                                                <span style={{fontSize: '11px', color: '#4d97ff'}}>.{item.ext}</span>
+                                            </span>
+                                            <span style={{
+                                                fontSize: '11px',
+                                                color: colors.textSecondary,
+                                                lineHeight: 1.5
+                                            }}>
+                                                {item.desc}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 文件右键菜单 */}
+                    {this.state.fileContextMenu && (
+                        <div
+                            onClick={this.closeFileContextMenu}
+                            onContextMenu={e => {
+                                e.preventDefault();
+                                this.closeFileContextMenu();
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                zIndex: 70,
+                                background: 'transparent'
+                            }}
+                        >
+                            <div
+                                onClick={e => e.stopPropagation()}
+                                style={{
+                                    position: 'absolute',
+                                    top: `${this.state.fileContextMenu.y}px`,
+                                    left: `${this.state.fileContextMenu.x}px`,
+                                    minWidth: '120px',
+                                    background: colors.background,
+                                    border: `1px solid ${colors.border}`,
+                                    borderRadius: '4px',
+                                    padding: '4px',
+                                    boxShadow: '0 6px 18px rgba(0,0,0,0.25)'
+                                }}
+                            >
+                                <button
+                                    onClick={() => this.startRenameFile(this.state.fileContextMenu.fileId)}
+                                    style={{
+                                        display: 'block',
+                                        width: '100%',
+                                        padding: '6px 10px',
+                                        textAlign: 'left',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: colors.text,
+                                        fontSize: '12px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    重命名
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* 设置自由窗口（独立浮动窗口） */}
