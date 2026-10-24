@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
-import {injectIntl} from 'react-intl';
+import {defineMessages, injectIntl} from 'react-intl';
 import bindAll from 'lodash.bindall';
 import {
     ChevronDown,
@@ -36,6 +36,553 @@ import {
 } from '../lib/super-refactor-rfd.js';
 import './super-refactor-modal.css';
 
+// 超级重构窗口的界面文案（走 react-intl，便于翻译）
+const messages = defineMessages({
+    title: {
+        id: 'mw.superRefactor.title',
+        defaultMessage: '超级重构',
+        description: 'Title of the super refactor window'
+    },
+    settingsTitle: {
+        id: 'mw.superRefactor.settingsTitle',
+        defaultMessage: '超级重构设置',
+        description: 'Title of the super refactor settings window'
+    },
+    fileCount: {
+        id: 'mw.superRefactor.fileCount',
+        defaultMessage: '共 {count} 个文件',
+        description: 'Total number of files in the project'
+    },
+    filteredFileCount: {
+        id: 'mw.superRefactor.filteredFileCount',
+        defaultMessage: '{filtered} / {total} 个文件',
+        description: 'Number of files matching the search out of the total'
+    },
+    searchPlaceholder: {
+        id: 'mw.superRefactor.searchPlaceholder',
+        defaultMessage: '搜索文件...',
+        description: 'Placeholder of the file search input'
+    },
+    clearSearch: {
+        id: 'mw.superRefactor.clearSearch',
+        defaultMessage: '清除',
+        description: 'Button that clears the file search'
+    },
+    noMatchingFiles: {
+        id: 'mw.superRefactor.noMatchingFiles',
+        defaultMessage: '没有找到匹配的文件',
+        description: 'Shown when the file search has no results'
+    },
+    createButtonTitle: {
+        id: 'mw.superRefactor.createButtonTitle',
+        defaultMessage: '在选中文件所在目录新建文件',
+        description: 'Tooltip of the new file button'
+    },
+    refresh: {
+        id: 'mw.superRefactor.refresh',
+        defaultMessage: '刷新',
+        description: 'Button that reloads the file list'
+    },
+    refreshed: {
+        id: 'mw.superRefactor.refreshed',
+        defaultMessage: '已刷新！',
+        description: 'Status message after refreshing the file list'
+    },
+    applyToProject: {
+        id: 'mw.superRefactor.applyToProject',
+        defaultMessage: '应用到作品',
+        description: 'Button that applies the edited file to the project'
+    },
+    cannotApply: {
+        id: 'mw.superRefactor.cannotApply',
+        defaultMessage: '不可应用',
+        description: 'Shown when the current file cannot be applied to the project'
+    },
+    downloadProject: {
+        id: 'mw.superRefactor.downloadProject',
+        defaultMessage: '下载项目',
+        description: 'Button that downloads the project'
+    },
+    close: {
+        id: 'mw.superRefactor.close',
+        defaultMessage: '关闭',
+        description: 'Button that closes the super refactor window'
+    },
+    rename: {
+        id: 'mw.superRefactor.rename',
+        defaultMessage: '重命名',
+        description: 'Context menu item that renames a file'
+    },
+    typeImage: {
+        id: 'mw.superRefactor.typeImage',
+        defaultMessage: '图片',
+        description: 'File type label for images'
+    },
+    typeSound: {
+        id: 'mw.superRefactor.typeSound',
+        defaultMessage: '声音',
+        description: 'File type label for sounds'
+    },
+    typeFile: {
+        id: 'mw.superRefactor.typeFile',
+        defaultMessage: '文件',
+        description: 'File type label for other files'
+    },
+    modeEdit: {
+        id: 'mw.superRefactor.modeEdit',
+        defaultMessage: '编辑',
+        description: 'Flow chart mode: edit only'
+    },
+    modePreview: {
+        id: 'mw.superRefactor.modePreview',
+        defaultMessage: '预览',
+        description: 'Flow chart mode: preview only'
+    },
+    modeEditPreview: {
+        id: 'mw.superRefactor.modeEditPreview',
+        defaultMessage: '编辑+预览',
+        description: 'Flow chart mode: edit and preview side by side'
+    },
+    showCode: {
+        id: 'mw.superRefactor.showCode',
+        defaultMessage: '显示代码',
+        description: 'Button that switches to the code view'
+    },
+    showPreview: {
+        id: 'mw.superRefactor.showPreview',
+        defaultMessage: '显示预览',
+        description: 'Button that switches to the preview view'
+    },
+    svgPreviewError: {
+        id: 'mw.superRefactor.svgPreviewError',
+        defaultMessage: '无法预览SVG',
+        description: 'Shown when the SVG file has no content to preview'
+    },
+    imagePreviewError: {
+        id: 'mw.superRefactor.imagePreviewError',
+        defaultMessage: '无法预览图片',
+        description: 'Shown when the image file has no content to preview'
+    },
+    unsupportedEdit: {
+        id: 'mw.superRefactor.unsupportedEdit',
+        defaultMessage: '此文件类型不支持编辑',
+        description: 'Shown when the selected file type cannot be edited'
+    },
+    mdEmpty: {
+        id: 'mw.superRefactor.mdEmpty',
+        defaultMessage: '暂无内容',
+        description: 'Shown when a Markdown file is empty'
+    },
+    rootDirectory: {
+        id: 'mw.superRefactor.rootDirectory',
+        defaultMessage: '（根目录）',
+        description: 'Label of the project root when creating a new file'
+    },
+    // 新建文件
+    createMenuTitle: {
+        id: 'mw.superRefactor.createMenuTitle',
+        defaultMessage: '新建文件',
+        description: 'Title of the new file dialog'
+    },
+    createMenuTargetDir: {
+        id: 'mw.superRefactor.createMenuTargetDir',
+        defaultMessage: '将在当前目录 {dir} 下创建',
+        description: 'Directory where the new file will be created'
+    },
+    createTypeSvgDesc: {
+        id: 'mw.superRefactor.createType.svgDesc',
+        defaultMessage: '可缩放矢量图形，适合角色造型与图标，支持代码与预览切换',
+        description: 'Description of the SVG option in the new file dialog'
+    },
+    createTypeJsonDesc: {
+        id: 'mw.superRefactor.createType.jsonDesc',
+        defaultMessage: '结构化数据文件，适合配置、作品数据与 .rj 分片',
+        description: 'Description of the JSON option in the new file dialog'
+    },
+    createTypeMdDesc: {
+        id: 'mw.superRefactor.createType.mdDesc',
+        defaultMessage: '文档说明文件，支持 Markdown 渲染预览',
+        description: 'Description of the Markdown option in the new file dialog'
+    },
+    createTypeRfdDesc: {
+        id: 'mw.superRefactor.createType.rfdDesc',
+        defaultMessage: '流程图描述文件，支持代码编辑与图形预览',
+        description: 'Description of the RFD option in the new file dialog'
+    },
+    createDefaultSvgName: {
+        id: 'mw.superRefactor.createDefault.svgName',
+        defaultMessage: '新建图形',
+        description: 'Default file name for a new SVG file'
+    },
+    createDefaultJsonName: {
+        id: 'mw.superRefactor.createDefault.jsonName',
+        defaultMessage: '新建数据',
+        description: 'Default file name for a new JSON file'
+    },
+    createDefaultMdName: {
+        id: 'mw.superRefactor.createDefault.mdName',
+        defaultMessage: '新建文档',
+        description: 'Default file name for a new Markdown file'
+    },
+    createDefaultRfdName: {
+        id: 'mw.superRefactor.createDefault.rfdName',
+        defaultMessage: '新建流程图',
+        description: 'Default file name for a new RFD file'
+    },
+    createDefaultMdContent: {
+        id: 'mw.superRefactor.createDefault.mdContent',
+        defaultMessage: '# 新文档\n\n在这里编写 Markdown 内容。\n',
+        description: 'Default content of a new Markdown file'
+    },
+    // 应用 / 下载的提示消息
+    readOnlyShard: {
+        id: 'mw.superRefactor.message.readOnlyShard',
+        defaultMessage: '.rj 分片文件为只读预览，请用「保存 .rj」重新生成',
+        description: 'Shown when trying to apply a read-only .rj shard'
+    },
+    projectUpdated: {
+        id: 'mw.superRefactor.message.projectUpdated',
+        defaultMessage: '✓ 项目已更新！',
+        description: 'Status message after applying project.json'
+    },
+    updateFailed: {
+        id: 'mw.superRefactor.message.updateFailed',
+        defaultMessage: '✗ 更新失败: {reason}',
+        description: 'Status message when applying project.json fails'
+    },
+    svgUpdated: {
+        id: 'mw.superRefactor.message.svgUpdated',
+        defaultMessage: '✓ SVG造型已更新！',
+        description: 'Status message after applying an SVG costume'
+    },
+    costumeNotFound: {
+        id: 'mw.superRefactor.message.costumeNotFound',
+        defaultMessage: '✗ 未找到对应的造型或目标',
+        description: 'Status message when the target costume cannot be found'
+    },
+    onlyJsonSvgApplicable: {
+        id: 'mw.superRefactor.message.onlyJsonSvg',
+        defaultMessage: '只有 project.json 和 SVG 可以应用到作品',
+        description: 'Status message when the file cannot be applied'
+    },
+    formatError: {
+        id: 'mw.superRefactor.message.formatError',
+        defaultMessage: '✗ 格式错误: {reason}',
+        description: 'Status message when the content cannot be parsed'
+    },
+    shardApplied: {
+        id: 'mw.superRefactor.message.shardApplied',
+        defaultMessage: '✓ 分片已应用到作品！',
+        description: 'Status message after applying a .rj shard'
+    },
+    applyFailed: {
+        id: 'mw.superRefactor.message.applyFailed',
+        defaultMessage: '✗ 应用失败: {reason}',
+        description: 'Status message when applying a .rj shard fails'
+    },
+    writtenToRj: {
+        id: 'mw.superRefactor.message.writtenToRj',
+        defaultMessage: '✓ 已写入 .rj 作品，下载时会一并打包',
+        description: 'Status message after writing a new file into the .rj archive'
+    },
+    writtenToProject: {
+        id: 'mw.superRefactor.message.writtenToProject',
+        defaultMessage: '✓ 已写入作品，下载项目时会一并打包',
+        description: 'Status message after saving a new file for the sb3 project'
+    },
+    rjDownloadedWithExtras: {
+        id: 'mw.superRefactor.message.rjDownloadedWithExtras',
+        defaultMessage: '已下载 .rj 文件（含新建文件）！',
+        description: 'Status message after downloading a .rj file including new files'
+    },
+    rjDownloaded: {
+        id: 'mw.superRefactor.message.rjDownloaded',
+        defaultMessage: '已下载 .rj 文件！',
+        description: 'Status message after downloading the .rj file'
+    },
+    rjDownloadFailed: {
+        id: 'mw.superRefactor.message.rjDownloadFailed',
+        defaultMessage: '下载 .rj 失败',
+        description: 'Status message when downloading the .rj file fails'
+    },
+    sb3DownloadedWithExtras: {
+        id: 'mw.superRefactor.message.sb3DownloadedWithExtras',
+        defaultMessage: '已下载作品（含新建文件）！',
+        description: 'Status message after downloading the sb3 project including new files'
+    },
+    projectDownloaded: {
+        id: 'mw.superRefactor.message.projectDownloaded',
+        defaultMessage: '已下载项目文件！',
+        description: 'Status message after downloading project.json'
+    },
+    jsonDownloadError: {
+        id: 'mw.superRefactor.message.jsonDownloadError',
+        defaultMessage: 'JSON格式错误，无法下载',
+        description: 'Status message when project.json is invalid'
+    },
+    readFailed: {
+        id: 'mw.superRefactor.message.readFailed',
+        defaultMessage: '读取失败: {reason}',
+        description: 'Shown as the content of a file that could not be read from the .rj archive'
+    },
+    // 设置窗口
+    settingsFileList: {
+        id: 'mw.superRefactor.settings.fileList',
+        defaultMessage: '文件列表显示',
+        description: 'Settings section: file list display mode'
+    },
+    settingTreeView: {
+        id: 'mw.superRefactor.settings.treeView',
+        defaultMessage: '树状结构（新版）',
+        description: 'Settings: tree file view'
+    },
+    settingListView: {
+        id: 'mw.superRefactor.settings.listView',
+        defaultMessage: '平铺列表（旧版）',
+        description: 'Settings: flat file list view'
+    },
+    settingsEditorVersion: {
+        id: 'mw.superRefactor.settings.editorVersion',
+        defaultMessage: '编辑器版本',
+        description: 'Settings section: editor version'
+    },
+    settingMonacoEditor: {
+        id: 'mw.superRefactor.settings.monacoEditor',
+        defaultMessage: '新版编辑器（Monaco）',
+        description: 'Settings: use the Monaco editor'
+    },
+    settingBuiltinEditor: {
+        id: 'mw.superRefactor.settings.builtinEditor',
+        defaultMessage: '旧版编辑器（内置）',
+        description: 'Settings: use the built-in editor'
+    },
+    settingsMonacoOptions: {
+        id: 'mw.superRefactor.settings.monacoOptions',
+        defaultMessage: '新版编辑器选项',
+        description: 'Settings section: Monaco editor options'
+    },
+    settingMinimap: {
+        id: 'mw.superRefactor.settings.minimap',
+        defaultMessage: '侧边代码预览（小地图）',
+        description: 'Monaco option: minimap'
+    },
+    settingFolding: {
+        id: 'mw.superRefactor.settings.folding',
+        defaultMessage: '代码折叠',
+        description: 'Monaco option: code folding'
+    },
+    settingFoldingControls: {
+        id: 'mw.superRefactor.settings.foldingControls',
+        defaultMessage: '折叠控件',
+        description: 'Monaco option: where folding controls are shown'
+    },
+    settingFoldingAlways: {
+        id: 'mw.superRefactor.settings.foldingAlways',
+        defaultMessage: '始终显示',
+        description: 'Monaco option value: always show folding controls'
+    },
+    settingFoldingMouseover: {
+        id: 'mw.superRefactor.settings.foldingMouseover',
+        defaultMessage: '悬停显示',
+        description: 'Monaco option value: show folding controls on hover'
+    },
+    settingBreadcrumbs: {
+        id: 'mw.superRefactor.settings.breadcrumbs',
+        defaultMessage: '顶部面包屑导航',
+        description: 'Monaco option: breadcrumbs'
+    },
+    settingStickyScroll: {
+        id: 'mw.superRefactor.settings.stickyScroll',
+        defaultMessage: '吸顶滚动（固定当前作用域）',
+        description: 'Monaco option: sticky scroll'
+    },
+    settingLineNumbers: {
+        id: 'mw.superRefactor.settings.lineNumbers',
+        defaultMessage: '显示行号',
+        description: 'Monaco option: line numbers'
+    },
+    settingIndentGuides: {
+        id: 'mw.superRefactor.settings.indentGuides',
+        defaultMessage: '缩进参考线',
+        description: 'Monaco option: indentation guides'
+    },
+    settingHighlightActiveLine: {
+        id: 'mw.superRefactor.settings.highlightActiveLine',
+        defaultMessage: '高亮当前行',
+        description: 'Monaco option: highlight the active line'
+    },
+    settingSmoothScrolling: {
+        id: 'mw.superRefactor.settings.smoothScrolling',
+        defaultMessage: '平滑滚动',
+        description: 'Monaco option: smooth scrolling'
+    },
+    settingMouseWheelZoom: {
+        id: 'mw.superRefactor.settings.mouseWheelZoom',
+        defaultMessage: 'Ctrl + 滚轮缩放字号',
+        description: 'Monaco option: zoom the font with Ctrl and the mouse wheel'
+    },
+    settingFontSize: {
+        id: 'mw.superRefactor.settings.fontSize',
+        defaultMessage: '字号',
+        description: 'Monaco option: font size'
+    },
+    settingTabSize: {
+        id: 'mw.superRefactor.settings.tabSize',
+        defaultMessage: 'Tab 宽度',
+        description: 'Monaco option: tab size'
+    },
+    settingWhitespace: {
+        id: 'mw.superRefactor.settings.whitespace',
+        defaultMessage: '空白字符',
+        description: 'Monaco option: render whitespace'
+    },
+    settingWhitespaceNone: {
+        id: 'mw.superRefactor.settings.whitespaceNone',
+        defaultMessage: '不显示',
+        description: 'Monaco option value: never render whitespace'
+    },
+    settingWhitespaceSelection: {
+        id: 'mw.superRefactor.settings.whitespaceSelection',
+        defaultMessage: '选中区域',
+        description: 'Monaco option value: render whitespace in the selection only'
+    },
+    settingWhitespaceAll: {
+        id: 'mw.superRefactor.settings.whitespaceAll',
+        defaultMessage: '全部',
+        description: 'Monaco option value: always render whitespace'
+    },
+    settingResetDefaults: {
+        id: 'mw.superRefactor.settings.resetDefaults',
+        defaultMessage: '恢复默认',
+        description: 'Button that restores the default Monaco options'
+    },
+    done: {
+        id: 'mw.superRefactor.done',
+        defaultMessage: '完成',
+        description: 'Button that closes the settings window'
+    },
+    // .rfd 流程图
+    rfdDisplayTitle: {
+        id: 'mw.superRefactor.rfd.displayTitle',
+        defaultMessage: '调整预览中显示的内容范围',
+        description: 'Tooltip of the flow chart display range selector'
+    },
+    rfdDisplayBoth: {
+        id: 'mw.superRefactor.rfd.displayBoth',
+        defaultMessage: '点ID 连接点',
+        description: 'Flow chart display: show point IDs and hotspots'
+    },
+    rfdDisplayId: {
+        id: 'mw.superRefactor.rfd.displayId',
+        defaultMessage: '点ID',
+        description: 'Flow chart display: show point IDs only'
+    },
+    rfdDisplayHotspot: {
+        id: 'mw.superRefactor.rfd.displayHotspot',
+        defaultMessage: '连接点',
+        description: 'Flow chart display: show hotspots only'
+    },
+    rfdDisplayNone: {
+        id: 'mw.superRefactor.rfd.displayNone',
+        defaultMessage: '均不显示',
+        description: 'Flow chart display: show neither point IDs nor hotspots'
+    },
+    rfdAddFlow: {
+        id: 'mw.superRefactor.rfd.addFlow',
+        defaultMessage: '新增流程',
+        description: 'Button that appends a new flow to the .rfd file'
+    },
+    rfdClearConnections: {
+        id: 'mw.superRefactor.rfd.clearConnections',
+        defaultMessage: '清除连线',
+        description: 'Button that removes all connections from the .rfd file'
+    },
+    rfdDownloadSvg: {
+        id: 'mw.superRefactor.rfd.downloadSvg',
+        defaultMessage: '下载 SVG',
+        description: 'Button that downloads the rendered flow chart as SVG'
+    },
+    rfdPendingHint: {
+        id: 'mw.superRefactor.rfd.pendingHint',
+        defaultMessage: '再点一个热点完成连线',
+        description: 'Hint shown after selecting the start hotspot of a connection'
+    },
+    rfdPreviewError: {
+        id: 'mw.superRefactor.rfd.previewError',
+        defaultMessage: '无法预览流程图，请检查 .rfd 内容',
+        description: 'Shown when the .rfd content cannot be rendered'
+    },
+    rfdLegend: {
+        id: 'mw.superRefactor.rfd.legend',
+        defaultMessage: '描述',
+        description: 'Title of the .rfd syntax legend panel'
+    },
+    legendOval: {
+        id: 'mw.superRefactor.rfd.legend.oval',
+        defaultMessage: '椭圆 · 开始 / 结束',
+        description: 'Legend: oval shape'
+    },
+    legendRect: {
+        id: 'mw.superRefactor.rfd.legend.rect',
+        defaultMessage: '矩形 · 处理 / 语句',
+        description: 'Legend: rectangle shape'
+    },
+    legendDiamond: {
+        id: 'mw.superRefactor.rfd.legend.diamond',
+        defaultMessage: '菱形 · 判断',
+        description: 'Legend: diamond shape'
+    },
+    legendPara: {
+        id: 'mw.superRefactor.rfd.legend.para',
+        defaultMessage: '平行四边形 · 输入 / 输出',
+        description: 'Legend: parallelogram shape'
+    },
+    legendComment: {
+        id: 'mw.superRefactor.rfd.legend.comment',
+        defaultMessage: '虚线框 · 注释',
+        description: 'Legend: comment box'
+    },
+    legendAssignSingle: {
+        id: 'mw.superRefactor.rfd.legend.assignSingle',
+        defaultMessage: '命名为 1，并连接到 2',
+        description: 'Legend: assign a point ID and connect to one target'
+    },
+    legendAssignMulti: {
+        id: 'mw.superRefactor.rfd.legend.assignMulti',
+        defaultMessage: '命名为 1，同时连接 2、3、4…',
+        description: 'Legend: assign a point ID and connect to several targets'
+    },
+    legendPorts: {
+        id: 'mw.superRefactor.rfd.legend.ports',
+        defaultMessage: '左 / 右 / 下 / 上，: 后为 ID，- 后为目标 ID',
+        description: 'Legend: port and connection marks'
+    },
+    legendSeparator: {
+        id: 'mw.superRefactor.rfd.legend.separator',
+        defaultMessage: '流程分隔（三个减号或空行）',
+        description: 'Legend: flow separator'
+    },
+    legendEscape: {
+        id: 'mw.superRefactor.rfd.legend.escape',
+        defaultMessage: '自动连接；反斜杠转义 \\, \\: \\-',
+        description: 'Legend: automatic connection and escaping'
+    }
+});
+
+// 与 RFD_LEGEND_ITEMS 的顺序一一对应
+const RFD_LEGEND_MESSAGE_KEYS = [
+    'legendOval',
+    'legendRect',
+    'legendDiamond',
+    'legendPara',
+    'legendComment',
+    'legendAssignSingle',
+    'legendAssignMulti',
+    'legendPorts',
+    'legendSeparator',
+    'legendEscape'
+];
+
 // 超过该字节数的文件不做逐 token 语法高亮与逐行行号渲染，避免打开卡顿
 const LARGE_CONTENT_THRESHOLD = 150000;
 
@@ -60,29 +607,29 @@ const isStandardRJPath = path => path === 'manifest.json' ||
 
 // 「+」新建菜单的四种文件类型
 const CREATE_FILE_TYPES = [
-    {ext: 'svg', label: 'SVG', desc: '可缩放矢量图形，适合角色造型与图标，支持代码与预览切换'},
-    {ext: 'json', label: 'JSON', desc: '结构化数据文件，适合配置、作品数据与 .rj 分片'},
-    {ext: 'md', label: 'Markdown', desc: '文档说明文件，支持 Markdown 渲染预览'},
-    {ext: 'rfd', label: 'RFD', desc: '流程图描述文件，支持代码编辑与图形预览'}
+    {ext: 'svg', label: 'SVG', desc: messages.createTypeSvgDesc},
+    {ext: 'json', label: 'JSON', desc: messages.createTypeJsonDesc},
+    {ext: 'md', label: 'Markdown', desc: messages.createTypeMdDesc},
+    {ext: 'rfd', label: 'RFD', desc: messages.createTypeRfdDesc}
 ];
 
 const CREATE_FILE_DEFAULTS = {
     svg: {
-        prefix: '新建图形',
+        prefix: messages.createDefaultSvgName,
         content: '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">\n' +
             '    <rect x="10" y="10" width="80" height="80" fill="#4d97ff"/>\n' +
             '</svg>\n'
     },
     json: {
-        prefix: '新建数据',
+        prefix: messages.createDefaultJsonName,
         content: '{}'
     },
     md: {
-        prefix: '新建文档',
-        content: '# 新文档\n\n在这里编写 Markdown 内容。\n'
+        prefix: messages.createDefaultMdName,
+        content: messages.createDefaultMdContent
     },
     rfd: {
-        prefix: '新建流程图',
+        prefix: messages.createDefaultRfdName,
         content: RFD_DEFAULT_TEXT
     }
 };
@@ -577,7 +1124,14 @@ class SuperRefactorModalContainer extends React.Component {
                 const text = await entry.async('string');
                 return {id: path, name: path, type: 'text', content: text, size: text.length, ...flags};
             } catch (e) {
-                return {id: path, name: path, type: 'text', content: `读取失败: ${e.message}`, size: 0, ...flags};
+                return {
+                    id: path,
+                    name: path,
+                    type: 'text',
+                    content: this.t(messages.readFailed, {reason: e.message}),
+                    size: 0,
+                    ...flags
+                };
             }
         };
 
@@ -603,9 +1157,14 @@ class SuperRefactorModalContainer extends React.Component {
         this.props.onClose();
     }
 
+    // 界面文案统一从这里取，便于翻译
+    t (descriptor, values) {
+        return this.props.intl.formatMessage(descriptor, values);
+    }
+
     handleRefresh () {
         this.loadProjectFiles();
-        this.setState({ message: '已刷新！' });
+        this.setState({ message: this.t(messages.refreshed) });
         setTimeout(() => this.setState({ message: '' }), 2000);
     }
 
@@ -741,16 +1300,18 @@ class SuperRefactorModalContainer extends React.Component {
         files.forEach(file => {
             usedNames[file.name] = true;
         });
-        let prefix = defaults.prefix;
+        const basePrefix = this.t(defaults.prefix);
+        let prefix = basePrefix;
         let name = `${dir}${prefix}.${ext}`;
         let seq = 2;
         while (usedNames[name]) {
-            prefix = `${defaults.prefix}${seq}`;
+            prefix = `${basePrefix}${seq}`;
             name = `${dir}${prefix}.${ext}`;
             seq++;
         }
 
-        const content = defaults.content;
+        const content = defaults.content.id ?
+            this.t(defaults.content) : defaults.content;
         const newFile = {
             id: `extra:${name}:${Date.now()}`,
             name,
@@ -1454,7 +2015,7 @@ class SuperRefactorModalContainer extends React.Component {
                 this.applyRJShard(file);
                 return;
             }
-            this.setState({message: '.rj 分片文件为只读预览，请用「保存 .rj」重新生成'});
+            this.setState({message: this.t(messages.readOnlyShard)});
             setTimeout(() => this.setState({message: ''}), 3000);
             return;
         }
@@ -1473,10 +2034,10 @@ class SuperRefactorModalContainer extends React.Component {
                 
                 if (this.props.vm) {
                     this.props.vm.loadProject(newData).then(() => {
-                        this.setState({ message: '✓ 项目已更新！' });
+                        this.setState({ message: this.t(messages.projectUpdated) });
                         setTimeout(() => this.setState({ message: '' }), 3000);
                     }).catch(err => {
-                        this.setState({ message: '✗ 更新失败: ' + err.message });
+                        this.setState({ message: this.t(messages.updateFailed, {reason: err.message}) });
                         setTimeout(() => this.setState({ message: '' }), 5000);
                     });
                 }
@@ -1550,21 +2111,21 @@ class SuperRefactorModalContainer extends React.Component {
                                     target.renderer.updateDrawable();
                                 }
 
-                                this.setState({ message: '✓ SVG造型已更新！' });
+                                this.setState({ message: this.t(messages.svgUpdated) });
                                 setTimeout(() => this.setState({ message: '' }), 3000);
                                 return;
                             }
                         }
                     }
                 }
-                this.setState({ message: '✗ 未找到对应的造型或目标' });
+                this.setState({ message: this.t(messages.costumeNotFound) });
                 setTimeout(() => this.setState({ message: '' }), 5000);
             } else {
-                this.setState({ message: '只有 project.json 和 SVG 可以应用到作品' });
+                this.setState({ message: this.t(messages.onlyJsonSvgApplicable) });
                 setTimeout(() => this.setState({ message: '' }), 3000);
             }
         } catch (e) {
-            this.setState({ message: '✗ 格式错误: ' + e.message });
+            this.setState({ message: this.t(messages.formatError, {reason: e.message}) });
             setTimeout(() => this.setState({ message: '' }), 5000);
         }
     }
@@ -1588,10 +2149,10 @@ class SuperRefactorModalContainer extends React.Component {
             const {loadRJIntoVMProgressive} = await import('../lib/rj/rj-lazy-loader.js');
             await loadRJIntoVMProgressive(this.props.vm, buffer, {});
 
-            this.setState({message: '✓ 分片已应用到作品！'});
+            this.setState({message: this.t(messages.shardApplied)});
             setTimeout(() => this.setState({message: ''}), 3000);
         } catch (e) {
-            this.setState({message: '✗ 应用失败: ' + e.message});
+            this.setState({message: this.t(messages.applyFailed, {reason: e.message})});
             setTimeout(() => this.setState({message: ''}), 5000);
         }
     }
@@ -1616,7 +2177,7 @@ class SuperRefactorModalContainer extends React.Component {
                 if (zip) {
                     zip.file(file.name, file.content);
                     this.saveExtraFiles();
-                    this.setState({message: '✓ 已写入 .rj 作品，下载时会一并打包'});
+                    this.setState({message: this.t(messages.writtenToRj)});
                     setTimeout(() => this.setState({message: ''}), 3000);
                     return;
                 }
@@ -1625,7 +2186,7 @@ class SuperRefactorModalContainer extends React.Component {
             }
         }
         this.saveExtraFiles();
-        this.setState({message: '✓ 已写入作品，下载项目时会一并打包'});
+        this.setState({message: this.t(messages.writtenToProject)});
         setTimeout(() => this.setState({message: ''}), 3000);
     }
 
@@ -1642,7 +2203,7 @@ class SuperRefactorModalContainer extends React.Component {
                         customFiles.forEach(file => zip.file(file.name, file.content));
                         const blob = await zip.generateAsync({type: 'blob', compression: 'DEFLATE'});
                         this.saveBlobAs(blob, 'project.rj');
-                        this.setState({message: '已下载 .rj 文件（含新建文件）！'});
+                        this.setState({message: this.t(messages.rjDownloadedWithExtras)});
                         setTimeout(() => this.setState({message: ''}), 3000);
                         return;
                     }
@@ -1651,11 +2212,11 @@ class SuperRefactorModalContainer extends React.Component {
                 const raw = getCurrentRJRaw();
                 if (raw) {
                     this.saveBlobAs(new Blob([raw], {type: 'application/octet-stream'}), 'project.rj');
-                    this.setState({message: '已下载 .rj 文件！'});
+                    this.setState({message: this.t(messages.rjDownloaded)});
                     setTimeout(() => this.setState({message: ''}), 3000);
                 }
             } catch (e) {
-                this.setState({message: '下载 .rj 失败'});
+                this.setState({message: this.t(messages.rjDownloadFailed)});
                 setTimeout(() => this.setState({message: ''}), 5000);
             }
             return;
@@ -1673,7 +2234,7 @@ class SuperRefactorModalContainer extends React.Component {
                     mimeType: 'application/x.scratch.sb3'
                 });
                 this.saveBlobAs(blob, 'project.sb3');
-                this.setState({message: '已下载作品（含新建文件）！'});
+                this.setState({message: this.t(messages.sb3DownloadedWithExtras)});
                 setTimeout(() => this.setState({message: ''}), 3000);
                 return;
             } catch (e) {
@@ -1691,10 +2252,10 @@ class SuperRefactorModalContainer extends React.Component {
                     new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}),
                     'project.json'
                 );
-                this.setState({message: '已下载项目文件！'});
+                this.setState({message: this.t(messages.projectDownloaded)});
                 setTimeout(() => this.setState({message: ''}), 3000);
             } catch (e) {
-                this.setState({message: 'JSON格式错误，无法下载'});
+                this.setState({message: this.t(messages.jsonDownloadError)});
                 setTimeout(() => this.setState({message: ''}), 5000);
             }
         }
@@ -1863,7 +2424,7 @@ class SuperRefactorModalContainer extends React.Component {
                     color: '#999',
                     fontSize: '13px'
                 }}>
-                    没有找到匹配的文件
+                    {this.t(messages.noMatchingFiles)}
                 </div>
             );
         }
@@ -1984,7 +2545,7 @@ class SuperRefactorModalContainer extends React.Component {
         return (
             <Modal
                 id="superRefactorSettingsModal"
-                contentLabel="超级重构设置"
+                contentLabel={this.t(messages.settingsTitle)}
                 visible={!!this.props.visible && this.state.settingsVisible}
                 className={`super-refactor-modal ${isDarkTheme ? 'dark-theme' : ''}`}
                 onRequestClose={this.closeSettings}
@@ -2001,60 +2562,60 @@ class SuperRefactorModalContainer extends React.Component {
                     color: colors.text
                 }}>
                     <div style={sectionStyle}>
-                        <div style={sectionTitleStyle}>文件列表显示</div>
-                        {this.renderSettingRadio('tree-file-view', '树状结构（新版）',
+                        <div style={sectionTitleStyle}>{this.t(messages.settingsFileList)}</div>
+                        {this.renderSettingRadio('tree-file-view', this.t(messages.settingTreeView),
                             fileViewMode === 'tree', () => this.setFileViewMode('tree'))}
-                        {this.renderSettingRadio('tree-file-view', '平铺列表（旧版）',
+                        {this.renderSettingRadio('tree-file-view', this.t(messages.settingListView),
                             fileViewMode === 'list', () => this.setFileViewMode('list'))}
                     </div>
 
                     <div style={sectionStyle}>
-                        <div style={sectionTitleStyle}>编辑器版本</div>
-                        {this.renderSettingRadio('editor-version', '新版编辑器（Monaco）',
+                        <div style={sectionTitleStyle}>{this.t(messages.settingsEditorVersion)}</div>
+                        {this.renderSettingRadio('editor-version', this.t(messages.settingMonacoEditor),
                             useMonacoEditor, () => this.setEditorVersion(true))}
-                        {this.renderSettingRadio('editor-version', '旧版编辑器（内置）',
+                        {this.renderSettingRadio('editor-version', this.t(messages.settingBuiltinEditor),
                             !useMonacoEditor, () => this.setEditorVersion(false))}
                     </div>
 
                     {useMonacoEditor && (
                         <div style={sectionStyle}>
-                            <div style={sectionTitleStyle}>新版编辑器选项</div>
-                            {this.renderSettingToggle('侧边代码预览（小地图）',
+                            <div style={sectionTitleStyle}>{this.t(messages.settingsMonacoOptions)}</div>
+                            {this.renderSettingToggle(this.t(messages.settingMinimap),
                                 editorOptions.minimap,
                                 value => this.setEditorOption('minimap', value))}
-                            {this.renderSettingToggle('代码折叠',
+                            {this.renderSettingToggle(this.t(messages.settingFolding),
                                 editorOptions.folding,
                                 value => this.setEditorOption('folding', value))}
-                            {editorOptions.folding && this.renderSettingSelect('折叠控件',
+                            {editorOptions.folding && this.renderSettingSelect(this.t(messages.settingFoldingControls),
                                 editorOptions.foldingControls,
                                 [
-                                    {value: 'always', label: '始终显示'},
-                                    {value: 'mouseover', label: '悬停显示'}
+                                    {value: 'always', label: this.t(messages.settingFoldingAlways)},
+                                    {value: 'mouseover', label: this.t(messages.settingFoldingMouseover)}
                                 ],
                                 value => this.setEditorOption('foldingControls', value),
                                 colors)}
-                            {this.renderSettingToggle('顶部面包屑导航',
+                            {this.renderSettingToggle(this.t(messages.settingBreadcrumbs),
                                 editorOptions.breadcrumbs,
                                 value => this.setEditorOption('breadcrumbs', value))}
-                            {this.renderSettingToggle('吸顶滚动（固定当前作用域）',
+                            {this.renderSettingToggle(this.t(messages.settingStickyScroll),
                                 editorOptions.stickyScroll,
                                 value => this.setEditorOption('stickyScroll', value))}
-                            {this.renderSettingToggle('显示行号',
+                            {this.renderSettingToggle(this.t(messages.settingLineNumbers),
                                 editorOptions.lineNumbers,
                                 value => this.setEditorOption('lineNumbers', value))}
-                            {this.renderSettingToggle('缩进参考线',
+                            {this.renderSettingToggle(this.t(messages.settingIndentGuides),
                                 editorOptions.indentationGuides,
                                 value => this.setEditorOption('indentationGuides', value))}
-                            {this.renderSettingToggle('高亮当前行',
+                            {this.renderSettingToggle(this.t(messages.settingHighlightActiveLine),
                                 editorOptions.highlightActiveLine,
                                 value => this.setEditorOption('highlightActiveLine', value))}
-                            {this.renderSettingToggle('平滑滚动',
+                            {this.renderSettingToggle(this.t(messages.settingSmoothScrolling),
                                 editorOptions.smoothScrolling,
                                 value => this.setEditorOption('smoothScrolling', value))}
-                            {this.renderSettingToggle('Ctrl + 滚轮缩放字号',
+                            {this.renderSettingToggle(this.t(messages.settingMouseWheelZoom),
                                 editorOptions.mouseWheelZoom,
                                 value => this.setEditorOption('mouseWheelZoom', value))}
-                            {this.renderSettingSelect('字号',
+                            {this.renderSettingSelect(this.t(messages.settingFontSize),
                                 String(editorOptions.fontSize),
                                 [
                                     {value: '12', label: '12'},
@@ -2066,7 +2627,7 @@ class SuperRefactorModalContainer extends React.Component {
                                 ],
                                 value => this.setEditorOption('fontSize', Number(value)),
                                 colors)}
-                            {this.renderSettingSelect('Tab 宽度',
+                            {this.renderSettingSelect(this.t(messages.settingTabSize),
                                 String(editorOptions.tabSize),
                                 [
                                     {value: '2', label: '2'},
@@ -2075,12 +2636,12 @@ class SuperRefactorModalContainer extends React.Component {
                                 ],
                                 value => this.setEditorOption('tabSize', Number(value)),
                                 colors)}
-                            {this.renderSettingSelect('空白字符',
+                            {this.renderSettingSelect(this.t(messages.settingWhitespace),
                                 editorOptions.renderWhitespace,
                                 [
-                                    {value: 'none', label: '不显示'},
-                                    {value: 'selection', label: '选中区域'},
-                                    {value: 'all', label: '全部'}
+                                    {value: 'none', label: this.t(messages.settingWhitespaceNone)},
+                                    {value: 'selection', label: this.t(messages.settingWhitespaceSelection)},
+                                    {value: 'all', label: this.t(messages.settingWhitespaceAll)}
                                 ],
                                 value => this.setEditorOption('renderWhitespace', value),
                                 colors)}
@@ -2097,7 +2658,7 @@ class SuperRefactorModalContainer extends React.Component {
                                         fontSize: '12px'
                                     }}
                                 >
-                                    恢复默认
+                                    {this.t(messages.settingResetDefaults)}
                                 </button>
                             </div>
                         </div>
@@ -2105,7 +2666,7 @@ class SuperRefactorModalContainer extends React.Component {
 
                     <div style={{display: 'flex', justifyContent: 'flex-end'}}>
                         <Button onClick={this.closeSettings}>
-                            完成
+                            {this.t(messages.done)}
                         </Button>
                     </div>
                 </div>
@@ -2210,7 +2771,7 @@ class SuperRefactorModalContainer extends React.Component {
                     <select
                         value={rfdDisplay}
                         onChange={this.handleRfdDisplayChange}
-                        title="调整预览中显示的内容范围"
+                        title={this.t(messages.rfdDisplayTitle)}
                         style={{
                             padding: '4px 6px',
                             background: colors.inputBg,
@@ -2221,17 +2782,23 @@ class SuperRefactorModalContainer extends React.Component {
                             fontSize: '10px'
                         }}
                     >
-                        <option value="both">点ID 连接点</option>
-                        <option value="id">点ID</option>
-                        <option value="hotspot">连接点</option>
-                        <option value="none">均不显示</option>
+                        <option value="both">{this.t(messages.rfdDisplayBoth)}</option>
+                        <option value="id">{this.t(messages.rfdDisplayId)}</option>
+                        <option value="hotspot">{this.t(messages.rfdDisplayHotspot)}</option>
+                        <option value="none">{this.t(messages.rfdDisplayNone)}</option>
                     </select>
-                    <button onClick={this.handleRfdAddFlow} style={toolbarButtonStyle}>新增流程</button>
-                    <button onClick={this.handleRfdClearConnections} style={toolbarButtonStyle}>清除连线</button>
-                    <button onClick={this.handleRfdDownloadSvg} style={toolbarButtonStyle}>下载 SVG</button>
+                    <button onClick={this.handleRfdAddFlow} style={toolbarButtonStyle}>
+                        {this.t(messages.rfdAddFlow)}
+                    </button>
+                    <button onClick={this.handleRfdClearConnections} style={toolbarButtonStyle}>
+                        {this.t(messages.rfdClearConnections)}
+                    </button>
+                    <button onClick={this.handleRfdDownloadSvg} style={toolbarButtonStyle}>
+                        {this.t(messages.rfdDownloadSvg)}
+                    </button>
                     {rfdPending && (
                         <span style={{fontSize: '11px', color: colors.textSecondary}}>
-                            再点一个热点完成连线
+                            {this.t(messages.rfdPendingHint)}
                         </span>
                     )}
                 </div>
@@ -2250,7 +2817,7 @@ class SuperRefactorModalContainer extends React.Component {
                         />
                     ) : (
                         <div style={{color: colors.textSecondary, fontSize: '13px'}}>
-                            无法预览流程图，请检查 .rfd 内容
+                            {this.t(messages.rfdPreviewError)}
                         </div>
                     )}
                 </div>
@@ -2281,7 +2848,7 @@ class SuperRefactorModalContainer extends React.Component {
                         textAlign: 'left'
                     }}
                 >
-                    描述 {rfdLegendOpen ? '▾' : '▸'}
+                    {this.t(messages.rfdLegend)} {rfdLegendOpen ? '▾' : '▸'}
                 </button>
                 {rfdLegendOpen && (
                     <div style={{
@@ -2292,7 +2859,7 @@ class SuperRefactorModalContainer extends React.Component {
                         lineHeight: 1.9,
                         color: colors.textSecondary
                     }}>
-                        {RFD_LEGEND_ITEMS.map(item => (
+                        {RFD_LEGEND_ITEMS.map((item, index) => (
                             <div key={item.code} style={{display: 'flex', gap: '10px'}}>
                                 <code style={{
                                     flexShrink: 0,
@@ -2302,7 +2869,7 @@ class SuperRefactorModalContainer extends React.Component {
                                 }}>
                                     {item.code}
                                 </code>
-                                <span>{item.desc}</span>
+                                <span>{this.t(messages[RFD_LEGEND_MESSAGE_KEYS[index]])}</span>
                             </div>
                         ))}
                     </div>
@@ -2457,7 +3024,7 @@ class SuperRefactorModalContainer extends React.Component {
                         {content}
                     </ReactMarkdown>
                 ) : (
-                    <div style={{color: colors.textSecondary}}>暂无内容</div>
+                    <div style={{color: colors.textSecondary}}>{this.t(messages.mdEmpty)}</div>
                 )}
             </div>
         );
@@ -2564,7 +3131,7 @@ class SuperRefactorModalContainer extends React.Component {
         return (
             <Modal
                 id="superRefactorModal"
-                contentLabel="超级重构"
+                contentLabel={this.t(messages.title)}
                 visible={!!visible}
                 className={`super-refactor-modal ${isDarkTheme ? 'dark-theme' : ''}`}
                 onRequestClose={this.handleClose}
@@ -2592,7 +3159,7 @@ class SuperRefactorModalContainer extends React.Component {
                                     fontSize: '12px',
                                     color: colors.textSecondary
                                 }}>
-                                    共 {files.length} 个文件
+                                    {this.t(messages.fileCount, {count: files.length})}
                                 </div>
                             )}
                             {message && (
@@ -2637,7 +3204,7 @@ class SuperRefactorModalContainer extends React.Component {
                                 <div style={{display: 'flex', gap: '5px'}}>
                                     <input
                                         type="text"
-                                        placeholder="搜索文件..."
+                                        placeholder={this.t(messages.searchPlaceholder)}
                                         value={searchQuery}
                                         onChange={this.handleSearchChange}
                                         style={{
@@ -2652,7 +3219,7 @@ class SuperRefactorModalContainer extends React.Component {
                                     />
                                     <button
                                         onClick={this.openCreateMenu}
-                                        title="在选中文件所在目录新建文件"
+                                        title={this.t(messages.createButtonTitle)}
                                         style={{
                                             flexShrink: 0,
                                             width: '30px',
@@ -2681,7 +3248,7 @@ class SuperRefactorModalContainer extends React.Component {
                                                 fontSize: '12px'
                                             }}
                                         >
-                                            清除
+                                            {this.t(messages.clearSearch)}
                                         </button>
                                     )}
                                 </div>
@@ -2690,7 +3257,10 @@ class SuperRefactorModalContainer extends React.Component {
                                     color: colors.textSecondary,
                                     marginTop: '5px'
                                 }}>
-                                    {filteredFiles.length} / {files.length} 个文件
+                                    {this.t(messages.filteredFileCount, {
+                                        filtered: filteredFiles.length,
+                                        total: files.length
+                                    })}
                                 </div>
                             </div>
 
@@ -2707,7 +3277,7 @@ class SuperRefactorModalContainer extends React.Component {
                                             color: '#999',
                                             fontSize: '13px'
                                         }}>
-                                            没有找到匹配的文件
+                                            {this.t(messages.noMatchingFiles)}
                                         </div>
                                     ) : (
                                         filteredFiles.map((file, index) => {
@@ -2777,17 +3347,18 @@ class SuperRefactorModalContainer extends React.Component {
                                              currentFileObj.type === 'svg' ? 'SVG' :
                                              currentFileObj.type === 'rfd' ? 'RFD' :
                                              currentFileObj.type === 'md' ? 'MD' :
-                                             currentFileObj.type === 'image' ? '图片' : 
-                                             currentFileObj.type === 'sound' ? '声音' : '文件'}
+                                             currentFileObj.type === 'image' ? this.t(messages.typeImage) : 
+                                             currentFileObj.type === 'sound' ? this.t(messages.typeSound) :
+                                             this.t(messages.typeFile)}
                                             {currentFileObj.size ? ` (${Math.round(currentFileObj.size / 1024)} KB)` : ''}
                                         </span>
                                     )}
                                     {isRfd ? (
                                         <div style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
                                             {[
-                                                ['edit', '编辑'],
-                                                ['preview', '预览'],
-                                                ['both', '编辑+预览']
+                                                ['edit', this.t(messages.modeEdit)],
+                                                ['preview', this.t(messages.modePreview)],
+                                                ['both', this.t(messages.modeEditPreview)]
                                             ].map(([mode, label]) => (
                                                 <button
                                                     key={mode}
@@ -2821,7 +3392,8 @@ class SuperRefactorModalContainer extends React.Component {
                                                 fontWeight: viewMode === 'code' ? 'bold' : 'normal'
                                             }}
                                         >
-                                            {viewMode === 'preview' ? '显示代码' : '显示预览'}
+                                            {viewMode === 'preview' ?
+                                                this.t(messages.showCode) : this.t(messages.showPreview)}
                                         </button>
                                     )}
                                 </div>
@@ -2981,7 +3553,7 @@ class SuperRefactorModalContainer extends React.Component {
                                                     <svg dangerouslySetInnerHTML={{ __html: content }} />
                                                 </div>
                                             ) : (
-                                                <div style={{color: '#999'}}>无法预览SVG</div>
+                                                <div style={{color: '#999'}}>{this.t(messages.svgPreviewError)}</div>
                                             )}
                                         </div>
                                     </div>
@@ -3116,7 +3688,7 @@ class SuperRefactorModalContainer extends React.Component {
                                             }}
                                         />
                                     ) : (
-                                        <div style={{color: '#999'}}>无法预览图片</div>
+                                        <div style={{color: '#999'}}>{this.t(messages.imagePreviewError)}</div>
                                     )}
                                 </div>
                             ) : (
@@ -3130,7 +3702,7 @@ class SuperRefactorModalContainer extends React.Component {
                                     background: colors.headerBg,
                                     color: colors.textSecondary
                                 }}>
-                                    此文件类型不支持编辑
+                                    {this.t(messages.unsupportedEdit)}
                                 </div>
                             )}
                         </div>
@@ -3146,7 +3718,7 @@ class SuperRefactorModalContainer extends React.Component {
                             style={footerButtonStyle}
                             onClick={this.handleRefresh}
                         >
-                            刷新
+                            {this.t(messages.refresh)}
                         </Button>
                         <Button
                             className="super-refactor-footer-button"
@@ -3156,26 +3728,26 @@ class SuperRefactorModalContainer extends React.Component {
                             onClick={this.applyChanges}
                             disabled={!canApply}
                         >
-                            {canApply ? '应用到作品' : '不可应用'}
+                            {canApply ? this.t(messages.applyToProject) : this.t(messages.cannotApply)}
                         </Button>
                         <Button
                             className="super-refactor-footer-button"
                             style={footerButtonStyle}
                             onClick={this.downloadProject}
                         >
-                            下载项目
+                            {this.t(messages.downloadProject)}
                         </Button>
                         <Button
                             className="super-refactor-footer-button"
                             style={footerButtonStyle}
                             onClick={this.handleClose}
                         >
-                            关闭
+                            {this.t(messages.close)}
                         </Button>
                         <button
                             className="super-refactor-footer-settings"
                             onClick={this.openSettings}
-                            title="超级重构设置"
+                            title={this.t(messages.settingsTitle)}
                             style={footerSettingsStyle}
                         >
                             <Settings size={17} />
@@ -3212,10 +3784,12 @@ class SuperRefactorModalContainer extends React.Component {
                                 }}
                             >
                                 <div style={{fontSize: '14px', fontWeight: 'bold', marginBottom: '4px'}}>
-                                    新建文件
+                                    {this.t(messages.createMenuTitle)}
                                 </div>
                                 <div style={{fontSize: '12px', color: colors.textSecondary, marginBottom: '14px'}}>
-                                    将在当前目录 {this.getCurrentDirectory() || '（根目录）'} 下创建
+                                    {this.t(messages.createMenuTargetDir, {
+                                        dir: this.getCurrentDirectory() || this.t(messages.rootDirectory)
+                                    })}
                                 </div>
                                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
                                     {CREATE_FILE_TYPES.map(item => (
@@ -3244,7 +3818,7 @@ class SuperRefactorModalContainer extends React.Component {
                                                 color: colors.textSecondary,
                                                 lineHeight: 1.5
                                             }}>
-                                                {item.desc}
+                                                {this.t(item.desc)}
                                             </span>
                                         </button>
                                     ))}
@@ -3299,7 +3873,7 @@ class SuperRefactorModalContainer extends React.Component {
                                         cursor: 'pointer'
                                     }}
                                 >
-                                    重命名
+                                    {this.t(messages.rename)}
                                 </button>
                             </div>
                         </div>
