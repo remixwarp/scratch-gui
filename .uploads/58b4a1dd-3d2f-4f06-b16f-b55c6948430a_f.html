@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>可命名连接 · 双向转换流程图</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: #f4f5f7; color: #222; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
+  .topbar {
+    display: flex; align-items: center; gap: 6px; padding: 8px 16px;
+    background: #fff; border-bottom: 1px solid #e2e4e8; flex-shrink: 0;
+  }
+  .topbar .brand { font-size: 13px; font-weight: 600; color: #5f6368; margin-right: 12px; white-space: nowrap; }
+  .topbar button {
+    font-size: 13px; padding: 6px 16px; border: 1px solid #d0d4da; background: #fff;
+    border-radius: 6px; cursor: pointer; color: #333; white-space: nowrap; transition: .15s;
+  }
+  .topbar button:hover { background: #f0f2f4; }
+  .topbar button.active { background: #4c8bf5; border-color: #4c8bf5; color: #fff; }
+
+  .app { flex: 1; display: flex; flex-direction: row; min-height: 0; }
+  .panel { display: flex; flex-direction: column; min-width: 0; }
+  .editor-panel { width: 40%; min-width: 0; background: #fff; border-right: 1px solid #e2e4e8; flex-shrink: 0; }
+  .preview-panel { flex: 1; background: #fafbfc; }
+  .app.mode-edit .editor-panel { width: 100%; border-right: none; }
+  .app.mode-edit .preview-panel { display: none; }
+  .app.mode-preview .editor-panel { display: none; }
+  .app.mode-preview .preview-panel { flex: 1; }
+
+  .panel-title {
+    padding: 10px 16px; font-weight: 600; font-size: 14px; border-bottom: 1px solid #e8eaed;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0;
+  }
+  .panel-title .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .panel-title button {
+    font-size: 12px; padding: 5px 12px; border: 1px solid #d0d4da; background: #fff;
+    border-radius: 6px; cursor: pointer; white-space: nowrap;
+  }
+  .panel-title button:hover { background: #f0f2f4; }
+  .panel-title select {
+    font-size: 12px; padding: 4px 8px; border: 1px solid #d0d4da;
+    border-radius: 6px; background: #fff; cursor: pointer; color: #333;
+  }
+
+  textarea {
+    flex: 1; border: none; outline: none; resize: none; padding: 16px;
+    font-family: 'SF Mono', 'Cascadia Code', Consolas, monospace; font-size: 13px;
+    line-height: 1.8; color: #1a1a1a; tab-size: 2; min-height: 0;
+  }
+  .legend {
+    padding: 10px 16px; font-size: 12px; color: #5f6368; border-top: 1px solid #e8eaed;
+    line-height: 1.9; flex-shrink: 0; max-height: 40vh; overflow-y: auto;
+  }
+  .legend code { background: #eef0f3; padding: 1px 6px; border-radius: 4px; font-family: monospace; color: #333; }
+  .svg-wrap { flex: 1; overflow: auto; padding: 20px; min-height: 0; }
+  svg { display: block; }
+
+  .node-shape { fill: #fff; stroke: #3a3f47; stroke-width: 1.6; }
+  .comment-shape { fill: #fdfbf3; stroke: #9aa0a6; stroke-dasharray: 5 4; }
+  .edge { stroke: #5f6368; stroke-width: 1.6; fill: none; }
+  .node-text { font-size: 13px; fill: #1a1a1a; font-family: system-ui, sans-serif; pointer-events: none; }
+  .hotspot { fill: #fff; stroke: #4c8bf5; stroke-width: 1.5; }
+  .hotspot:hover { fill: #e6f0ff; }
+  .hotspot.active { fill: #4c8bf5; stroke: #2a6bd4; }
+  .hotspot-plus { font-size: 13px; font-weight: 700; fill: #4c8bf5; user-select: none; }
+  .hotspot-id { font-size: 9px; fill: #4c8bf5; font-weight: 600; user-select: none; pointer-events: none; }
+  .temp-line { stroke: #4c8bf5; stroke-width: 1.6; stroke-dasharray: 5 4; fill: none; pointer-events: none; }
+  .separator { stroke: #c0c4cc; stroke-width: 1.4; stroke-dasharray: 6 6; }
+
+  @media (max-width: 760px) {
+    .editor-panel { width: 45%; }
+    .app.mode-edit .editor-panel { width: 100%; }
+    .topbar .brand { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">程序流程图</span>
+  <button data-mode="edit">编辑</button>
+  <button data-mode="preview">预览</button>
+  <button data-mode="both" class="active">编辑|预览</button>
+</div>
+
+<div class="app mode-both" id="app">
+  <div class="panel editor-panel">
+    <div class="panel-title">
+      <span>文本输入</span>
+      <button id="toggleLegend">描述 ▾</button>
+    </div>
+    <textarea id="input" spellcheck="false"></textarea>
+    <div class="legend" id="legend">
+      <div><code>( 文字 )</code> 椭圆 · 开始 / 结束</div>
+      <div><code>[ 文字 ]</code> 矩形 · 处理 / 语句</div>
+      <div><code>&lt; 文字 &gt;</code> 菱形 · 判断</div>
+      <div><code>/ 文字 /</code> 平行四边形 · 输入 / 输出</div>
+      <div><code>~ 文字 ~</code> 虚线框 · 注释</div>
+      <div>赋值：<code>(开始,v:1-2)</code> = 命名为 1，并连接到 2</div>
+      <div>多目标：<code>(开始,v:1-2-3-4)</code> = 命名为 1，同时连接 2、3、4…</div>
+      <div><code>{</code>左 <code>}</code>右 <code>v</code>下 <code>^</code>上，<code>:</code>后为ID，<code>-</code>后为目标ID</div>
+      <div>流程分隔：<code>---</code>（三个减号）或空行</div>
+      <div>相同ID自动连接；反斜杠转义 <code>\,</code> <code>\:</code> <code>\-</code></div>
+    </div>
+  </div>
+
+  <div class="panel preview-panel">
+    <div class="panel-title">
+      <span>流程图</span>
+      <div class="actions">
+        <select id="displayMode">
+          <option value="both">点ID 连接点</option>
+          <option value="id">点ID</option>
+          <option value="hotspot">连接点</option>
+          <option value="none">均不显示</option>
+        </select>
+        <button id="addFlow">新增流程</button>
+        <button id="clearConn">清除连线</button>
+        <button id="download">下载 SVG</button>
+      </div>
+    </div>
+    <div class="svg-wrap">
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const SHAPES = {
+    oval:    { w: 160, h: 48 },
+    rect:    { w: 180, h: 48 },
+    diamond: { w: 190, h: 90 },
+    para:    { w: 180, h: 48 },
+    comment: { w: 180, h: 44 }
+  };
+
+  const H_GAP = 80, V_GAP = 62, FLOW_GAP = 50, SEP_GAP = 30, TOP_PAD = 60, LEFT_PAD = 60;
+
+  const app = document.getElementById('app');
+  const input = document.getElementById('input');
+  const svg = document.getElementById('svg');
+  const displayModeSelect = document.getElementById('displayMode');
+
+  let blocks = [], layout = {}, connections = [], pendingHotspot = null, tempLine = null;
+  let idMap = {};
+  let displayMode = 'both';
+
+  /* ================= 模式切换 ================= */
+  document.querySelectorAll('.topbar button[data-mode]').forEach(b => {
+    b.addEventListener('click', () => {
+      app.className = 'app mode-' + b.dataset.mode;
+      document.querySelectorAll('.topbar button[data-mode]').forEach(x => x.classList.toggle('active', x === b));
+    });
+  });
+
+  displayModeSelect.addEventListener('change', () => {
+    displayMode = displayModeSelect.value;
+    render();
+  });
+
+  /* ================= 描述折叠 ================= */
+  const legend = document.getElementById('legend');
+  const toggleLegend = document.getElementById('toggleLegend');
+  let legendOpen = true;
+  toggleLegend.addEventListener('click', () => {
+    legendOpen = !legendOpen;
+    legend.style.display = legendOpen ? '' : 'none';
+    toggleLegend.textContent = legendOpen ? '描述 ▾' : '描述 ▸';
+  });
+
+  /* ================= 外部 API ================= */
+  const apiListeners = [];
+  function notifyChange() {
+    const text = input.value;
+    apiListeners.forEach(fn => { try { fn(text); } catch (e) {} });
+  }
+
+  window.flowchartAPI = {
+    getText: () => input.value,
+    setText: (text) => {
+      input.value = text;
+      render();
+      notifyChange();
+    },
+    getSVG: () => svg.outerHTML,
+    getEditor: () => input,
+    getSvgElement: () => svg,
+    onChange: (fn) => { if (typeof fn === 'function') apiListeners.push(fn); },
+    offChange: (fn) => {
+      const i = apiListeners.indexOf(fn);
+      if (i >= 0) apiListeners.splice(i, 1);
+    }
+  };
+
+  /* ================= SVG 辅助 ================= */
+  function el(tag, attrs) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function makeDefs() {
+    const d = el('defs', {});
+    const m = el('marker', { id: 'arrow', viewBox: '0 0 10 10', refX: '9', refY: '5', markerWidth: '7', markerHeight: '7', orient: 'auto' });
+    m.appendChild(el('path', { d: 'M 0 0 L 10 5 L 0 10 z', fill: '#5f6368' }));
+    d.appendChild(m);
+    return d;
+  }
+  function wrapText(text, maxWidth, fontSize) {
+    if (!text) return [''];
+    const lines = []; let cur = '', curW = 0;
+    for (const ch of text) {
+      const w = /[\u3000-\u9fff\uff00-\uffef]/.test(ch) ? fontSize : fontSize * 0.55;
+      if (curW + w > maxWidth && cur) { lines.push(cur); cur = ''; curW = 0; }
+      cur += ch; curW += w;
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+  function drawText(g, cx, cy, text, maxWidth) {
+    const fs = 13, lines = wrapText(text, maxWidth, fs), lh = 18;
+    const startY = cy - ((lines.length - 1) * lh) / 2;
+    lines.forEach((line, i) => {
+      const t = el('text', { x: cx, y: startY + i * lh, 'text-anchor': 'middle', 'dominant-baseline': 'middle', class: 'node-text' });
+      t.textContent = line; g.appendChild(t);
+    });
+  }
+  function drawShape(g, shape, cx, top, w, h) {
+    const x = cx - w / 2; let node;
+    if (shape === 'oval') node = el('rect', { x, y: top, width: w, height: h, rx: h / 2, ry: h / 2, class: 'node-shape' });
+    else if (shape === 'rect') node = el('rect', { x, y: top, width: w, height: h, rx: 6, ry: 6, class: 'node-shape' });
+    else if (shape === 'comment') node = el('rect', { x, y: top, width: w, height: h, rx: 6, ry: 6, class: 'comment-shape', 'stroke-width': '1.4' });
+    else if (shape === 'diamond') { const pts = `${cx},${top} ${x + w},${top + h / 2} ${cx},${top + h} ${x},${top + h / 2}`; node = el('polygon', { points: pts, class: 'node-shape' }); }
+    else if (shape === 'para') { const sk = 18; const pts = `${x + sk},${top} ${x + w},${top} ${x + w - sk},${top + h} ${x},${top + h}`; node = el('polygon', { points: pts, class: 'node-shape' }); }
+    g.appendChild(node);
+  }
+
+  /* ================= 解析工具 ================= */
+  function unescapeStr(s) {
+    return s.replace(/\\(.)/g, (_, c) => c === 'n' ? '\n' : c);
+  }
+  function escapeStr(s) {
+    return s.replace(/[\\,:\-]/g, m => '\\' + m);
+  }
+  function splitEscaped(str, sep) {
+    const result = [];
+    let cur = '';
+    let escaped = false;
+    for (let k = 0; k < str.length; k++) {
+      const c = str[k];
+      if (escaped) { cur += '\\' + c; escaped = false; continue; }
+      if (c === '\\') { escaped = true; continue; }
+      if (c === sep) { result.push(cur); cur = ''; continue; }
+      cur += c;
+    }
+    if (escaped) cur += '\\';
+    result.push(cur);
+    return result;
+  }
+
+  function shapeOpen(shape) {
+    return shape === 'oval' ? '(' : shape === 'rect' ? '[' : shape === 'diamond' ? '<' : shape === 'para' ? '/' : '~';
+  }
+  function shapeClose(shape) {
+    return shape === 'oval' ? ')' : shape === 'rect' ? ']' : shape === 'diamond' ? '>' : shape === 'para' ? '/' : '~';
+  }
+
+  function scanLine(line) {
+    const result = [];
+    let i = 0;
+    const pairs = { '(': ')', '[': ']', '<': '>', '/': '/', '~': '~' };
+    while (i < line.length) {
+      const ch = line[i];
+      if (!pairs[ch]) { i++; continue; }
+      const close = pairs[ch];
+      let end = -1, j = i + 1, escaped = false;
+      while (j < line.length) {
+        if (!escaped && line[j] === '\\') { escaped = true; j++; continue; }
+        if (!escaped && line[j] === close) { end = j; break; }
+        escaped = false; j++;
+      }
+      if (end === -1) break;
+      const inner = line.slice(i + 1, end);
+      let shape = null;
+      if (ch === '(') shape = 'oval';
+      else if (ch === '[') shape = 'rect';
+      else if (ch === '<') shape = 'diamond';
+      else if (ch === '/') shape = 'para';
+      else if (ch === '~') shape = 'comment';
+
+      const parts = splitEscaped(inner, ',');
+      const textPart = unescapeStr(parts[0].trim());
+      const assigns = [];
+      for (let p = 1; p < parts.length; p++) {
+        const seg = parts[p].trim();
+        if (!seg) continue;
+        const dirMatch = seg.match(/^([{}v^])\s*:/);
+        if (!dirMatch) continue;
+        const dir = dirMatch[1];
+        const val = seg.slice(dirMatch[0].length);
+        const segments = splitEscaped(val, '-');
+        const id = unescapeStr(segments[0].trim());
+        const targetIds = [...new Set(
+          segments.slice(1).map(s => unescapeStr(s.trim())).filter(Boolean)
+        )];
+        if (id) assigns.push({ dir, id, targetIds });
+      }
+      if (textPart || shape) result.push({ shape, text: textPart, assigns, start: i, end });
+      i = end + 1;
+    }
+    return result;
+  }
+
+  /* ================= 解析文本（支持 --- 流程分隔） ================= */
+  function parseText(text) {
+    const lines = text.split('\n');
+    const flows = [[]];
+    for (const raw of lines) {
+      const trimmed = raw.trim();
+
+      // 显式流程分隔符 ---
+      if (trimmed === '---') {
+        const cur = flows[flows.length - 1];
+        if (cur.length > 0) flows.push([]);
+        continue;
+      }
+
+      // 空行与注释行
+      if (!trimmed || trimmed.startsWith('#')) {
+        if (!trimmed) {
+          const cur = flows[flows.length - 1];
+          if (cur.length > 0) flows.push([]);
+        }
+        continue;
+      }
+
+      const rowBlocks = scanLine(trimmed);
+      if (rowBlocks.length > 0) flows[flows.length - 1].push(rowBlocks);
+    }
+    while (flows.length > 1 && flows[flows.length - 1].length === 0) flows.pop();
+
+    const blocks = [];
+    flows.forEach((rows, fi) => {
+      rows.forEach((rowBlocks, ri) => {
+        rowBlocks.forEach((b, ci) => {
+          blocks.push({
+            id: `f${fi}r${ri}c${ci}`,
+            flowIndex: fi, rowIndex: ri, colIndex: ci,
+            shape: b.shape, text: b.text, assigns: b.assigns
+          });
+        });
+      });
+    });
+    return { blocks, flows };
+  }
+
+  /* ================= 布局 ================= */
+  function computeLayout(parsed) {
+    const { blocks, flows } = parsed;
+    if (!blocks.length) return { layout: {}, totalWidth: 600, totalHeight: 300, flowSizes: [], flowX: [], maxFlowHeight: 0 };
+    const flowSizes = flows.map(rows => {
+      const rowHeights = []; let maxW = 0, totalH = 0;
+      rows.forEach((rowBlocks, ri) => {
+        let rowW = 0, maxH = 0;
+        rowBlocks.forEach((b, i) => {
+          const s = SHAPES[b.shape];
+          rowW += s.w + (i > 0 ? H_GAP : 0);
+          maxH = Math.max(maxH, s.h);
+        });
+        maxW = Math.max(maxW, rowW); rowHeights.push(maxH);
+        totalH += maxH + (ri > 0 ? V_GAP : 0);
+      });
+      return { w: maxW, h: totalH, rowHeights };
+    });
+    const flowX = []; let x = LEFT_PAD;
+    flowSizes.forEach((s, i) => {
+      if (i > 0) x += FLOW_GAP + SEP_GAP;
+      flowX.push(x); x += s.w;
+    });
+    const totalWidth = x + LEFT_PAD;
+    let maxFlowHeight = 0; flowSizes.forEach(s => maxFlowHeight = Math.max(maxFlowHeight, s.h));
+    const totalHeight = TOP_PAD * 2 + maxFlowHeight;
+    const layout = {};
+    blocks.forEach(b => {
+      const fi = b.flowIndex, flowSize = flowSizes[fi], fx = flowX[fi], rows = flows[fi];
+      let y = TOP_PAD;
+      for (let r = 0; r < b.rowIndex; r++) y += flowSize.rowHeights[r] + V_GAP;
+      const rowH = flowSize.rowHeights[b.rowIndex];
+      const rowBlocks = rows[b.rowIndex];
+      let rowW = 0; rowBlocks.forEach((rb, i) => { rowW += SHAPES[rb.shape].w + (i > 0 ? H_GAP : 0); });
+      let rx = fx + (flowSize.w - rowW) / 2;
+      for (let c = 0; c < b.colIndex; c++) rx += SHAPES[rowBlocks[c].shape].w + H_GAP;
+      const s = SHAPES[b.shape];
+      layout[b.id] = { cx: rx + s.w / 2, top: y + (rowH - s.h) / 2, w: s.w, h: s.h };
+    });
+    return { layout, totalWidth, totalHeight, flowSizes, flowX, maxFlowHeight };
+  }
+
+  /* ================= 热点位置 ================= */
+  function hotspotPos(lay, side) {
+    if (side === 'top') return { x: lay.cx, y: lay.top };
+    if (side === 'bottom') return { x: lay.cx, y: lay.top + lay.h };
+    if (side === 'left') return { x: lay.cx - lay.w / 2, y: lay.top + lay.h / 2 };
+    return { x: lay.cx + lay.w / 2, y: lay.top + lay.h / 2 };
+  }
+  function dirToSide(dir) { return { '{': 'left', '}': 'right', 'v': 'bottom', '^': 'top' }[dir]; }
+  function sideToDir(side) { return { left: '{', right: '}', bottom: 'v', top: '^' }[side]; }
+
+  /* ================= 连接线 ================= */
+  function connectionPath(p1, p2, side1, side2) {
+    const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+    const d = Math.max(24, Math.min(80, dist * 0.45));
+    const dir1 = { top: {x:0,y:-1}, bottom:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} }[side1];
+    const dir2 = { top: {x:0,y:-1}, bottom:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} }[side2];
+    const c1 = { x: p1.x + dir1.x * d, y: p1.y + dir1.y * d };
+    const c2 = { x: p2.x + dir2.x * d, y: p2.y + dir2.y * d };
+    return `M ${p1.x} ${p1.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${p2.x} ${p2.y}`;
+  }
+  function drawConnection(g, fromId, fromSide, toId, toSide) {
+    const from = layout[fromId], to = layout[toId];
+    if (!from || !to) return;
+    const p1 = hotspotPos(from, fromSide), p2 = hotspotPos(to, toSide);
+    g.appendChild(el('path', { d: connectionPath(p1, p2, fromSide, toSide), class: 'edge', 'marker-end': 'url(#arrow)' }));
+  }
+
+  /* ================= 构建 ID 映射与连接 ================= */
+  function buildIdMapAndConnections(parsed) {
+    idMap = {};
+    connections = [];
+    const autoConnects = [];
+
+    parsed.blocks.forEach(b => {
+      b.assigns.forEach(a => {
+        const side = dirToSide(a.dir);
+        const isNewId = !idMap[a.id];
+        if (isNewId) idMap[a.id] = { blockId: b.id, side };
+
+        if (a.targetIds.length === 0) {
+          if (!isNewId) {
+            autoConnects.push({ fromId: b.id, fromSide: side, targetId: a.id });
+          }
+        } else {
+          a.targetIds.forEach(tid => {
+            autoConnects.push({ fromId: b.id, fromSide: side, targetId: tid });
+          });
+        }
+      });
+    });
+
+    autoConnects.forEach(c => {
+      const target = idMap[c.targetId];
+      if (!target) return;
+      if (target.blockId === c.fromId && target.side === c.fromSide) return;
+      const exists = connections.some(x =>
+        x.fromId === c.fromId && x.fromSide === c.fromSide &&
+        x.toId === target.blockId && x.toSide === target.side
+      );
+      if (!exists) {
+        connections.push({
+          fromId: c.fromId, fromSide: c.fromSide,
+          toId: target.blockId, toSide: target.side
+        });
+      }
+    });
+  }
+
+  function nextNumericId() {
+    let n = 1;
+    while (idMap[String(n)]) n++;
+    return String(n);
+  }
+
+  /* ================= 更新文本赋值（支持 --- 分隔与多目标） ================= */
+  function updateTextAssign(blockId, side, id, targetIds) {
+    const parsed = parseText(input.value);
+    const b = parsed.blocks.find(x => x.id === blockId);
+    if (!b) return false;
+    const dir = sideToDir(side);
+    const lines = input.value.split('\n');
+
+    let flowCount = 0;
+    let rowCount = 0;
+    let hasContent = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const t = lines[i].trim();
+
+      // --- 显式流程分隔
+      if (t === '---') {
+        if (hasContent) { flowCount++; rowCount = 0; hasContent = false; }
+        continue;
+      }
+
+      if (!t || t.startsWith('#')) {
+        if (!t && hasContent) { flowCount++; rowCount = 0; hasContent = false; }
+        continue;
+      }
+
+      if (flowCount === b.flowIndex && rowCount === b.rowIndex) {
+        const rowBlocks = scanLine(t);
+        if (rowBlocks.length > b.colIndex) {
+          const rb = rowBlocks[b.colIndex];
+          if (typeof rb.start !== 'number' || typeof rb.end !== 'number') return false;
+
+          const assigns = rb.assigns.filter(a => dirToSide(a.dir) !== side);
+          if (id) assigns.push({ dir, id, targetIds: (targetIds || []).slice() });
+
+          const open = shapeOpen(rb.shape);
+          const close = shapeClose(rb.shape);
+          let blockStr = open + escapeStr(rb.text);
+          assigns.forEach(a => {
+            blockStr += ',' + a.dir + ':' + escapeStr(a.id);
+            if (a.targetIds && a.targetIds.length) {
+              a.targetIds.forEach(tid => { blockStr += '-' + escapeStr(tid); });
+            }
+          });
+          blockStr += close;
+
+          const leading = lines[i].length - lines[i].replace(/^\s+/, '').length;
+          lines[i] = ' '.repeat(leading) + t.slice(0, rb.start) + blockStr + t.slice(rb.end + 1);
+          input.value = lines.join('\n');
+          return true;
+        }
+        return false;
+      }
+
+      hasContent = true;
+      rowCount++;
+    }
+    return false;
+  }
+
+  /* ================= 清除连线 ================= */
+  function clearAllConnections() {
+    const lines = input.value.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const t = lines[i].trim();
+      if (!t || t.startsWith('#') || t === '---') continue;
+      const rowBlocks = scanLine(t);
+      if (rowBlocks.length === 0) continue;
+
+      let newLine = '';
+      for (const rb of rowBlocks) {
+        newLine += shapeOpen(rb.shape) + escapeStr(rb.text) + shapeClose(rb.shape);
+      }
+      const leading = lines[i].length - lines[i].replace(/^\s+/, '').length;
+      lines[i] = ' '.repeat(leading) + newLine;
+    }
+    input.value = lines.join('\n');
+  }
+
+  /* ================= 渲染 ================= */
+  function render() {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.appendChild(makeDefs());
+    tempLine = null;
+
+    const parsed = parseText(input.value);
+    blocks = parsed.blocks;
+    buildIdMapAndConnections(parsed);
+
+    const res = computeLayout(parsed);
+    layout = res.layout;
+    const vw = res.totalWidth, vh = res.totalHeight;
+    svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+    svg.setAttribute('width', vw); svg.setAttribute('height', vh);
+
+    if (!blocks.length) {
+      const t = el('text', { x: vw/2, y: vh/2, 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-size': 14, fill: '#9aa0a6' });
+      t.textContent = '在左侧输入内容，点击块边缘的 + 连接';
+      svg.appendChild(t); return;
+    }
+
+    if (res.flowX.length > 1) {
+      const gSep = el('g', {});
+      for (let i = 1; i < res.flowX.length; i++) {
+        const x = (res.flowX[i-1] + res.flowSizes[i-1].w + res.flowX[i]) / 2;
+        gSep.appendChild(el('line', { x1: x, y1: TOP_PAD - 22, x2: x, y2: TOP_PAD + res.maxFlowHeight + 22, class: 'separator' }));
+      }
+      svg.appendChild(gSep);
+    }
+
+    const gConn = el('g', {});
+    connections.forEach(c => drawConnection(gConn, c.fromId, c.fromSide, c.toId, c.toSide));
+    svg.appendChild(gConn);
+
+    const gNodes = el('g', {});
+    blocks.forEach(b => {
+      const lay = layout[b.id]; if (!lay) return;
+      drawShape(gNodes, b.shape, lay.cx, lay.top, lay.w, lay.h);
+      drawText(gNodes, lay.cx, lay.top + lay.h/2, b.text, lay.w - 32);
+    });
+    svg.appendChild(gNodes);
+
+    const showHotspot = displayMode === 'both' || displayMode === 'hotspot';
+    const showId = displayMode === 'both' || displayMode === 'id';
+
+    const gHot = el('g', {});
+    blocks.forEach(b => {
+      const lay = layout[b.id]; if (!lay) return;
+      const assignMap = {};
+      b.assigns.forEach(a => { assignMap[dirToSide(a.dir)] = a; });
+      ['top','bottom','left','right'].forEach(side => {
+        const p = hotspotPos(lay, side);
+        const active = pendingHotspot && pendingHotspot.blockId === b.id && pendingHotspot.side === side;
+
+        if (showHotspot) {
+          const c = el('circle', { cx: p.x, cy: p.y, r: 9, class: 'hotspot' + (active ? ' active' : ''), 'data-block-id': b.id, 'data-side': side });
+          c.style.cursor = 'pointer';
+          gHot.appendChild(c);
+          const t = el('text', { x: p.x, y: p.y, class: 'hotspot-plus', 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: active ? '#fff' : '#4c8bf5' });
+          t.textContent = '+'; t.style.pointerEvents = 'none'; t.style.userSelect = 'none';
+          gHot.appendChild(t);
+        }
+
+        const assign = assignMap[side];
+        if (showId && assign && assign.id) {
+          const label = el('text', {
+            x: p.x, y: p.y + (side === 'top' ? -14 : side === 'bottom' ? 14 : 0),
+            class: 'hotspot-id', 'text-anchor': 'middle',
+            'dominant-baseline': side === 'top' ? 'auto' : side === 'bottom' ? 'hanging' : 'central'
+          });
+          if (side === 'left') { label.setAttribute('x', p.x - 14); label.setAttribute('text-anchor', 'end'); }
+          if (side === 'right') { label.setAttribute('x', p.x + 14); label.setAttribute('text-anchor', 'start'); }
+          label.textContent = assign.id;
+          gHot.appendChild(label);
+        }
+      });
+    });
+    svg.appendChild(gHot);
+
+    if (pendingHotspot && showHotspot) {
+      const lay = layout[pendingHotspot.blockId];
+      if (lay) {
+        const p = hotspotPos(lay, pendingHotspot.side);
+        tempLine = el('line', { x1: p.x, y1: p.y, x2: p.x, y2: p.y, class: 'temp-line' });
+        svg.appendChild(tempLine);
+      }
+    }
+  }
+
+  /* ================= 点击热点连线 ================= */
+  function handleHotspotClick(blockId, side) {
+    if (pendingHotspot) {
+      if (pendingHotspot.blockId === blockId && pendingHotspot.side === side) {
+        pendingHotspot = null;
+        render();
+        return;
+      }
+
+      const fromId = pendingHotspot.blockId, fromSide = pendingHotspot.side;
+
+      let fromPointId = null;
+      let existingTargets = [];
+      {
+        const fb = blocks.find(b => b.id === fromId);
+        if (!fb) { pendingHotspot = null; render(); return; }
+        const fa = fb.assigns.find(a => dirToSide(a.dir) === fromSide);
+        if (fa) {
+          fromPointId = fa.id;
+          existingTargets = fa.targetIds.slice();
+        }
+      }
+
+      let toPointId = null;
+      {
+        const tb = blocks.find(b => b.id === blockId);
+        if (!tb) { pendingHotspot = null; render(); return; }
+        const ta = tb.assigns.find(a => dirToSide(a.dir) === side);
+        if (ta) toPointId = ta.id;
+      }
+      if (!toPointId) {
+        toPointId = nextNumericId();
+        if (!updateTextAssign(blockId, side, toPointId, [])) {
+          pendingHotspot = null; render(); return;
+        }
+        const p = parseText(input.value);
+        blocks = p.blocks;
+        buildIdMapAndConnections(p);
+      }
+
+      if (!fromPointId) {
+        fromPointId = nextNumericId();
+      }
+      if (fromPointId !== toPointId && !existingTargets.includes(toPointId)) {
+        existingTargets.push(toPointId);
+      }
+      if (!updateTextAssign(fromId, fromSide, fromPointId, existingTargets)) {
+        pendingHotspot = null; render(); return;
+      }
+
+      pendingHotspot = null;
+      render();
+      notifyChange();
+    } else {
+      pendingHotspot = { blockId, side };
+      render();
+    }
+  }
+
+  svg.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t && t.dataset && t.dataset.blockId) {
+      handleHotspotClick(t.dataset.blockId, t.dataset.side);
+    } else if (pendingHotspot) {
+      pendingHotspot = null;
+      render();
+    }
+  });
+
+  svg.addEventListener('mousemove', (e) => {
+    if (!pendingHotspot || !tempLine) return;
+    const ctm = svg.getScreenCTM(); if (!ctm) return;
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const p = pt.matrixTransform(ctm.inverse());
+    tempLine.setAttribute('x2', p.x); tempLine.setAttribute('y2', p.y);
+  });
+
+  let timer = null;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { render(); notifyChange(); }, 150);
+  });
+
+  /* ================= 新增流程：末尾追加 --- 分隔 ================= */
+  document.getElementById('addFlow').addEventListener('click', () => {
+    let v = input.value.replace(/\s+$/, '');
+    input.value = (v ? v + '\n---\n' : '') + '(开始)\n[步骤]';
+    render();
+    notifyChange();
+  });
+
+  document.getElementById('clearConn').addEventListener('click', () => {
+    clearAllConnections();
+    render();
+    notifyChange();
+  });
+
+  document.getElementById('download').addEventListener('click', () => {
+    if (!svg.firstChild) return;
+    const data = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'flowchart.svg';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  });
+
+  /* ================= 初始示例 ================= */
+  input.value = `(开始,v:1-2)
+[执行操作,^:2,}:3-4] / 输出结果,{:4,v:5-6 /
+(结束,^:6)`;
+
+  render();
+})();
+</script>
+</body>
+</html>
