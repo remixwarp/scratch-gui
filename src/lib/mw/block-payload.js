@@ -34,6 +34,20 @@ const CORE_PREFIXES = new Set([
     'procedures'
 ]);
 
+// 内置分类之外、但属于 Scratch 本身的积木（主要是各种输入框 shadow 与自定义积木参数）
+const CORE_BLOCK_TYPES = new Set([
+    'math_number',
+    'math_whole_number',
+    'math_positive_number',
+    'math_integer',
+    'math_angle',
+    'text',
+    'colour_picker',
+    'colour_random',
+    'argument_reporter_string_number',
+    'argument_reporter_boolean'
+]);
+
 const DEFAULT_MIME = 'application/javascript';
 
 const encodeBase64Utf8 = value => {
@@ -59,6 +73,7 @@ const decodeBase64Utf8 = value => {
  */
 const isCoreBlockType = type => {
     if (!type || !type.includes('_')) return true;
+    if (CORE_BLOCK_TYPES.has(type)) return true;
     const prefix = type.split('_')[0];
     return !prefix || CORE_PREFIXES.has(prefix);
 };
