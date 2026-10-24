@@ -15,7 +15,35 @@ const DRAG_PAYLOAD_TTL = 15000;
 const DRAG_MIN_DISTANCE = 12;
 const DRAG_MIN_DURATION = 120;
 
+// 积木剪贴板的本地记录：同源标签页共享，任何一个标签页复制过积木，
+// 其它标签页右键空白处也能看到「粘贴」
+const BLOCK_CLIPBOARD_KEY = 'mw:block-clipboard-payload';
+
 const WINDOW_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
+const saveBlockClipboard = text => {
+    if (!text) return;
+    try {
+        localStorage.setItem(BLOCK_CLIPBOARD_KEY, JSON.stringify({text, ts: Date.now()}));
+    } catch (e) { /* localStorage 不可用时只用内存缓存 */ }
+};
+
+const loadBlockClipboard = () => {
+    try {
+        const raw = localStorage.getItem(BLOCK_CLIPBOARD_KEY);
+        if (!raw) return null;
+        const payload = JSON.parse(raw);
+        return payload && typeof payload.text === 'string' ? payload.text : null;
+    } catch (e) {
+        return null;
+    }
+};
+
+const clearBlockClipboard = () => {
+    try {
+        localStorage.removeItem(BLOCK_CLIPBOARD_KEY);
+    } catch (e) { /* ignore */ }
+};
 
 const isFirefox = () => typeof navigator !== 'undefined' &&
         typeof navigator.userAgent === 'string' &&
@@ -283,6 +311,7 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
             copiedBlockText = text;
             copiedBlockMeta = meta;
             ScratchBlocks.__mistwarpSystemClipboardExtensionMeta = meta;
+            saveBlockClipboard(text);
             return text;
         } catch (e) {
             return null;
@@ -298,6 +327,9 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
                 }
             });
     };
+
+    /** 剪贴板里是否有可粘贴的积木：本页复制过的、其它标签页复制过的、或编辑器内部剪贴板 */
+    const hasBlockClipboard = () => !!(copiedBlockText || loadBlockClipboard() || ScratchBlocks.clipboardXml_);
 
     ScratchBlocks.copy_ = function (toCopy, ...args) {
         const result = originalCopy.apply(this, [toCopy, ...args]);
@@ -451,7 +483,8 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
             if (!workspace) return;
 
             let parsed = null;
-            if (copiedBlockText) parsed = parseClipboardTextToBlockXml(copiedBlockText);
+            const storedText = copiedBlockText || loadBlockClipboard();
+            if (storedText) parsed = parseClipboardTextToBlockXml(storedText);
             if (!parsed && ScratchBlocks.clipboardXml_) {
                 parsed = {
                     xml: ScratchBlocks.clipboardXml_,
@@ -486,11 +519,7 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
         const originalContextMenuShow = ContextMenu.show;
         ContextMenu.show = function (e, menuOptions, rtl, opt_workspace) {
             const target = resolveWorkspaceMenuTarget(e);
-            if (
-                target &&
-                menuOptions &&
-                (copiedBlockText || ScratchBlocks.clipboardXml_)
-            ) {
+            if (target && menuOptions && hasBlockClipboard()) {
                 menuOptions.push({
                     text: getFormattedMessage('mw.clipboard.paste', '粘贴'),
                     enabled: true,
@@ -499,6 +528,29 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
             }
             return originalContextMenuShow.apply(this, arguments);
         };
+    }
+
+    /* 标签页重新获得焦点时，按系统剪贴板的实际内容刷新本地记录：
+       其它标签页/窗口复制的积木能被识别，剪贴板换成别的内容时移除过期的粘贴入口 */
+    if (typeof window !== 'undefined') {
+        window.addEventListener('focus', () => {
+            if (!canReadText() || !hasBlockClipboard()) return;
+            navigator.clipboard.readText()
+                .then(text => {
+                    if (!text) return;
+                    const parsed = parseClipboardTextToBlockXml(text);
+                    if (parsed && parsed.xml) {
+                        copiedBlockText = text;
+                        copiedBlockMeta = parsed.meta;
+                        saveBlockClipboard(text);
+                    } else {
+                        copiedBlockText = null;
+                        copiedBlockMeta = null;
+                        clearBlockClipboard();
+                    }
+                })
+                .catch(() => {});
+        });
     }
 
     /* ---------------- 拖拽：跨窗口落板（不写系统剪贴板） ---------------- */

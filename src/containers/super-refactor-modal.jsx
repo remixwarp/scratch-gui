@@ -19,6 +19,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import JSZip from '@turbowarp/jszip';
 import {closeSuperRefactorModal} from '../reducers/modals';
+import {LoadingState} from '../reducers/project-state';
 import Modal from './windowed-modal.jsx';
 import Button from '../components/button/button.jsx';
 import VM from 'scratch-vm';
@@ -43,6 +44,19 @@ const SUPER_REFACTOR_SETTINGS_KEY = 'mw-super-refactor-settings';
 
 // 超级重构里新建的文件不属于 sb3 / .rj 结构，按作品 id 存在本地
 const EXTRA_STORAGE_PREFIX = 'mw-super-refactor-extra:';
+
+// 未保存的新作品 projectId 固定为 '0'，用页面级随机 token 区分不同的新作品，
+// 避免上一个新作品里建的文件被下一个新作品复用
+const createNewProjectToken = () =>
+    `new-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+let newProjectToken = createNewProjectToken();
+const isUnsavedProjectId = id => id === null || typeof id === 'undefined' ||
+    String(id) === '' || String(id) === '0';
+
+// .rj 包内属于格式本身的路径，其余条目视为用户新建的文件
+const RJ_STANDARD_PREFIXES = ['tables/', 'targets/', 'blocks/', 'assets/'];
+const isStandardRJPath = path => path === 'manifest.json' ||
+    RJ_STANDARD_PREFIXES.some(prefix => path.startsWith(prefix));
 
 // 「+」新建菜单的四种文件类型
 const CREATE_FILE_TYPES = [
@@ -268,10 +282,21 @@ class SuperRefactorModalContainer extends React.Component {
                 monacoIframeReady: false,
                 monacoIframeKey: prevState.monacoIframeKey + 1
             }));
+            // 期间可能切换过作品，重新读取当前作品的文件列表
+            this.loadProjectFiles();
         }
 
         if (prevProps.theme !== this.props.theme) {
             this.applyThemeToWindow();
+        }
+
+        // 切换作品：本地新建文件按作品隔离，需要重新读取
+        if (prevProps.projectId !== this.props.projectId) {
+            this.handleProjectSwitch(
+                prevProps.projectId,
+                this.props.projectId,
+                prevProps.loadingState === LoadingState.CREATING_NEW
+            );
         }
         
         // 主题变化时更新 Monaco iframe
@@ -527,28 +552,32 @@ class SuperRefactorModalContainer extends React.Component {
             const entry = zip.file(path);
             if (!entry) return null;
             const ext = rjExtOf(path);
+            // 包内不属于 .rj 格式结构的条目 = 之前新建并写到作品里的文件，
+            // 读出来后按可编辑的新建文件复用
+            const custom = !isStandardRJPath(path);
+            const flags = custom ? {readOnly: false, custom: true} : {readOnly: true};
             try {
                 if (ext === 'json') {
                     const text = await entry.async('string');
-                    return {id: path, name: path, type: 'json', content: text, size: text.length, readOnly: true};
+                    return {id: path, name: path, type: 'json', content: text, size: text.length, ...flags};
                 }
                 if (ext === 'svg') {
                     const text = await entry.async('string');
-                    return {id: path, name: path, type: 'svg', content: text, size: text.length, readOnly: true};
+                    return {id: path, name: path, type: 'svg', content: text, size: text.length, ...flags};
                 }
                 if (RJ_IMAGE_EXTS.indexOf(ext) !== -1) {
                     const u8 = await entry.async('uint8array');
                     const dataURL = await uint8ArrayToDataURL(u8, RJ_IMAGE_MIME[ext] || 'image/png');
-                    return {id: path, name: path, type: 'image', content: dataURL, size: u8.byteLength, readOnly: true};
+                    return {id: path, name: path, type: 'image', content: dataURL, size: u8.byteLength, ...flags};
                 }
                 if (ext === 'wav' || ext === 'mp3') {
                     const u8 = await entry.async('uint8array');
-                    return {id: path, name: path, type: 'sound', content: u8, size: u8.byteLength, readOnly: true};
+                    return {id: path, name: path, type: 'sound', content: u8, size: u8.byteLength, ...flags};
                 }
                 const text = await entry.async('string');
-                return {id: path, name: path, type: 'text', content: text, size: text.length, readOnly: true};
+                return {id: path, name: path, type: 'text', content: text, size: text.length, ...flags};
             } catch (e) {
-                return {id: path, name: path, type: 'text', content: `读取失败: ${e.message}`, size: 0, readOnly: true};
+                return {id: path, name: path, type: 'text', content: `读取失败: ${e.message}`, size: 0, ...flags};
             }
         };
 
@@ -580,6 +609,18 @@ class SuperRefactorModalContainer extends React.Component {
         setTimeout(() => this.setState({ message: '' }), 2000);
     }
 
+    // 作品切换：进入新作品换 token，新作品保存出真实 id 后迁移本地文件
+    handleProjectSwitch (prevId, nextId, savedNewProject) {
+        const prevUnsaved = isUnsavedProjectId(prevId);
+        const nextUnsaved = isUnsavedProjectId(nextId);
+        if (prevUnsaved && !nextUnsaved) {
+            // 只有「新作品保存后拿到 id」才迁移；打开已有作品不能继承新作品里建的文件
+            if (savedNewProject) this.migrateSessionExtrasToProject(nextId);
+        } else if (!prevUnsaved && nextUnsaved) {
+            newProjectToken = createNewProjectToken();
+        }
+    }
+
     handleFileChange (e) {
         const content = e.target.value;
         const files = [...this.state.files];
@@ -594,8 +635,26 @@ class SuperRefactorModalContainer extends React.Component {
     // -----------------------------------------------------------------------
     getExtraStorageKey () {
         const projectId = this.props.projectId;
-        const key = (typeof projectId === 'undefined' || projectId === null) ? 'default' : projectId;
-        return `${EXTRA_STORAGE_PREFIX}${key}`;
+        if (isUnsavedProjectId(projectId)) {
+            // 新作品用本次页面会话的 token，换作品后不会读到别的作品里建的文件
+            return `${EXTRA_STORAGE_PREFIX}${newProjectToken}`;
+        }
+        return `${EXTRA_STORAGE_PREFIX}project:${projectId}`;
+    }
+
+    // 新作品保存出真实 id 后，把本次新作品里建的文件迁到该作品名下
+    migrateSessionExtrasToProject (projectId) {
+        if (isUnsavedProjectId(projectId)) return;
+        try {
+            const fromKey = `${EXTRA_STORAGE_PREFIX}${newProjectToken}`;
+            const toKey = `${EXTRA_STORAGE_PREFIX}project:${projectId}`;
+            const raw = localStorage.getItem(fromKey);
+            if (!raw || localStorage.getItem(toKey)) return;
+            localStorage.setItem(toKey, raw);
+            localStorage.removeItem(fromKey);
+        } catch (e) {
+            // localStorage 不可用时忽略
+        }
     }
 
     // 新建的文件不属于 sb3 / .rj 结构，按作品 id 存到本地，刷新后仍能找回
@@ -620,10 +679,9 @@ class SuperRefactorModalContainer extends React.Component {
         try {
             const raw = localStorage.getItem(this.getExtraStorageKey());
             if (raw) return normalize(JSON.parse(raw));
-            // 兼容旧版本的 .rfd 存储键，升级后本地文件不丢失
-            const projectId = this.props.projectId;
-            const key = (typeof projectId === 'undefined' || projectId === null) ? 'default' : projectId;
-            const legacy = localStorage.getItem(`mw-super-refactor-rfd:${key}`);
+            // 兼容旧版本的 .rfd 存储键（只对已保存的作品生效，新作品不再复用）
+            if (isUnsavedProjectId(this.props.projectId)) return [];
+            const legacy = localStorage.getItem(`mw-super-refactor-rfd:${this.props.projectId}`);
             return legacy ? normalize(JSON.parse(legacy)) : [];
         } catch (e) {
             return [];
@@ -3261,6 +3319,7 @@ SuperRefactorModalContainer.propTypes = {
     vm: PropTypes.instanceOf(VM),
     theme: PropTypes.object,
     projectId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    loadingState: PropTypes.string,
     intl: PropTypes.object
 };
 
@@ -3268,7 +3327,8 @@ const mapStateToProps = state => ({
     visible: state.scratchGui.modals.superRefactorModal,
     vm: state.scratchGui.vm,
     theme: state.scratchGui.theme.theme,
-    projectId: state.scratchGui.projectState.projectId
+    projectId: state.scratchGui.projectState.projectId,
+    loadingState: state.scratchGui.projectState.loadingState
 });
 
 const mapDispatchToProps = dispatch => ({
