@@ -20,6 +20,15 @@ import Button from '../components/button/button.jsx';
 import VM from 'scratch-vm';
 import {hasCurrentRJ, getCurrentRJZip, getCurrentRJRaw} from '../lib/rj/rj-store.js';
 import {mapLimit} from '../lib/rj/rj-shared.js';
+import {
+    RFD_DEFAULT_TEXT,
+    RFD_LEGEND_ITEMS,
+    appendRfdFlow,
+    clearRfdConnections,
+    connectRfdHotspots,
+    isRfdFileName,
+    renderRfdSvg
+} from '../lib/super-refactor-rfd.js';
 import './super-refactor-modal.css';
 
 // 超过该字节数的文件不做逐 token 语法高亮与逐行行号渲染，避免打开卡顿
@@ -27,6 +36,9 @@ const LARGE_CONTENT_THRESHOLD = 150000;
 
 // 超级重构窗口的界面偏好（文件树/旧版列表、编辑器版本、Monaco 选项）
 const SUPER_REFACTOR_SETTINGS_KEY = 'mw-super-refactor-settings';
+
+// 超级重构里新建的 .rfd 文件不属于 sb3 / .rj 结构，按作品 id 存在本地
+const RFD_STORAGE_PREFIX = 'mw-super-refactor-rfd:';
 
 const DEFAULT_EDITOR_OPTIONS = {
     minimap: true,
@@ -130,7 +142,19 @@ class SuperRefactorModalContainer extends React.Component {
             'setEditorVersion',
             'setEditorOption',
             'resetEditorOptions',
-            'toggleFolder'
+            'toggleFolder',
+            'handleCreateRfdFile',
+            'setRfdMode',
+            'toggleRfdLegend',
+            'toggleRfdHotspots',
+            'handleRfdPreviewClick',
+            'handleRfdAddFlow',
+            'handleRfdClearConnections',
+            'handleRfdDownloadSvg',
+            'updateRfdContent',
+            'saveRfdFiles',
+            'loadStoredRfdFiles',
+            'withStoredRfdFiles'
         ]);
 
         const savedSettings = loadSuperRefactorSettings();
@@ -153,6 +177,11 @@ class SuperRefactorModalContainer extends React.Component {
             monacoIframeKey: 0, // 重新打开窗口时强制重建 iframe
             settingsVisible: false, // 设置自由窗口是否打开
             collapsedFolders: {}, // 树状结构中已折叠的文件夹路径
+            // .rfd 流程图：编辑 / 预览 / 编辑+预览，以及描述面板、热点连线的显示状态
+            rfdMode: 'both',
+            rfdLegendOpen: true,
+            rfdShowHotspots: true,
+            rfdPending: null, // 已点选的起点热点 {blockId, side}
             modalWidth: Math.min(1100, window.innerWidth - 60),
             modalHeight: Math.min(700, window.innerHeight - 80)
         };
@@ -404,7 +433,7 @@ class SuperRefactorModalContainer extends React.Component {
             }
         }
 
-        const files = this.getProjectFiles();
+        const files = this.withStoredRfdFiles(this.getProjectFiles());
         
         if (files.length > 0) {
             let content = files[0].content;
@@ -465,7 +494,7 @@ class SuperRefactorModalContainer extends React.Component {
 
         // 分批并行读取，避免超大作品一次性解压全部资源把内存打爆
         const results = await mapLimit(paths, 8, buildFile);
-        const files = results.filter(Boolean);
+        const files = this.withStoredRfdFiles(results.filter(Boolean));
 
         if (files.length > 0) {
             let content = files[0].content;
@@ -495,7 +524,196 @@ class SuperRefactorModalContainer extends React.Component {
         const content = e.target.value;
         const files = [...this.state.files];
         files[this.state.currentFile].content = content;
-        this.setState({files, content});
+        this.setState({files, content}, () => {
+            if (files[this.state.currentFile].type === 'rfd') this.saveRfdFiles();
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // .rfd 流程图
+    // -----------------------------------------------------------------------
+    getRfdStorageKey () {
+        const projectId = this.props.projectId;
+        const key = (typeof projectId === 'undefined' || projectId === null) ? 'default' : projectId;
+        return `${RFD_STORAGE_PREFIX}${key}`;
+    }
+
+    // 新建的 .rfd 不属于 sb3 / .rj 结构，按作品 id 存到本地，刷新后仍能找回
+    loadStoredRfdFiles () {
+        try {
+            const raw = localStorage.getItem(this.getRfdStorageKey());
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            return parsed
+                .filter(item => item && typeof item.name === 'string' && isRfdFileName(item.name))
+                .map((item, index) => {
+                    const content = typeof item.content === 'string' ? item.content : '';
+                    return {
+                        id: `rfd:${item.name}:${index}`,
+                        name: item.name,
+                        type: 'rfd',
+                        content,
+                        size: content.length
+                    };
+                });
+        } catch (e) {
+            return [];
+        }
+    }
+
+    withStoredRfdFiles (files) {
+        const list = Array.isArray(files) ? files.slice() : [];
+        const existing = {};
+        list.forEach(file => {
+            existing[file.name] = true;
+        });
+        this.loadStoredRfdFiles().forEach(file => {
+            if (!existing[file.name]) list.push(file);
+        });
+        return list;
+    }
+
+    saveRfdFiles () {
+        try {
+            const stored = this.state.files
+                .filter(file => file.type === 'rfd')
+                .map(file => ({name: file.name, content: file.content}));
+            localStorage.setItem(this.getRfdStorageKey(), JSON.stringify(stored));
+        } catch (e) {
+            // 隐私模式下 localStorage 可能不可用，忽略即可
+        }
+    }
+
+    // 在选中文件的相同目录下新建 .rfd，默认内容是一份可直接预览的流程图
+    handleCreateRfdFile () {
+        const {files, currentFile, searchQuery} = this.state;
+        const current = files[currentFile];
+        const currentPath = current ? String(current.name || '') : '';
+        const slash = currentPath.lastIndexOf('/');
+        const dir = slash === -1 ? '' : currentPath.substring(0, slash + 1);
+        const baseName = slash === -1 ? currentPath : currentPath.substring(slash + 1);
+        const stem = baseName.replace(/\.[^.]+$/, '') || '流程图';
+
+        let name = `${dir}${stem}.rfd`;
+        let seq = 2;
+        const usedNames = {};
+        files.forEach(file => {
+            usedNames[file.name] = true;
+        });
+        while (usedNames[name]) {
+            name = `${dir}${stem}-${seq}.rfd`;
+            seq++;
+        }
+
+        const content = RFD_DEFAULT_TEXT;
+        const newFile = {
+            id: `rfd:${name}:${Date.now()}`,
+            name,
+            type: 'rfd',
+            content,
+            size: content.length
+        };
+        const nextFiles = files.concat(newFile).map(file => Object.assign({}, file, {
+            selected: file.id === newFile.id
+        }));
+        const query = String(searchQuery || '').toLowerCase();
+        const nextFiltered = nextFiles.filter(file => file.name.toLowerCase().includes(query));
+        const newIndex = nextFiles.findIndex(file => file.id === newFile.id);
+
+        this.setState({
+            files: nextFiles,
+            filteredFiles: nextFiltered,
+            currentFile: newIndex,
+            content,
+            rfdPending: null
+        }, () => {
+            this.saveRfdFiles();
+            if (this.state.useMonacoEditor && this.state.monacoIframeReady) this.sendMonacoInit();
+        });
+    }
+
+    setRfdMode (rfdMode) {
+        if (rfdMode === this.state.rfdMode) return;
+        this.setState({rfdMode, rfdPending: null});
+    }
+
+    toggleRfdLegend () {
+        this.setState(prevState => ({rfdLegendOpen: !prevState.rfdLegendOpen}));
+    }
+
+    toggleRfdHotspots () {
+        this.setState(prevState => ({rfdShowHotspots: !prevState.rfdShowHotspots, rfdPending: null}));
+    }
+
+    // 写回 .rfd 文本：同步内存文件、本地存储和 Monaco 内容
+    updateRfdContent (nextText, done) {
+        const files = [...this.state.files];
+        if (!files[this.state.currentFile]) return;
+        files[this.state.currentFile].content = nextText;
+        this.setState({files, content: nextText}, () => {
+            this.saveRfdFiles();
+            if (this.state.useMonacoEditor && this.state.monacoIframeReady) {
+                this.sendToMonacoIframe({type: 'monaco-set-content', content: nextText});
+            }
+            if (done) done();
+        });
+    }
+
+    // 点热点连线：第一次点起点，第二次点终点后写回文本
+    handleRfdPreviewClick (e) {
+        const target = e.target;
+        if (!target || typeof target.getAttribute !== 'function') return;
+        const blockId = target.getAttribute('data-block-id');
+        const side = target.getAttribute('data-side');
+        if (!blockId || !side) return;
+
+        const pending = this.state.rfdPending;
+        if (!pending) {
+            this.setState({rfdPending: {blockId, side}});
+            return;
+        }
+        if (pending.blockId === blockId && pending.side === side) {
+            this.setState({rfdPending: null});
+            return;
+        }
+
+        const nextText = connectRfdHotspots(this.state.content, pending, {blockId, side});
+        if (!nextText) {
+            this.setState({rfdPending: {blockId, side}});
+            return;
+        }
+        this.updateRfdContent(nextText, () => this.setState({rfdPending: null}));
+    }
+
+    handleRfdAddFlow () {
+        this.setState({rfdPending: null});
+        this.updateRfdContent(appendRfdFlow(this.state.content));
+    }
+
+    handleRfdClearConnections () {
+        this.setState({rfdPending: null});
+        this.updateRfdContent(clearRfdConnections(this.state.content));
+    }
+
+    handleRfdDownloadSvg () {
+        const {svg} = renderRfdSvg(this.state.content, {
+            dark: false,
+            showHotspot: false,
+            showId: true
+        });
+        const blob = new Blob([svg], {type: 'image/svg+xml;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const currentName = this.state.files[this.state.currentFile]
+            ? this.state.files[this.state.currentFile].name
+            : 'flow';
+        a.download = `${currentName.replace(/\.rfd$/i, '') || 'flow'}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     handleEditorScroll (e) {
@@ -679,7 +897,11 @@ class SuperRefactorModalContainer extends React.Component {
                     if (files[this.state.currentFile]) {
                         files[this.state.currentFile].content = data.content;
                     }
-                    this.setState({ content: data.content, files });
+                    this.setState({ content: data.content, files }, () => {
+                        if (files[this.state.currentFile] && files[this.state.currentFile].type === 'rfd') {
+                            this.saveRfdFiles();
+                        }
+                    });
                 }
                 break;
         }
@@ -903,7 +1125,8 @@ class SuperRefactorModalContainer extends React.Component {
         this.setState({
             files,
             currentFile: fullIndex,
-            content: content
+            content: content,
+            rfdPending: null
         }, () => {
             // 文件切换后更新 Monaco iframe
             if (this.state.useMonacoEditor && this.state.monacoIframeReady) {
@@ -1137,6 +1360,7 @@ class SuperRefactorModalContainer extends React.Component {
     getFileIcon (type) {
         switch (type) {
             case 'json': return <FileCode size={14} />;
+            case 'rfd': return <FileCode size={14} />;
             case 'image': return <FileImage size={14} />;
             case 'svg': return <FileImage size={14} />;
             case 'sound': return <FileAudio size={14} />;
@@ -1541,6 +1765,246 @@ class SuperRefactorModalContainer extends React.Component {
         );
     }
 
+    // .rfd 的代码区：沿用超级重构当前选用的编辑器（Monaco / 内置）
+    renderRfdCodeEditor (colors) {
+        const {content, wordWrap} = this.state;
+        if (this.state.useMonacoEditor) {
+            return (
+                <iframe
+                    key={`monaco-rfd-${this.state.monacoIframeKey}`}
+                    ref={this.monacoIframeRef}
+                    src="/monaco-editor-iframe.html"
+                    style={{
+                        flex: 1,
+                        minHeight: 0,
+                        width: '100%',
+                        border: 'none',
+                        background: colors.editorBg,
+                        pointerEvents: 'auto'
+                    }}
+                    frameBorder="0"
+                />
+            );
+        }
+        return (
+            <textarea
+                value={content}
+                onChange={this.handleFileChange}
+                onKeyDown={this.handleEditorKeyDown}
+                spellCheck="false"
+                style={{
+                    flex: 1,
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '15px',
+                    fontFamily: "Consolas, 'Courier New', monospace",
+                    fontSize: '13px',
+                    lineHeight: '1.5',
+                    resize: 'none',
+                    outline: 'none',
+                    border: 'none',
+                    background: colors.editorBg,
+                    color: colors.text,
+                    whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+                    wordWrap: wordWrap ? 'break-word' : 'normal',
+                    overflow: 'auto'
+                }}
+            />
+        );
+    }
+
+    // .rfd 的预览区：直接渲染 SVG，点击热点可以连线
+    renderRfdPreview (colors, isDarkTheme) {
+        const {content, rfdShowHotspots, rfdPending} = this.state;
+        let rendered = {svg: '', width: 0, height: 0};
+        try {
+            rendered = renderRfdSvg(content, {
+                dark: isDarkTheme,
+                showHotspot: rfdShowHotspots,
+                showId: true,
+                pending: rfdPending
+            });
+        } catch (e) {
+            rendered = {svg: '', width: 0, height: 0};
+        }
+
+        const toolbarButtonStyle = {
+            padding: '4px 8px',
+            background: colors.buttonBg,
+            color: colors.text,
+            border: `1px solid ${colors.border}`,
+            borderRadius: '3px',
+            cursor: 'pointer',
+            fontSize: '10px',
+            whiteSpace: 'nowrap'
+        };
+
+        return (
+            <div style={{
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                minWidth: 0
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    flexWrap: 'wrap',
+                    padding: '6px 10px',
+                    borderBottom: `1px solid ${colors.border}`,
+                    background: colors.headerBg,
+                    flexShrink: 0
+                }}>
+                    <button
+                        onClick={this.toggleRfdHotspots}
+                        style={Object.assign({}, toolbarButtonStyle, {
+                            background: rfdShowHotspots ? '#4d97ff' : colors.buttonBg,
+                            color: rfdShowHotspots ? 'white' : colors.text
+                        })}
+                    >
+                        显示连线
+                    </button>
+                    <button onClick={this.handleRfdAddFlow} style={toolbarButtonStyle}>新增流程</button>
+                    <button onClick={this.handleRfdClearConnections} style={toolbarButtonStyle}>清除连线</button>
+                    <button onClick={this.handleRfdDownloadSvg} style={toolbarButtonStyle}>下载 SVG</button>
+                    {rfdPending && (
+                        <span style={{fontSize: '11px', color: colors.textSecondary}}>
+                            再点一个热点完成连线
+                        </span>
+                    )}
+                </div>
+                <div style={{
+                    flex: 1,
+                    minHeight: 0,
+                    overflow: 'auto',
+                    padding: '20px',
+                    background: isDarkTheme ? '#1b1b1b' : '#fafbfc'
+                }}>
+                    {rendered.svg ? (
+                        <div
+                            onClick={this.handleRfdPreviewClick}
+                            style={{display: 'inline-block'}}
+                            dangerouslySetInnerHTML={{__html: rendered.svg}}
+                        />
+                    ) : (
+                        <div style={{color: colors.textSecondary, fontSize: '13px'}}>
+                            无法预览流程图，请检查 .rfd 内容
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // .rfd 的语法描述，编辑和预览模式下都保留
+    renderRfdLegend (colors) {
+        const {rfdLegendOpen} = this.state;
+        return (
+            <div style={{
+                flexShrink: 0,
+                borderTop: `1px solid ${colors.border}`,
+                background: colors.background
+            }}>
+                <button
+                    onClick={this.toggleRfdLegend}
+                    style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '6px 14px',
+                        background: 'transparent',
+                        color: colors.textSecondary,
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        textAlign: 'left'
+                    }}
+                >
+                    描述 {rfdLegendOpen ? '▾' : '▸'}
+                </button>
+                {rfdLegendOpen && (
+                    <div style={{
+                        padding: '0 14px 10px',
+                        maxHeight: '30vh',
+                        overflow: 'auto',
+                        fontSize: '12px',
+                        lineHeight: 1.9,
+                        color: colors.textSecondary
+                    }}>
+                        {RFD_LEGEND_ITEMS.map(item => (
+                            <div key={item.code} style={{display: 'flex', gap: '10px'}}>
+                                <code style={{
+                                    flexShrink: 0,
+                                    minWidth: '90px',
+                                    fontFamily: 'monospace',
+                                    color: colors.text
+                                }}>
+                                    {item.code}
+                                </code>
+                                <span>{item.desc}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    renderRfdEditor (colors, isDarkTheme) {
+        const {rfdMode} = this.state;
+        const codePane = (
+            <div style={{
+                flex: 1,
+                minWidth: 0,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column'
+            }}>
+                {this.renderRfdCodeEditor(colors)}
+            </div>
+        );
+
+        let body;
+        if (rfdMode === 'edit') {
+            body = codePane;
+        } else if (rfdMode === 'preview') {
+            body = this.renderRfdPreview(colors, isDarkTheme);
+        } else {
+            body = (
+                <div style={{flex: 1, minHeight: 0, display: 'flex'}}>
+                    {codePane}
+                    <div style={{width: '1px', background: colors.border, flexShrink: 0}} />
+                    <div style={{
+                        flex: 1,
+                        minWidth: 0,
+                        minHeight: 0,
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }}>
+                        {this.renderRfdPreview(colors, isDarkTheme)}
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div style={{
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                border: `1px solid ${colors.border}`,
+                borderRadius: '0 0 4px 4px',
+                overflow: 'hidden',
+                background: colors.editorBg
+            }}>
+                {body}
+                {this.renderRfdLegend(colors)}
+            </div>
+        );
+    }
+
     render () {
         const {visible, theme} = this.props;
         const {files, currentFile, content, message, searchQuery, filteredFiles, viewMode, wordWrap, fileViewMode} = this.state;
@@ -1569,13 +2033,15 @@ class SuperRefactorModalContainer extends React.Component {
         };
 
         // 是否可以编辑
-        const canEdit = currentFileType === 'json' || currentFileType === 'svg';
+        const canEdit = currentFileType === 'json' || currentFileType === 'svg' || currentFileType === 'rfd';
         // 是否可以应用（.rj 的 JSON 分片可写回压缩包后重新载入）
         const canApply = currentFileName === 'project.json' ||
             currentFileType === 'svg' ||
             (hasCurrentRJ() && currentFileType === 'json');
         // 是否是SVG文件
         const isSvg = currentFileType === 'svg';
+        // 是否是 .rfd 流程图描述文件
+        const isRfd = currentFileType === 'rfd' || isRfdFileName(currentFileName);
         // 是否显示切换按钮
         const showToggleButton = isSvg;
 
@@ -1716,6 +2182,24 @@ class SuperRefactorModalContainer extends React.Component {
                                             color: colors.text
                                         }}
                                     />
+                                    <button
+                                        onClick={this.handleCreateRfdFile}
+                                        title="在选中文件所在目录新建 .rfd 流程图文件"
+                                        style={{
+                                            flexShrink: 0,
+                                            width: '30px',
+                                            padding: '6px 0',
+                                            background: colors.buttonBg,
+                                            color: colors.text,
+                                            border: `1px solid ${colors.inputBorder}`,
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                            fontSize: '15px',
+                                            lineHeight: 1
+                                        }}
+                                    >
+                                        +
+                                    </button>
                                     {searchQuery && (
                                         <button
                                             onClick={this.clearSearch}
@@ -1822,12 +2306,38 @@ class SuperRefactorModalContainer extends React.Component {
                                         <span style={{fontSize: '11px', color: colors.textSecondary}}>
                                             {currentFileObj.type === 'json' ? 'JSON' : 
                                              currentFileObj.type === 'svg' ? 'SVG' :
+                                             currentFileObj.type === 'rfd' ? 'RFD' :
                                              currentFileObj.type === 'image' ? '图片' : 
                                              currentFileObj.type === 'sound' ? '声音' : '文件'}
                                             {currentFileObj.size ? ` (${Math.round(currentFileObj.size / 1024)} KB)` : ''}
                                         </span>
                                     )}
-                                    {showToggleButton && (
+                                    {isRfd ? (
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
+                                            {[
+                                                ['edit', '编辑'],
+                                                ['preview', '预览'],
+                                                ['both', '编辑+预览']
+                                            ].map(([mode, label]) => (
+                                                <button
+                                                    key={mode}
+                                                    onClick={() => this.setRfdMode(mode)}
+                                                    style={{
+                                                        padding: '4px 8px',
+                                                        background: this.state.rfdMode === mode ? '#4d97ff' : colors.buttonBg,
+                                                        color: this.state.rfdMode === mode ? 'white' : colors.text,
+                                                        border: `1px solid ${colors.border}`,
+                                                        borderRadius: '3px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '10px',
+                                                        fontWeight: this.state.rfdMode === mode ? 'bold' : 'normal'
+                                                    }}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : showToggleButton && (
                                         <button
                                             onClick={this.toggleViewMode}
                                             style={{
@@ -1847,7 +2357,9 @@ class SuperRefactorModalContainer extends React.Component {
                                 </div>
                             </div>
                             
-                            {isSvg ? (
+                            {isRfd ? (
+                                this.renderRfdEditor(colors, isDarkTheme)
+                            ) : isSvg ? (
                                 viewMode === 'code' ? (
                                     this.state.useMonacoEditor ? (
                                         // Monaco 编辑器 iframe
@@ -2197,13 +2709,15 @@ SuperRefactorModalContainer.propTypes = {
     onClose: PropTypes.func,
     vm: PropTypes.instanceOf(VM),
     theme: PropTypes.object,
+    projectId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     intl: PropTypes.object
 };
 
 const mapStateToProps = state => ({
     visible: state.scratchGui.modals.superRefactorModal,
     vm: state.scratchGui.vm,
-    theme: state.scratchGui.theme.theme
+    theme: state.scratchGui.theme.theme,
+    projectId: state.scratchGui.projectState.projectId
 });
 
 const mapDispatchToProps = dispatch => ({
