@@ -19,7 +19,6 @@ import {openCustomTheme} from '../../reducers/modals.js';
 
 import {closeEditMenu} from '../../reducers/menus.js';
 
-import mcThemeCircle from '../../lib/themes/pixel-presets/MC风格主题_○_pixel_theme.json';
 import mcThemeLeft from '../../lib/themes/pixel-presets/MC风格主题_←_pixel_theme.json';
 
 import cysoThemeLeft from '../../lib/themes/pixel-presets/cyso_←_pixel_theme.json';
@@ -29,7 +28,6 @@ import startThemeN from '../../lib/themes/pixel-presets/start_n_pixel_theme.json
 import startThemeLeft from '../../lib/themes/pixel-presets/start_left_pixel_theme.json';
 
 const PIXEL_PRESETS = [
-    {id: 'pixel-mc-circle', name: mcThemeCircle.themes[0].name, data: mcThemeCircle},
     {id: 'pixel-mc-left', name: mcThemeLeft.themes[0].name, data: mcThemeLeft},
     {id: 'pixel-cyso-left', name: cysoThemeLeft.themes[0].name, data: cysoThemeLeft},
     {id: 'pixel-cyso-n', name: cysoThemeN.themes[0].name, data: cysoThemeN},
@@ -112,8 +110,8 @@ const ColorIcon = props => {
         if (accentId.startsWith('pixel-cyso-')) {
             pixelIconColor = '#4e8dc1';
         } else if (accentId.startsWith('pixel-start-')) {
-            // Start 系列是黑白像素风格，用中性灰做缩略色块
-            pixelIconColor = '#7d7d7d';
+            // Start 系列是黑白像素风格，缩略色块用纯黑
+            pixelIconColor = '#000000';
         }
         return (
             <div
