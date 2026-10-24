@@ -113,13 +113,19 @@ const screenToWorkspace = (workspace, clientX, clientY) => {
 
 const setTopLevelPosition = (xmlDom, x, y) => {
     if (!xmlDom) return;
+    const setOnBlock = node => {
+        if (node && node.nodeType === 1 && node.nodeName.toLowerCase() === 'block') {
+            node.setAttribute('x', String(Math.round(x)));
+            node.setAttribute('y', String(Math.round(y)));
+            return true;
+        }
+        return false;
+    };
+    // 单个顶层积木：直接给它设坐标；<xml> 包裹时逐个设其下的顶层积木
+    if (setOnBlock(xmlDom)) return;
     const children = xmlDom.childNodes || [];
     for (let i = 0; i < children.length; i++) {
-        const child = children[i];
-        if (child.nodeType === 1 && child.nodeName.toLowerCase() === 'block') {
-            child.setAttribute('x', String(Math.round(x)));
-            child.setAttribute('y', String(Math.round(y)));
-        }
+        setOnBlock(children[i]);
     }
 };
 
@@ -143,11 +149,8 @@ const writeDragPayload = (ScratchBlocks, vm, block) => {
                 ts: Date.now(),
                 from: WINDOW_ID
             }));
-        } catch (e) { /* localStorage 不可用时仍然写系统剪贴板 */ }
-
-        if (canWriteText()) {
-            navigator.clipboard.writeText(text).catch(() => {});
-        }
+        } catch (e) { /* localStorage 不可用时不影响拖拽 */ }
+        // 拖拽不写入系统剪贴板，避免覆盖用户自己的剪贴板内容
     } catch (e) {
         /* 序列化失败不影响正常拖拽 */
     }
@@ -184,6 +187,10 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
 
     let readAccessDenied = false;
     let writeAccessDenied = false;
+
+    // 最近一次「复制积木」写入的载荷，用于右键空白处的粘贴菜单
+    let copiedBlockText = null;
+    let copiedBlockMeta = null;
 
     // 给每个注入出来的工作区 SVG 打标记，跨窗口落点才能找回它的 workspace。
     if (!ScratchBlocks.__rwWorkspaceTagInstalled) {
@@ -266,35 +273,79 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
     const originalCopy = ScratchBlocks.copy_;
     const originalOnKeyDown = ScratchBlocks.onKeyDown_;
 
+    /** 记录积木载荷（右键粘贴菜单据此判断剪贴板里是否有积木） */
+    const rememberBlockPayload = xml => {
+        if (!xml) return null;
+        try {
+            const meta = buildExtensionMetaForXmlDom(vm, xml);
+            const text = serializeClipboardXmlToText(xml, meta);
+            if (!text) return null;
+            copiedBlockText = text;
+            copiedBlockMeta = meta;
+            ScratchBlocks.__mistwarpSystemClipboardExtensionMeta = meta;
+            return text;
+        } catch (e) {
+            return null;
+        }
+    };
+
+    const writeBlocksToSystemClipboard = text => {
+        if (!text || writeAccessDenied || !canWriteText()) return;
+        navigator.clipboard.writeText(text)
+            .catch(err => {
+                if (err && err.name === 'NotAllowedError') {
+                    writeAccessDenied = true;
+                }
+            });
+    };
+
     ScratchBlocks.copy_ = function (toCopy, ...args) {
         const result = originalCopy.apply(this, [toCopy, ...args]);
 
         // 注释不走积木载荷；粘贴正在进行时也不再回写
         if (
             systemClipboardActive ||
-            writeAccessDenied ||
-            !canWriteText() ||
             !toCopy ||
             (toCopy.isComment === true)
         ) {
             return result;
         }
 
-        const meta = buildExtensionMetaForXmlDom(vm, ScratchBlocks.clipboardXml_);
-        ScratchBlocks.__mistwarpSystemClipboardExtensionMeta = meta;
-        const text = serializeClipboardXmlToText(ScratchBlocks.clipboardXml_, meta);
-
-        if (text) {
-            navigator.clipboard.writeText(text)
-                .catch(err => {
-                    if (err && err.name === 'NotAllowedError') {
-                        writeAccessDenied = true;
-                    }
-                });
-        }
-
+        writeBlocksToSystemClipboard(rememberBlockPayload(ScratchBlocks.clipboardXml_));
         return result;
     };
+
+    // 右键积木里的「复制」走 ContextMenu.blockDuplicateOption，
+    // 它不经过 copy_，这里在回调里补写一次积木数据
+    const BlockContextMenu = ScratchBlocks.ContextMenu;
+    if (
+        BlockContextMenu &&
+        typeof BlockContextMenu.blockDuplicateOption === 'function' &&
+        !BlockContextMenu.__rwDuplicateClipboardPatched
+    ) {
+        BlockContextMenu.__rwDuplicateClipboardPatched = true;
+        const originalDuplicateOption = BlockContextMenu.blockDuplicateOption;
+        BlockContextMenu.blockDuplicateOption = function (block, event) {
+            const option = originalDuplicateOption.call(this, block, event);
+            if (!option || typeof option.callback !== 'function' || !block || block.isComment === true) {
+                return option;
+            }
+            const originalCallback = option.callback;
+            option.callback = function (...args) {
+                try {
+                    if (ScratchBlocks.Xml) {
+                        writeBlocksToSystemClipboard(
+                            rememberBlockPayload(ScratchBlocks.Xml.blockToDom(block, true))
+                        );
+                    }
+                } catch (e) {
+                    /* 序列化失败不影响复制 */
+                }
+                return originalCallback.apply(this, args);
+            };
+            return option;
+        };
+    }
 
     /* ---------------- 粘贴：优先读系统剪贴板 ---------------- */
 
@@ -349,7 +400,108 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm) => {
             });
     };
 
-    /* ---------------- 拖拽：写剪贴板 + 跨窗口落板 ---------------- */
+    /* ---------------- 右键空白处：粘贴积木 ---------------- */
+
+    const WorkspaceSvg = ScratchBlocks.WorkspaceSvg;
+    const ContextMenu = ScratchBlocks.ContextMenu;
+    if (
+        ContextMenu &&
+        typeof ContextMenu.show === 'function' &&
+        !ContextMenu.__rwBlockPastePatched
+    ) {
+        ContextMenu.__rwBlockPastePatched = true;
+
+        // 工作区空白处右键时的目标工作区与点击位置
+        let workspaceMenuTarget = null;
+        if (WorkspaceSvg && typeof WorkspaceSvg.prototype.showContextMenu_ === 'function') {
+            const originalWorkspaceContextMenu = WorkspaceSvg.prototype.showContextMenu_;
+            WorkspaceSvg.prototype.showContextMenu_ = function (e) {
+                workspaceMenuTarget = {
+                    workspace: this,
+                    point: e && e.clientX != null ? {x: e.clientX, y: e.clientY} : null
+                };
+                try {
+                    return originalWorkspaceContextMenu.call(this, e);
+                } finally {
+                    workspaceMenuTarget = null;
+                }
+            };
+        }
+
+        const resolveWorkspaceMenuTarget = e => {
+            if (workspaceMenuTarget) return workspaceMenuTarget;
+            // 兜底：按手势判断是否是空白处右键
+            const gesture = ScratchBlocks.mainWorkspace && ScratchBlocks.mainWorkspace.currentGesture_;
+            if (
+                gesture &&
+                !gesture.targetBlock_ &&
+                !gesture.flyout_ &&
+                !gesture.startBubble_
+            ) {
+                return {
+                    workspace: ScratchBlocks.mainWorkspace,
+                    point: e && e.clientX != null ? {x: e.clientX, y: e.clientY} : null
+                };
+            }
+            return null;
+        };
+
+        const pasteBlocksFromMenu = (target, event) => {
+            const workspace = target && target.workspace;
+            if (!workspace) return;
+
+            let parsed = null;
+            if (copiedBlockText) parsed = parseClipboardTextToBlockXml(copiedBlockText);
+            if (!parsed && ScratchBlocks.clipboardXml_) {
+                parsed = {
+                    xml: ScratchBlocks.clipboardXml_,
+                    meta: copiedBlockMeta || ScratchBlocks.__mistwarpSystemClipboardExtensionMeta
+                };
+            }
+            if (!parsed || !parsed.xml) return;
+
+            const point = (target && target.point) ||
+                (event && event.clientX != null ? {x: event.clientX, y: event.clientY} : null);
+            if (point) {
+                try {
+                    const local = screenToWorkspace(workspace, point.x, point.y);
+                    setTopLevelPosition(parsed.xml, local.x, local.y);
+                } catch (err) {
+                    /* 定位失败时按载荷原坐标粘贴 */
+                }
+            }
+
+            ensureExtensionsLoaded(vm, parsed.meta).then(() => {
+                try {
+                    ScratchBlocks.Events.setGroup(true);
+                    workspace.paste(parsed.xml);
+                } catch (err) {
+                    /* 工作区已销毁等情况忽略 */
+                } finally {
+                    ScratchBlocks.Events.setGroup(false);
+                }
+            });
+        };
+
+        const originalContextMenuShow = ContextMenu.show;
+        ContextMenu.show = function (e, menuOptions, rtl, opt_workspace) {
+            const target = resolveWorkspaceMenuTarget(e);
+            if (
+                target &&
+                menuOptions &&
+                (copiedBlockText || ScratchBlocks.clipboardXml_)
+            ) {
+                menuOptions.push({
+                    text: getFormattedMessage('mw.clipboard.paste', '粘贴'),
+                    enabled: true,
+                    callback: () => pasteBlocksFromMenu(target, e)
+                });
+            }
+            return originalContextMenuShow.apply(this, arguments);
+        };
+    }
+
+    /* ---------------- 拖拽：跨窗口落板（不写系统剪贴板） ---------------- */
 
     const Dragger = ScratchBlocks.BlockDragger;
     /** 本次拖拽的起始工作区：同窗口跨工作区拖拽时用来区分源 / 目标 */
