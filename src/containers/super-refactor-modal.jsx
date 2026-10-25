@@ -564,7 +564,7 @@ const messages = defineMessages({
     },
     legendEscape: {
         id: 'mw.superRefactor.rfd.legend.escape',
-        defaultMessage: '自动连接；反斜杠转义 \\, \\: \\-',
+        defaultMessage: '自动连接；反斜杠转义 \\\\, \\\\: \\\\-',
         description: 'Legend: automatic connection and escaping'
     }
 });

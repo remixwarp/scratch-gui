@@ -1325,7 +1325,7 @@
         "mw.superRefactor.rfd.legend.assignMulti": "Name it 1 and connect it to 2, 3, 4…",
         "mw.superRefactor.rfd.legend.ports": "Left / right / bottom / top; after : is an ID, after - is the target ID",
         "mw.superRefactor.rfd.legend.separator": "Flow separator (three dashes or a blank line)",
-        "mw.superRefactor.rfd.legend.escape": "Connect automatically; escape with \\, \\: \\-"
+        "mw.superRefactor.rfd.legend.escape": "Connect automatically; escape with \\\\, \\\\: \\\\-"
     },
     "zh-geng": {
         "gui.backpack.searchPlaceholder": "搜索书包...",
@@ -5132,7 +5132,7 @@
         "mw.superRefactor.rfd.legend.assignMulti": "命名为 1，同时连接 2、3、4…",
         "mw.superRefactor.rfd.legend.ports": "左 / 右 / 下 / 上，: 后为 ID，- 后为目标 ID",
         "mw.superRefactor.rfd.legend.separator": "流程分隔（三个减号或空行）",
-        "mw.superRefactor.rfd.legend.escape": "自动连接；反斜杠转义 \\, \\: \\-"
+        "mw.superRefactor.rfd.legend.escape": "自动连接；反斜杠转义 \\\\, \\\\: \\\\-"
     },
     "wenyan": {
         "mw.tree.explorer": "资源管理器",
