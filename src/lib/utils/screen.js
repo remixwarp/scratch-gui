@@ -53,7 +53,7 @@ const resolveStageSize = (stageSizeMode, isUnconstrained) => {
  * @param {?number} stageContainerWidth - optional container width to scale to in non-fullscreen mode.
  * @return {StageDimensions} - an object describing the dimensions of the stage.
  */
-const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageContainerWidth) => {
+const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageContainerWidth, stageMaxHeight) => {
     // 当舞台模式为 initial（宽屏按钮）时，始终使用默认舞台尺寸 480x360
     // 忽略用户可能设置的自定义舞台尺寸
     const isInitialMode = stageSize === STAGE_DISPLAY_SIZES.initial;
@@ -105,14 +105,35 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageConta
         Number.isFinite(stageContainerWidth) &&
         stageContainerWidth > 0 &&
         stageSize !== STAGE_DISPLAY_SIZES.initial) {
-        const metadata = STAGE_DISPLAY_SCALE_METADATA[stageSize];
-        if (!metadata.width) { // Only adjust for container width if not using fixed width
-            const availableContentWidth = Math.max(0, stageContainerWidth - 2);
+        const availableContentWidth = Math.max(0, stageContainerWidth - 2);
+        // 双向缩放：舞台始终填满面板内容区（拖拽调整大小模式）。
+        // 之前仅当非固定宽度模式（!metadata.width）才缩放，导致 large 模式
+        // （固定宽度）在被拖窄时画布不收缩、仍以固定宽度溢出面板，挤压下方信息。
+        // 改为始终跟随面板缩放，scale 不设下限，最小不低于 1px。
+        if (Math.abs(stageDimensions.width - availableContentWidth) > 0.5) {
             const fitScale = availableContentWidth / stageDimensions.width;
             stageDimensions.scale *= fitScale;
             stageDimensions.width *= fitScale;
             stageDimensions.height *= fitScale;
+            // 确保舞台尺寸不低于 1px
+            stageDimensions.width = Math.max(1, stageDimensions.width);
+            stageDimensions.height = Math.max(1, stageDimensions.height);
         }
+    }
+
+    // 短视口（如手机横屏）下限制舞台最大高度并按比例缩放宽度，避免舞台过高。
+    if (!isFullScreen &&
+        typeof stageMaxHeight === 'number' &&
+        Number.isFinite(stageMaxHeight) &&
+        stageMaxHeight > 0 &&
+        stageDimensions.height > 0 &&
+        stageDimensions.height > stageMaxHeight) {
+        const fitScale = stageMaxHeight / stageDimensions.height;
+        stageDimensions.scale *= fitScale;
+        stageDimensions.width *= fitScale;
+        stageDimensions.height *= fitScale;
+        stageDimensions.width = Math.max(1, stageDimensions.width);
+        stageDimensions.height = Math.max(1, stageDimensions.height);
     }
 
     // Round off dimensions to prevent resampling/blurriness
