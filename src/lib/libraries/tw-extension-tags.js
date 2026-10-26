@@ -2,7 +2,7 @@ import {defineMessages} from 'react-intl';
 
 const M = defineMessages({
     scratch:        {id: 'tw.extensionTag.scratch',       defaultMessage: 'Scratch',          description: 'Extension sidebar category — Scratch'      },
-    turboWarp:      {id: 'tw.extensionTag.turboWarp',     defaultMessage: 'RemixWarp',       description: 'Extension sidebar category — RemixWarp'     },
+    turboWarp:      {id: 'tw.extensionTag.turboWarp',     defaultMessage: 'TurboWarp',       description: 'Extension sidebar category — TurboWarp'     },
     remixWarp:      {id: 'tw.extensionTag.remixWarp',    defaultMessage: 'RemixWarp',        description: 'Extension sidebar category — RemixWarp'    },
     astraEditor:    {id: 'tw.extensionTag.astraEditor',  defaultMessage: 'AstraEditor',      description: 'Extension sidebar category — AstraEditor'  },
     mistium:        {id: 'tw.extensionTag.mistium',      defaultMessage: 'Mistium',          description: 'Extension sidebar category — Mistium'      },
