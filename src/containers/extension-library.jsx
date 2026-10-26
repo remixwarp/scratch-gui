@@ -654,7 +654,7 @@ const fetchLibrary = async () => {
         }),
         fetchAndAdd('bilup', async () => {
             try {
-                const bilupRes = await fetch('https://cors-api.rewp.de5.net/?url=https://extensions.bilup.org/generated-metadata/extensions-v0.json');
+                const bilupRes = await fetch('https://rw-extensions.pages.dev/bilup/extensions-index.json');
                 if (!bilupRes.ok) {
                     console.warn(`Bilup extensions: HTTP status ${bilupRes.status}`);
                     return [];
