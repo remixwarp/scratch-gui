@@ -630,7 +630,7 @@ const fetchLibrary = async () => {
         fetchAndAdd('bilup', async () => {
             return await fetchWithFallback(
                 'bilup',
-                'https://extensions.bilup.org/generated-metadata/extensions-v0.json',
+                'https://rw-extensions.pages.dev/bilup/extensions-index.json',
                 'https://rw-extensions.pages.dev/bilup/extensions-index.json',
                 data => data.extensions.map(extension => {
                     const zh = bilupZhTranslations[extension.id];
