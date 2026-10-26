@@ -1942,6 +1942,15 @@ const GUIComponent = props => {
     return (<MediaQuery minWidth={unconstrainedWidth}>{isUnconstrained => {
         const stageSize = resolveStageSize(stageSizeMode, isUnconstrained);
 
+        // 当拖拽缩放面板时，stageSize 保持 large/full 不变（避免舞台离散跳变），
+        // 但角色选择区的 SpriteInfo 需要使用简略布局来防止控件溢出。
+        // 当面板内容宽度小于完整舞台宽度时，强制使用 small 布局。
+        const spriteLayoutSize = enableStageResize &&
+            typeof stageContainerWidth === 'number' &&
+            stageContainerWidth < FIXED_WIDTH ?
+            STAGE_DISPLAY_SIZES.small :
+            stageSize;
+
         return (<React.Fragment>{isPlayerOnly ? (
             <React.Fragment>
                 {isWindowFullScreen ? (
@@ -2359,7 +2368,7 @@ const GUIComponent = props => {
                             />
                             <Box className={styles.targetWrapper}>
                                 <TargetPane
-                                    stageSize={stageSize}
+                                    stageSize={spriteLayoutSize}
                                     vm={vm}
                                 />
                             </Box>
