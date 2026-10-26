@@ -1091,11 +1091,9 @@ const GUIComponent = props => {
             const computedStyle = window.getComputedStyle(el);
             const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
             const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
-            const borderExtra = getStageBorderExtraWidth(el);
-
             const innerWidth = Math.max(
                 0,
-                rect.width - paddingLeft - paddingRight - borderExtra
+                rect.width - paddingLeft - paddingRight
             );
 
             setStageContainerWidth(prev => {
@@ -1105,7 +1103,7 @@ const GUIComponent = props => {
                 return innerWidth;
             });
         });
-    }, [getStageBorderExtraWidth, enableStageResize]);
+    }, [enableStageResize]);
 
     const lastResizeWidthRef = useRef(null);
     useEffect(() => {
@@ -1393,7 +1391,7 @@ const GUIComponent = props => {
         const editorRect = editorEl ? editorEl.getBoundingClientRect() : null;
         const startX = (typeof e.clientX === 'number') ? e.clientX : 0;
         const startWidth = startRect.width;
-        const startInnerWidth = Math.max(0, startWidth - paddingLeft - paddingRight - borderExtra);
+        const startInnerWidth = Math.max(0, startWidth - paddingLeft - paddingRight);
 
         setStageContainerWidth(Math.round(startInnerWidth));
 
@@ -1408,6 +1406,7 @@ const GUIComponent = props => {
         }
 
         const minWidth = Math.max(0, (FIXED_WIDTH * 0.5) + paddingLeft + paddingRight + borderExtra);
+        const hideThreshold = Math.max(0, minWidth - HIDE_STAGE_DRAG_SLOP);
 
         const containerEl = editorEl ? editorEl.parentElement : null;
         const containerRect = containerEl ? containerEl.getBoundingClientRect() : null;
@@ -1489,8 +1488,8 @@ const GUIComponent = props => {
                     }
                 }
 
-                const nextWidth = Math.min(maxWidth, Math.max(minWidth, rawWidth));
-                const nextInnerWidth = Math.max(0, nextWidth - paddingLeft - paddingRight - borderExtra);
+                const nextWidth = Math.min(maxWidth, Math.max(hideThreshold, rawWidth));
+                const nextInnerWidth = Math.max(0, nextWidth - paddingLeft - paddingRight);
                 preferredPanelWidthRef.current = nextWidth;
 
                 setStagePanelWidth(nextWidth);
