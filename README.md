@@ -30,6 +30,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 src/lib/default-project/dango.svg is based on [Twemoji](https://twemoji.twitter.com/) and is licensed under CC BY 4.0 https://creativecommons.org/licenses/by/4.0/
 
+
 ## 如果你看不懂英文，也不想用翻译，也不想看复杂连篇，并且对你没有太多帮助的文字的话，请把目光移到此处。
 ## 适合中国宝宝看的运行项目解释
 
@@ -294,6 +295,7 @@ If you run into npm install errors, try these steps:
 4. run `npm install` again
 
 ## Publishing to GitHub Pages
+我是象棋脑，我放了个彩蛋在这里，你猜有啥用
 You can publish the GUI to github.io so that others on the Internet can view it.
 [Read the wiki for a step-by-step guide.](https://github.com/LLK/scratch-gui/wiki/Publishing-to-GitHub-Pages)
 
