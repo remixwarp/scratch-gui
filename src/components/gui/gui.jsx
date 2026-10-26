@@ -335,7 +335,11 @@ const AUTO_SMALL_STAGE_INNER_WIDTH = Math.round(FIXED_WIDTH);
 const AUTO_RESTORE_STAGE_INNER_WIDTH = Math.round(FIXED_WIDTH * 0.875);
 const MIN_EDITOR_PANE_WIDTH = 598;
 const MIN_TARGET_PANE_HEIGHT = 180;
-const HIDE_STAGE_DRAG_SLOP = 80;
+// 面板隐藏的拖拽容差。值越大，面板在隐藏前可缩得越小。
+// 配合 getStageDimensions 的双向缩放（舞台可安全缩到 1px），
+// 面板不再需要为容纳固定尺寸舞台而保留较大宽度，
+// 因此在隐藏前允许拖得更窄，使小面板下 SpriteInfo 始终走紧凑布局。
+const HIDE_STAGE_DRAG_SLOP = 138;
 const STAGE_RESIZER_WIDTH = 6;
 const MIN_STAGE_PANEL_WIDTH = (FIXED_WIDTH * 0.5) + 18;
 
