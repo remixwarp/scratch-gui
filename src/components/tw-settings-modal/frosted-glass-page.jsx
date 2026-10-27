@@ -168,6 +168,14 @@ class FrostedGlassPage extends React.Component {
                                 <span>0.55</span>
                             </div>
                         </div>
+
+                        {/* Neumorphism theme conflict warning (theme-adaptive) */}
+                        <div className={styles.neumorphismConflict}>
+                            <FormattedMessage
+                                id="bl.frostedGlass.neumorphismConflict"
+                                defaultMessage="Neumorphism theme conflicts with frosted glass effect"
+                            />
+                        </div>
                     </React.Fragment>
                 )}
             </Box>

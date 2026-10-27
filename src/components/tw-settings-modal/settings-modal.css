@@ -229,9 +229,13 @@
 }
 
 .sidebarItem.selected {
-    background: $looks-transparent;
+    background: $looks-secondary;
     color: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebarItem.selected::before {
+    opacity: 0;
 }
 
 .sidebarItem.selected::before {
@@ -652,6 +656,19 @@
     border-radius: 4px;
     background: rgb(233, 233, 53);
     color: $text-primary-default;
+}
+
+/* 毛玻璃：新拟物主题冲突提示 —— 文字颜色随主题（深色/浅色）自适应，
+   背景使用半透明暖色，两种模式下都清晰可见 */
+.neumorphismConflict {
+    padding: 0.5rem 1rem;
+    margin: 0.5rem 0 0.25rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, rgb(255, 179, 71) 16%, transparent);
+    border-left: 3px solid color-mix(in srgb, rgb(255, 179, 71) 65%, transparent);
+    color: $text-primary;
+    font-size: 0.8125rem;
+    line-height: 1.45;
 }
 
 .custom-sprite-secondary {
