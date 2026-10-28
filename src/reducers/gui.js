@@ -38,7 +38,6 @@ import mwProjectThemeReducer, {mwProjectThemeInitialState} from './mw-project-th
 import onboardingReducer, {onboardingInitialState} from './onboarding';
 import toastReducer, {toastInitialState} from './toast';
 import shortcutsReducer, {shortcutsInitialState} from './shortcuts';
-import sharedBackpackReducer from './shared-backpack';
 import throttle from 'redux-throttle';
 
 import decks from '../lib/libraries/decks/index.jsx';
@@ -84,12 +83,7 @@ const guiInitialState = {
     vmStatus: vmStatusInitialState,
     workspaceMetrics: workspaceMetricsInitialState,
     onboarding: onboardingInitialState,
-    shortcuts: shortcutsInitialState,
-    sharedBackpack: {
-        backpacks: [],
-        selectedBackpackId: null,
-        createDialogOpen: false
-    }
+    shortcuts: shortcutsInitialState
 };
 
 const initPlayer = function (currentState) {
@@ -216,8 +210,7 @@ const guiReducer = combineReducers({
     vmStatus: vmStatusReducer,
     workspaceMetrics: workspaceMetricsReducer,
     onboarding: onboardingReducer,
-    shortcuts: shortcutsReducer,
-    sharedBackpack: sharedBackpackReducer
+    shortcuts: shortcutsReducer
 });
 
 export {

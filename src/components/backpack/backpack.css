@@ -2,31 +2,17 @@
 @import "../../css/colors.css";
 
 .backpack-container {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 100;
+    flex-shrink: 1;
+    position: relative;
     display: flex;
     flex-direction: column;
-    background: $ui-white;
-    border-top: 1px solid $ui-tertiary;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .resize-handle {
-    height: 0.75rem;
+    height: 0.5rem;
     cursor: ns-resize;
     background: $ui-white;
-    border-bottom: 1px solid $ui-tertiary;
     touch-action: none;
-    user-select: none;
-    transition: background 0.15s ease;
-}
-
-.resize-handle:hover,
-.resize-handle:active {
-    background: $ui-secondary;
 }
 
 .backpack-header {
@@ -66,7 +52,7 @@
     position: relative;
     min-height: 0;
     height: calc(100% - 40px);
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 /* Absolute position the inner list to allow scrolling inside flex sized container */
@@ -87,6 +73,11 @@
     box-sizing: border-box;
 }
 
+.backpack-list {
+    display: flex;
+    flex-direction: column;
+}
+
 .drag-over:after {
     content: '';
     position: absolute;
@@ -100,131 +91,16 @@
 }
 
 .status-message {
+    padding: 1.25rem;
     width: 100%;
     text-align: center;
     font-size: 0.85rem;
     color: $text-primary;
+    box-sizing: border-box;
 }
 
 .error-message {
     font-family: monospace;
-}
-
-.toolbar {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    padding: 0 0.5rem;
-}
-
-.toolbarButton {
-    background: $ui-primary;
-    color: $text-primary;
-    border: 1px solid $ui-tertiary;
-    border-radius: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: background 0.2s ease;
-
-    &:hover {
-        background: $ui-tertiary;
-    }
-}
-
-.categoryTabs {
-    display: flex;
-    gap: 0.25rem;
-    margin-bottom: 0.5rem;
-    padding: 0 0.5rem;
-    overflow-x: auto;
-}
-
-.categoryTab {
-    background: $ui-primary;
-    color: $text-primary;
-    border: 1px solid $ui-tertiary;
-    border-radius: 0.25rem;
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: $ui-tertiary;
-    }
-
-    &.categoryTabActive {
-        background: $ui-secondary;
-        color: $ui-white;
-        border-color: $ui-secondary;
-    }
-}
-
-.breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-    color: $text-primary;
-    overflow-x: auto;
-}
-
-.breadcrumbItem {
-    background: none;
-    border: none;
-    color: $text-primary;
-    cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    transition: background 0.2s ease;
-
-    &:hover {
-        background: $ui-tertiary;
-    }
-}
-
-.breadcrumbSeparator {
-    color: $ui-tertiary;
-}
-
-.workspaceSection {
-    background: $ui-tertiary;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    z-index: 10;
-    position: relative;
-}
-
-.workspaceSectionTitle {
-    margin: 0 0 0.5rem 0;
-    font-size: 1rem;
-    font-weight: bold;
-    color: $text-primary;
-}
-
-.workspaceCategories {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.workspaceCategory {
-    h4 {
-        margin: 0 0 0.5rem 0;
-        font-size: 0.9rem;
-        font-weight: bold;
-        color: $text-primary;
-    }
-}
-
-.workspaceItems {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
-    gap: 0.5rem;
 }
 
 .backpack-item {
@@ -254,15 +130,4 @@
     padding: 0.25rem;
     margin: 0;
     cursor: pointer;
-}
-
-.folderItem {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px dashed $ui-tertiary;
-    border-radius: 0.25rem;
-}
-
-.dragOver {
-    background: rgba(0, 255, 0, 0.2);
-    border: 1px solid $ui-secondary;
 }
