@@ -2,7 +2,6 @@ import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo, Suspense} from 'react';
-import ReactDOM from 'react-dom';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
@@ -2278,9 +2277,8 @@ const GUIComponent = props => {
                                     {soundsTabVisible ? <SoundTab vm={vm} /> : null}
                                 </TabPanel>
                             </Tabs>
-                            {backpackVisible ? ReactDOM.createPortal(
-                                <Backpack host={backpackHost} />,
-                                document.body
+                            {backpackVisible ? (
+                                <Backpack host={backpackHost} />
                             ) : null}
                             {vscodeLayout && explorerVisible && (
                                 <Box
