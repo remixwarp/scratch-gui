@@ -91,14 +91,14 @@
 
 .blocks :global(.scratchCategoryMenu) {
     box-sizing: border-box;
-    padding-bottom: 5.6875rem;
+    padding-bottom: 3.4rem;
     overflow-y: auto;
     scrollbar-width: none;
 }
 
 @media only screen and (max-width: 900px) {
     .blocks :global(.scratchCategoryMenu) {
-        padding-bottom: 8.9375rem;
+        padding-bottom: 6.8rem;
     }
 }
 

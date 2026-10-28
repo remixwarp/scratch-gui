@@ -787,7 +787,7 @@
     width: 3.75rem;
     height: 3.25rem;
     position: absolute;
-    bottom: 2.4375rem;
+    bottom: 0;
     left: 0;
     right: 0;
     z-index: $z-index-extension-button;
