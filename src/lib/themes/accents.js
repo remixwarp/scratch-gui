@@ -1,3 +1,4 @@
+import * as accentMistWarp from './accent/mistwarp';
 import * as accentPurple from './accent/purple';
 import * as accentBlue from './accent/blue';
 import * as accentLightBlue from './accent/light-blue';
@@ -48,6 +49,12 @@ import * as accentBlack from './accent/black';
 
 const ACCENTS = [
     // ===== 纯色主题 =====
+    {
+        name: 'MistWarp',
+        accent: accentMistWarp,
+        description: 'The lilac from the MistWarp logo',
+        id: 'mw.accent.mistwarp'
+    },
     {
         name: 'Red',
         accent: accentRed,
