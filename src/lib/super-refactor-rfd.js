@@ -1,6 +1,6 @@
-// .rfd（流程图描述）文本的解析、布局与 SVG 渲染。
+// .rjf（流程图描述）文本的解析、布局与 SVG 渲染。
 //
-// 语法（与超级重构里 .rfd 文件的「描述」面板一致）：
+// 语法（与超级重构里 .rjf 文件的「描述」面板一致）：
 //   ( 文字 )  椭圆 · 开始 / 结束
 //   [ 文字 ]  矩形 · 处理 / 语句
 //   < 文字 >  菱形 · 判断
@@ -742,4 +742,4 @@ export const RFD_LEGEND_ITEMS = [
     {code: '相同 ID', desc: '自动连接；反斜杠转义 \\, \\: \\-'}
 ];
 
-export const isRfdFileName = name => /\.rfd$/i.test(String(name || ''));
+export const isRjfFileName = name => /\.(rjf|rfd)$/i.test(String(name || ''));

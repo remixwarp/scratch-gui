@@ -31,7 +31,7 @@ import {
     appendRfdFlow,
     clearRfdConnections,
     connectRfdHotspots,
-    isRfdFileName,
+    isRjfFileName,
     renderRfdSvg
 } from '../lib/super-refactor-rfd.js';
 import './super-refactor-modal.css';
@@ -226,8 +226,8 @@ const messages = defineMessages({
     },
     createDefaultRfdName: {
         id: 'mw.superRefactor.createDefault.rfdName',
-        defaultMessage: '新建流程图',
-        description: 'Default file name for a new RFD file'
+        defaultMessage: 'Remix Jit Flowchart',
+        description: 'Default file name for a new RJF file'
     },
     createDefaultMdContent: {
         id: 'mw.superRefactor.createDefault.mdContent',
@@ -610,7 +610,7 @@ const CREATE_FILE_TYPES = [
     {ext: 'svg', label: 'SVG', desc: messages.createTypeSvgDesc},
     {ext: 'json', label: 'JSON', desc: messages.createTypeJsonDesc},
     {ext: 'md', label: 'Markdown', desc: messages.createTypeMdDesc},
-    {ext: 'rfd', label: 'RFD', desc: messages.createTypeRfdDesc}
+    {ext: 'rjf', label: 'RJF', desc: messages.createTypeRfdDesc}
 ];
 
 const CREATE_FILE_DEFAULTS = {
@@ -628,9 +628,9 @@ const CREATE_FILE_DEFAULTS = {
         prefix: messages.createDefaultMdName,
         content: messages.createDefaultMdContent
     },
-    rfd: {
+    rjf: {
         prefix: messages.createDefaultRfdName,
-        content: RFD_DEFAULT_TEXT
+        content: '# Remix Jit Flowchart.rjf\n\n' + RFD_DEFAULT_TEXT
     }
 };
 
@@ -1554,7 +1554,7 @@ class SuperRefactorModalContainer extends React.Component {
         const currentName = this.state.files[this.state.currentFile]
             ? this.state.files[this.state.currentFile].name
             : 'flow';
-        a.download = `${currentName.replace(/\.rfd$/i, '') || 'flow'}.svg`;
+        a.download = `${currentName.replace(/\.(rjf|rfd)$/i, '') || 'flow'}.svg`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2265,7 +2265,7 @@ class SuperRefactorModalContainer extends React.Component {
     getFileIcon (type) {
         switch (type) {
             case 'json': return <FileCode size={14} />;
-            case 'rfd': return <FileCode size={14} />;
+            case 'rfd': case 'rjf': return <FileCode size={14} />;
             case 'md': return <FileText size={14} />;
             case 'image': return <FileImage size={14} />;
             case 'svg': return <FileImage size={14} />;
@@ -3061,7 +3061,7 @@ class SuperRefactorModalContainer extends React.Component {
 
         // 是否可以编辑
         const canEdit = currentFileType === 'json' || currentFileType === 'svg' ||
-            currentFileType === 'rfd' || currentFileType === 'md';
+            currentFileType === 'rjf' || currentFileType === 'rfd' || currentFileType === 'md';
         // 是否可以应用（.rj 的 JSON 分片可写回压缩包后重新载入；新建的本地文件写入作品压缩包）
         const canApply = (!!currentFileObj && !!currentFileObj.custom) ||
             currentOriginalName === 'project.json' ||
@@ -3073,7 +3073,7 @@ class SuperRefactorModalContainer extends React.Component {
         // 是否是 Markdown 文件
         const isMd = currentFileType === 'md' || /\.md$/i.test(currentFileName);
         // 是否是 .rfd 流程图描述文件
-        const isRfd = currentFileType === 'rfd' || isRfdFileName(currentFileName);
+        const isRfd = currentFileType === 'rjf' || currentFileType === 'rfd' || isRjfFileName(currentFileName);
         // 是否显示切换按钮
         const showToggleButton = isSvg || isMd;
 
@@ -3345,7 +3345,7 @@ class SuperRefactorModalContainer extends React.Component {
                                         <span style={{fontSize: '11px', color: colors.textSecondary}}>
                                             {currentFileObj.type === 'json' ? 'JSON' : 
                                              currentFileObj.type === 'svg' ? 'SVG' :
-                                             currentFileObj.type === 'rfd' ? 'RFD' :
+                                             currentFileObj.type === 'rjf' || currentFileObj.type === 'rfd' ? 'RJF' :
                                              currentFileObj.type === 'md' ? 'MD' :
                                              currentFileObj.type === 'image' ? this.t(messages.typeImage) : 
                                              currentFileObj.type === 'sound' ? this.t(messages.typeSound) :
