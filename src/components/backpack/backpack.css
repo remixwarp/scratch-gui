@@ -9,10 +9,26 @@
 }
 
 .resize-handle {
-    height: 0.5rem;
+    position: relative;
+    height: 1.25rem;
+    width: 100%;
     cursor: ns-resize;
     background: $ui-white;
     touch-action: none;
+    user-select: none;
+}
+
+.resize-handle::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 2.5rem;
+    height: 0.25rem;
+    border-radius: 0.25rem;
+    background: $ui-black-transparent;
+    pointer-events: none;
 }
 
 .backpack-header {

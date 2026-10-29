@@ -23,6 +23,7 @@ import {fetchSprite, fetchCode} from '../lib/api/backpack';
 import randomizeSpritePosition from '../lib/utils/randomize-sprite-position';
 import downloadBlob from '../lib/utils/download-blob';
 import log from '../lib/utils/log';
+import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
 import {placeInViewport} from '../lib/backpack/code-payload.js';
 import CollaborationService from '../lib/collaboration-service.js';
 import {unlockAchievement} from '../lib/achievements.js';
@@ -351,8 +352,15 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => ({
     }
 });
 
-export default injectIntl(connect(
+export default DropAreaHOC([
+    DragConstants.SPRITE,
+    DragConstants.COSTUME,
+    DragConstants.BACKPACK_SPRITE,
+    DragConstants.BACKPACK_COSTUME,
+    DragConstants.BACKPACK_SOUND,
+    DragConstants.BACKPACK_CODE
+])(injectIntl(connect(
     mapStateToProps,
     mapDispatchToProps,
     mergeProps
-)(TargetPane));
+)(TargetPane)));

@@ -144,13 +144,13 @@ const Backpack = ({
                                     {contents.map(item => (
                                         <SpriteSelectorItem
                                             className={styles.backpackItem}
-                                            costumeURL={item.thumbnailUrl || item.thumbnail}
+                                            costumeURL={item.thumbnailUrl}
                                             details={item.name}
                                             dragPayload={item}
                                             dragType={dragTypeMap[item.type]}
                                             id={item.id}
                                             key={item.id}
-                                            name={item.type && labelMap[item.type] ? intl.formatMessage(labelMap[item.type]) : (item.name || '')}
+                                            name={intl.formatMessage(labelMap[item.type])}
                                             selected={false}
                                             onClick={noop}
                                             onDeleteButtonClick={onDelete}
