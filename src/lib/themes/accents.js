@@ -53,7 +53,7 @@ const ACCENTS = [
         name: 'MistWarp',
         accent: accentMistWarp,
         description: 'The lilac from the MistWarp logo',
-        id: 'mw.accent.mistwarp'
+        id: 'mw.accent.mistwarp',
         category: 'solid'
     },
     {
