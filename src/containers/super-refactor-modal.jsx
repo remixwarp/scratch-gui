@@ -610,7 +610,7 @@ const CREATE_FILE_TYPES = [
     {ext: 'svg', label: 'SVG', desc: messages.createTypeSvgDesc},
     {ext: 'json', label: 'JSON', desc: messages.createTypeJsonDesc},
     {ext: 'md', label: 'Markdown', desc: messages.createTypeMdDesc},
-    {ext: 'rjf', label: 'RJF', desc: messages.createTypeRfdDesc}
+    {ext: 'rjf', label: 'Remix Jit Flowchart', desc: messages.createTypeRfdDesc}
 ];
 
 const CREATE_FILE_DEFAULTS = {
@@ -630,7 +630,7 @@ const CREATE_FILE_DEFAULTS = {
     },
     rjf: {
         prefix: messages.createDefaultRfdName,
-        content: '# Remix Jit Flowchart.rjf\n\n' + RFD_DEFAULT_TEXT
+        content: RFD_DEFAULT_TEXT
     }
 };
 
