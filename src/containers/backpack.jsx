@@ -377,6 +377,18 @@ class Backpack extends React.Component {
         if (!this.state.expanded) return;
         if (typeof e.preventDefault === 'function') e.preventDefault();
 
+        // Lock the pointer to the handle element. Without this, a touch drag is
+        // cancelled by the browser as soon as the finger moves over another
+        // (scrollable) element, so the drawer would never resize on mobile.
+        if (e.pointerId !== undefined && e.currentTarget &&
+                typeof e.currentTarget.setPointerCapture === 'function') {
+            try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+            } catch (err) {
+                // ignore unsupported / already-captured
+            }
+        }
+
         this.resizeSession = {
             startY: e.clientY,
             startHeight: this.state.height
