@@ -18,22 +18,8 @@
     color: $text-primary;
     transition: 0.2s;
     cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* Separate drag handle shown only while the backpack is open. The large height
-   (40px) gives fingers a comfortable touch target on mobile while staying a
-   tidy drawer handle on desktop. touch-action:none keeps the browser from
-   stealing the drag as a scroll gesture. */
-.resize-handle {
-    position: relative;
-    height: 40px;
-    width: 100%;
-    cursor: ns-resize;
-    background: $ui-white;
+    /* The whole header is the resize handle: block the browser from treating a
+       press-drag on it as a page scroll so the drag works on touch screens. */
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
@@ -41,14 +27,13 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-.resize-handle::before {
+/* Small grip hint so it is obvious the header can be dragged to resize. */
+.backpack-header::before {
     content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    display: block;
     width: 3rem;
-    height: 0.3rem;
+    height: 0.25rem;
+    margin: 0 auto 0.25rem;
     border-radius: 0.25rem;
     background: $ui-black-transparent;
     pointer-events: none;

@@ -79,10 +79,9 @@ class Backpack extends React.Component {
             'handleMouseLeave',
             'handleBlockDragEnd',
             'handleBlockDragUpdate',
-            'handleResizePointerDown',
-            'handleResizePointerMove',
-            'handleResizePointerUp',
-            'handleResizePointerCancel',
+            'handleHeaderPointerDown',
+            'handleHeaderPointerMove',
+            'handleHeaderPointerUp',
             'handleGlobalPointerMove',
             'setDropAreaRef',
             'isPointerOverDropArea',
@@ -369,40 +368,58 @@ class Backpack extends React.Component {
         });
     }
 
-    handleResizePointerDown (e) {
+    // The whole backpack header is both the toggle button and the drag handle.
+    // A press that moves less than DRAG_THRESHOLD pixels is treated as a tap and
+    // toggles the drawer; a press that moves further resizes it. The exact same
+    // pointer logic runs for mouse, touch and pen, so there is no device sniffing.
+    handleHeaderPointerDown (e) {
         if (!e) return;
-        if (!this.state.expanded) return;
-        if (typeof e.preventDefault === 'function') e.preventDefault();
-
-        // Capture the pointer on the strip so the drag keeps firing even when the
-        // finger/mouse slides off the (now 40px) handle. This single pointer path
-        // works for both mouse and touch.
-        if (e.pointerId !== undefined && e.currentTarget &&
-                typeof e.currentTarget.setPointerCapture === 'function') {
-            try {
-                e.currentTarget.setPointerCapture(e.pointerId);
-            } catch (err) {
-                // ignore unsupported / already-captured
-            }
-        }
+        // Ignore non-primary mouse buttons (right / middle click)
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
 
         this.resizeSession = {
+            pointerId: e.pointerId,
+            target: e.currentTarget,
             startY: e.clientY,
-            startHeight: this.state.height
+            startHeight: this.state.height,
+            moved: false
         };
 
-        window.addEventListener('pointermove', this.handleResizePointerMove);
-        window.addEventListener('pointerup', this.handleResizePointerUp);
-        window.addEventListener('pointercancel', this.handleResizePointerUp);
+        // Capture the pointer on the header so the drag keeps tracking even when
+        // the finger / mouse slides off the button.
+        try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+        } catch (err) {
+            // ignore unsupported / already-captured
+        }
+
+        e.currentTarget.addEventListener('pointermove', this.handleHeaderPointerMove);
+        e.currentTarget.addEventListener('pointerup', this.handleHeaderPointerUp);
+        e.currentTarget.addEventListener('pointercancel', this.handleHeaderPointerUp);
     }
 
-    handleResizePointerMove (e) {
+    handleHeaderPointerMove (e) {
         if (!this.resizeSession) return;
-        if (typeof e.preventDefault === 'function') e.preventDefault();
+
         const MIN_HEIGHT = 5.5 * 16;
         const maxHeight = Math.max(MIN_HEIGHT, Math.floor(window.innerHeight * 0.75));
-        const delta = this.resizeSession.startY - e.clientY;
-        const next = Math.max(MIN_HEIGHT, Math.min(maxHeight, Math.round(this.resizeSession.startHeight + delta)));
+        const deltaY = e.clientY - this.resizeSession.startY;
+
+        // Below the movement threshold we wait — it may still become a tap.
+        if (!this.resizeSession.moved) {
+            if (Math.abs(deltaY) < 6) return;
+            this.resizeSession.moved = true;
+            if (typeof e.preventDefault === 'function') e.preventDefault();
+        }
+
+        // Resizing only matters while the drawer is open.
+        if (!this.state.expanded) return;
+
+        // Dragging the header up (negative deltaY) grows the drawer.
+        const next = Math.max(
+            MIN_HEIGHT,
+            Math.min(maxHeight, Math.round(this.resizeSession.startHeight - deltaY))
+        );
         if (next !== this.state.height) {
             this.setState({height: next}, () => {
                 window.dispatchEvent(new Event('resize'));
@@ -410,21 +427,35 @@ class Backpack extends React.Component {
         }
     }
 
-    handleResizePointerUp () {
+    handleHeaderPointerUp (e) {
+        if (!this.resizeSession) return;
+        const session = this.resizeSession;
         this.resizeSession = null;
-        window.removeEventListener('pointermove', this.handleResizePointerMove);
-        window.removeEventListener('pointerup', this.handleResizePointerUp);
-        window.removeEventListener('pointercancel', this.handleResizePointerUp);
 
+        const target = session.target;
         try {
-            localStorage.setItem('mw:backpackHeight', String(this.state.height));
-        } catch (e) {
+            if (target && typeof target.releasePointerCapture === 'function') {
+                target.releasePointerCapture(session.pointerId);
+            }
+        } catch (err) {
             // ignore
         }
-    }
+        if (target) {
+            target.removeEventListener('pointermove', this.handleHeaderPointerMove);
+            target.removeEventListener('pointerup', this.handleHeaderPointerUp);
+            target.removeEventListener('pointercancel', this.handleHeaderPointerUp);
+        }
 
-    handleResizePointerCancel () {
-        this.handleResizePointerUp();
+        if (!session.moved) {
+            // A tap (not a drag) toggles the drawer.
+            this.handleToggle();
+        } else {
+            try {
+                localStorage.setItem('mw:backpackHeight', String(this.state.height));
+            } catch (err) {
+                // ignore
+            }
+        }
     }
 
     handleMore () {
@@ -456,7 +487,7 @@ class Backpack extends React.Component {
                 onMore={this.handleMore}
                 onMouseEnter={this.handleMouseEnter}
                 onMouseLeave={this.handleMouseLeave}
-                onResizePointerDown={this.handleResizePointerDown}
+                onHeaderPointerDown={this.handleHeaderPointerDown}
                 onToggle={this.handleToggle}
                 componentRef={this.setDropAreaRef}
             />
