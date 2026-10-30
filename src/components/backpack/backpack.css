@@ -17,14 +17,41 @@
     font-size: 0.85rem;
     color: $text-primary;
     transition: 0.2s;
-    cursor: ns-resize;
+    cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
-    /* Press-and-drag on the header resizes the drawer; this stops the browser
-       from treating the drag as a scroll gesture on touch devices. */
-    touch-action: none;
     -webkit-tap-highlight-color: transparent;
+}
+
+/* Separate drag handle shown only while the backpack is open. The large height
+   (40px) gives fingers a comfortable touch target on mobile while staying a
+   tidy drawer handle on desktop. touch-action:none keeps the browser from
+   stealing the drag as a scroll gesture. */
+.resize-handle {
+    position: relative;
+    height: 40px;
+    width: 100%;
+    cursor: ns-resize;
+    background: $ui-white;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.resize-handle::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 3rem;
+    height: 0.3rem;
+    border-radius: 0.25rem;
+    background: $ui-black-transparent;
+    pointer-events: none;
 }
 
 .search-container {

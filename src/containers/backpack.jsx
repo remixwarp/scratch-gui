@@ -92,7 +92,7 @@ class Backpack extends React.Component {
 
         this.dropAreaRef = null;
         this.lastPointer = {x: null, y: null};
-        this._resizeCandidate = null;
+        this.resizeSession = null;
         this.contentsRequest = null;
         this.loadAllContents = false;
 
@@ -371,10 +371,12 @@ class Backpack extends React.Component {
 
     handleResizePointerDown (e) {
         if (!e) return;
+        if (!this.state.expanded) return;
         if (typeof e.preventDefault === 'function') e.preventDefault();
 
-        // Capture the pointer so move/up keep arriving even if the finger/mouse
-        // leaves the header. One code path serves mouse and touch alike.
+        // Capture the pointer on the strip so the drag keeps firing even when the
+        // finger/mouse slides off the (now 40px) handle. This single pointer path
+        // works for both mouse and touch.
         if (e.pointerId !== undefined && e.currentTarget &&
                 typeof e.currentTarget.setPointerCapture === 'function') {
             try {
@@ -384,39 +386,23 @@ class Backpack extends React.Component {
             }
         }
 
-        // Remember the press but do not resize yet. A small movement is a tap
-        // (toggle); crossing the threshold turns it into a resize drag. This lets
-        // the same gesture work on desktop (mouse) and mobile (finger) without any
-        // device detection.
-        this._resizeCandidate = {
+        this.resizeSession = {
             startY: e.clientY,
-            startHeight: this.state.height,
-            dragging: false,
-            pointerId: e.pointerId,
-            target: e.currentTarget
+            startHeight: this.state.height
         };
+
+        window.addEventListener('pointermove', this.handleResizePointerMove);
+        window.addEventListener('pointerup', this.handleResizePointerUp);
+        window.addEventListener('pointercancel', this.handleResizePointerUp);
     }
 
     handleResizePointerMove (e) {
-        const c = this._resizeCandidate;
-        if (!c) return;
-        const delta = c.startY - e.clientY;
-
-        if (!c.dragging) {
-            // Not a drag yet: wait until the pointer moves past the threshold so a
-            // plain click still toggles the backpack instead of resizing it.
-            if (Math.abs(delta) < 6) return;
-            c.dragging = true;
-            // Reveal the drawer while resizing so the size change is visible.
-            if (!this.state.expanded) {
-                this.setState({expanded: true});
-            }
-        }
-
+        if (!this.resizeSession) return;
         if (typeof e.preventDefault === 'function') e.preventDefault();
         const MIN_HEIGHT = 5.5 * 16;
         const maxHeight = Math.max(MIN_HEIGHT, Math.floor(window.innerHeight * 0.75));
-        const next = Math.max(MIN_HEIGHT, Math.min(maxHeight, Math.round(c.startHeight + delta)));
+        const delta = this.resizeSession.startY - e.clientY;
+        const next = Math.max(MIN_HEIGHT, Math.min(maxHeight, Math.round(this.resizeSession.startHeight + delta)));
         if (next !== this.state.height) {
             this.setState({height: next}, () => {
                 window.dispatchEvent(new Event('resize'));
@@ -424,41 +410,21 @@ class Backpack extends React.Component {
         }
     }
 
-    handleResizePointerUp (e) {
-        const c = this._resizeCandidate;
-        this._resizeCandidate = null;
-        if (c && c.target && e && e.pointerId !== undefined &&
-                typeof c.target.releasePointerCapture === 'function') {
-            try {
-                c.target.releasePointerCapture(e.pointerId);
-            } catch (err) {
-                // ignore
-            }
-        }
-        if (!c) return;
-        if (!c.dragging) {
-            // It was a tap, not a drag -> toggle the backpack open/closed.
-            this.handleToggle();
-        } else {
-            try {
-                localStorage.setItem('mw:backpackHeight', String(this.state.height));
-            } catch (e) {
-                // ignore
-            }
+    handleResizePointerUp () {
+        this.resizeSession = null;
+        window.removeEventListener('pointermove', this.handleResizePointerMove);
+        window.removeEventListener('pointerup', this.handleResizePointerUp);
+        window.removeEventListener('pointercancel', this.handleResizePointerUp);
+
+        try {
+            localStorage.setItem('mw:backpackHeight', String(this.state.height));
+        } catch (e) {
+            // ignore
         }
     }
-    handleResizePointerCancel (e) {
-        const c = this._resizeCandidate;
-        this._resizeCandidate = null;
-        if (c && c.target && e && e.pointerId !== undefined &&
-                typeof c.target.releasePointerCapture === 'function') {
-            try {
-                c.target.releasePointerCapture(e.pointerId);
-            } catch (err) {
-                // ignore
-            }
-        }
-        // A cancelled gesture abandons the resize without toggling.
+
+    handleResizePointerCancel () {
+        this.handleResizePointerUp();
     }
 
     handleMore () {
@@ -491,9 +457,6 @@ class Backpack extends React.Component {
                 onMouseEnter={this.handleMouseEnter}
                 onMouseLeave={this.handleMouseLeave}
                 onResizePointerDown={this.handleResizePointerDown}
-                onResizePointerMove={this.handleResizePointerMove}
-                onResizePointerUp={this.handleResizePointerUp}
-                onResizePointerCancel={this.handleResizePointerCancel}
                 onToggle={this.props.host ? this.handleToggle : null}
                 componentRef={this.setDropAreaRef}
             />
