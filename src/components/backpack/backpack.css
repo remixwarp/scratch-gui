@@ -10,7 +10,7 @@
 
 .resize-handle {
     position: relative;
-    height: 1.5rem;
+    height: 2rem;
     width: 100%;
     cursor: ns-resize;
     background: $ui-white;
@@ -18,6 +18,8 @@
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+    /* Make the whole strip a comfortable finger target on touch devices */
+    -webkit-tap-highlight-color: transparent;
 }
 
 .resize-handle::before {
@@ -26,8 +28,8 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 3rem;
-    height: 0.3rem;
+    width: 3.5rem;
+    height: 0.35rem;
     border-radius: 0.25rem;
     background: $ui-black-transparent;
     pointer-events: none;

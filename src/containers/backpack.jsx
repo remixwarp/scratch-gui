@@ -82,9 +82,7 @@ class Backpack extends React.Component {
             'handleResizePointerDown',
             'handleResizePointerMove',
             'handleResizePointerUp',
-            'handleResizeTouchStart',
-            'handleResizeTouchMove',
-            'handleResizeTouchEnd',
+            'handleResizePointerCancel',
             'handleGlobalPointerMove',
             'setDropAreaRef',
             'isPointerOverDropArea',
@@ -152,10 +150,6 @@ class Backpack extends React.Component {
 
         document.removeEventListener('pointermove', this.handleGlobalPointerMove);
         document.removeEventListener('mousemove', this.handleGlobalPointerMove);
-
-        window.removeEventListener('pointermove', this.handleResizePointerMove);
-        window.removeEventListener('pointerup', this.handleResizePointerUp);
-        window.removeEventListener('pointercancel', this.handleResizePointerUp);
     }
 
     setDropAreaRef (el) {
@@ -377,13 +371,13 @@ class Backpack extends React.Component {
 
     handleResizePointerDown (e) {
         if (!e) return;
-        if (e.pointerType === 'touch') return; // touch is handled by the touch-event handlers
         if (!this.state.expanded) return;
         if (typeof e.preventDefault === 'function') e.preventDefault();
 
-        // Lock the pointer to the handle element. Without this, a touch drag is
-        // cancelled by the browser as soon as the finger moves over another
-        // (scrollable) element, so the drawer would never resize on mobile.
+        // Lock the pointer to the handle element. After setPointerCapture, every
+        // pointermove / pointerup / pointercancel for this pointer is delivered
+        // directly to the handle element -- even when the finger slides off it or
+        // over a scrollable area -- so the drawer resizes correctly on touch.
         if (e.pointerId !== undefined && e.currentTarget &&
                 typeof e.currentTarget.setPointerCapture === 'function') {
             try {
@@ -397,14 +391,11 @@ class Backpack extends React.Component {
             startY: e.clientY,
             startHeight: this.state.height
         };
-
-        window.addEventListener('pointermove', this.handleResizePointerMove);
-        window.addEventListener('pointerup', this.handleResizePointerUp);
-        window.addEventListener('pointercancel', this.handleResizePointerUp);
     }
 
     handleResizePointerMove (e) {
         if (!this.resizeSession) return;
+        if (typeof e.preventDefault === 'function') e.preventDefault();
         const MIN_HEIGHT = 5.5 * 16;
         const maxHeight = Math.max(MIN_HEIGHT, Math.floor(window.innerHeight * 0.75));
         const delta = this.resizeSession.startY - e.clientY;
@@ -416,57 +407,35 @@ class Backpack extends React.Component {
         }
     }
 
-    handleResizePointerUp () {
+    handleResizePointerUp (e) {
         this.resizeSession = null;
-        window.removeEventListener('pointermove', this.handleResizePointerMove);
-        window.removeEventListener('pointerup', this.handleResizePointerUp);
-        window.removeEventListener('pointercancel', this.handleResizePointerUp);
-
+        if (e && e.pointerId !== undefined && e.currentTarget &&
+                typeof e.currentTarget.releasePointerCapture === 'function') {
+            try {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+            } catch (err) {
+                // ignore
+            }
+        }
         try {
             localStorage.setItem('mw:backpackHeight', String(this.state.height));
         } catch (e) {
             // ignore
         }
     }
-    handleResizeTouchStart (e) {
-        if (!e) return;
-        if (!this.state.expanded) return;
-        if (typeof e.preventDefault === 'function') e.preventDefault();
-        const touch = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
-        if (!touch) return;
-        this.resizeSession = {
-            startY: touch.clientY,
-            startHeight: this.state.height
-        };
-        document.addEventListener('touchmove', this.handleResizeTouchMove, {passive: false});
-        document.addEventListener('touchend', this.handleResizeTouchEnd);
-        document.addEventListener('touchcancel', this.handleResizeTouchEnd);
-    }
-
-    handleResizeTouchMove (e) {
-        if (!this.resizeSession) return;
-        if (typeof e.preventDefault === 'function') e.preventDefault();
-        const touch = e.touches && e.touches[0];
-        if (!touch) return;
-        const MIN_HEIGHT = 5.5 * 16;
-        const maxHeight = Math.max(MIN_HEIGHT, Math.floor(window.innerHeight * 0.75));
-        const delta = this.resizeSession.startY - touch.clientY;
-        const next = Math.max(MIN_HEIGHT, Math.min(maxHeight, Math.round(this.resizeSession.startHeight + delta)));
-        if (next !== this.state.height) {
-            this.setState({height: next}, () => {
-                window.dispatchEvent(new Event('resize'));
-            });
-        }
-    }
-
-    handleResizeTouchEnd () {
+    handleResizePointerCancel (e) {
         this.resizeSession = null;
-        document.removeEventListener('touchmove', this.handleResizeTouchMove, {passive: false});
-        document.removeEventListener('touchend', this.handleResizeTouchEnd);
-        document.removeEventListener('touchcancel', this.handleResizeTouchEnd);
+        if (e && e.pointerId !== undefined && e.currentTarget &&
+                typeof e.currentTarget.releasePointerCapture === 'function') {
+            try {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+            } catch (err) {
+                // ignore
+            }
+        }
         try {
             localStorage.setItem('mw:backpackHeight', String(this.state.height));
-        } catch (err) {
+        } catch (e) {
             // ignore
         }
     }
@@ -501,9 +470,9 @@ class Backpack extends React.Component {
                 onMouseEnter={this.handleMouseEnter}
                 onMouseLeave={this.handleMouseLeave}
                 onResizePointerDown={this.handleResizePointerDown}
-                onResizeTouchStart={this.handleResizeTouchStart}
-                onResizeTouchMove={this.handleResizeTouchMove}
-                onResizeTouchEnd={this.handleResizeTouchEnd}
+                onResizePointerMove={this.handleResizePointerMove}
+                onResizePointerUp={this.handleResizePointerUp}
+                onResizePointerCancel={this.handleResizePointerCancel}
                 onToggle={this.props.host ? this.handleToggle : null}
                 componentRef={this.setDropAreaRef}
             />
