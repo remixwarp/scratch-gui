@@ -96,7 +96,6 @@ class Backpack extends React.Component {
             'handleCreateFolder',
             'handleDeleteFolder',
             'handleCategoryChange',
-            'handleToggleWorkspaceAssets',
             'handleAddToFolder',
             'handleFolderDragOver',
             'handleFolderDragLeave',
@@ -136,12 +135,10 @@ class Backpack extends React.Component {
             contents: [],
             height: persistedHeight || DEFAULT_HEIGHT,
             searchQuery: '',
-            // Folder / workspace support.
+            // Folder support.
             currentFolderId: null,
             folderPath: [],
             selectedCategory: 'all',
-            showWorkspaceAssets: false,
-            workspaceAssets: null,
             folderDragOverId: null
         };
 
@@ -573,58 +570,6 @@ class Backpack extends React.Component {
     handleCategoryChange (category) {
         this.setState({selectedCategory: category});
     }
-    handleToggleWorkspaceAssets () {
-        const show = !this.state.showWorkspaceAssets;
-        this.setState({
-            showWorkspaceAssets: show,
-            workspaceAssets: show ? this.computeWorkspaceAssets() : null
-        });
-    }
-    computeWorkspaceAssets () {
-        const vm = this.props.vm;
-        if (!vm || !vm.runtime) {
-            return {costumes: [], sounds: [], sprites: [], scripts: []};
-        }
-        const runtime = vm.runtime;
-        const targets = runtime.targets || [];
-        const costumes = [];
-        const sounds = [];
-        const sprites = [];
-        const scripts = [];
-        targets.forEach(target => {
-            const targetCostumes = target.getCostumes ? target.getCostumes() : [];
-            targetCostumes.forEach((costume, index) => {
-                costumes.push({
-                    id: `workspace-costume-${target.id}-${index}`,
-                    type: 'costume',
-                    name: costume.name,
-                    thumbnailUrl: costume.asset ? costume.asset.encodeDataURI() : '',
-                    isWorkspace: true
-                });
-            });
-            const targetSounds = target.getSounds ? target.getSounds() : [];
-            targetSounds.forEach((sound, index) => {
-                sounds.push({
-                    id: `workspace-sound-${target.id}-${index}`,
-                    type: 'sound',
-                    name: sound.name,
-                    thumbnailUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTUgMTJhNyA3IDAgMCAxIDctN2g1YTcgNyAwIDAgMSAxIDd6Ii8+PHBhdGggZD0iTTUgMTJhNyA3IDAgMCAxIDctN2g1YTcgNyAwIDAgMSAxIDd6Ii8+PC9zdmc+',
-                    isWorkspace: true
-                });
-            });
-        });
-        targets.slice(1).forEach(target => {
-            const costume = target.getCostumes ? target.getCostumes()[0] : null;
-            sprites.push({
-                id: `workspace-sprite-${target.id}`,
-                type: 'sprite',
-                name: target.getName ? target.getName() : target.name,
-                thumbnailUrl: costume && costume.asset ? costume.asset.encodeDataURI() : '',
-                isWorkspace: true
-            });
-        });
-        return {costumes, sounds, sprites, scripts};
-    }
     handleAddToFolder (itemId, folderId) {
         if (!folderId) return;
         this.setState({loading: true}, () => {
@@ -724,9 +669,6 @@ class Backpack extends React.Component {
                 onDeleteFolder={this.handleDeleteFolder}
                 onCategoryChange={this.handleCategoryChange}
                 onAddToFolder={this.handleAddToFolder}
-                onToggleWorkspaceAssets={this.handleToggleWorkspaceAssets}
-                showWorkspaceAssets={this.state.showWorkspaceAssets}
-                workspaceAssets={this.state.workspaceAssets}
                 folderDragOverId={this.state.folderDragOverId}
                 onFolderDragOver={this.handleFolderDragOver}
                 onFolderDragLeave={this.handleFolderDragLeave}

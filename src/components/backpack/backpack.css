@@ -2,12 +2,15 @@
 @import "../../css/colors.css";
 
 /* ---------------------------------------------------------------------------
- * All backpack buttons share the CURRENT THEME'S PRIMARY COLOR.
- * `var(--looks-secondary)` is the theme's accent / main color (the same color
- * the menu bar uses). Because it is a CSS custom property written to <html> by
- * the theme engine on every theme / accent switch, every button below
- * automatically re-reads and switches to the new theme color — no JS needed.
+ * Only the buttons introduced by the folder / workspace feature use the
+ * CURRENT THEME'S PRIMARY COLOR. `var(--looks-secondary)` is the theme's
+ * accent / main color (the same color the menu bar uses) and is rewritten to
+ * <html> by the theme engine on every theme / accent switch, so these buttons
+ * automatically re-read and switch to the new theme color — no JS needed.
  * Text uses `var(--menu-bar-foreground)` (white on the accent) for contrast.
+ *
+ * NOTE: the header toggle, the "More" button and the breadcrumb (path
+ * indicator) deliberately keep their plain, non-theme backgrounds.
  * ------------------------------------------------------------------------- */
 $backpack-accent: var(--looks-secondary);
 $backpack-on-accent: var(--menu-bar-foreground, #fff);
@@ -46,14 +49,15 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     pointer-events: none;
 }
 
+/* Plain (non-themed) header toggle — reverts the earlier accent background. */
 .backpack-header {
     margin-top: 0.5rem;
-    border: 1px solid $backpack-accent;
-    background: $backpack-accent;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-white;
     padding: 0.25rem;
     text-align: center;
     font-size: 0.85rem;
-    color: $backpack-on-accent;
+    color: $text-primary;
     transition: 0.2s;
     cursor: pointer;
     user-select: none;
@@ -63,14 +67,21 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     }
 }
 
-.search-container {
+/* Search row: the search box flexes to fill the space and the create-folder
+ * button is squeezed in to its right (it shrinks the search box instead of
+ * extending the row to the right). */
+.search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
     padding: 0.5rem;
     background: $ui-white;
     flex-shrink: 0;
 }
 
 .search-input {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     padding: 0.25rem 0.5rem;
     font-size: 0.85rem;
     border: 1px solid $ui-black-transparent;
@@ -79,7 +90,15 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
 }
 
 .search-input:focus {
-    border-color: $backpack-accent;
+    border-color: $ui-primary;
+}
+
+/* Inline "create folder" row shown just below the search row when creating. */
+.create-folder-row {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0 0.5rem 0.5rem;
+    flex-shrink: 0;
 }
 
 .itemsScroller {
@@ -152,9 +171,10 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     background: $ui-primary;
 }
 
+/* Plain (non-themed) "More" button — reverts the earlier accent background. */
 .more {
-    background: $backpack-accent;
-    color: $backpack-on-accent;
+    background: $looks-secondary;
+    color: $ui-white;
     border: none;
     outline: none;
     font-weight: bold;
@@ -171,31 +191,7 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     }
 }
 
-/* ---- Toolbar (create folder / show-hide workspace) ---- */
-.toolbar {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    padding: 0 0.5rem;
-    flex-wrap: wrap;
-}
-
-.toolbar-button {
-    background: $backpack-accent;
-    color: $backpack-on-accent;
-    border: none;
-    border-radius: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: filter 0.2s ease;
-
-    &:hover {
-        filter: brightness(0.92);
-    }
-}
-
-/* ---- Category tabs (all / costume / sound / sprite / script) ---- */
+/* ---- Category tabs (all / costume / sound / sprite / script) — themed ---- */
 .category-tabs {
     display: flex;
     gap: 0.25rem;
@@ -226,7 +222,7 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     }
 }
 
-/* ---- Breadcrumb navigation ---- */
+/* ---- Breadcrumb navigation — plain (non-themed) path indicator ---- */
 .breadcrumb {
     display: flex;
     align-items: center;
@@ -238,59 +234,21 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
 }
 
 .breadcrumb-item {
-    background: $backpack-accent;
+    background: none;
     border: none;
-    color: $backpack-on-accent;
+    color: $text-primary;
     cursor: pointer;
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
-    transition: filter 0.2s ease;
+    transition: background 0.2s ease;
 
     &:hover {
-        filter: brightness(0.92);
+        background: $ui-tertiary;
     }
 }
 
 .breadcrumb-separator {
     color: $ui-tertiary;
-}
-
-/* ---- Workspace assets section ---- */
-.workspace-section {
-    background: $ui-tertiary;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    z-index: 10;
-    position: relative;
-}
-
-.workspace-section-title {
-    margin: 0 0 0.5rem 0;
-    font-size: 1rem;
-    font-weight: bold;
-    color: $text-primary;
-}
-
-.workspace-categories {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.workspace-category {
-    h4 {
-        margin: 0 0 0.5rem 0;
-        font-size: 0.9rem;
-        font-weight: bold;
-        color: $text-primary;
-    }
-}
-
-.workspace-items {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
-    gap: 0.5rem;
 }
 
 /* ---- Folder items & their drag highlight ---- */
@@ -311,7 +269,34 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     height: 100%;
 }
 
-/* ---- Inline input rows (create folder / rename) ---- */
+/* Push the folder card's name to the bottom so the centred icon has room. */
+.folder-sprite-item {
+    justify-content: flex-end !important;
+}
+
+/* Folder glyph. Colour follows the active theme (light/dark) via
+ * `var(--text-primary)`; the inline SVG draws with `currentColor`. */
+.folder-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Follows the active theme: dark ink on light mode, light ink on dark mode. */
+    color: var(--text-primary, #575e75);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.folder-icon-svg {
+    width: 2rem;
+    height: 2rem;
+}
+
+/* ---- Inline input rows (rename) ---- */
 .inline-input-row {
     position: absolute;
     left: 0;
@@ -335,6 +320,7 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     outline: none;
 }
 
+/* "OK" / "Cancel" inline buttons — themed. */
 .inline-button {
     flex-shrink: 0;
     background: $backpack-accent;
@@ -351,7 +337,7 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     }
 }
 
-/* ---- "Add to folder" affordance ---- */
+/* ---- "Add to folder" affordance — themed ---- */
 .add-to-folder-button {
     position: absolute;
     top: 0.15rem;
@@ -391,6 +377,7 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     z-index: 7;
 }
 
+/* "Add to folder" menu items — themed. */
 .add-menu-item {
     text-align: left;
     background: $backpack-accent;
@@ -411,4 +398,55 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     padding: 0.35rem 0.5rem;
     font-size: 0.7rem;
     color: $text-primary;
+}
+
+/* ---- Create-folder button squeezed next to the search box — themed ---- */
+.create-folder-button {
+    flex-shrink: 0;
+    width: 1.8rem;
+    height: 1.8rem;
+    line-height: 1.8rem;
+    text-align: center;
+    padding: 0;
+    border: none;
+    border-radius: 0.25rem;
+    background: $backpack-accent;
+    color: $backpack-on-accent;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+
+    &:hover {
+        filter: brightness(0.92);
+    }
+}
+
+/* ---- Right-click context menu (create folder) ---- */
+.context-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 7rem;
+    padding: 0.15rem;
+    background: $ui-white;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.3);
+}
+
+.context-menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    color: $text-primary;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    border-radius: 0.2rem;
+    white-space: nowrap;
+
+    &:hover {
+        background: $ui-tertiary;
+    }
 }

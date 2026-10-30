@@ -9,7 +9,37 @@ const DATABASE_NAME = 'TW_Backpack';
 const DATABASE_VERSION = 1;
 const STORE_NAME = 'backpack';
 
-const FOLDER_ICON = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCI+PHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xMCA0SDRjLTEuMSAwLTEuOTkuOS0xLjk5IDJMMiAxOGMwIDEuMS45IDIgMiAyaDE2YzEuMSAwIDItLjkgMi0yVjhjMC0xLjEtLjktMi0yLTJoLThsLTItMnoiLz48L3N2Zz4=';
+let _db;
+const openDB = () => new Promise((resolve, reject) => {
+    if (_db) {
+        resolve(_db);
+        return;
+    }
+
+    if (!window.indexedDB) {
+        reject(new Error('indexedDB is not supported'));
+        return;
+    }
+
+    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+
+    request.onupgradeneeded = event => {
+        const db = event.target.result;
+        db.createObjectStore(STORE_NAME, {
+            keyPath: 'id',
+            autoIncrement: true
+        });
+    };
+
+    request.onsuccess = event => {
+        _db = event.target.result;
+        resolve(_db);
+    };
+
+    request.onerror = event => {
+        reject(new Error(`DB error: ${event.target.error}`));
+    };
+});
 
 const idbItemToBackpackItem = item => {
     // convert id to string
@@ -21,8 +51,9 @@ const idbItemToBackpackItem = item => {
         // use the old icon instead of the new one.
         item.thumbnailUrl = `data:;base64,${soundThumbnail}`;
     } else if (item.type === 'folder') {
-        // For folders, use a folder icon
-        item.thumbnailUrl = FOLDER_ICON;
+        // Folders carry no thumbnail. The backpack component renders a theme-aware
+        // folder icon (from the editor's own icon set) instead of a fixed image.
+        item.thumbnailUrl = undefined;
     } else {
         // Thumbnail could be any image format. The browser will figure out which format it is.
         item.thumbnailUrl = `data:;base64,${arrayBufferToBase64(item.thumbnailData)}`;
@@ -58,38 +89,6 @@ const idbItemToBackpackItem = item => {
 
     return item;
 };
-
-let _db;
-const openDB = () => new Promise((resolve, reject) => {
-    if (_db) {
-        resolve(_db);
-        return;
-    }
-
-    if (!window.indexedDB) {
-        reject(new Error('indexedDB is not supported'));
-        return;
-    }
-
-    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-
-    request.onupgradeneeded = event => {
-        const db = event.target.result;
-        db.createObjectStore(STORE_NAME, {
-            keyPath: 'id',
-            autoIncrement: true
-        });
-    };
-
-    request.onsuccess = event => {
-        _db = event.target.result;
-        resolve(_db);
-    };
-
-    request.onerror = event => {
-        reject(new Error(`DB error: ${event.target.error}`));
-    };
-});
 
 const getBackpackContents = async ({
     limit,

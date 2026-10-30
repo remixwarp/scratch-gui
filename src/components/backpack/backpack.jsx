@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
@@ -17,6 +17,24 @@ const dragTypeMap = { // Keys correspond with backpack-server item types
     sprite: DragConstants.BACKPACK_SPRITE,
     folder: 'BACKPACK_FOLDER' // folders cannot be dragged elsewhere
 };
+
+// Folder glyph taken from the editor's own icon set (lucide folder icon used by
+// the sprite-folders addon). It draws with `currentColor`, so the colour follows
+// the active theme (light vs dark) automatically via the CSS `color` below.
+const FolderIcon = () => (
+    <svg
+        className={styles.folderIconSvg}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+    </svg>
+);
 
 const labelMap = defineMessages({
     costume: {
@@ -49,25 +67,10 @@ const labelMap = defineMessages({
         defaultMessage: 'All',
         description: 'Label for the "all" category tab'
     },
-    workspace: {
-        id: 'gui.backpack.workspaceLabel',
-        defaultMessage: 'Workspace',
-        description: 'Label for the workspace assets section'
-    },
     createFolder: {
         id: 'gui.backpack.createFolder',
         defaultMessage: 'New folder',
-        description: 'Button to create a folder'
-    },
-    showWorkspace: {
-        id: 'gui.backpack.showWorkspace',
-        defaultMessage: 'Show workspace',
-        description: 'Button to show workspace assets'
-    },
-    hideWorkspace: {
-        id: 'gui.backpack.hideWorkspace',
-        defaultMessage: 'Hide workspace',
-        description: 'Button to hide workspace assets'
+        description: 'Button / menu item to create a folder'
     }
 });
 
@@ -120,9 +123,6 @@ const Backpack = props => {
         onDeleteFolder,
         onCategoryChange,
         onAddToFolder,
-        onToggleWorkspaceAssets,
-        showWorkspaceAssets,
-        workspaceAssets,
         folderDragOverId,
         onFolderDragOver,
         onFolderDragLeave,
@@ -135,6 +135,8 @@ const Backpack = props => {
     const [renameId, setRenameId] = useState(null);
     const [renameName, setRenameName] = useState('');
     const [addMenuId, setAddMenuId] = useState(null);
+    // Right-click context menu (opened on empty backpack area -> "New folder").
+    const [contextMenu, setContextMenu] = useState(null);
 
     const submitCreate = () => {
         const name = createName.trim();
@@ -155,6 +157,29 @@ const Backpack = props => {
     const cancelRename = () => {
         setRenameId(null);
         setRenameName('');
+    };
+
+    // Close the right-click context menu on any outside interaction.
+    useEffect(() => {
+        if (!contextMenu) return undefined;
+        const close = () => setContextMenu(null);
+        window.addEventListener('click', close);
+        window.addEventListener('contextmenu', close);
+        window.addEventListener('scroll', close, true);
+        return () => {
+            window.removeEventListener('click', close);
+            window.removeEventListener('contextmenu', close);
+            window.removeEventListener('scroll', close, true);
+        };
+    }, [contextMenu]);
+
+    const handleContextMenu = e => {
+        // Let individual items show their own (rename / delete) context menu.
+        if (e.target.closest('[data-backpack-item]')) return;
+        e.preventDefault();
+        const x = Math.min(e.clientX, window.innerWidth - 150);
+        const y = Math.min(e.clientY, window.innerHeight - 90);
+        setContextMenu({x, y});
     };
 
     return (
@@ -204,7 +229,7 @@ const Backpack = props => {
                     onMouseLeave={onMouseLeave}
                     style={height ? {height: `${height}px`} : null}
                 >
-                    <div className={styles.searchContainer}>
+                    <div className={styles.searchRow}>
                         <input
                             aria-label={intl.formatMessage({
                                 id: 'gui.backpack.searchPlaceholder',
@@ -219,69 +244,58 @@ const Backpack = props => {
                             value={searchQuery}
                             onChange={onSearchChange}
                         />
-                    </div>
-
-                    <div className={styles.toolbar}>
-                        {showCreate ? (
-                            <div className={styles.inlineInputRow}>
-                                <input
-                                    autoFocus
-                                    className={styles.inlineInput}
-                                    placeholder={intl.formatMessage({
-                                        id: 'gui.backpack.folderNamePlaceholder',
-                                        defaultMessage: 'Folder name'
-                                    })}
-                                    value={createName}
-                                    onChange={e => setCreateName(e.target.value)}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter') submitCreate();
-                                        if (e.key === 'Escape') {
-                                            setShowCreate(false);
-                                            setCreateName('');
-                                        }
-                                    }}
-                                />
-                                <button
-                                    className={styles.inlineButton}
-                                    onClick={submitCreate}
-                                >
-                                    <FormattedMessage
-                                        defaultMessage="OK"
-                                        id="gui.backpack.ok"
-                                    />
-                                </button>
-                                <button
-                                    className={styles.inlineButton}
-                                    onClick={() => {
-                                        setShowCreate(false);
-                                        setCreateName('');
-                                    }}
-                                >
-                                    <FormattedMessage
-                                        defaultMessage="Cancel"
-                                        id="gui.backpack.cancel"
-                                    />
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                className={styles.toolbarButton}
-                                onClick={() => setShowCreate(true)}
-                            >
-                                <FormattedMessage {...labelMap.createFolder} />
-                            </button>
-                        )}
+                        {/* Create-folder button squeezed next to the search box. */}
                         <button
-                            className={styles.toolbarButton}
-                            onClick={onToggleWorkspaceAssets}
+                            className={styles.createFolderButton}
+                            title={intl.formatMessage(labelMap.createFolder)}
+                            onClick={() => setShowCreate(true)}
                         >
-                            {showWorkspaceAssets ? (
-                                <FormattedMessage {...labelMap.hideWorkspace} />
-                            ) : (
-                                <FormattedMessage {...labelMap.showWorkspace} />
-                            )}
+                            {'+'}
                         </button>
                     </div>
+
+                    {showCreate ? (
+                        <div className={styles.createFolderRow}>
+                            <input
+                                autoFocus
+                                className={styles.inlineInput}
+                                placeholder={intl.formatMessage({
+                                    id: 'gui.backpack.folderNamePlaceholder',
+                                    defaultMessage: 'Folder name'
+                                })}
+                                value={createName}
+                                onChange={e => setCreateName(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') submitCreate();
+                                    if (e.key === 'Escape') {
+                                        setShowCreate(false);
+                                        setCreateName('');
+                                    }
+                                }}
+                            />
+                            <button
+                                className={styles.inlineButton}
+                                onClick={submitCreate}
+                            >
+                                <FormattedMessage
+                                    defaultMessage="OK"
+                                    id="gui.backpack.ok"
+                                />
+                            </button>
+                            <button
+                                className={styles.inlineButton}
+                                onClick={() => {
+                                    setShowCreate(false);
+                                    setCreateName('');
+                                }}
+                            >
+                                <FormattedMessage
+                                    defaultMessage="Cancel"
+                                    id="gui.backpack.cancel"
+                                />
+                            </button>
+                        </div>
+                    ) : null}
 
                     <div className={styles.categoryTabs}>
                         {CATEGORIES.map(cat => (
@@ -319,7 +333,10 @@ const Backpack = props => {
                         </div>
                     )}
 
-                    <div className={styles.itemsScroller}>
+                    <div
+                        className={styles.itemsScroller}
+                        onContextMenu={handleContextMenu}
+                    >
                         {error !== false ? (
                             <div className={styles.statusMessage}>
                                 <FormattedMessage
@@ -340,45 +357,6 @@ const Backpack = props => {
                                 </div>
                             ) : (
                                 <>
-                                    {showWorkspaceAssets && workspaceAssets && (
-                                        <div className={styles.workspaceSection}>
-                                            <h3 className={styles.workspaceSectionTitle}>
-                                                <FormattedMessage {...labelMap.workspace} />
-                                            </h3>
-                                            <div className={styles.workspaceCategories}>
-                                                {['costume', 'sound', 'sprite'].map(kind => {
-                                                    const list = workspaceAssets[kind] || [];
-                                                    if (list.length === 0) return null;
-                                                    return (
-                                                        <div
-                                                            className={styles.workspaceCategory}
-                                                            key={kind}
-                                                        >
-                                                            <h4>
-                                                                <FormattedMessage {...labelMap[kind]} />
-                                                            </h4>
-                                                            <div className={styles.workspaceItems}>
-                                                                {list.map(item => (
-                                                                    <SpriteSelectorItem
-                                                                        className={styles.backpackItem}
-                                                                        costumeURL={item.thumbnailUrl}
-                                                                        details={item.name}
-                                                                        dragPayload={item}
-                                                                        dragType={dragTypeMap[item.type]}
-                                                                        id={item.id}
-                                                                        key={item.id}
-                                                                        name={nameFor(intl, item)}
-                                                                        selected={false}
-                                                                        onClick={noop}
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
                                     {contents.length > 0 ? (
                                         <div className={styles.backpackListInner}>
                                             {contents.map(item => {
@@ -387,6 +365,7 @@ const Backpack = props => {
                                                 return (
                                                     <div
                                                         key={item.id}
+                                                        data-backpack-item
                                                         className={classNames(styles.itemWrapper, {
                                                             [styles.folderItem]: isFolder,
                                                             [styles.folderDragOver]: isFolder && folderDragOverId === item.id
@@ -399,18 +378,26 @@ const Backpack = props => {
                                                         onDrop={isFolder ? e => onFolderDrop(item.id, e) : undefined}
                                                     >
                                                         <SpriteSelectorItem
-                                                            className={styles.backpackItem}
-                                                            costumeURL={item.thumbnailUrl}
+                                                            className={classNames(styles.backpackItem, {
+                                                                [styles.folderSpriteItem]: isFolder
+                                                            })}
+                                                            costumeURL={isFolder ? null : item.thumbnailUrl}
                                                             details={item.name}
                                                             dragPayload={item}
                                                             dragType={dragTypeMap[item.type]}
                                                             id={item.id}
+                                                            key={item.id}
                                                             name={nameFor(intl, item)}
                                                             selected={false}
                                                             onClick={isFolder ? () => onFolderClick(item.id, item.name) : noop}
                                                             onDeleteButtonClick={isFolder ? onDeleteFolder : onDelete}
                                                             onRenameButtonClick={item.type === 'sprite' ? null : startRename}
                                                         />
+                                                        {isFolder && (
+                                                            <div className={styles.folderIcon}>
+                                                                <FolderIcon />
+                                                            </div>
+                                                        )}
                                                         {renaming ? (
                                                             <div className={styles.inlineInputRow}>
                                                                 <input
@@ -516,6 +503,24 @@ const Backpack = props => {
                             )
                         )}
                     </div>
+
+                    {contextMenu && (
+                        <div
+                            className={styles.contextMenu}
+                            style={{left: contextMenu.x, top: contextMenu.y}}
+                            onMouseDown={e => e.stopPropagation()}
+                        >
+                            <button
+                                className={styles.contextMenuItem}
+                                onClick={() => {
+                                    setContextMenu(null);
+                                    setShowCreate(true);
+                                }}
+                            >
+                                <FormattedMessage {...labelMap.createFolder} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             ) : null}
         </div>
@@ -563,15 +568,7 @@ Backpack.propTypes = {
     onCreateFolder: PropTypes.func,
     onDeleteFolder: PropTypes.func,
     onCategoryChange: PropTypes.func,
-    onToggleWorkspaceAssets: PropTypes.func,
     onAddToFolder: PropTypes.func,
-    showWorkspaceAssets: PropTypes.bool,
-    workspaceAssets: PropTypes.shape({
-        costumes: PropTypes.array,
-        sounds: PropTypes.array,
-        sprites: PropTypes.array,
-        scripts: PropTypes.array
-    }),
     folderDragOverId: PropTypes.string,
     onFolderDragOver: PropTypes.func,
     onFolderDragLeave: PropTypes.func,
@@ -595,8 +592,6 @@ Backpack.defaultProps = {
     onResizePointerUp: null,
     onResizePointerCancel: null,
     onToggle: null,
-    showWorkspaceAssets: false,
-    workspaceAssets: null,
     folderPath: [],
     selectedCategory: 'all'
 };
