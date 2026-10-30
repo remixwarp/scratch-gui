@@ -457,7 +457,7 @@ class Backpack extends React.Component {
                 onMouseEnter={this.handleMouseEnter}
                 onMouseLeave={this.handleMouseLeave}
                 onResizePointerDown={this.handleResizePointerDown}
-                onToggle={this.props.host ? this.handleToggle : null}
+                onToggle={this.handleToggle}
                 componentRef={this.setDropAreaRef}
             />
         );
