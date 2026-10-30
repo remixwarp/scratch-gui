@@ -8,6 +8,34 @@
     flex-direction: column;
 }
 
+.resize-handle {
+    position: relative;
+    height: 4rem;
+    width: 100%;
+    cursor: ns-resize;
+    background: $ui-white;
+    border-bottom: 1px solid $ui-black-transparent;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    /* Enlarged strip gives a comfortable, easy-to-grab finger target on touch */
+    -webkit-tap-highlight-color: transparent;
+}
+
+.resize-handle::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 4rem;
+    height: 0.4rem;
+    border-radius: 0.25rem;
+    background: $ui-black-transparent;
+    pointer-events: none;
+}
+
 .backpack-header {
     margin-top: 0.5rem;
     border: 1px solid $ui-black-transparent;
@@ -18,25 +46,7 @@
     color: $text-primary;
     transition: 0.2s;
     cursor: pointer;
-    /* The whole header is the resize handle: block the browser from treating a
-       press-drag on it as a page scroll so the drag works on touch screens. */
-    touch-action: none;
     user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* Small grip hint so it is obvious the header can be dragged to resize. */
-.backpack-header::before {
-    content: '';
-    display: block;
-    width: 3rem;
-    height: 0.25rem;
-    margin: 0 auto 0.25rem;
-    border-radius: 0.25rem;
-    background: $ui-black-transparent;
-    pointer-events: none;
 }
 
 .search-container {

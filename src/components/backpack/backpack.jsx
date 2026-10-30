@@ -53,7 +53,10 @@ const Backpack = ({
     onToggle,
     onDelete,
     onRename,
-    onHeaderPointerDown,
+    onResizePointerDown,
+    onResizePointerMove,
+    onResizePointerUp,
+    onResizePointerCancel,
     onMouseEnter,
     onMouseLeave,
     onMore,
@@ -64,9 +67,18 @@ const Backpack = ({
         className={styles.backpackContainer}
         data-backpack-container
     >
+        {expanded ? (
+            <div
+                className={styles.resizeHandle}
+                onPointerDown={onResizePointerDown}
+                onPointerMove={onResizePointerMove}
+                onPointerUp={onResizePointerUp}
+                onPointerCancel={onResizePointerCancel}
+            />
+        ) : null}
         <div
             className={styles.backpackHeader}
-            onPointerDown={onHeaderPointerDown}
+            onClick={onToggle}
         >
             {onToggle ? (
                 <FormattedMessage
@@ -207,7 +219,10 @@ Backpack.propTypes = {
     onSearchChange: PropTypes.func,
     onDelete: PropTypes.func,
     onRename: PropTypes.func,
-    onHeaderPointerDown: PropTypes.func,
+    onResizePointerDown: PropTypes.func,
+    onResizePointerMove: PropTypes.func,
+    onResizePointerUp: PropTypes.func,
+    onResizePointerCancel: PropTypes.func,
     onMore: PropTypes.func,
     onMouseEnter: PropTypes.func,
     onMouseLeave: PropTypes.func,
@@ -226,7 +241,10 @@ Backpack.defaultProps = {
     onSearchChange: null,
     showMore: false,
     onMore: null,
-    onHeaderPointerDown: null,
+    onResizePointerDown: null,
+    onResizePointerMove: null,
+    onResizePointerUp: null,
+    onResizePointerCancel: null,
     onToggle: null
 };
 
