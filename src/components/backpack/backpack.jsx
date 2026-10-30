@@ -67,18 +67,12 @@ const Backpack = ({
         className={styles.backpackContainer}
         data-backpack-container
     >
-        {expanded ? (
-            <div
-                className={styles.resizeHandle}
-                onPointerDown={onResizePointerDown}
-                onPointerMove={onResizePointerMove}
-                onPointerUp={onResizePointerUp}
-                onPointerCancel={onResizePointerCancel}
-            />
-        ) : null}
         <div
             className={styles.backpackHeader}
-            onClick={onToggle}
+            onPointerDown={onResizePointerDown}
+            onPointerMove={onResizePointerMove}
+            onPointerUp={onResizePointerUp}
+            onPointerCancel={onResizePointerCancel}
         >
             {onToggle ? (
                 <FormattedMessage

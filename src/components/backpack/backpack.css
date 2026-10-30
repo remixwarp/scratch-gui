@@ -8,33 +8,6 @@
     flex-direction: column;
 }
 
-.resize-handle {
-    position: relative;
-    height: 2rem;
-    width: 100%;
-    cursor: ns-resize;
-    background: $ui-white;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    /* Make the whole strip a comfortable finger target on touch devices */
-    -webkit-tap-highlight-color: transparent;
-}
-
-.resize-handle::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 3.5rem;
-    height: 0.35rem;
-    border-radius: 0.25rem;
-    background: $ui-black-transparent;
-    pointer-events: none;
-}
-
 .backpack-header {
     margin-top: 0.5rem;
     border: 1px solid $ui-black-transparent;
@@ -44,8 +17,14 @@
     font-size: 0.85rem;
     color: $text-primary;
     transition: 0.2s;
-    cursor: pointer;
+    cursor: ns-resize;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    /* Press-and-drag on the header resizes the drawer; this stops the browser
+       from treating the drag as a scroll gesture on touch devices. */
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .search-container {
