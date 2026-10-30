@@ -10,12 +10,14 @@
 
 .resize-handle {
     position: relative;
-    height: 1.25rem;
+    height: 1.5rem;
     width: 100%;
     cursor: ns-resize;
     background: $ui-white;
     touch-action: none;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .resize-handle::before {
@@ -24,8 +26,8 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 2.5rem;
-    height: 0.25rem;
+    width: 3rem;
+    height: 0.3rem;
     border-radius: 0.25rem;
     background: $ui-black-transparent;
     pointer-events: none;

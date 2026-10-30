@@ -54,6 +54,9 @@ const Backpack = ({
     onDelete,
     onRename,
     onResizePointerDown,
+    onResizeTouchStart,
+    onResizeTouchMove,
+    onResizeTouchEnd,
     onMouseEnter,
     onMouseLeave,
     onMore,
@@ -68,6 +71,9 @@ const Backpack = ({
             <div
                 className={styles.resizeHandle}
                 onPointerDown={onResizePointerDown}
+                onTouchStart={onResizeTouchStart}
+                onTouchMove={onResizeTouchMove}
+                onTouchEnd={onResizeTouchEnd}
             />
         ) : null}
         <div
@@ -214,6 +220,9 @@ Backpack.propTypes = {
     onDelete: PropTypes.func,
     onRename: PropTypes.func,
     onResizePointerDown: PropTypes.func,
+    onResizeTouchStart: PropTypes.func,
+    onResizeTouchMove: PropTypes.func,
+    onResizeTouchEnd: PropTypes.func,
     onMore: PropTypes.func,
     onMouseEnter: PropTypes.func,
     onMouseLeave: PropTypes.func,
@@ -233,6 +242,9 @@ Backpack.defaultProps = {
     showMore: false,
     onMore: null,
     onResizePointerDown: null,
+    onResizeTouchStart: null,
+    onResizeTouchMove: null,
+    onResizeTouchEnd: null,
     onToggle: null
 };
 
