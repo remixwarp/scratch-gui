@@ -83,6 +83,7 @@ class Backpack extends React.Component {
             'handleResizePointerMove',
             'handleResizePointerUp',
             'handleResizePointerCancel',
+            'handleResizeTouchMove',
             'handleGlobalPointerMove',
             'setDropAreaRef',
             'isPointerOverDropArea',
@@ -372,12 +373,13 @@ class Backpack extends React.Component {
     handleResizePointerDown (e) {
         if (!e) return;
         if (!this.state.expanded) return;
+        // Stop the gesture from bubbling to ancestors and from being treated as a
+        // default browser / workspace action (e.g. starting a block drag).
         if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
 
-        // Lock the pointer to the handle element. After setPointerCapture, every
-        // pointermove / pointerup / pointercancel for this pointer is delivered
-        // directly to the handle element -- even when the finger slides off it or
-        // over a scrollable area -- so the drawer resizes correctly on touch.
+        // Best-effort: lock the pointer to the handle so subsequent events are
+        // delivered here even when the finger slides off the (small) strip.
         if (e.pointerId !== undefined && e.currentTarget &&
                 typeof e.currentTarget.setPointerCapture === 'function') {
             try {
@@ -391,6 +393,23 @@ class Backpack extends React.Component {
             startY: e.clientY,
             startHeight: this.state.height
         };
+
+        // Listen on window in the CAPTURE phase so we track the drag even if
+        // pointer capture fails or the finger moves over the block workspace
+        // behind the handle. Without this the touch leaks to the workspace and
+        // drags the blocks instead of resizing the backpack.
+        window.addEventListener('pointermove', this.handleResizePointerMove, true);
+        window.addEventListener('pointerup', this.handleResizePointerUp, true);
+        window.addEventListener('pointercancel', this.handleResizePointerUp, true);
+        // Prevent the browser / workspace from acting on the touch as it travels
+        // over the blocks behind the handle.
+        window.addEventListener('touchmove', this.handleResizeTouchMove, {capture: true, passive: false});
+    }
+
+    handleResizeTouchMove (e) {
+        if (this.resizeSession && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+        }
     }
 
     handleResizePointerMove (e) {
@@ -409,6 +428,10 @@ class Backpack extends React.Component {
 
     handleResizePointerUp (e) {
         this.resizeSession = null;
+        window.removeEventListener('pointermove', this.handleResizePointerMove, true);
+        window.removeEventListener('pointerup', this.handleResizePointerUp, true);
+        window.removeEventListener('pointercancel', this.handleResizePointerUp, true);
+        window.removeEventListener('touchmove', this.handleResizeTouchMove, {capture: true, passive: false});
         if (e && e.pointerId !== undefined && e.currentTarget &&
                 typeof e.currentTarget.releasePointerCapture === 'function') {
             try {

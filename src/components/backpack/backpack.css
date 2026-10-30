@@ -10,16 +10,15 @@
 
 .resize-handle {
     position: relative;
-    height: 4rem;
+    height: 2rem;
     width: 100%;
     cursor: ns-resize;
     background: $ui-white;
-    border-bottom: 1px solid $ui-black-transparent;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
-    /* Enlarged strip gives a comfortable, easy-to-grab finger target on touch */
+    /* Make the whole strip a comfortable finger target on touch devices */
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -29,8 +28,8 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 4rem;
-    height: 0.4rem;
+    width: 3.5rem;
+    height: 0.35rem;
     border-radius: 0.25rem;
     background: $ui-black-transparent;
     pointer-events: none;
