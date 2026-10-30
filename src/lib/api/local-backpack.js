@@ -9,6 +9,8 @@ const DATABASE_NAME = 'TW_Backpack';
 const DATABASE_VERSION = 1;
 const STORE_NAME = 'backpack';
 
+const FOLDER_ICON = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCI+PHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xMCA0SDRjLTEuMSAwLTEuOTkuOS0xLjk5IDJMMiAxOGMwIDEuMS45IDIgMiAyaDE2YzEuMSAwIDItLjkgMi0yVjhjMC0xLjEtLjktMi0yLTJoLThsLTItMnoiLz48L3N2Zz4=';
+
 const idbItemToBackpackItem = item => {
     // convert id to string
     item.id = `${item.id}`;
@@ -18,6 +20,9 @@ const idbItemToBackpackItem = item => {
         // The thumbnail was updated and it doesn't make sense for already backpacked sounds to
         // use the old icon instead of the new one.
         item.thumbnailUrl = `data:;base64,${soundThumbnail}`;
+    } else if (item.type === 'folder') {
+        // For folders, use a folder icon
+        item.thumbnailUrl = FOLDER_ICON;
     } else {
         // Thumbnail could be any image format. The browser will figure out which format it is.
         item.thumbnailUrl = `data:;base64,${arrayBufferToBase64(item.thumbnailData)}`;
@@ -88,7 +93,8 @@ const openDB = () => new Promise((resolve, reject) => {
 
 const getBackpackContents = async ({
     limit,
-    offset
+    offset,
+    folderId = null
 }) => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -110,7 +116,12 @@ const getBackpackContents = async ({
                 }
             }
             if (cursor && items.length < limit) {
-                items.push(idbItemToBackpackItem(cursor.value));
+                // Return only items in the requested folder (or the root when null).
+                // == is intentional: stored folderId may be undefined while the
+                // requested value is null, both meaning "root".
+                if (cursor.value.folderId == folderId) {
+                    items.push(idbItemToBackpackItem(cursor.value));
+                }
                 cursor.continue();
             } else {
                 resolve(items);
@@ -124,7 +135,8 @@ const saveBackpackObject = async ({
     mime,
     name,
     body,
-    thumbnail
+    thumbnail,
+    folderId = null
 }) => {
     // User interaction -- fine to show a permission dialog
     requestPersistentStorage();
@@ -136,16 +148,22 @@ const saveBackpackObject = async ({
             reject(new Error(`Sving object: ${event.target.error}`));
         };
         const store = transaction.objectStore(STORE_NAME);
-        const bodyData = base64ToArrayBuffer(body);
-        const bodyMD5 = md5(bodyData);
         const idbItem = {
             type,
             mime,
             name,
-            bodyData,
-            bodyMD5,
-            thumbnailData: base64ToArrayBuffer(thumbnail)
+            folderId,
+            createdAt: Date.now()
         };
+
+        if (type !== 'folder') {
+            const bodyData = base64ToArrayBuffer(body);
+            const bodyMD5 = md5(bodyData);
+            idbItem.bodyData = bodyData;
+            idbItem.bodyMD5 = bodyMD5;
+            idbItem.thumbnailData = base64ToArrayBuffer(thumbnail);
+        }
+
         const putRequest = store.put(idbItem);
         putRequest.onsuccess = () => {
             idbItem.id = putRequest.result;
@@ -175,7 +193,8 @@ const deleteBackpackObject = async ({
 
 const updateBackpackObject = async ({
     id,
-    name
+    name,
+    folderId
 }) => {
     id = +id;
     const db = await openDB();
@@ -187,13 +206,82 @@ const updateBackpackObject = async ({
         const store = transaction.objectStore(STORE_NAME);
         const getRequest = store.get(id);
         getRequest.onsuccess = () => {
+            const existing = getRequest.result;
+            if (!existing) {
+                reject(new Error('Item not found'));
+                return;
+            }
             const newItem = {
-                ...getRequest.result,
-                name: name
+                ...existing
             };
+            if (name !== undefined) {
+                newItem.name = name;
+            }
+            if (folderId !== undefined) {
+                newItem.folderId = folderId;
+            }
             const putRequest = store.put(newItem);
             putRequest.onsuccess = () => {
                 resolve(idbItemToBackpackItem(newItem));
+            };
+        };
+    });
+};
+
+const createFolder = async ({
+    name,
+    folderId = null
+}) => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, 'readwrite');
+        transaction.onerror = event => {
+            reject(new Error(`Creating folder: ${event.target.error}`));
+        };
+        const store = transaction.objectStore(STORE_NAME);
+        const idbItem = {
+            type: 'folder',
+            name,
+            folderId,
+            createdAt: Date.now()
+        };
+        const putRequest = store.put(idbItem);
+        putRequest.onsuccess = () => {
+            idbItem.id = putRequest.result;
+            resolve(idbItemToBackpackItem(idbItem));
+        };
+    });
+};
+
+const deleteBackpackFolder = async ({
+    id
+}) => {
+    id = +id;
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, 'readwrite');
+        transaction.onerror = event => {
+            reject(new Error(`Deleting folder: ${event.target.error}`));
+        };
+        const store = transaction.objectStore(STORE_NAME);
+
+        // Delete the folder and every item it contains.
+        const deleteFolderRequest = store.delete(id);
+        deleteFolderRequest.onsuccess = () => {
+            const itemsToDelete = [];
+            const request = store.openCursor();
+            request.onsuccess = e => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    // == is intentional: stored folderId may be undefined
+                    if (cursor.value.folderId == id) {
+                        itemsToDelete.push(cursor.value.id);
+                    }
+                    cursor.continue();
+                } else {
+                    itemsToDelete.forEach(itemId => store.delete(itemId));
+                    resolve();
+                }
             };
         };
     });
@@ -203,5 +291,7 @@ export default {
     getBackpackContents,
     saveBackpackObject,
     deleteBackpackObject,
-    updateBackpackObject
+    updateBackpackObject,
+    createFolder,
+    deleteBackpackFolder
 };
