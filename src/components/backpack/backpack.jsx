@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
@@ -134,7 +134,10 @@ const Backpack = props => {
     const [createName, setCreateName] = useState('');
     const [renameId, setRenameId] = useState(null);
     const [renameName, setRenameName] = useState('');
-    const [addMenuId, setAddMenuId] = useState(null);
+    // Folder picker opened from the item's own (editor built-in) right-click
+    // menu. {itemId, x, y} -> anchored at the pointer, like a native popup.
+    const [folderPicker, setFolderPicker] = useState(null);
+    const folderPickerRef = useRef(null);
     // Right-click context menu (opened on empty backpack area -> "New folder").
     const [contextMenu, setContextMenu] = useState(null);
 
@@ -144,10 +147,12 @@ const Backpack = props => {
         setCreateName('');
         if (name) onCreateFolder(name);
     };
-    const startRename = item => {
-        setRenameId(item.id);
-        setRenameName(item.name || '');
-        setAddMenuId(null);
+    // NOTE: the editor's SpriteSelectorItem calls onRenameButtonClick with the
+    // item id (not the item object), so look the item up by id here.
+    const startRename = id => {
+        const target = contents.find(i => i.id === id);
+        setRenameId(id);
+        setRenameName(target ? (target.name || '') : '');
     };
     const submitRename = () => {
         if (renameId != null) onRename(renameId, renameName.trim());
@@ -159,7 +164,20 @@ const Backpack = props => {
         setRenameName('');
     };
 
-    // Close the right-click context menu on any outside interaction.
+    // The editor's own SpriteSelectorItem renders a built-in "Add to Folder"
+    // entry in its right-click menu. We only catch that click and open our
+    // folder picker next to the pointer.
+    const openFolderPicker = (itemId, event) => {
+        const rawX = event && typeof event.clientX === 'number' ? event.clientX : window.innerWidth / 2;
+        const rawY = event && typeof event.clientY === 'number' ? event.clientY : window.innerHeight / 2;
+        setFolderPicker({
+            itemId,
+            x: Math.max(0, Math.min(rawX, window.innerWidth - 170)),
+            y: Math.max(0, Math.min(rawY, window.innerHeight - 220))
+        });
+    };
+
+    // Close the "New folder" context menu on any outside interaction.
     useEffect(() => {
         if (!contextMenu) return undefined;
         const close = () => setContextMenu(null);
@@ -172,6 +190,25 @@ const Backpack = props => {
             window.removeEventListener('scroll', close, true);
         };
     }, [contextMenu]);
+
+    // Close the folder picker on an outside press (mousedown so that clicks
+    // inside the picker itself keep working).
+    useEffect(() => {
+        if (!folderPicker) return undefined;
+        const close = e => {
+            if (folderPickerRef.current && folderPickerRef.current.contains(e.target)) return;
+            setFolderPicker(null);
+        };
+        const closeOnEscape = e => {
+            if (e.key === 'Escape') setFolderPicker(null);
+        };
+        window.addEventListener('mousedown', close);
+        window.addEventListener('keydown', closeOnEscape);
+        return () => {
+            window.removeEventListener('mousedown', close);
+            window.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [folderPicker]);
 
     const handleContextMenu = e => {
         // Let individual items show their own (rename / delete) context menu.
@@ -392,6 +429,7 @@ const Backpack = props => {
                                                             onClick={isFolder ? () => onFolderClick(item.id, item.name) : noop}
                                                             onDeleteButtonClick={isFolder ? onDeleteFolder : onDelete}
                                                             onRenameButtonClick={item.type === 'sprite' ? null : startRename}
+                                                            onAddToFolder={isFolder ? null : e => openFolderPicker(item.id, e)}
                                                         />
                                                         {isFolder && (
                                                             <div className={styles.folderIcon}>
@@ -429,44 +467,7 @@ const Backpack = props => {
                                                                     />
                                                                 </button>
                                                             </div>
-                                                        ) : (isFolder ? null : (
-                                                            <button
-                                                                className={styles.addToFolderButton}
-                                                                title={intl.formatMessage({
-                                                                    id: 'gui.backpack.addToFolder',
-                                                                    defaultMessage: 'Add to folder'
-                                                                })}
-                                                                onClick={() => setAddMenuId(addMenuId === item.id ? null : item.id)}
-                                                            >
-                                                                {'+'}
-                                                            </button>
-                                                        ))}
-                                                        {addMenuId === item.id && (
-                                                            <div className={styles.addMenu}>
-                                                                {folders
-                                                                    .filter(f => f.id !== item.id)
-                                                                    .map(f => (
-                                                                        <button
-                                                                            key={f.id}
-                                                                            className={styles.addMenuItem}
-                                                                            onClick={() => {
-                                                                                onAddToFolder(item.id, f.id);
-                                                                                setAddMenuId(null);
-                                                                            }}
-                                                                        >
-                                                                            {f.name}
-                                                                        </button>
-                                                                    ))}
-                                                                {folders.filter(f => f.id !== item.id).length === 0 && (
-                                                                    <div className={styles.addMenuEmpty}>
-                                                                        <FormattedMessage
-                                                                            defaultMessage="No folders yet"
-                                                                            id="gui.backpack.noFolders"
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
+                                                        ) : null}
                                                     </div>
                                                 );
                                             })}
@@ -519,6 +520,47 @@ const Backpack = props => {
                             >
                                 <FormattedMessage {...labelMap.createFolder} />
                             </button>
+                        </div>
+                    )}
+
+                    {/* Folder picker, opened from the editor's built-in
+                        right-click "Add to Folder" entry on a backpack item. */}
+                    {folderPicker && (
+                        <div
+                            ref={folderPickerRef}
+                            className={styles.folderPicker}
+                            style={{left: folderPicker.x, top: folderPicker.y}}
+                            onMouseDown={e => e.stopPropagation()}
+                        >
+                            <div className={styles.folderPickerTitle}>
+                                <FormattedMessage
+                                    defaultMessage="Add to folder"
+                                    description="Title of the add-to-folder picker"
+                                    id="gui.backpack.addToFolder"
+                                />
+                            </div>
+                            {folders
+                                .filter(f => f.id !== folderPicker.itemId)
+                                .map(f => (
+                                    <button
+                                        key={f.id}
+                                        className={styles.folderPickerItem}
+                                        onClick={() => {
+                                            onAddToFolder(folderPicker.itemId, f.id);
+                                            setFolderPicker(null);
+                                        }}
+                                    >
+                                        {f.name}
+                                    </button>
+                                ))}
+                            {folders.filter(f => f.id !== folderPicker.itemId).length === 0 && (
+                                <div className={styles.folderPickerEmpty}>
+                                    <FormattedMessage
+                                        defaultMessage="No folders yet"
+                                        id="gui.backpack.noFolders"
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

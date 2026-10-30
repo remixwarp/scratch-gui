@@ -337,48 +337,32 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     }
 }
 
-/* ---- "Add to folder" affordance — themed ---- */
-.add-to-folder-button {
-    position: absolute;
-    top: 0.15rem;
-    right: 0.15rem;
-    width: 1.2rem;
-    height: 1.2rem;
-    line-height: 1.2rem;
-    text-align: center;
-    padding: 0;
-    border: none;
-    border-radius: 50%;
-    background: $backpack-accent;
-    color: $backpack-on-accent;
-    font-size: 0.9rem;
-    cursor: pointer;
-    z-index: 6;
-    transition: filter 0.2s ease;
-
-    &:hover {
-        filter: brightness(0.92);
-    }
-}
-
-.add-menu {
-    position: absolute;
-    top: 1.4rem;
-    right: 0.15rem;
-    min-width: 6rem;
-    max-height: 8rem;
+/* ---- Folder picker (opened from the item's right-click menu) ---- */
+.folder-picker {
+    position: fixed;
+    /* Above the editor's own context menu ($z-index-context-menu: 10000),
+       since the picker is triggered from that menu. */
+    z-index: 10001;
+    min-width: 8rem;
+    max-height: 11rem;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    padding: 0.2rem;
     background: $ui-white;
     border: 1px solid $ui-black-transparent;
     border-radius: 0.25rem;
-    box-shadow: 0 0.15rem 0.4rem rgba(0, 0, 0, 0.25);
-    z-index: 7;
+    box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.3);
 }
 
-/* "Add to folder" menu items — themed. */
-.add-menu-item {
+.folder-picker-title {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.7rem;
+    color: $text-primary;
+    opacity: 0.75;
+}
+
+.folder-picker-item {
     text-align: left;
     background: $backpack-accent;
     border: none;
@@ -387,6 +371,7 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     font-size: 0.75rem;
     cursor: pointer;
     white-space: nowrap;
+    border-radius: 0.2rem;
     transition: filter 0.2s ease;
 
     &:hover {
@@ -394,7 +379,7 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     }
 }
 
-.add-menu-empty {
+.folder-picker-empty {
     padding: 0.35rem 0.5rem;
     font-size: 0.7rem;
     color: $text-primary;
