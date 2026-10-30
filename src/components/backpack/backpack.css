@@ -1,6 +1,17 @@
 @import "../../css/units.css";
 @import "../../css/colors.css";
 
+/* ---------------------------------------------------------------------------
+ * All backpack buttons share the CURRENT THEME'S PRIMARY COLOR.
+ * `var(--looks-secondary)` is the theme's accent / main color (the same color
+ * the menu bar uses). Because it is a CSS custom property written to <html> by
+ * the theme engine on every theme / accent switch, every button below
+ * automatically re-reads and switches to the new theme color — no JS needed.
+ * Text uses `var(--menu-bar-foreground)` (white on the accent) for contrast.
+ * ------------------------------------------------------------------------- */
+$backpack-accent: var(--looks-secondary);
+$backpack-on-accent: var(--menu-bar-foreground, #fff);
+
 .backpack-container {
     flex-shrink: 1;
     position: relative;
@@ -37,15 +48,19 @@
 
 .backpack-header {
     margin-top: 0.5rem;
-    border: 1px solid $ui-black-transparent;
-    background: $ui-white;
+    border: 1px solid $backpack-accent;
+    background: $backpack-accent;
     padding: 0.25rem;
     text-align: center;
     font-size: 0.85rem;
-    color: $text-primary;
+    color: $backpack-on-accent;
     transition: 0.2s;
     cursor: pointer;
     user-select: none;
+
+    &:hover {
+        filter: brightness(0.95);
+    }
 }
 
 .search-container {
@@ -64,7 +79,7 @@
 }
 
 .search-input:focus {
-    border-color: $ui-primary;
+    border-color: $backpack-accent;
 }
 
 .itemsScroller {
@@ -138,8 +153,8 @@
 }
 
 .more {
-    background: $looks-secondary;
-    color: $ui-white;
+    background: $backpack-accent;
+    color: $backpack-on-accent;
     border: none;
     outline: none;
     font-weight: bold;
@@ -150,6 +165,10 @@
     padding: 0.25rem;
     margin: 0;
     cursor: pointer;
+
+    &:hover {
+        filter: brightness(0.92);
+    }
 }
 
 /* ---- Toolbar (create folder / show-hide workspace) ---- */
@@ -162,17 +181,17 @@
 }
 
 .toolbar-button {
-    background: $ui-primary;
-    color: $text-primary;
-    border: 1px solid $ui-tertiary;
+    background: $backpack-accent;
+    color: $backpack-on-accent;
+    border: none;
     border-radius: 0.25rem;
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: filter 0.2s ease;
 
     &:hover {
-        background: $ui-tertiary;
+        filter: brightness(0.92);
     }
 }
 
@@ -186,24 +205,24 @@
 }
 
 .category-tab {
-    background: $ui-primary;
-    color: $text-primary;
-    border: 1px solid $ui-tertiary;
+    background: $backpack-accent;
+    color: $backpack-on-accent;
+    border: none;
     border-radius: 0.25rem;
     padding: 0.25rem 0.75rem;
     font-size: 0.75rem;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.2s ease;
+    opacity: 0.6;
+    transition: opacity 0.2s ease, filter 0.2s ease;
 
     &:hover {
-        background: $ui-tertiary;
+        opacity: 0.85;
     }
 
     &.category-tab-active {
-        background: $ui-secondary;
-        color: $ui-white;
-        border-color: $ui-secondary;
+        opacity: 1;
+        font-weight: bold;
     }
 }
 
@@ -219,16 +238,16 @@
 }
 
 .breadcrumb-item {
-    background: none;
+    background: $backpack-accent;
     border: none;
-    color: $text-primary;
+    color: $backpack-on-accent;
     cursor: pointer;
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
-    transition: background 0.2s ease;
+    transition: filter 0.2s ease;
 
     &:hover {
-        background: $ui-tertiary;
+        filter: brightness(0.92);
     }
 }
 
@@ -318,13 +337,18 @@
 
 .inline-button {
     flex-shrink: 0;
-    background: $ui-secondary;
-    color: $ui-white;
+    background: $backpack-accent;
+    color: $backpack-on-accent;
     border: none;
     border-radius: 0.2rem;
     padding: 0.15rem 0.4rem;
     font-size: 0.7rem;
     cursor: pointer;
+    transition: filter 0.2s ease;
+
+    &:hover {
+        filter: brightness(0.92);
+    }
 }
 
 /* ---- "Add to folder" affordance ---- */
@@ -339,11 +363,16 @@
     padding: 0;
     border: none;
     border-radius: 50%;
-    background: $ui-secondary;
-    color: $ui-white;
+    background: $backpack-accent;
+    color: $backpack-on-accent;
     font-size: 0.9rem;
     cursor: pointer;
     z-index: 6;
+    transition: filter 0.2s ease;
+
+    &:hover {
+        filter: brightness(0.92);
+    }
 }
 
 .add-menu {
@@ -364,16 +393,17 @@
 
 .add-menu-item {
     text-align: left;
-    background: none;
+    background: $backpack-accent;
     border: none;
-    color: $text-primary;
+    color: $backpack-on-accent;
     padding: 0.35rem 0.5rem;
     font-size: 0.75rem;
     cursor: pointer;
     white-space: nowrap;
+    transition: filter 0.2s ease;
 
     &:hover {
-        background: $ui-tertiary;
+        filter: brightness(0.92);
     }
 }
 
