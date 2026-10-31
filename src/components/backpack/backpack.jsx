@@ -2,6 +2,17 @@ import React, {useState, useEffect, useRef} from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
+import {
+    Blocks,
+    ChevronDown,
+    ChevronUp,
+    FolderPlus,
+    Images,
+    LayoutGrid,
+    PaintbrushVertical,
+    Search,
+    Volume2
+} from 'lucide-react';
 import DragConstants from '../../lib/constants/drag-constants';
 import {ComingSoonTooltip} from '../coming-soon/coming-soon.jsx';
 import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
@@ -75,11 +86,11 @@ const labelMap = defineMessages({
 });
 
 const CATEGORIES = [
-    {key: 'all', label: labelMap.all},
-    {key: 'costume', label: labelMap.costume},
-    {key: 'sound', label: labelMap.sound},
-    {key: 'sprite', label: labelMap.sprite},
-    {key: 'script', label: labelMap.script}
+    {key: 'all', label: labelMap.all, icon: LayoutGrid},
+    {key: 'costume', label: labelMap.costume, icon: PaintbrushVertical},
+    {key: 'sound', label: labelMap.sound, icon: Volume2},
+    {key: 'sprite', label: labelMap.sprite, icon: Images},
+    {key: 'script', label: labelMap.script, icon: Blocks}
 ];
 
 const nameFor = (intl, item) => (
@@ -233,28 +244,85 @@ const Backpack = props => {
                     onPointerCancel={onResizePointerCancel}
                 />
             ) : null}
-            <div
-                className={styles.backpackHeader}
-                onClick={onToggle}
-            >
-                {onToggle ? (
-                    <FormattedMessage
-                        defaultMessage="Backpack"
-                        description="Button to open the backpack"
-                        id="gui.backpack.header"
-                    />
-                ) : (
-                    <ComingSoonTooltip
-                        place="top"
-                        tooltipId="backpack-tooltip"
-                    >
+            <div className={styles.backpackHeader}>
+                <button
+                    className={styles.headerToggle}
+                    onClick={onToggle}
+                >
+                    {onToggle ? (
                         <FormattedMessage
                             defaultMessage="Backpack"
                             description="Button to open the backpack"
                             id="gui.backpack.header"
                         />
-                    </ComingSoonTooltip>
-                )}
+                    ) : (
+                        <ComingSoonTooltip
+                            place="top"
+                            tooltipId="backpack-tooltip"
+                        >
+                            <FormattedMessage
+                                defaultMessage="Backpack"
+                                description="Button to open the backpack"
+                                id="gui.backpack.header"
+                            />
+                        </ComingSoonTooltip>
+                    )}
+                    {expanded ? (
+                        <ChevronUp size={14} />
+                    ) : (
+                        <ChevronDown size={14} />
+                    )}
+                </button>
+                {expanded ? (
+                    <React.Fragment>
+                        <label className={styles.headerSearch}>
+                            <Search
+                                className={styles.headerSearchIcon}
+                                size={14}
+                            />
+                            <input
+                                aria-label={intl.formatMessage({
+                                    id: 'gui.backpack.searchPlaceholder',
+                                    defaultMessage: 'Search backpack...'
+                                })}
+                                autoComplete="off"
+                                className={styles.headerSearchInput}
+                                placeholder={intl.formatMessage({
+                                    id: 'gui.backpack.searchPlaceholder',
+                                    defaultMessage: 'Search backpack...'
+                                })}
+                                type="search"
+                                value={searchQuery}
+                                onChange={onSearchChange}
+                            />
+                        </label>
+                        <div className={styles.headerFilters}>
+                            {CATEGORIES.map(cat => {
+                                const Icon = cat.icon;
+                                return (
+                                    <button
+                                        key={cat.key}
+                                        className={classNames(styles.headerFilterTab, {
+                                            [styles.headerFilterTabActive]: selectedCategory === cat.key
+                                        })}
+                                        title={intl.formatMessage(cat.label)}
+                                        onClick={() => onCategoryChange(cat.key)}
+                                    >
+                                        <Icon size={16} />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <span className={styles.headerDivider} />
+                        <button
+                            className={styles.headerCreateFolder}
+                            title={intl.formatMessage(labelMap.createFolder)}
+                            onClick={() => setShowCreate(true)}
+                        >
+                            <FolderPlus size={16} />
+                        </button>
+                    </React.Fragment>
+                ) : null}
             </div>
             {expanded ? (
                 <div
@@ -266,31 +334,6 @@ const Backpack = props => {
                     onMouseLeave={onMouseLeave}
                     style={height ? {height: `${height}px`} : null}
                 >
-                    <div className={styles.searchRow}>
-                        <input
-                            aria-label={intl.formatMessage({
-                                id: 'gui.backpack.searchPlaceholder',
-                                defaultMessage: 'Search backpack...'
-                            })}
-                            autoComplete="off"
-                            className={styles.searchInput}
-                            placeholder={intl.formatMessage({
-                                id: 'gui.backpack.searchPlaceholder',
-                                defaultMessage: 'Search backpack...'
-                            })}
-                            value={searchQuery}
-                            onChange={onSearchChange}
-                        />
-                        {/* Create-folder button squeezed next to the search box. */}
-                        <button
-                            className={styles.createFolderButton}
-                            title={intl.formatMessage(labelMap.createFolder)}
-                            onClick={() => setShowCreate(true)}
-                        >
-                            {'+'}
-                        </button>
-                    </div>
-
                     {showCreate ? (
                         <div className={styles.createFolderRow}>
                             <input
@@ -333,20 +376,6 @@ const Backpack = props => {
                             </button>
                         </div>
                     ) : null}
-
-                    <div className={styles.categoryTabs}>
-                        {CATEGORIES.map(cat => (
-                            <button
-                                key={cat.key}
-                                className={classNames(styles.categoryTab, {
-                                    [styles.categoryTabActive]: selectedCategory === cat.key
-                                })}
-                                onClick={() => onCategoryChange(cat.key)}
-                            >
-                                <FormattedMessage {...cat.label} />
-                            </button>
-                        ))}
-                    </div>
 
                     {folderPath.length > 0 && (
                         <div className={styles.breadcrumb}>
