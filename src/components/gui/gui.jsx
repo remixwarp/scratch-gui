@@ -87,6 +87,7 @@ import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import Onboarding from '../../containers/onboarding.jsx';
 import BlockCounter from '../../components/block-counter/block-counter.jsx';
+import TWVariableManager from '../../containers/tw-variable-manager.jsx';
 import StatusBar from '../../components/status-bar/status-bar.jsx';
 import {recordSponsorIntent, isAchievementsEnabled} from '../../lib/achievements.js';
 import AchievementTracker from '../achievements/achievement-tracker.jsx';
@@ -1745,6 +1746,7 @@ const GUIComponent = props => {
                     <TWDebugger isRtl={isRtl} />
                 </React.Suspense>
             )}
+            <TWVariableManager />
             <AIModal />
             <AIChatModal />
             <AIAgentModal />

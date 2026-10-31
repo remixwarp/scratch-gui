@@ -33,6 +33,7 @@ const MODAL_EXTENSION_LOAD_CHOICE = 'extensionLoadChoiceModal';
 const MODAL_WARPTHEME = 'bilmeModal';
 const MODAL_CUSTOM_GALLERY = 'customGalleryModal';
 const MODAL_DEBUGGER = 'debuggerModal';
+const MODAL_VARIABLE_MANAGER = 'variableManagerModal';
 const MODAL_HELP = 'helpModal';
 const MODAL_WARPTHEME_STORE = 'warpthemeModal';
 const MODAL_EXTENSION_EDITOR = 'extensionEditorModal';
@@ -95,6 +96,7 @@ const initialState = {
     [MODAL_ASSETS]: false,
     [MODAL_CUSTOM_GALLERY]: false,
     [MODAL_DEBUGGER]: false,
+    [MODAL_VARIABLE_MANAGER]: false,
     [MODAL_HELP]: false,
     helpEntry: null,
     extensionLoadChoiceData: null,
@@ -248,6 +250,12 @@ const closeAIAgentModal = function () {
     return closeModal(MODAL_AI_AGENT);
 };
 
+const openVariableManagerModal = function () {
+    return openModal(MODAL_VARIABLE_MANAGER);
+};
+const closeVariableManagerModal = function () {
+    return closeModal(MODAL_VARIABLE_MANAGER);
+};
 const openSimpleDialog = function (dialogConfig) {
     return {
         type: 'scratch-gui/modals/SHOW_SIMPLE_DIALOG',
@@ -490,6 +498,8 @@ export {
     openAIAgentModal,
     closeAIAgentModal,
     openSimpleDialog,
+    openVariableManagerModal,
+    closeVariableManagerModal,
     closeBackdropLibrary,
     closeCostumeLibrary,
     closeExtensionLibrary,
