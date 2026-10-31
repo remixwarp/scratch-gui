@@ -1,0 +1,150 @@
+/* Bilup: 右键菜单入场动画
+ *
+ * 全站右键菜单共有 4 套实现，全部在这里统一接管：
+ *   1) react-contextmenu —— 角色 / 造型 / 声音 / 背包积木 / 变量监视器
+ *   2) scratch-blocks 原生菜单 —— 积木 / 工作区 / 积木区
+ *   3) sprite-folders 扩展 —— 角色文件夹
+ *   4) mw-fractch-workspace —— 文件树（.fractch）
+ *
+ * 开关跟随「设置 → 开启窗口动画」（localStorage: mw:window-animation）。
+ * gui.jsx 会按该开关给 <html> 增删 no-window-animation 类，所以每条规则
+ * 都带 html:not(.no-window-animation) 前缀：关掉动画时这段 CSS 等价于不存在。
+ *
+ * 只用 transform / opacity 两个合成层属性，不触发 layout、不改变命中区域，
+ * 因此不会影响菜单的定位、点击和键盘导航。
+ */
+
+@keyframes bl-menu-enter {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(-2px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* react-contextmenu 的显隐完全依赖 inline style 上的 opacity + transition，
+   所以对它只做 transform 动画，绝不碰 opacity。 */
+@keyframes bl-menu-scale-enter {
+    from {
+        transform: scale(0.94);
+    }
+
+    to {
+        transform: scale(1);
+    }
+}
+
+/* 1) react-contextmenu
+   src/components/context-menu/context-menu.jsx
+   库把库内固定类名 react-contextmenu / react-contextmenu--visible 挂在 <nav> 上，
+   显示时加上 --visible，类一加上动画即重新播放。
+
+   45ms 的延迟是必需的：该库靠 getBoundingClientRect() 决定菜单是否会超出视口、
+   要不要向上/向左翻转，而 rect 会把 transform 一起算进去。延迟到它测量（2 个
+   RAF，约 32ms）之后再起动画（fill-mode 默认 none，延迟期间不施加任何变换），
+   测量就不会被缩放干扰，翻转位置与实际尺寸一致。 */
+:global(html:not(.no-window-animation)) :global(nav.react-contextmenu.react-contextmenu--visible) {
+    transform-origin: top left;
+    animation: bl-menu-scale-enter 0.13s cubic-bezier(0.2, 0.9, 0.3, 1) 0.045s;
+}
+
+/* 2) scratch-blocks 原生右键菜单（Blockly.ContextMenu）
+   每次 show 都会重建一个 .blocklyContextMenu 节点，插入 .blocklyWidgetDiv 之后
+   才定位，所以动画起点就是光标位置，不会闪一下。 */
+:global(html:not(.no-window-animation)) :global(.blocklyContextMenu) {
+    transform-origin: top left;
+    animation: bl-menu-enter 0.13s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* 3) sprite-folders 扩展的角色文件夹右键菜单 */
+:global(html:not(.no-window-animation)) :global(.sa-folder-context-menu) {
+    transform-origin: top left;
+    animation: bl-menu-enter 0.13s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* 4) 文件树（.fractch）右键菜单
+   src/components/mw-fractch-workspace/fractch-workspace.jsx
+   类名来自 CSS Module（fractch-workspace_context-menu_xxxxx），用属性选择器匹配。 */
+:global(html:not(.no-window-animation)) :global([class*="fractch-workspace_context-menu"]) {
+    transform-origin: top left;
+    animation: bl-menu-enter 0.13s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* 5) Dropdown / SelectMenu 下拉菜单
+   src/community/components/ui/Dropdown.jsx
+   类名来自 CSS Module（Dropdown.module.css 的 menu / menu-left / menu-up），
+   用组件在菜单节点上挂的 data-mw-dropdown 钩子匹配，再靠 data-flipped 区分方向：
+   向下展开从顶部缩入，向上翻转从底部缩入；关闭时组件先置 data-closing、
+   播完退场动画（EXIT_MS=130ms）再卸载。 */
+@keyframes bl-dropdown-enter-down {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes bl-dropdown-enter-up {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+:global(html:not(.no-window-animation)) :global([data-mw-dropdown]) {
+    transform-origin: top center;
+    animation: bl-dropdown-enter-down 0.13s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+:global(html:not(.no-window-animation)) :global([data-mw-dropdown][data-flipped="true"]) {
+    transform-origin: bottom center;
+    animation-name: bl-dropdown-enter-up;
+}
+
+/* 退场：组件先置 data-closing 播完动画再卸载（EXIT_MS 与下面对齐），
+   fill-mode forwards 保证动画结束到卸载之间保持隐藏。
+   缓动用 ease-in（去程的逆），比 ease-out 收得干脆。 */
+@keyframes bl-dropdown-exit-down {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.96) translateY(-4px);
+    }
+}
+
+@keyframes bl-dropdown-exit-up {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.96) translateY(4px);
+    }
+}
+
+:global(html:not(.no-window-animation)) :global([data-mw-dropdown][data-closing="true"]) {
+    animation: bl-dropdown-exit-down 0.12s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+:global(html:not(.no-window-animation)) :global([data-mw-dropdown][data-flipped="true"][data-closing="true"]) {
+    animation-name: bl-dropdown-exit-up;
+}

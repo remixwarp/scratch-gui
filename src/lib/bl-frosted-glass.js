@@ -1,4 +1,5 @@
 import {getItem as getStorageItem} from './utils/safe-storage.js';
+import './bl-menu-animation.css';
 
 const STORAGE_KEY = 'bl:frosted-glass';
 
@@ -1504,6 +1505,62 @@ body .Popover-tipShape {
 }`;
         }
     }
+
+,
+    {
+        id: 'context-menu',
+        labelId: 'bl.frostedGlass.target.contextMenu',
+        defaultMessage: 'Context Menu',
+        css: (blur, alpha, r, g, b) => {
+            const glass = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            const glassBlur = `blur(${blur}px) saturate(150%)`;
+            return `
+/* 1) react-contextmenu
+   实色底来自 context-menu.css 的 .context-menu{background-color:var(--ui-white)}
+   （CSS Module，类名被哈希）。库在 ContextMenu.js 里用
+   cx(cssClasses.menu, className, …) 把 'react-contextmenu' 和 Module 类名一起挂在
+   <nav> 上，所以直接命中库类名即可，不必依赖哈希后的名字。
+   ScratchAddons 的动态菜单项（addons/contextmenu.js）只是往同一个 <nav> 里插
+   .sa-ctx-menu 子节点，一并被覆盖。 */
+nav.react-contextmenu {
+    background: ${glass} !important;
+    background-color: ${glass} !important;
+    backdrop-filter: ${glassBlur} !important;
+    -webkit-backdrop-filter: ${glassBlur} !important;
+}
+
+/* 2) scratch-blocks 原生菜单
+   实色底来自 Blockly 注入的 .blocklyWidgetDiv .goog-menu{background:$colour_contextMenuBackground}
+   —— $ 变量在 Css.inject() 生成样式表时就被替换成字面量（暗色是 #111111），
+   DOM 里拿不到变量，只能整块覆盖。
+   叠加 .blocklyContextMenu 是为了精确限定"右键菜单"：字段下拉用 .blocklyDropDownDiv，
+   不在此列，它的白底/描边逻辑保持原样。 */
+.blocklyWidgetDiv .goog-menu.blocklyContextMenu {
+    background: ${glass} !important;
+    backdrop-filter: ${glassBlur} !important;
+    -webkit-backdrop-filter: ${glassBlur} !important;
+}
+
+/* 3) sprite-folders 扩展的角色文件夹菜单 */
+.sa-folder-context-menu {
+    background: ${glass} !important;
+    background-color: ${glass} !important;
+    backdrop-filter: ${glassBlur} !important;
+    -webkit-backdrop-filter: ${glassBlur} !important;
+}
+
+/* 4) .fractch 文件树菜单
+   底色是 --mw-menu-background，由 fractch-workspace.jsx 把 Blockly 的
+   contextMenuBackground 内联成该变量，同样是字面量，只能整块覆盖。
+   类名来自 CSS Module（fractch-workspace_context-menu_xxxxx），用属性子串匹配。 */
+[class*="fractch-workspace_context-menu"] {
+    background: ${glass} !important;
+    background-color: ${glass} !important;
+    backdrop-filter: ${glassBlur} !important;
+    -webkit-backdrop-filter: ${glassBlur} !important;
+}`;
+        }
+    },
 ];
 
 const safeGetItem = key => {

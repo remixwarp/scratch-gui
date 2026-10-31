@@ -160,6 +160,14 @@ class UsernameModal extends React.Component {
         const enabled = e.target.checked;
         this.setState({windowAnimation: enabled});
         WindowManager.setAnimationsEnabled(enabled);
+        // 桥接：把窗口动画开关同步到 <html> 的 no-window-animation 类，
+        // 使 bl-menu-animation.css 的 :global(html:not(.no-window-animation)) 门控生效
+        document.documentElement.classList.toggle('no-window-animation', !enabled);
+    }
+
+    componentDidMount () {
+        // 启动即按当前设置应用初始状态
+        document.documentElement.classList.toggle('no-window-animation', !this.state.windowAnimation);
     }
 
     handleEnableStageResizeChange (e) {
