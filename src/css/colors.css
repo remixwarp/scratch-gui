@@ -78,3 +78,7 @@ $project-title-inactive: var(--project-title-inactive);
 $project-title-hover: var(--project-title-hover);
 
 $link-color: var(--link-color);
+
+$accent-foreground: var(--accent-foreground);
+$looks-tertiary: var(--looks-tertiary);
+$ui-modal-inset: color-mix(in srgb, var(--text-primary) 6%, var(--ui-modal-background));
