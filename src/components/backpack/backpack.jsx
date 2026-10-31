@@ -244,36 +244,38 @@ const Backpack = props => {
                     onPointerCancel={onResizePointerCancel}
                 />
             ) : null}
-            <div className={styles.backpackHeader}>
-                <button
-                    className={styles.headerToggle}
-                    onClick={onToggle}
-                >
-                    {onToggle ? (
+            <div
+                className={styles.backpackHeader}
+                onClick={onToggle}
+            >
+                {onToggle ? (
+                    <React.Fragment>
                         <FormattedMessage
                             defaultMessage="Backpack"
                             description="Button to open the backpack"
                             id="gui.backpack.header"
                         />
-                    ) : (
-                        <ComingSoonTooltip
-                            place="top"
-                            tooltipId="backpack-tooltip"
-                        >
-                            <FormattedMessage
-                                defaultMessage="Backpack"
-                                description="Button to open the backpack"
-                                id="gui.backpack.header"
-                            />
-                        </ComingSoonTooltip>
-                    )}
-                    {expanded ? (
-                        <ChevronUp size={14} />
-                    ) : (
-                        <ChevronDown size={14} />
-                    )}
-                </button>
-                {expanded ? (
+                        {expanded ? (
+                            <ChevronUp className={styles.headerChevron} size={14} />
+                        ) : (
+                            <ChevronDown className={styles.headerChevron} size={14} />
+                        )}
+                    </React.Fragment>
+                ) : (
+                    <ComingSoonTooltip
+                        place="top"
+                        tooltipId="backpack-tooltip"
+                    >
+                        <FormattedMessage
+                            defaultMessage="Backpack"
+                            description="Button to open the backpack"
+                            id="gui.backpack.header"
+                        />
+                    </ComingSoonTooltip>
+                )}
+            </div>
+            {expanded ? (
+                <div className={styles.headerRow}>
                     <React.Fragment>
                         <label className={styles.headerSearch}>
                             <Search
@@ -322,8 +324,8 @@ const Backpack = props => {
                             <FolderPlus size={16} />
                         </button>
                     </React.Fragment>
-                ) : null}
-            </div>
+                </div>
+            ) : null}
             {expanded ? (
                 <div
                     className={classNames(styles.backpackList, {

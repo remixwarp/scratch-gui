@@ -49,25 +49,16 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     pointer-events: none;
 }
 
-/* Backpack top bar: toggle | search | filter buttons | divider | new folder */
+/* Full-width backpack toggle bar (back to the original long strip). */
 .backpack-header {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.25rem;
     margin-top: 0.5rem;
     border: 1px solid $ui-black-transparent;
     background: $ui-white;
     padding: 0.25rem;
-}
-
-.header-toggle {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    border: none;
-    background: none;
     font-size: 0.85rem;
     color: $text-primary;
     transition: 0.2s;
@@ -77,6 +68,21 @@ $backpack-on-accent: var(--menu-bar-foreground, #fff);
     &:hover {
         filter: brightness(0.95);
     }
+}
+
+.header-chevron {
+    color: $text-primary;
+}
+
+/* Controls row below the toggle bar: search | filters | divider | new folder */
+.header-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid $ui-black-transparent;
+    background: $ui-white;
 }
 
 .header-search {
