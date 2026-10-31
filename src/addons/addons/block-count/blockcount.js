@@ -1,224 +1,6 @@
 import WindowManager from '../../window-system/window-manager.js';
+import {mountProjectAnalyzer} from '../simple-project-analyzer/embedded.js';
 
-
-// ===== Bilup 新版项目复杂度分析（从 Bilup/scratch-gui 移植）=====
-const BL_CONDITIONALS = new Set(['control_if', 'control_if_else', 'control_switch']);
-const BL_LOOPS = new Set(['control_repeat', 'control_repeat_until', 'control_forever',
-    'control_while', 'control_for_each']);
-const blClamp = (value, max) => Math.min(max, Math.round(value));
-const blGetTargetName = target => {
-    if (typeof target.getName === 'function') return target.getName();
-    return target.sprite && target.sprite.name ? target.sprite.name : 'Sprite';
-};
-const blGetScriptIds = target => {
-    if (typeof target.blocks.getScripts === 'function') return target.blocks.getScripts();
-    return Object.values(target.blocks._blocks)
-        .filter(block => !block.shadow && !block.parent)
-        .map(block => block.id);
-};
-const blHumanizeOpcode = opcode => {
-    const labels = {
-        event_whenflagclicked: '绿旗', event_whenkeypressed: '按键', event_whenthisspriteclicked: '角色被点击',
-        event_whenstageclicked: '舞台被点击', event_whenbroadcastreceived: '接收广播',
-        control_start_as_clone: '克隆体启动', procedures_definition: '自制积木'
-    };
-    if (labels[opcode]) return labels[opcode];
-    const name = (opcode.split('_').slice(1).join(' ') || opcode).replace(/([a-z])([A-Z])/g, '$1 $2');
-    return name.charAt(0).toUpperCase() + name.slice(1);
-};
-const blAnalyzeScript = (blocks, rootId) => {
-    const visited = new Set();
-    let length = 0;
-    let maxDepth = 0;
-    let controlCount = 0;
-    const walk = (firstId, depth) => {
-        let blockId = firstId;
-        while (blockId && !visited.has(blockId)) {
-            visited.add(blockId);
-            const block = blocks[blockId];
-            if (!block) break;
-            if (!block.shadow) {
-                length++;
-                maxDepth = Math.max(maxDepth, depth);
-                if (BL_CONDITIONALS.has(block.opcode) || BL_LOOPS.has(block.opcode)) controlCount++;
-            }
-            for (const [name, input] of Object.entries(block.inputs || {})) {
-                if (input.block) walk(input.block, name.startsWith('SUBSTACK') ? depth + 1 : depth);
-            }
-            blockId = block.next;
-        }
-    };
-    walk(rootId, 0);
-    return {length, maxDepth, controlCount};
-};
-const blAnalyzeProject = runtime => {
-    const targets = (runtime.targets || []).filter(target =>
-        target && target.blocks && target.blocks._blocks && target.isOriginal !== false);
-    const categories = Object.create(null);
-    const variables = new Map();
-    const scripts = [];
-    const targetMetrics = [];
-    let blockCount = 0, costumeCount = 0, soundCount = 0, conditionalCount = 0;
-    let loopCount = 0, eventCount = 0, customCallCount = 0, customDefinitionCount = 0;
-    for (const target of targets) {
-        const blocks = target.blocks._blocks;
-        const visibleBlocks = Object.values(blocks).filter(block => !block.shadow);
-        const scriptIds = blGetScriptIds(target);
-        const targetName = blGetTargetName(target);
-        const targetScripts = [];
-        blockCount += visibleBlocks.length;
-        costumeCount += target.sprite && target.sprite.costumes ? target.sprite.costumes.length : 0;
-        soundCount += target.sprite && target.sprite.sounds ? target.sprite.sounds.length : 0;
-        for (const variable of Object.values(target.variables || {})) variables.set(variable.id, variable);
-        for (const block of visibleBlocks) {
-            const category = block.opcode.split('_')[0] || 'other';
-            categories[category] = (categories[category] || 0) + 1;
-            if (BL_CONDITIONALS.has(block.opcode)) conditionalCount++;
-            if (BL_LOOPS.has(block.opcode)) loopCount++;
-            if (block.opcode.startsWith('event_')) eventCount++;
-            if (block.opcode === 'procedures_call') customCallCount++;
-            if (block.opcode === 'procedures_definition') customDefinitionCount++;
-        }
-        for (const rootId of scriptIds) {
-            const root = blocks[rootId];
-            if (!root || root.shadow) continue;
-            const shape = blAnalyzeScript(blocks, rootId);
-            const script = Object.assign({}, shape, {
-                id: rootId, targetId: target.id, targetName,
-                label: blHumanizeOpcode(root.opcode),
-                score: shape.length + (shape.controlCount * 4) + (shape.maxDepth * 8)
-            });
-            scripts.push(script);
-            targetScripts.push(script);
-        }
-        targetMetrics.push({
-            id: target.id, name: targetName, isStage: Boolean(target.isStage),
-            blocks: visibleBlocks.length, scripts: targetScripts.length,
-            costumes: target.sprite && target.sprite.costumes ? target.sprite.costumes.length : 0,
-            sounds: target.sprite && target.sprite.sounds ? target.sprite.sounds.length : 0
-        });
-    }
-    const scriptCount = scripts.length;
-    const maxDepth = scripts.reduce((max, script) => Math.max(max, script.maxDepth), 0);
-    const averageDepth = scriptCount ? scripts.reduce((sum, script) => sum + script.maxDepth, 0) / scriptCount : 0;
-    const longestScript = scripts.reduce((max, script) => Math.max(max, script.length), 0);
-    const scoreParts = {
-        size: blClamp(blockCount / 20, 25),
-        structure: blClamp(scriptCount / 3, 20),
-        flow: blClamp(((conditionalCount * 2) + loopCount) / 3, 25),
-        nesting: blClamp((maxDepth * 3) + averageDepth, 15),
-        length: blClamp(Math.max(0, longestScript - 10) / 3, 15)
-    };
-    const complexityScore = Object.values(scoreParts).reduce((sum, value) => sum + value, 0);
-    const scalarCount = [...variables.values()].filter(variable => !variable.type).length;
-    const listCount = [...variables.values()].filter(variable => variable.type === 'list').length;
-    const recommendations = [];
-    if (maxDepth >= 4) recommendations.push({id: 'nesting', count: scripts.filter(s => s.maxDepth >= 4).length});
-    if (longestScript >= 40) recommendations.push({id: 'length', count: scripts.filter(s => s.length >= 40).length});
-    if (blockCount >= 100 && customDefinitionCount === 0) recommendations.push({id: 'custom-blocks'});
-    if (scriptCount >= 30) recommendations.push({id: 'scripts', count: scriptCount});
-    return {
-        blockCount, scriptCount,
-        spriteCount: targetMetrics.filter(t => !t.isStage).length,
-        costumeCount, soundCount, scalarCount, listCount,
-        conditionalCount, loopCount, eventCount, customCallCount, customDefinitionCount,
-        maxDepth, averageDepth: Math.round(averageDepth * 10) / 10, longestScript, complexityScore, scoreParts,
-        recommendations,
-        categories: Object.entries(categories).sort((a, b) => b[1] - a[1]),
-        targets: targetMetrics.sort((a, b) => b.blocks - a.blocks),
-        scripts: scripts.sort((a, b) => b.score - a.score)
-    };
-};
-
-const blCatColor = {motion: '#4c97ff', looks: '#9966ff', sound: '#cf63cf', event: '#ffbf00',
-    control: '#ffab19', sensing: '#5cb1d6', operators: '#59c059', data: '#ff8c1a',
-    procedures: '#ff6680', pen: '#0fbd8c'};
-const blCatLabel = {motion: '运动', looks: '外观', sound: '声音', event: '事件', control: '控制',
-    sensing: '侦测', operators: '运算', data: '变量', procedures: '自制积木', pen: '画笔'};
-const blEsc = value => String(value == null ? '' : value)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-// 渲染 Bilup 新版分析界面（HTML 版）
-const renderBilupAnalysis = m => {
-    const level = m.complexityScore >= 60 ? '高' : (m.complexityScore >= 30 ? '中' : '低');
-    const levelColor = m.complexityScore >= 60 ? '#e06c75' : (m.complexityScore >= 30 ? '#e5c07b' : '#59c059');
-    const fg = 'var(--ui-modal-foreground, #2b2b2b)';
-    const cardBg = 'var(--ui-secondary, #f1f3f5)';
-    const muted = 'var(--ui-black-transparent-40, #8a8f98)';
-    const card = 'background:' + cardBg + ';border-radius:12px;padding:16px 18px;margin-bottom:16px;';
-    const tile = 'background:' + cardBg + ';border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;';
-    const tileVal = 'font-size:22px;font-weight:700;color:' + fg + ';line-height:1.1;';
-    const tileLbl = 'font-size:12px;color:' + muted + ';';
-    const h2 = 'font-size:15px;font-weight:700;margin:0 0 10px;color:' + fg + ';';
-    const tiles = [
-        [m.blockCount, '积木总数'], [m.scriptCount, '脚本数'],
-        [m.spriteCount, '角色数'], [m.maxDepth, '最大嵌套']
-    ].map(([v, l]) => '<div style="' + tile + '"><strong style="' + tileVal + '">' + v +
-        '</strong><span style="' + tileLbl + '">' + l + '</span></div>').join('');
-
-    const maxCat = m.categories.length ? m.categories[0][1] : 1;
-    const bars = m.categories.slice(0, 10).map(([cat, count]) => {
-        const w = Math.max(3, Math.round((count / maxCat) * 100));
-        const color = blCatColor[cat] || '#95a5a6';
-        const name = blCatLabel[cat] || blHumanizeOpcode(cat);
-        return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' +
-            '<span style="width:70px;font-size:12px;color:' + fg + ';text-align:right;">' + name + '</span>' +
-            '<span style="flex:1;height:10px;background:rgba(128,128,128,0.18);border-radius:6px;overflow:hidden;">' +
-            '<span style="display:block;height:100%;width:' + w + '%;background:' + color + ';border-radius:6px;"></span></span>' +
-            '<strong style="width:38px;font-size:12px;color:' + fg + ';">' + count + '</strong></div>';
-    }).join('') || '<p style="color:' + muted + ';font-size:13px;">暂无积木</p>';
-
-    const recList = m.recommendations.length ? m.recommendations.map(r => {
-        const titles = {
-            nesting: '嵌套偏深', length: '存在过长脚本',
-            'custom-blocks': '建议使用自制积木', scripts: '脚本数量较多'
-        };
-        const details = {
-            nesting: (r.count || 0) + ' 个脚本嵌套 ≥ 4 层',
-            length: (r.count || 0) + ' 个脚本长度 ≥ 40 块',
-            'custom-blocks': '积木总数 ≥ 100 但未使用自制积木',
-            scripts: (r.count || 0) + ' 个脚本，建议拆分整理'
-        };
-        return '<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid rgba(128,128,128,0.15);">' +
-            '<span style="color:#e5c07b;">●</span><span style="font-size:13px;color:' + fg + ';">' +
-            '<strong>' + titles[r.id] + '</strong><br><span style="color:' + muted + ';font-size:12px;">' +
-            details[r.id] + '</span></span></div>';
-    }).join('') : '<div style="font-size:13px;color:#59c059;">结构均衡，未发现明显的复杂度问题。</div>';
-
-    const scripts = m.scripts.slice(0, 8).map(s => '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.12);">' +
-        '<span style="flex:1;font-size:13px;color:' + fg + ';">' + blEsc(s.targetName) +
-        ' · <span style="color:' + muted + ';">' + blEsc(s.label) + '</span></span>' +
-        '<span style="font-size:12px;color:' + muted + ';">' + s.length + ' 块</span>' +
-        '<span style="font-size:12px;color:' + muted + ';">' + s.maxDepth + ' 层</span></div>').join('') ||
-        '<p style="color:' + muted + ';font-size:13px;">暂无脚本</p>';
-
-    const sprites = m.targets.filter(t => !t.isStage).map(t => '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.12);">' +
-        '<span style="flex:1;font-size:13px;color:' + fg + ';">' + blEsc(t.name) + '</span>' +
-        '<span style="font-size:12px;color:' + muted + ';">' + t.blocks + ' 块</span>' +
-        '<span style="font-size:12px;color:' + muted + ';">' + t.scripts + ' 脚本</span></div>').join('') ||
-        '<p style="color:' + muted + ';font-size:13px;">暂无角色</p>';
-
-    const scoreBlock = m.blockCount > 0 ? (
-        '<div style="' + card + 'display:flex;align-items:center;gap:20px;">' +
-        '<div style="width:96px;height:96px;border-radius:50%;display:flex;flex-direction:column;' +
-        'align-items:center;justify-content:center;border:6px solid ' + levelColor + ';">' +
-        '<strong style="font-size:26px;font-weight:800;color:' + fg + ';">' + m.complexityScore + '</strong>' +
-        '<small style="font-size:11px;color:' + muted + ';">/ 100</small></div>' +
-        '<div><div style="font-size:13px;color:' + muted + ';">复杂度评分</div>' +
-        '<strong style="font-size:20px;color:' + levelColor + ';">' + level + '</strong>' +
-        '<div style="font-size:12px;color:' + muted + ';margin-top:4px;">' +
-        m.blockCount + ' 个积木 · ' + m.scriptCount + ' 个脚本 · ' + m.spriteCount + ' 个角色</div></div></div>'
-    ) : '<div style="' + card + 'font-size:13px;color:' + muted + ';">当前项目还没有积木，先拖几个积木试试吧。</div>';
-
-    return '<h2 style="font-size:20px;font-weight:800;margin:0 0 16px;color:' + fg + ';">项目复杂度分析</h2>' +
-        '<div style="font-size:12px;color:' + muted + ';margin-bottom:12px;">Bilup 分析引擎</div>' +
-        scoreBlock +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px;">' + tiles + '</div>' +
-        '<div style="' + card + '"><h3 style="' + h2 + '">积木分布</h3>' + bars + '</div>' +
-        '<div style="' + card + '"><h3 style="' + h2 + '">改进建议</h3>' + recList + '</div>' +
-        '<div style="' + card + '"><h3 style="' + h2 + '">脚本列表</h3>' + scripts + '</div>' +
-        '<div style="' + card + '"><h3 style="' + h2 + '">角色列表</h3>' + sprites + '</div>';
-};
 
 export default async function ({ addon, console, msg }) {
   const vm = addon.tab.traps.vm;
@@ -404,6 +186,7 @@ export default async function ({ addon, console, msg }) {
     
     let languageChangeListener;
     let currentMode = 'original';
+    let spaAnalyzer = null;
     
     // 加载Chart.js库
     async function loadChartJS() {
@@ -1324,6 +1107,10 @@ export default async function ({ addon, console, msg }) {
     
     // Create a function to update the window content
     const updateWindowContent = () => {
+      if (currentMode !== 'astra' && spaAnalyzer) {
+        spaAnalyzer.unmount();
+        spaAnalyzer = null;
+      }
       const content = document.createElement('div');
       content.className = 'sa-block-count-window-content';
       content.style.cssText = `
@@ -1443,23 +1230,8 @@ export default async function ({ addon, console, msg }) {
       `;
       astraButton.addEventListener('click', () => switchMode('astra'));
 
-      const bilupButton = document.createElement('button');
-      bilupButton.textContent = 'Bilup项目分析';
-      bilupButton.style.cssText = `
-        padding: 8px 16px;
-        border: 1px solid var(--ui-black-transparent, #ccc);
-        border-radius: 4px;
-        background: ${currentMode === 'bilup' ? 'var(--looks-secondary, #0fbd8c)' : 'var(--ui-secondary, #f8f9fa)'};
-        color: ${currentMode === 'bilup' ? 'white' : 'var(--ui-modal-foreground, #000)'};
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 500;
-      `;
-      bilupButton.addEventListener('click', () => switchMode('bilup'));
-      
       buttonContainer.appendChild(originalButton);
       buttonContainer.appendChild(astraButton);
-      buttonContainer.appendChild(bilupButton);
       content.appendChild(buttonContainer);
       
       // Main content container
@@ -1515,185 +1287,15 @@ export default async function ({ addon, console, msg }) {
             </div>
           </div>
         `;
-      } else if (currentMode === 'bilup') {
-        const blMetrics = blAnalyzeProject(vm.runtime);
-        contentContainer.innerHTML = renderBilupAnalysis(blMetrics);
       } else {
-        contentContainer.innerHTML = `
-          <div style="margin-bottom: 20px;">
-            <h2 style="margin-bottom: 10px;">项目分析</h2>
-            <div style="width: 100%; height: 1px; background: var(--ui-black-transparent, #e0e0e0);"></div>
-          </div>
-          
-          <div class="sa-analyze-loading" id="saAnalyzeLoading">
-            <div style="display: flex; flex-direction: column; align-items: center; padding: 40px;">
-              <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
-              <p style="color: #666;">分析中...</p>
-            </div>
-          </div>
-          <div class="sa-analyze-results" id="saAnalyzeResults" style="display: none;">
-            <!-- 项目统计部分 -->
-            <div style="margin-bottom: 30px;">
-              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">项目统计</h3>
-              <div class="sa-analyze-stats-grid" id="saStatsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px;">
-                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">总代码块数</div>
-                </div>
-                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">有效积木</div>
-                </div>
-                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">函数定义</div>
-                </div>
-                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">角色</div>
-                </div>
-                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">造型</div>
-                </div>
-                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">声音</div>
-                </div>
-                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">变量</div>
-                </div>
-                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">列表</div>
-                </div>
-                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">扩展</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 代码类型分布 -->
-            <div style="margin-bottom: 30px;">
-              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">积木分布</h3>
-              <div style="background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; height: 300px;">
-                <canvas id="saCodeTypeChart" width="400" height="200"></canvas>
-              </div>
-            </div>
-
-            <!-- Dr.Scratch评分系统 -->
-            <div style="margin-bottom: 30px;">
-              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">Dr.Scratch评分</h3>
-              <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; height: 350px;">
-                  <canvas id="saDrScratchChart" width="400" height="300"></canvas>
-                </div>
-                <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px;">
-                  <div id="saDrScratchDetails" style="color: var(--ui-modal-foreground, white);">
-                    <div style="margin-bottom: 20px;">
-                      <h4 style="margin-bottom: 10px;">总分：<span id="saDrScratchTotalScore">0</span> / 21</h4>
-                      <div id="saDrScratchScoreLevel" style="color: var(--ui-black-transparent, #999);">评估等级：计算中...</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 数学逻辑评估 -->
-            <div style="margin-bottom: 30px;">
-              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">数学逻辑评估</h3>
-              <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; height: 350px;">
-                  <canvas id="saMathLogicChart" width="400" height="300"></canvas>
-                </div>
-                <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px;">
-                  <div id="saMathLogicDetails" style="color: var(--ui-modal-foreground, white);">
-                    <div style="margin-bottom: 20px;">
-                      <h4 style="margin-bottom: 10px;">数学总分：<span id="saMathTotalScore">0</span> 个积木</h4>
-                      <div id="saMathScoreLevel" style="color: var(--ui-black-transparent, #999);">评估等级：计算中...</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 使用的扩展 -->
-            <div style="margin-bottom: 20px;">
-              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">使用的扩展</h3>
-              <div id="saExtensionList" style="background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; color: var(--ui-modal-foreground, white);">
-                <p>加载中...</p>
-              </div>
-            </div>
-
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--ui-black-transparent, #e0e0e0);">
-              <button id="saExportImageBtn" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: transform 0.2s, box-shadow 0.2s;">
-                📸 导出结果为图片
-              </button>
-            </div>
-          </div>
-        `;
-        
-        // 异步分析项目
-        setTimeout(async () => {
-          console.log('开始分析项目...');
-          const analysis = await analyzeProject();
-          console.log('分析完成:', analysis);
-          await updateAstraAnalysisResults(analysis);
-          console.log('结果更新完成');
-
-          // 绑定导出图片按钮事件
-          const exportBtn = document.getElementById('saExportImageBtn');
-          if (exportBtn) {
-            exportBtn.addEventListener('click', async () => {
-              const resultsEl = document.getElementById('saAnalyzeResults');
-              if (!resultsEl) return;
-
-              exportBtn.textContent = '⏳ 导出中...';
-              exportBtn.disabled = true;
-
-              try {
-                // 动态加载 html2canvas
-                if (!window.html2canvas) {
-                  await new Promise((resolve, reject) => {
-                    const script = document.createElement('script');
-                    script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-                    script.onload = resolve;
-                    script.onerror = reject;
-                    document.head.appendChild(script);
-                  });
-                }
-
-                const canvas = await window.html2canvas(resultsEl, {
-                  scale: 2,
-                  useCORS: true,
-                  backgroundColor: '#ffffff',
-                  logging: false
-                });
-
-                canvas.toBlob(blob => {
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `astra-analysis-${Date.now()}.png`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                }, 'image/png');
-              } catch (err) {
-                console.error('导出图片失败:', err);
-                alert('导出图片失败：' + err.message);
-              } finally {
-                exportBtn.textContent = '📸 导出结果为图片';
-                exportBtn.disabled = false;
-              }
-            });
-          }
-        }, 100);
+        // AstraEditor 项目分析已整体替换为 bilup 的 SPA 简易作品分析器
+        contentContainer.style.padding = '0';
+        if (spaAnalyzer) {
+          spaAnalyzer.unmount();
+        }
+        spaAnalyzer = mountProjectAnalyzer(contentContainer, {vm, addon});
       }
-      
+
       content.appendChild(contentContainer);
       complexityWindow.setContent(content);
     };
@@ -1718,7 +1320,9 @@ export default async function ({ addon, console, msg }) {
         if (currentMode === 'original') {
           metrics = getProjectComplexity();
         }
-        updateWindowContent();
+        if (currentMode !== 'astra') {
+          updateWindowContent();
+        }
       }, 1000);
     };
     vm.on("PROJECT_CHANGED", projectChangeListener);
