@@ -1,6 +1,11 @@
 import WindowManager from '../../window-system/window-manager.js';
 
+import {makeT} from '../../../lib/mw/mw-l10n.js';
+
 export default async function ({ addon, msg, console }) {
+    const T = makeT({
+        openTerminalTitle: {en: ' - Open the terminal window', 'zh-cn': ' - 打开终端窗口', geng: ' - 开个终端嗷', wenyan: ' - 启终端之窗'}
+    });
   // 等待 DOM 加载完成
   await addon.tab.waitForElement('body', { markAsSeen: true });
 
@@ -281,7 +286,7 @@ export default async function ({ addon, msg, console }) {
   const createSidebarButton = () => {
     const btn = document.createElement('button');
     btn.className = 'sa-terminal-button';
-    btn.title = terminalName() + ' - 打开终端窗口';
+    btn.title = terminalName() + T('openTerminalTitle');
     btn.appendChild(createSvgIcon());
     btn.addEventListener('click', openTerminalWindow);
     addon.tab.displayNoneWhileDisabled(btn);

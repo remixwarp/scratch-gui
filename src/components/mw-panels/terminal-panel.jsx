@@ -1,9 +1,58 @@
 import React, {useEffect, useRef, useState, useCallback} from 'react';
+import {makeT} from '../mw/mw-l10n.js';
 
 // 纯 DOM 终端，无 CDN 依赖。
 // 命令可读取/编辑当前作品文件，范式与「超级重构」一致：
 //   读取  -> vm.toJSON() 把当前作品序列化成 project.json
 //   应用  -> vm.loadProject(newData) 把修改后的数据重新加载回作品
+
+
+// ---- 终端界面文案（en / zh-cn / geng / wenyan）----
+const T = makeT({
+    errNoVm: {en: 'Cannot access the VM', 'zh-cn': '无法获取 VM', geng: '拿不到 VM 嗷', wenyan: '不得虚机'},
+    outputTruncated: {en: '... (output truncated)', 'zh-cn': '... (输出已截断)', geng: '... (输出太长砍了)', wenyan: '…（输出已裁）'},
+    catUsage: {en: 'Usage: cat <project.json | sprite name | sprite name/script>', 'zh-cn': '用法：cat <project.json | 角色名 | 角色名/script>', geng: '用法：cat <project.json | 角色名 | 角色名/script>', wenyan: '用法：cat <project.json | 角色名 | 角色名/script>'},
+    cannotReadProject: {en: 'Cannot read the current project', 'zh-cn': '无法读取当前作品', geng: '读不到当前作品嗷', wenyan: '不得读当前之作'},
+    notFound: {en: 'Not found: {path}', 'zh-cn': '未找到：{path}', geng: '找不到：{path}', wenyan: '未得：{path}'},
+    helpDesc: {en: 'Show help', 'zh-cn': '显示帮助信息', geng: '看帮助嗷', wenyan: '示其助'},
+    availableCommands: {en: 'Available commands:', 'zh-cn': '可用命令：', geng: '能用的命令：', wenyan: '可用之令：'},
+    historyHint: {en: "Tip: press ↑/↓ to browse history, press Enter to run.", 'zh-cn': '提示：↑/↓ 浏览历史，输入后按回车执行。', geng: '提示：↑/↓ 翻历史，回车就跑。', wenyan: '示：↑/↓ 览其史，录毕按回车行之。'},
+    clearDesc: {en: 'Clear the terminal', 'zh-cn': '清空终端', geng: '清屏嗷', wenyan: '涤其端'},
+    echoDesc: {en: 'Echo the input text', 'zh-cn': '回显输入的文本', geng: '你说啥它说啥', wenyan: '复述所录之言'},
+    dateDesc: {en: 'Show current date and time', 'zh-cn': '显示当前日期与时间', geng: '看看现在几点', wenyan: '示今之日期时刻'},
+    whoamiDesc: {en: 'Show current user', 'zh-cn': '显示当前用户', geng: '我是谁嗷', wenyan: '示今之用者'},
+    versionDesc: {en: 'Show the RemixWarp version', 'zh-cn': '显示 RemixWarp 版本', geng: '看看版本号', wenyan: '示 RemixWarp 之版'},
+    aboutDesc: {en: 'About RemixWarp', 'zh-cn': '关于 RemixWarp', geng: '关于 RemixWarp 嗷', wenyan: 'RemixWarp 之本末'},
+    aboutLine1: {en: 'RemixWarp — an enhanced editor based on Scratch', 'zh-cn': 'RemixWarp — 基于 Scratch 的增强编辑器', geng: 'RemixWarp — Scratch 的增强版编辑器嗷', wenyan: 'RemixWarp — 本乎 Scratch 之增补编辑器'},
+    aboutLine2: {en: 'With command palette, terminal and VS Code style layout.', 'zh-cn': '集成命令面板、终端与 VS Code 风格布局。', geng: '带命令面板、终端和 VS Code 风格布局。', wenyan: '兼命令之panel、终端与 VS Code 之布局。'},
+    lsDesc: {en: 'List files of the current project (project.json + sprites/stage)', 'zh-cn': '列出当前作品的文件（project.json + 各角色/舞台）', geng: '列作品文件（project.json + 角色/舞台）', wenyan: '列当前作品之牍（project.json 并诸角色/舞台）'},
+    blocksCount: {en: '({count} blocks)', 'zh-cn': '({count} 个积木)', geng: '({count} 块积木嗷)', wenyan: '（积木 {count} 枚）'},
+    readDesc: {en: 'Read a file: cat project.json | cat <sprite> | cat <sprite>/script', 'zh-cn': '查看文件：cat project.json | cat <角色> | cat <角色>/script', geng: '看文件：cat project.json | cat <角色> | cat <角色>/script', wenyan: '观牍：cat project.json | cat <角色> | cat <角色>/script'},
+    readAliasDesc: {en: 'Alias of cat, same as above', 'zh-cn': 'cat 的别名，同上', geng: 'cat 的别名，一样嗷', wenyan: 'cat 之别名，同上'},
+    varsDesc: {en: 'List all variables in the project (global and sprite-level)', 'zh-cn': '列出当前作品中的所有变量（含全局与角色级）', geng: '列出作品里所有变量（全局的和角色的都有）', wenyan: '列当前作品诸变数（兼全局与角色）'},
+    noVars: {en: '(no variables)', 'zh-cn': '（无变量）', geng: '（一个变量都没有嗷）', wenyan: '（无变数）'},
+    scopeGlobal: {en: 'global', 'zh-cn': '全局', geng: '全局的', wenyan: '通天下'},
+    renameDesc: {en: 'Rename a sprite: rename <old name> <new name>', 'zh-cn': '重命名角色：rename <旧角色名> <新角色名>', geng: '改角色名：rename <旧角色名> <新角色名>', wenyan: '改角色之名：rename <旧名> <新名>'},
+    renameUsage: {en: 'Usage: rename <old sprite name> <new sprite name>', 'zh-cn': '用法：rename <旧角色名> <新角色名>', geng: '用法：rename <旧角色名> <新角色名>', wenyan: '用法：rename <旧角色名> <新角色名>'},
+    spriteNotFound: {en: 'Sprite not found: {name}', 'zh-cn': '未找到角色：{name}', geng: '没这个角色：{name}', wenyan: '未得角色：{name}'},
+    spriteRenamed: {en: 'Renamed sprite "{old}" to "{new}"', 'zh-cn': '已将角色「{old}」重命名为「{new}」', geng: '角色「{old}」改名成「{new}」咯', wenyan: '角色「{old}」已改名「{new}」'},
+    renameVarDesc: {en: 'Rename a variable: rename-var <old name> <new name>', 'zh-cn': '重命名变量：rename-var <旧变量名> <新变量名>', geng: '改变量名：rename-var <旧变量名> <新变量名>', wenyan: '改变数之名：rename-var <旧名> <新名>'},
+    renameVarUsage: {en: 'Usage: rename-var <old variable name> <new variable name>', 'zh-cn': '用法：rename-var <旧变量名> <新变量名>', geng: '用法：rename-var <旧变量名> <新变量名>', wenyan: '用法：rename-var <旧变数名> <新变数名>'},
+    varNotFound: {en: 'Variable not found: {name}', 'zh-cn': '未找到变量：{name}', geng: '没这个变量：{name}', wenyan: '未得变数：{name}'},
+    varRenamed: {en: 'Renamed variable at {count} place(s)', 'zh-cn': '已重命名变量 {count} 处', geng: '变量改名完成，共 {count} 处', wenyan: '变数已更名，凡 {count} 处'},
+    applyFailed: {en: 'Failed to apply: {message}', 'zh-cn': '应用失败：{message}', geng: '没应用上：{message}', wenyan: '行之未成：{message}'},
+    rmDesc: {en: 'Delete a sprite: rm <sprite name>', 'zh-cn': '删除角色：rm <角色名>', geng: '删角色：rm <角色名>', wenyan: '除角色：rm <角色名>'},
+    rmUsage: {en: 'Usage: rm <sprite name>', 'zh-cn': '用法：rm <角色名>', geng: '用法：rm <角色名>', wenyan: '用法：rm <角色名>'},
+    spriteDeleted: {en: 'Deleted sprite "{name}"', 'zh-cn': '已删除角色「{name}」', geng: '角色「{name}」删掉咯', wenyan: '角色「{name}」已除'},
+    themeDesc: {en: 'Show or switch theme (theme <dark|light>)', 'zh-cn': '显示或切换主题（theme <dark|light>）', geng: '看或换主题（theme <dark|light>）', wenyan: '示或易其题（theme <dark|light>）'},
+    themeSwitched: {en: 'Switched to {mode} theme.', 'zh-cn': '已请求切换到 {mode} 主题。', geng: '换到 {mode} 主题咯。', wenyan: '已请易为 {mode} 之题。'},
+    themePreference: {en: 'Current system theme preference: {mode}', 'zh-cn': '当前系统主题偏好：{mode}', geng: '系统主题偏好：{mode}', wenyan: '今系统所好之题：{mode}'},
+    themeUsage: {en: 'Usage: theme <dark|light>', 'zh-cn': '用法：theme <dark|light>', geng: '用法：theme <dark|light>', wenyan: '用法：theme <dark|light>'},
+    cmdNotFound: {en: 'Command not found: {cmd}', 'zh-cn': '命令未找到: {cmd}', geng: '没这命令: {cmd}', wenyan: '未得其令: {cmd}'},
+    cmdHelpHint: {en: "Type 'help' to see available commands.", 'zh-cn': "输入 'help' 查看可用命令。", geng: "输个 'help' 看看有啥命令。", wenyan: "录 'help' 以观可用之令。"},
+    ready: {en: "Terminal ready. Type 'ls' to view project files, 'help' for commands.", 'zh-cn': "终端就绪。输入 'ls' 查看作品文件，输入 'help' 查看命令。", geng: "终端就绪嗷。输 'ls' 看作品文件，输 'help' 看命令。", wenyan: "终端备矣。录 'ls' 观作品之牍，录 'help' 观其令。"},
+    openTerminalTitle: {en: ' - Open the terminal window', 'zh-cn': ' - 打开终端窗口', geng: ' - 开个终端嗷', wenyan: ' - 启终端之窗'},
+});
 
 const getVm = () => {
     try {
@@ -30,14 +79,14 @@ const getProject = () => {
 
 const applyProject = project => {
     const vm = getVm();
-    if (!vm) return Promise.reject(new Error('无法获取 VM'));
+    if (!vm) return Promise.reject(new Error(T('errNoVm')));
     return vm.loadProject(project);
 };
 
 // 大文件输出超过该长度则截断，避免卡死终端
 const MAX_OUTPUT = 8000;
 const truncate = text => (text.length > MAX_OUTPUT ?
-    text.slice(0, MAX_OUTPUT) + '\n... (输出已截断)' : text);
+    text.slice(0, MAX_OUTPUT) + '\n' + T('outputTruncated') : text);
 
 const targetLabel = t => (t.isStage ? 'stage' : t.name);
 
@@ -45,12 +94,12 @@ const targetLabel = t => (t.isStage ? 'stage' : t.name);
 const catFile = (ctx, args) => {
     const path = args[0];
     if (!path) {
-        ctx.writeln('用法：cat <project.json | 角色名 | 角色名/script>', 'error');
+        ctx.writeln(T('catUsage'), 'error');
         return;
     }
     const project = getProject();
     if (!project) {
-        ctx.writeln('无法读取当前作品', 'error');
+        ctx.writeln(T('cannotReadProject'), 'error');
         return;
     }
     if (path === 'project.json') {
@@ -65,7 +114,7 @@ const catFile = (ctx, args) => {
     }
     const target = (project.targets || []).find(t => targetLabel(t) === targetName);
     if (!target) {
-        ctx.writeln(`未找到：${path}`, 'error');
+        ctx.writeln(T('notFound').replace('{path}', path), 'error');
         return;
     }
     const content = isScript ? (target.blocks || {}) : target;
@@ -74,36 +123,36 @@ const catFile = (ctx, args) => {
 
 const COMMANDS = {
     help: {
-        desc: '显示帮助信息',
+        desc: T('helpDesc'),
         run: (ctx) => {
-            ctx.writeln('可用命令：', 'info');
+            ctx.writeln(T('availableCommands'), 'info');
             Object.keys(COMMANDS).sort().forEach(name => {
                 ctx.writeln(`  ${name.padEnd(12)} - ${COMMANDS[name].desc}`, 'info');
             });
             ctx.writeln('');
-            ctx.writeln('提示：↑/↓ 浏览历史，输入后按回车执行。', 'info');
+            ctx.writeln(T('historyHint'), 'info');
         }
     },
-    clear: {desc: '清空终端', run: (ctx) => ctx.clear()},
-    cls: {desc: '清空终端', run: (ctx) => ctx.clear()},
-    echo: {desc: '回显输入的文本', run: (ctx, args) => ctx.writeln(args.join(' '), 'info')},
-    date: {desc: '显示当前日期与时间', run: (ctx) => ctx.writeln(new Date().toString(), 'info')},
-    whoami: {desc: '显示当前用户', run: (ctx) => ctx.writeln('remixwarp-user', 'info')},
-    version: {desc: '显示 RemixWarp 版本', run: (ctx) => ctx.writeln('RemixWarp 1.0.3', 'info')},
+    clear: {desc: T('clearDesc'), run: (ctx) => ctx.clear()},
+    cls: {desc: T('clearDesc'), run: (ctx) => ctx.clear()},
+    echo: {desc: T('echoDesc'), run: (ctx, args) => ctx.writeln(args.join(' '), 'info')},
+    date: {desc: T('dateDesc'), run: (ctx) => ctx.writeln(new Date().toString(), 'info')},
+    whoami: {desc: T('whoamiDesc'), run: (ctx) => ctx.writeln('remixwarp-user', 'info')},
+    version: {desc: T('versionDesc'), run: (ctx) => ctx.writeln('RemixWarp 1.0.3', 'info')},
     about: {
-        desc: '关于 RemixWarp',
+        desc: T('aboutDesc'),
         run: (ctx) => {
-            ctx.writeln('RemixWarp — 基于 Scratch 的增强编辑器', 'ok');
-            ctx.writeln('集成命令面板、终端与 VS Code 风格布局。', 'info');
+            ctx.writeln(T('aboutLine1'), 'ok');
+            ctx.writeln(T('aboutLine2'), 'info');
         }
     },
     // ---- 作品文件相关（模仿超级重构读取/修改当前项目）----
     ls: {
-        desc: '列出当前作品的文件（project.json + 各角色/舞台）',
+        desc: T('lsDesc'),
         run: (ctx) => {
             const project = getProject();
             if (!project) {
-                ctx.writeln('无法读取当前作品', 'error');
+                ctx.writeln(T('cannotReadProject'), 'error');
                 return;
             }
             ctx.writeln('project.json', 'info');
@@ -112,31 +161,31 @@ const COMMANDS = {
                 const costumes = (t.costumes || []).length;
                 const sounds = (t.sounds || []).length;
                 ctx.writeln(`  ${targetLabel(t)}/`, 'info');
-                ctx.writeln(`    script/   (${blocks} 个积木)`, 'info');
+                ctx.writeln(`    script/   ${T('blocksCount').replace('{count}', blocks)}`, 'info');
                 ctx.writeln(`    costumes/ (${costumes})`, 'info');
                 ctx.writeln(`    sounds/   (${sounds})`, 'info');
             });
         }
     },
     cat: {
-        desc: '查看文件：cat project.json | cat <角色> | cat <角色>/script',
+        desc: T('readDesc'),
         run: (ctx, args) => catFile(ctx, args)
     },
     read: {
-        desc: 'cat 的别名，同上',
+        desc: T('readAliasDesc'),
         run: (ctx, args) => catFile(ctx, args)
     },
     vars: {
-        desc: '列出当前作品中的所有变量（含全局与角色级）',
+        desc: T('varsDesc'),
         run: (ctx) => {
             const project = getProject();
             if (!project) {
-                ctx.writeln('无法读取当前作品', 'error');
+                ctx.writeln(T('cannotReadProject'), 'error');
                 return;
             }
             const seen = new Set();
             (project.targets || []).forEach(t => {
-                const scope = t.isStage ? '全局' : t.name;
+                const scope = t.isStage ? T('scopeGlobal') : t.name;
                 const vars = t.variables || {};
                 Object.keys(vars).forEach(id => {
                     const v = vars[id];
@@ -149,46 +198,46 @@ const COMMANDS = {
                     }
                 });
             });
-            if (seen.size === 0) ctx.writeln('（无变量）', 'info');
+            if (seen.size === 0) ctx.writeln(T('noVars'), 'info');
         }
     },
     rename: {
-        desc: '重命名角色：rename <旧角色名> <新角色名>',
+        desc: T('renameDesc'),
         run: (ctx, args) => {
             if (args.length < 2) {
-                ctx.writeln('用法：rename <旧角色名> <新角色名>', 'error');
+                ctx.writeln(T('renameUsage'), 'error');
                 return;
             }
             const oldName = args[0];
             const newName = args.slice(1).join(' ');
             const project = getProject();
             if (!project) {
-                ctx.writeln('无法读取当前作品', 'error');
+                ctx.writeln(T('cannotReadProject'), 'error');
                 return;
             }
             const target = (project.targets || []).find(t => !t.isStage && t.name === oldName);
             if (!target) {
-                ctx.writeln(`未找到角色：${oldName}`, 'error');
+                ctx.writeln(T('spriteNotFound').replace('{name}', oldName), 'error');
                 return;
             }
             target.name = newName;
             applyProject(project)
-                .then(() => ctx.writeln(`已将角色「${oldName}」重命名为「${newName}」`, 'ok'))
-                .catch(e => ctx.writeln('应用失败：' + e.message, 'error'));
+                .then(() => ctx.writeln(T('spriteRenamed').replace('{old}', oldName).replace('{new}', newName), 'ok'))
+                .catch(e => ctx.writeln(T('applyFailed').replace('{message}', e.message), 'error'));
         }
     },
     'rename-var': {
-        desc: '重命名变量：rename-var <旧变量名> <新变量名>',
+        desc: T('renameVarDesc'),
         run: (ctx, args) => {
             if (args.length < 2) {
-                ctx.writeln('用法：rename-var <旧变量名> <新变量名>', 'error');
+                ctx.writeln(T('renameVarUsage'), 'error');
                 return;
             }
             const oldName = args[0];
             const newName = args.slice(1).join(' ');
             const project = getProject();
             if (!project) {
-                ctx.writeln('无法读取当前作品', 'error');
+                ctx.writeln(T('cannotReadProject'), 'error');
                 return;
             }
             let renamed = 0;
@@ -202,50 +251,50 @@ const COMMANDS = {
                 });
             });
             if (renamed === 0) {
-                ctx.writeln(`未找到变量：${oldName}`, 'error');
+                ctx.writeln(T('varNotFound').replace('{name}', oldName), 'error');
                 return;
             }
             applyProject(project)
-                .then(() => ctx.writeln(`已重命名变量 ${renamed} 处`, 'ok'))
-                .catch(e => ctx.writeln('应用失败：' + e.message, 'error'));
+                .then(() => ctx.writeln(T('varRenamed').replace('{count}', renamed), 'ok'))
+                .catch(e => ctx.writeln(T('applyFailed').replace('{message}', e.message), 'error'));
         }
     },
     rm: {
-        desc: '删除角色：rm <角色名>',
+        desc: T('rmDesc'),
         run: (ctx, args) => {
             const name = args[0];
             if (!name) {
-                ctx.writeln('用法：rm <角色名>', 'error');
+                ctx.writeln(T('rmUsage'), 'error');
                 return;
             }
             const project = getProject();
             if (!project) {
-                ctx.writeln('无法读取当前作品', 'error');
+                ctx.writeln(T('cannotReadProject'), 'error');
                 return;
             }
             const before = (project.targets || []).length;
             project.targets = (project.targets || []).filter(t => t.isStage || t.name !== name);
             if (project.targets.length === before) {
-                ctx.writeln(`未找到角色：${name}`, 'error');
+                ctx.writeln(T('spriteNotFound').replace('{name}', name), 'error');
                 return;
             }
             applyProject(project)
-                .then(() => ctx.writeln(`已删除角色「${name}」`, 'ok'))
-                .catch(e => ctx.writeln('应用失败：' + e.message, 'error'));
+                .then(() => ctx.writeln(T('spriteDeleted').replace('{name}', name), 'ok'))
+                .catch(e => ctx.writeln(T('applyFailed').replace('{message}', e.message), 'error'));
         }
     },
     theme: {
-        desc: '显示或切换主题（theme <dark|light>）',
+        desc: T('themeDesc'),
         run: (ctx, args) => {
             const mode = (args[0] || '').toLowerCase();
             if (mode === 'dark' || mode === 'light') {
                 window.dispatchEvent(new CustomEvent('mw-theme-set', {detail: mode}));
-                ctx.writeln(`已请求切换到 ${mode} 主题。`, 'ok');
+                ctx.writeln(T('themeSwitched').replace('{mode}', mode), 'ok');
             } else {
                 const dark = window.matchMedia &&
                     window.matchMedia('(prefers-color-scheme: dark)').matches;
-                ctx.writeln(`当前系统主题偏好：${dark ? 'dark' : 'light'}`);
-                ctx.writeln('用法：theme <dark|light>');
+                ctx.writeln(T('themePreference').replace('{mode}', dark ? 'dark' : 'light'));
+                ctx.writeln(T('themeUsage'));
             }
         }
     }
@@ -310,8 +359,8 @@ const TerminalPanel = () => {
         if (handler) {
             handler.run(ctx, args);
         } else {
-            ctx.writeln(`命令未找到: ${cmd}`, 'error');
-            ctx.writeln("输入 'help' 查看可用命令。", 'error');
+            ctx.writeln(T('cmdNotFound').replace('{cmd}', cmd), 'error');
+            ctx.writeln(T('cmdHelpHint'), 'error');
         }
     }, [appendLines]);
 
@@ -319,7 +368,7 @@ const TerminalPanel = () => {
     useEffect(() => {
         const banner = [
             {id: `line-${++idRef.current}`, text: '=== RemixWarp Terminal ===', cls: 'ok'},
-            {id: `line-${++idRef.current}`, text: '终端就绪。输入 \'ls\' 查看作品文件，输入 \'help\' 查看命令。', cls: 'ok'},
+            {id: `line-${++idRef.current}`, text: T('ready'), cls: 'ok'},
             {id: `line-${++idRef.current}`, text: '', cls: 'info'}
         ];
         setLines(banner);
