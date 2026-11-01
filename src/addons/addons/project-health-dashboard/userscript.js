@@ -204,7 +204,7 @@ class ProjectAnalyzer {
                         severity: 'info',
                         rule: 'empty-script',
                         sprite: target.name,
-                        message: `空脚本：${tb.opcode} 没有后续积木`
+                        message: phdT('lintEmptyScript').replace('{opcode}', tb.opcode)
                     });
                 }
             });
@@ -226,7 +226,7 @@ class ProjectAnalyzer {
                                 severity: 'warning',
                                 rule: 'empty-branch',
                                 sprite: target.name,
-                                message: `空分支：${b.opcode} 的 SUBSTACK 为空`
+                                message: phdT('lintEmptyBranch').replace('{opcode}', b.opcode)
                             });
                         }
                     }
@@ -239,7 +239,7 @@ class ProjectAnalyzer {
                                 severity: 'warning',
                                 rule: 'empty-branch',
                                 sprite: target.name,
-                                message: `空分支：${b.opcode} 的 SUBSTACK2（else）为空`
+                                message: phdT('lintEmptyBranch2').replace('{opcode}', b.opcode)
                             });
                         }
                     }
@@ -254,7 +254,7 @@ class ProjectAnalyzer {
                         severity: 'warning',
                         rule: 'long-script',
                         sprite: target.name,
-                        message: `脚本过长：${chain.length} 个积木（建议 < 30）`
+                        message: phdT('lintLongScript').replace('{n}', chain.length)
                     });
                 }
             });
@@ -276,7 +276,7 @@ class ProjectAnalyzer {
                         severity: 'warning',
                         rule: 'dead-code',
                         sprite: target.name,
-                        message: `死代码：${chain[stopIdx].opcode} 之后还有 ${chain.length - stopIdx - 1} 个积木`
+                        message: phdT('lintDeadCode').replace('{opcode}', chain[stopIdx].opcode).replace('{count}', chain.length - stopIdx - 1)
                     });
                 }
             });
@@ -309,7 +309,7 @@ class ProjectAnalyzer {
                             severity: 'info',
                             rule: 'unused-variable',
                             sprite: target.name,
-                            message: `未使用的变量：${name}`
+                            message: phdT('lintUnusedVar').replace('{name}', name)
                         });
                     }
                 });
@@ -330,7 +330,7 @@ class ProjectAnalyzer {
                             severity: 'info',
                             rule: 'magic-number',
                             sprite: target.name,
-                            message: `魔法数字：重复 ${num} 次（建议用变量替代）`
+                            message: phdT('lintMagicNumber').replace('{num}', num)
                         });
                     }
                 }
@@ -352,7 +352,7 @@ class ProjectAnalyzer {
                                 severity: 'info',
                                 rule: 'empty-procedure',
                                 sprite: target.name,
-                                message: `空的自定义积木定义：没有实现体`
+                                message: phdT('lintEmptyBlockDef')
                             });
                         }
                     }
@@ -511,35 +511,35 @@ class ProjectAnalyzer {
         if (complexity.totalBlocks > 300) {
             const penalty = Math.min(20, Math.floor((complexity.totalBlocks - 300) / 100) * 5);
             score -= penalty;
-            factors.push({ name: '积木规模', penalty, reason: `总积木数 ${complexity.totalBlocks}` });
+            factors.push({ name: phdT('factorBlocks'), penalty, reason: phdT('reasonBlocks').replace('{n}', complexity.totalBlocks) });
         }
 
         // 2. 过长脚本扣分
         if (complexity.longestScript > 30) {
             const penalty = Math.min(15, Math.floor((complexity.longestScript - 30) / 10) * 5);
             score -= penalty;
-            factors.push({ name: '脚本过长', penalty, reason: `最长脚本 ${complexity.longestScript} 积木` });
+            factors.push({ name: phdT('factorLongScript'), penalty, reason: phdT('reasonLongScript').replace('{n}', complexity.longestScript) });
         }
 
         // 3. 嵌套过深扣分
         if (complexity.maxNestingDepth > 4) {
             const penalty = Math.min(15, (complexity.maxNestingDepth - 4) * 5);
             score -= penalty;
-            factors.push({ name: '嵌套过深', penalty, reason: `最大嵌套 ${complexity.maxNestingDepth}` });
+            factors.push({ name: phdT('factorDeepNesting'), penalty, reason: phdT('reasonNesting').replace('{n}', complexity.maxNestingDepth) });
         }
 
         // 4. 警告与错误扣分
         const warnPenalty = Math.min(20, lint.summary.warnings * 2);
         const errorPenalty = Math.min(20, lint.summary.errors * 5);
         score -= warnPenalty + errorPenalty;
-        if (warnPenalty > 0) factors.push({ name: '警告', penalty: warnPenalty, reason: `${lint.summary.warnings} 个` });
-        if (errorPenalty > 0) factors.push({ name: '错误', penalty: errorPenalty, reason: `${lint.summary.errors} 个` });
+        if (warnPenalty > 0) factors.push({ name: phdT('factorWarnings'), penalty: warnPenalty, reason: phdT('reasonCount').replace('{n}', lint.summary.warnings) });
+        if (errorPenalty > 0) factors.push({ name: phdT('factorErrors'), penalty: errorPenalty, reason: phdT('reasonCount').replace('{n}', lint.summary.errors) });
 
         // 5. 依赖过密扣分（边数 > 30 扣分）
         if (deps.edges.length > 30) {
             const penalty = Math.min(10, Math.floor((deps.edges.length - 30) / 10) * 2);
             score -= penalty;
-            factors.push({ name: '依赖过密', penalty, reason: `${deps.edges.length} 条依赖边` });
+            factors.push({ name: phdT('factorDeps'), penalty, reason: phdT('reasonEdges').replace('{n}', deps.edges.length) });
         }
 
         score = Math.max(0, Math.min(100, score));
@@ -615,10 +615,10 @@ class DashboardRenderer {
         const tabBar = document.createElement('div');
         tabBar.className = 'rw-phd-tabbar';
         const tabs = [
-            { id: 'overview', label: '概览', icon: '◎' },
-            { id: 'complexity', label: '复杂度', icon: '◆' },
-            { id: 'lint', label: '规范检查', icon: '!' },
-            { id: 'deps', label: '依赖图', icon: '⇄' }
+            { id: 'overview', label: phdT('tabOverview'), icon: '◎' },
+            { id: 'complexity', label: phdT('tabComplexity'), icon: '◆' },
+            { id: 'lint', label: phdT('tabLint'), icon: '!' },
+            { id: 'deps', label: phdT('tabDeps'), icon: '⇄' }
         ];
         tabs.forEach(t => {
             const btn = document.createElement('button');
@@ -657,42 +657,42 @@ class DashboardRenderer {
             (h.score >= 70 ? '#FFBF00' : (h.score >= 60 ? '#FF8C1A' : '#FF6680'));
         const levelBg = h.score >= 85 ? 'rgba(89,192,89,0.15)' :
             (h.score >= 70 ? 'rgba(255,191,0,0.15)' : (h.score >= 60 ? 'rgba(255,140,26,0.15)' : 'rgba(255,102,128,0.15)'));
-        const desc = h.score >= 85 ? '项目结构清晰' :
-            (h.score >= 70 ? '可读性良好' : (h.score >= 60 ? '存在改进空间' : '需重构'));
+        const desc = h.score >= 85 ? phdT('descClear') :
+            (h.score >= 70 ? phdT('descReadable') : (h.score >= 60 ? phdT('descImprovable') : phdT('descRefactor')));
 
         // 健康度分数条
         const scoreSection = document.createElement('div');
         scoreSection.className = 'rw-phd-section';
         scoreSection.innerHTML = `
-            <h4 class="rw-phd-section-title">项目健康度</h4>
+            <h4 class='rw-phd-section-title'>${phdT('healthTitle')}</h4>
             <div class="rw-phd-score-row">
                 <div class="rw-phd-score-info">
                     <div class="rw-phd-score-num" style="color:${levelColor}">${h.score}</div>
-                    <div class="rw-phd-score-level" style="background:${levelBg};color:${levelColor}">${h.level} 级</div>
+                    <div class="rw-phd-score-level" style="background:${levelBg};color:${levelColor}">${phdT('levelSuffix').replace('{level}', h.level)}</div>
                 </div>
                 <div class="rw-phd-score-bar">
                     <div class="rw-phd-score-fill" style="width:${h.score}%;background:${levelColor}"></div>
                 </div>
             </div>
-            <div class="rw-phd-score-desc">等级 ${h.level} · ${desc}</div>
+            <div class="rw-phd-score-desc">${phdT('levelDesc').replace('{level}', h.level).replace('{desc}', desc)}</div>
         `;
         panel.appendChild(scoreSection);
 
         // 项目统计
         const statsSection = document.createElement('div');
         statsSection.className = 'rw-phd-section';
-        statsSection.innerHTML = `<h4 class="rw-phd-section-title">项目统计</h4>`;
+        statsSection.innerHTML = `<h4 class="rw-phd-section-title">${phdT('statsTitle')}</h4>`;
         const statsGrid = document.createElement('div');
         statsGrid.className = 'rw-phd-stats-grid';
         const cards = [
-            { label: '积木总数', value: s.totalBlocks },
-            { label: '脚本数', value: s.scriptCount },
-            { label: '角色数', value: s.spriteCount },
-            { label: '变量数', value: s.variableCount },
-            { label: '列表数', value: s.listCount },
-            { label: '造型数', value: s.costumeCount },
-            { label: '声音数', value: s.soundCount },
-            { label: '扩展数', value: s.extensionCount }
+            { label: phdT('statBlocks'), value: s.totalBlocks },
+            { label: phdT('statScripts'), value: s.scriptCount },
+            { label: phdT('statSprites'), value: s.spriteCount },
+            { label: phdT('statVars'), value: s.variableCount },
+            { label: phdT('statLists'), value: s.listCount },
+            { label: phdT('statCostumes'), value: s.costumeCount },
+            { label: phdT('statSounds'), value: s.soundCount },
+            { label: phdT('statExts'), value: s.extensionCount }
         ];
         cards.forEach(c => {
             const card = document.createElement('div');
@@ -710,7 +710,7 @@ class DashboardRenderer {
         if (h.factors.length > 0) {
             const factorSection = document.createElement('div');
             factorSection.className = 'rw-phd-section';
-            factorSection.innerHTML = `<h4 class="rw-phd-section-title">扣分项</h4>`;
+            factorSection.innerHTML = `<h4 class="rw-phd-section-title">${phdT('factorTitle')}</h4>`;
             const ul = document.createElement('ul');
             ul.className = 'rw-phd-factor-list';
             h.factors.forEach(f => {
@@ -729,12 +729,12 @@ class DashboardRenderer {
         const summarySection = document.createElement('div');
         summarySection.className = 'rw-phd-section';
         summarySection.innerHTML = `
-            <h4 class="rw-phd-section-title">复杂度摘要</h4>
+            <h4 class='rw-phd-section-title'>${phdT('complexityTitle')}</h4>
             <div class="rw-phd-summary-grid">
-                <div><span>最长脚本</span><b>${c.longestScript} 积木</b></div>
-                <div><span>最大嵌套</span><b>${c.maxNestingDepth} 层</b></div>
-                <div><span>平均脚本长度</span><b>${c.avgScriptLength.toFixed(1)} 积木</b></div>
-                <div><span>总复杂度</span><b>${c.totalComplexity}</b></div>
+                <div><span>${phdT('longestScript')}</span><b>${phdT('blocksUnit').replace('{n}', c.longestScript)}</b></div>
+                <div><span>${phdT('maxNesting')}</span><b>${phdT('layersUnit').replace('{n}', c.maxNestingDepth)}</b></div>
+                <div><span>${phdT('avgScriptLen')}</span><b>${phdT('blocksUnit').replace('{n}', c.avgScriptLength.toFixed(1))}</b></div>
+                <div><span>${phdT('totalComplexity')}</span><b>${c.totalComplexity}</b></div>
             </div>
         `;
         panel.appendChild(summarySection);
@@ -744,19 +744,19 @@ class DashboardRenderer {
         const lintSection = document.createElement('div');
         lintSection.className = 'rw-phd-section';
         lintSection.innerHTML = `
-            <h4 class="rw-phd-section-title">规范检查摘要</h4>
+            <h4 class='rw-phd-section-title'>${phdT('lintTitle')}</h4>
             <div class="rw-phd-lint-summary">
                 <div class="rw-phd-lint-stat error">
                     <div class="rw-phd-lint-num">${l.summary.errors}</div>
-                    <div class="rw-phd-lint-label">错误</div>
+                    <div class="rw-phd-lint-label">${phdT('lintErrors')}</div>
                 </div>
                 <div class="rw-phd-lint-stat warning">
                     <div class="rw-phd-lint-num">${l.summary.warnings}</div>
-                    <div class="rw-phd-lint-label">警告</div>
+                    <div class="rw-phd-lint-label">${phdT('lintWarnings')}</div>
                 </div>
                 <div class="rw-phd-lint-stat info">
                     <div class="rw-phd-lint-num">${l.summary.infos}</div>
-                    <div class="rw-phd-lint-label">提示</div>
+                    <div class="rw-phd-lint-label">${phdT('lintHints')}</div>
                 </div>
             </div>
         `;
@@ -768,25 +768,25 @@ class DashboardRenderer {
         const c = this.complexity;
         const section = document.createElement('div');
         section.className = 'rw-phd-section';
-        section.innerHTML = `<h4 class="rw-phd-section-title">各角色复杂度</h4>`;
+        section.innerHTML = `<h4 class="rw-phd-section-title">${phdT('spriteComplexityTitle')}</h4>`;
         const tableWrap = document.createElement('div');
         tableWrap.className = 'rw-phd-table-wrap';
         tableWrap.innerHTML = `
             <table class="rw-phd-table">
                 <thead>
                     <tr>
-                        <th>角色</th>
-                        <th>积木数</th>
-                        <th>脚本数</th>
-                        <th>最长脚本</th>
-                        <th>最大嵌套</th>
-                        <th>复杂度</th>
+                        <th>${phdT('thSprite')}</th>
+                        <th>${phdT('thBlocks')}</th>
+                        <th>${phdT('thScripts')}</th>
+                        <th>${phdT('thLongest')}</th>
+                        <th>${phdT('thNesting')}</th>
+                        <th>${phdT('thComplexity')}</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${c.perSprite.map(s => `
                         <tr>
-                            <td>${s.name}${s.isStage ? ' (舞台)' : ''}</td>
+                            <td>${s.name}${s.isStage ? phdT('stageLabel') : ''}</td>
                             <td>${s.blockCount}</td>
                             <td>${s.scriptCount}</td>
                             <td>${s.longestScript}</td>
@@ -803,7 +803,7 @@ class DashboardRenderer {
         // 雷达图：5 个维度的对比
         const chartSection = document.createElement('div');
         chartSection.className = 'rw-phd-section';
-        chartSection.innerHTML = `<h4 class="rw-phd-section-title">复杂度维度雷达图</h4>`;
+        chartSection.innerHTML = `<h4 class='rw-phd-section-title'>${phdT('radarTitle')}</h4>`;
         const canvasWrap = document.createElement('div');
         canvasWrap.className = 'rw-phd-chart-wrap';
         canvasWrap.style.height = '300px';
@@ -836,7 +836,7 @@ class DashboardRenderer {
             this.chartInstances.radar = new Chart(canvas.getContext('2d'), {
                 type: 'radar',
                 data: {
-                    labels: ['积木数', '脚本数', '最长脚本', '最大嵌套', '复杂度'],
+                    labels: phdT('radarLabels'),
                     datasets
                 },
                 options: {
@@ -847,7 +847,7 @@ class DashboardRenderer {
                 }
             });
         } else if (!window.Chart) {
-            canvasWrap.innerHTML = '<p class="rw-phd-empty">Chart.js 未加载，无法显示雷达图</p>';
+            canvasWrap.innerHTML = '<p class="rw-phd-empty">${phdT('chartMissing')}</p>';
         }
     }
 
@@ -857,10 +857,10 @@ class DashboardRenderer {
         const filter = document.createElement('div');
         filter.className = 'rw-phd-lint-filter';
         filter.innerHTML = `
-            <button class="rw-phd-filter-btn active" data-filter="all">全部 (${l.summary.total})</button>
-            <button class="rw-phd-filter-btn" data-filter="error">错误 (${l.summary.errors})</button>
-            <button class="rw-phd-filter-btn" data-filter="warning">警告 (${l.summary.warnings})</button>
-            <button class="rw-phd-filter-btn" data-filter="info">提示 (${l.summary.infos})</button>
+            <button class="rw-phd-filter-btn active" data-filter="all">${phdT('filterAll')} (${l.summary.total})</button>
+            <button class="rw-phd-filter-btn" data-filter="error">${phdT('lintErrors')} (${l.summary.errors})</button>
+            <button class="rw-phd-filter-btn" data-filter="warning">${phdT('lintWarnings')} (${l.summary.warnings})</button>
+            <button class="rw-phd-filter-btn" data-filter="info">${phdT('lintHints')} (${l.summary.infos})</button>
         `;
         panel.appendChild(filter);
 
@@ -871,7 +871,7 @@ class DashboardRenderer {
             list.innerHTML = '';
             const items = l.issues.filter(i => sev === 'all' || i.severity === sev);
             if (items.length === 0) {
-                list.innerHTML = '<div class="rw-phd-empty">无问题</div>';
+                list.innerHTML = `<div class="rw-phd-empty">${phdT('noIssues')}</div>`;
                 return;
             }
             items.forEach(i => {
@@ -881,7 +881,7 @@ class DashboardRenderer {
                     <div class="rw-phd-lint-icon">${i.severity === 'error' ? '✕' : (i.severity === 'warning' ? '!' : 'i')}</div>
                     <div class="rw-phd-lint-body">
                         <div class="rw-phd-lint-msg">${i.message}</div>
-                        <div class="rw-phd-lint-meta">[${i.rule}] · 角色: ${i.sprite}</div>
+                        <div class="rw-phd-lint-meta">[${i.rule}] · ${phdT('lintMetaSprite').replace('{s}', i.sprite)}</div>
                     </div>
                 `;
                 list.appendChild(item);
@@ -908,11 +908,11 @@ class DashboardRenderer {
         const legend = document.createElement('div');
         legend.className = 'rw-phd-legend';
         legend.innerHTML = `
-            <span class="rw-phd-legend-item"><span class="rw-phd-legend-dot" style="background:#4C97FF"></span>角色</span>
-            <span class="rw-phd-legend-item"><span class="rw-phd-legend-dot" style="background:#868DA5"></span>舞台</span>
-            <span class="rw-phd-legend-item"><span class="rw-phd-legend-line" style="border-top:2px dashed #FFBF00"></span>广播</span>
-            <span class="rw-phd-legend-item"><span class="rw-phd-legend-line" style="border-top:2px dotted #9966FF"></span>克隆</span>
-            <span class="rw-phd-legend-item"><span class="rw-phd-legend-line" style="border-top:2px solid #FF6680"></span>调用自定义积木</span>
+            <span class="rw-phd-legend-item"><span class="rw-phd-legend-dot" style="background:#4C97FF"></span>${phdT('legendSprite')}</span>
+            <span class="rw-phd-legend-item"><span class="rw-phd-legend-dot" style="background:#868DA5"></span>${phdT('legendStage')}</span>
+            <span class="rw-phd-legend-item"><span class="rw-phd-legend-line" style="border-top:2px dashed #FFBF00"></span>${phdT('legendBroadcast')}</span>
+            <span class="rw-phd-legend-item"><span class="rw-phd-legend-line" style="border-top:2px dotted #9966FF"></span>${phdT('legendClone')}</span>
+            <span class="rw-phd-legend-item"><span class="rw-phd-legend-line" style="border-top:2px solid #FF6680"></span>${phdT('legendCall')}</span>
         `;
         ctrl.appendChild(legend);
         panel.appendChild(ctrl);
@@ -1038,11 +1038,11 @@ class DashboardRenderer {
         const cloneCount = d.edges.filter(e => e.type === 'clone').length;
         const callCount = d.edges.filter(e => e.type === 'call').length;
         statsLine.innerHTML = `
-            <span>节点 ${d.nodes.length}</span>
-            <span>广播依赖 ${broadcastCount}</span>
-            <span>克隆依赖 ${cloneCount}</span>
-            <span>自定义积木调用 ${callCount}</span>
-            <span>广播消息 ${d.broadcasts.length}</span>
+            <span>${phdT('depNodes').replace('{n}', d.nodes.length)}</span>
+            <span>${phdT('depBroadcast').replace('{n}', broadcastCount)}</span>
+            <span>${phdT('depClone').replace('{n}', cloneCount)}</span>
+            <span>${phdT('depCall').replace('{n}', callCount)}</span>
+            <span>${phdT('depMsgs').replace('{n}', d.broadcasts.length)}</span>
         `;
         panel.appendChild(statsLine);
     }
@@ -1051,6 +1051,92 @@ class DashboardRenderer {
 // ============================================================================
 // 主入口
 // ============================================================================
+import {makeT} from '../../../lib/mw/mw-l10n.js';
+
+// ---- 项目健康度仪表盘文案（en / zh-cn / geng / wenyan）----
+const phdT = makeT({
+    title: {en: 'Project Health Dashboard', 'zh-cn': '项目健康度仪表盘', geng: '项目体检报告嗷', wenyan: '作卷康健之仪'},
+    refresh: {en: 'Refresh', 'zh-cn': '刷新', geng: '刷新一下嗷', wenyan: '复载'},
+    tabOverview: {en: 'Overview', 'zh-cn': '概览', geng: '总览嗷', wenyan: '总要'},
+    tabComplexity: {en: 'Complexity', 'zh-cn': '复杂度', geng: '复杂度', wenyan: '繁难'},
+    tabLint: {en: 'Lint', 'zh-cn': '规范检查', geng: '规范检查', wenyan: '绳检'},
+    tabDeps: {en: 'Dependencies', 'zh-cn': '依赖图', geng: '依赖图', wenyan: '相系之图'},
+    healthTitle: {en: 'Project Health', 'zh-cn': '项目健康度', geng: '项目健康度', wenyan: '作卷康健'},
+    levelSuffix: {en: 'Level {level}', 'zh-cn': '{level} 级', geng: '{level} 级嗷', wenyan: '{level} 等'},
+    levelDesc: {en: 'Level {level} · {desc}', 'zh-cn': '等级 {level} · {desc}', geng: '等级 {level} · {desc}', wenyan: '等 {level} · {desc}'},
+    descClear: {en: 'Project structure is clear', 'zh-cn': '项目结构清晰', geng: '结构挺清晰的', wenyan: '结构明澈'},
+    descReadable: {en: 'Readability is good', 'zh-cn': '可读性良好', geng: '读起来挺顺的', wenyan: '可读性尚佳'},
+    descImprovable: {en: 'Room for improvement', 'zh-cn': '存在改进空间', geng: '还有得改嗷', wenyan: '犹可改进'},
+    descRefactor: {en: 'Needs refactoring', 'zh-cn': '需重构', geng: '得重构了嗷', wenyan: '须重构'},
+    statsTitle: {en: 'Project Stats', 'zh-cn': '项目统计', geng: '项目统计', wenyan: '作卷之计'},
+    statBlocks: {en: 'Blocks', 'zh-cn': '积木总数', geng: '积木总数', wenyan: '积木凡几'},
+    statScripts: {en: 'Scripts', 'zh-cn': '脚本数', geng: '脚本数', wenyan: '脚本凡几'},
+    statSprites: {en: 'Sprites', 'zh-cn': '角色数', geng: '角色数', wenyan: '角色凡几'},
+    statVars: {en: 'Variables', 'zh-cn': '变量数', geng: '变量数', wenyan: '变数凡几'},
+    statLists: {en: 'Lists', 'zh-cn': '列表数', geng: '列表数', wenyan: '列目凡几'},
+    statCostumes: {en: 'Costumes', 'zh-cn': '造型数', geng: '造型数', wenyan: '造型凡几'},
+    statSounds: {en: 'Sounds', 'zh-cn': '声音数', geng: '声音数', wenyan: '声效凡几'},
+    statExts: {en: 'Extensions', 'zh-cn': '扩展数', geng: '扩展数', wenyan: '延展凡几'},
+    factorTitle: {en: 'Score Deductions', 'zh-cn': '扣分项', geng: '扣分的地方', wenyan: '失分之目'},
+    complexityTitle: {en: 'Complexity Summary', 'zh-cn': '复杂度摘要', geng: '复杂度小结', wenyan: '繁难之略'},
+    lintTitle: {en: 'Lint Summary', 'zh-cn': '规范检查摘要', geng: '规范检查小结', wenyan: '绳检之略'},
+    longestScript: {en: 'Longest script', 'zh-cn': '最长脚本', geng: '最长的脚本', wenyan: '最长之脚本'},
+    maxNesting: {en: 'Max nesting', 'zh-cn': '最大嵌套', geng: '最深嵌套', wenyan: '最深之嵌'},
+    avgScriptLen: {en: 'Avg. script length', 'zh-cn': '平均脚本长度', geng: '脚本平均长度', wenyan: '脚本均长'},
+    totalComplexity: {en: 'Total complexity', 'zh-cn': '总复杂度', geng: '总复杂度', wenyan: '通计繁难'},
+    blocksUnit: {en: '{n} blocks', 'zh-cn': '{n} 积木', geng: '{n} 块积木', wenyan: '积木 {n}'},
+    layersUnit: {en: '{n} layer(s)', 'zh-cn': '{n} 层', geng: '{n} 层嗷', wenyan: '{n} 重'},
+    lintErrors: {en: 'Errors', 'zh-cn': '错误', geng: '错误嗷', wenyan: '谬'},
+    lintWarnings: {en: 'Warnings', 'zh-cn': '警告', geng: '警告嗷', wenyan: '警'},
+    lintHints: {en: 'Hints', 'zh-cn': '提示', geng: '提示嗷', wenyan: '示'},
+    spriteComplexityTitle: {en: 'Per-sprite Complexity', 'zh-cn': '各角色复杂度', geng: '每个角色的复杂度', wenyan: '诸角色繁难'},
+    radarTitle: {en: 'Complexity Radar', 'zh-cn': '复杂度维度雷达图', geng: '复杂度雷达图', wenyan: '繁难诸维之雷达图'},
+    chartMissing: {en: 'Chart.js is not loaded; cannot show the radar chart', 'zh-cn': 'Chart.js 未加载，无法显示雷达图', geng: 'Chart.js 没加载，雷达图画不了嗷', wenyan: 'Chart.js 未载，雷达图不得示'},
+    analyzing: {en: 'Analyzing...', 'zh-cn': '分析中...', geng: '分析着呢...', wenyan: '察之中...'},
+    noIssues: {en: 'No issues', 'zh-cn': '无问题', geng: '没毛病', wenyan: '无恙'},
+    analyzeFailed: {en: 'Analysis failed, please retry', 'zh-cn': '分析失败，请重试', geng: '分析砸了，再试一次嗷', 'wenyan': '察之未成，请复试'},
+    factorBlocks: {en: 'Block count', 'zh-cn': '积木规模', geng: '积木多少', wenyan: '积木之数'},
+    factorLongScript: {en: 'Script too long', 'zh-cn': '脚本过长', geng: '脚本太长了', wenyan: '脚本过冗'},
+    factorDeepNesting: {en: 'Nesting too deep', 'zh-cn': '嵌套过深', geng: '套娃太深了', wenyan: '嵌套过深'},
+    factorWarnings: {en: 'Warnings', 'zh-cn': '警告', geng: '警告', wenyan: '警'},
+    factorErrors: {en: 'Errors', 'zh-cn': '错误', geng: '错误', wenyan: '谬'},
+    factorDeps: {en: 'Too many dependencies', 'zh-cn': '依赖过密', geng: '依赖太密了', wenyan: '相系过密'},
+    reasonBlocks: {en: 'Total blocks: {n}', 'zh-cn': '总积木数 {n}', geng: '总积木 {n}', wenyan: '积木凡 {n}'},
+    reasonLongScript: {en: 'Longest script: {n} blocks', 'zh-cn': '最长脚本 {n} 积木', geng: '最长脚本 {n} 块', wenyan: '最长脚本积木 {n}'},
+    reasonNesting: {en: 'Max nesting: {n}', 'zh-cn': '最大嵌套 {n}', geng: '最大嵌套 {n}', wenyan: '最深嵌套 {n}'},
+    reasonCount: {en: '{n} item(s)', 'zh-cn': '{n} 个', geng: '{n} 个嗷', wenyan: '凡 {n}'},
+    reasonEdges: {en: '{n} dependency edge(s)', 'zh-cn': '{n} 条依赖边', geng: '{n} 条依赖边嗷', wenyan: '相系之边 {n}'},
+    lintEmptyScript: {en: 'Empty script: {opcode} has no following blocks', 'zh-cn': '空脚本：{opcode} 没有后续积木', geng: '空脚本：{opcode} 后面啥都没有', wenyan: '空脚本：{opcode} 无后继之积木'},
+    lintEmptyBranch: {en: 'Empty branch: {opcode} SUBSTACK is empty', 'zh-cn': '空分支：{opcode} 的 SUBSTACK 为空', geng: '空分支：{opcode} 的 SUBSTACK 是空的', wenyan: '空支：{opcode} 之 SUBSTACK 虚空'},
+    lintEmptyBranch2: {en: 'Empty branch: {opcode} SUBSTACK2 (else) is empty', 'zh-cn': '空分支：{opcode} 的 SUBSTACK2（else）为空', geng: '空分支：{opcode} 的 SUBSTACK2（else）是空的', wenyan: '空支：{opcode} 之 SUBSTACK2（else）虚空'},
+    lintLongScript: {en: 'Script too long: {n} blocks (suggest < 30)', 'zh-cn': '脚本过长：{n} 个积木（建议 < 30）', geng: '脚本太长：{n} 个积木（最好少于 30）', wenyan: '脚本过冗：积木 {n}（宜少于三十）'},
+    lintDeadCode: {en: 'Dead code: {count} block(s) after {opcode}', 'zh-cn': '死代码：{opcode} 之后还有 {count} 个积木', geng: '死代码：{opcode} 后面还挂着 {count} 个积木', wenyan: '死码：{opcode} 之后尚余积木 {count}'},
+    lintUnusedVar: {en: 'Unused variable: {name}', 'zh-cn': '未使用的变量：{name}', geng: '没用上的变量：{name}', wenyan: '未用之变数：{name}'},
+    lintMagicNumber: {en: 'Magic number: repeated {n} times (consider a variable)', 'zh-cn': '魔法数字：重复 {num} 次（建议用变量替代）', geng: '魔法数字：重复了 {num} 次（建议用变量）', wenyan: '幻数：重 {num} 次（宜以变数代之）'},
+    lintEmptyBlockDef: {en: 'Empty custom block definition: no implementation', 'zh-cn': '空的自定义积木定义：没有实现体', geng: '自定义积木是空的：没有实现体', wenyan: '自定义积木之界虚空：未有实现'},
+    stageLabel: {en: '(stage)', 'zh-cn': '（舞台）', geng: '（舞台嗷）', wenyan: '（舞台）'},
+thSprite: {en: 'Sprite', 'zh-cn': '角色', geng: '角色', wenyan: '角色'},
+thBlocks: {en: 'Blocks', 'zh-cn': '积木数', geng: '积木数', wenyan: '积木'},
+thScripts: {en: 'Scripts', 'zh-cn': '脚本数', geng: '脚本数', wenyan: '脚本'},
+thLongest: {en: 'Longest', 'zh-cn': '最长脚本', geng: '最长脚本', wenyan: '最长'},
+thNesting: {en: 'Nesting', 'zh-cn': '最大嵌套', geng: '最深嵌套', wenyan: '最深'},
+thComplexity: {en: 'Complexity', 'zh-cn': '复杂度', geng: '复杂度', wenyan: '繁难'},
+radarLabels: {en: ['Blocks', 'Scripts', 'Longest', 'Nesting', 'Complexity'], 'zh-cn': ['积木数', '脚本数', '最长脚本', '最大嵌套', '复杂度'], geng: ['积木数', '脚本数', '最长脚本', '最深嵌套', '复杂度'], wenyan: ['积木', '脚本', '最长脚本', '最深嵌套', '繁难']},
+filterAll: {en: 'All', 'zh-cn': '全部', geng: '全部', wenyan: '凡'},
+lintMetaSprite: {en: 'Sprite: {s}', 'zh-cn': '角色: {s}', geng: '角色: {s}', wenyan: '角色: {s}'},
+legendSprite: {en: 'Sprite', 'zh-cn': '角色', geng: '角色', wenyan: '角色'},
+legendStage: {en: 'Stage', 'zh-cn': '舞台', geng: '舞台', wenyan: '台'},
+legendBroadcast: {en: 'Broadcast', 'zh-cn': '广播', geng: '广播', wenyan: '播'},
+legendClone: {en: 'Clone', 'zh-cn': '克隆', geng: '克隆', wenyan: '仿'},
+legendCall: {en: 'Custom block call', 'zh-cn': '调用自定义积木', geng: '调用自定义积木', wenyan: '唤自定之积木'},
+depNodes: {en: 'Nodes {n}', 'zh-cn': '节点 {n}', geng: '节点 {n}', wenyan: '节点 {n}'},
+depBroadcast: {en: 'Broadcast deps {n}', 'zh-cn': '广播依赖 {n}', geng: '广播依赖 {n} 嗷', wenyan: '播系 {n}'},
+depClone: {en: 'Clone deps {n}', 'zh-cn': '克隆依赖 {n}', geng: '克隆依赖 {n} 嗷', wenyan: '仿系 {n}'},
+depCall: {en: 'Custom calls {n}', 'zh-cn': '自定义积木调用 {n}', geng: '自定义积木调用 {n}', wenyan: '自定之唤 {n}'},
+depMsgs: {en: 'Broadcast messages {n}', 'zh-cn': '广播消息 {n}', geng: '广播消息 {n}', wenyan: '播文 {n}'},
+    varCountUnit: {en: '{n} variable(s)', 'zh-cn': '{n} 个变量', geng: '{n} 个变量嗷', wenyan: '变数 {n}'},
+});
+
 export default async function ({ addon, msg, console }) {
     let dashboardWindow = null;
     let renderer = null;
@@ -1084,7 +1170,7 @@ export default async function ({ addon, msg, console }) {
         if (!isWindowAlive()) return;
         if (refreshBtn) {
             refreshBtn.disabled = true;
-            refreshBtn.textContent = '分析中...';
+            refreshBtn.textContent = phdT('analyzing');
         }
         try {
             await loadChartJS();
@@ -1094,19 +1180,19 @@ export default async function ({ addon, msg, console }) {
                 if (renderer) renderer.destroyCharts();
                 // 显示加载占位
                 dashboardWindow._rwRenderTarget.innerHTML =
-                    '<div class="rw-phd-loading">分析中...</div>';
+                    '<div class="rw-phd-loading">${phdT("analyzing")}</div>';
                 r.render(dashboardWindow._rwRenderTarget);
             }
         } catch (e) {
             console.error('Project Health Dashboard refresh error:', e);
             if (isWindowAlive() && dashboardWindow._rwRenderTarget) {
                 dashboardWindow._rwRenderTarget.innerHTML =
-                    '<div class="rw-phd-empty">分析失败，请重试</div>';
+                    '<div class="rw-phd-empty">${phdT("analyzeFailed")}</div>';
             }
         } finally {
             if (refreshBtn) {
                 refreshBtn.disabled = false;
-                refreshBtn.textContent = '刷新';
+                refreshBtn.textContent = phdT('refresh');
             }
         }
     };
@@ -1114,7 +1200,7 @@ export default async function ({ addon, msg, console }) {
     const createDashboardWindow = () => {
         dashboardWindow = WindowManager.createWindow({
             id: WINDOW_ID,
-            title: '项目健康度仪表盘',
+            title: phdT('title'),
             width: 760,
             height: 560,
             minWidth: 520,
@@ -1137,7 +1223,7 @@ export default async function ({ addon, msg, console }) {
         toolbar.className = 'rw-phd-toolbar';
         refreshBtn = document.createElement('button');
         refreshBtn.className = 'rw-phd-refresh-btn';
-        refreshBtn.textContent = '刷新';
+        refreshBtn.textContent = phdT('refresh');
         refreshBtn.addEventListener('click', refreshContent);
         toolbar.appendChild(refreshBtn);
         content.appendChild(toolbar);
@@ -1145,7 +1231,7 @@ export default async function ({ addon, msg, console }) {
         // 内容容器（渲染目标，独立于工具栏）
         const inner = document.createElement('div');
         inner.className = 'rw-phd-inner';
-        inner.innerHTML = '<div class="rw-phd-loading">分析中...</div>';
+        inner.innerHTML = '<div class="rw-phd-loading">${phdT("analyzing")}</div>';
         content.appendChild(inner);
 
         // 让 refreshContent / renderer 写入此处而非覆盖整个 content

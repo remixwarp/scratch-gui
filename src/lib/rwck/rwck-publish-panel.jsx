@@ -37,6 +37,142 @@ import {
     Plus, Trash2, Star, Hash, Compass, Layers,
     Database, Zap, FileText, Wrench, XCircle, Settings
 } from 'lucide-react';
+import {makeT} from '../mw/mw-l10n.js';
+const rwckT = makeT({
+    rwck1: {en: ' min ago', 'zh-cn': ' 分钟前', geng: ' 分钟前嗷', wenyan: ' 分前'},
+    rwck2: {en: ' d ago', 'zh-cn': ' 天前', geng: ' 天前嗷', wenyan: ' 日前'},
+    rwck3: {en: ' h ago', 'zh-cn': ' 小时前', geng: ' 小时前嗷', wenyan: ' 时前'},
+    rwck4: {en: 'JS source of the Scratch extension…', 'zh-cn': 'Scratch 扩展的 JS 源码…', geng: 'Scratch 扩展的 JS 源码嗷…', wenyan: 'Scratch 延伸之 JS 源…'},
+    rwck5: {en: '\\n\\nClick', 'zh-cn': '\\n\\n点', geng: '\\n\\n点一下嗷', wenyan: '\\n\\n按'},
+    rwck6: {en: '[MakerVerse Upload Notice]\\n\\n', 'zh-cn': '【创客次元上传须知】\\n\\n', geng: '【创客次元上传须知】\\n\\n', wenyan: '【创客次元上传须諭】\\n\\n'},
+    rwck7: {en: 'One-line intro, optional, ≤500 chars', 'zh-cn': '一句话简介，可选，≤500 字', geng: '一句话简介，随便写，≤500 字嗷', wenyan: '一言以介，可略，不过五百字'},
+    rwck8: {en: 'Uploading…', 'zh-cn': '上传中…', geng: '上传中嗷…', wenyan: '传之中…'},
+    rwck9: {en: 'Uploading .sb3…', 'zh-cn': '上传作品 .sb3…', geng: '上传作品 .sb3 嗷…', wenyan: '传 .sb3 之中…'},
+    rwck10: {en: 'Uploading cover…', 'zh-cn': '上传封面…', geng: '上传封面嗷…', wenyan: '传封面之中…'},
+    rwck11: {en: 'Upload & Publish', 'zh-cn': '上传并发布', geng: '上传并发布嗷', wenyan: '上传而布'},
+    rwck12: {en: 'Cloud Variables', 'zh-cn': '云变量', geng: '云变量', wenyan: '云中变数'},
+    rwck13: {en: 'Cloud variable project created', 'zh-cn': '云变量项目已创建', geng: '云变量项目建好啦', wenyan: '云变数之卷已成'},
+    rwck14: {en: 'Interactions', 'zh-cn': '互动', geng: '互动', wenyan: '相与'},
+    rwck15: {en: "Today's visits", 'zh-cn': '今日访问', geng: '今日访问嗷', wenyan: '今日之览'},
+    rwck16: {en: 'Reading current project from editor…', 'zh-cn': '从编辑器读取当前作品…', geng: '从编辑器读作品嗷…', wenyan: '自编辑器读今之卷…'},
+    rwck17: {en: 'Proxy prefix cannot be empty', 'zh-cn': '代理前缀不能为空', geng: '代理前缀不能为空嗷', wenyan: '代理之前缀不可空'},
+    rwck18: {en: 'Proxy prefix must start with http:// or https://', 'zh-cn': '代理前缀必须以 http:// 或 https:// 开头', geng: '代理前缀得用 http:// 或 https:// 开头嗷', wenyan: '代理前缀当以 http:// 或 https:// 始'},
+    rwck19: {en: 'Project uploaded', 'zh-cn': '作品上传完成', geng: '作品传完啦', wenyan: '卷已传毕'},
+    rwck20: {en: 'Project uploaded', 'zh-cn': '作品已上传', geng: '作品传好啦', wenyan: '卷已上传'},
+    rwck21: {en: 'Project Plaza', 'zh-cn': '作品广场', geng: '作品广场', wenyan: '作之场'},
+    rwck22: {en: 'e.g. 123', 'zh-cn': '例如 123', geng: '比如 123 嗷', wenyan: '譬如一二三'},
+    rwck23: {en: 'Save failed: ', 'zh-cn': '保存失败：', geng: '保存砸了：', wenyan: '存之未成：'},
+    rwck24: {en: 'Get captcha first', 'zh-cn': '先获取验证码', geng: '先拿验证码嗷', wenyan: '先取验符'},
+    rwck25: {en: 'Close', 'zh-cn': '关闭', geng: '关掉嗷', wenyan: '闭'},
+    rwck26: {en: 'Dismiss', 'zh-cn': '关闭提示', geng: '关掉提示嗷', wenyan: '去其示'},
+    rwck27: {en: 'Write a comment…', 'zh-cn': '写点评论…', geng: '写点评论嗷…', wenyan: '书评…'},
+    rwck28: {en: 'Preparing…', 'zh-cn': '准备中…', geng: '准备中嗷…', wenyan: '备之中…'},
+    rwck29: {en: 'just now', 'zh-cn': '刚刚', geng: '刚刚嗷', wenyan: '方才'},
+    rwck30: {en: 'MakerVerse Settings', 'zh-cn': '创客次元设置', geng: '创客次元设置', wenyan: '创客次元之设'},
+    rwck31: {en: 'MakerVerse Settings (CORS proxy / network log)', 'zh-cn': '创客次元设置（CORS 代理 / 网络日志）', geng: '创客次元设置（CORS 代理 / 网络日志）', wenyan: '创客次元之设（CORS 代理 / 网志）'},
+    rwck32: {en: 'Delete', 'zh-cn': '删除', geng: '删掉嗷', wenyan: '删'},
+    rwck33: {en: 'Delete project', 'zh-cn': '删除作品', geng: '删掉作品嗷', wenyan: '删其卷'},
+    rwck34: {en: 'Animation', 'zh-cn': '动画', geng: '动画', wenyan: '戏'},
+    rwck35: {en: 'Anonymous', 'zh-cn': '匿名', geng: '匿名', wenyan: '无名'},
+    rwck36: {en: 'means you have read and agree to the terms above.\\n(You will only be reminded once per window / per day)', 'zh-cn': '即表示您已阅读并同意以上条款。\\n（同一窗口 / 同一天内只会再提醒一次）', geng: '就是说你看过并同意上面这些啦。\\n（同一个窗口 / 同一天只再提醒一次嗷）', wenyan: '即汝已读而诺其上之约。\\n（同窗 / 同日仅再警一次）'},
+    rwck37: {en: 'Originality Registration', 'zh-cn': '原创登记', geng: '原创登记', wenyan: '原创之登'},
+    rwck38: {en: 'Publish Project', 'zh-cn': '发布作品', geng: '发布作品', wenyan: '布其卷'},
+    rwck39: {en: 'Post', 'zh-cn': '发布帖子', geng: '发帖嗷', wenyan: '发帖'},
+    rwck40: {en: 'Post / Reply', 'zh-cn': '发帖/回复', geng: '发帖/回复', wenyan: '帖与对'},
+    rwck41: {en: 'Posting…', 'zh-cn': '发帖中…', geng: '发帖中嗷…', wenyan: '发帖之中…'},
+    rwck42: {en: 'Reply posted', 'zh-cn': '回复已发布', geng: '回复发好啦', wenyan: '对已成'},
+    rwck43: {en: 'Copy failed, please select the text manually', 'zh-cn': '复制失败，请手动选文本', geng: '复制没成，手动选一下文本嗷', wenyan: '复制未成，请手择其文'},
+    rwck44: {en: 'API key created', 'zh-cn': '密钥已创建', geng: '密钥建好啦', wenyan: '密钥已成'},
+    rwck45: {en: 'Will upload the selected file', 'zh-cn': '将以上传选中文件', geng: '会把选中的文件传上去嗷', wenyan: '将传所选之文'},
+    rwck46: {en: 'Will export the current editor project', 'zh-cn': '将导出当前编辑器作品', geng: '会把当前编辑器里的作品导出来嗷', wenyan: '将出今编辑器之卷'},
+    rwck47: {en: 'Restored defaults', 'zh-cn': '已恢复默认', geng: '恢复默认啦', wenyan: '复其初'},
+    rwck48: {en: 'Bookmarked', 'zh-cn': '已收藏', geng: '收藏好啦', wenyan: '已藏'},
+    rwck49: {en: 'Total posts', 'zh-cn': '帖子总数', geng: '帖子总数', wenyan: '帖之凡'},
+    rwck50: {en: 'Applying…', 'zh-cn': '应用中…', geng: '应用着呢嗷…', wenyan: '用之中…'},
+    rwck51: {en: 'Developer', 'zh-cn': '开发者', geng: '开发者', wenyan: '作者'},
+    rwck52: {en: 'Current editor environment does not support .sb3 export', 'zh-cn': '当前编辑器环境不支持导出 .sb3', geng: '当前编辑器不支持导出 .sb3 嗷', wenyan: '今之编辑器不支持出 .sb3'},
+    rwck53: {en: 'Restore default https://cors-api.rewp.de5.net ?', 'zh-cn': '恢复默认 https://cors-api.rewp.de5.net ？', geng: '恢复默认 https://cors-api.rewp.de5.net 嗷？', wenyan: '复其初 https://cors-api.rewp.de5.net ？'},
+    rwck54: {en: 'My Drive', 'zh-cn': '我的云盘', geng: '我的云盘', wenyan: '吾之盘'},
+    rwck55: {en: 'My Projects', 'zh-cn': '我的作品', geng: '我的作品', wenyan: '吾之卷'},
+    rwck56: {en: 'Extension published', 'zh-cn': '扩展已发布', geng: '扩展发布好啦', wenyan: '延伸已布'},
+    rwck57: {en: 'Extension Plaza', 'zh-cn': '扩展广场', geng: '扩展广场', wenyan: '延伸之场'},
+    rwck58: {en: 'Probe done, but some endpoints failed', 'zh-cn': '探测完成，但有接口失败', geng: '探测完啦，但有接口没成', wenyan: '探已毕，然有端未成'},
+    rwck59: {en: 'Submitting project info…', 'zh-cn': '提交作品信息…', geng: '提交作品信息嗷…', wenyan: '呈卷之讯…'},
+    rwck60: {en: 'Search', 'zh-cn': '搜索', geng: '搜索', wenyan: '索'},
+    rwck61: {en: 'Search projects / discussions / users…', 'zh-cn': '搜索作品 / 讨论 / 用户…', geng: '搜索作品 / 讨论 / 用户嗷…', wenyan: '索卷 / 议 / 人…'},
+    rwck62: {en: 'Search project title…', 'zh-cn': '搜索作品标题…', geng: '搜索作品标题嗷…', wenyan: '索卷之名…'},
+    rwck63: {en: 'Story', 'zh-cn': '故事', geng: '故事', wenyan: '事'},
+    rwck64: {en: 'Tutorial', 'zh-cn': '教程', geng: '教程', wenyan: '教'},
+    rwck65: {en: 'Log copied to clipboard', 'zh-cn': '日志已复制到剪贴板', geng: '日志复制到剪贴板啦', wenyan: '志已录于 clipboard'},
+    rwck66: {en: 'Log cleared', 'zh-cn': '日志已清空', geng: '日志清空啦', wenyan: '志已空'},
+    rwck67: {en: 'Unknown error', 'zh-cn': '未知错误', geng: '不知啥错', wenyan: '未知之误'},
+    rwck68: {en: 'View variables', 'zh-cn': '查看变量', geng: '看看变量嗷', wenyan: '视其变数'},
+    rwck69: {en: 'Tag created', 'zh-cn': '标签已创建', geng: '标签建好啦', wenyan: '标已成'},
+    rwck70: {en: 'Mark as read', 'zh-cn': '标记已读', geng: '标成已读嗷', wenyan: '记为已读'},
+    rwck71: {en: 'Both title and code are required', 'zh-cn': '标题和代码都要填', geng: '标题和代码都得填嗷', wenyan: '题与码皆须填'},
+    rwck72: {en: 'Loading…', 'zh-cn': '正在加载…', geng: '加载着呢嗷…', wenyan: '载之中…'},
+    rwck73: {en: 'Registered users', 'zh-cn': '注册用户', geng: '注册用户', wenyan: '注籍之人'},
+    rwck74: {en: 'Game', 'zh-cn': '游戏', geng: '游戏', wenyan: '戏'},
+    rwck75: {en: 'Click to refresh', 'zh-cn': '点一下刷新', geng: '点一下刷新嗷', wenyan: '按以更'},
+    rwck76: {en: 'Like', 'zh-cn': '点赞', geng: '点赞', wenyan: '善'},
+    rwck77: {en: 'Like / Unlike', 'zh-cn': '点赞 / 取消点赞', geng: '点赞 / 取消点赞', wenyan: '善 / 去善'},
+    rwck78: {en: 'Log in', 'zh-cn': '登录', geng: '登录嗷', wenyan: '入'},
+    rwck79: {en: 'Logging in…', 'zh-cn': '登录中…', geng: '登录着呢嗷…', wenyan: '入之中…'},
+    rwck80: {en: 'Target ID and comment are both required', 'zh-cn': '目标 ID 和评论内容都要填', geng: '目标 ID 和评论都得填嗷', wenyan: '标的之 ID 与评皆须填'},
+    rwck81: {en: 'Delete project #{id}? This cannot be undone.', 'zh-cn': '确定删除作品 #${id}？此操作不可撤销。', geng: '确定删掉作品 #{id} 嗷？删了找不回来哦', wenyan: '决删卷 #{id} 乎？此不可复也。'},
+    rwck82: {en: 'Delete extension #{id}?', 'zh-cn': '确定删除扩展 #${id}？', geng: '确定删掉扩展 #{id} 嗷？', wenyan: '决删延伸 #{id} 乎？'},
+    rwck83: {en: 'Delete this file?', 'zh-cn': '确定删除这个文件？', geng: '确定删掉这个文件嗷？', wenyan: '决删此文乎？'},
+    rwck84: {en: 'Confirm changes', 'zh-cn': '确认修改', geng: '确认修改嗷', wenyan: '诺其改'},
+    rwck85: {en: 'Community Status', 'zh-cn': '社区状态', geng: '社区状态', wenyan: '社之状'},
+    rwck86: {en: 'Community has no tags yet', 'zh-cn': '社区还没有标签', geng: '社区还没有标签嗷', wenyan: '社尚无标'},
+    rwck87: {en: 'Loading…', 'zh-cn': '等待加载', geng: '等着加载嗷…', wenyan: '待载'},
+    rwck88: {en: 'Netdisk resource registered', 'zh-cn': '网盘资源已登记', geng: '网盘资源登记好啦', wenyan: '网盘之资已登'},
+    rwck89: {en: 'Network error: browser cannot reach forum.ctspace.xyz, please check your connection and retry.', 'zh-cn': '网络错误：浏览器无法连接 forum.ctspace.xyz，请检查网络后重试。', geng: '网络出错：连不上 forum.ctspace.xyz 嗷，检查下网络再试', wenyan: '网误：浏览器不能至 forum.ctspace.xyz，请察网而重试。'},
+    rwck90: {en: 'Art', 'zh-cn': '美术', geng: '美术', wenyan: '画'},
+    rwck91: {en: 'Failed to fetch community status', 'zh-cn': '获取社区状态失败', geng: '拿社区状态没成', wenyan: '取社之状未成'},
+    rwck92: {en: 'Failed to fetch discussion list', 'zh-cn': '获取讨论列表失败', geng: '拿讨论列表没成', wenyan: '取议之目未成'},
+    rwck93: {en: 'Reaction submitted', 'zh-cn': '表态已提交', geng: '表态交好啦', wenyan: '其态已呈'},
+    rwck94: {en: 'Discussion ID and reply are both required', 'zh-cn': '讨论 ID 和回复内容都要填', geng: '讨论 ID 和回复都得填嗷', wenyan: '议之 ID 与对皆须填'},
+    rwck95: {en: 'Thread', 'zh-cn': '讨论串', geng: '讨论串', wenyan: '议之串'},
+    rwck96: {en: 'Visit forum home', 'zh-cn': '访问论坛首页', geng: '去论坛首页嗷', wenyan: '诣论坛之首'},
+    rwck97: {en: 'Comment posted', 'zh-cn': '评论已发布', geng: '评论发好啦', wenyan: '评已成'},
+    rwck98: {en: 'Detailed intro, how-to-play, changelog……', 'zh-cn': '详细介绍、玩法说明、更新日志……', geng: '详细介绍、玩法说明、更新日志啥的……', wenyan: '详介、玩法、更录……'},
+    rwck99: {en: 'Please log in first', 'zh-cn': '请先登录', geng: '先登录嗷', wenyan: '请先入'},
+    rwck100: {en: 'Select a project and enter a variable name first', 'zh-cn': '请先选项目并填变量名', geng: '先选项目再填变量名嗷', wenyan: '先择卷而书名'},
+    rwck101: {en: 'Fill in account / password / captcha completely', 'zh-cn': '请填完整账号 / 密码 / 验证码', geng: '账号 / 密码 / 验证码都得填嗷', wenyan: '账号 / 密 / 验符皆须填'},
+    rwck102: {en: 'Enter the bookmark target ID', 'zh-cn': '请填收藏目标 ID', geng: '填一下收藏目标 ID 嗷', wenyan: '书标的之 ID'},
+    rwck103: {en: 'Enter title and content', 'zh-cn': '请填标题和内容', geng: '标题和内容都得填嗷', wenyan: '题与文皆须填'},
+    rwck104: {en: 'Enter the like target ID', 'zh-cn': '请填点赞目标 ID', geng: '填一下点赞目标 ID 嗷', wenyan: '善标的之 ID'},
+    rwck105: {en: 'Enter the target ID', 'zh-cn': '请填目标 ID', geng: '填一下目标 ID 嗷', wenyan: '书标的之 ID'},
+    rwck106: {en: 'Enter the netdisk link', 'zh-cn': '请填网盘链接', geng: '填一下网盘链接嗷', wenyan: '书网盘之链'},
+    rwck107: {en: 'Enter keywords', 'zh-cn': '请输入关键词', geng: '输入关键词嗷', wenyan: '输入关键词'},
+    rwck108: {en: 'Enter key name', 'zh-cn': '请输入密钥名称', geng: '输入密钥名称嗷', wenyan: '书名钥'},
+    rwck109: {en: 'Enter tag name', 'zh-cn': '请输入标签名', geng: '输入标签名嗷', wenyan: '书名标'},
+    rwck110: {en: 'Enter username', 'zh-cn': '请输入用户名', geng: '输入用户名嗷', wenyan: '书名'},
+    rwck111: {en: 'Enter registration number', 'zh-cn': '请输入登记号', geng: '输入登记号嗷', wenyan: '书登之号'},
+    rwck112: {en: 'Enter project name', 'zh-cn': '请输入项目名', geng: '输入项目名嗷', wenyan: '书卷之名'},
+    rwck113: {en: 'Failed to read current project: ', 'zh-cn': '读取当前作品失败：', geng: '读当前作品没成：', wenyan: '读今之卷未成：'},
+    rwck114: {en: 'Resource', 'zh-cn': '资源', geng: '资源', wenyan: '资'},
+    rwck115: {en: 'Enter the characters in the image', 'zh-cn': '输入图中字符', geng: '把图里的字输进去嗷', wenyan: '书图中之字'},
+    rwck116: {en: 'Log out', 'zh-cn': '退出登录', geng: '退出登录嗷', wenyan: '出'},
+    rwck117: {en: 'Notifications / Check-in', 'zh-cn': '通知/签到', geng: '通知/签到', wenyan: '告 / 至'},
+    rwck118: {en: 'Re-probe', 'zh-cn': '重新探测', geng: '重新探测嗷', wenyan: '复探'},
+    rwck119: {en: 'Refresh captcha', 'zh-cn': '重新获取验证码', geng: '重新拿验证码嗷', wenyan: '复取验符'},
+    rwck120: {en: 'Music', 'zh-cn': '音乐', geng: '音乐', wenyan: '音'},
+    rwck121: {en: 'Default from current editor project name', 'zh-cn': '默认从当前编辑器作品名取', geng: '默认用当前编辑器作品名嗷', wenyan: '初以今编辑器之卷名'},
+    rwck122: {en: '(checked in today)', 'zh-cn': '（今天已签到）', geng: '（今天签过到啦）', wenyan: '（今日已至）'},
+    rwck123: {en: 'Uploaded ${name}', 'zh-cn': '已上传 ${f.name}', geng: '上传好啦 ${name}', wenyan: '已传 ${name}'},
+    rwck124: {en: 'Uploaded, resource ID ${id}', 'zh-cn': '已上传，资源 ID ${r.id}', geng: '传好啦，资源 ID ${id}', wenyan: '已传，资 ID ${id}'},
+    rwck125: {en: 'Followed tag #${name}', 'zh-cn': '已关注标签 #${first.name}', geng: '关注了标签 #${name}', wenyan: '已随标 #${name}'},
+    rwck126: {en: 'Toggled follow on ${name}', 'zh-cn': '已切换对 ${name} 的关注', geng: '切换了关注 ${name}', wenyan: '更其随 ${name}'},
+    rwck127: {en: 'Set ${name}', 'zh-cn': '已设置 ${cloudVarName}', geng: '设好啦 ${name}', wenyan: '已置 ${name}'},
+    rwck128: {en: 'Probe done, took ${ms} ms', 'zh-cn': '探测完成，耗时 ${this._communityLatencyMs} ms', geng: '探测完啦，用了 ${ms} ms', wenyan: '探毕，历 ${ms} 毫秒'},
+    rwck129: {en: 'Bookmark status: ${json}', 'zh-cn': '收藏状态：${JSON.stringify(r)}', geng: '收藏状态：${json}', wenyan: '藏之状：${json}'},
+    rwck130: {en: 'Registration #${id}', 'zh-cn': '登记 #${g.id}', geng: '登记 #${id}', wenyan: '登 #${id}'},
+    rwck131: {en: 'Registration ${cert} verified', 'zh-cn': '登记号 ${cert} 校验完成', geng: '登记号 ${cert} 校验好啦', wenyan: '登 ${cert} 验毕'},
+    rwck132: {en: 'Resource ${id}', 'zh-cn': '资源 ${r.id}', geng: '资源 ${id}', wenyan: '资 ${id}'},
+});
+
 
 const PAD = 14;
 
@@ -158,12 +294,12 @@ const STYLE = C => ({
 });
 
 const CATEGORIES = [
-    {id:'game',     zh:'游戏',   en:'Game'},
-    {id:'animation',zh:'动画',   en:'Animation'},
-    {id:'story',    zh:'故事',   en:'Story'},
-    {id:'music',    zh:'音乐',   en:'Music'},
-    {id:'art',      zh:'美术',   en:'Art'},
-    {id:'tutorial', zh:'教程',   en:'Tutorial'}
+    {id:'game',     zh:rwckT('rwck74'),   en:'Game'},
+    {id:'animation',zh:rwckT('rwck34'),   en:'Animation'},
+    {id:'story',    zh:rwckT('rwck63'),   en:'Story'},
+    {id:'music',    zh:rwckT('rwck120'),   en:'Music'},
+    {id:'art',      zh:rwckT('rwck90'),   en:'Art'},
+    {id:'tutorial', zh:rwckT('rwck64'),   en:'Tutorial'}
 ];
 
 /** 论坛网页入口（点按钮直接新标签打开）。 */
@@ -422,14 +558,14 @@ class RwckPublishPanel extends Component {
             this.setState({stats: r});
             latencies.stats = Date.now();
         }).catch(e => {
-            this.setState({statsErr: e.message || '获取社区状态失败'});
+            this.setState({statsErr: e.message || rwckT('rwck91')});
         });
 
         const pDiscs = rwck.discussions.list({page:1, pageSize:8, sort:'new'}).then(r => {
             this.setState({discussionsPreview: rwck.unwrapList(r)});
             latencies.disc = Date.now();
         }).catch(e => {
-            this.setState({discussionsErr: e.message || '获取讨论列表失败'});
+            this.setState({discussionsErr: e.message || rwckT('rwck92')});
         });
 
         const pBoard = rwck.users.leaderboard().then(r => {
@@ -457,7 +593,7 @@ class RwckPublishPanel extends Component {
         this._communityLatencyMs = Date.now() - t0;
         this.setState({
             probeBusy: false,
-            probeMsg: this.state.statsErr ? '探测完成，但有接口失败' : `探测完成，耗时 ${this._communityLatencyMs} ms`
+            probeMsg: this.state.statsErr ? rwckT('rwck58') : rwckT('rwck128')
         });
     }
 
@@ -474,9 +610,9 @@ class RwckPublishPanel extends Component {
     _friendlyError(e) {
         const msg = (e && (e.message || '')).toLowerCase();
         if (msg.includes('fetch') || msg.includes('failed to fetch') || msg.includes('network')) {
-            return '网络错误：浏览器无法连接 forum.ctspace.xyz，请检查网络后重试。';
+            return rwckT('rwck89');
         }
-        return (e && e.message) || '未知错误';
+        return (e && e.message) || rwckT('rwck67');
     }
 
     // ========== 验证码 ==========
@@ -532,7 +668,7 @@ class RwckPublishPanel extends Component {
         container.style.cssText = 'height:100%;display:flex;flex-direction:column;min-height:0;overflow:auto;';
         const win = WM.createWindow({
             id: 'rwck-settings',
-            title: '创客次元设置',
+            title: rwckT('rwck30'),
             width: 640, height: 560, minWidth: 520, minHeight: 460,
             onClose: () => { try { ReactDOM.unmountComponentAtNode(container); } catch (_) {} }
         });
@@ -551,7 +687,7 @@ class RwckPublishPanel extends Component {
     async _loadSb3FromVm () {
         const vm = this.props.getVm && this.props.getVm();
         if (!vm || !vm.saveProjectSb3) {
-            this.setState({publishErr:'当前编辑器环境不支持导出 .sb3'});
+            this.setState({publishErr:rwckT('rwck52')});
             return null;
         }
         let blob;
@@ -559,7 +695,7 @@ class RwckPublishPanel extends Component {
             const result = await vm.saveProjectSb3();
             blob = result instanceof Blob ? result : new Blob([result], {type:'application/zip'});
         } catch (e) {
-            this.setState({publishErr:'读取当前作品失败：' + (e.message||e)});
+            this.setState({publishErr:rwckT('rwck113') + (e.message||e)});
             return null;
         }
         const projectTitle = this._guessProjectTitle();
@@ -594,34 +730,34 @@ class RwckPublishPanel extends Component {
 
     async _upload() {
         if (!this._ensureTermsAgreed()) return;
-        this.setState({uploadBusy:true, publishErr:'', publishOk:'', uploadProgress:'准备中…'});
+        this.setState({uploadBusy:true, publishErr:'', publishOk:'', uploadProgress:rwckT('rwck28')});
         try {
             let sb3File = this.state.sb3File;
             if (!sb3File) {
-                this.setState({uploadProgress:'从编辑器读取当前作品…'});
+                this.setState({uploadProgress:rwckT('rwck16')});
                 sb3File = await this._loadSb3FromVm();
                 if (!sb3File) { this.setState({uploadBusy:false, uploadProgress:''}); return; }
                 this.setState({sb3File});
             }
 
-            this.setState({uploadProgress:'上传作品 .sb3…'});
+            this.setState({uploadProgress:rwckT('rwck9')});
             const sb3 = await rwck.resources.upload(sb3File, this.state.sb3Name);
-            this.setState({sb3ResourceId: sb3.id, uploadProgress:'作品上传完成'});
+            this.setState({sb3ResourceId: sb3.id, uploadProgress:rwckT('rwck19')});
 
             let coverResourceId = this.state.coverResourceId;
             if (this.state.coverFile) {
-                this.setState({uploadProgress:'上传封面…'});
+                this.setState({uploadProgress:rwckT('rwck10')});
                 const cover = await rwck.resources.upload(this.state.coverFile, this.state.coverFile.name);
                 coverResourceId = cover.id;
                 this.setState({coverResourceId});
             }
 
             if (!this.state.title) {
-                const autoTitle = this._guessProjectTitle() || this.state.sb3Name.replace(/\.sb3$/i,'') || '我的作品';
+                const autoTitle = this._guessProjectTitle() || this.state.sb3Name.replace(/\.sb3$/i,'') || rwckT('rwck55');
                 this.setState({title: autoTitle});
             }
 
-            this.setState({uploadProgress:'提交作品信息…'});
+            this.setState({uploadProgress:rwckT('rwck59')});
             const proj = await rwck.projects.create({
                 title: this.state.title,
                 summary: this.state.summary,
@@ -686,21 +822,21 @@ class RwckPublishPanel extends Component {
         const C = this.props.colors || getEditorTheme();
         const S = STYLE(C);
         const tabs = [
-            {id:'login',     icon: LogIn,          label: '登录'},
-            {id:'community', icon: BarChart3,      label: '社区状态'},
-            {id:'publish',   icon: Upload,         label: '发布作品'},
-            {id:'disc',      icon: MessageCircle,  label: '发帖/回复'},
-            {id:'mine',      icon: FolderOpen,     label: '我的作品'},
-            {id:'works',     icon: Compass,        label: '作品广场'},
-            {id:'ext',       icon: Package,        label: '扩展广场'},
-            {id:'drive',     icon: HardDrive,      label: '我的云盘'},
-            {id:'res',       icon: Layers,         label: '资源'},
-            {id:'social',    icon: Users,          label: '互动'},
-            {id:'notify',    icon: Bell,           label: '通知/签到'},
-            {id:'search',    icon: Search,         label: '搜索'},
-            {id:'orig',      icon: ShieldCheck,    label: '原创登记'},
-            {id:'cloud',     icon: Database,       label: '云变量'},
-            {id:'dev',       icon: Wrench,         label: '开发者'}
+            {id:'login',     icon: LogIn,          label: rwckT('rwck78')},
+            {id:'community', icon: BarChart3,      label: rwckT('rwck85')},
+            {id:'publish',   icon: Upload,         label: rwckT('rwck38')},
+            {id:'disc',      icon: MessageCircle,  label: rwckT('rwck40')},
+            {id:'mine',      icon: FolderOpen,     label: rwckT('rwck55')},
+            {id:'works',     icon: Compass,        label: rwckT('rwck21')},
+            {id:'ext',       icon: Package,        label: rwckT('rwck57')},
+            {id:'drive',     icon: HardDrive,      label: rwckT('rwck54')},
+            {id:'res',       icon: Layers,         label: rwckT('rwck114')},
+            {id:'social',    icon: Users,          label: rwckT('rwck14')},
+            {id:'notify',    icon: Bell,           label: rwckT('rwck117')},
+            {id:'search',    icon: Search,         label: rwckT('rwck60')},
+            {id:'orig',      icon: ShieldCheck,    label: rwckT('rwck37')},
+            {id:'cloud',     icon: Database,       label: rwckT('rwck12')},
+            {id:'dev',       icon: Wrench,         label: rwckT('rwck51')}
         ];
         // 未登录时，只显示可匿名访问的 Tab，登录后才显示需要鉴权的 Tab
         // 已登录：隐藏「登录」Tab（右上角用户栏 + 设置窗口承担所有账号相关入口）。
@@ -713,14 +849,14 @@ class RwckPublishPanel extends Component {
             <div style={S.root}>
                 <div style={S.titleRow}>
                     <span style={S.brandDot} />
-                    <strong style={{fontSize:15}}>创客次元 · 极光论坛</strong>
+                    <strong style={{fontSize:15}}>{rwckT('rwck159')}</strong>
                     <span style={{flex:1}} />
                     {this.state.user ? (
                         <span style={{fontSize:12, color: C.textMuted}}>
                             {this.state.user.username}
                             <button style={cls(S.btn, S.btnGhost, {marginLeft:8})}
                                     onClick={()=>this._logout()} title='退出登录'>
-                                <LogOut size={14} strokeWidth={2.2} /> 退出
+                                <LogOut size={14} strokeWidth={2.2} /> {rwckT('rwck250')}
                             </button>
                         </span>
                     ) : null}
@@ -750,8 +886,8 @@ class RwckPublishPanel extends Component {
                     <div style={S.footer}>
                         <div style={S.footerBanner}>
                             <AlertTriangle size={14} strokeWidth={2.2} style={S.footerBannerIcon} />
-                            <span style={{flex:1}}><strong>创客次元 社区</strong>会不定时的进行暂停服务、更新，请注意谅解。</span>
-                            <button title='关闭' aria-label='关闭提示'
+                            <span style={{flex:1}}><strong>{rwckT('rwck160')}</strong>{rwckT('rwck143')}</span>
+                            <button title='关闭' aria-label=rwckT('rwck26')
                                     style={{background:'transparent',border:'none',cursor:'pointer',
                                             padding:6, marginLeft:4, minWidth:32, minHeight:32,
                                             display:'inline-flex', alignItems:'center', justifyContent:'center',
@@ -819,14 +955,14 @@ class RwckPublishPanel extends Component {
                 <div style={cls(S.box, {display:'flex', flexDirection:'column', gap:8})}>
                     <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
                         <Activity size={16} strokeWidth={2.2} style={{color: this.state.statsErr ? C.danger : primary}} />
-                        <strong style={{fontSize:14}}>社区状态</strong>
+                        <strong style={{fontSize:14}}>{rwckT('rwck85')}</strong>
                         <span style={{flex:1}} />
                         <button style={cls(S.btn, S.btnGhost, this.state.probeBusy && S.btnDisabled)}
                                 disabled={this.state.probeBusy}
                                 onClick={()=>this._refreshCommunity()}>
                             <RefreshCw size={14} strokeWidth={2.2}
                                        style={{animation: this.state.probeBusy ? 'spin 1s linear infinite' : 'none'}} />
-                            {this.state.probeBusy ? '正在探测…' : '重新探测'}
+                            {this.state.probeBusy ? '正在探测…' : rwckT('rwck118')}
                         </button>
                     </div>
                     <div style={{display:'flex', gap:8, alignItems:'center', fontSize:12}}>
@@ -846,7 +982,7 @@ class RwckPublishPanel extends Component {
                             </span>
                         )}
                         {!latency && !this.state.statsErr && !this.state.statsBusy && (
-                            <span style={{color: C.textMuted}}>正在获取…</span>
+                            <span style={{color: C.textMuted}}>{rwckT('rwck217')}</span>
                         )}
                     </div>
                 </div>
@@ -854,13 +990,13 @@ class RwckPublishPanel extends Component {
                 {/* 核心指标 */}
                 {st && (
                     <div style={cls(S.box, {padding:14})}>
-                        <div style={S.sectionTitle}>站点总览</div>
+                        <div style={S.sectionTitle}>{rwckT('rwck242')}</div>
                         <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:10}}>
                             {[
-                                {label:'注册用户',   value: st.users || 0,        icon: Users},
-                                {label:'帖子总数',   value: st.posts || 0,        icon: MessageCircle},
-                                {label:'讨论串',     value: st.discussions || 0,  icon: BookOpen},
-                                {label:'今日访问',   value: st.todayVisits || 0,  icon: Activity}
+                                {label:rwckT('rwck73'),   value: st.users || 0,        icon: Users},
+                                {label:rwckT('rwck49'),   value: st.posts || 0,        icon: MessageCircle},
+                                {label:rwckT('rwck95'),     value: st.discussions || 0,  icon: BookOpen},
+                                {label:rwckT('rwck15'),   value: st.todayVisits || 0,  icon: Activity}
                             ].map((c, i) => (
                                 <div key={i} style={{
                                     border:`1px solid ${C.border}`, borderRadius: RADIUS_MD,
@@ -889,19 +1025,19 @@ class RwckPublishPanel extends Component {
                     {/* 最新讨论 */}
                     <div style={S.box}>
                         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
-                            <div style={S.sectionTitle}>最新讨论</div>
+                            <div style={S.sectionTitle}>{rwckT('rwck209')}</div>
                             <a href='https://forum.ctspace.xyz/d/new' target='_blank' rel='noreferrer'
                                style={{...S.hint, ...S.link}}>
-                                查看全部 →
+                                {rwckT('rwck212')}
                             </a>
                         </div>
                         {this.state.discussionsErr && <div style={S.err}>{this.state.discussionsErr}</div>}
                         {!this.state.discussionsErr && (!discs || discs.length === 0) && (
-                            <div style={S.hint}>暂无讨论，<a href='https://forum.ctspace.xyz/d/new' target='_blank' rel='noreferrer'>去发第一个吧 →</a></div>
+                            <div style={S.hint}>{rwckT('rwck206')}<a href='https://forum.ctspace.xyz/d/new' target='_blank' rel='noreferrer'>{rwckT('rwck166')}</a></div>
                         )}
                         <div style={{display:'flex', flexDirection:'column', gap:6}}>
                             {discs.slice(0, 8).map((d, i) => {
-                                const author = d.author || {nickname: null, username: '匿名', avatar: null};
+                                const author = d.author || {nickname: null, username: rwckT('rwck35'), avatar: null};
                                 return (
                                     <a key={d.id || i}
                                        href={`https://forum.ctspace.xyz/d/${d.seq || ''}`}
@@ -918,7 +1054,7 @@ class RwckPublishPanel extends Component {
                                                 {d.title}
                                             </div>
                                             <div style={{...S.hint, marginTop:2}}>
-                                                由 <b>{author.nickname || author.username || '匿名'}</b>
+                                                {rwckT('rwck233')} <b>{author.nickname || author.username || '匿名'}</b>
                                                 · <span style={{color: C.textMuted}}>{this._fmtTime(d.createdAt)}</span>
                                             </div>
                                         </div>
@@ -937,9 +1073,9 @@ class RwckPublishPanel extends Component {
                     {/* 活跃用户 / 排行榜 */}
                     <div style={{display:'flex', flexDirection:'column', gap:10}}>
                         <div style={S.box}>
-                            <div style={S.sectionTitle}>排行榜</div>
-                            {this.state.leaderboardErr && <div style={S.hint}>加载失败</div>}
-                            {!this.state.leaderboardErr && board.length === 0 && <div style={S.hint}>暂无数据</div>}
+                            <div style={S.sectionTitle}>{rwckT('rwck198')}</div>
+                            {this.state.leaderboardErr && <div style={S.hint}>{rwckT('rwck165')}</div>}
+                            {!this.state.leaderboardErr && board.length === 0 && <div style={S.hint}>{rwckT('rwck205')}</div>}
                             {board.slice(0, 5).map((u, i) => (
                                 <div key={u.id || i}
                                      style={{display:'flex', alignItems:'center', gap:8, padding:'6px 8px',
@@ -949,7 +1085,7 @@ class RwckPublishPanel extends Component {
                                         <img src={u.avatar} alt='' style={{width:22, height:22, borderRadius:11, border:`1px solid ${C.border}`}} />
                                     )}
                                     <span style={{flex:1, fontWeight:600}}>
-                                        {u.nickname || u.username || '匿名'}
+                                        {u.nickname || u.username || rwckT('rwck35')}
                                     </span>
                                     <span style={{fontSize:11, color: C.textMuted}}>
                                         +{(u.points ?? u.score ?? 0)}
@@ -959,9 +1095,9 @@ class RwckPublishPanel extends Component {
                         </div>
 
                         <div style={S.box}>
-                            <div style={S.sectionTitle}>活跃用户</div>
-                            {this.state.activeErr && <div style={S.hint}>加载失败</div>}
-                            {!this.state.activeErr && active.length === 0 && <div style={S.hint}>暂无数据</div>}
+                            <div style={S.sectionTitle}>{rwckT('rwck223')}</div>
+                            {this.state.activeErr && <div style={S.hint}>{rwckT('rwck165')}</div>}
+                            {!this.state.activeErr && active.length === 0 && <div style={S.hint}>{rwckT('rwck205')}</div>}
                             <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
                                 {active.slice(0, 6).map((u, i) => (
                                     <a key={u.id || i}
@@ -972,7 +1108,7 @@ class RwckPublishPanel extends Component {
                                                textDecoration:'none', display:'inline-flex', gap:4,
                                                alignItems:'center', background: C.surfaceRaised}}>
                                         {u.avatar && <img src={u.avatar} alt='' style={{width:14, height:14, borderRadius:7}} />}
-                                        {u.nickname || u.username || '匿名'}
+                                        {u.nickname || u.username || rwckT('rwck35')}
                                     </a>
                                 ))}
                             </div>
@@ -980,7 +1116,7 @@ class RwckPublishPanel extends Component {
 
                         {tags && tags.length > 0 && (
                             <div style={S.box}>
-                                <div style={S.sectionTitle}>热门标签</div>
+                                <div style={S.sectionTitle}>{rwckT('rwck229')}</div>
                                 <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
                                     {tags.slice(0, 10).map((t, i) => (
                                         <a key={t.id || i}
@@ -1001,9 +1137,9 @@ class RwckPublishPanel extends Component {
                 {/* 站内入口：前三个直接新标签打开，登录 / 注册先弹编辑器内选择 */}
                 <div style={cls(S.box, {display:'flex', gap:8, flexWrap:'wrap', alignItems:'center'})}>
                     {[
-                        {key:'home',  icon: Globe,       text: '访问论坛首页', href: FORUM.home},
-                        {key:'works', icon: FolderOpen,  text: '作品广场',     href: FORUM.works},
-                        {key:'ext',   icon: Package,     text: '扩展广场',     href: FORUM.extensions}
+                        {key:'home',  icon: Globe,       text: rwckT('rwck96'), href: FORUM.home},
+                        {key:'works', icon: FolderOpen,  text: rwckT('rwck21'),     href: FORUM.works},
+                        {key:'ext',   icon: Package,     text: rwckT('rwck57'),     href: FORUM.extensions}
                     ].map(item => (
                         <a key={item.key}
                            href={item.href} target='_blank' rel='noreferrer'
@@ -1013,11 +1149,11 @@ class RwckPublishPanel extends Component {
                     ))}
                     <button style={cls(S.btn, S.btnPrimary)}
                             onClick={()=>this.setState({authModal:'login'})}>
-                        <LogIn size={14} strokeWidth={2.2} /> 登录
+                        <LogIn size={14} strokeWidth={2.2} /> {rwckT('rwck78')}
                     </button>
                     <button style={cls(S.btn, S.btnGhost)}
                             onClick={e => { e.preventDefault(); window.open('https://forum.ctspace.xyz/?register=1','_blank','noopener,noreferrer'); }}>
-                        <UserPlus size={14} strokeWidth={2.2} /> 注册
+                        <UserPlus size={14} strokeWidth={2.2} /> {rwckT('rwck222')}
                     </button>
                 </div>
             </div>
@@ -1035,7 +1171,7 @@ class RwckPublishPanel extends Component {
                      onClick={e=>e.stopPropagation()}>
                     <div style={S.modalTitle}>
                         <LogIn size={16} strokeWidth={2.2} />
-                        登录创客次元
+                        {rwckT('rwck234')}
                     </div>
                     <div style={S.hint}>
                         想在哪里登录？在编辑器内可以直接填账号密码；
@@ -1044,18 +1180,18 @@ class RwckPublishPanel extends Component {
                     <div style={S.modalActions}>
                         <button style={cls(S.btn, S.btnPrimary)}
                                 onClick={()=>this.setState({authModal:null, tab:'login'})}>
-                            <LogIn size={14} strokeWidth={2.2} /> 在编辑器内登录
+                            <LogIn size={14} strokeWidth={2.2} /> {rwckT('rwck180')}
                         </button>
                         <a href={FORUM.login} target='_blank' rel='noreferrer'
                            style={cls(S.btn, S.btnGhost, {textDecoration:'none'})}
                            onClick={()=>this.setState({authModal:null})}>
-                            <ExternalLink size={14} strokeWidth={2.2} /> 在论坛中登录
+                            <ExternalLink size={14} strokeWidth={2.2} /> {rwckT('rwck181')}
                         </a>
                     </div>
                     <div style={S.modalRow}>
                         <button style={cls(S.btn, S.btnGhost, {marginLeft:'auto'})}
                                 onClick={()=>this.setState({authModal:null})}>
-                            取消
+                            {rwckT('rwck171')}
                         </button>
                     </div>
                 </div>
@@ -1069,10 +1205,10 @@ class RwckPublishPanel extends Component {
             const d = new Date(iso);
             const now = Date.now();
             const diff = (now - d.getTime()) / 1000;
-            if (diff < 60) return '刚刚';
-            if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
-            if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
-            if (diff < 86400 * 7) return Math.floor(diff / 86400) + ' 天前';
+            if (diff < 60) return rwckT('rwck29');
+            if (diff < 3600) return Math.floor(diff / 60) + rwckT('rwck1');
+            if (diff < 86400) return Math.floor(diff / 3600) + rwckT('rwck3');
+            if (diff < 86400 * 7) return Math.floor(diff / 86400) + rwckT('rwck2');
             return d.toLocaleDateString();
         } catch { return iso; }
     }
@@ -1087,44 +1223,44 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{position:'relative', display:'flex', flexDirection:'column', gap:10}}>
             <div style={S.box}>
-                <div style={S.sectionTitle}>登录</div>
+                <div style={S.sectionTitle}>{rwckT('rwck78')}</div>
                 <div style={S.hint}>首次使用请先去官网注册账号（需验证邮箱）。登录会先通过图形验证码 + 前端自动计算的 PoW 工作量证明。</div>
                 {this.state.loginErr && <div style={S.err}>{this.state.loginErr}</div>}
-                {this.state.loginBusy && <div style={S.ok}>登录中…</div>}
+                {this.state.loginBusy && <div style={S.ok}>{rwckT('rwck79')}</div>}
 
                 <div style={S.row}>
-                    <label style={S.label}>用户名 / 邮箱</label>
+                    <label style={S.label}>{rwckT('rwck232')}</label>
                     <input style={S.input} value={this.state.username}
                            onChange={e=>this.setState({username:e.target.value})} autoComplete='username' />
                 </div>
                 <div style={S.row}>
-                    <label style={S.label}>密码</label>
+                    <label style={S.label}>{rwckT('rwck184')}</label>
                     <input style={S.input} type='password' value={this.state.password}
                            onChange={e=>this.setState({password:e.target.value})} autoComplete='current-password' />
                 </div>
 
                 <div style={S.row}>
-                    <label style={S.label}>图形验证码</label>
+                    <label style={S.label}>{rwckT('rwck179')}</label>
                     <div style={{...S.captcha, display:'flex', alignItems:'center', justifyContent:'center',
                                   minWidth:140, color: C.textSubtle, fontSize:12}}>
-                        {this.state.captchaLoading ? '正在加载…'
+                        {this.state.captchaLoading ? rwckT('rwck72')
                          : hasImage ? (
                             <img alt='captcha' style={{borderRadius:4, height:40, cursor:'pointer'}}
                                  src={captcha.image}
                                  onClick={()=>this._refreshCaptcha()}
-                                 title='点一下刷新' />
-                         ) : '等待加载'}
+                                 title=rwckT('rwck75') />
+                         ) : rwckT('rwck87')}
                     </div>
 
                     <input style={{...S.input, maxWidth:150}} value={this.state.captchaAnswer}
                            onChange={e=>this.setState({captchaAnswer:e.target.value})}
-                           placeholder={hasImage ? '输入图中字符' : '先获取验证码'}
+                           placeholder={hasImage ? rwckT('rwck115') : rwckT('rwck24')}
                            maxLength={8} disabled={!hasImage} />
 
                     <button style={cls(S.btn, S.btnGhost, this.state.captchaLoading && S.btnDisabled)}
                             onClick={()=>this._refreshCaptcha()}
                             disabled={this.state.captchaLoading}
-                            title='重新获取验证码'>
+                            title=rwckT('rwck119')>
                         <RefreshCw size={14} strokeWidth={2.2}
                                    style={{animation: this.state.captchaLoading ? 'spin 1s linear infinite' : 'none'}} />
                     </button>
@@ -1138,18 +1274,18 @@ class RwckPublishPanel extends Component {
                     <button style={cls(S.btn, S.btnPrimary, loginDisabled && S.btnDisabled)}
                             disabled={loginDisabled}
                             onClick={()=>this._login()}>
-                        <LogIn size={14} strokeWidth={2.2} /> {this.state.loginBusy ? '登录中…' : '登录'}
+                        <LogIn size={14} strokeWidth={2.2} /> {this.state.loginBusy ? rwckT('rwck79') : rwckT('rwck78')}
                     </button>
-                    <span style={S.hint}>PoW 会在点击登录时自动计算（几毫秒）</span>
+                    <span style={S.hint}>{rwckT('rwck137')}</span>
                 </div>
             </div>
             <div style={S.box}>
                 <div style={S.hint}>
-                    还没有账号？注册需要转到社区官网
+                    {rwckT('rwck251')}
                     <a href='https://forum.ctspace.xyz/?register=1'
                        target='_blank' rel='noreferrer'
                        style={{...S.link, marginLeft:3}}>https://forum.ctspace.xyz/?register=1</a>
-                    页面注册。
+                    {rwckT('rwck252')}
                 </div>
             </div>
             <div style={{height:44}} />
@@ -1163,7 +1299,7 @@ class RwckPublishPanel extends Component {
                     display:'inline-flex', gap:6, alignItems:'center'
                 }}
                         onClick={() => this._openSettings()}>
-                    <Settings size={13} strokeWidth={2.2} /> 设置
+                    <Settings size={13} strokeWidth={2.2} /> {rwckT('rwck249')}
                 </button>
             )}
             </div>
@@ -1177,71 +1313,71 @@ class RwckPublishPanel extends Component {
                 <div style={S.box}>
                     <div style={S.hint}>
                         <AlertCircle size={12} strokeWidth={2.2} style={{verticalAlign:'-2px', color: C.warning}} />
-                        发布前确认作品内容符合社区公约。上传即视为您的作品同意被别人下载。
+                        {rwckT('rwck167')}
                     </div>
                 </div>
                 {this.state.publishErr && <div style={S.err}>{this.state.publishErr}</div>}
                 {this.state.publishOk  && <div style={S.ok}>{this.state.publishOk}</div>}
 
-                <div style={S.sectionTitle}>作品信息</div>
+                <div style={S.sectionTitle}>{rwckT('rwck145')}</div>
                 <div style={S.row}>
-                    <label style={S.label}>标题 *</label>
+                    <label style={S.label}>{rwckT('rwck214')}</label>
                     <input style={S.input} value={this.state.title}
                            onChange={e=>this.setState({title:e.target.value})}
                            placeholder='默认从当前编辑器作品名取' />
                 </div>
                 <div style={S.row}>
-                    <label style={S.label}>分类</label>
+                    <label style={S.label}>{rwckT('rwck157')}</label>
                     <select style={S.input} value={this.state.category}
                             onChange={e=>this.setState({category:e.target.value})}>
                         {CATEGORIES.map(c => <option key={c.id} value={c.id}>{catLabel(c)}</option>)}
                     </select>
                 </div>
                 <div style={S.row}>
-                    <label style={S.label}>简介</label>
+                    <label style={S.label}>{rwckT('rwck244')}</label>
                     <input style={S.input} value={this.state.summary}
                            onChange={e=>this.setState({summary:e.target.value})}
                            placeholder='一句话简介，可选，≤500 字' />
                 </div>
                 <div style={S.row}>
-                    <label style={S.label}>正文（Markdown）</label>
+                    <label style={S.label}>{rwckT('rwck219')}</label>
                     <textarea style={S.textarea} value={this.state.content}
                               onChange={e=>this.setState({content:e.target.value})}
                               placeholder='详细介绍、玩法说明、更新日志……' />
                 </div>
 
-                <div style={S.sectionTitle}>文件</div>
+                <div style={S.sectionTitle}>{rwckT('rwck202')}</div>
                 <div style={S.row}>
-                    <label style={S.label}>.sb3 作品</label>
+                    <label style={S.label}>{rwckT('rwck133')}</label>
                     <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._loadSb3FromVm()}>
-                        <FileCode size={14} strokeWidth={2.2} /> 从编辑器读取
+                        <FileCode size={14} strokeWidth={2.2} /> {rwckT('rwck141')}
                     </button>
-                    <span style={S.fileInfo}>或</span>
+                    <span style={S.fileInfo}>{rwckT('rwck194')}</span>
                     <label style={cls(S.btn, S.btnGhost)}>
-                        手动选择
+                        {rwckT('rwck195')}
                         <input type='file' accept='.sb3' style={{display:'none'}}
                                onChange={e=>this._pickSb3(e)} />
                     </label>
                     {this.state.sb3Name && <span style={S.fileInfo}>已选：{this.state.sb3Name}</span>}
                 </div>
                 <div style={S.row}>
-                    <label style={S.label}>封面图（可选）</label>
+                    <label style={S.label}>{rwckT('rwck185')}</label>
                     <label style={cls(S.btn, S.btnGhost)}>
-                        选择图片
+                        {rwckT('rwck256')}
                         <input type='file' accept='image/*' style={{display:'none'}}
                                onChange={e=>this._pickCover(e)} />
                     </label>
                     {this.state.coverFile && <span style={S.fileInfo}>已选：{this.state.coverFile.name}</span>}
                 </div>
 
-                <div style={S.sectionTitle}>其它</div>
+                <div style={S.sectionTitle}>{rwckT('rwck155')}</div>
                 <div style={S.row}>
-                    <label style={S.label}>允许他人下载</label>
+                    <label style={S.label}>{rwckT('rwck147')}</label>
                     <input type='checkbox' checked={this.state.allowDownload}
                            onChange={e=>this.setState({allowDownload:e.target.checked})} />
                 </div>
                 <div style={S.row}>
-                    <label style={S.label}>同步到论坛帖子</label>
+                    <label style={S.label}>{rwckT('rwck174')}</label>
                     <input type='checkbox' checked={this.state.syncToForum}
                            onChange={e=>this.setState({syncToForum:e.target.checked})} />
                 </div>
@@ -1251,10 +1387,10 @@ class RwckPublishPanel extends Component {
                     <button style={cls(S.btn, S.btnPrimary, this.state.uploadBusy && S.btnDisabled)}
                             disabled={this.state.uploadBusy}
                             onClick={()=>this._upload()}>
-                        <Upload size={14} strokeWidth={2.2} /> {this.state.uploadBusy ? '上传中…' : '上传并发布'}
+                        <Upload size={14} strokeWidth={2.2} /> {this.state.uploadBusy ? rwckT('rwck8') : rwckT('rwck11')}
                     </button>
                     <span style={S.fileInfo}>
-                        {this.state.sb3ResourceId ? '作品已上传' : this.state.sb3File ? '将以上传选中文件' : '将导出当前编辑器作品'}
+                        {this.state.sb3ResourceId ? rwckT('rwck20') : this.state.sb3File ? rwckT('rwck45') : rwckT('rwck46')}
                     </span>
                 </div>
             </div>
@@ -1265,17 +1401,17 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.box}>
-                    <div style={S.hint}>发帖限流 4 条/小时。正文支持 Markdown，可引用云盘资源。</div>
+                    <div style={S.hint}>{rwckT('rwck169')}</div>
                 </div>
                 {this.state.discussionErr && <div style={S.err}>{this.state.discussionErr}</div>}
                 {this.state.discussionOk  && <div style={S.ok}>{this.state.discussionOk}</div>}
                 <div style={S.row}>
-                    <label style={S.label}>标题 *</label>
+                    <label style={S.label}>{rwckT('rwck214')}</label>
                     <input style={S.input} value={this.state.discussionTitle}
                            onChange={e=>this.setState({discussionTitle:e.target.value})} />
                 </div>
                 <div style={S.row}>
-                    <label style={S.label}>正文 *</label>
+                    <label style={S.label}>{rwckT('rwck218')}</label>
                     <textarea style={S.textarea} value={this.state.discussionContent}
                               onChange={e=>this.setState({discussionContent:e.target.value})} />
                 </div>
@@ -1283,20 +1419,20 @@ class RwckPublishPanel extends Component {
                     <button style={cls(S.btn, S.btnPrimary, this.state.discussionBusy && S.btnDisabled)}
                             disabled={this.state.discussionBusy}
                             onClick={()=>this._postDiscussion()}>
-                        {this.state.discussionBusy ? '发帖中…' : '发布帖子'}
+                        {this.state.discussionBusy ? '发帖中…' : rwckT('rwck39')}
                     </button>
                 </div>
 
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>回复已有讨论（POST /posts）</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck178')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>讨论 ID</label>
+                        <label style={S.label}>{rwckT('rwck248')}</label>
                         <input style={S.input} value={this.state.replyDiscussionId}
                                onChange={e=>this.setState({replyDiscussionId: e.target.value})}
-                               placeholder='例如 123' />
+                               placeholder=rwckT('rwck22') />
                     </div>
                     <div style={S.row}>
-                        <label style={S.label}>回复内容</label>
+                        <label style={S.label}>{rwckT('rwck177')}</label>
                         <textarea style={S.textarea} value={this.state.replyContent}
                                   onChange={e=>this.setState({replyContent: e.target.value})} />
                     </div>
@@ -1306,7 +1442,7 @@ class RwckPublishPanel extends Component {
                         <button style={cls(S.btn, S.btnPrimary, this.state.replyBusy && S.btnDisabled)}
                                 disabled={this.state.replyBusy}
                                 onClick={()=>this._postReply()}>
-                            <Send size={14} strokeWidth={2.2} /> 回复
+                            <Send size={14} strokeWidth={2.2} /> {rwckT('rwck176')}
                         </button>
                     </div>
                 </div>
@@ -1318,13 +1454,13 @@ class RwckPublishPanel extends Component {
     async _postReply() {
         const {replyDiscussionId, replyContent} = this.state;
         if (!replyDiscussionId.trim() || !replyContent.trim()) {
-            this.setState({replyErr: '讨论 ID 和回复内容都要填'});
+            this.setState({replyErr: rwckT('rwck94')});
             return;
         }
         this.setState({replyBusy: true, replyErr: '', replyOk: ''});
         try {
             await rwck.posts.create({discussionId: replyDiscussionId, content: replyContent});
-            this.setState({replyBusy: false, replyOk: '回复已发布', replyContent: ''});
+            this.setState({replyBusy: false, replyOk: rwckT('rwck42'), replyContent: ''});
         } catch (e) {
             this.setState({replyErr: this._friendlyError(e), replyBusy: false});
         }
@@ -1334,16 +1470,16 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:8}}>
                 <div style={S.row}>
-                    <strong style={{fontSize:13}}>我发布的作品</strong>
+                    <strong style={{fontSize:13}}>{rwckT('rwck190')}</strong>
                     <span style={{flex:1}} />
                     <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._refreshMine()}>
-                        <RefreshCw size={14} strokeWidth={2.2} /> 刷新
+                        <RefreshCw size={14} strokeWidth={2.2} /> {rwckT('rwck162')}
                     </button>
                 </div>
                 {this.state.myErr && <div style={S.err}>{this.state.myErr}</div>}
-                {this.state.myBusy && <div style={S.ok}>加载中…</div>}
+                {this.state.myBusy && <div style={S.ok}>{rwckT('rwck164')}</div>}
                 {!this.state.myBusy && this.state.mine.length === 0 && (
-                    <div style={S.hint}>还没有发布过作品，快去「发布作品」Tab 发第一个吧～</div>
+                    <div style={S.hint}>{rwckT('rwck253')}</div>
                 )}
                 {this.state.mine.map(p => (
                     <div key={p.id} style={S.listItem}>
@@ -1357,7 +1493,7 @@ class RwckPublishPanel extends Component {
                         </span>
                         {p.shortLinkSlug && (
                             <a href={`https://forum.ctspace.xyz/g/${p.shortLinkSlug}`} target='_blank' rel='noreferrer'
-                               style={{...S.link, fontSize:11}}>试玩</a>
+                               style={{...S.link, fontSize:11}}>{rwckT('rwck255')}</a>
                         )}
                         <button style={cls(S.btn, S.btnGhost, S.btnIcon)}
                                 title='删除作品'
@@ -1371,7 +1507,7 @@ class RwckPublishPanel extends Component {
     }
 
     async _removeProject (id) {
-        if (!window.confirm(`确定删除作品 #${id}？此操作不可撤销。`)) return;
+        if (!window.confirm(rwckT('rwck81').replace('{id}', id))) return;
         try {
             await rwck.projects.remove(id);
             this._refreshMine();
@@ -1422,26 +1558,26 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.row}>
-                    <input style={S.input} placeholder='搜索作品标题…' value={this.state.worksQ}
+                    <input style={S.input} placeholder=rwckT('rwck62') value={this.state.worksQ}
                            onChange={e=>this.setState({worksQ: e.target.value})} />
                     <select style={{...S.input, flex:'0 0 130px'}} value={this.state.worksCategory}
                             onChange={e=>this.setState({worksCategory: e.target.value})}>
-                        <option value=''>全部分类</option>
+                        <option value=''>{rwckT('rwck149')}</option>
                         {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.zh}</option>)}
                     </select>
                     <select style={{...S.input, flex:'0 0 110px'}} value={this.state.worksSort}
                             onChange={e=>this.setState({worksSort: e.target.value})}>
-                        <option value='new'>最新</option>
-                        <option value='score'>最热</option>
+                        <option value='new'>{rwckT('rwck208')}</option>
+                        <option value='score'>{rwckT('rwck210')}</option>
                     </select>
                     <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._loadWorks()}>
-                        <Search size={14} strokeWidth={2.2} /> 搜索
+                        <Search size={14} strokeWidth={2.2} /> {rwckT('rwck60')}
                     </button>
                 </div>
                 {errBar(S, this.state.worksErr)}
-                {this.state.worksBusy && <div style={S.ok}>加载中…</div>}
+                {this.state.worksBusy && <div style={S.ok}>{rwckT('rwck164')}</div>}
                 {!this.state.worksBusy && this.state.worksList.length === 0 && (
-                    <div style={S.hint}>没有找到作品</div>
+                    <div style={S.hint}>{rwckT('rwck221')}</div>
                 )}
                 {this.state.worksList.map((p, i) => (
                     <div key={p.id || i} style={S.listItem}>
@@ -1455,13 +1591,13 @@ class RwckPublishPanel extends Component {
                             <Heart size={12} strokeWidth={2.2} style={{verticalAlign:'-2px'}} /> {p.likeCount || 0}
                             · <Eye size={12} strokeWidth={2.2} style={{verticalAlign:'-2px'}} /> {p.views || 0}
                         </span>
-                        <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title='点赞 / 取消点赞'
+                        <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title=rwckT('rwck77')
                                 onClick={()=>this._likeProject(p.id)}>
                             <ThumbsUp size={13} strokeWidth={2.2} />
                         </button>
                         {p.shortLinkSlug && (
                             <a href={`https://forum.ctspace.xyz/g/${p.shortLinkSlug}`} target='_blank' rel='noreferrer'
-                               style={{...S.link, fontSize:11}}>试玩</a>
+                               style={{...S.link, fontSize:11}}>{rwckT('rwck255')}</a>
                         )}
                     </div>
                 ))}
@@ -1500,7 +1636,7 @@ class RwckPublishPanel extends Component {
                 title: extTitle, summary: extSummary, category: extCategory,
                 code: extCode, license: 'mit'
             });
-            this.setState({extBusy: false, extOk: '扩展已发布', extTitle: '', extSummary: '', extCode: ''});
+            this.setState({extBusy: false, extOk: rwckT('rwck56'), extTitle: '', extSummary: '', extCode: ''});
             this._loadExtMine();
         } catch (e) {
             this.setState({extErr: this._friendlyError(e), extBusy: false});
@@ -1508,7 +1644,7 @@ class RwckPublishPanel extends Component {
     }
 
     async _removeExt (id) {
-        if (!window.confirm(`确定删除扩展 #${id}？`)) return;
+        if (!window.confirm(rwckT('rwck82').replace('{id}', id))) return;
         try {
             await rwck.extensions.remove(id);
             this._loadExtMine();
@@ -1530,26 +1666,26 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>发布扩展</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck168')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>标题 *</label>
+                        <label style={S.label}>{rwckT('rwck214')}</label>
                         <input style={S.input} value={this.state.extTitle}
                                onChange={e=>this.setState({extTitle: e.target.value})} />
                     </div>
                     <div style={S.row}>
-                        <label style={S.label}>简介</label>
+                        <label style={S.label}>{rwckT('rwck244')}</label>
                         <input style={S.input} value={this.state.extSummary}
                                onChange={e=>this.setState({extSummary: e.target.value})} />
                     </div>
                     <div style={S.row}>
-                        <label style={S.label}>分类</label>
+                        <label style={S.label}>{rwckT('rwck157')}</label>
                         <select style={S.input} value={this.state.extCategory}
                                 onChange={e=>this.setState({extCategory: e.target.value})}>
                             {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.zh}</option>)}
                         </select>
                     </div>
                     <div style={S.row}>
-                        <label style={S.label}>源码 *</label>
+                        <label style={S.label}>{rwckT('rwck226')}</label>
                         <textarea style={S.textarea} value={this.state.extCode}
                                   onChange={e=>this.setState({extCode: e.target.value})}
                                   placeholder='Scratch 扩展的 JS 源码…' />
@@ -1558,17 +1694,17 @@ class RwckPublishPanel extends Component {
                         <button style={cls(S.btn, S.btnPrimary, this.state.extBusy && S.btnDisabled)}
                                 disabled={this.state.extBusy}
                                 onClick={()=>this._createExt()}>
-                            <Plus size={14} strokeWidth={2.2} /> 发布扩展
+                            <Plus size={14} strokeWidth={2.2} /> {rwckT('rwck168')}
                         </button>
                     </div>
                 </div>
                 {errBar(S, this.state.extErr)}
                 {okBar(S, this.state.extOk)}
 
-                <div style={S.sectionTitle}>全部扩展</div>
+                <div style={S.sectionTitle}>{rwckT('rwck151')}</div>
                 <div style={S.row}>
                     <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._loadExt()}>
-                        <RefreshCw size={14} strokeWidth={2.2} /> 刷新
+                        <RefreshCw size={14} strokeWidth={2.2} /> {rwckT('rwck162')}
                     </button>
                 </div>
                 {this.state.extList.map((x, i) => (
@@ -1578,7 +1714,7 @@ class RwckPublishPanel extends Component {
                             <span style={{color: C.textSubtle, fontSize:11, marginLeft:6}}>{x.category}</span>
                         </span>
                         <a href={rwck.extensions.rawUrl(x.id)} target='_blank' rel='noreferrer'
-                           style={{...S.link, fontSize:11}}>源码</a>
+                           style={{...S.link, fontSize:11}}>{rwckT('rwck225')}</a>
                         <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title='点赞'
                                 onClick={()=>this._likeExt(x.id)}>
                             <ThumbsUp size={13} strokeWidth={2.2} />
@@ -1588,7 +1724,7 @@ class RwckPublishPanel extends Component {
 
                 {this.state.extMine.length > 0 && (
                     <React.Fragment>
-                        <div style={S.sectionTitle}>我发布的扩展</div>
+                        <div style={S.sectionTitle}>{rwckT('rwck191')}</div>
                         {this.state.extMine.map((x, i) => (
                             <div key={x.id || i} style={S.listItem}>
                                 <span style={{flex:1, fontWeight:600}}>{x.title}</span>
@@ -1621,7 +1757,7 @@ class RwckPublishPanel extends Component {
         this.setState({driveBusy: true, driveErr: '', driveOk: ''});
         try {
             await rwck.drive.upload(f, f.name);
-            this.setState({driveOk: `已上传 ${f.name}`, driveBusy: false});
+            this.setState({driveOk: rwckT('rwck123'), driveBusy: false});
             this._loadDrive();
         } catch (err) {
             this.setState({driveErr: this._friendlyError(err), driveBusy: false});
@@ -1643,11 +1779,11 @@ class RwckPublishPanel extends Component {
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.row}>
                     <label style={cls(S.btn, S.btnGhost)}>
-                        <Upload size={14} strokeWidth={2.2} /> 上传到云盘
+                        <Upload size={14} strokeWidth={2.2} /> {rwckT('rwck139')}
                         <input type='file' style={{display:'none'}} onChange={e=>this._uploadDrive(e)} />
                     </label>
                     <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._loadDrive()}>
-                        <RefreshCw size={14} strokeWidth={2.2} /> 刷新
+                        <RefreshCw size={14} strokeWidth={2.2} /> {rwckT('rwck162')}
                     </button>
                     {this.state.driveUsage && (
                         <span style={S.fileInfo}>
@@ -1658,7 +1794,7 @@ class RwckPublishPanel extends Component {
                 </div>
                 {errBar(S, this.state.driveErr)}
                 {okBar(S, this.state.driveOk)}
-                {this.state.driveBusy && <div style={S.ok}>处理中…</div>}
+                {this.state.driveBusy && <div style={S.ok}>{rwckT('rwck182')}</div>}
                 {this.state.driveFiles.map((f, i) => (
                     <div key={f.id || i} style={S.listItem}>
                         <FileText size={14} strokeWidth={2.2} style={{color: C.textSubtle}} />
@@ -1667,7 +1803,7 @@ class RwckPublishPanel extends Component {
                         </span>
                         {f.shareId && (
                             <a href={rwck.drive.rawUrl(f.shareId)} target='_blank' rel='noreferrer'
-                               style={{...S.link, fontSize:11}}>直链</a>
+                               style={{...S.link, fontSize:11}}>{rwckT('rwck240')}</a>
                         )}
                         <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title='删除'
                                 onClick={()=>this._removeDriveFile(f.id)}>
@@ -1696,7 +1832,7 @@ class RwckPublishPanel extends Component {
         this.setState({resBusy: true, resErr: '', resOk: ''});
         try {
             const r = await rwck.resources.upload(f, f.name);
-            this.setState({resOk: `已上传，资源 ID ${r.id}`, resBusy: false});
+            this.setState({resOk: rwckT('rwck124'), resBusy: false});
         } catch (err) {
             this.setState({resErr: this._friendlyError(err), resBusy: false});
         }
@@ -1717,7 +1853,7 @@ class RwckPublishPanel extends Component {
                 requireLogin: false,
                 requireReward: false
             });
-            this.setState({resOk: '网盘资源已登记', resBusy: false, netdiskLink: '', netdiskCode: ''});
+            this.setState({resOk: rwckT('rwck88'), resBusy: false, netdiskLink: '', netdiskCode: ''});
         } catch (e) {
             this.setState({resErr: this._friendlyError(e), resBusy: false});
         }
@@ -1727,42 +1863,42 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>上传资源</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck140')}</div>
                     <div style={S.row}>
                         <label style={cls(S.btn, S.btnGhost)}>
-                            <Upload size={14} strokeWidth={2.2} /> 选择文件
+                            <Upload size={14} strokeWidth={2.2} /> {rwckT('rwck257')}
                             <input type='file' style={{display:'none'}} onChange={e=>this._uploadResource(e)} />
                         </label>
                         <span style={S.fileInfo}>上传后可作为附件引用（resources/{'{id}'}）</span>
                     </div>
                 </div>
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>登记网盘资源</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck237')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>链接</label>
+                        <label style={S.label}>{rwckT('rwck258')}</label>
                         <input style={S.input} value={this.state.netdiskLink}
                                onChange={e=>this.setState({netdiskLink: e.target.value})}
                                placeholder='https://pan.xxx.com/s/…' />
                     </div>
                     <div style={S.row}>
-                        <label style={S.label}>提取码</label>
+                        <label style={S.label}>{rwckT('rwck199')}</label>
                         <input style={S.input} value={this.state.netdiskCode}
                                onChange={e=>this.setState({netdiskCode: e.target.value})} />
                     </div>
                     <div style={{...S.row, marginTop:8}}>
                         <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._addNetdisk()}>
-                            <Plus size={14} strokeWidth={2.2} /> 登记
+                            <Plus size={14} strokeWidth={2.2} /> {rwckT('rwck235')}
                         </button>
                     </div>
                 </div>
                 {errBar(S, this.state.resErr)}
                 {okBar(S, this.state.resOk)}
-                <div style={S.sectionTitle}>已获赏资源</div>
+                <div style={S.sectionTitle}>{rwckT('rwck186')}</div>
                 {this.state.resList.map((r, i) => (
                     <div key={r.id || i} style={S.listItem}>
-                        <span style={{flex:1, minWidth:0}}>{r.name || r.filename || `资源 ${r.id}`}</span>
+                        <span style={{flex:1, minWidth:0}}>{r.name || r.filename || rwckT('rwck132')}</span>
                         <a href={`https://forum.ctspace.xyz/r/${r.id}`} target='_blank' rel='noreferrer'
-                           style={{...S.link, fontSize:11}}>打开</a>
+                           style={{...S.link, fontSize:11}}>{rwckT('rwck196')}</a>
                     </div>
                 ))}
             </div>
@@ -1788,13 +1924,13 @@ class RwckPublishPanel extends Component {
     async _postComment () {
         const {commentTargetType, commentTargetId, commentText} = this.state;
         if (!commentTargetId || !commentText.trim()) {
-            this.setState({socialErr: '目标 ID 和评论内容都要填'});
+            this.setState({socialErr: rwckT('rwck80')});
             return;
         }
         this.setState({socialBusy: true, socialErr: '', socialOk: ''});
         try {
             await rwck.comments.create({targetType: commentTargetType, targetId: commentTargetId, content: commentText});
-            this.setState({commentText: '', socialOk: '评论已发布', socialBusy: false});
+            this.setState({commentText: '', socialOk: rwckT('rwck97'), socialBusy: false});
             this._loadComments();
         } catch (e) {
             this.setState({socialErr: this._friendlyError(e), socialBusy: false});
@@ -1804,7 +1940,7 @@ class RwckPublishPanel extends Component {
     async _toggleLike () {
         const {likeTargetType, likeTargetId} = this.state;
         if (!likeTargetId) {
-            this.setState({socialErr: '请填点赞目标 ID'});
+            this.setState({socialErr: rwckT('rwck104')});
             return;
         }
         try {
@@ -1818,12 +1954,12 @@ class RwckPublishPanel extends Component {
     async _toggleBookmark () {
         const {bookmarkTargetType, bookmarkTargetId} = this.state;
         if (!bookmarkTargetId) {
-            this.setState({socialErr: '请填收藏目标 ID'});
+            this.setState({socialErr: rwckT('rwck102')});
             return;
         }
         try {
             await rwck.bookmarks.add({targetType: bookmarkTargetType, targetId: bookmarkTargetId});
-            this.setState({socialOk: '已收藏'});
+            this.setState({socialOk: rwckT('rwck48')});
         } catch (e) {
             this.setState({socialErr: this._friendlyError(e)});
         }
@@ -1833,7 +1969,7 @@ class RwckPublishPanel extends Component {
         const {bookmarkTargetType, bookmarkTargetId} = this.state;
         try {
             const r = await rwck.bookmarks.check(bookmarkTargetType, bookmarkTargetId);
-            this.setState({socialOk: `收藏状态：${JSON.stringify(r)}`});
+            this.setState({socialOk: rwckT('rwck129')});
         } catch (e) {
             this.setState({socialErr: this._friendlyError(e)});
         }
@@ -1843,7 +1979,7 @@ class RwckPublishPanel extends Component {
         const {likeTargetType, likeTargetId} = this.state;
         try {
             await rwck.reactions.add({targetType: likeTargetType, targetId: likeTargetId, reaction: 'like'});
-            this.setState({socialOk: '表态已提交'});
+            this.setState({socialOk: rwckT('rwck93')});
         } catch (e) {
             this.setState({socialErr: this._friendlyError(e)});
         }
@@ -1852,14 +1988,14 @@ class RwckPublishPanel extends Component {
     async _followByUsername () {
         const name = this.state.followUsername.trim();
         if (!name) {
-            this.setState({socialErr: '请输入用户名'});
+            this.setState({socialErr: rwckT('rwck110')});
             return;
         }
         this.setState({socialBusy: true, socialErr: '', socialOk: ''});
         try {
             const u = await rwck.users.byUsername(name);
             await rwck.users.toggleFollow(u.id);
-            this.setState({socialOk: `已切换对 ${name} 的关注`, socialBusy: false});
+            this.setState({socialOk: rwckT('rwck126').replace('{name}', name), socialBusy: false});
         } catch (e) {
             this.setState({socialErr: this._friendlyError(e), socialBusy: false});
         }
@@ -1871,11 +2007,11 @@ class RwckPublishPanel extends Component {
             const list = await rwck.tags.list();
             const first = rwck.unwrapList(list)[0];
             if (!first) {
-                this.setState({socialErr: '社区还没有标签', socialBusy: false});
+                this.setState({socialErr: rwckT('rwck86'), socialBusy: false});
                 return;
             }
             await rwck.followTags.add(first.id);
-            this.setState({socialOk: `已关注标签 #${first.name}`, socialBusy: false});
+            this.setState({socialOk: rwckT('rwck125'), socialBusy: false});
         } catch (e) {
             this.setState({socialErr: this._friendlyError(e), socialBusy: false});
         }
@@ -1885,22 +2021,22 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>评论</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck259')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>目标类型</label>
+                        <label style={S.label}>{rwckT('rwck239')}</label>
                         <select style={S.input} value={this.state.commentTargetType}
                                 onChange={e=>this.setState({commentTargetType: e.target.value})}>
-                            <option value='project'>作品</option>
-                            <option value='discussion'>讨论</option>
-                            <option value='extension'>扩展</option>
+                            <option value='project'>{rwckT('rwck144')}</option>
+                            <option value='discussion'>{rwckT('rwck247')}</option>
+                            <option value='extension'>{rwckT('rwck197')}</option>
                         </select>
                     </div>
                     <div style={S.row}>
-                        <label style={S.label}>目标 ID</label>
+                        <label style={S.label}>{rwckT('rwck238')}</label>
                         <input style={S.input} value={this.state.commentTargetId}
                                onChange={e=>this.setState({commentTargetId: e.target.value})} />
                         <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._loadComments()}>
-                            <RefreshCw size={14} strokeWidth={2.2} /> 加载
+                            <RefreshCw size={14} strokeWidth={2.2} /> {rwckT('rwck163')}
                         </button>
                     </div>
                     <div style={S.row}>
@@ -1910,13 +2046,13 @@ class RwckPublishPanel extends Component {
                     </div>
                     <div style={{...S.row, marginTop:6}}>
                         <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._postComment()}>
-                            <Send size={14} strokeWidth={2.2} /> 发表评论
+                            <Send size={14} strokeWidth={2.2} /> {rwckT('rwck170')}
                         </button>
                     </div>
                     {this.state.commentsList.map((c, i) => (
                         <div key={c.id || i} style={{...S.listItem, alignItems:'flex-start'}}>
                             <span style={{flex:1}}>
-                                <b style={{fontSize:12}}>{c.author && (c.author.nickname || c.author.username) || '匿名'}</b>
+                                <b style={{fontSize:12}}>{c.author && (c.author.nickname || c.author.username) || rwckT('rwck35')}</b>
                                 <div style={{fontSize:12, color: C.text}}>{c.content}</div>
                             </span>
                             <span style={{fontSize:11, color: C.textSubtle}}>{this._fmtTime(c.createdAt)}</span>
@@ -1925,17 +2061,17 @@ class RwckPublishPanel extends Component {
                 </div>
 
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>点赞 / 表态 / 收藏</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck228')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>目标类型</label>
+                        <label style={S.label}>{rwckT('rwck239')}</label>
                         <select style={S.input} value={this.state.likeTargetType}
                                 onChange={e=>this.setState({likeTargetType: e.target.value})}>
-                            <option value='project'>作品</option>
-                            <option value='discussion'>讨论</option>
-                            <option value='post'>帖子</option>
-                            <option value='extension'>扩展</option>
+                            <option value='project'>{rwckT('rwck144')}</option>
+                            <option value='discussion'>{rwckT('rwck247')}</option>
+                            <option value='post'>{rwckT('rwck187')}</option>
+                            <option value='extension'>{rwckT('rwck197')}</option>
                         </select>
-                        <label style={S.label}>目标 ID</label>
+                        <label style={S.label}>{rwckT('rwck238')}</label>
                         <input style={S.input} value={this.state.likeTargetId}
                                onChange={e=>this.setState({
                                    likeTargetId: e.target.value,
@@ -1945,33 +2081,33 @@ class RwckPublishPanel extends Component {
                     </div>
                     <div style={{...S.row, marginTop:6, flexWrap:'wrap'}}>
                         <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._toggleLike()}>
-                            <ThumbsUp size={14} strokeWidth={2.2} /> 点赞 / 取消
+                            <ThumbsUp size={14} strokeWidth={2.2} /> {rwckT('rwck227')}
                         </button>
                         <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._sendReaction()}>
-                            <Smile size={14} strokeWidth={2.2} /> 表态
+                            <Smile size={14} strokeWidth={2.2} /> {rwckT('rwck246')}
                         </button>
                         <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._toggleBookmark()}>
-                            <Bookmark size={14} strokeWidth={2.2} /> 收藏
+                            <Bookmark size={14} strokeWidth={2.2} /> {rwckT('rwck201')}
                         </button>
                         <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._checkBookmark()}>
-                            <Search size={14} strokeWidth={2.2} /> 查收藏状态
+                            <Search size={14} strokeWidth={2.2} /> {rwckT('rwck211')}
                         </button>
                     </div>
                 </div>
 
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>关注</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck152')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>用户名</label>
+                        <label style={S.label}>{rwckT('rwck231')}</label>
                         <input style={S.input} value={this.state.followUsername}
                                onChange={e=>this.setState({followUsername: e.target.value})} />
                         <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._followByUsername()}>
-                            <UserPlus size={14} strokeWidth={2.2} /> 关注 / 取关
+                            <UserPlus size={14} strokeWidth={2.2} /> {rwckT('rwck153')}
                         </button>
                     </div>
                     <div style={{...S.row, marginTop:6}}>
                         <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._followFirstTag()}>
-                            <Hash size={14} strokeWidth={2.2} /> 关注第一个标签
+                            <Hash size={14} strokeWidth={2.2} /> {rwckT('rwck154')}
                         </button>
                     </div>
                 </div>
@@ -2015,10 +2151,10 @@ class RwckPublishPanel extends Component {
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.box}>
                     <div style={S.row}>
-                        <strong style={{fontSize:13}}>每日签到</strong>
+                        <strong style={{fontSize:13}}>{rwckT('rwck220')}</strong>
                         <span style={{flex:1}} />
                         <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._doCheckin()}>
-                            <Star size={14} strokeWidth={2.2} /> 签到
+                            <Star size={14} strokeWidth={2.2} /> {rwckT('rwck243')}
                         </button>
                     </div>
                     {this.state.checkin && (
@@ -2029,21 +2165,21 @@ class RwckPublishPanel extends Component {
                     )}
                 </div>
                 <div style={S.row}>
-                    <strong style={{fontSize:13}}>通知</strong>
+                    <strong style={{fontSize:13}}>{rwckT('rwck260')}</strong>
                     <span style={{flex:1}} />
                     <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._loadNotify()}>
-                        <RefreshCw size={14} strokeWidth={2.2} /> 刷新
+                        <RefreshCw size={14} strokeWidth={2.2} /> {rwckT('rwck162')}
                     </button>
                     <button style={cls(S.btn, S.btnGhost)}
                             onClick={async ()=>{
                                 try { await rwck.notifications.markAllRead(); this._loadNotify(); }
                                 catch (e) { this.setState({notifyErr: this._friendlyError(e)}); }
                             }}>
-                        <CheckCircle size={14} strokeWidth={2.2} /> 全部已读
+                        <CheckCircle size={14} strokeWidth={2.2} /> {rwckT('rwck150')}
                     </button>
                 </div>
                 {errBar(S, this.state.notifyErr)}
-                {this.state.notifyBusy && <div style={S.ok}>加载中…</div>}
+                {this.state.notifyBusy && <div style={S.ok}>{rwckT('rwck164')}</div>}
                 {this.state.notifyList.map((n, i) => (
                     <div key={n.id || i} style={S.listItem}>
                         <Bell size={13} strokeWidth={2.2} style={{color: n.read ? C.textSubtle : C.accent}} />
@@ -2086,22 +2222,22 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.row}>
-                    <input style={S.input} placeholder='搜索作品 / 讨论 / 用户…' value={this.state.searchQ}
+                    <input style={S.input} placeholder=rwckT('rwck61') value={this.state.searchQ}
                            onChange={e=>this.setState({searchQ: e.target.value})} />
                     <select style={{...S.input, flex:'0 0 120px'}} value={this.state.searchType}
                             onChange={e=>this.setState({searchType: e.target.value})}>
-                        <option value='all'>全部</option>
-                        <option value='project'>作品</option>
-                        <option value='discussion'>讨论</option>
-                        <option value='user'>用户</option>
-                        <option value='extension'>扩展</option>
+                        <option value='all'>{rwckT('rwck148')}</option>
+                        <option value='project'>{rwckT('rwck144')}</option>
+                        <option value='discussion'>{rwckT('rwck247')}</option>
+                        <option value='user'>{rwckT('rwck230')}</option>
+                        <option value='extension'>{rwckT('rwck197')}</option>
                     </select>
                     <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._doSearch()}>
-                        <Search size={14} strokeWidth={2.2} /> 搜索
+                        <Search size={14} strokeWidth={2.2} /> {rwckT('rwck60')}
                     </button>
                 </div>
                 {errBar(S, this.state.searchErr)}
-                {this.state.searchBusy && <div style={S.ok}>搜索中…</div>}
+                {this.state.searchBusy && <div style={S.ok}>{rwckT('rwck200')}</div>}
                 {items.map((it, i) => (
                     <div key={it.id || i} style={S.listItem}>
                         <span style={{flex:1, minWidth:0}}>{it.title || it.name || it.username || JSON.stringify(it).slice(0, 60)}</span>
@@ -2126,13 +2262,13 @@ class RwckPublishPanel extends Component {
     async _verifyOrig () {
         const cert = this.state.origCert.trim();
         if (!cert) {
-            this.setState({origErr: '请输入登记号'});
+            this.setState({origErr: rwckT('rwck111')});
             return;
         }
         this.setState({origBusy: true, origErr: '', origOk: ''});
         try {
             const r = await rwck.origmark.verify(cert);
-            this.setState({origVerify: r, origOk: `登记号 ${cert} 校验完成`, origBusy: false});
+            this.setState({origVerify: r, origOk: rwckT('rwck131').replace('{cert}', cert), origBusy: false});
         } catch (e) {
             this.setState({origErr: this._friendlyError(e), origBusy: false});
         }
@@ -2142,13 +2278,13 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>校验登记号</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck216')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>登记号</label>
+                        <label style={S.label}>{rwckT('rwck236')}</label>
                         <input style={S.input} value={this.state.origCert}
                                onChange={e=>this.setState({origCert: e.target.value})} />
                         <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._verifyOrig()}>
-                            <ShieldCheck size={14} strokeWidth={2.2} /> 校验
+                            <ShieldCheck size={14} strokeWidth={2.2} /> {rwckT('rwck215')}
                         </button>
                     </div>
                     {this.state.origVerify && (
@@ -2158,17 +2294,17 @@ class RwckPublishPanel extends Component {
                     )}
                 </div>
                 <div style={S.row}>
-                    <strong style={{fontSize:13}}>我的登记</strong>
+                    <strong style={{fontSize:13}}>{rwckT('rwck193')}</strong>
                     <span style={{flex:1}} />
                     <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._loadOrig()}>
-                        <RefreshCw size={14} strokeWidth={2.2} /> 刷新
+                        <RefreshCw size={14} strokeWidth={2.2} /> {rwckT('rwck162')}
                     </button>
                 </div>
                 {errBar(S, this.state.origErr)}
                 {okBar(S, this.state.origOk)}
                 {this.state.origList.map((g, i) => (
                     <div key={g.id || i} style={S.listItem}>
-                        <span style={{flex:1, minWidth:0}}>{g.title || g.certNumber || `登记 #${g.id}`}</span>
+                        <span style={{flex:1, minWidth:0}}>{g.title || g.certNumber || rwckT('rwck130')}</span>
                         <span style={{fontSize:11, color: C.textSubtle}}>{g.status || ''}</span>
                     </div>
                 ))}
@@ -2194,12 +2330,12 @@ class RwckPublishPanel extends Component {
     async _createCloud () {
         const name = this.state.cloudName.trim();
         if (!name) {
-            this.setState({cloudErr: '请输入项目名'});
+            this.setState({cloudErr: rwckT('rwck112')});
             return;
         }
         try {
             await rwck.cloud.create(name);
-            this.setState({cloudName: '', cloudOk: '云变量项目已创建'});
+            this.setState({cloudName: '', cloudOk: rwckT('rwck13')});
             this._loadCloud();
         } catch (e) {
             this.setState({cloudErr: this._friendlyError(e)});
@@ -2219,12 +2355,12 @@ class RwckPublishPanel extends Component {
     async _setCloudVar () {
         const {cloudSel, cloudVarName, cloudVarValue} = this.state;
         if (!cloudSel || !cloudVarName.trim()) {
-            this.setState({cloudErr: '请先选项目并填变量名'});
+            this.setState({cloudErr: rwckT('rwck100')});
             return;
         }
         try {
             await rwck.cloud.setVariable(cloudSel, {name: cloudVarName, value: cloudVarValue, scope: 'global'});
-            this.setState({cloudOk: `已设置 ${cloudVarName}`});
+            this.setState({cloudOk: rwckT('rwck127')});
             this._loadCloudVars(cloudSel);
         } catch (e) {
             this.setState({cloudErr: this._friendlyError(e)});
@@ -2235,21 +2371,21 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>新建云变量项目</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck204')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>项目名</label>
+                        <label style={S.label}>{rwckT('rwck261')}</label>
                         <input style={S.input} value={this.state.cloudName}
                                onChange={e=>this.setState({cloudName: e.target.value})} />
                         <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._createCloud()}>
-                            <Plus size={14} strokeWidth={2.2} /> 创建
+                            <Plus size={14} strokeWidth={2.2} /> {rwckT('rwck161')}
                         </button>
                     </div>
                 </div>
                 <div style={S.row}>
-                    <strong style={{fontSize:13}}>我的云项目</strong>
+                    <strong style={{fontSize:13}}>{rwckT('rwck192')}</strong>
                     <span style={{flex:1}} />
                     <button style={cls(S.btn, S.btnGhost)} onClick={()=>this._loadCloud()}>
-                        <RefreshCw size={14} strokeWidth={2.2} /> 刷新
+                        <RefreshCw size={14} strokeWidth={2.2} /> {rwckT('rwck162')}
                     </button>
                 </div>
                 {errBar(S, this.state.cloudErr)}
@@ -2266,20 +2402,20 @@ class RwckPublishPanel extends Component {
                 ))}
                 {this.state.cloudSel && (
                     <div style={S.box}>
-                        <div style={S.sectionTitle}>设置变量</div>
+                        <div style={S.sectionTitle}>{rwckT('rwck262')}</div>
                         <div style={S.row}>
-                            <label style={S.label}>变量名</label>
+                            <label style={S.label}>{rwckT('rwck173')}</label>
                             <input style={S.input} value={this.state.cloudVarName}
                                    onChange={e=>this.setState({cloudVarName: e.target.value})} />
                         </div>
                         <div style={S.row}>
-                            <label style={S.label}>值</label>
+                            <label style={S.label}>{rwckT('rwck146')}</label>
                             <input style={S.input} value={this.state.cloudVarValue}
                                    onChange={e=>this.setState({cloudVarValue: e.target.value})} />
                         </div>
                         <div style={{...S.row, marginTop:6}}>
                             <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._setCloudVar()}>
-                                <Zap size={14} strokeWidth={2.2} /> 写入
+                                <Zap size={14} strokeWidth={2.2} /> {rwckT('rwck156')}
                             </button>
                         </div>
                         {this.state.cloudVars && (
@@ -2320,12 +2456,12 @@ class RwckPublishPanel extends Component {
     async _createKey () {
         const name = this.state.newKeyName.trim();
         if (!name) {
-            this.setState({devErr: '请输入密钥名称'});
+            this.setState({devErr: rwckT('rwck108')});
             return;
         }
         try {
             await rwck.apiKeys.create({name});
-            this.setState({newKeyName: '', devOk: '密钥已创建'});
+            this.setState({newKeyName: '', devOk: rwckT('rwck44')});
             this._loadDev();
         } catch (e) {
             this.setState({devErr: this._friendlyError(e)});
@@ -2344,12 +2480,12 @@ class RwckPublishPanel extends Component {
     async _createTag () {
         const name = this.state.newTagName.trim();
         if (!name) {
-            this.setState({devErr: '请输入标签名'});
+            this.setState({devErr: rwckT('rwck109')});
             return;
         }
         try {
             await rwck.tags.create({name});
-            this.setState({newTagName: '', devOk: '标签已创建'});
+            this.setState({newTagName: '', devOk: rwckT('rwck69')});
             this._loadDev();
         } catch (e) {
             this.setState({devErr: this._friendlyError(e)});
@@ -2369,13 +2505,13 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>API 密钥</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck134')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>名称</label>
+                        <label style={S.label}>{rwckT('rwck175')}</label>
                         <input style={S.input} value={this.state.newKeyName}
                                onChange={e=>this.setState({newKeyName: e.target.value})} />
                         <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._createKey()}>
-                            <Key size={14} strokeWidth={2.2} /> 新建
+                            <Key size={14} strokeWidth={2.2} /> {rwckT('rwck203')}
                         </button>
                     </div>
                     {this.state.devKeys.map((k, i) => (
@@ -2391,13 +2527,13 @@ class RwckPublishPanel extends Component {
                 </div>
 
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>社区标签</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck241')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>标签名</label>
+                        <label style={S.label}>{rwckT('rwck213')}</label>
                         <input style={S.input} value={this.state.newTagName}
                                onChange={e=>this.setState({newTagName: e.target.value})} />
                         <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._createTag()}>
-                            <Tag size={14} strokeWidth={2.2} /> 新建
+                            <Tag size={14} strokeWidth={2.2} /> {rwckT('rwck203')}
                         </button>
                     </div>
                     <div style={{display:'flex', flexWrap:'wrap', gap:6, marginTop:6}}>
@@ -2418,7 +2554,7 @@ class RwckPublishPanel extends Component {
                     </div>
                 </div>
 
-                <div style={S.sectionTitle}>变更日志</div>
+                <div style={S.sectionTitle}>{rwckT('rwck172')}</div>
                 {this.state.devLogs.map((l, i) => (
                     <div key={l.id || i} style={S.listItem}>
                         <FileText size={13} strokeWidth={2.2} style={{color: C.textSubtle}} />
@@ -2473,7 +2609,7 @@ class RwckSettingsPanel extends Component {
         if (!body) return;
         const logs = (this._getNetLog && this._getNetLog()) || [];
         if (!logs.length) {
-            body.innerHTML = '<div style="color:#7a8290;padding:12px">暂无请求。触发登录 / 发布 / 发帖后，这里会显示所有发送与接收。</div>';
+            body.innerHTML = '<div style="color:#7a8290;padding:12px">{rwckT('rwck207')}</div>';
             return;
         }
         body.innerHTML = '';
@@ -2499,8 +2635,8 @@ class RwckSettingsPanel extends Component {
 
     _asyncApply () {
         const v = (this.state.proxyInput || '').trim().replace(/\/$/, '');
-        if (!v) return this.setState({applyMsg: '代理前缀不能为空'});
-        if (!/^https?:\/\//.test(v)) return this.setState({applyMsg: '代理前缀必须以 http:// 或 https:// 开头'});
+        if (!v) return this.setState({applyMsg: rwckT('rwck17')});
+        if (!/^https?:\/\//.test(v)) return this.setState({applyMsg: rwckT('rwck18')});
         this.setState({applyBusy: true, applyMsg: '正在应用…'});
         try {
             localStorage.setItem('rwck:cors-anywhere', v);
@@ -2508,15 +2644,15 @@ class RwckSettingsPanel extends Component {
             setTimeout(() => this.setState({applyBusy: false,
                 applyMsg: '已保存。大部分接口会立即生效；\n如需完全切换（含 BASE_URL），请刷新页面。'}), 250);
         } catch (e) {
-            this.setState({applyBusy: false, applyMsg: '保存失败：' + (e.message || e)});
+            this.setState({applyBusy: false, applyMsg: rwckT('rwck23') + (e.message || e)});
         }
     }
 
     _restoreDefault () {
-        if (!window.confirm('恢复默认 https://cors-api.rewp.de5.net ？')) return;
+        if (!window.confirm(rwckT('rwck53'))) return;
         localStorage.removeItem('rwck:cors-anywhere');
         if (typeof window !== 'undefined') window.__RWCK_CORS_ANYWHERE__ = undefined;
-        this.setState({proxyInput: 'https://cors-api.rewp.de5.net', applyMsg: '已恢复默认'});
+        this.setState({proxyInput: 'https://cors-api.rewp.de5.net', applyMsg: rwckT('rwck47')});
     }
 
     async _copyLog () {
@@ -2527,11 +2663,141 @@ class RwckSettingsPanel extends Component {
             if (e.error) s += ` ⚠ ${e.error}`;
             return s;
         }).join('\n');
-        try { await navigator.clipboard.writeText(text); this.setState({applyMsg: '日志已复制到剪贴板'}); }
-        catch (_) { this.setState({applyMsg: '复制失败，请手动选文本'}); }
+        try { await navigator.clipboard.writeText(text); this.setState({applyMsg: rwckT('rwck65')}); }
+        catch (_) { this.setState({applyMsg: rwckT('rwck43')}); }
     }
     _clearLog () {
-        if (this._clearNetLog) { this._clearNetLog(); this._logRender(); this.setState({applyMsg: '日志已清空'}); }
+        if (this._clearNetLog) { this._clearNetLog(); this._logRender(); this.setState({applyMsg: rwckT('rwck66')    rwck133: {en: '.sb3 Project', 'zh-cn': '.sb3 作品', geng: '.sb3 作品', wenyan: '.sb3 之卷'},
+    rwck134: {en: 'API Key', 'zh-cn': 'API 密钥', geng: 'API 密钥', wenyan: 'API 密钥'},
+    rwck135: {en: 'CORS proxy prefix', 'zh-cn': 'CORS 代理前缀', geng: 'CORS 代理前缀', wenyan: 'CORS 代理之前缀'},
+    rwck136: {en: 'CORS proxy note: ', 'zh-cn': 'CORS 代理说明：', geng: 'CORS 代理说明：', wenyan: 'CORS 代理之注：'},
+    rwck137: {en: 'PoW is auto-computed when you click log in (a few ms)', 'zh-cn': 'PoW 会在点击登录时自动计算（几毫秒）', geng: '点登录时会自动算 PoW（几毫秒）', wenyan: '按登录则自动算 PoW（数毫秒）'},
+    rwck138: {en: '.\n                        Official default: ', 'zh-cn': '。\n                        官方默认：', geng: '。\n                        官方默认：', wenyan: '。\n                        官方之初：'},
+    rwck139: {en: 'Upload to drive', 'zh-cn': '上传到云盘', geng: '传到云盘', wenyan: '传于盘'},
+    rwck140: {en: 'Upload resource', 'zh-cn': '上传资源', geng: '上传资源', wenyan: '传资'},
+    rwck141: {en: 'Read from editor', 'zh-cn': '从编辑器读取', geng: '从编辑器读', wenyan: '自编辑器读'},
+    rwck142: {en: 'Proxy prefix', 'zh-cn': '代理前缀', geng: '代理前缀', wenyan: '代理前缀'},
+    rwck143: {en: 'May pause for maintenance/update from time to time; please understand.', 'zh-cn': '会不定时的进行暂停服务、更新，请注意谅解。', geng: '会不定时暂停服务或更新，多包涵嗷', wenyan: '或不时休止而更之，望见谅。'},
+    rwck144: {en: 'Project', 'zh-cn': '作品', geng: '作品', wenyan: '卷'},
+    rwck145: {en: 'Project info', 'zh-cn': '作品信息', geng: '作品信息', wenyan: '卷之讯'},
+    rwck146: {en: 'Value', 'zh-cn': '值', geng: '值', wenyan: '值'},
+    rwck147: {en: 'Allow others to download', 'zh-cn': '允许他人下载', geng: '允许别人下载', wenyan: '许人下载'},
+    rwck148: {en: 'All', 'zh-cn': '全部', geng: '全部', wenyan: '凡'},
+    rwck149: {en: 'All categories', 'zh-cn': '全部分类', geng: '全部分类', wenyan: '诸类'},
+    rwck150: {en: 'Mark all read', 'zh-cn': '全部已读', geng: '全部已读', wenyan: '悉记为读'},
+    rwck151: {en: 'All extensions', 'zh-cn': '全部扩展', geng: '全部扩展', wenyan: '诸延伸'},
+    rwck152: {en: 'Follow', 'zh-cn': '关注', geng: '关注', wenyan: '随'},
+    rwck153: {en: 'Follow / Unfollow', 'zh-cn': '关注 / 取关', geng: '关注 / 取关', wenyan: '随 / 去随'},
+    rwck154: {en: 'Follow first tag', 'zh-cn': '关注第一个标签', geng: '关注第一个标签', wenyan: '随首标'},
+    rwck155: {en: 'Other', 'zh-cn': '其它', geng: '其它', wenyan: '他'},
+    rwck156: {en: 'Write', 'zh-cn': '写入', geng: '写入', wenyan: '书'},
+    rwck157: {en: 'Category', 'zh-cn': '分类', geng: '分类', wenyan: '类'},
+    rwck158: {en: 'MakerVerse API did not respond', 'zh-cn': '创客次元 API 未回', geng: '创客次元 API 没回', wenyan: '创客次元 API 未应'},
+    rwck159: {en: 'MakerVerse · Aurora Forum', 'zh-cn': '创客次元 · 极光论坛', geng: '创客次元 · 极光论坛', wenyan: '创客次元 · 极光之坛'},
+    rwck160: {en: 'MakerVerse Community', 'zh-cn': '创客次元 社区', geng: '创客次元 社区', wenyan: '创客次元 之社'},
+    rwck161: {en: 'Create', 'zh-cn': '创建', geng: '创建', wenyan: '创'},
+    rwck162: {en: 'Refresh', 'zh-cn': '刷新', geng: '刷新', wenyan: '更'},
+    rwck163: {en: 'Load', 'zh-cn': '加载', geng: '加载', wenyan: '载'},
+    rwck164: {en: 'Loading…', 'zh-cn': '加载中…', geng: '加载中嗷…', wenyan: '载之中…'},
+    rwck165: {en: 'Load failed', 'zh-cn': '加载失败', geng: '加载没成', wenyan: '载未成'},
+    rwck166: {en: 'Go post your first one →', 'zh-cn': '去发第一个吧 →', geng: '去发第一个吧 →', wenyan: '往发其首 →'},
+    rwck167: {en: 'Before publishing, confirm your work follows the community guidelines. Uploading means you agree others may download it.', 'zh-cn': '发布前确认作品内容符合社区公约。上传即视为您的作品同意被别人下载。', geng: '发布前确认符合社区公约。上传即视为同意别人下载。', wenyan: '布前请确其合社约。上传即许人下载。'},
+    rwck168: {en: 'Publish extension', 'zh-cn': '发布扩展', geng: '发布扩展', wenyan: '布延伸'},
+    rwck169: {en: 'Post rate limit: 4/hour. Body supports Markdown and can reference drive resources.', 'zh-cn': '发帖限流 4 条/小时。正文支持 Markdown，可引用云盘资源。', geng: '发帖限流 4 条/小时。正文支持 Markdown，能引用云盘资源。', wenyan: '发帖限每时四。正文用 Markdown，可引盘资。'},
+    rwck170: {en: 'Post comment', 'zh-cn': '发表评论', geng: '发表评论', wenyan: '发评'},
+    rwck171: {en: 'Cancel', 'zh-cn': '取消', geng: '取消', wenyan: '却'},
+    rwck172: {en: 'Changelog', 'zh-cn': '变更日志', geng: '变更日志', wenyan: '更录'},
+    rwck173: {en: 'Variable name', 'zh-cn': '变量名', geng: '变量名', wenyan: '变数之名'},
+    rwck174: {en: 'Sync to forum post', 'zh-cn': '同步到论坛帖子', geng: '同步到论坛帖子', wenyan: '同于论坛之帖'},
+    rwck175: {en: 'Name', 'zh-cn': '名称', geng: '名称', wenyan: '名'},
+    rwck176: {en: 'Reply', 'zh-cn': '回复', geng: '回复', wenyan: '对'},
+    rwck177: {en: 'Reply content', 'zh-cn': '回复内容', geng: '回复内容', wenyan: '对之文'},
+    rwck178: {en: 'Reply to existing thread (POST /posts)', 'zh-cn': '回复已有讨论（POST /posts）', geng: '回复已有讨论（POST /posts）', wenyan: '对既议（POST /posts）'},
+    rwck179: {en: 'Image captcha', 'zh-cn': '图形验证码', geng: '图形验证码', wenyan: '图验'},
+    rwck180: {en: 'Log in inside editor', 'zh-cn': '在编辑器内登录', geng: '在编辑器里登录', wenyan: '于编辑器内入'},
+    rwck181: {en: 'Log in on forum', 'zh-cn': '在论坛中登录', geng: '在论坛登录', wenyan: '于论坛入'},
+    rwck182: {en: 'Processing…', 'zh-cn': '处理中…', geng: '处理中嗷…', wenyan: '处之中…'},
+    rwck183: {en: 'Copy', 'zh-cn': '复制', geng: '复制', wenyan: '录'},
+    rwck184: {en: 'Password', 'zh-cn': '密码', geng: '密码', wenyan: '密'},
+    rwck185: {en: 'Cover image (optional)', 'zh-cn': '封面图（可选）', geng: '封面图（可选）', wenyan: '封面（可略）'},
+    rwck186: {en: 'Rewarded resources', 'zh-cn': '已获赏资源', geng: '已获赏资源', wenyan: '已赏之资'},
+    rwck187: {en: 'Post', 'zh-cn': '帖子', geng: '帖子', wenyan: '帖'},
+    rwck188: {en: 'e.g.', 'zh-cn': '形如', geng: '形如', wenyan: '譬如'},
+    rwck189: {en: 'Restore default', 'zh-cn': '恢复默认', geng: '恢复默认', wenyan: '复其初'},
+    rwck190: {en: 'My published projects', 'zh-cn': '我发布的作品', geng: '我发布的作品', wenyan: '吾所布之卷'},
+    rwck191: {en: 'My published extensions', 'zh-cn': '我发布的扩展', geng: '我发布的扩展', wenyan: '吾所布之延伸'},
+    rwck192: {en: 'My cloud projects', 'zh-cn': '我的云项目', geng: '我的云项目', wenyan: '吾之云卷'},
+    rwck193: {en: 'My registrations', 'zh-cn': '我的登记', geng: '我的登记', wenyan: '吾之登'},
+    rwck194: {en: 'or', 'zh-cn': '或', geng: '或', wenyan: '或'},
+    rwck195: {en: 'Choose manually', 'zh-cn': '手动选择', geng: '手动选', wenyan: '手择'},
+    rwck196: {en: 'Open', 'zh-cn': '打开', geng: '打开', wenyan: '开'},
+    rwck197: {en: 'Extension', 'zh-cn': '扩展', geng: '扩展', wenyan: '延伸'},
+    rwck198: {en: 'Leaderboard', 'zh-cn': '排行榜', geng: '排行榜', wenyan: '榜'},
+    rwck199: {en: 'Extraction code', 'zh-cn': '提取码', geng: '提取码', wenyan: '取码'},
+    rwck200: {en: 'Searching…', 'zh-cn': '搜索中…', geng: '搜索中嗷…', wenyan: '索之中…'},
+    rwck201: {en: 'Bookmark', 'zh-cn': '收藏', geng: '收藏', wenyan: '藏'},
+    rwck202: {en: 'File', 'zh-cn': '文件', geng: '文件', wenyan: '文'},
+    rwck203: {en: 'New', 'zh-cn': '新建', geng: '新建', wenyan: '新'},
+    rwck204: {en: 'New cloud variable project', 'zh-cn': '新建云变量项目', geng: '新建云变量项目', wenyan: '新云变数之卷'},
+    rwck205: {en: 'No data', 'zh-cn': '暂无数据', geng: '还没数据', wenyan: '无数据'},
+    rwck206: {en: 'No discussions yet, ', 'zh-cn': '暂无讨论，', geng: '还没讨论，', wenyan: '尚无议，'},
+    rwck207: {en: 'No requests yet. After you log in / publish / post, all sent and received data shows here.', 'zh-cn': '暂无请求。触发登录 / 发布 / 发帖后，这里会显示所有发送与接收。', geng: '暂无请求。登录 / 发布 / 发帖后，这里会显示所有收发。', wenyan: '尚无请。既入 / 布 / 发之后，此处示其收发。'},
+    rwck208: {en: 'Latest', 'zh-cn': '最新', geng: '最新', wenyan: '新'},
+    rwck209: {en: 'Latest discussions', 'zh-cn': '最新讨论', geng: '最新讨论', wenyan: '近议'},
+    rwck210: {en: 'Hottest', 'zh-cn': '最热', geng: '最热', wenyan: '热'},
+    rwck211: {en: 'Check bookmark status', 'zh-cn': '查收藏状态', geng: '查收藏状态', wenyan: '察藏之状'},
+    rwck212: {en: 'View all →', 'zh-cn': '查看全部 →', geng: '查看全部 →', wenyan: '视其全 →'},
+    rwck213: {en: 'Tag name', 'zh-cn': '标签名', geng: '标签名', wenyan: '标之名'},
+    rwck214: {en: 'Title *', 'zh-cn': '标题 *', geng: '标题 *', wenyan: '题 *'},
+    rwck215: {en: 'Verify', 'zh-cn': '校验', geng: '校验', wenyan: '验'},
+    rwck216: {en: 'Verify registration number', 'zh-cn': '校验登记号', geng: '校验登记号', wenyan: '验登之号'},
+    rwck217: {en: 'Fetching…', 'zh-cn': '正在获取…', geng: '获取中嗷…', wenyan: '取之中…'},
+    rwck218: {en: 'Body *', 'zh-cn': '正文 *', geng: '正文 *', wenyan: '文 *'},
+    rwck219: {en: 'Body (Markdown)', 'zh-cn': '正文（Markdown）', geng: '正文（Markdown）', wenyan: '文（Markdown）'},
+    rwck220: {en: 'Daily check-in', 'zh-cn': '每日签到', geng: '每日签到', wenyan: '每日之至'},
+    rwck221: {en: 'No projects found', 'zh-cn': '没有找到作品', geng: '没找到作品', wenyan: '未得卷'},
+    rwck222: {en: 'Register', 'zh-cn': '注册', geng: '注册', wenyan: '注'},
+    rwck223: {en: 'Active users', 'zh-cn': '活跃用户', geng: '活跃用户', wenyan: '活跃之人'},
+    rwck224: {en: 'Clear', 'zh-cn': '清空', geng: '清空', wenyan: '空'},
+    rwck225: {en: 'Source', 'zh-cn': '源码', geng: '源码', wenyan: '源'},
+    rwck226: {en: 'Source *', 'zh-cn': '源码 *', geng: '源码 *', wenyan: '源 *'},
+    rwck227: {en: 'Like / Unlike', 'zh-cn': '点赞 / 取消', geng: '点赞 / 取消', wenyan: '善 / 去善'},
+    rwck228: {en: 'Like / React / Bookmark', 'zh-cn': '点赞 / 表态 / 收藏', geng: '点赞 / 表态 / 收藏', wenyan: '善 / 态 / 藏'},
+    rwck229: {en: 'Hot tags', 'zh-cn': '热门标签', geng: '热门标签', wenyan: '热标'},
+    rwck230: {en: 'User', 'zh-cn': '用户', geng: '用户', wenyan: '人'},
+    rwck231: {en: 'Username', 'zh-cn': '用户名', geng: '用户名', wenyan: '人名'},
+    rwck232: {en: 'Username / Email', 'zh-cn': '用户名 / 邮箱', geng: '用户名 / 邮箱', wenyan: '人名 / 邮'},
+    rwck233: {en: 'by', 'zh-cn': '由', geng: '由', wenyan: '自'},
+    rwck234: {en: 'Log in to MakerVerse', 'zh-cn': '登录创客次元', geng: '登录创客次元', wenyan: '入创客次元'},
+    rwck235: {en: 'Register', 'zh-cn': '登记', geng: '登记', wenyan: '登'},
+    rwck236: {en: 'Registration number', 'zh-cn': '登记号', geng: '登记号', wenyan: '登之号'},
+    rwck237: {en: 'Register netdisk resource', 'zh-cn': '登记网盘资源', geng: '登记网盘资源', wenyan: '登网盘之资'},
+    rwck238: {en: 'Target ID', 'zh-cn': '目标 ID', geng: '目标 ID', wenyan: '标的之 ID'},
+    rwck239: {en: 'Target type', 'zh-cn': '目标类型', geng: '目标类型', wenyan: '标之型'},
+    rwck240: {en: 'Direct link', 'zh-cn': '直链', geng: '直链', wenyan: '直链'},
+    rwck241: {en: 'Community tags', 'zh-cn': '社区标签', geng: '社区标签', wenyan: '社之标'},
+    rwck242: {en: 'Site overview', 'zh-cn': '站点总览', geng: '站点总览', wenyan: '站之览'},
+    rwck243: {en: 'Check-in', 'zh-cn': '签到', geng: '签到', wenyan: '至'},
+    rwck244: {en: 'Intro', 'zh-cn': '简介', geng: '简介', wenyan: '介'},
+    rwck245: {en: 'Network request log (send / receive / error)', 'zh-cn': '网络请求日志（发送 / 接收 / 错误）', geng: '网络请求日志（发送 / 接收 / 错误）', wenyan: '网请之志（发 / 收 / 误）'},
+    rwck246: {en: 'React', 'zh-cn': '表态', geng: '表态', wenyan: '态'},
+    rwck247: {en: 'Discussion', 'zh-cn': '讨论', geng: '讨论', wenyan: '议'},
+    rwck248: {en: 'Discussion ID', 'zh-cn': '讨论 ID', geng: '讨论 ID', wenyan: '议之 ID'},
+    rwck249: {en: 'Settings', 'zh-cn': '设置', geng: '设置', wenyan: '设'},
+    rwck250: {en: 'Exit', 'zh-cn': '退出', geng: '退出', wenyan: '出'},
+    rwck251: {en: 'No account yet? Registration is on the community site', 'zh-cn': '还没有账号？注册需要转到社区官网', geng: '还没账号？注册要去社区官网', wenyan: '未注籍？注册于社之官网'},
+    rwck252: {en: 'on the site.', 'zh-cn': '页面注册。', geng: '页面注册。', wenyan: '于页注册。'},
+    rwck253: {en: "Haven't published yet? Go to the Publish tab and post your first one~", 'zh-cn': '还没有发布过作品，快去「发布作品」Tab 发第一个吧～', geng: '还没发过作品？去「发布作品」Tab 发第一个吧～', wenyan: '未布乎？往发布之Tab发其首～'},
+    rwck254: {en: ', will be appended automatically', 'zh-cn': '，会自动追加', geng: '，会自动追加', wenyan: '，自附'},
+    rwck255: {en: 'Play', 'zh-cn': '试玩', geng: '试玩', wenyan: '试'},
+    rwck256: {en: 'Choose image', 'zh-cn': '选择图片', geng: '选图片', wenyan: '择图'},
+    rwck257: {en: 'Choose file', 'zh-cn': '选择文件', geng: '选文件', wenyan: '择文'},
+    rwck258: {en: 'Link', 'zh-cn': '链接', geng: '链接', wenyan: '链'},
+    rwck259: {en: 'Comments', 'zh-cn': '评论', geng: '评论', wenyan: '评'},
+    rwck260: {en: 'Notifications', 'zh-cn': '通知', geng: '通知', wenyan: '告'},
+    rwck261: {en: 'Project name', 'zh-cn': '项目名', geng: '项目名', wenyan: '卷名'},
+    rwck262: {en: 'Set variable', 'zh-cn': '设置变量', geng: '设置变量', wenyan: '置变数'},
+}); }
     }
 
     render () {
@@ -2569,7 +2835,7 @@ class RwckSettingsPanel extends Component {
                 <div style={S.corsBanner}>
                     <AlertCircle size={15} strokeWidth={2.2} style={{flex:'0 0 auto', marginTop:1, color:'#d97706'}} />
                     <div style={{flex:1, minWidth:0}}>
-                        <b>CORS 代理说明：</b> 创客次元 API 未回
+                        <b>{rwckT('rwck136')}</b> {rwckT('rwck158')}
                         <code style={{background:'#fef3c7', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>
                             Access-Control-Allow-Origin
                         </code>
@@ -2581,17 +2847,16 @@ class RwckSettingsPanel extends Component {
 
                 {/* 设置：CORS 代理前缀 */}
                 <div style={S.box}>
-                    <div style={S.sectionTitle}>CORS 代理前缀</div>
+                    <div style={S.sectionTitle}>{rwckT('rwck135')}</div>
                     <div style={S.row}>
-                        <label style={S.label}>代理前缀</label>
+                        <label style={S.label}>{rwckT('rwck142')}</label>
                         <input style={S.input} value={this.state.proxyInput}
                                onChange={e => this.setState({proxyInput: e.target.value})}
                                placeholder='https://cors-api.rewp.de5.net' />
                     </div>
                     <div style={S.hint}>
-                        形如 <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>https://cors-api.rewp.de5.net</code>
-                        ，会自动追加 <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>?url=https://forum.ctspace.xyz/api/xxx</code>。
-                        官方默认：
+                        {rwckT('rwck188')} <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>https://cors-api.rewp.de5.net</code>
+                        {rwckT('rwck254')} <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>?url=https://forum.ctspace.xyz/api/xxx</code>{rwckT('rwck138')}
                         <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>
                             {(this.props.getApiClient && this.props.getApiClient().CORS_ANYWHERE)
                                 || 'https://cors-api.rewp.de5.net'}
@@ -2602,10 +2867,10 @@ class RwckSettingsPanel extends Component {
                         <button style={{...S.btn, ...S.btnPrimary, ...(this.state.applyBusy && S.btnDisabled)}}
                                 disabled={this.state.applyBusy}
                                 onClick={() => this._asyncApply()}>
-                            <CheckCircle size={13} strokeWidth={2.2} /> {this.state.applyBusy ? '应用中…' : '确认修改'}
+                            <CheckCircle size={13} strokeWidth={2.2} /> {this.state.applyBusy ? '应用中…' : rwckT('rwck84')}
                         </button>
                         <button style={{...S.btn, ...S.btnGhost}} onClick={() => this._restoreDefault()}>
-                            <Trash2 size={13} strokeWidth={2.2} /> 恢复默认
+                            <Trash2 size={13} strokeWidth={2.2} /> {rwckT('rwck189')}
                         </button>
                     </div>
                     {this.state.applyMsg && <div style={S.msg}>{this.state.applyMsg}</div>}
@@ -2614,12 +2879,12 @@ class RwckSettingsPanel extends Component {
                 {/* 网络日志大窗口 */}
                 <div style={S.logBox}>
                     <div style={S.logHeader}>
-                        <span style={{fontWeight:700, color:'#e6e6e6'}}>网络请求日志（发送 / 接收 / 错误）</span>
+                        <span style={{fontWeight:700, color:'#e6e6e6'}}>{rwckT('rwck245')}</span>
                         <span style={{flex:1}} />
                         <button style={{...S.btn, ...S.btnGhost, fontSize:11, padding:'3px 10px'}}
-                                onClick={() => this._copyLog()}>复制</button>
+                                onClick={() => this._copyLog()}>{rwckT('rwck183')}</button>
                         <button style={{...S.btn, ...S.btnGhost, fontSize:11, padding:'3px 10px'}}
-                                onClick={() => this._clearLog()}>清空</button>
+                                onClick={() => this._clearLog()}>{rwckT('rwck224')}</button>
                     </div>
                     <div style={S.logBody} ref={this._bodyRef} />
                 </div>

@@ -223,12 +223,12 @@ const messages = defineMessages({
         id: 'tw.tutorialModal.addVideo'
     },
     shareChannelHint: {
-        defaultMessage: '{props.intl.formatMessage(messages.shareChannelHint)}',
+        defaultMessage: '点击下方链接加入腾讯频道，提交你的视频教程供所有用户浏览：',
         description: 'Hint above the QQ channel link',
         id: 'tw.tutorialModal.shareChannelHint'
     },
     channelName: {
-        defaultMessage: '{props.intl.formatMessage(messages.channelName)}',
+        defaultMessage: '【RemixWarp重构跃迁】腾讯频道',
         description: 'Name of the QQ channel link',
         id: 'tw.tutorialModal.channelName'
     },
