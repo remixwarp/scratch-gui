@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState, useCallback} from 'react';
-import {makeT} from '../mw/mw-l10n.js';
+import {makeT} from '../../lib/mw/mw-l10n.js';
 
 // 纯 DOM 终端，无 CDN 依赖。
 // 命令可读取/编辑当前作品文件，范式与「超级重构」一致：
