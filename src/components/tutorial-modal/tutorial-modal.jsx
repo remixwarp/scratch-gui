@@ -41,6 +41,226 @@ const messages = defineMessages({
         defaultMessage: 'Extension',
         description: 'Category for tutorial extensions',
         id: 'tw.tutorialModal.category.extension'
+    },
+    categoryLocal: {
+        defaultMessage: '本地视频',
+        description: 'Category for local video tutorials',
+        id: 'tw.tutorialModal.category.local'
+    },
+    categoryBasics: {
+        defaultMessage: '基础知识',
+        description: 'Category for basics tutorials',
+        id: 'tw.tutorialModal.category.basics'
+    },
+    categoryAdvanced: {
+        defaultMessage: '进阶算法',
+        description: 'Category for advanced tutorials',
+        id: 'tw.tutorialModal.category.advanced'
+    },
+    categoryOther: {
+        defaultMessage: '其他',
+        description: 'Category for other tutorials',
+        id: 'tw.tutorialModal.category.other'
+    },
+    categoryFav: {
+        defaultMessage: '收藏',
+        description: 'Tab showing favorite tutorials',
+        id: 'tw.tutorialModal.category.fav'
+    },
+    searchPlaceholder: {
+        defaultMessage: '搜索教程...',
+        description: 'Placeholder of the tutorial search box',
+        id: 'tw.tutorialModal.searchPlaceholder'
+    },
+    localFile: {
+        defaultMessage: '本地文件',
+        description: 'Fallback description of a local tutorial file',
+        id: 'tw.tutorialModal.localFile'
+    },
+    localTutorial: {
+        defaultMessage: '本地教程',
+        description: 'Fallback title of a local tutorial',
+        id: 'tw.tutorialModal.localTutorial'
+    },
+    localTutorialFile: {
+        defaultMessage: '本地教程文件',
+        description: 'Fallback description of a local tutorial file entry',
+        id: 'tw.tutorialModal.localTutorialFile'
+    },
+    localAuthor: {
+        defaultMessage: '本地',
+        description: 'Author label of locally added tutorials',
+        id: 'tw.tutorialModal.localAuthor'
+    },
+    playVideo: {
+        defaultMessage: '点击播放视频教程',
+        description: 'Fallback description of a video tutorial',
+        id: 'tw.tutorialModal.playVideo'
+    },
+    playBv: {
+        defaultMessage: '点击播放视频',
+        description: 'Description of a Bilibili tutorial',
+        id: 'tw.tutorialModal.playBv'
+    },
+    bvLabel: {
+        defaultMessage: 'BV号: {bvid}',
+        description: 'Fallback description showing the Bilibili BV id',
+        id: 'tw.tutorialModal.bvLabel'
+    },
+    tutorialName: {
+        defaultMessage: '教程 {name}',
+        description: 'Fallback title of a tutorial',
+        id: 'tw.tutorialModal.tutorialName'
+    },
+    personalBadge: {
+        defaultMessage: '个人',
+        description: 'Badge shown on personally added tutorials',
+        id: 'tw.tutorialModal.personalBadge'
+    },
+    favoriteAlt: {
+        defaultMessage: '收藏',
+        description: 'Alt text of the favorite icon',
+        id: 'tw.tutorialModal.favoriteAlt'
+    },
+    errNeedBv: {
+        defaultMessage: '请输入B站BV号',
+        description: 'Error when the BV id is empty',
+        id: 'tw.tutorialModal.errNeedBv'
+    },
+    errInvalidBv: {
+        defaultMessage: '请输入有效的B站BV号',
+        description: 'Error when the BV id is invalid',
+        id: 'tw.tutorialModal.errInvalidBv'
+    },
+    addSuccess: {
+        defaultMessage: '教程添加成功！',
+        description: 'Success message after adding a tutorial',
+        id: 'tw.tutorialModal.addSuccess'
+    },
+    addFailed: {
+        defaultMessage: '添加失败: {message}',
+        description: 'Error message after failing to add a tutorial',
+        id: 'tw.tutorialModal.addFailed'
+    },
+    localAddSuccess: {
+        defaultMessage: '本地教程添加成功！',
+        description: 'Success message after adding a local tutorial',
+        id: 'tw.tutorialModal.localAddSuccess'
+    },
+    fileReadFail: {
+        defaultMessage: '文件读取失败',
+        description: 'Error when reading a local tutorial file fails',
+        id: 'tw.tutorialModal.fileReadFail'
+    },
+    addTutorial: {
+        defaultMessage: '添加教程',
+        description: 'Title of the add-tutorial view',
+        id: 'tw.tutorialModal.addTutorial'
+    },
+    addPersonal: {
+        defaultMessage: '添加个人教程',
+        description: 'Title of the personal tutorial section',
+        id: 'tw.tutorialModal.addPersonal'
+    },
+    addPersonalDesc: {
+        defaultMessage: '上传本地文件或输入B站BV号，仅您个人可见',
+        description: 'Hint of the personal tutorial section',
+        id: 'tw.tutorialModal.addPersonalDesc'
+    },
+    sharePublic: {
+        defaultMessage: '分享公共教程',
+        description: 'Title of the public tutorial section',
+        id: 'tw.tutorialModal.sharePublic'
+    },
+    sharePublicDesc: {
+        defaultMessage: '添加教程资源，所有用户可浏览查看',
+        description: 'Hint of the public tutorial section',
+        id: 'tw.tutorialModal.sharePublicDesc'
+    },
+    back: {
+        defaultMessage: '返回',
+        description: 'Back button of the add-tutorial view',
+        id: 'tw.tutorialModal.back'
+    },
+    uploadLocal: {
+        defaultMessage: '上传本地教程文件',
+        description: 'Button to upload a local tutorial file',
+        id: 'tw.tutorialModal.uploadLocal'
+    },
+    uploading: {
+        defaultMessage: '上传中...',
+        description: 'Progress text while uploading',
+        id: 'tw.tutorialModal.uploading'
+    },
+    uploadDone: {
+        defaultMessage: '上传完成',
+        description: 'Progress text after upload finished',
+        id: 'tw.tutorialModal.uploadDone'
+    },
+    or: {
+        defaultMessage: '或',
+        description: 'Divider between upload and BV id input',
+        id: 'tw.tutorialModal.or'
+    },
+    inputBvid: {
+        defaultMessage: '输入B站BV号',
+        description: 'Label of the BV id input',
+        id: 'tw.tutorialModal.inputBvid'
+    },
+    bvidPlaceholder: {
+        defaultMessage: '例如: BV1234567890',
+        description: 'Placeholder of the BV id input',
+        id: 'tw.tutorialModal.bvidPlaceholder'
+    },
+    loading: {
+        defaultMessage: '加载中...',
+        description: 'Text shown while fetching a video',
+        id: 'tw.tutorialModal.loading'
+    },
+    addVideo: {
+        defaultMessage: '添加视频',
+        description: 'Button to add a video by BV id',
+        id: 'tw.tutorialModal.addVideo'
+    },
+    shareChannelHint: {
+        defaultMessage: '{props.intl.formatMessage(messages.shareChannelHint)}',
+        description: 'Hint above the QQ channel link',
+        id: 'tw.tutorialModal.shareChannelHint'
+    },
+    channelName: {
+        defaultMessage: '{props.intl.formatMessage(messages.channelName)}',
+        description: 'Name of the QQ channel link',
+        id: 'tw.tutorialModal.channelName'
+    },
+    close: {
+        defaultMessage: '关闭',
+        description: 'Close button',
+        id: 'tw.tutorialModal.close'
+    },
+    editTutorial: {
+        defaultMessage: '编辑教程',
+        description: 'Title of the edit-tutorial dialog',
+        id: 'tw.tutorialModal.editTutorial'
+    },
+    titleLabel: {
+        defaultMessage: '标题',
+        description: 'Label of the title input',
+        id: 'tw.tutorialModal.titleLabel'
+    },
+    descLabel: {
+        defaultMessage: '简介',
+        description: 'Label of the description input',
+        id: 'tw.tutorialModal.descLabel'
+    },
+    cancel: {
+        defaultMessage: '取消',
+        description: 'Cancel button',
+        id: 'tw.tutorialModal.cancel'
+    },
+    save: {
+        defaultMessage: '保存',
+        description: 'Save button',
+        id: 'tw.tutorialModal.save'
     }
 });
 
@@ -56,6 +276,17 @@ const getCategoryInfo = (categoryId) => {
         7: { id: 7, key: 'other', defaultMessage: '其他' }
     };
     return categories[categoryId] || categories[1];
+};
+
+const categoryMessageMap = {
+    all: 'categoryAll',
+    local: 'categoryLocal',
+    basics: 'categoryBasics',
+    advanced: 'categoryAdvanced',
+    tips: 'categoryTips',
+    extension: 'categoryExtension',
+    facts: 'categoryFacts',
+    other: 'categoryOther'
 };
 
 const tutorialData = [
@@ -553,7 +784,7 @@ const TutorialModal = props => {
                 const parsed = JSON.parse(savedTutorials);
                 const tutorialsWithFiles = parsed.map(t => {
                     if (t.filePath && !t.localFile) {
-                        const file = new File([], t.fileName || '本地文件', { type: t.fileType || 'application/octet-stream' });
+                        const file = new File([], t.fileName || props.intl.formatMessage(messages.localFile), { type: t.fileType || 'application/octet-stream' });
                         return { ...t, localFile: file, fm: t.thumbnail || t.fm };
                     }
                     return t;
@@ -615,11 +846,11 @@ const TutorialModal = props => {
             const videoUrl = URL.createObjectURL(tutorial.localFile);
             const tutorialDetails = {
                 bvid: null,
-                title: tutorial.bt || '本地教程',
-                description: tutorial.jj || '本地教程文件',
+                title: tutorial.bt || props.intl.formatMessage(messages.localTutorial),
+                description: tutorial.jj || props.intl.formatMessage(messages.localTutorialFile),
                 thumbnail: tutorial.fm,
                 videoUrl: videoUrl,
-                author: '本地',
+                author: props.intl.formatMessage(messages.localAuthor),
                 views: 0,
                 duration: 0,
                 url: null,
@@ -630,8 +861,8 @@ const TutorialModal = props => {
         } else {
             const tutorialDetails = {
                 bvid: tutorial.bvid,
-                title: tutorial.bt || '视频教程',
-                description: tutorial.jj || '点击播放视频教程',
+                title: tutorial.bt || props.intl.formatMessage(messages.title),
+                description: tutorial.jj || props.intl.formatMessage(messages.playVideo),
                 thumbnail: tutorial.fm || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5MaW5rIFN0cmF0Y2g8L3RleHQ+PC9zdmc+',
                 videoUrl: `https://www.bilibili.com/video/${tutorial.bvid}`,
                 author: 'RemixWarp',
@@ -676,13 +907,13 @@ const TutorialModal = props => {
 
     const handleAddBVVideo = async () => {
         if (!bvInput.trim()) {
-            setFeedbackMessage({ type: 'error', text: '请输入B站BV号' });
+            setFeedbackMessage({ type: 'error', text: props.intl.formatMessage(messages.errNeedBv) });
             return;
         }
 
         const bvid = bvInput.trim();
         if (!validateBVId(bvid)) {
-            setFeedbackMessage({ type: 'error', text: '请输入有效的B站BV号' });
+            setFeedbackMessage({ type: 'error', text: props.intl.formatMessage(messages.errInvalidBv) });
             return;
         }
 
@@ -697,7 +928,7 @@ const TutorialModal = props => {
                 bvid: bvid,
                 category: 8,
                 bt: `B站视频 - ${bvid}`,
-                jj: '点击播放视频',
+                jj: props.intl.formatMessage(messages.playBv),
                 fm: `https://player.bilibili.com/player.html?isOutside=true&bvid=${bvid}&p=1`,
                 url: videoUrl,
                 isPersonal: true
@@ -708,7 +939,7 @@ const TutorialModal = props => {
                 saveTutorialsToStorage(updated);
                 return updated;
             });
-            setFeedbackMessage({ type: 'success', text: '教程添加成功！' });
+            setFeedbackMessage({ type: 'success', text: props.intl.formatMessage(messages.addSuccess) });
             setBvInput('');
             setSelectedCategory(8);
             
@@ -717,7 +948,7 @@ const TutorialModal = props => {
             }, 1000);
         } catch (error) {
             console.error('添加教程失败:', error);
-            setFeedbackMessage({ type: 'error', text: `添加失败: ${error.message}` });
+            setFeedbackMessage({ type: 'error', text: props.intl.formatMessage(messages.addFailed, {message: error.message}) });
         } finally {
             setLoading(false);
         }
@@ -763,7 +994,7 @@ const TutorialModal = props => {
                 saveTutorialsToStorage(updated);
                 return updated;
             });
-            setFeedbackMessage({ type: 'success', text: '本地教程添加成功！' });
+            setFeedbackMessage({ type: 'success', text: props.intl.formatMessage(messages.localAddSuccess) });
             setSelectedCategory(8);
             event.target.value = '';
 
@@ -776,7 +1007,7 @@ const TutorialModal = props => {
 
         reader.onerror = () => {
             clearInterval(progressInterval);
-            setFeedbackMessage({ type: 'error', text: '文件读取失败' });
+            setFeedbackMessage({ type: 'error', text: props.intl.formatMessage(messages.fileReadFail) });
             setLoading(false);
         };
 
@@ -829,7 +1060,7 @@ const TutorialModal = props => {
                         <input
                             type="text"
                             className={styles.searchInput}
-                            placeholder="搜索教程..."
+                            placeholder={props.intl.formatMessage(messages.searchPlaceholder)}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -841,13 +1072,13 @@ const TutorialModal = props => {
                         className={`${styles.categoryTab} ${selectedCategory === 1 ? styles.active : ''}`}
                         onClick={() => setSelectedCategory(1)}
                     >
-                        全部
+                        {props.intl.formatMessage(messages.categoryAll)}
                     </Button>
                     <Button
                         className={`${styles.categoryTab} ${selectedCategory === 9 ? styles.active : ''}`}
                         onClick={() => setSelectedCategory(9)}
                     >
-                        收藏
+                        {props.intl.formatMessage(messages.categoryFav)}
                     </Button>
                     {[8, 2, 3, 4, 5, 6, 7].map(categoryId => {
                         const categoryInfo = getCategoryInfo(categoryId);
@@ -857,7 +1088,7 @@ const TutorialModal = props => {
                                 className={`${styles.categoryTab} ${selectedCategory === categoryId ? styles.active : ''}`}
                                 onClick={() => setSelectedCategory(categoryId)}
                             >
-                                {categoryInfo.defaultMessage}
+                                {props.intl.formatMessage(messages[categoryMessageMap[categoryInfo.key]])}
                             </Button>
                         );
                     })}
@@ -874,12 +1105,12 @@ const TutorialModal = props => {
                                 <div className={styles.tutorialThumbnail}>
                                     <img 
                                         src={tutorial.fm} 
-                                        alt={tutorial.bt || `教程 ${tutorial.id}`}
+                                        alt={tutorial.bt || props.intl.formatMessage(messages.tutorialName, {name: tutorial.id})}
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                     />
                                     {tutorial.isPersonal && (
                                         <>
-                                            <div className={styles.personalBadge}>个人</div>
+                                            <div className={styles.personalBadge}>{props.intl.formatMessage(messages.personalBadge)}</div>
                                             <button 
                                                 className={styles.editButton}
                                                 onClick={(e) => {
@@ -907,7 +1138,7 @@ const TutorialModal = props => {
                                         <img 
                                             src={favorites.includes(tutorial.id) ? favoriteActiveIcon : favoriteInactiveIcon}
                                             className={styles.favoriteIcon}
-                                            alt="收藏"
+                                            alt={props.intl.formatMessage(messages.favoriteAlt)}
                                         />
                                     </button>
                                     <div className={styles.playButton}>
@@ -916,11 +1147,11 @@ const TutorialModal = props => {
                                 </div>
                                 <div className={styles.tutorialInfo}>
                                     <h3 className={styles.tutorialTitle}>
-                                        {tutorial.bt || `教程 ${tutorial.id.replace('tutorial', '')}`}
+                                        {tutorial.bt || props.intl.formatMessage(messages.tutorialName, {name: tutorial.id.replace('tutorial', '')})}
                                     </h3>
                                     <div className={styles.descriptionContainer}>
                                         <p className={`${styles.tutorialDescription} ${expandedDescriptions[tutorial.id] ? styles.expanded : ''}`}>
-                                            {tutorial.jj || (tutorial.bvid ? `BV号: ${tutorial.bvid}` : '本地文件')}
+                                            {tutorial.jj || (tutorial.bvid ? props.intl.formatMessage(messages.bvLabel, {bvid: tutorial.bvid}) : props.intl.formatMessage(messages.localFile))}
                                         </p>
                                         {tutorial.jj && tutorial.jj.length > 30 && (
                                             <button 
@@ -951,7 +1182,7 @@ const TutorialModal = props => {
                             {!addMode ? (
                                 <>
                                     <div className={styles.modalHeader}>
-                                        <h3>添加教程</h3>
+                                        <h3>{props.intl.formatMessage(messages.addTutorial)}</h3>
                                         <button className={styles.closeIconButton} onClick={handleCloseAddTutorialModal}>
                                             ×
                                         </button>
@@ -964,8 +1195,8 @@ const TutorialModal = props => {
                                             <div className={styles.modeIconWrapper}>
                                                 <User className={styles.modeIcon} size={32} />
                                             </div>
-                                            <h4>添加个人教程</h4>
-                                            <p>上传本地文件或输入B站BV号，仅您个人可见</p>
+                                            <h4>{props.intl.formatMessage(messages.addPersonal)}</h4>
+                                            <p>{props.intl.formatMessage(messages.addPersonalDesc)}</p>
                                         </div>
                                         <div 
                                             className={styles.modeCard}
@@ -974,8 +1205,8 @@ const TutorialModal = props => {
                                             <div className={styles.modeIconWrapper}>
                                                 <Globe className={styles.modeIcon} size={32} />
                                             </div>
-                                            <h4>分享公共教程</h4>
-                                            <p>添加教程资源，所有用户可浏览查看</p>
+                                            <h4>{props.intl.formatMessage(messages.sharePublic)}</h4>
+                                            <p>{props.intl.formatMessage(messages.sharePublicDesc)}</p>
                                         </div>
                                     </div>
                                 </>
@@ -984,9 +1215,9 @@ const TutorialModal = props => {
                                     <div className={styles.modalHeader}>
                                         <button className={styles.backButton} onClick={handleBackToModeSelect}>
                                             <ArrowLeft size={16} />
-                                            <span>返回</span>
+                                            <span>{props.intl.formatMessage(messages.back)}</span>
                                         </button>
-                                        <h3>添加个人教程</h3>
+                                        <h3>{props.intl.formatMessage(messages.addPersonal)}</h3>
                                         <button className={styles.closeIconButton} onClick={handleCloseAddTutorialModal}>
                                             ×
                                         </button>
@@ -1002,7 +1233,7 @@ const TutorialModal = props => {
                                                     className={styles.fileInput}
                                                 />
                                                 <Upload className={styles.uploadIcon} size={32} />
-                                                <span>上传本地教程文件</span>
+                                                <span>{props.intl.formatMessage(messages.uploadLocal)}</span>
                                             </label>
                                             {uploadProgress > 0 && (
                                                 <div className={styles.uploadProgress}>
@@ -1013,21 +1244,21 @@ const TutorialModal = props => {
                                                         />
                                                     </div>
                                                     <span className={styles.uploadText}>
-                                                        {uploadProgress < 100 ? '上传中...' : '上传完成'}
+                                                        {uploadProgress < 100 ? props.intl.formatMessage(messages.uploading) : props.intl.formatMessage(messages.uploadDone)}
                                                     </span>
                                                 </div>
                                             )}
                                         </div>
                                         <div className={styles.divider}>
-                                            <span>或</span>
+                                            <span>{props.intl.formatMessage(messages.or)}</span>
                                         </div>
                                         <div className={styles.bvInputSection}>
-                                            <label>输入B站BV号</label>
+                                            <label>{props.intl.formatMessage(messages.inputBvid)}</label>
                                             <input 
                                                 type="text"
                                                 value={bvInput}
                                                 onChange={(e) => setBvInput(e.target.value)}
-                                                placeholder="例如: BV1234567890"
+                                                placeholder={props.intl.formatMessage(messages.bvidPlaceholder)}
                                                 disabled={loading}
                                                 className={styles.bvInput}
                                             />
@@ -1036,7 +1267,7 @@ const TutorialModal = props => {
                                                 disabled={loading}
                                                 className={styles.addButton}
                                             >
-                                                {loading ? '加载中...' : '添加视频'}
+                                                {loading ? props.intl.formatMessage(messages.loading) : props.intl.formatMessage(messages.addVideo)}
                                             </button>
                                         </div>
                                     </div>
@@ -1051,15 +1282,15 @@ const TutorialModal = props => {
                                     <div className={styles.modalHeader}>
                                         <button className={styles.backButton} onClick={handleBackToModeSelect}>
                                             <ArrowLeft size={16} />
-                                            <span>返回</span>
+                                            <span>{props.intl.formatMessage(messages.back)}</span>
                                         </button>
-                                        <h3>分享公共教程</h3>
+                                        <h3>{props.intl.formatMessage(messages.sharePublic)}</h3>
                                         <button className={styles.closeIconButton} onClick={handleCloseAddTutorialModal}>
                                             ×
                                         </button>
                                     </div>
                                     <p className={styles.publicDescription}>
-                                        点击下方链接加入腾讯频道，提交你的视频教程供所有用户浏览：
+                                        {props.intl.formatMessage(messages.shareChannelHint)}
                                     </p>
                                     <a 
                                         href="https://pd.qq.com/s/6cn3ldjnw?b=5" 
@@ -1067,10 +1298,10 @@ const TutorialModal = props => {
                                         rel="noopener noreferrer"
                                         className={styles.qqLink}
                                     >
-                                        【RemixWarp重构跃迁】腾讯频道
+                                        {props.intl.formatMessage(messages.channelName)}
                                     </a>
                                     <button className={styles.confirmButton} onClick={handleCloseAddTutorialModal}>
-                                        关闭
+                                        {props.intl.formatMessage(messages.close)}
                                     </button>
                                 </>
                             )}
@@ -1082,14 +1313,14 @@ const TutorialModal = props => {
                     <div className={styles.modalOverlay} onClick={() => setEditingTutorial(null)}>
                         <div className={styles.editTutorialModal} onClick={(e) => e.stopPropagation()}>
                             <div className={styles.modalHeader}>
-                                <h3>编辑教程</h3>
+                                <h3>{props.intl.formatMessage(messages.editTutorial)}</h3>
                                 <button className={styles.closeIconButton} onClick={() => setEditingTutorial(null)}>
                                     ×
                                 </button>
                             </div>
                             <div className={styles.editForm}>
                                 <div className={styles.formGroup}>
-                                    <label>标题</label>
+                                    <label>{props.intl.formatMessage(messages.titleLabel)}</label>
                                     <input 
                                         type="text"
                                         value={editingTutorial.bt || ''}
@@ -1098,7 +1329,7 @@ const TutorialModal = props => {
                                     />
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label>简介</label>
+                                    <label>{props.intl.formatMessage(messages.descLabel)}</label>
                                     <textarea 
                                         value={editingTutorial.jj || ''}
                                         onChange={(e) => setEditingTutorial({...editingTutorial, jj: e.target.value})}
@@ -1108,10 +1339,10 @@ const TutorialModal = props => {
                                 </div>
                                 <div className={styles.editButtons}>
                                     <button className={styles.cancelButton} onClick={() => setEditingTutorial(null)}>
-                                        取消
+                                        {props.intl.formatMessage(messages.cancel)}
                                     </button>
                                     <button className={styles.saveButton} onClick={saveTutorialEdit}>
-                                        保存
+                                        {props.intl.formatMessage(messages.save)}
                                     </button>
                                 </div>
                             </div>

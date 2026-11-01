@@ -42,6 +42,14 @@ import TWSaveStatus from './tw-save-status.jsx';
 import TWNews from './tw-news.jsx';
 import CollaborationContainer from '../../containers/collaboration-container.jsx';
 import openConfigPlazaWindow from '../../lib/mw/open-config-plaza-window.js';
+
+const configPlazaMessages = defineMessages({
+    configPlazaTitle: {
+        defaultMessage: '配置广场',
+        description: 'Title of the config plaza window',
+        id: 'mw.menuBar.configPlaza'
+    }
+});
 import openMaterialPlazaWindow from '../../lib/mw/open-material-plaza-window.js';
 import openRwckPublishWindow from '../../lib/mw/open-rwck-publish-window.jsx';
 import {
@@ -2460,7 +2468,7 @@ class MenuBar extends React.Component {
         }
     };
     handleClickConfigPlaza = () => {
-        openConfigPlazaWindow();
+        openConfigPlazaWindow(this.props.intl.formatMessage(configPlazaMessages.configPlazaTitle));
         this.props.onRequestCloseFile();
     };
     handleClickMaterialPlaza = () => {

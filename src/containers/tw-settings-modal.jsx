@@ -15,6 +15,11 @@ import {getHideOperatorArrows, setHideOperatorArrows} from '../lib/mw-operator-a
 import WindowManager from '../addons/window-system/window-manager.js';
 
 const messages = defineMessages({
+    hatReminderDefaultComment: {
+        defaultMessage: '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）',
+        description: 'Default text of hat block comment reminders',
+        id: 'mw.hatReminder.defaultComment'
+    },
     newFramerate: {
         defaultMessage: 'New framerate:',
         description: 'Prompt shown to choose a new framerate',
@@ -52,7 +57,7 @@ class UsernameModal extends React.Component {
             hatBlockCommentReminder: localStorage.getItem('mw:hat-block-comment-reminder') !== 'false',
             hatReminderCheckInterval: parseInt(localStorage.getItem('mw:hat-reminder-check-interval'), 10) || 500,
             hatReminderBlockThreshold: parseInt(localStorage.getItem('mw:hat-reminder-block-threshold'), 10) || 10,
-            hatReminderCommentText: localStorage.getItem('mw:hat-reminder-comment-text') || '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）',
+            hatReminderCommentText: localStorage.getItem('mw:hat-reminder-comment-text') || this.props.intl.formatMessage(messages.hatReminderDefaultComment),
             tabStyle: getStyleSetting('tab-style'),
             tabLooks: getStyleSetting('tab-looks'),
             windowStyle: getStyleSetting('window-style'),
@@ -401,7 +406,7 @@ class UsernameModal extends React.Component {
         }
     }
     handleHatReminderCommentTextChange (value) {
-        const text = value || '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）';
+        const text = value || this.props.intl.formatMessage(messages.hatReminderDefaultComment);
         this.setState({hatReminderCommentText: text});
         try {
             localStorage.setItem('mw:hat-reminder-comment-text', text);
@@ -416,7 +421,7 @@ class UsernameModal extends React.Component {
         const defaults = {
             hatReminderCheckInterval: 500,
             hatReminderBlockThreshold: 10,
-            hatReminderCommentText: '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）'
+            hatReminderCommentText: this.props.intl.formatMessage(messages.hatReminderDefaultComment)
         };
         this.setState(defaults);
         try {

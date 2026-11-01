@@ -547,7 +547,10 @@ const PixelEditorApp = injectIntl(props => {
                         </div>
                         <div style={{marginBottom: '16px'}}>
                             <p style={{fontSize: '12px', margin: '0 0 8px 0'}}>
-                                输入的是列数，对应图片最左侧一列的列数
+                                <FormattedMessage
+                                    defaultMessage="输入的是列数，对应图片最左侧一列的列数"
+                                    id="tw.customThemes.pixelCreator.insertColumnHint"
+                                />
                             </p>
                             <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
                                 <label style={{background: '#000', color: '#fff', padding: '2px 8px', borderRadius: '4px'}}>
@@ -746,7 +749,10 @@ const PixelEditorApp = injectIntl(props => {
                                 </div>
                             </div>
                             <p style={{fontSize: '12px', color: '#666', margin: 0}}>
-                                首先要清空画布之后才能开始编辑。输入主题名称才可以创建或预览。
+                                <FormattedMessage
+                                    defaultMessage="首先要清空画布之后才能开始编辑。输入主题名称才可以创建或预览。"
+                                    id="tw.customThemes.pixelCreator.needClearFirst"
+                                />
                             </p>
                         </div>
 
@@ -816,7 +822,10 @@ const PixelEditorApp = injectIntl(props => {
                                             borderRadius: '4px'
                                         }}
                                     >
-                                        请先清空画布，再进行编辑
+                                        <FormattedMessage
+                                            defaultMessage="请先清空画布，再进行编辑"
+                                            id="tw.customThemes.pixelCreator.clearCanvasFirst"
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -922,7 +931,7 @@ const PixelEditorApp = injectIntl(props => {
                     className={styles.footerBtn}
                     onClick={() => {
                         if (!name.trim()) {
-                            showAlert('请输入主题名称');
+                            showAlert(intl.formatMessage({defaultMessage: '请输入主题名称', id: 'tw.customThemes.pixelCreator.errNameRequired'}));
                             return;
                         }
                         setShowExportDialog(true);

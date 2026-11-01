@@ -56,6 +56,21 @@ import {unlockAchievement} from '../lib/achievements.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
+    hatReminderDefaultComment: {
+        defaultMessage: '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）',
+        description: 'Default text of hat block comment reminders',
+        id: 'mw.hatReminder.defaultComment'
+    },
+    commentClearBtn: {
+        defaultMessage: '清空',
+        description: 'Button that clears a hat block reminder comment',
+        id: 'mw.blocks.clearCommentBtn'
+    },
+    commentCleared: {
+        defaultMessage: '已清空文本，清空前的项目已自动保存在还原点中',
+        description: 'Status shown after clearing a reminder comment',
+        id: 'mw.blocks.commentCleared'
+    },
     PROCEDURES_RETURN: {
         defaultMessage: 'return {v}',
         // eslint-disable-next-line max-len
@@ -191,7 +206,7 @@ class Blocks extends React.Component {
         this.hatBlockCommentReminderEnabled = localStorage.getItem('mw:hat-block-comment-reminder') !== 'false';
         this.hatReminderCheckInterval = parseInt(localStorage.getItem('mw:hat-reminder-check-interval'), 10) || 500;
         this.hatReminderBlockThreshold = parseInt(localStorage.getItem('mw:hat-reminder-block-threshold'), 10) || 10;
-        this.hatReminderCommentText = localStorage.getItem('mw:hat-reminder-comment-text') || '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）';
+        this.hatReminderCommentText = localStorage.getItem('mw:hat-reminder-comment-text') || (this.props.intl ? this.props.intl.formatMessage(messages.hatReminderDefaultComment) : '记得写注释，不然别人和自己以后都看不懂！（可在高级设置-实验性中修改相关设置）');
         this._hatReminderChecking = false;
         this._checkHatBlockReminders = debounce(this._checkHatBlockRemindersImpl.bind(this), this.hatReminderCheckInterval);
         this._handleHatReminderSettingChanged = this._handleHatReminderSettingChanged.bind(this);
@@ -348,7 +363,7 @@ class Blocks extends React.Component {
                         buttonDiv.style.cssText = 'margin: 4px 12px 8px; text-align: right;';
                         const clearBtn = document.createElementNS(HTML_NS, 'button');
                         clearBtn.className = 'sc-clear-btn';
-                        clearBtn.textContent = '清空';
+                        clearBtn.textContent = this.props.intl ? this.props.intl.formatMessage(messages.commentClearBtn) : 'Clear';
                         clearBtn.style.cssText = 'padding: 2px 10px; font-size: 12px; cursor: pointer; border: none; background: #ff8c1a; color: white; border-radius: 4px;';
                         const statusSpan = document.createElementNS(HTML_NS, 'span');
                         statusSpan.className = 'sc-clear-status';
@@ -379,7 +394,7 @@ class Blocks extends React.Component {
                                 // Show status notification in the bottom-right area
                                 // (same area used for real-time collaboration info)
                                 if (this.clearStatusSpan_) {
-                                    this.clearStatusSpan_.textContent = '已清空文本，清空前的项目已自动保存在还原点中';
+                                    this.clearStatusSpan_.textContent = this.props.intl ? this.props.intl.formatMessage(messages.commentCleared) : 'Cleared';
                                     this.clearStatusSpan_.style.display = 'inline';
                                     if (this._clearStatusTimer) {
                                         clearTimeout(this._clearStatusTimer);

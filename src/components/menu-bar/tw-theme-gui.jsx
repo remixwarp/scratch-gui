@@ -94,7 +94,11 @@ const GuiThemeMenu = ({
             })}
             <div className={styles.menuSeparator} />
             <div className={styles.themeRefreshHint}>
-                部分主题需要刷新才能够全部生效
+                <FormattedMessage
+                    defaultMessage="部分主题需要刷新才能够全部生效"
+                    description="Hint that some themes need a reload to fully apply"
+                    id="mw.themeGui.refreshHint"
+                />
             </div>
         </Submenu>
     </MenuItem>

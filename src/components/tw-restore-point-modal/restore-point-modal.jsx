@@ -10,6 +10,21 @@ import {APP_NAME} from '../../lib/constants/brand';
 import {formatBytes} from '../../lib/utils/bytes';
 
 const messages = defineMessages({
+    cloudNote1: {
+        defaultMessage: '1. 推送完成后，请牢记按钮下方的推送号码（哈希值），然后刷新界面，重新进入该界面之后找到带有刚才记录哈希值的作品，进行下一步操作',
+        description: 'Cloud restore point note 1',
+        id: 'mw.restorePoint.cloudNote1'
+    },
+    cloudNote2: {
+        defaultMessage: '2. 网络还原点使用的是公共存储库，所有人都能看见您所推送的作品',
+        description: 'Cloud restore point note 2',
+        id: 'mw.restorePoint.cloudNote2'
+    },
+    cloudNote3: {
+        defaultMessage: '3. 推送前请确保作品大小小于 25 MB',
+        description: 'Cloud restore point note 3',
+        id: 'mw.restorePoint.cloudNote3'
+    },
     title: {
         defaultMessage: 'Restore Points',
         description: 'Title of restore point management modal',
@@ -271,9 +286,9 @@ const RestorePointModal = props => (
             {props.activeTab === 'cloud' && (
                 <React.Fragment>
                     <div className={styles.cloudWarning}>
-                        <p>1. 推送完成后，请牢记按钮下方的推送号码（哈希值），然后刷新界面，重新进入该界面之后找到带有刚才记录哈希值的作品，进行下一步操作</p>
-                        <p>2. 网络还原点使用的是公共存储库，所有人都能看见您所推送的作品</p>
-                        <p>3. 推送前请确保作品大小小于 25 MB</p>
+                        <p><FormattedMessage {...messages.cloudNote1} /></p>
+                        <p><FormattedMessage {...messages.cloudNote2} /></p>
+                        <p><FormattedMessage {...messages.cloudNote3} /></p>
                     </div>
                     <div className={styles.cloudHeader}>
                         <button

@@ -9,7 +9,7 @@ const PLAZA_URL = 'https://rw-c.pages.dev/';
 
 let plazaWindow = null;
 
-const openConfigPlazaWindow = () => {
+const openConfigPlazaWindow = title => {
     if (plazaWindow) {
         plazaWindow.show();
         plazaWindow.bringToFront();
@@ -23,7 +23,7 @@ const openConfigPlazaWindow = () => {
 
     plazaWindow = WindowManager.createWindow({
         id: 'config-plaza-window',
-        title: '配置广场',
+        title: title || 'Config Plaza',
         width: 960,
         height: 640,
         minWidth: 480,
