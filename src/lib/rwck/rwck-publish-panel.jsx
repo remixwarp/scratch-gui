@@ -88,7 +88,7 @@ const rwckT = makeT({
     rwck47: {en: 'Restored defaults', 'zh-cn': '已恢复默认', geng: '恢复默认啦', wenyan: '复其初'},
     rwck48: {en: 'Bookmarked', 'zh-cn': '已收藏', geng: '收藏好啦', wenyan: '已藏'},
     rwck49: {en: 'Total posts', 'zh-cn': '帖子总数', geng: '帖子总数', wenyan: '帖之凡'},
-    rwck50: {en: 'Applying…', 'zh-cn': '应用中…', geng: '应用着呢嗷…', wenyan: '用之中…'},
+    rwck50: {en: 'Applying…', 'zh-cn': rwckT('rwck431'), geng: '应用着呢嗷…', wenyan: '用之中…'},
     rwck51: {en: 'Developer', 'zh-cn': '开发者', geng: '开发者', wenyan: '作者'},
     rwck52: {en: 'Current editor environment does not support .sb3 export', 'zh-cn': '当前编辑器环境不支持导出 .sb3', geng: '当前编辑器不支持导出 .sb3 嗷', wenyan: '今之编辑器不支持出 .sb3'},
     rwck53: {en: 'Restore default https://cors-api.rewp.de5.net ?', 'zh-cn': '恢复默认 https://cors-api.rewp.de5.net ？', geng: '恢复默认 https://cors-api.rewp.de5.net 嗷？', wenyan: '复其初 https://cors-api.rewp.de5.net ？'},
@@ -109,7 +109,7 @@ const rwckT = makeT({
     rwck68: {en: 'View variables', 'zh-cn': '查看变量', geng: '看看变量嗷', wenyan: '视其变数'},
     rwck69: {en: 'Tag created', 'zh-cn': '标签已创建', geng: '标签建好啦', wenyan: '标已成'},
     rwck70: {en: 'Mark as read', 'zh-cn': '标记已读', geng: '标成已读嗷', wenyan: '记为已读'},
-    rwck71: {en: 'Both title and code are required', 'zh-cn': '标题和代码都要填', geng: '标题和代码都得填嗷', wenyan: '题与码皆须填'},
+    rwck71: {en: 'Both title and code are required', 'zh-cn': rwckT('rwck416'), geng: '标题和代码都得填嗷', wenyan: '题与码皆须填'},
     rwck72: {en: 'Loading…', 'zh-cn': '正在加载…', geng: '加载着呢嗷…', wenyan: '载之中…'},
     rwck73: {en: 'Registered users', 'zh-cn': '注册用户', geng: '注册用户', wenyan: '注籍之人'},
     rwck74: {en: 'Game', 'zh-cn': '游戏', geng: '游戏', wenyan: '戏'},
@@ -132,18 +132,18 @@ const rwckT = makeT({
     rwck91: {en: 'Failed to fetch community status', 'zh-cn': '获取社区状态失败', geng: '拿社区状态没成', wenyan: '取社之状未成'},
     rwck92: {en: 'Failed to fetch discussion list', 'zh-cn': '获取讨论列表失败', geng: '拿讨论列表没成', wenyan: '取议之目未成'},
     rwck93: {en: 'Reaction submitted', 'zh-cn': '表态已提交', geng: '表态交好啦', wenyan: '其态已呈'},
-    rwck94: {en: 'Discussion ID and reply are both required', 'zh-cn': '讨论 ID 和回复内容都要填', geng: '讨论 ID 和回复都得填嗷', wenyan: '议之 ID 与对皆须填'},
+    rwck94: {en: 'Discussion ID and reply are both required', 'zh-cn': rwckT('rwck415'), geng: '讨论 ID 和回复都得填嗷', wenyan: '议之 ID 与对皆须填'},
     rwck95: {en: 'Thread', 'zh-cn': '讨论串', geng: '讨论串', wenyan: '议之串'},
     rwck96: {en: 'Visit forum home', 'zh-cn': '访问论坛首页', geng: '去论坛首页嗷', wenyan: '诣论坛之首'},
     rwck97: {en: 'Comment posted', 'zh-cn': '评论已发布', geng: '评论发好啦', wenyan: '评已成'},
     rwck98: {en: 'Detailed intro, how-to-play, changelog……', 'zh-cn': '详细介绍、玩法说明、更新日志……', geng: '详细介绍、玩法说明、更新日志啥的……', wenyan: '详介、玩法、更录……'},
-    rwck99: {en: 'Please log in first', 'zh-cn': '请先登录', geng: '先登录嗷', wenyan: '请先入'},
+    rwck99: {en: 'Please log in first', 'zh-cn': rwckT('rwck423'), geng: '先登录嗷', wenyan: '请先入'},
     rwck100: {en: 'Select a project and enter a variable name first', 'zh-cn': '请先选项目并填变量名', geng: '先选项目再填变量名嗷', wenyan: '先择卷而书名'},
-    rwck101: {en: 'Fill in account / password / captcha completely', 'zh-cn': '请填完整账号 / 密码 / 验证码', geng: '账号 / 密码 / 验证码都得填嗷', wenyan: '账号 / 密 / 验符皆须填'},
+    rwck101: {en: 'Fill in account / password / captcha completely', 'zh-cn': rwckT('rwck404'), geng: '账号 / 密码 / 验证码都得填嗷', wenyan: '账号 / 密 / 验符皆须填'},
     rwck102: {en: 'Enter the bookmark target ID', 'zh-cn': '请填收藏目标 ID', geng: '填一下收藏目标 ID 嗷', wenyan: '书标的之 ID'},
-    rwck103: {en: 'Enter title and content', 'zh-cn': '请填标题和内容', geng: '标题和内容都得填嗷', wenyan: '题与文皆须填'},
+    rwck103: {en: 'Enter title and content', 'zh-cn': rwckT('rwck406'), geng: '标题和内容都得填嗷', wenyan: '题与文皆须填'},
     rwck104: {en: 'Enter the like target ID', 'zh-cn': '请填点赞目标 ID', geng: '填一下点赞目标 ID 嗷', wenyan: '善标的之 ID'},
-    rwck105: {en: 'Enter the target ID', 'zh-cn': '请填目标 ID', geng: '填一下目标 ID 嗷', wenyan: '书标的之 ID'},
+    rwck105: {en: 'Enter the target ID', 'zh-cn': rwckT('rwck419'), geng: '填一下目标 ID 嗷', wenyan: '书标的之 ID'},
     rwck106: {en: 'Enter the netdisk link', 'zh-cn': '请填网盘链接', geng: '填一下网盘链接嗷', wenyan: '书网盘之链'},
     rwck107: {en: 'Enter keywords', 'zh-cn': '请输入关键词', geng: '输入关键词嗷', wenyan: '输入关键词'},
     rwck108: {en: 'Enter key name', 'zh-cn': '请输入密钥名称', geng: '输入密钥名称嗷', wenyan: '书名钥'},
@@ -160,7 +160,7 @@ const rwckT = makeT({
     rwck119: {en: 'Refresh captcha', 'zh-cn': '重新获取验证码', geng: '重新拿验证码嗷', wenyan: '复取验符'},
     rwck120: {en: 'Music', 'zh-cn': '音乐', geng: '音乐', wenyan: '音'},
     rwck121: {en: 'Default from current editor project name', 'zh-cn': '默认从当前编辑器作品名取', geng: '默认用当前编辑器作品名嗷', wenyan: '初以今编辑器之卷名'},
-    rwck122: {en: '(checked in today)', 'zh-cn': '（今天已签到）', geng: '（今天签过到啦）', wenyan: '（今日已至）'},
+    rwck122: {en: '(checked in today)', 'zh-cn': rwckT('rwck422'), geng: '（今天签过到啦）', wenyan: '（今日已至）'},
     rwck123: {en: 'Uploaded ${name}', 'zh-cn': '已上传 ${f.name}', geng: '上传好啦 ${name}', wenyan: '已传 ${name}'},
     rwck124: {en: 'Uploaded, resource ID ${id}', 'zh-cn': '已上传，资源 ID ${r.id}', geng: '传好啦，资源 ID ${id}', wenyan: '已传，资 ID ${id}'},
     rwck125: {en: 'Followed tag #${name}', 'zh-cn': '已关注标签 #${first.name}', geng: '关注了标签 #${name}', wenyan: '已随标 #${name}'},
@@ -171,6 +171,169 @@ const rwckT = makeT({
     rwck130: {en: 'Registration #${id}', 'zh-cn': '登记 #${g.id}', geng: '登记 #${id}', wenyan: '登 #${id}'},
     rwck131: {en: 'Registration ${cert} verified', 'zh-cn': '登记号 ${cert} 校验完成', geng: '登记号 ${cert} 校验好啦', wenyan: '登 ${cert} 验毕'},
     rwck132: {en: 'Resource ${id}', 'zh-cn': '资源 ${r.id}', geng: '资源 ${id}', wenyan: '资 ${id}'},
+    rwck133: {en: '.sb3 Project', 'zh-cn': '.sb3 作品', geng: '.sb3 作品', wenyan: '.sb3 之卷'},
+    rwck134: {en: 'API Key', 'zh-cn': 'API 密钥', geng: 'API 密钥', wenyan: 'API 密钥'},
+    rwck135: {en: 'CORS proxy prefix', 'zh-cn': 'CORS 代理前缀', geng: 'CORS 代理前缀', wenyan: 'CORS 代理之前缀'},
+    rwck136: {en: 'CORS proxy note: ', 'zh-cn': 'CORS 代理说明：', geng: 'CORS 代理说明：', wenyan: 'CORS 代理之注：'},
+    rwck137: {en: 'PoW is auto-computed when you click log in (a few ms)', 'zh-cn': 'PoW 会在点击登录时自动计算（几毫秒）', geng: '点登录时会自动算 PoW（几毫秒）', wenyan: '按登录则自动算 PoW（数毫秒）'},
+    rwck138: {en: '.\n                        Official default: ', 'zh-cn': '。\n                        官方默认：', geng: '。\n                        官方默认：', wenyan: '。\n                        官方之初：'},
+    rwck139: {en: 'Upload to drive', 'zh-cn': '上传到云盘', geng: '传到云盘', wenyan: '传于盘'},
+    rwck140: {en: 'Upload resource', 'zh-cn': '上传资源', geng: '上传资源', wenyan: '传资'},
+    rwck141: {en: 'Read from editor', 'zh-cn': '从编辑器读取', geng: '从编辑器读', wenyan: '自编辑器读'},
+    rwck142: {en: 'Proxy prefix', 'zh-cn': '代理前缀', geng: '代理前缀', wenyan: '代理前缀'},
+    rwck143: {en: 'May pause for maintenance/update from time to time; please understand.', 'zh-cn': '会不定时的进行暂停服务、更新，请注意谅解。', geng: '会不定时暂停服务或更新，多包涵嗷', wenyan: '或不时休止而更之，望见谅。'},
+    rwck144: {en: 'Project', 'zh-cn': '作品', geng: '作品', wenyan: '卷'},
+    rwck145: {en: 'Project info', 'zh-cn': '作品信息', geng: '作品信息', wenyan: '卷之讯'},
+    rwck146: {en: 'Value', 'zh-cn': '值', geng: '值', wenyan: '值'},
+    rwck147: {en: 'Allow others to download', 'zh-cn': '允许他人下载', geng: '允许别人下载', wenyan: '许人下载'},
+    rwck148: {en: 'All', 'zh-cn': '全部', geng: '全部', wenyan: '凡'},
+    rwck149: {en: 'All categories', 'zh-cn': '全部分类', geng: '全部分类', wenyan: '诸类'},
+    rwck150: {en: 'Mark all read', 'zh-cn': '全部已读', geng: '全部已读', wenyan: '悉记为读'},
+    rwck151: {en: 'All extensions', 'zh-cn': '全部扩展', geng: '全部扩展', wenyan: '诸延伸'},
+    rwck152: {en: 'Follow', 'zh-cn': '关注', geng: '关注', wenyan: '随'},
+    rwck153: {en: 'Follow / Unfollow', 'zh-cn': '关注 / 取关', geng: '关注 / 取关', wenyan: '随 / 去随'},
+    rwck154: {en: 'Follow first tag', 'zh-cn': '关注第一个标签', geng: '关注第一个标签', wenyan: '随首标'},
+    rwck155: {en: 'Other', 'zh-cn': '其它', geng: '其它', wenyan: '他'},
+    rwck156: {en: 'Write', 'zh-cn': '写入', geng: '写入', wenyan: '书'},
+    rwck157: {en: 'Category', 'zh-cn': '分类', geng: '分类', wenyan: '类'},
+    rwck158: {en: 'MakerVerse API did not respond', 'zh-cn': '创客次元 API 未回', geng: '创客次元 API 没回', wenyan: '创客次元 API 未应'},
+    rwck159: {en: 'MakerVerse · Aurora Forum', 'zh-cn': '创客次元 · 极光论坛', geng: '创客次元 · 极光论坛', wenyan: '创客次元 · 极光之坛'},
+    rwck160: {en: 'MakerVerse Community', 'zh-cn': '创客次元 社区', geng: '创客次元 社区', wenyan: '创客次元 之社'},
+    rwck161: {en: 'Create', 'zh-cn': '创建', geng: '创建', wenyan: '创'},
+    rwck162: {en: 'Refresh', 'zh-cn': '刷新', geng: '刷新', wenyan: '更'},
+    rwck163: {en: 'Load', 'zh-cn': '加载', geng: '加载', wenyan: '载'},
+    rwck164: {en: 'Loading…', 'zh-cn': '加载中…', geng: '加载中嗷…', wenyan: '载之中…'},
+    rwck165: {en: 'Load failed', 'zh-cn': '加载失败', geng: '加载没成', wenyan: '载未成'},
+    rwck166: {en: 'Go post your first one →', 'zh-cn': '去发第一个吧 →', geng: '去发第一个吧 →', wenyan: '往发其首 →'},
+    rwck167: {en: 'Before publishing, confirm your work follows the community guidelines. Uploading means you agree others may download it.', 'zh-cn': '发布前确认作品内容符合社区公约。上传即视为您的作品同意被别人下载。', geng: '发布前确认符合社区公约。上传即视为同意别人下载。', wenyan: '布前请确其合社约。上传即许人下载。'},
+    rwck168: {en: 'Publish extension', 'zh-cn': '发布扩展', geng: '发布扩展', wenyan: '布延伸'},
+    rwck169: {en: 'Post rate limit: 4/hour. Body supports Markdown and can reference drive resources.', 'zh-cn': '发帖限流 4 条/小时。正文支持 Markdown，可引用云盘资源。', geng: '发帖限流 4 条/小时。正文支持 Markdown，能引用云盘资源。', wenyan: '发帖限每时四。正文用 Markdown，可引盘资。'},
+    rwck170: {en: 'Post comment', 'zh-cn': '发表评论', geng: '发表评论', wenyan: '发评'},
+    rwck171: {en: 'Cancel', 'zh-cn': '取消', geng: '取消', wenyan: '却'},
+    rwck172: {en: 'Changelog', 'zh-cn': '变更日志', geng: '变更日志', wenyan: '更录'},
+    rwck173: {en: 'Variable name', 'zh-cn': '变量名', geng: '变量名', wenyan: '变数之名'},
+    rwck174: {en: 'Sync to forum post', 'zh-cn': '同步到论坛帖子', geng: '同步到论坛帖子', wenyan: '同于论坛之帖'},
+    rwck175: {en: 'Name', 'zh-cn': '名称', geng: '名称', wenyan: '名'},
+    rwck176: {en: 'Reply', 'zh-cn': '回复', geng: '回复', wenyan: '对'},
+    rwck177: {en: 'Reply content', 'zh-cn': '回复内容', geng: '回复内容', wenyan: '对之文'},
+    rwck178: {en: 'Reply to existing thread (POST /posts)', 'zh-cn': '回复已有讨论（POST /posts）', geng: '回复已有讨论（POST /posts）', wenyan: '对既议（POST /posts）'},
+    rwck179: {en: 'Image captcha', 'zh-cn': '图形验证码', geng: '图形验证码', wenyan: '图验'},
+    rwck180: {en: 'Log in inside editor', 'zh-cn': '在编辑器内登录', geng: '在编辑器里登录', wenyan: '于编辑器内入'},
+    rwck181: {en: 'Log in on forum', 'zh-cn': '在论坛中登录', geng: '在论坛登录', wenyan: '于论坛入'},
+    rwck182: {en: 'Processing…', 'zh-cn': '处理中…', geng: '处理中嗷…', wenyan: '处之中…'},
+    rwck183: {en: 'Copy', 'zh-cn': '复制', geng: '复制', wenyan: '录'},
+    rwck184: {en: 'Password', 'zh-cn': '密码', geng: '密码', wenyan: '密'},
+    rwck185: {en: 'Cover image (optional)', 'zh-cn': '封面图（可选）', geng: '封面图（可选）', wenyan: '封面（可略）'},
+    rwck186: {en: 'Rewarded resources', 'zh-cn': '已获赏资源', geng: '已获赏资源', wenyan: '已赏之资'},
+    rwck187: {en: 'Post', 'zh-cn': '帖子', geng: '帖子', wenyan: '帖'},
+    rwck188: {en: 'e.g.', 'zh-cn': '形如', geng: '形如', wenyan: '譬如'},
+    rwck189: {en: 'Restore default', 'zh-cn': '恢复默认', geng: '恢复默认', wenyan: '复其初'},
+    rwck190: {en: 'My published projects', 'zh-cn': '我发布的作品', geng: '我发布的作品', wenyan: '吾所布之卷'},
+    rwck191: {en: 'My published extensions', 'zh-cn': '我发布的扩展', geng: '我发布的扩展', wenyan: '吾所布之延伸'},
+    rwck192: {en: 'My cloud projects', 'zh-cn': '我的云项目', geng: '我的云项目', wenyan: '吾之云卷'},
+    rwck193: {en: 'My registrations', 'zh-cn': '我的登记', geng: '我的登记', wenyan: '吾之登'},
+    rwck194: {en: 'or', 'zh-cn': '或', geng: '或', wenyan: '或'},
+    rwck195: {en: 'Choose manually', 'zh-cn': '手动选择', geng: '手动选', wenyan: '手择'},
+    rwck196: {en: 'Open', 'zh-cn': '打开', geng: '打开', wenyan: '开'},
+    rwck197: {en: 'Extension', 'zh-cn': '扩展', geng: '扩展', wenyan: '延伸'},
+    rwck198: {en: 'Leaderboard', 'zh-cn': '排行榜', geng: '排行榜', wenyan: '榜'},
+    rwck199: {en: 'Extraction code', 'zh-cn': '提取码', geng: '提取码', wenyan: '取码'},
+    rwck200: {en: 'Searching…', 'zh-cn': '搜索中…', geng: '搜索中嗷…', wenyan: '索之中…'},
+    rwck201: {en: 'Bookmark', 'zh-cn': '收藏', geng: '收藏', wenyan: '藏'},
+    rwck202: {en: 'File', 'zh-cn': '文件', geng: '文件', wenyan: '文'},
+    rwck203: {en: 'New', 'zh-cn': '新建', geng: '新建', wenyan: '新'},
+    rwck204: {en: 'New cloud variable project', 'zh-cn': '新建云变量项目', geng: '新建云变量项目', wenyan: '新云变数之卷'},
+    rwck205: {en: 'No data', 'zh-cn': '暂无数据', geng: '还没数据', wenyan: '无数据'},
+    rwck206: {en: 'No discussions yet, ', 'zh-cn': '暂无讨论，', geng: '还没讨论，', wenyan: '尚无议，'},
+    rwck207: {en: 'No requests yet. After you log in / publish / post, all sent and received data shows here.', 'zh-cn': '暂无请求。触发登录 / 发布 / 发帖后，这里会显示所有发送与接收。', geng: '暂无请求。登录 / 发布 / 发帖后，这里会显示所有收发。', wenyan: '尚无请。既入 / 布 / 发之后，此处示其收发。'},
+    rwck208: {en: 'Latest', 'zh-cn': '最新', geng: '最新', wenyan: '新'},
+    rwck209: {en: 'Latest discussions', 'zh-cn': '最新讨论', geng: '最新讨论', wenyan: '近议'},
+    rwck210: {en: 'Hottest', 'zh-cn': '最热', geng: '最热', wenyan: '热'},
+    rwck211: {en: 'Check bookmark status', 'zh-cn': '查收藏状态', geng: '查收藏状态', wenyan: '察藏之状'},
+    rwck212: {en: 'View all →', 'zh-cn': '查看全部 →', geng: '查看全部 →', wenyan: '视其全 →'},
+    rwck213: {en: 'Tag name', 'zh-cn': '标签名', geng: '标签名', wenyan: '标之名'},
+    rwck214: {en: 'Title *', 'zh-cn': '标题 *', geng: '标题 *', wenyan: '题 *'},
+    rwck215: {en: 'Verify', 'zh-cn': '校验', geng: '校验', wenyan: '验'},
+    rwck216: {en: 'Verify registration number', 'zh-cn': '校验登记号', geng: '校验登记号', wenyan: '验登之号'},
+    rwck217: {en: 'Fetching…', 'zh-cn': '正在获取…', geng: '获取中嗷…', wenyan: '取之中…'},
+    rwck218: {en: 'Body *', 'zh-cn': '正文 *', geng: '正文 *', wenyan: '文 *'},
+    rwck219: {en: 'Body (Markdown)', 'zh-cn': '正文（Markdown）', geng: '正文（Markdown）', wenyan: '文（Markdown）'},
+    rwck220: {en: 'Daily check-in', 'zh-cn': '每日签到', geng: '每日签到', wenyan: '每日之至'},
+    rwck221: {en: 'No projects found', 'zh-cn': '没有找到作品', geng: '没找到作品', wenyan: '未得卷'},
+    rwck222: {en: 'Register', 'zh-cn': '注册', geng: '注册', wenyan: '注'},
+    rwck223: {en: 'Active users', 'zh-cn': '活跃用户', geng: '活跃用户', wenyan: '活跃之人'},
+    rwck224: {en: 'Clear', 'zh-cn': '清空', geng: '清空', wenyan: '空'},
+    rwck225: {en: 'Source', 'zh-cn': '源码', geng: '源码', wenyan: '源'},
+    rwck226: {en: 'Source *', 'zh-cn': '源码 *', geng: '源码 *', wenyan: '源 *'},
+    rwck227: {en: 'Like / Unlike', 'zh-cn': '点赞 / 取消', geng: '点赞 / 取消', wenyan: '善 / 去善'},
+    rwck228: {en: 'Like / React / Bookmark', 'zh-cn': '点赞 / 表态 / 收藏', geng: '点赞 / 表态 / 收藏', wenyan: '善 / 态 / 藏'},
+    rwck229: {en: 'Hot tags', 'zh-cn': '热门标签', geng: '热门标签', wenyan: '热标'},
+    rwck230: {en: 'User', 'zh-cn': '用户', geng: '用户', wenyan: '人'},
+    rwck231: {en: 'Username', 'zh-cn': '用户名', geng: '用户名', wenyan: '人名'},
+    rwck232: {en: 'Username / Email', 'zh-cn': '用户名 / 邮箱', geng: '用户名 / 邮箱', wenyan: '人名 / 邮'},
+    rwck233: {en: 'by', 'zh-cn': '由', geng: '由', wenyan: '自'},
+    rwck234: {en: 'Log in to MakerVerse', 'zh-cn': '登录创客次元', geng: '登录创客次元', wenyan: '入创客次元'},
+    rwck235: {en: 'Register', 'zh-cn': '登记', geng: '登记', wenyan: '登'},
+    rwck236: {en: 'Registration number', 'zh-cn': '登记号', geng: '登记号', wenyan: '登之号'},
+    rwck237: {en: 'Register netdisk resource', 'zh-cn': '登记网盘资源', geng: '登记网盘资源', wenyan: '登网盘之资'},
+    rwck238: {en: 'Target ID', 'zh-cn': '目标 ID', geng: '目标 ID', wenyan: '标的之 ID'},
+    rwck239: {en: 'Target type', 'zh-cn': '目标类型', geng: '目标类型', wenyan: '标之型'},
+    rwck240: {en: 'Direct link', 'zh-cn': '直链', geng: '直链', wenyan: '直链'},
+    rwck241: {en: 'Community tags', 'zh-cn': '社区标签', geng: '社区标签', wenyan: '社之标'},
+    rwck242: {en: 'Site overview', 'zh-cn': '站点总览', geng: '站点总览', wenyan: '站之览'},
+    rwck243: {en: 'Check-in', 'zh-cn': '签到', geng: '签到', wenyan: '至'},
+    rwck244: {en: 'Intro', 'zh-cn': '简介', geng: '简介', wenyan: '介'},
+    rwck245: {en: 'Network request log (send / receive / error)', 'zh-cn': '网络请求日志（发送 / 接收 / 错误）', geng: '网络请求日志（发送 / 接收 / 错误）', wenyan: '网请之志（发 / 收 / 误）'},
+    rwck246: {en: 'React', 'zh-cn': '表态', geng: '表态', wenyan: '态'},
+    rwck247: {en: 'Discussion', 'zh-cn': '讨论', geng: '讨论', wenyan: '议'},
+    rwck248: {en: 'Discussion ID', 'zh-cn': '讨论 ID', geng: '讨论 ID', wenyan: '议之 ID'},
+    rwck249: {en: 'Settings', 'zh-cn': '设置', geng: '设置', wenyan: '设'},
+    rwck250: {en: 'Exit', 'zh-cn': '退出', geng: '退出', wenyan: '出'},
+    rwck251: {en: 'No account yet? Registration is on the community site', 'zh-cn': '还没有账号？注册需要转到社区官网', geng: '还没账号？注册要去社区官网', wenyan: '未注籍？注册于社之官网'},
+    rwck252: {en: 'on the site.', 'zh-cn': '页面注册。', geng: '页面注册。', wenyan: '于页注册。'},
+    rwck253: {en: "Haven't published yet? Go to the Publish tab and post your first one~", 'zh-cn': '还没有发布过作品，快去「发布作品」Tab 发第一个吧～', geng: '还没发过作品？去「发布作品」Tab 发第一个吧～', wenyan: '未布乎？往发布之Tab发其首～'},
+    rwck254: {en: ', will be appended automatically', 'zh-cn': '，会自动追加', geng: '，会自动追加', wenyan: '，自附'},
+    rwck255: {en: 'Play', 'zh-cn': '试玩', geng: '试玩', wenyan: '试'},
+    rwck256: {en: 'Choose image', 'zh-cn': '选择图片', geng: '选图片', wenyan: '择图'},
+    rwck257: {en: 'Choose file', 'zh-cn': '选择文件', geng: '选文件', wenyan: '择文'},
+    rwck258: {en: 'Link', 'zh-cn': '链接', geng: '链接', wenyan: '链'},
+    rwck259: {en: 'Comments', 'zh-cn': '评论', geng: '评论', wenyan: '评'},
+    rwck260: {en: 'Notifications', 'zh-cn': '通知', geng: '通知', wenyan: '告'},
+    rwck261: {en: 'Project name', 'zh-cn': '项目名', geng: '项目名', wenyan: '卷名'},
+    rwck262: {en: 'Set variable', 'zh-cn': '设置变量', geng: '设置变量', wenyan: '置变数'},
+    rwck400: {"en": "By uploading you agree that others may download your work.\nAfter publishing to the CTSpace community, CTSpace cannot absolutely guarantee your work won't be downloaded or adapted by others.\nPlease confirm your work complies with the platform community guidelines before publishing.", "geng": "上传啦就代表你默许别人下你的作品哦～\n发到创客次元后，本社区也无法绝对保证没人下走或二改。\n发布前请确认内容符合社区公约嗷。", "wenyan": "既上传，则许人下载矣。\n既布于创客次元，彼亦难保无人取下或改之。\n布前请审其合于公约。"},
+    rwck401: {"en": "Click \"OK\" to indicate you have read and agree to the above terms.\n(This reminder shows at most once per window / per day.)", "geng": "点“确定”就代表你已经看完并同意上面这些条条啦～\n（同一窗口 / 同一天内就只提醒这么一回）", "wenyan": "点“确定”者，视作已读而许之。\n（同窗／同日，仅一示之）"},
+    rwck402: {"en": "Re-probing…", "geng": "重新探测中…", "wenyan": "复探中"},
+    rwck403: {"en": "Failed to auto-fetch captcha: {msg}. Click the refresh button on the right to retry.", "geng": "自动拉验证码翻车啦：{msg}。点右边刷新钮再试试捏～", "wenyan": "自动取验失败：{msg}。请点右涮钮重试。"},
+    rwck404: {"en": "Fill in account / password / captcha", "geng": "账号 / 密码 / 验证码 都要填嗷", "wenyan": "账号、密码、验码皆须填"},
+    rwck405: {"en": "Published! Work #{id}, play link https://forum.ctspace.xyz/g/{slug}", "geng": "发布成功！作品编号 {id}，试玩短链 https://forum.ctspace.xyz/g/{slug}", "wenyan": "布成！编号 {id}，试玩 https://forum.ctspace.xyz/g/{slug}"},
+    rwck406: {"en": "Fill in title and content", "geng": "标题和内容都要填嗷", "wenyan": "题与文皆须填"},
+    rwck407: {"en": "Posted! Thread #{seq}", "geng": "发帖成功！帖子 #{seq}", "wenyan": "帖成！第 {seq} 帖"},
+    rwck408: {"en": "Probing…", "geng": "探测中…", "wenyan": "探中"},
+    rwck409: {"en": "Connected, latency {ms} ms", "geng": "连通，耗时 {ms} ms", "wenyan": "通，迟 {ms} 毫"},
+    rwck410: {"en": "Online now: {n}", "geng": "当前在线 {n} 人", "wenyan": "今在线 {n} 人"},
+    rwck411: {"en": "Where do you want to log in? You can enter account & password directly in the editor;", "geng": "想在哪儿登录？在编辑器里直接填账号密码也行嗷；", "wenyan": "欲于何處登？在編內直填賬密亦可；"},
+    rwck412: {"en": "or jump to the forum web login (which carries the matching entry parameters).", "geng": "也可以跳去论坛网页登录（会带好对应的入口参数捏）。", "wenyan": "或往論壇網頁登（自带其入口參）。"},
+    rwck413: {"en": "First-time use: register on the official site (email verification required). Login goes through a graphical captcha + a frontend-computed PoW proof-of-work.", "geng": "首次用请先去官网注册账号（要验邮箱嗷）。登录会先过图形验证码 + 前端自动算的 PoW 工作量证明。", "wenyan": "初用宜先於官網註冊（須驗郵）。登時先過圖驗，加以前端自算之 PoW 證。"},
+    rwck414: {"en": "Selected: {name}", "geng": "已选：{name}", "wenyan": "已选：{name}"},
+    rwck415: {"en": "Both discussion ID and reply content are required", "geng": "讨论 ID 和回复内容都要填嗷", "wenyan": "议 ID 与回复皆须填"},
+    rwck416: {"en": "Both title and code are required", "geng": "标题和代码都要填嗷", "wenyan": "题与码皆须填"},
+    rwck417: {"en": "Used {n} /", "geng": "已用 {n} /", "wenyan": "用 {n} /"},
+    rwck418: {"en": "After upload it can be referenced as an attachment (resources/{id})", "geng": "上传后可作为附件引用（resources/{id}）", "wenyan": "上传后可作附引（resources/{id}）"},
+    rwck419: {"en": "Enter a target ID", "geng": "请填目标 ID 嗷", "wenyan": "须填标的 ID"},
+    rwck420: {"en": "Like toggled", "geng": "已切换点赞状态捏", "wenyan": "赞态已易"},
+    rwck421: {"en": "Checked in for {n} consecutive days", "geng": "连续签到 {n} 天", "wenyan": "连签 {n} 日"},
+    rwck422: {"en": "(checked in today)", "geng": "（今天已签到）", "wenyan": "（今日已签）"},
+    rwck423: {"en": "Please log in first", "geng": "请先登录嗷", "wenyan": "请先登"},
+    rwck424: {"en": "Error: {msg}", "geng": "错误：{msg}", "wenyan": "误：{msg}"},
+    rwck425: {"en": "Applying…", "geng": "正在应用…", "wenyan": "施中"},
+    rwck426: {"en": "Saved. Most interfaces take effect immediately;\nrefresh the page to fully switch (incl. BASE_URL).", "geng": "已保存。大部分接口会立即生效；\n如需完全切换（含 BASE_URL），请刷新页面。", "wenyan": "已存。多口即效；\n欲全切（含 BASE_URL）请涮页。"},
+    rwck427: {"en": ", the editor forwards all requests through the official CORS proxy by default.", "geng": "，编辑器已默认通过官方 CORS 代理转发所有请求。", "wenyan": "，編輯器默以官 CORS 代理轉諸請。"},
+    rwck428: {"en": "Usually keep the default; if a Tab keeps loading / erroring,", "geng": "一般保持默认即可，遇到某 Tab 一直 loading / 报错时，", "wenyan": "常守默认；若某页久载或报错，"},
+    rwck429: {"en": "switch the \"CORS proxy prefix\" below back to the official address or your own proxy.", "geng": "再把下方「CORS 代理前缀」换回官方地址或填你自己的代理。", "wenyan": "下方「CORS 代理前缀」改回官址或自代理。"},
+    rwck430: {"en": "Usually keep the default; switch to your own cors-anywhere instance only when cross-origin issues occur.", "geng": "。一般保持默认即可，遇到跨域时再换成你自己部署的 cors-anywhere 实例。", "wenyan": "。常守默认，遇跨域方易为己部署之 cors-anywhere。"},
+    rwck431: {"en": "Applying…", "geng": "应用中…", "wenyan": "施中"},
+    rwck432: {"en": "CTSpace Upload Notice", "geng": "创客次元上传须知", "wenyan": "创客次元上传之告"}
 });
 
 
@@ -532,11 +695,12 @@ class RwckPublishPanel extends Component {
             return true;
         }
         const terms = (this.props && this.props.terms) ||
-`上传即视为您的作品同意被别人下载。
-上传至创客次元社区后，创客次元无法绝对保证您的作品不被别人下载或改编。
-请在发布前确认作品内容符合平台社区公约。`;
-        const ok = window.confirm('【创客次元上传须知】\n\n' + terms +
-            '\n\n点"确定"即表示您已阅读并同意以上条款。\n（同一窗口 / 同一天内只会再提醒一次）');
+rwckT('rwck400');
+        const ok = window.confirm(`${rwckT('rwck432')}
+
+${terms}
+
+${rwckT('rwck401')}`);
         if (ok) {
             sessionStorage.setItem('rwck:terms-agreed-today', '1');
             this.setState({termsAcceptedForSession: true});
@@ -551,7 +715,7 @@ class RwckPublishPanel extends Component {
     async _refreshCommunity() {
         const latencies = {};
         const t0 = Date.now();
-        this.setState({probeBusy: true, probeMsg: '正在重新探测…', statsErr: '',
+        this.setState({probeBusy: true, probeMsg: rwckT('rwck402'), statsErr: '',
             discussionsErr: '', leaderboardErr: '', activeErr: '', tagsErr: ''});
 
         const pStats = rwck.stats.public().then(r => {
@@ -623,7 +787,7 @@ class RwckPublishPanel extends Component {
             this.setState({captcha: cap, captchaAnswer: '', loginErr: '', captchaLoading: false});
         } catch (e) {
             this.setState({captcha: null, captchaLoading: false,
-                           captchaLoadErr: `自动拉取验证码失败：${(e && e.message) || e}。请点右侧刷新按钮重试。`});
+                           captchaLoadErr: rwckT('rwck403').replace('{msg}', (e && e.message) || e)});
         }
     }
 
@@ -631,7 +795,7 @@ class RwckPublishPanel extends Component {
     async _login() {
         const {username, password, captcha, captchaAnswer} = this.state;
         if (!username || !password || !captcha || !captchaAnswer) {
-            this.setState({loginErr: '请填完整账号 / 密码 / 验证码'});
+            this.setState({loginErr: rwckT('rwck404')});
             return;
         }
         this.setState({loginBusy:true, loginErr:''});
@@ -770,7 +934,7 @@ class RwckPublishPanel extends Component {
                 forumTagIds: []
             });
             this.setState({
-                publishOk: `发布成功！作品编号 ${proj.id}，试玩短链 https://forum.ctspace.xyz/g/${proj.shortLinkSlug || ''}`,
+                publishOk: rwckT('rwck405').replace('{id}', proj.id).replace('{slug}', proj.shortLinkSlug || ''),
                 uploadBusy:false, uploadProgress:'', sb3File:null, sb3ResourceId:null, sb3Name:'',
                 coverFile:null, coverResourceId:null, title:'', summary:'', content:''
             });
@@ -785,13 +949,13 @@ class RwckPublishPanel extends Component {
         if (!this._ensureTermsAgreed()) return;
         const {discussionTitle, discussionContent} = this.state;
         if (!discussionTitle.trim() || !discussionContent.trim()) {
-            this.setState({discussionErr:'请填标题和内容', discussionOk:''}); return;
+            this.setState({discussionErr:rwckT('rwck406'), discussionOk:''}); return;
         }
         this.setState({discussionBusy:true, discussionErr:'', discussionOk:''});
         try {
             const d = await rwck.discussions.create({title: discussionTitle, content: discussionContent});
             this.setState({
-                discussionOk:`发帖成功！帖子 #${d.seq || d.id}`,
+                discussionOk:rwckT('rwck407').replace('{seq}', d.seq || d.id),
                 discussionBusy:false, discussionTitle:'', discussionContent:''
             });
             this._refreshCommunity();
@@ -855,13 +1019,13 @@ class RwckPublishPanel extends Component {
                         <span style={{fontSize:12, color: C.textMuted}}>
                             {this.state.user.username}
                             <button style={cls(S.btn, S.btnGhost, {marginLeft:8})}
-                                    onClick={()=>this._logout()} title='退出登录'>
+                                    onClick={()=>this._logout()} title={rwckT('rwck116')}>
                                 <LogOut size={14} strokeWidth={2.2} /> {rwckT('rwck250')}
                             </button>
                         </span>
                     ) : null}
                     <button style={cls(S.btn, S.btnIcon, S.btnGhost)}
-                            title='创客次元设置（CORS 代理 / 网络日志）'
+                            title={rwckT('rwck31')}
                             onClick={() => this._openSettings()}>
                         <Settings size={16} strokeWidth={2.2} />
                     </button>
@@ -887,7 +1051,7 @@ class RwckPublishPanel extends Component {
                         <div style={S.footerBanner}>
                             <AlertTriangle size={14} strokeWidth={2.2} style={S.footerBannerIcon} />
                             <span style={{flex:1}}><strong>{rwckT('rwck160')}</strong>{rwckT('rwck143')}</span>
-                            <button title='关闭' aria-label=rwckT('rwck26')
+                            <button title={rwckT('rwck25')} aria-label={rwckT('rwck26')}
                                     style={{background:'transparent',border:'none',cursor:'pointer',
                                             padding:6, marginLeft:4, minWidth:32, minHeight:32,
                                             display:'inline-flex', alignItems:'center', justifyContent:'center',
@@ -962,7 +1126,7 @@ class RwckPublishPanel extends Component {
                                 onClick={()=>this._refreshCommunity()}>
                             <RefreshCw size={14} strokeWidth={2.2}
                                        style={{animation: this.state.probeBusy ? 'spin 1s linear infinite' : 'none'}} />
-                            {this.state.probeBusy ? '正在探测…' : rwckT('rwck118')}
+                            {this.state.probeBusy ? rwckT('rwck408') : rwckT('rwck118')}
                         </button>
                     </div>
                     <div style={{display:'flex', gap:8, alignItems:'center', fontSize:12}}>
@@ -972,7 +1136,7 @@ class RwckPublishPanel extends Component {
                         {latency != null && !this.state.statsErr && !this.state.probeBusy && (
                             <span style={{color: C.success}}>
                                 <CheckCircle size={12} strokeWidth={2.2} style={{verticalAlign:'-2px'}} />
-                                连通，耗时 {latency} ms
+                                {rwckT('rwck409').replace('{ms}', latency)}
                             </span>
                         )}
                         {this.state.statsErr && (
@@ -1016,7 +1180,7 @@ class RwckPublishPanel extends Component {
                 {this.state.onlineCount != null && (
                     <div style={cls(S.box, {display:'flex', gap:8, alignItems:'center', padding:10})}>
                         <Activity size={14} strokeWidth={2.2} style={{color: C.success}} />
-                        <span style={{fontSize:12}}>当前在线 {this.state.onlineCount} 人</span>
+                        <span style={{fontSize:12}}>{rwckT('rwck410').replace('{n}', this.state.onlineCount)}</span>
                     </div>
                 )}
 
@@ -1054,7 +1218,7 @@ class RwckPublishPanel extends Component {
                                                 {d.title}
                                             </div>
                                             <div style={{...S.hint, marginTop:2}}>
-                                                {rwckT('rwck233')} <b>{author.nickname || author.username || '匿名'}</b>
+                                                {rwckT('rwck233')} <b>{author.nickname || author.username || rwckT('rwck35')}</b>
                                                 · <span style={{color: C.textMuted}}>{this._fmtTime(d.createdAt)}</span>
                                             </div>
                                         </div>
@@ -1174,8 +1338,8 @@ class RwckPublishPanel extends Component {
                         {rwckT('rwck234')}
                     </div>
                     <div style={S.hint}>
-                        想在哪里登录？在编辑器内可以直接填账号密码；
-                        也可以跳到论坛网页登录（会带好对应入口参数）。
+                        {rwckT('rwck411')}
+                        {rwckT('rwck412')}
                     </div>
                     <div style={S.modalActions}>
                         <button style={cls(S.btn, S.btnPrimary)}
@@ -1224,7 +1388,7 @@ class RwckPublishPanel extends Component {
             <div style={{position:'relative', display:'flex', flexDirection:'column', gap:10}}>
             <div style={S.box}>
                 <div style={S.sectionTitle}>{rwckT('rwck78')}</div>
-                <div style={S.hint}>首次使用请先去官网注册账号（需验证邮箱）。登录会先通过图形验证码 + 前端自动计算的 PoW 工作量证明。</div>
+                <div style={S.hint}>{rwckT('rwck413')}</div>
                 {this.state.loginErr && <div style={S.err}>{this.state.loginErr}</div>}
                 {this.state.loginBusy && <div style={S.ok}>{rwckT('rwck79')}</div>}
 
@@ -1248,7 +1412,7 @@ class RwckPublishPanel extends Component {
                             <img alt='captcha' style={{borderRadius:4, height:40, cursor:'pointer'}}
                                  src={captcha.image}
                                  onClick={()=>this._refreshCaptcha()}
-                                 title=rwckT('rwck75') />
+                                 title={rwckT('rwck75')} />
                          ) : rwckT('rwck87')}
                     </div>
 
@@ -1260,7 +1424,7 @@ class RwckPublishPanel extends Component {
                     <button style={cls(S.btn, S.btnGhost, this.state.captchaLoading && S.btnDisabled)}
                             onClick={()=>this._refreshCaptcha()}
                             disabled={this.state.captchaLoading}
-                            title=rwckT('rwck119')>
+                            title={rwckT('rwck119')}>
                         <RefreshCw size={14} strokeWidth={2.2}
                                    style={{animation: this.state.captchaLoading ? 'spin 1s linear infinite' : 'none'}} />
                     </button>
@@ -1324,7 +1488,7 @@ class RwckPublishPanel extends Component {
                     <label style={S.label}>{rwckT('rwck214')}</label>
                     <input style={S.input} value={this.state.title}
                            onChange={e=>this.setState({title:e.target.value})}
-                           placeholder='默认从当前编辑器作品名取' />
+                           placeholder={rwckT('rwck121')} />
                 </div>
                 <div style={S.row}>
                     <label style={S.label}>{rwckT('rwck157')}</label>
@@ -1337,13 +1501,13 @@ class RwckPublishPanel extends Component {
                     <label style={S.label}>{rwckT('rwck244')}</label>
                     <input style={S.input} value={this.state.summary}
                            onChange={e=>this.setState({summary:e.target.value})}
-                           placeholder='一句话简介，可选，≤500 字' />
+                           placeholder={rwckT('rwck7')} />
                 </div>
                 <div style={S.row}>
                     <label style={S.label}>{rwckT('rwck219')}</label>
                     <textarea style={S.textarea} value={this.state.content}
                               onChange={e=>this.setState({content:e.target.value})}
-                              placeholder='详细介绍、玩法说明、更新日志……' />
+                              placeholder={rwckT('rwck98')} />
                 </div>
 
                 <div style={S.sectionTitle}>{rwckT('rwck202')}</div>
@@ -1358,7 +1522,7 @@ class RwckPublishPanel extends Component {
                         <input type='file' accept='.sb3' style={{display:'none'}}
                                onChange={e=>this._pickSb3(e)} />
                     </label>
-                    {this.state.sb3Name && <span style={S.fileInfo}>已选：{this.state.sb3Name}</span>}
+                    {this.state.sb3Name && <span style={S.fileInfo}>{rwckT('rwck414').replace('{name}', this.state.sb3Name)}</span>}
                 </div>
                 <div style={S.row}>
                     <label style={S.label}>{rwckT('rwck185')}</label>
@@ -1367,7 +1531,7 @@ class RwckPublishPanel extends Component {
                         <input type='file' accept='image/*' style={{display:'none'}}
                                onChange={e=>this._pickCover(e)} />
                     </label>
-                    {this.state.coverFile && <span style={S.fileInfo}>已选：{this.state.coverFile.name}</span>}
+                    {this.state.coverFile && <span style={S.fileInfo}>{rwckT('rwck414').replace('{name}', this.state.coverFile.name)}</span>}
                 </div>
 
                 <div style={S.sectionTitle}>{rwckT('rwck155')}</div>
@@ -1419,7 +1583,7 @@ class RwckPublishPanel extends Component {
                     <button style={cls(S.btn, S.btnPrimary, this.state.discussionBusy && S.btnDisabled)}
                             disabled={this.state.discussionBusy}
                             onClick={()=>this._postDiscussion()}>
-                        {this.state.discussionBusy ? '发帖中…' : rwckT('rwck39')}
+                        {this.state.discussionBusy ? rwckT('rwck41') : rwckT('rwck39')}
                     </button>
                 </div>
 
@@ -1429,7 +1593,7 @@ class RwckPublishPanel extends Component {
                         <label style={S.label}>{rwckT('rwck248')}</label>
                         <input style={S.input} value={this.state.replyDiscussionId}
                                onChange={e=>this.setState({replyDiscussionId: e.target.value})}
-                               placeholder=rwckT('rwck22') />
+                               placeholder={rwckT('rwck22')} />
                     </div>
                     <div style={S.row}>
                         <label style={S.label}>{rwckT('rwck177')}</label>
@@ -1454,7 +1618,7 @@ class RwckPublishPanel extends Component {
     async _postReply() {
         const {replyDiscussionId, replyContent} = this.state;
         if (!replyDiscussionId.trim() || !replyContent.trim()) {
-            this.setState({replyErr: rwckT('rwck94')});
+            this.setState({replyErr: rwckT('rwck415')});
             return;
         }
         this.setState({replyBusy: true, replyErr: '', replyOk: ''});
@@ -1496,7 +1660,7 @@ class RwckPublishPanel extends Component {
                                style={{...S.link, fontSize:11}}>{rwckT('rwck255')}</a>
                         )}
                         <button style={cls(S.btn, S.btnGhost, S.btnIcon)}
-                                title='删除作品'
+                                title={rwckT('rwck33')}
                                 onClick={()=>this._removeProject(p.id)}>
                             <Trash2 size={13} strokeWidth={2.2} />
                         </button>
@@ -1558,7 +1722,7 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.row}>
-                    <input style={S.input} placeholder=rwckT('rwck62') value={this.state.worksQ}
+                    <input style={S.input} placeholder={rwckT('rwck62')} value={this.state.worksQ}
                            onChange={e=>this.setState({worksQ: e.target.value})} />
                     <select style={{...S.input, flex:'0 0 130px'}} value={this.state.worksCategory}
                             onChange={e=>this.setState({worksCategory: e.target.value})}>
@@ -1584,14 +1748,14 @@ class RwckPublishPanel extends Component {
                         <span style={{flex:1, minWidth:0}}>
                             <span style={{fontWeight:600}}>{p.title}</span>
                             <span style={{color: C.textSubtle, fontSize:11, marginLeft:6}}>
-                                {p.category} · {p.author && (p.author.nickname || p.author.username) || '匿名'}
+                                {p.category} · {p.author && (p.author.nickname || p.author.username) || rwckT('rwck35')}
                             </span>
                         </span>
                         <span style={{fontSize:11, color: C.textSubtle}}>
                             <Heart size={12} strokeWidth={2.2} style={{verticalAlign:'-2px'}} /> {p.likeCount || 0}
                             · <Eye size={12} strokeWidth={2.2} style={{verticalAlign:'-2px'}} /> {p.views || 0}
                         </span>
-                        <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title=rwckT('rwck77')
+                        <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title={rwckT('rwck77')}
                                 onClick={()=>this._likeProject(p.id)}>
                             <ThumbsUp size={13} strokeWidth={2.2} />
                         </button>
@@ -1627,7 +1791,7 @@ class RwckPublishPanel extends Component {
     async _createExt () {
         const {extTitle, extSummary, extCategory, extCode} = this.state;
         if (!extTitle.trim() || !extCode.trim()) {
-            this.setState({extErr: '标题和代码都要填'});
+            this.setState({extErr: rwckT('rwck416')});
             return;
         }
         this.setState({extBusy: true, extErr: '', extOk: ''});
@@ -1688,7 +1852,7 @@ class RwckPublishPanel extends Component {
                         <label style={S.label}>{rwckT('rwck226')}</label>
                         <textarea style={S.textarea} value={this.state.extCode}
                                   onChange={e=>this.setState({extCode: e.target.value})}
-                                  placeholder='Scratch 扩展的 JS 源码…' />
+                                  placeholder={rwckT('rwck4')} />
                     </div>
                     <div style={{...S.row, marginTop:8}}>
                         <button style={cls(S.btn, S.btnPrimary, this.state.extBusy && S.btnDisabled)}
@@ -1715,7 +1879,7 @@ class RwckPublishPanel extends Component {
                         </span>
                         <a href={rwck.extensions.rawUrl(x.id)} target='_blank' rel='noreferrer'
                            style={{...S.link, fontSize:11}}>{rwckT('rwck225')}</a>
-                        <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title='点赞'
+                        <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title={rwckT('rwck76')}
                                 onClick={()=>this._likeExt(x.id)}>
                             <ThumbsUp size={13} strokeWidth={2.2} />
                         </button>
@@ -1728,7 +1892,7 @@ class RwckPublishPanel extends Component {
                         {this.state.extMine.map((x, i) => (
                             <div key={x.id || i} style={S.listItem}>
                                 <span style={{flex:1, fontWeight:600}}>{x.title}</span>
-                                <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title='删除'
+                                <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title={rwckT('rwck32')}
                                         onClick={()=>this._removeExt(x.id)}>
                                     <Trash2 size={13} strokeWidth={2.2} />
                                 </button>
@@ -1765,7 +1929,7 @@ class RwckPublishPanel extends Component {
     }
 
     async _removeDriveFile (id) {
-        if (!window.confirm('确定删除这个文件？')) return;
+        if (!window.confirm(rwckT('rwck83'))) return;
         try {
             await rwck.drive.remove(id);
             this._loadDrive();
@@ -1787,7 +1951,7 @@ class RwckPublishPanel extends Component {
                     </button>
                     {this.state.driveUsage && (
                         <span style={S.fileInfo}>
-                            已用 {this.state.driveUsage.used ?? this.state.driveUsage.usedBytes ?? '?'} /
+                            {rwckT('rwck417').replace('{n}', this.state.driveUsage.used ?? this.state.driveUsage.usedBytes ?? '?')}
                             {this.state.driveUsage.total ?? this.state.driveUsage.totalBytes ?? '?'}
                         </span>
                     )}
@@ -1805,7 +1969,7 @@ class RwckPublishPanel extends Component {
                             <a href={rwck.drive.rawUrl(f.shareId)} target='_blank' rel='noreferrer'
                                style={{...S.link, fontSize:11}}>{rwckT('rwck240')}</a>
                         )}
-                        <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title='删除'
+                        <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title={rwckT('rwck32')}
                                 onClick={()=>this._removeDriveFile(f.id)}>
                             <Trash2 size={13} strokeWidth={2.2} />
                         </button>
@@ -1841,7 +2005,7 @@ class RwckPublishPanel extends Component {
     async _addNetdisk () {
         const {netdiskLink, netdiskCode} = this.state;
         if (!netdiskLink.trim()) {
-            this.setState({resErr: '请填网盘链接'});
+            this.setState({resErr: rwckT('rwck106')});
             return;
         }
         this.setState({resBusy: true, resErr: '', resOk: ''});
@@ -1869,7 +2033,7 @@ class RwckPublishPanel extends Component {
                             <Upload size={14} strokeWidth={2.2} /> {rwckT('rwck257')}
                             <input type='file' style={{display:'none'}} onChange={e=>this._uploadResource(e)} />
                         </label>
-                        <span style={S.fileInfo}>上传后可作为附件引用（resources/{'{id}'}）</span>
+                        <span style={S.fileInfo}>{rwckT('rwck418')}</span>
                     </div>
                 </div>
                 <div style={S.box}>
@@ -1909,7 +2073,7 @@ class RwckPublishPanel extends Component {
     async _loadComments () {
         const {commentTargetType, commentTargetId} = this.state;
         if (!commentTargetId) {
-            this.setState({socialErr: '请填目标 ID'});
+            this.setState({socialErr: rwckT('rwck419')});
             return;
         }
         this.setState({socialBusy: true, socialErr: ''});
@@ -1945,7 +2109,7 @@ class RwckPublishPanel extends Component {
         }
         try {
             await rwck.likes.toggle({targetType: likeTargetType, targetId: likeTargetId});
-            this.setState({socialOk: '已切换点赞状态'});
+            this.setState({socialOk: rwckT('rwck420')});
         } catch (e) {
             this.setState({socialErr: this._friendlyError(e)});
         }
@@ -2042,7 +2206,7 @@ class RwckPublishPanel extends Component {
                     <div style={S.row}>
                         <textarea style={S.textarea} value={this.state.commentText}
                                   onChange={e=>this.setState({commentText: e.target.value})}
-                                  placeholder='写点评论…' />
+                                  placeholder={rwckT('rwck27')} />
                     </div>
                     <div style={{...S.row, marginTop:6}}>
                         <button style={cls(S.btn, S.btnPrimary)} onClick={()=>this._postComment()}>
@@ -2159,8 +2323,8 @@ class RwckPublishPanel extends Component {
                     </div>
                     {this.state.checkin && (
                         <div style={S.hint}>
-                            连续签到 {this.state.checkin.streak ?? this.state.checkin.days ?? 0} 天
-                            {this.state.checkin.checkedToday ? '（今天已签到）' : ''}
+                            {rwckT('rwck421').replace('{n}', this.state.checkin.streak ?? this.state.checkin.days ?? 0)}
+                            {this.state.checkin.checkedToday ? rwckT('rwck422') : ''}
                         </div>
                     )}
                 </div>
@@ -2186,7 +2350,7 @@ class RwckPublishPanel extends Component {
                         <span style={{flex:1, minWidth:0}}>{n.content || n.title || n.type}</span>
                         <span style={{fontSize:11, color: C.textSubtle}}>{this._fmtTime(n.createdAt)}</span>
                         {!n.read && (
-                            <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title='标记已读'
+                            <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title={rwckT('rwck70')}
                                     onClick={async ()=>{
                                         try { await rwck.notifications.markRead(n.id); this._loadNotify(); }
                                         catch (e) { this.setState({notifyErr: this._friendlyError(e)}); }
@@ -2204,7 +2368,7 @@ class RwckPublishPanel extends Component {
     async _doSearch () {
         const q = this.state.searchQ.trim();
         if (!q) {
-            this.setState({searchErr: '请输入关键词'});
+            this.setState({searchErr: rwckT('rwck107')});
             return;
         }
         this.setState({searchBusy: true, searchErr: ''});
@@ -2222,7 +2386,7 @@ class RwckPublishPanel extends Component {
         return (
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 <div style={S.row}>
-                    <input style={S.input} placeholder=rwckT('rwck61') value={this.state.searchQ}
+                    <input style={S.input} placeholder={rwckT('rwck61')} value={this.state.searchQ}
                            onChange={e=>this.setState({searchQ: e.target.value})} />
                     <select style={{...S.input, flex:'0 0 120px'}} value={this.state.searchType}
                             onChange={e=>this.setState({searchType: e.target.value})}>
@@ -2315,7 +2479,7 @@ class RwckPublishPanel extends Component {
     // ========== 云变量 ==========
     async _loadCloud () {
         if (!rwck.authState().token) {
-            this.setState({cloudErr: '请先登录'});
+            this.setState({cloudErr: rwckT('rwck423')});
             return;
         }
         this.setState({cloudBusy: true, cloudErr: ''});
@@ -2394,7 +2558,7 @@ class RwckPublishPanel extends Component {
                     <div key={p.id || i} style={S.listItem}>
                         <Database size={13} strokeWidth={2.2} style={{color: C.textSubtle}} />
                         <span style={{flex:1, minWidth:0}}>{p.name}</span>
-                        <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title='查看变量'
+                        <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title={rwckT('rwck68')}
                                 onClick={()=>this._loadCloudVars(p.id)}>
                             <Eye size={13} strokeWidth={2.2} />
                         </button>
@@ -2432,7 +2596,7 @@ class RwckPublishPanel extends Component {
     // ========== 开发者（API 密钥 / 标签 / 变更日志） ==========
     async _loadDev () {
         if (!rwck.authState().token) {
-            this.setState({devErr: '请先登录'});
+            this.setState({devErr: rwckT('rwck423')});
             return;
         }
         this.setState({devBusy: true, devErr: ''});
@@ -2518,7 +2682,7 @@ class RwckPublishPanel extends Component {
                         <div key={k.id || i} style={S.listItem}>
                             <Key size={13} strokeWidth={2.2} style={{color: C.textSubtle}} />
                             <span style={{flex:1, minWidth:0}}>{k.name}</span>
-                            <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title='删除'
+                            <button style={cls(S.btn, S.btnGhost, S.btnIcon)} title={rwckT('rwck32')}
                                     onClick={()=>this._removeKey(k.id)}>
                                 <Trash2 size={13} strokeWidth={2.2} />
                             </button>
@@ -2609,7 +2773,7 @@ class RwckSettingsPanel extends Component {
         if (!body) return;
         const logs = (this._getNetLog && this._getNetLog()) || [];
         if (!logs.length) {
-            body.innerHTML = '<div style="color:#7a8290;padding:12px">{rwckT('rwck207')}</div>';
+            body.innerHTML = `<div style="color:#7a8290;padding:12px">${rwckT('rwck207')}</div>`;
             return;
         }
         body.innerHTML = '';
@@ -2626,7 +2790,7 @@ class RwckSettingsPanel extends Component {
                 `<span style="color:#fff">${e.method || 'GET'}</span> ` +
                 `<span style="color:#cdd6e4">${e.url}</span>` +
                 (e.status ? ` <span style="color:${e.ok ? '#8ce99a' : '#ffd479'}">[${e.status}]</span>` : '') +
-                (e.error ? `<div style="color:#ff9a9a">错误: ${e.error}</div>` : '') +
+                (e.error ? `<div style="color:#ff9a9a">${rwckT('rwck424').replace('{msg}', e.error)}</div>` : '') +
                 '</div>';
             body.appendChild(row);
         });
@@ -2637,12 +2801,12 @@ class RwckSettingsPanel extends Component {
         const v = (this.state.proxyInput || '').trim().replace(/\/$/, '');
         if (!v) return this.setState({applyMsg: rwckT('rwck17')});
         if (!/^https?:\/\//.test(v)) return this.setState({applyMsg: rwckT('rwck18')});
-        this.setState({applyBusy: true, applyMsg: '正在应用…'});
+        this.setState({applyBusy: true, applyMsg: rwckT('rwck425')});
         try {
             localStorage.setItem('rwck:cors-anywhere', v);
             if (typeof window !== 'undefined') window.__RWCK_CORS_ANYWHERE__ = v;
             setTimeout(() => this.setState({applyBusy: false,
-                applyMsg: '已保存。大部分接口会立即生效；\n如需完全切换（含 BASE_URL），请刷新页面。'}), 250);
+                applyMsg: rwckT('rwck426')}), 250);
         } catch (e) {
             this.setState({applyBusy: false, applyMsg: rwckT('rwck23') + (e.message || e)});
         }
@@ -2667,137 +2831,7 @@ class RwckSettingsPanel extends Component {
         catch (_) { this.setState({applyMsg: rwckT('rwck43')}); }
     }
     _clearLog () {
-        if (this._clearNetLog) { this._clearNetLog(); this._logRender(); this.setState({applyMsg: rwckT('rwck66')    rwck133: {en: '.sb3 Project', 'zh-cn': '.sb3 作品', geng: '.sb3 作品', wenyan: '.sb3 之卷'},
-    rwck134: {en: 'API Key', 'zh-cn': 'API 密钥', geng: 'API 密钥', wenyan: 'API 密钥'},
-    rwck135: {en: 'CORS proxy prefix', 'zh-cn': 'CORS 代理前缀', geng: 'CORS 代理前缀', wenyan: 'CORS 代理之前缀'},
-    rwck136: {en: 'CORS proxy note: ', 'zh-cn': 'CORS 代理说明：', geng: 'CORS 代理说明：', wenyan: 'CORS 代理之注：'},
-    rwck137: {en: 'PoW is auto-computed when you click log in (a few ms)', 'zh-cn': 'PoW 会在点击登录时自动计算（几毫秒）', geng: '点登录时会自动算 PoW（几毫秒）', wenyan: '按登录则自动算 PoW（数毫秒）'},
-    rwck138: {en: '.\n                        Official default: ', 'zh-cn': '。\n                        官方默认：', geng: '。\n                        官方默认：', wenyan: '。\n                        官方之初：'},
-    rwck139: {en: 'Upload to drive', 'zh-cn': '上传到云盘', geng: '传到云盘', wenyan: '传于盘'},
-    rwck140: {en: 'Upload resource', 'zh-cn': '上传资源', geng: '上传资源', wenyan: '传资'},
-    rwck141: {en: 'Read from editor', 'zh-cn': '从编辑器读取', geng: '从编辑器读', wenyan: '自编辑器读'},
-    rwck142: {en: 'Proxy prefix', 'zh-cn': '代理前缀', geng: '代理前缀', wenyan: '代理前缀'},
-    rwck143: {en: 'May pause for maintenance/update from time to time; please understand.', 'zh-cn': '会不定时的进行暂停服务、更新，请注意谅解。', geng: '会不定时暂停服务或更新，多包涵嗷', wenyan: '或不时休止而更之，望见谅。'},
-    rwck144: {en: 'Project', 'zh-cn': '作品', geng: '作品', wenyan: '卷'},
-    rwck145: {en: 'Project info', 'zh-cn': '作品信息', geng: '作品信息', wenyan: '卷之讯'},
-    rwck146: {en: 'Value', 'zh-cn': '值', geng: '值', wenyan: '值'},
-    rwck147: {en: 'Allow others to download', 'zh-cn': '允许他人下载', geng: '允许别人下载', wenyan: '许人下载'},
-    rwck148: {en: 'All', 'zh-cn': '全部', geng: '全部', wenyan: '凡'},
-    rwck149: {en: 'All categories', 'zh-cn': '全部分类', geng: '全部分类', wenyan: '诸类'},
-    rwck150: {en: 'Mark all read', 'zh-cn': '全部已读', geng: '全部已读', wenyan: '悉记为读'},
-    rwck151: {en: 'All extensions', 'zh-cn': '全部扩展', geng: '全部扩展', wenyan: '诸延伸'},
-    rwck152: {en: 'Follow', 'zh-cn': '关注', geng: '关注', wenyan: '随'},
-    rwck153: {en: 'Follow / Unfollow', 'zh-cn': '关注 / 取关', geng: '关注 / 取关', wenyan: '随 / 去随'},
-    rwck154: {en: 'Follow first tag', 'zh-cn': '关注第一个标签', geng: '关注第一个标签', wenyan: '随首标'},
-    rwck155: {en: 'Other', 'zh-cn': '其它', geng: '其它', wenyan: '他'},
-    rwck156: {en: 'Write', 'zh-cn': '写入', geng: '写入', wenyan: '书'},
-    rwck157: {en: 'Category', 'zh-cn': '分类', geng: '分类', wenyan: '类'},
-    rwck158: {en: 'MakerVerse API did not respond', 'zh-cn': '创客次元 API 未回', geng: '创客次元 API 没回', wenyan: '创客次元 API 未应'},
-    rwck159: {en: 'MakerVerse · Aurora Forum', 'zh-cn': '创客次元 · 极光论坛', geng: '创客次元 · 极光论坛', wenyan: '创客次元 · 极光之坛'},
-    rwck160: {en: 'MakerVerse Community', 'zh-cn': '创客次元 社区', geng: '创客次元 社区', wenyan: '创客次元 之社'},
-    rwck161: {en: 'Create', 'zh-cn': '创建', geng: '创建', wenyan: '创'},
-    rwck162: {en: 'Refresh', 'zh-cn': '刷新', geng: '刷新', wenyan: '更'},
-    rwck163: {en: 'Load', 'zh-cn': '加载', geng: '加载', wenyan: '载'},
-    rwck164: {en: 'Loading…', 'zh-cn': '加载中…', geng: '加载中嗷…', wenyan: '载之中…'},
-    rwck165: {en: 'Load failed', 'zh-cn': '加载失败', geng: '加载没成', wenyan: '载未成'},
-    rwck166: {en: 'Go post your first one →', 'zh-cn': '去发第一个吧 →', geng: '去发第一个吧 →', wenyan: '往发其首 →'},
-    rwck167: {en: 'Before publishing, confirm your work follows the community guidelines. Uploading means you agree others may download it.', 'zh-cn': '发布前确认作品内容符合社区公约。上传即视为您的作品同意被别人下载。', geng: '发布前确认符合社区公约。上传即视为同意别人下载。', wenyan: '布前请确其合社约。上传即许人下载。'},
-    rwck168: {en: 'Publish extension', 'zh-cn': '发布扩展', geng: '发布扩展', wenyan: '布延伸'},
-    rwck169: {en: 'Post rate limit: 4/hour. Body supports Markdown and can reference drive resources.', 'zh-cn': '发帖限流 4 条/小时。正文支持 Markdown，可引用云盘资源。', geng: '发帖限流 4 条/小时。正文支持 Markdown，能引用云盘资源。', wenyan: '发帖限每时四。正文用 Markdown，可引盘资。'},
-    rwck170: {en: 'Post comment', 'zh-cn': '发表评论', geng: '发表评论', wenyan: '发评'},
-    rwck171: {en: 'Cancel', 'zh-cn': '取消', geng: '取消', wenyan: '却'},
-    rwck172: {en: 'Changelog', 'zh-cn': '变更日志', geng: '变更日志', wenyan: '更录'},
-    rwck173: {en: 'Variable name', 'zh-cn': '变量名', geng: '变量名', wenyan: '变数之名'},
-    rwck174: {en: 'Sync to forum post', 'zh-cn': '同步到论坛帖子', geng: '同步到论坛帖子', wenyan: '同于论坛之帖'},
-    rwck175: {en: 'Name', 'zh-cn': '名称', geng: '名称', wenyan: '名'},
-    rwck176: {en: 'Reply', 'zh-cn': '回复', geng: '回复', wenyan: '对'},
-    rwck177: {en: 'Reply content', 'zh-cn': '回复内容', geng: '回复内容', wenyan: '对之文'},
-    rwck178: {en: 'Reply to existing thread (POST /posts)', 'zh-cn': '回复已有讨论（POST /posts）', geng: '回复已有讨论（POST /posts）', wenyan: '对既议（POST /posts）'},
-    rwck179: {en: 'Image captcha', 'zh-cn': '图形验证码', geng: '图形验证码', wenyan: '图验'},
-    rwck180: {en: 'Log in inside editor', 'zh-cn': '在编辑器内登录', geng: '在编辑器里登录', wenyan: '于编辑器内入'},
-    rwck181: {en: 'Log in on forum', 'zh-cn': '在论坛中登录', geng: '在论坛登录', wenyan: '于论坛入'},
-    rwck182: {en: 'Processing…', 'zh-cn': '处理中…', geng: '处理中嗷…', wenyan: '处之中…'},
-    rwck183: {en: 'Copy', 'zh-cn': '复制', geng: '复制', wenyan: '录'},
-    rwck184: {en: 'Password', 'zh-cn': '密码', geng: '密码', wenyan: '密'},
-    rwck185: {en: 'Cover image (optional)', 'zh-cn': '封面图（可选）', geng: '封面图（可选）', wenyan: '封面（可略）'},
-    rwck186: {en: 'Rewarded resources', 'zh-cn': '已获赏资源', geng: '已获赏资源', wenyan: '已赏之资'},
-    rwck187: {en: 'Post', 'zh-cn': '帖子', geng: '帖子', wenyan: '帖'},
-    rwck188: {en: 'e.g.', 'zh-cn': '形如', geng: '形如', wenyan: '譬如'},
-    rwck189: {en: 'Restore default', 'zh-cn': '恢复默认', geng: '恢复默认', wenyan: '复其初'},
-    rwck190: {en: 'My published projects', 'zh-cn': '我发布的作品', geng: '我发布的作品', wenyan: '吾所布之卷'},
-    rwck191: {en: 'My published extensions', 'zh-cn': '我发布的扩展', geng: '我发布的扩展', wenyan: '吾所布之延伸'},
-    rwck192: {en: 'My cloud projects', 'zh-cn': '我的云项目', geng: '我的云项目', wenyan: '吾之云卷'},
-    rwck193: {en: 'My registrations', 'zh-cn': '我的登记', geng: '我的登记', wenyan: '吾之登'},
-    rwck194: {en: 'or', 'zh-cn': '或', geng: '或', wenyan: '或'},
-    rwck195: {en: 'Choose manually', 'zh-cn': '手动选择', geng: '手动选', wenyan: '手择'},
-    rwck196: {en: 'Open', 'zh-cn': '打开', geng: '打开', wenyan: '开'},
-    rwck197: {en: 'Extension', 'zh-cn': '扩展', geng: '扩展', wenyan: '延伸'},
-    rwck198: {en: 'Leaderboard', 'zh-cn': '排行榜', geng: '排行榜', wenyan: '榜'},
-    rwck199: {en: 'Extraction code', 'zh-cn': '提取码', geng: '提取码', wenyan: '取码'},
-    rwck200: {en: 'Searching…', 'zh-cn': '搜索中…', geng: '搜索中嗷…', wenyan: '索之中…'},
-    rwck201: {en: 'Bookmark', 'zh-cn': '收藏', geng: '收藏', wenyan: '藏'},
-    rwck202: {en: 'File', 'zh-cn': '文件', geng: '文件', wenyan: '文'},
-    rwck203: {en: 'New', 'zh-cn': '新建', geng: '新建', wenyan: '新'},
-    rwck204: {en: 'New cloud variable project', 'zh-cn': '新建云变量项目', geng: '新建云变量项目', wenyan: '新云变数之卷'},
-    rwck205: {en: 'No data', 'zh-cn': '暂无数据', geng: '还没数据', wenyan: '无数据'},
-    rwck206: {en: 'No discussions yet, ', 'zh-cn': '暂无讨论，', geng: '还没讨论，', wenyan: '尚无议，'},
-    rwck207: {en: 'No requests yet. After you log in / publish / post, all sent and received data shows here.', 'zh-cn': '暂无请求。触发登录 / 发布 / 发帖后，这里会显示所有发送与接收。', geng: '暂无请求。登录 / 发布 / 发帖后，这里会显示所有收发。', wenyan: '尚无请。既入 / 布 / 发之后，此处示其收发。'},
-    rwck208: {en: 'Latest', 'zh-cn': '最新', geng: '最新', wenyan: '新'},
-    rwck209: {en: 'Latest discussions', 'zh-cn': '最新讨论', geng: '最新讨论', wenyan: '近议'},
-    rwck210: {en: 'Hottest', 'zh-cn': '最热', geng: '最热', wenyan: '热'},
-    rwck211: {en: 'Check bookmark status', 'zh-cn': '查收藏状态', geng: '查收藏状态', wenyan: '察藏之状'},
-    rwck212: {en: 'View all →', 'zh-cn': '查看全部 →', geng: '查看全部 →', wenyan: '视其全 →'},
-    rwck213: {en: 'Tag name', 'zh-cn': '标签名', geng: '标签名', wenyan: '标之名'},
-    rwck214: {en: 'Title *', 'zh-cn': '标题 *', geng: '标题 *', wenyan: '题 *'},
-    rwck215: {en: 'Verify', 'zh-cn': '校验', geng: '校验', wenyan: '验'},
-    rwck216: {en: 'Verify registration number', 'zh-cn': '校验登记号', geng: '校验登记号', wenyan: '验登之号'},
-    rwck217: {en: 'Fetching…', 'zh-cn': '正在获取…', geng: '获取中嗷…', wenyan: '取之中…'},
-    rwck218: {en: 'Body *', 'zh-cn': '正文 *', geng: '正文 *', wenyan: '文 *'},
-    rwck219: {en: 'Body (Markdown)', 'zh-cn': '正文（Markdown）', geng: '正文（Markdown）', wenyan: '文（Markdown）'},
-    rwck220: {en: 'Daily check-in', 'zh-cn': '每日签到', geng: '每日签到', wenyan: '每日之至'},
-    rwck221: {en: 'No projects found', 'zh-cn': '没有找到作品', geng: '没找到作品', wenyan: '未得卷'},
-    rwck222: {en: 'Register', 'zh-cn': '注册', geng: '注册', wenyan: '注'},
-    rwck223: {en: 'Active users', 'zh-cn': '活跃用户', geng: '活跃用户', wenyan: '活跃之人'},
-    rwck224: {en: 'Clear', 'zh-cn': '清空', geng: '清空', wenyan: '空'},
-    rwck225: {en: 'Source', 'zh-cn': '源码', geng: '源码', wenyan: '源'},
-    rwck226: {en: 'Source *', 'zh-cn': '源码 *', geng: '源码 *', wenyan: '源 *'},
-    rwck227: {en: 'Like / Unlike', 'zh-cn': '点赞 / 取消', geng: '点赞 / 取消', wenyan: '善 / 去善'},
-    rwck228: {en: 'Like / React / Bookmark', 'zh-cn': '点赞 / 表态 / 收藏', geng: '点赞 / 表态 / 收藏', wenyan: '善 / 态 / 藏'},
-    rwck229: {en: 'Hot tags', 'zh-cn': '热门标签', geng: '热门标签', wenyan: '热标'},
-    rwck230: {en: 'User', 'zh-cn': '用户', geng: '用户', wenyan: '人'},
-    rwck231: {en: 'Username', 'zh-cn': '用户名', geng: '用户名', wenyan: '人名'},
-    rwck232: {en: 'Username / Email', 'zh-cn': '用户名 / 邮箱', geng: '用户名 / 邮箱', wenyan: '人名 / 邮'},
-    rwck233: {en: 'by', 'zh-cn': '由', geng: '由', wenyan: '自'},
-    rwck234: {en: 'Log in to MakerVerse', 'zh-cn': '登录创客次元', geng: '登录创客次元', wenyan: '入创客次元'},
-    rwck235: {en: 'Register', 'zh-cn': '登记', geng: '登记', wenyan: '登'},
-    rwck236: {en: 'Registration number', 'zh-cn': '登记号', geng: '登记号', wenyan: '登之号'},
-    rwck237: {en: 'Register netdisk resource', 'zh-cn': '登记网盘资源', geng: '登记网盘资源', wenyan: '登网盘之资'},
-    rwck238: {en: 'Target ID', 'zh-cn': '目标 ID', geng: '目标 ID', wenyan: '标的之 ID'},
-    rwck239: {en: 'Target type', 'zh-cn': '目标类型', geng: '目标类型', wenyan: '标之型'},
-    rwck240: {en: 'Direct link', 'zh-cn': '直链', geng: '直链', wenyan: '直链'},
-    rwck241: {en: 'Community tags', 'zh-cn': '社区标签', geng: '社区标签', wenyan: '社之标'},
-    rwck242: {en: 'Site overview', 'zh-cn': '站点总览', geng: '站点总览', wenyan: '站之览'},
-    rwck243: {en: 'Check-in', 'zh-cn': '签到', geng: '签到', wenyan: '至'},
-    rwck244: {en: 'Intro', 'zh-cn': '简介', geng: '简介', wenyan: '介'},
-    rwck245: {en: 'Network request log (send / receive / error)', 'zh-cn': '网络请求日志（发送 / 接收 / 错误）', geng: '网络请求日志（发送 / 接收 / 错误）', wenyan: '网请之志（发 / 收 / 误）'},
-    rwck246: {en: 'React', 'zh-cn': '表态', geng: '表态', wenyan: '态'},
-    rwck247: {en: 'Discussion', 'zh-cn': '讨论', geng: '讨论', wenyan: '议'},
-    rwck248: {en: 'Discussion ID', 'zh-cn': '讨论 ID', geng: '讨论 ID', wenyan: '议之 ID'},
-    rwck249: {en: 'Settings', 'zh-cn': '设置', geng: '设置', wenyan: '设'},
-    rwck250: {en: 'Exit', 'zh-cn': '退出', geng: '退出', wenyan: '出'},
-    rwck251: {en: 'No account yet? Registration is on the community site', 'zh-cn': '还没有账号？注册需要转到社区官网', geng: '还没账号？注册要去社区官网', wenyan: '未注籍？注册于社之官网'},
-    rwck252: {en: 'on the site.', 'zh-cn': '页面注册。', geng: '页面注册。', wenyan: '于页注册。'},
-    rwck253: {en: "Haven't published yet? Go to the Publish tab and post your first one~", 'zh-cn': '还没有发布过作品，快去「发布作品」Tab 发第一个吧～', geng: '还没发过作品？去「发布作品」Tab 发第一个吧～', wenyan: '未布乎？往发布之Tab发其首～'},
-    rwck254: {en: ', will be appended automatically', 'zh-cn': '，会自动追加', geng: '，会自动追加', wenyan: '，自附'},
-    rwck255: {en: 'Play', 'zh-cn': '试玩', geng: '试玩', wenyan: '试'},
-    rwck256: {en: 'Choose image', 'zh-cn': '选择图片', geng: '选图片', wenyan: '择图'},
-    rwck257: {en: 'Choose file', 'zh-cn': '选择文件', geng: '选文件', wenyan: '择文'},
-    rwck258: {en: 'Link', 'zh-cn': '链接', geng: '链接', wenyan: '链'},
-    rwck259: {en: 'Comments', 'zh-cn': '评论', geng: '评论', wenyan: '评'},
-    rwck260: {en: 'Notifications', 'zh-cn': '通知', geng: '通知', wenyan: '告'},
-    rwck261: {en: 'Project name', 'zh-cn': '项目名', geng: '项目名', wenyan: '卷名'},
-    rwck262: {en: 'Set variable', 'zh-cn': '设置变量', geng: '设置变量', wenyan: '置变数'},
-}); }
+        if (this._clearNetLog) { this._clearNetLog(); this._logRender(); this.setState({applyMsg: rwckT('rwck66')}); }
     }
 
     render () {
@@ -2839,9 +2873,9 @@ class RwckSettingsPanel extends Component {
                         <code style={{background:'#fef3c7', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>
                             Access-Control-Allow-Origin
                         </code>
-                        ，编辑器已默认通过官方 CORS 代理转发所有请求。
-                        一般保持默认即可，遇到某 Tab 一直 loading / 报错时，
-                        再把下方「CORS 代理前缀」换回官方地址或填你自己的代理。
+                        {rwckT('rwck427')}
+                        {rwckT('rwck428')}
+                        {rwckT('rwck429')}
                     </div>
                 </div>
 
@@ -2861,13 +2895,13 @@ class RwckSettingsPanel extends Component {
                             {(this.props.getApiClient && this.props.getApiClient().CORS_ANYWHERE)
                                 || 'https://cors-api.rewp.de5.net'}
                         </code>
-                        。一般保持默认即可，遇到跨域时再换成你自己部署的 cors-anywhere 实例。
+                        {rwckT('rwck430')}
                     </div>
                     <div style={{...S.row, marginTop:8}}>
                         <button style={{...S.btn, ...S.btnPrimary, ...(this.state.applyBusy && S.btnDisabled)}}
                                 disabled={this.state.applyBusy}
                                 onClick={() => this._asyncApply()}>
-                            <CheckCircle size={13} strokeWidth={2.2} /> {this.state.applyBusy ? '应用中…' : rwckT('rwck84')}
+                            <CheckCircle size={13} strokeWidth={2.2} /> {this.state.applyBusy ? rwckT('rwck431') : rwckT('rwck84')}
                         </button>
                         <button style={{...S.btn, ...S.btnGhost}} onClick={() => this._restoreDefault()}>
                             <Trash2 size={13} strokeWidth={2.2} /> {rwckT('rwck189')}

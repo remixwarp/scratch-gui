@@ -847,7 +847,7 @@ class DashboardRenderer {
                 }
             });
         } else if (!window.Chart) {
-            canvasWrap.innerHTML = '<p class="rw-phd-empty">${phdT('chartMissing')}</p>';
+            canvasWrap.innerHTML = `<p class="rw-phd-empty">${phdT('chartMissing')}</p>`;
         }
     }
 
@@ -1180,14 +1180,14 @@ export default async function ({ addon, msg, console }) {
                 if (renderer) renderer.destroyCharts();
                 // 显示加载占位
                 dashboardWindow._rwRenderTarget.innerHTML =
-                    '<div class="rw-phd-loading">${phdT("analyzing")}</div>';
+                    `<div class="rw-phd-loading">${phdT("analyzing")}</div>`;
                 r.render(dashboardWindow._rwRenderTarget);
             }
         } catch (e) {
             console.error('Project Health Dashboard refresh error:', e);
             if (isWindowAlive() && dashboardWindow._rwRenderTarget) {
                 dashboardWindow._rwRenderTarget.innerHTML =
-                    '<div class="rw-phd-empty">${phdT("analyzeFailed")}</div>';
+                    `<div class="rw-phd-empty">${phdT("analyzeFailed")}</div>`;
             }
         } finally {
             if (refreshBtn) {
@@ -1231,7 +1231,7 @@ export default async function ({ addon, msg, console }) {
         // 内容容器（渲染目标，独立于工具栏）
         const inner = document.createElement('div');
         inner.className = 'rw-phd-inner';
-        inner.innerHTML = '<div class="rw-phd-loading">${phdT("analyzing")}</div>';
+        inner.innerHTML = `<div class="rw-phd-loading">${phdT("analyzing")}</div>`;
         content.appendChild(inner);
 
         // 让 refreshContent / renderer 写入此处而非覆盖整个 content
