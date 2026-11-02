@@ -94,6 +94,11 @@ const messages = defineMessages({
         // eslint-disable-next-line max-len
         description: 'Button in extension list to learn how to use the "return" block from the Custom Reporters extension.',
         id: 'tw.blocks.PROCEDURES_DOCS'
+    },
+    CATEGORY_FUNCTIONS: {
+        defaultMessage: 'Functions',
+        description: 'Name of the "functions" (custom blocks / my blocks) category in the block palette.',
+        id: 'tw.blocks.CATEGORY_FUNCTIONS'
     }
 });
 
@@ -462,6 +467,7 @@ class Blocks extends React.Component {
         Msg.PROCEDURES_TO_REPORTER = this.props.intl.formatMessage(messages.PROCEDURES_TO_REPORTER);
         Msg.PROCEDURES_TO_STATEMENT = this.props.intl.formatMessage(messages.PROCEDURES_TO_STATEMENT);
         Msg.PROCEDURES_DOCS = this.props.intl.formatMessage(messages.PROCEDURES_DOCS);
+        Msg.CATEGORY_FUNCTIONS = this.props.intl.formatMessage(messages.CATEGORY_FUNCTIONS);
 
         const workspaceConfig = defaultsDeep({},
             this.props.options,
@@ -1143,6 +1149,7 @@ class Blocks extends React.Component {
     setLocale () {
         this.ScratchBlocks.ScratchMsgs.setLocale(this.props.locale);
         this.ScratchBlocks.Msg.PROCEDURES_RETURN = getProcedureReturnMessage(this.props.intl);
+        this.ScratchBlocks.Msg.CATEGORY_FUNCTIONS = this.props.intl.formatMessage(messages.CATEGORY_FUNCTIONS);
         this.props.vm.setLocale(this.props.locale, this.props.messages)
             .then(() => {
                 // The workspace may have been disposed or destroyed while the

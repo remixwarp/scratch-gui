@@ -256,9 +256,9 @@ const Backpack = props => {
                             id="gui.backpack.header"
                         />
                         {expanded ? (
-                            <ChevronUp className={styles.headerChevron} size={14} />
-                        ) : (
                             <ChevronDown className={styles.headerChevron} size={14} />
+                        ) : (
+                            <ChevronUp className={styles.headerChevron} size={14} />
                         )}
                     </React.Fragment>
                 ) : (
