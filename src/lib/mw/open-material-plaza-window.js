@@ -1,8 +1,19 @@
 import WindowManager from '../../addons/window-system/window-manager';
+import {makeT} from './mw-l10n.js';
 
 // The material plaza is deployed alongside the config plaza at rw-c.pages.dev.
 // During development, use the local file.
 const PLAZA_URL = 'https://rw-c.pages.dev/material-plaza/';
+
+// 窗口标题文案（随编辑器语言切换；回退 zh-cn → en）
+const t = makeT({
+    title: {
+        en: 'Material Plaza',
+        'zh-cn': '素材广场',
+        wenyan: '素材之廣場',
+        geng: '素材广场（进来逛逛捏）'
+    }
+});
 
 let plazaWindow = null;
 
@@ -20,7 +31,7 @@ const openMaterialPlazaWindow = () => {
 
     plazaWindow = WindowManager.createWindow({
         id: 'material-plaza-window',
-        title: '素材广场',
+        title: t('title', '素材广场'),
         width: 960,
         height: 640,
         minWidth: 480,

@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import classNames from 'classnames';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import VM from 'scratch-vm';
 
 import Box from '../box/box.jsx';
@@ -10,6 +11,14 @@ import Stage from '../../containers/stage.jsx';
 import Loader from '../loader/loader.jsx';
 
 import styles from './stage-wrapper.css';
+
+const messages = defineMessages({
+    detachedHint: {
+        id: 'mw.stageWrapper.detachedHint',
+        defaultMessage: '舞台已拆分到自由窗口',
+        description: 'Placeholder shown where the stage used to be when it is split into a free window'
+    }
+});
 
 // ---------------------------------------------------------------------------
 // FLIP (First, Last, Invert, Play) animation helpers
@@ -202,7 +211,7 @@ const StageWrapperComponent = function (props) {
             <Box className={styles.stageCanvasWrapper}>
                 {stageDetached ? (
                     <div className={styles.stageDetachedPlaceholder}>
-                        <span>{'舞台已拆分到自由窗口'}</span>
+                        <span>{props.intl.formatMessage(messages.detachedHint)}</span>
                     </div>
                 ) : (
                     isRendererSupported ?
@@ -230,7 +239,8 @@ StageWrapperComponent.propTypes = {
     stageContainerWidth: PropTypes.number,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,
     vm: PropTypes.instanceOf(VM).isRequired,
-    stageDetached: PropTypes.bool
+    stageDetached: PropTypes.bool,
+    intl: intlShape.isRequired
 };
 
-export default StageWrapperComponent;
+export default injectIntl(StageWrapperComponent);

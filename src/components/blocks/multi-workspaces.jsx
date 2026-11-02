@@ -21,6 +21,141 @@ const messages = defineMessages({
         id: 'mw.panel.buttonTitle',
         defaultMessage: '项目问题与运行控制台',
         description: 'Toolbar button title for opening the problems/runtime console panel'
+    },
+    targetStage: {
+        id: 'mw.multiWorkspaces.targetStage',
+        defaultMessage: '舞台',
+        description: 'Label for the stage target in workspace dropdowns'
+    },
+    targetSprite: {
+        id: 'mw.multiWorkspaces.targetSprite',
+        defaultMessage: '角色',
+        description: 'Label for a sprite target in workspace dropdowns'
+    },
+    detachedPlaceholder: {
+        id: 'mw.multiWorkspaces.detachedPlaceholder',
+        defaultMessage: '已拆分到自由窗口',
+        description: 'Placeholder shown where a blocks panel has been split into a free window'
+    },
+    restore: {
+        id: 'mw.multiWorkspaces.restore',
+        defaultMessage: '恢复',
+        description: 'Button to bring a split blocks panel back from its free window'
+    },
+    leftColumn: {
+        id: 'mw.multiWorkspaces.leftColumn',
+        defaultMessage: '左列',
+        description: 'Label of the left column in split mode'
+    },
+    rightColumn: {
+        id: 'mw.multiWorkspaces.rightColumn',
+        defaultMessage: '右列',
+        description: 'Label of the right column in split mode'
+    },
+    selectTarget: {
+        id: 'mw.multiWorkspaces.selectTarget',
+        defaultMessage: '选择角色',
+        description: 'Tooltip for the split column target selector'
+    },
+    unselected: {
+        id: 'mw.multiWorkspaces.unselected',
+        defaultMessage: '未选择',
+        description: 'Fallback text when no target has been picked yet'
+    },
+    unset: {
+        id: 'mw.multiWorkspaces.unset',
+        defaultMessage: '未设置',
+        description: 'Fallback text when no target is assigned'
+    },
+    pinnedTabTitle: {
+        id: 'mw.multiWorkspaces.pinnedTabTitle',
+        defaultMessage: '{name}（已固定，右键可取消）',
+        description: 'Tooltip of a pinned workspace tab'
+    },
+    pinnedDotTitle: {
+        id: 'mw.multiWorkspaces.pinnedDotTitle',
+        defaultMessage: '已固定（移到上面可删除）',
+        description: 'Tooltip of the pin dot on a pinned workspace tab'
+    },
+    unpinAndRemove: {
+        id: 'mw.multiWorkspaces.unpinAndRemove',
+        defaultMessage: '取消固定并删除该工作区',
+        description: 'Tooltip of the close dot that unpins and removes a workspace'
+    },
+    chooseTarget: {
+        id: 'mw.multiWorkspaces.chooseTarget',
+        defaultMessage: '选择角色/背景',
+        description: 'Tooltip of the workspace tab dropdown button'
+    },
+    closeWorkspace: {
+        id: 'mw.multiWorkspaces.closeWorkspace',
+        defaultMessage: '关闭该工作区',
+        description: 'Tooltip of the workspace tab close button'
+    },
+    swapTargets: {
+        id: 'mw.multiWorkspaces.swapTargets',
+        defaultMessage: '交换左右角色',
+        description: 'Tooltip of the swap button in split mode'
+    },
+    splitBtnTitle: {
+        id: 'mw.multiWorkspaces.splitBtnTitle',
+        defaultMessage: '拆分积木盒',
+        description: 'Tooltip of the split button when not split yet'
+    },
+    splitToVertical: {
+        id: 'mw.multiWorkspaces.splitToVertical',
+        defaultMessage: '切换为上下拆分',
+        description: 'Tooltip of the split button in horizontal split mode'
+    },
+    unsplit: {
+        id: 'mw.multiWorkspaces.unsplit',
+        defaultMessage: '取消拆分',
+        description: 'Tooltip of the split button in vertical split mode'
+    },
+    addWorkspace: {
+        id: 'mw.multiWorkspaces.addWorkspace',
+        defaultMessage: '添加工作区',
+        description: 'Tooltip of the add-workspace button'
+    },
+    close: {
+        id: 'mw.multiWorkspaces.close',
+        defaultMessage: '关闭',
+        description: 'Tooltip of the conflict toast close button'
+    },
+    splitBlocks: {
+        id: 'mw.multiWorkspaces.splitBlocks',
+        defaultMessage: '拆分积木',
+        description: 'Context menu item to split a workspace into a free window'
+    },
+    pin: {
+        id: 'mw.multiWorkspaces.pin',
+        defaultMessage: '固定',
+        description: 'Context menu item to pin a workspace'
+    },
+    unpin: {
+        id: 'mw.multiWorkspaces.unpin',
+        defaultMessage: '取消固定',
+        description: 'Context menu item to unpin a workspace'
+    },
+    removeWorkspace: {
+        id: 'mw.multiWorkspaces.removeWorkspace',
+        defaultMessage: '删除',
+        description: 'Context menu item to remove a workspace'
+    },
+    blocksPanelTitle: {
+        id: 'mw.multiWorkspaces.blocksPanelTitle',
+        defaultMessage: '积木盒',
+        description: 'Fallback title of a floating blocks window'
+    },
+    conflictDuplicateWindow: {
+        id: 'mw.multiWorkspaces.conflictDuplicateWindow',
+        defaultMessage: '该角色/造型的积木盒已在其它窗口中打开',
+        description: 'Toast when the target is already open in another free window'
+    },
+    conflictSameTarget: {
+        id: 'mw.multiWorkspaces.conflictSameTarget',
+        defaultMessage: '左右两侧不能设置成相同的角色/背景',
+        description: 'Toast when both split columns pick the same target'
     }
 });
 
@@ -44,7 +179,8 @@ const FloatingBlocksWindow = ({
     stageSize,
     onOpenCustomExtensionModal,
     onChangeTarget,
-    onClose
+    onClose,
+    intl
 }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -83,10 +219,10 @@ const FloatingBlocksWindow = ({
                         type="button"
                         className={styles.floatingTargetBtn}
                         onClick={() => setDropdownOpen(o => !o)}
-                        title={targetNames[targetId] || targetId || '选择角色/背景'}
+                        title={targetNames[targetId] || targetId || intl.formatMessage(messages.chooseTarget)}
                     >
                         <span className={styles.splitTargetName}>
-                            {targetNames[targetId] || (targetId ? '未选择' : '未设置')}
+                            {targetNames[targetId] || (targetId ? intl.formatMessage(messages.unselected) : intl.formatMessage(messages.unset))}
                         </span>
                         <svg width="10" height="6" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
                             <path d="M0 0 L5 6 L10 0 Z" fill="currentColor" />
@@ -111,7 +247,7 @@ const FloatingBlocksWindow = ({
                                     }}
                                 >
                                     <span className={styles.splitTargetMenuItemIcon}>
-                                        {t.isStage ? '舞台' : '角色'}
+                                        {t.isStage ? intl.formatMessage(messages.targetStage) : intl.formatMessage(messages.targetSprite)}
                                     </span>
                                     <span className={styles.splitTargetMenuItemLabel}>
                                         {targetNames[t.id] || t.id}
@@ -153,7 +289,8 @@ FloatingBlocksWindow.propTypes = {
     stageSize: PropTypes.string,
     onOpenCustomExtensionModal: PropTypes.func,
     onChangeTarget: PropTypes.func.isRequired,
-    onClose: PropTypes.func.isRequired
+    onClose: PropTypes.func.isRequired,
+    intl: PropTypes.object
 };
 
 /**
@@ -213,7 +350,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
         setFloatingWindows(prev => {
             const targetExists = prev.some(w => w.winKey !== winKey && w.targetId === newTargetId);
             if (targetExists) {
-                showConflictToast('该角色/造型的积木盒已在其它窗口中打开');
+                showConflictToast(intl.formatMessage(messages.conflictDuplicateWindow));
                 return prev;
             }
             return prev.map(w => (w.winKey === winKey ? {...w, targetId: newTargetId} : w));
@@ -418,7 +555,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
     const handleSplitTargetSelect = (side, targetId) => {
         const otherSide = side === 'left' ? rightTargetId : leftTargetId;
         if (targetId === otherSide && targetId) {
-            showConflictToast('左右两侧不能设置成相同的角色/背景');
+            showConflictToast(intl.formatMessage(messages.conflictSameTarget));
             setSplitDropdown(null);
             return;
         }
@@ -508,13 +645,13 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
     // ========== 渲染「已拆分到自由窗口」占位（配色跟随当前主题） ==========
     const renderDetachedPlaceholder = (targetId) => (
         <div className={styles.detachedPlaceholder}>
-            <span className={styles.detachedPlaceholderText}>已拆分到自由窗口</span>
+            <span className={styles.detachedPlaceholderText}>{intl.formatMessage(messages.detachedPlaceholder)}</span>
             <button
                 type="button"
                 className={styles.detachedRestoreBtn}
                 onClick={() => closeFloatingWindowByTarget(targetId)}
             >
-                恢复
+                {intl.formatMessage(messages.restore)}
             </button>
         </div>
     );
@@ -530,17 +667,17 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                 {/* 列头：角色选择器 */}
                 <div className={styles.splitColumnHeader}>
                     <span className={styles.splitColumnLabel}>
-                        {side === 'left' ? '左列' : '右列'}
+                        {side === 'left' ? intl.formatMessage(messages.leftColumn) : intl.formatMessage(messages.rightColumn)}
                     </span>
                     <div className={styles.splitTargetSelector} data-mw-split-dropdown>
                         <button
                             type="button"
                             className={styles.splitTargetBtn}
                             onClick={() => setSplitDropdown(isOpen ? null : side)}
-                            title={targetNames[targetId] || targetId || '选择角色'}
+                            title={targetNames[targetId] || targetId || intl.formatMessage(messages.selectTarget)}
                         >
                             <span className={styles.splitTargetName}>
-                                {targetNames[targetId] || (targetId ? '未选择' : '未设置')}
+                                {targetNames[targetId] || (targetId ? intl.formatMessage(messages.unselected) : intl.formatMessage(messages.unset))}
                             </span>
                             <svg width="10" height="6" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M0 0 L5 6 L10 0 Z" fill="currentColor" />
@@ -564,7 +701,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                                         }}
                                     >
                                         <span className={styles.splitTargetMenuItemIcon}>
-                                            {t.isStage ? '舞台' : '角色'}
+                                            {t.isStage ? intl.formatMessage(messages.targetStage) : intl.formatMessage(messages.targetSprite)}
                                         </span>
                                         <span className={styles.splitTargetMenuItemLabel}>
                                             {targetNames[t.id] || t.id}
@@ -611,7 +748,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
     const renderWorkspaceTab = (w, i) => {
         const runtime = vm && vm.runtime;
         const targets = runtime ? runtime.targets : [];
-        const name = targetNames[w.id] || (w.id ? '未选择' : '未设置');
+        const name = targetNames[w.id] || (w.id ? intl.formatMessage(messages.unselected) : intl.formatMessage(messages.unset));
         const isOpen = dropdownOpenTab === i;
         const isPinned = !!w.pinned;
 
@@ -631,10 +768,10 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                 onClick={() => {
                     if (contextMenu) setContextMenu(null);
                 }}
-                title={isPinned ? `${name}（已固定，右键可取消）` : name}
+                title={isPinned ? intl.formatMessage(messages.pinnedTabTitle, {name}) : name}
             >
                 {isPinned ? (
-                    <span className={styles.pinDot} title={'已固定（移到上面可删除）'} />
+                    <span className={styles.pinDot} title={intl.formatMessage(messages.pinnedDotTitle)} />
                 ) : null}
                 <button
                     type="button"
@@ -651,7 +788,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                         e.stopPropagation();
                         setDropdownOpenTab(isOpen ? null : i);
                     }}
-                    title={'选择角色/背景'}
+                    title={intl.formatMessage(messages.chooseTarget)}
                     aria-haspopup="menu"
                     aria-expanded={isOpen}
                 >
@@ -667,7 +804,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                             setContextMenu(null);
                             removeWorkspace(i);
                         }}
-                        title={'取消固定并删除该工作区'}
+                        title={intl.formatMessage(messages.unpinAndRemove)}
                     >
                         <span className={styles.closeDotGlyph} />
                         <span className={styles.closeXGlyph}>×</span>
@@ -676,7 +813,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                     <span
                         className={styles.close}
                         onClick={(e) => { e.stopPropagation(); setContextMenu(null); removeWorkspace(i); }}
-                        title={'关闭该工作区'}
+                        title={intl.formatMessage(messages.closeWorkspace)}
                     >×</span>
                 ) : null)}
                 {isOpen ? (
@@ -700,7 +837,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                                 }}
                             >
                                 <span className={styles.tabMenuItemIcon}>
-                                    {t.isStage ? '舞台' : '角色'}
+                                    {t.isStage ? intl.formatMessage(messages.targetStage) : intl.formatMessage(messages.targetSprite)}
                                 </span>
                                 <span className={styles.tabMenuItemLabel}>
                                     {targetNames[t.id] || t.id}
@@ -723,18 +860,18 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                     </>
                 ) : (
                     <span className={styles.splitModeLabel}>
-                        <span className={styles.splitModeTag}>{targetNames[leftTargetId] || '未选择'}</span>
+                        <span className={styles.splitModeTag}>{targetNames[leftTargetId] || intl.formatMessage(messages.unselected)}</span>
                         <button
                             type="button"
                             className={styles.swapBtn}
                             onClick={swapLeftRightTargets}
-                            title="交换左右角色"
+                            title={intl.formatMessage(messages.swapTargets)}
                         >
                             <svg className={styles.swapBtnIcon} viewBox="0 0 1217 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M81.279482 403.912645l1.601294-0.055217 1054.866326-0.110434h0.55217a54.112699 54.112699 0 0 0 54.057482-53.33966 52.732273 52.732273 0 0 0-23.246374-44.78102L775.026368 35.780642a55.051389 55.051389 0 0 0-74.211701 11.871663l-1.766945 2.374333a52.014451 52.014451 0 0 0-8.503424 39.424966 51.904017 51.904017 0 0 0 21.755513 33.903263l253.611863 173.712806H83.101645a53.450094 53.450094 0 0 0-1.822163 106.844972zM1137.471016 619.976921H82.273389a54.112699 54.112699 0 0 0-54.057482 53.394877 52.897924 52.897924 0 0 0 23.301591 44.781019l394.028795 269.790456v0.055217c9.276463 6.294743 20.099002 9.607765 31.308061 9.607765h0.165651a55.051389 55.051389 0 0 0 44.449717-22.528552l1.104341-1.546077a52.621839 52.621839 0 0 0-14.35643-72.996927l-253.611863-173.712806H1137.471016a53.450094 53.450094 0 0 0 0-106.844972z" />
                             </svg>
                         </button>
-                        <span className={styles.splitModeTag}>{targetNames[rightTargetId] || '未选择'}</span>
+                        <span className={styles.splitModeTag}>{targetNames[rightTargetId] || intl.formatMessage(messages.unselected)}</span>
                     </span>
                 )}
 
@@ -745,7 +882,12 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                             [styles.splitBtnConflict]: conflictDetected
                         })}
                         onClick={toggleSplitMode}
-                        title={splitMode === null ? '拆分积木盒' : splitMode === 'horizontal' ? '切换为上下拆分' : '取消拆分'}
+                        title={splitMode === null ?
+                            intl.formatMessage(messages.splitBtnTitle) :
+                            splitMode === 'horizontal' ?
+                                intl.formatMessage(messages.splitToVertical) :
+                                intl.formatMessage(messages.unsplit)
+                        }
                     >
                         <svg className={classNames(styles.splitBtnIcon, {
                             [styles.splitBtnIconRotate90]: splitMode === 'horizontal',
@@ -773,7 +915,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                         <button
                             className={styles.addBtn}
                             onClick={addWorkspace}
-                            title={'添加工作区'}
+                            title={intl.formatMessage(messages.addWorkspace)}
                         >
                             +
                         </button>
@@ -789,7 +931,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                     <button
                         className={styles.toastClose}
                         onClick={() => clearConflict()}
-                        title="关闭"
+                        title={intl.formatMessage(messages.close)}
                     >×</button>
                 </div>
             ) : null}
@@ -833,7 +975,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                             setContextMenu(null);
                         }}
                     >
-                        <span className={styles.contextMenuIcon}>拆分积木</span>
+                        <span className={styles.contextMenuIcon}>{intl.formatMessage(messages.splitBlocks)}</span>
                     </li>
                     <li
                         role="menuitem"
@@ -845,7 +987,9 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                         }}
                     >
                         <span className={styles.contextMenuIcon}>
-                            {workspaces[contextMenu.index] && workspaces[contextMenu.index].pinned ? '取消固定' : '固定'}
+                            {workspaces[contextMenu.index] && workspaces[contextMenu.index].pinned ?
+                                intl.formatMessage(messages.unpin) :
+                                intl.formatMessage(messages.pin)}
                         </span>
                     </li>
                     {workspaces.length > 1 ? (
@@ -859,7 +1003,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                                 removeWorkspace(idx);
                             }}
                         >
-                            <span className={styles.contextMenuIcon}>删除</span>
+                            <span className={styles.contextMenuIcon}>{intl.formatMessage(messages.removeWorkspace)}</span>
                         </li>
                     ) : null}
                 </ul>
@@ -873,7 +1017,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                     targetId={fw.targetId}
                     x={fw.x}
                     y={fw.y}
-                    title={targetNames[fw.targetId] || '积木盒'}
+                    title={targetNames[fw.targetId] || intl.formatMessage(messages.blocksPanelTitle)}
                     targets={vm && vm.runtime ? vm.runtime.targets : []}
                     targetNames={targetNames}
                     vm={vm}
@@ -883,6 +1027,7 @@ const MultiWorkspaces = ({vm, theme, canUseCloud, stageSize, onOpenCustomExtensi
                     onOpenCustomExtensionModal={onOpenCustomExtensionModal}
                     onChangeTarget={(newTargetId) => changeFloatingTarget(fw.winKey, newTargetId)}
                     onClose={() => closeFloatingWindow(fw.winKey)}
+                    intl={intl}
                 />
             ))}
         </div>

@@ -2403,7 +2403,7 @@ const GUIComponent = props => {
             <AddonWindow
                 id="split-stage-window"
                 className="split-stage-window"
-                title={'舞台'}
+                title={intl.formatMessage({defaultMessage: '舞台', id: 'mw.stageWindow.title', description: 'Title of the split-stage free window'})}
                 width={480}
                 height={405}
                 minWidth={240}
