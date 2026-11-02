@@ -658,6 +658,19 @@
     color: $text-primary-default;
 }
 
+/* 高级设置刷新提示警告框：复用还原点中“网络还原点”上方警告框（.cloudWarning）的样式 */
+.aeWarningBox {
+    background: rgba(255, 107, 107, 0.15);
+    color: #ff6b6b;
+    padding: 12px 16px;
+    margin-top: 20px;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    border-left: 4px solid #ff6b6b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
 /* 毛玻璃：新拟物主题冲突提示 —— 文字颜色随主题（深色/浅色）自适应，
    背景使用半透明暖色，两种模式下都清晰可见 */
 .neumorphismConflict {

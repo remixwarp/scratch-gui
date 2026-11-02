@@ -2595,15 +2595,8 @@ const pageConfigurations = {
                 settings: [
                     {
                         component: () => (
-                            <div style={{
-                                backgroundColor: '#ffebee',
-                                color: '#c62828',
-                                padding: '12px',
-                                borderRadius: '6px',
-                                marginTop: '20px',
-                                border: '1px solid #ffcdd2'
-                            }}>
-                                警告：部分高级设置可能需要刷新页面才能生效。如果设置未生效，请尝试刷新页面。
+                            <div className={styles.aeWarningBox}>
+                                <FormattedMessage {...messages.aeWarning} />
                             </div>
                         ),
                         props: () => ({})
