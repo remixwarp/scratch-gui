@@ -1,97 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {defineMessages, FormattedMessage, injectIntl} from 'react-intl';
 import styles from './gandi-help.css';
 
-const messages = defineMessages({
-    ariaLabel: {
-        defaultMessage: 'Gandi 帮助',
-        description: 'Accessibility label for the Gandi help dialog',
-        id: 'tw.gandiHelp.ariaLabel'
-    },
-    title: {
-        defaultMessage: 'Gandi 扩展库说明',
-        description: 'Title of the Gandi help dialog',
-        id: 'tw.gandiHelp.title'
-    },
-    notFoundTitle: {
-        defaultMessage: '扩展未找到问题',
-        description: 'Heading for the extension not found issue',
-        id: 'tw.gandiHelp.notFoundTitle'
-    },
-    notFoundDesc: {
-        defaultMessage: '当您在 Gandi 编辑器中导入转换后的项目时，可能会看到以下错误：',
-        description: 'Description shown before the error message',
-        id: 'tw.gandiHelp.notFoundDesc'
-    },
-    notFoundError: {
-        defaultMessage: '很遗憾，工程内的扩展【xxx】没有找到，请尝试删除后再导入',
-        description: 'Error message shown when an extension is not found',
-        id: 'tw.gandiHelp.notFoundError'
-    },
-    solutionTitle: {
-        defaultMessage: '解决方案',
-        description: 'Heading for the solution section',
-        id: 'tw.gandiHelp.solutionTitle'
-    },
-    solutionDesc: {
-        defaultMessage: '要解决这个问题，您需要：',
-        description: 'Description shown before the solution steps',
-        id: 'tw.gandiHelp.solutionDesc'
-    },
-    step1: {
-        defaultMessage: '在 RemixWarp 编辑器中，开启高级设置中的实验性超级重构功能',
-        description: 'Solution step 1',
-        id: 'tw.gandiHelp.step1'
-    },
-    step2: {
-        defaultMessage: '使用超级重构功能修改工程内的扩展代码',
-        description: 'Solution step 2',
-        id: 'tw.gandiHelp.step2'
-    },
-    step3: {
-        defaultMessage: '将扩展 ID 修改为 Gandi 扩展实验广场中存在的 ID',
-        description: 'Solution step 3',
-        id: 'tw.gandiHelp.step3'
-    },
-    step4: {
-        defaultMessage: '再次使用兼容性转换功能转换为 Gandi 格式',
-        description: 'Solution step 4',
-        id: 'tw.gandiHelp.step4'
-    },
-    notesTitle: {
-        defaultMessage: '注意事项',
-        description: 'Heading for the notes section',
-        id: 'tw.gandiHelp.notesTitle'
-    },
-    note1: {
-        defaultMessage: '确保您使用的扩展 ID 在 Gandi 扩展实验广场中存在',
-        description: 'Note 1',
-        id: 'tw.gandiHelp.note1'
-    },
-    note2: {
-        defaultMessage: '修改扩展 ID 后，可能需要更新相关的代码引用',
-        description: 'Note 2',
-        id: 'tw.gandiHelp.note2'
-    },
-    note3: {
-        defaultMessage: '如果遇到其他问题，请尝试删除扩展后再导入项目',
-        description: 'Note 3',
-        id: 'tw.gandiHelp.note3'
-    },
-    close: {
-        defaultMessage: '关闭',
-        description: 'Close button label',
-        id: 'tw.gandiHelp.close'
-    }
-});
+const GandiHelp = ({ onClose }) => {
+    const isChinese = navigator.language === 'zh-CN' || navigator.language === 'zh';
 
-const GandiHelp = ({ onClose, intl }) => {
     return (
         <div className={styles.overlay}>
-            <div className={styles.panel} role="dialog" aria-label={intl.formatMessage(messages.ariaLabel)}>
+            <div className={styles.panel} role="dialog" aria-label={isChinese ? "Gandi 帮助" : "Gandi Help"}>
                 <div className={styles.header}>
-                    <h3 className={styles.title}><FormattedMessage {...messages.title} /></h3>
+                    <h3 className={styles.title}>{isChinese ? "Gandi 扩展库说明" : "Gandi Extension Library Guide"}</h3>
                     <button className={styles.closeButton} onClick={onClose}>
                         ×
                     </button>
@@ -99,47 +17,47 @@ const GandiHelp = ({ onClose, intl }) => {
                 
                 <div className={styles.content}>
                     <div className={styles.section}>
-                        <h4 className={styles.sectionTitle}><FormattedMessage {...messages.notFoundTitle} /></h4>
+                        <h4 className={styles.sectionTitle}>{isChinese ? "扩展未找到问题" : "Extension Not Found Issue"}</h4>
                         <p className={styles.paragraph}>
-                            <FormattedMessage {...messages.notFoundDesc} />
+                            {isChinese ? "当您在 Gandi 编辑器中导入转换后的项目时，可能会看到以下错误：" : "When importing the converted project in Gandi Editor, you may see the following error:"}
                         </p>
                         <div className={styles.errorMessage}>
-                            <FormattedMessage {...messages.notFoundError} />
+                            {isChinese ? "很遗憾，工程内的扩展【xxx】没有找到，请尝试删除后再导入" : "Unfortunately, the extension [xxx] in the project was not found. Please try deleting it and then import again."}
                         </div>
                     </div>
                     
                     <div className={styles.section}>
-                        <h4 className={styles.sectionTitle}><FormattedMessage {...messages.solutionTitle} /></h4>
+                        <h4 className={styles.sectionTitle}>{isChinese ? "解决方案" : "Solution"}</h4>
                         <p className={styles.paragraph}>
-                            <FormattedMessage {...messages.solutionDesc} />
+                            {isChinese ? "要解决这个问题，您需要：" : "To solve this issue, you need to:"}
                         </p>
                         <ol className={styles.steps}>
                             <li className={styles.step}>
-                                <FormattedMessage {...messages.step1} />
+                                {isChinese ? "在 RemixWarp 编辑器中，开启高级设置中的实验性超级重构功能" : "In RemixWarp Editor, enable the experimental Super Refactor feature in Advanced Settings"}
                             </li>
                             <li className={styles.step}>
-                                <FormattedMessage {...messages.step2} />
+                                {isChinese ? "使用超级重构功能修改工程内的扩展代码" : "Use the Super Refactor feature to modify the extension code in the project"}
                             </li>
                             <li className={styles.step}>
-                                <FormattedMessage {...messages.step3} />
+                                {isChinese ? "将扩展 ID 修改为 Gandi 扩展实验广场中存在的 ID" : "Change the extension ID to one that exists in Gandi's Extension Experiment Square"}
                             </li>
                             <li className={styles.step}>
-                                <FormattedMessage {...messages.step4} />
+                                {isChinese ? "再次使用兼容性转换功能转换为 Gandi 格式" : "Use the compatibility conversion feature again to convert to Gandi format"}
                             </li>
                         </ol>
                     </div>
                     
                     <div className={styles.section}>
-                        <h4 className={styles.sectionTitle}><FormattedMessage {...messages.notesTitle} /></h4>
+                        <h4 className={styles.sectionTitle}>{isChinese ? "注意事项" : "Notes"}</h4>
                         <ul className={styles.notes}>
                             <li className={styles.note}>
-                                <FormattedMessage {...messages.note1} />
+                                {isChinese ? "确保您使用的扩展 ID 在 Gandi 扩展实验广场中存在" : "Ensure the extension ID you use exists in Gandi's Extension Experiment Square"}
                             </li>
                             <li className={styles.note}>
-                                <FormattedMessage {...messages.note2} />
+                                {isChinese ? "修改扩展 ID 后，可能需要更新相关的代码引用" : "After changing the extension ID, you may need to update related code references"}
                             </li>
                             <li className={styles.note}>
-                                <FormattedMessage {...messages.note3} />
+                                {isChinese ? "如果遇到其他问题，请尝试删除扩展后再导入项目" : "If you encounter other issues, try deleting the extension and then importing the project"}
                             </li>
                         </ul>
                     </div>
@@ -156,7 +74,7 @@ const GandiHelp = ({ onClose, intl }) => {
                 
                 <div className={styles.actions}>
                     <button onClick={onClose} className={styles.button}>
-                        <FormattedMessage {...messages.close} />
+                        {isChinese ? "关闭" : "Close"}
                     </button>
                 </div>
             </div>
@@ -165,10 +83,7 @@ const GandiHelp = ({ onClose, intl }) => {
 };
 
 GandiHelp.propTypes = {
-    onClose: PropTypes.func.isRequired,
-    intl: PropTypes.shape({
-        formatMessage: PropTypes.func.isRequired
-    }).isRequired
+    onClose: PropTypes.func.isRequired
 };
 
-export default injectIntl(GandiHelp);
+export default GandiHelp;
