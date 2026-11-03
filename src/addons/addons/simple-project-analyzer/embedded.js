@@ -13,33 +13,136 @@ import {Chart} from './chart.js';
  *     而不是对 DOM 做 html2canvas 截图。
  */
 
-// 没有字符串字面量兜底的文案（带占位符）
-const SPA_TEMPLATE_TEXTS = {
-    'analysis-error': '分析项目时出错:',
-    'export-title': '作品分析报告 - {name}'
+
+// 简易作品分析器多语言词典（l10n）
+// 键名与 this.msg('key', '中文兜底') 一一对应。zh-cn / en 提供完整翻译，
+// wenyan / geng / zh-geng / zh_geng 未单独提供时回退到 zh-cn。
+const SPA_I18N = {
+  'zh-cn': {'abstraction': '抽象和问题分解', 'advanced': '高级', 'analysis-error': '分析项目时出错:', 'analyzing': '分析中...', 'beginner': '初学者', 'block-distribution': '代码类型分布', 'blocks-count': '个', 'calculating': '计算中...', 'computational-thinking-score': '计算思维评分', 'control': '控制', 'custom-functions': '自定义函数', 'data': '数据', 'data-magnitude': 'Data Magnitude', 'data-representation': '数据表示', 'developing': '发展中', 'dr-scratch-score': 'Dr.Scratch评分系统', 'effective-blocks': '有效积木', 'evaluation-level': '评估等级', 'events': '事件', 'expert': '专家级', 'export-image': '导出图片', 'export-title': '作品分析报告 - {name}', 'extension-pen': '画笔', 'extensions': '扩展数量', 'extensions-used': '使用的扩展', 'flow-control': '流程控制', 'function-definitions': '函数定义', 'intermediate': '中级', 'loading': '加载中...', 'logic': '逻辑思维', 'logic-depth': 'Logic Depth', 'looks': '外观', 'math-logic-assessment': '核心数学能力评估', 'math-total-score': '数学总分', 'motion': '运动', 'no-extensions': '未使用扩展', 'operation-complexity': 'Operation Complexity', 'operators': '运算', 'other': '其他', 'parallelism': '并行性', 'project-stats': '项目统计', 'relative-intensity': '相对强度', 'sensing': '侦测', 'sound': '声音', 'stat-costumes': '造型数量', 'stat-lists': '列表数量', 'stat-sounds': '声音数量', 'stat-sprites': '角色数量', 'stat-variables': '变量数量', 'synchronization': '同步', 'total-blocks': '总积木数', 'total-score': '总分', 'user-interactivity': '用户交互', 'video': '视频'},
+  'en': {'abstraction': 'Abstraction and Problem Decomposition', 'advanced': 'Advanced', 'analysis-error': 'Error analyzing project:', 'analyzing': 'Analyzing...', 'beginner': 'Beginner', 'block-distribution': 'Code Type Distribution', 'blocks-count': 'blocks', 'calculating': 'Calculating...', 'computational-thinking-score': 'Computational Thinking Score', 'control': 'Control', 'custom-functions': 'Custom Functions', 'data': 'Data', 'data-magnitude': 'Data Magnitude', 'data-representation': 'Data Representation', 'developing': 'Developing', 'dr-scratch-score': 'Dr.Scratch Scoring System', 'effective-blocks': 'Effective Blocks', 'evaluation-level': 'Evaluation Level', 'events': 'Events', 'expert': 'Expert', 'export-image': 'Export Image', 'export-title': 'Analysis Report - {name}', 'extension-pen': 'Pen', 'extensions': 'Extensions Count', 'extensions-used': 'Extensions Used', 'flow-control': 'Flow Control', 'function-definitions': 'Function Definitions', 'intermediate': 'Intermediate', 'loading': 'Loading...', 'logic': 'Logical Thinking', 'logic-depth': 'Logic Depth', 'looks': 'Looks', 'math-logic-assessment': 'Core Math Ability Assessment', 'math-total-score': 'Math Total Score', 'motion': 'Motion', 'no-extensions': 'No Extensions Used', 'operation-complexity': 'Operation Complexity', 'operators': 'Operators', 'other': 'Other', 'parallelism': 'Parallelism', 'project-stats': 'Project Statistics', 'relative-intensity': 'Relative Intensity', 'sensing': 'Sensing', 'sound': 'Sound', 'stat-costumes': 'Costume Count', 'stat-lists': 'List Count', 'stat-sounds': 'Sound Count', 'stat-sprites': 'Sprite Count', 'stat-variables': 'Variable Count', 'synchronization': 'Synchronization', 'total-blocks': 'Total Blocks', 'total-score': 'Total Score', 'user-interactivity': 'User Interactivity', 'video': 'Video'},
+  'wenyan': null,
+  'geng': null,
+  'zh-geng': null,
+  'zh_geng': null
 };
 
-const createSpaMsg = () => (key, fallback) => {
-    if (typeof fallback === 'string') return fallback;
-    const template = SPA_TEMPLATE_TEXTS[key] || key;
+const resolveSpaMsg = (locale, key, fallback) => {
+    const table = (SPA_I18N[locale] || SPA_I18N['zh-cn']) || null;
+    let template;
+    if (table && Object.prototype.hasOwnProperty.call(table, key) && table[key] !== '') {
+        template = table[key];
+    } else if (typeof fallback === 'string') {
+        template = fallback;
+    } else if (table && Object.prototype.hasOwnProperty.call(table, key)) {
+        template = table[key];
+    } else {
+        template = key;
+    }
     if (fallback && typeof fallback === 'object') {
-        return template.replace(/\{(\w+)\}/g, (match, name) => (
-            Object.prototype.hasOwnProperty.call(fallback, name) ? String(fallback[name]) : match
-        ));
+        return template.replace(/\{(\w+)\}/g, (m, name) =>
+            Object.prototype.hasOwnProperty.call(fallback, name) ? String(fallback[name]) : m);
     }
     return template;
 };
+
 
 export class EmbeddedProjectAnalyzer {
     constructor ({vm, addon}) {
         this.vm = vm;
         this.addon = addon;
-        this.msg = createSpaMsg();
+        this.msg = (key, fallback) => resolveSpaMsg(this.getLocale(), key, fallback);
         this.projectName = '';
         this.chartInstance = null;
         this.mathLogicChartInstance = null;
         this.drScratchChartInstance = null;
         this.mountRoot = null;
+    }
+
+    getLocale () {
+        try {
+            const state = this.addon && this.addon.tab && this.addon.tab.redux && this.addon.tab.redux.state;
+            const locale = state && state.scratchGui && state.scratchGui.locales && state.scratchGui.locales.locale;
+            return locale || 'zh-cn';
+        } catch (e) {
+            return 'zh-cn';
+        }
+    }
+
+    injectThemeStyle () {
+        if (document.getElementById('spa-analyze-theme-style')) return;
+        const style = document.createElement('style');
+        style.id = 'spa-analyze-theme-style';
+        style.textContent = `
+.sa-analyze-content {
+  --spa-bg: #ffffff;
+  --spa-fg: #1a1a1a;
+  --spa-muted: #6b6b6b;
+  --spa-border: #e0e0e0;
+  --spa-card: #f5f5f5;
+  --spa-card-2: #eaeaea;
+  --spa-header-bg: #fafafa;
+  --spa-accent: var(--motion-primary, #4d97ff);
+  --spa-shadow: rgba(0,0,0,0.08);
+}
+[data-theme="dark"] .sa-analyze-content,
+.sa-dark .sa-analyze-content,
+body.theme-dark .sa-analyze-content,
+.theme-dark .sa-analyze-content,
+body.dark .sa-analyze-content,
+body.tw-dark .sa-analyze-content {
+  --spa-bg: #1e1e1e;
+  --spa-fg: #e6e6e6;
+  --spa-muted: #a8a8a8;
+  --spa-border: #3a3a3a;
+  --spa-card: #2a2a2a;
+  --spa-card-2: #333333;
+  --spa-header-bg: #242424;
+  --spa-shadow: rgba(0,0,0,0.4);
+}
+@media (prefers-color-scheme: dark) {
+  .sa-analyze-content:not([data-theme="light"]) {
+    --spa-bg: #1e1e1e; --spa-fg: #e6e6e6; --spa-muted: #a8a8a8; --spa-border: #3a3a3a;
+    --spa-card: #2a2a2a; --spa-card-2: #333333; --spa-header-bg: #242424; --spa-shadow: rgba(0,0,0,0.4);
+  }
+}
+.sa-analyze-content { background: var(--spa-bg) !important; color: var(--spa-fg) !important; }
+.sa-analyze-content .sa-analyze-header {
+  background: var(--spa-header-bg) !important; border-bottom: 1px solid var(--spa-border) !important;
+}
+.sa-analyze-content .sa-analyze-section,
+.sa-analyze-content .sa-analyze-stat,
+.sa-analyze-content .sa-analyze-card,
+.sa-analyze-content .sa-analyze-extension-item,
+.sa-analyze-content .sa-analyze-score-item,
+.sa-analyze-content .sa-analyze-modal-body,
+.sa-analyze-content .sa-analyze-chart-container,
+.sa-analyze-content .sa-analyze-row,
+.sa-analyze-content .sa-block-count-stat-card {
+  background: var(--spa-card) !important; color: var(--spa-fg) !important; border-color: var(--spa-border) !important;
+}
+.sa-analyze-content .sa-analyze-section-title,
+.sa-analyze-content .sa-analyze-stat-label,
+.sa-analyze-content .sa-analyze-stat-value,
+.sa-analyze-content .sa-analyze-score-label,
+.sa-analyze-content .sa-analyze-score-value,
+.sa-analyze-content .sa-analyze-extension-name,
+.sa-analyze-content .sa-analyze-extension-count,
+.sa-analyze-content h2, .sa-analyze-content h3, .sa-analyze-content h4,
+.sa-analyze-content p, .sa-analyze-content span, .sa-analyze-content div {
+  color: var(--spa-fg) !important;
+}
+.sa-analyze-content .sa-analyze-stat-value { font-weight: 600; }
+.sa-analyze-content .sa-analyze-export-button {
+  background: var(--spa-accent) !important; color: #ffffff !important; border: none !important;
+}
+.sa-analyze-content .sa-analyze-loading { color: var(--spa-muted) !important; }
+.sa-analyze-content .sa-analyze-spinner {
+  border: 3px solid var(--spa-border) !important; border-top-color: var(--spa-accent) !important;
+}
+.sa-analyze-content .sa-analyze-score-bar { background: var(--spa-card-2) !important; }
+.sa-analyze-content .sa-analyze-score-fill { background: var(--spa-accent) !important; }
+`;
+        document.head.appendChild(style);
     }
 
     /**
@@ -59,6 +162,8 @@ export class EmbeddedProjectAnalyzer {
         } catch (e) {
             this.projectName = '';
         }
+
+        this.injectThemeStyle();
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'sa-analyze-content';
@@ -114,8 +219,9 @@ export class EmbeddedProjectAnalyzer {
 
     // 分析项目
     async analyzeProject() {
+      const loadingEl = this.mountRoot.querySelector('#saAnalyzeLoading');
+      const resultsEl = this.mountRoot.querySelector('#saAnalyzeResults');
       try {
-        // 使用 vm.toJSON 获取项目数据
         const vm = this.vm;
         const projectJSON = JSON.parse(vm.toJSON());
 
@@ -123,12 +229,15 @@ export class EmbeddedProjectAnalyzer {
         const analysis = this.performAnalysis(projectJSON);
 
         // 更新UI
-        this.updateAnalysisResults(analysis);
+        this.updateAnalysisResults(projectJSON, analysis);
       } catch (error) {
         console.error(this.msg('analysis-error', '分析项目时出错:'), error);
-        document.getElementById('saAnalyzeLoading').innerHTML = `
-          <p style="color: #d32f2f;">${this.msg('analysis-error')}</p>
-        `;
+        if (loadingEl) {
+          loadingEl.innerHTML = `<p style="color: #d32f2f;">${this.msg('analysis-error', '分析项目时出错:')} ${String((error && error.message) || '')}</p>`;
+        }
+      } finally {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (resultsEl) resultsEl.style.display = 'block';
       }
     }
 
@@ -781,7 +890,7 @@ export class EmbeddedProjectAnalyzer {
     }
 
     // 更新分析结果
-    updateAnalysisResults(analysis) {
+    updateAnalysisResults(projectJSON, analysis) {
       // 更新统计数据
       this.updateStats(analysis);
 
@@ -789,8 +898,6 @@ export class EmbeddedProjectAnalyzer {
       this.displayCodeTypeChart(analysis);
 
       // 计算并更新Dr.Scratch评分
-      const vm = this.vm;
-      const projectJSON = JSON.parse(vm.toJSON());
       const drScratchScores = this.calculateDrScratchScores(projectJSON);
       this.displayDrScratchScores(drScratchScores);
 
@@ -800,10 +907,6 @@ export class EmbeddedProjectAnalyzer {
 
       // 更新扩展列表
       this.displayExtensions(analysis.extensions);
-
-      // 显示结果，隐藏加载
-      document.getElementById('saAnalyzeLoading').style.display = 'none';
-      document.getElementById('saAnalyzeResults').style.display = 'block';
     }
 
     // 更新统计数据
