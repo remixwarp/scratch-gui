@@ -137,29 +137,37 @@
 
 .tabs {
     display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    border-bottom: 1px solid $ui-black-transparent;
+    background: $ui-secondary;
+    padding: 0;
+    margin: 0 0 1rem 0;
 }
 
 .tab {
-    padding: 0.5rem 1rem;
-    border: 2px solid $ui-black-transparent;
-    border-radius: 0.5rem;
-    background: transparent;
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-bottom: 1px solid $ui-black-transparent;
+    background: $ui-secondary;
     cursor: pointer;
     font-weight: 600;
     color: $text-primary;
-    transition: all 0.2s;
+    font-size: 14px;
+    transition: background-color 0.2s;
 }
 
 .tab:hover {
-    border-color: $looks-secondary;
+    background: $looks-transparent;
 }
 
 .tabActive {
-    background-color: $data-primary;
-    color: white;
-    border-color: $data-primary;
+    background: $ui-modal-background;
+    color: $text-primary;
+    border-bottom: 3px solid $looks-secondary;
+}
+
+.tabActive:hover {
+    background: $ui-modal-background;
 }
 
 .cloudWarning {
@@ -189,7 +197,7 @@
 }
 
 .pushButton {
-    background-color: $data-primary;
+    background-color: $looks-secondary;
     color: white;
     margin-left: auto;
 }
