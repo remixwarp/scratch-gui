@@ -781,5 +781,18 @@
     "block-count/astra-loading": "加载中...（转圈）",
     "block-count/astra-export-image": "📸 导出结果为图片（存图）",
     "block-count/astra-exporting": "⏳ 导出中...（保存中）",
-    "block-count/astra-export-failed": "导出图片失败：（翻车了）"
+    "block-count/astra-export-failed": "导出图片失败：（翻车了）",
+    "block-count/category-events": "事件（触发）",
+    "block-count/category-video": "视频（摄像头）",
+    "block-count/category-other": "其他（杂项）",
+    "block-count/drscratch-abstraction": "抽象和问题分解（拆解）",
+    "block-count/drscratch-parallelism": "并行性（同时跑）",
+    "block-count/drscratch-logic": "逻辑思维（如果否则）",
+    "block-count/drscratch-synchronization": "同步（等待广播）",
+    "block-count/drscratch-flow-control": "流程控制（顺序）",
+    "block-count/drscratch-interactivity": "用户交互（点按）",
+    "block-count/drscratch-data-representation": "数据表示（变量列表）",
+    "block-count/mathlogic-operator-complexity": "运算复杂度（数学块）",
+    "block-count/mathlogic-logic-depth": "逻辑深度（判断嵌套）",
+    "block-count/mathlogic-data-volume": "数据量（变量多少）"
 }

@@ -278,19 +278,19 @@ export default async function ({ addon, console, msg }) {
     
     // 获取积木类型
     const getBlockCategory = (opcode, extensionNameMap = {}) => {
-      if (opcode.startsWith('motion_')) return '运动';
-      if (opcode.startsWith('looks_')) return '外观';
-      if (opcode.startsWith('sound_')) return '声音';
-      if (opcode.startsWith('event_')) return '事件';
-      if (opcode.startsWith('control_')) return '控制';
-      if (opcode.startsWith('sensing_')) return '侦测';
-      if (opcode.startsWith('operator_')) return '运算';
-      if (opcode.startsWith('data_')) return '数据';
-      if (opcode.startsWith('video_')) return '视频';
+      if (opcode.startsWith('motion_')) return msg('block-count/category-motion', '运动');
+      if (opcode.startsWith('looks_')) return msg('block-count/category-looks', '外观');
+      if (opcode.startsWith('sound_')) return msg('block-count/category-sound', '声音');
+      if (opcode.startsWith('event_')) return msg('block-count/category-events', '事件');
+      if (opcode.startsWith('control_')) return msg('block-count/category-control', '控制');
+      if (opcode.startsWith('sensing_')) return msg('block-count/category-sensing', '侦测');
+      if (opcode.startsWith('operator_')) return msg('block-count/category-operators', '运算');
+      if (opcode.startsWith('data_')) return msg('block-count/category-data', '数据');
+      if (opcode.startsWith('video_')) return msg('block-count/category-video', '视频');
       
       // 自定义函数和参数
-      if (opcode.startsWith('procedures_')) return '自定义函数';
-      if (opcode.startsWith('argument_')) return '自定义函数';
+      if (opcode.startsWith('procedures_')) return msg('block-count/category-procedures', '自定义函数');
+      if (opcode.startsWith('argument_')) return msg('block-count/category-procedures', '自定义函数');
       
       // 扩展积木处理
       if (!isStandardBlock(opcode)) {
@@ -301,7 +301,7 @@ export default async function ({ addon, console, msg }) {
         return getExtensionNameFromId(extensionId);
       }
       
-      return '其他';
+      return msg('block-count/category-other', '其他');
     };
     
     // 分析扩展
@@ -544,13 +544,13 @@ export default async function ({ addon, console, msg }) {
       const hasClones = controlBlockTypes.has('control_create_clone_of') || controlBlockTypes.has('control_start_as_clone');
       
       if (hasMultipleSprites && hasMultipleScripts) {
-        scores['抽象和问题分解'] = 1;
+        scores[msg('block-count/drscratch-abstraction', '抽象和问题分解')] = 1;
       }
       if (hasCustomBlocks) {
-        scores['抽象和问题分解'] = 2;
+        scores[msg('block-count/drscratch-abstraction', '抽象和问题分解')] = 2;
       }
       if (hasClones) {
-        scores['抽象和问题分解'] = 3;
+        scores[msg('block-count/drscratch-abstraction', '抽象和问题分解')] = 3;
       }
 
       // 2. 并行性
@@ -563,13 +563,13 @@ export default async function ({ addon, console, msg }) {
       const hasBackdropEvents = eventBlockTypes.has('event_whenbackdropswitchesto');
       
       if (hasGreenFlag && eventBlockTypes.size > 1) {
-        scores['并行性'] = 1;
+        scores[msg('block-count/drscratch-parallelism', '并行性')] = 1;
       }
       if ((hasKeyEvents || hasClickEvents) && (eventBlockTypes.size > 2)) {
-        scores['并行性'] = 2;
+        scores[msg('block-count/drscratch-parallelism', '并行性')] = 2;
       }
       if (hasMessageEvents || hasCloneEvents || hasSensorEvents || hasBackdropEvents) {
-        scores['并行性'] = 3;
+        scores[msg('block-count/drscratch-parallelism', '并行性')] = 3;
       }
 
       // 3. 逻辑思维
@@ -580,13 +580,13 @@ export default async function ({ addon, console, msg }) {
                          operatorBlockTypes.has('operator_not');
       
       if (hasIf) {
-        scores['逻辑思维'] = 1;
+        scores[msg('block-count/drscratch-logic', '逻辑思维')] = 1;
       }
       if (hasIfElse) {
-        scores['逻辑思维'] = 2;
+        scores[msg('block-count/drscratch-logic', '逻辑思维')] = 2;
       }
       if (hasLogicOps) {
-        scores['逻辑思维'] = 3;
+        scores[msg('block-count/drscratch-logic', '逻辑思维')] = 3;
       }
 
       // 4. 同步
@@ -601,13 +601,13 @@ export default async function ({ addon, console, msg }) {
       const hasBroadcastAndWait = eventBlockTypes.has('event_broadcastandwait');
       
       if (hasWait) {
-        scores['同步'] = 1;
+        scores[msg('block-count/drscratch-synchronization', '同步')] = 1;
       }
       if (hasBroadcast || hasReceiveMessage || hasStopAll || hasStopThis || hasStopOther) {
-        scores['同步'] = 2;
+        scores[msg('block-count/drscratch-synchronization', '同步')] = 2;
       }
       if (hasWaitUntil || hasBackdropChange || hasBroadcastAndWait) {
-        scores['同步'] = 3;
+        scores[msg('block-count/drscratch-synchronization', '同步')] = 3;
       }
 
       // 5. 流程控制
@@ -616,13 +616,13 @@ export default async function ({ addon, console, msg }) {
       const hasRepeatUntil = controlBlockTypes.has('control_repeat_until');
       
       if (hasSequence) {
-        scores['流程控制'] = 1;
+        scores[msg('block-count/drscratch-flow-control', '流程控制')] = 1;
       }
       if (hasRepeat) {
-        scores['流程控制'] = 2;
+        scores[msg('block-count/drscratch-flow-control', '流程控制')] = 2;
       }
       if (hasRepeatUntil) {
-        scores['流程控制'] = 3;
+        scores[msg('block-count/drscratch-flow-control', '流程控制')] = 3;
       }
 
       // 6. 用户交互
@@ -640,13 +640,13 @@ export default async function ({ addon, console, msg }) {
                                  blockTypes.has('sound_changevolumeby');
       
       if (hasGreenFlagEvent) {
-        scores['用户交互'] = 1;
+        scores[msg('block-count/drscratch-interactivity', '用户交互')] = 1;
       }
       if (hasKeyPressedEvent || hasSpriteClickedEvent || hasAskWait || hasMouseBlocks) {
-        scores['用户交互'] = 2;
+        scores[msg('block-count/drscratch-interactivity', '用户交互')] = 2;
       }
       if (hasSensorGreater || hasVideo || hasAudioInteraction) {
-        scores['用户交互'] = 3;
+        scores[msg('block-count/drscratch-interactivity', '用户交互')] = 3;
       }
 
       // 7. 数据表示
@@ -655,13 +655,13 @@ export default async function ({ addon, console, msg }) {
       const hasListOperations = listNames.size > 0 && Array.from(dataBlockTypes).some(type => type.includes('list'));
       
       if (hasSpriteModifiers) {
-        scores['数据表示'] = 1;
+        scores[msg('block-count/drscratch-data-representation', '数据表示')] = 1;
       }
       if (hasVariableOperations) {
-        scores['数据表示'] = 2;
+        scores[msg('block-count/drscratch-data-representation', '数据表示')] = 2;
       }
       if (hasListOperations) {
-        scores['数据表示'] = 3;
+        scores[msg('block-count/drscratch-data-representation', '数据表示')] = 3;
       }
 
       return scores;
@@ -696,9 +696,9 @@ export default async function ({ addon, console, msg }) {
       });
 
       const scores = {
-        '运算复杂度': operatorCount,
-        '逻辑深度': controlCount,
-        '数据量': dataCount
+        [msg('block-count/mathlogic-operator-complexity', '运算复杂度')]: operatorCount,
+        [msg('block-count/mathlogic-logic-depth', '逻辑深度')]: controlCount,
+        [msg('block-count/mathlogic-data-volume', '数据量')]: dataCount
       };
 
       return scores;
@@ -710,11 +710,11 @@ export default async function ({ addon, console, msg }) {
       if (!canvas) return;
       
       const ctx = canvas.getContext('2d');
-      try { window.Chart.defaults.color = (document.body.classList.contains('dark') || document.body.classList.contains('tw-dark')) ? '#e6e6e6' : '#333'; } catch (e) {}
+      try { window.Chart.defaults.color = (window.__saIsDark ? '#e6e6e6' : '#333'); } catch (e) {}
       
       // 定义标准类别的固定顺序
       const standardOrder = [
-        '运动', '外观', '声音', '事件', '控制', '侦测', '运算', '数据', '自定义函数'
+        msg('block-count/category-motion', '运动'), msg('block-count/category-looks', '外观'), msg('block-count/category-sound', '声音'), msg('block-count/category-events', '事件'), msg('block-count/category-control', '控制'), msg('block-count/category-sensing', '侦测'), msg('block-count/category-operators', '运算'), msg('block-count/category-data', '数据'), msg('block-count/category-procedures', '自定义函数')
       ];
       
       // 分离标准和扩展类别
@@ -750,15 +750,15 @@ export default async function ({ addon, console, msg }) {
       
       // 定义每个类别的颜色
       const categoryColors = {
-        '运动': '#4C97FF',
-        '外观': '#9966FF',
-        '声音': '#CF63CF',
-        '事件': '#FFBF00',
-        '控制': '#FFAB19',
-        '侦测': '#5CB1D6',
-        '运算': '#59C059',
-        '数据': '#FF8C1A',
-        '自定义函数': '#FF6680'
+        [msg('block-count/category-motion', '运动')]: '#4C97FF',
+        [msg('block-count/category-looks', '外观')]: '#9966FF',
+        [msg('block-count/category-sound', '声音')]: '#CF63CF',
+        [msg('block-count/category-events', '事件')]: '#FFBF00',
+        [msg('block-count/category-control', '控制')]: '#FFAB19',
+        [msg('block-count/category-sensing', '侦测')]: '#5CB1D6',
+        [msg('block-count/category-operators', '运算')]: '#59C059',
+        [msg('block-count/category-data', '数据')]: '#FF8C1A',
+        [msg('block-count/category-procedures', '自定义函数')]: '#FF6680'
       };
       
       // 为扩展生成默认颜色
@@ -830,7 +830,7 @@ export default async function ({ addon, console, msg }) {
       if (!canvas) return;
       
       const ctx = canvas.getContext('2d');
-      try { window.Chart.defaults.color = (document.body.classList.contains('dark') || document.body.classList.contains('tw-dark')) ? '#e6e6e6' : '#333'; } catch (e) {}
+      try { window.Chart.defaults.color = (window.__saIsDark ? '#e6e6e6' : '#333'); } catch (e) {}
       
       const labels = Object.keys(scores);
       const data = Object.values(scores);
@@ -840,17 +840,17 @@ export default async function ({ addon, console, msg }) {
       document.getElementById('saDrScratchTotalScore').textContent = totalScore;
       
       // 计算等级
-      let level = msg('block-count/astra-level-primary', '初级');
+      let level = msg('astra-level-primary', '初级');
       if (totalScore >= 18) {
-        level = msg('block-count/astra-level-expert', '专家级');
+        level = msg('astra-level-expert', '专家级');
       } else if (totalScore >= 14) {
-        level = msg('block-count/astra-level-advanced', '高级');
+        level = msg('astra-level-advanced', '高级');
       } else if (totalScore >= 10) {
-        level = msg('block-count/astra-level-intermediate', '中级');
+        level = msg('astra-level-intermediate', '中级');
       } else if (totalScore >= 6) {
-        level = msg('block-count/astra-level-developing', '发展中');
+        level = msg('astra-level-developing', '发展中');
       }
-      document.getElementById('saDrScratchScoreLevel').textContent = msg('block-count/astra-eval-level', '评估等级：') + level;
+      document.getElementById('saDrScratchScoreLevel').textContent = msg('astra-eval-level', '评估等级：') + level;
       
       // 更新评分详情
       const detailsHTML = labels.map(label => `
@@ -879,7 +879,7 @@ export default async function ({ addon, console, msg }) {
         data: {
           labels: labels,
           datasets: [{
-            label: msg('block-count/astra-computational-thinking', '计算思维评分'),
+            label: msg('astra-computational-thinking', '计算思维评分'),
             data: data,
             backgroundColor: 'rgba(77, 151, 255, 0.2)',
             borderColor: '#4d97ff',
@@ -917,7 +917,7 @@ export default async function ({ addon, console, msg }) {
       if (!canvas) return;
       
       const ctx = canvas.getContext('2d');
-      try { window.Chart.defaults.color = (document.body.classList.contains('dark') || document.body.classList.contains('tw-dark')) ? '#e6e6e6' : '#333'; } catch (e) {}
+      try { window.Chart.defaults.color = (window.__saIsDark ? '#e6e6e6' : '#333'); } catch (e) {}
       
       const labels = Object.keys(scores);
       const data = Object.values(scores);
@@ -927,15 +927,15 @@ export default async function ({ addon, console, msg }) {
       document.getElementById('saMathTotalScore').textContent = totalScore;
       
       // 计算等级
-      let level = msg('block-count/astra-level-primary', '初级');
+      let level = msg('astra-level-primary', '初级');
       if (totalScore >= 20) {
-        level = msg('block-count/astra-level-advanced', '高级');
+        level = msg('astra-level-advanced', '高级');
       } else if (totalScore >= 10) {
-        level = msg('block-count/astra-level-intermediate', '中级');
+        level = msg('astra-level-intermediate', '中级');
       } else if (totalScore >= 5) {
-        level = msg('block-count/astra-level-developing', '发展中');
+        level = msg('astra-level-developing', '发展中');
       }
-      document.getElementById('saMathScoreLevel').textContent = msg('block-count/astra-eval-level', '评估等级：') + level;
+      document.getElementById('saMathScoreLevel').textContent = msg('astra-eval-level', '评估等级：') + level;
       
       // 更新评分详情
       const detailsHTML = labels.map(label => `
@@ -965,7 +965,7 @@ export default async function ({ addon, console, msg }) {
         data: {
           labels: labels,
           datasets: [{
-            label: msg('block-count/astra-relative-strength', '相对强度'),
+            label: msg('astra-relative-strength', '相对强度'),
             data: normalizedData,
             backgroundColor: 'rgba(230, 81, 0, 0.2)',
             borderColor: '#E65100',
@@ -1011,7 +1011,7 @@ export default async function ({ addon, console, msg }) {
       const extensionList = document.getElementById('saExtensionList');
       
       if (extensions.length === 0) {
-        extensionList.innerHTML = '<p>' + msg('block-count/astra-no-extensions', '未使用扩展') + '</p>';
+        extensionList.innerHTML = '<p>' + msg('astra-no-extensions', '未使用扩展') + '</p>';
         return;
       }
       
@@ -1024,7 +1024,7 @@ export default async function ({ addon, console, msg }) {
             <div class="sa-analyze-extension-color" style="width: 12px; height: 12px; border-radius: 50%; background-color: ${color};"></div>
             <div style="flex: 1;">
               <div class="sa-analyze-extension-name" style="font-weight: 500; margin-bottom: 2px;">${extension.name}</div>
-              <div class="sa-analyze-extension-count" style="font-size: 12px; color: var(--ui-black-transparent, #999);">${extension.blocks.length} ${msg('block-count/astra-blocks-unit','个积木')}</div>
+              <div class="sa-analyze-extension-count" style="font-size: 12px; color: var(--ui-black-transparent, #999);">${extension.blocks.length} ${msg('astra-blocks-unit','个积木')}</div>
             </div>
           </div>
         `;
@@ -1043,53 +1043,56 @@ export default async function ({ addon, console, msg }) {
       statsGrid.innerHTML = `
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.totalBlocks}</div>
-          <div class="sa-analyze-stat-label">${msg('block-count/astra-total-code-blocks','总代码块数')}</div>
+          <div class="sa-analyze-stat-label">${msg('astra-total-code-blocks','总代码块数')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.effectiveBlocks}</div>
-          <div class="sa-analyze-stat-label">${msg('block-count/astra-effective-blocks','有效积木')}</div>
+          <div class="sa-analyze-stat-label">${msg('astra-effective-blocks','有效积木')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.functionDefinitions}</div>
-          <div class="sa-analyze-stat-label">${msg('block-count/astra-function-defs','函数定义')}</div>
+          <div class="sa-analyze-stat-label">${msg('astra-function-defs','函数定义')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.sprites}</div>
-          <div class="sa-analyze-stat-label">${msg('block-count/astra-sprites','角色')}</div>
+          <div class="sa-analyze-stat-label">${msg('astra-sprites','角色')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.costumeCount}</div>
-          <div class="sa-analyze-stat-label">${msg('block-count/astra-costumes','造型')}</div>
+          <div class="sa-analyze-stat-label">${msg('astra-costumes','造型')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.soundCount}</div>
-          <div class="sa-analyze-stat-label">${msg('block-count/astra-sounds','声音')}</div>
+          <div class="sa-analyze-stat-label">${msg('astra-sounds','声音')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.variableCount}</div>
-          <div class="sa-analyze-stat-label">${msg('block-count/astra-variables','变量')}</div>
+          <div class="sa-analyze-stat-label">${msg('astra-variables','变量')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.listCount}</div>
-          <div class="sa-analyze-stat-label">${msg('block-count/astra-lists','列表')}</div>
+          <div class="sa-analyze-stat-label">${msg('astra-lists','列表')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.extensions.length}</div>
-          <div class="sa-analyze-stat-label">${msg('block-count/astra-extensions','扩展')}</div>
+          <div class="sa-analyze-stat-label">${msg('astra-extensions','扩展')}</div>
         </div>
       `;
       
       // 更新代码类型分布图
       displayCodeTypeChart(analysis);
+      window.__saLastAnalysis = analysis;
       
       // 计算并更新Dr.Scratch评分
       const projectJSON = JSON.parse(vm.toJSON());
       const drScratchScores = calculateDrScratchScores(projectJSON);
       displayDrScratchScores(drScratchScores);
+      window.__saLastDr = drScratchScores;
       
       // 计算并更新数学逻辑评分
       const mathLogicScores = calculateMathLogicScores(projectJSON);
       displayMathLogicScores(mathLogicScores);
+      window.__saLastMath = mathLogicScores;
       
       // 更新扩展列表
       displayExtensions(analysis.extensions);
@@ -1188,6 +1191,43 @@ export default async function ({ addon, console, msg }) {
       `;
       content.appendChild(style);
       // Astra 积木分析 - 深色模式适配
+
+      // 深色模式适配（基于编辑器主题前景色亮度判定，兼容所有深色主题，并随主题切换实时更新）
+      const saIsDarkMode = () => {
+        const fg = getComputedStyle(document.documentElement).getPropertyValue('--ui-modal-foreground').trim();
+        if (!fg) return false;
+        let r = 0, g = 0, b = 0;
+        if (fg.startsWith('#')) {
+          const h = fg.slice(1);
+          r = parseInt(h.substr(0, 2), 16);
+          g = parseInt(h.substr(2, 2), 16);
+          b = parseInt(h.substr(4, 2), 16);
+        } else if (fg.startsWith('rgb')) {
+          const m = fg.match(/\d+/g);
+          if (m && m.length >= 3) { r = +m[0]; g = +m[1]; b = +m[2]; }
+        } else {
+          return false;
+        }
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return lum > 0.5;
+      };
+      const saApplyDark = () => {
+        const dark = saIsDarkMode();
+        window.__saIsDark = dark;
+        document.body.classList.toggle('sa-dark', dark);
+        if (window.__saLastAnalysis) {
+          try {
+            displayCodeTypeChart(window.__saLastAnalysis);
+            if (window.__saLastDr) displayDrScratchScores(window.__saLastDr);
+            if (window.__saLastMath) displayMathLogicScores(window.__saLastMath);
+          } catch (e) {}
+        }
+      };
+      saApplyDark();
+      if (!window.__saThemeObserver) {
+        window.__saThemeObserver = new MutationObserver(saApplyDark);
+        window.__saThemeObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['data-gui-theme']});
+      }
       const darkStyle = document.createElement('style');
       darkStyle.textContent = `
         .sa-block-count-window-content { color: #333; }
@@ -1198,27 +1238,27 @@ export default async function ({ addon, console, msg }) {
         /* 图表容器：浅色用浅底深字，深色用深底浅字 */
         .sa-block-count-window-content div[style*="ui-secondary"] { background: #f5f5f5 !important; }
         .sa-block-count-window-content div[style*="ui-modal-foreground"] { color: #333 !important; }
-        body.dark .sa-block-count-window-content,
-        body.tw-dark .sa-block-count-window-content { color: #e6e6e6 !important; }
-        body.dark .sa-block-count-window-content h2,
-        body.dark .sa-block-count-window-content h3,
-        body.dark .sa-block-count-window-content h4,
-        body.tw-dark .sa-block-count-window-content h2,
-        body.tw-dark .sa-block-count-window-content h3,
-        body.tw-dark .sa-block-count-window-content h4 { color: #e6e6e6 !important; }
-        body.dark .sa-block-count-window-content .sa-analyze-loading p,
-        body.tw-dark .sa-block-count-window-content .sa-analyze-loading p { color: #aaa !important; }
-        body.dark .sa-block-count-window-content div[style*="ui-secondary"],
-        body.tw-dark .sa-block-count-window-content div[style*="ui-secondary"] { background: #23252b !important; }
-        body.dark .sa-block-count-window-content div[style*="ui-modal-foreground"],
-        body.tw-dark .sa-block-count-window-content div[style*="ui-modal-foreground"] { color: #e6e6e6 !important; }
+        .sa-dark .sa-block-count-window-content,
+        .sa-dark .sa-block-count-window-content { color: #e6e6e6 !important; }
+        .sa-dark .sa-block-count-window-content h2,
+        .sa-dark .sa-block-count-window-content h3,
+        .sa-dark .sa-block-count-window-content h4,
+        .sa-dark .sa-block-count-window-content h2,
+        .sa-dark .sa-block-count-window-content h3,
+        .sa-dark .sa-block-count-window-content h4 { color: #e6e6e6 !important; }
+        .sa-dark .sa-block-count-window-content .sa-analyze-loading p,
+        .sa-dark .sa-block-count-window-content .sa-analyze-loading p { color: #aaa !important; }
+        .sa-dark .sa-block-count-window-content div[style*="ui-secondary"],
+        .sa-dark .sa-block-count-window-content div[style*="ui-secondary"] { background: #23252b !important; }
+        .sa-dark .sa-block-count-window-content div[style*="ui-modal-foreground"],
+        .sa-dark .sa-block-count-window-content div[style*="ui-modal-foreground"] { color: #e6e6e6 !important; }
         /* 扩展项/进度条硬编码深色，深浅皆可读 */
         .sa-block-count-window-content .sa-analyze-extension-item { background: rgba(255,255,255,0.08) !important; }
-        body.dark .sa-block-count-window-content .sa-analyze-extension-item,
-        body.tw-dark .sa-block-count-window-content .sa-analyze-extension-item { background: #2c3e50 !important; }
+        .sa-dark .sa-block-count-window-content .sa-analyze-extension-item,
+        .sa-dark .sa-block-count-window-content .sa-analyze-extension-item { background: #2c3e50 !important; }
         .sa-block-count-window-content .sa-analyze-score-bar { background: #ddd !important; }
-        body.dark .sa-block-count-window-content .sa-analyze-score-bar,
-        body.tw-dark .sa-block-count-window-content .sa-analyze-score-bar { background: #444 !important; }
+        .sa-dark .sa-block-count-window-content .sa-analyze-score-bar,
+        .sa-dark .sa-block-count-window-content .sa-analyze-score-bar { background: #444 !important; }
       `;
       content.appendChild(darkStyle);
 
@@ -1234,7 +1274,7 @@ export default async function ({ addon, console, msg }) {
       `;
       
       const originalButton = document.createElement('button');
-      originalButton.textContent = msg('block-count/astra-original-mode', '原版积木分析');
+      originalButton.textContent = msg('astra-original-mode', '原版积木分析');
       originalButton.style.cssText = `
         padding: 8px 16px;
         border: 1px solid var(--ui-black-transparent, #ccc);
@@ -1248,7 +1288,7 @@ export default async function ({ addon, console, msg }) {
       originalButton.addEventListener('click', () => switchMode('original'));
       
       const astraButton = document.createElement('button');
-      astraButton.textContent = msg('block-count/astra-astra-mode', 'AstraEditor积木分析');
+      astraButton.textContent = msg('astra-astra-mode', 'AstraEditor积木分析');
       astraButton.style.cssText = `
         padding: 8px 16px;
         border: 1px solid var(--ui-black-transparent, #ccc);
@@ -1321,63 +1361,63 @@ export default async function ({ addon, console, msg }) {
       } else {
         contentContainer.innerHTML = `
           <div style="margin-bottom: 20px;">
-            <h2 style="margin-bottom: 10px;">${msg('block-count/astra-project-analysis','项目分析')}</h2>
+            <h2 style="margin-bottom: 10px;">${msg('astra-project-analysis','项目分析')}</h2>
             <div style="width: 100%; height: 1px; background: var(--ui-black-transparent, #e0e0e0);"></div>
           </div>
           
           <div class="sa-analyze-loading" id="saAnalyzeLoading">
             <div style="display: flex; flex-direction: column; align-items: center; padding: 40px;">
               <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
-              <p style="color: #666;">${msg('block-count/astra-analyzing','分析中...')}</p>
+              <p style="color: #666;">${msg('astra-analyzing','分析中...')}</p>
             </div>
           </div>
           <div class="sa-analyze-results" id="saAnalyzeResults" style="display: none;">
             <!-- 项目统计部分 -->
             <div style="margin-bottom: 30px;">
-              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('block-count/astra-project-stats','项目统计')}</h3>
+              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('astra-project-stats','项目统计')}</h3>
               <div class="sa-analyze-stats-grid" id="saStatsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px;">
                 <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">${msg('block-count/astra-total-code-blocks','总代码块数')}</div>
+                  <div style="font-size: 12px;">${msg('astra-total-code-blocks','总代码块数')}</div>
                 </div>
                 <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">${msg('block-count/astra-effective-blocks','有效积木')}</div>
+                  <div style="font-size: 12px;">${msg('astra-effective-blocks','有效积木')}</div>
                 </div>
                 <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">${msg('block-count/astra-function-defs','函数定义')}</div>
+                  <div style="font-size: 12px;">${msg('astra-function-defs','函数定义')}</div>
                 </div>
                 <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">${msg('block-count/astra-sprites','角色')}</div>
+                  <div style="font-size: 12px;">${msg('astra-sprites','角色')}</div>
                 </div>
                 <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">${msg('block-count/astra-costumes','造型')}</div>
+                  <div style="font-size: 12px;">${msg('astra-costumes','造型')}</div>
                 </div>
                 <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">${msg('block-count/astra-sounds','声音')}</div>
+                  <div style="font-size: 12px;">${msg('astra-sounds','声音')}</div>
                 </div>
                 <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">${msg('block-count/astra-variables','变量')}</div>
+                  <div style="font-size: 12px;">${msg('astra-variables','变量')}</div>
                 </div>
                 <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">${msg('block-count/astra-lists','列表')}</div>
+                  <div style="font-size: 12px;">${msg('astra-lists','列表')}</div>
                 </div>
                 <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
-                  <div style="font-size: 12px;">${msg('block-count/astra-extensions','扩展')}</div>
+                  <div style="font-size: 12px;">${msg('astra-extensions','扩展')}</div>
                 </div>
               </div>
             </div>
 
             <!-- 代码类型分布 -->
             <div style="margin-bottom: 30px;">
-              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('block-count/astra-block-distribution','积木分布')}</h3>
+              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('astra-block-distribution','积木分布')}</h3>
               <div style="background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; height: 300px;">
                 <canvas id="saCodeTypeChart" width="400" height="200"></canvas>
               </div>
@@ -1385,7 +1425,7 @@ export default async function ({ addon, console, msg }) {
 
             <!-- Dr.Scratch评分系统 -->
             <div style="margin-bottom: 30px;">
-              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('block-count/astra-dr-scratch-score','Dr.Scratch评分')}</h3>
+              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('astra-dr-scratch-score','Dr.Scratch评分')}</h3>
               <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; height: 350px;">
                   <canvas id="saDrScratchChart" width="400" height="300"></canvas>
@@ -1393,8 +1433,8 @@ export default async function ({ addon, console, msg }) {
                 <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px;">
                   <div id="saDrScratchDetails" style="color: var(--ui-modal-foreground, white);">
                     <div style="margin-bottom: 20px;">
-                      <h4 style="margin-bottom: 10px;">${msg('block-count/astra-total-score','总分：')}<span id="saDrScratchTotalScore">0</span> / 21</h4>
-                      <div id="saDrScratchScoreLevel" style="color: var(--ui-black-transparent, #999);">${msg('block-count/astra-eval-level-calc','评估等级：计算中...')}</div>
+                      <h4 style="margin-bottom: 10px;">${msg('astra-total-score','总分：')}<span id="saDrScratchTotalScore">0</span> / 21</h4>
+                      <div id="saDrScratchScoreLevel" style="color: var(--ui-black-transparent, #999);">${msg('astra-eval-level-calc','评估等级：计算中...')}</div>
                     </div>
                   </div>
                 </div>
@@ -1403,7 +1443,7 @@ export default async function ({ addon, console, msg }) {
 
             <!-- 数学逻辑评估 -->
             <div style="margin-bottom: 30px;">
-              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('block-count/astra-math-logic','数学逻辑评估')}</h3>
+              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('astra-math-logic','数学逻辑评估')}</h3>
               <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; height: 350px;">
                   <canvas id="saMathLogicChart" width="400" height="300"></canvas>
@@ -1411,8 +1451,8 @@ export default async function ({ addon, console, msg }) {
                 <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px;">
                   <div id="saMathLogicDetails" style="color: var(--ui-modal-foreground, white);">
                     <div style="margin-bottom: 20px;">
-                      <h4 style="margin-bottom: 10px;">${msg('block-count/astra-math-total-score','数学总分：')}<span id="saMathTotalScore">0</span> ${msg('block-count/astra-blocks-unit','个积木')}</h4>
-                      <div id="saMathScoreLevel" style="color: var(--ui-black-transparent, #999);">${msg('block-count/astra-eval-level-calc','评估等级：计算中...')}</div>
+                      <h4 style="margin-bottom: 10px;">${msg('astra-math-total-score','数学总分：')}<span id="saMathTotalScore">0</span> ${msg('astra-blocks-unit','个积木')}</h4>
+                      <div id="saMathScoreLevel" style="color: var(--ui-black-transparent, #999);">${msg('astra-eval-level-calc','评估等级：计算中...')}</div>
                     </div>
                   </div>
                 </div>
@@ -1421,15 +1461,15 @@ export default async function ({ addon, console, msg }) {
 
             <!-- 使用的扩展 -->
             <div style="margin-bottom: 20px;">
-              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('block-count/astra-used-extensions','使用的扩展')}</h3>
+              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('astra-used-extensions','使用的扩展')}</h3>
               <div id="saExtensionList" style="background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; color: var(--ui-modal-foreground, white);">
-                <p>${msg('block-count/astra-loading','加载中...')}</p>
+                <p>${msg('astra-loading','加载中...')}</p>
               </div>
             </div>
 
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--ui-black-transparent, #e0e0e0);">
               <button id="saExportImageBtn" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: transform 0.2s, box-shadow 0.2s;">
-                ${msg('block-count/astra-export-image','📸 导出结果为图片')}
+                ${msg('astra-export-image','📸 导出结果为图片')}
               </button>
             </div>
           </div>
@@ -1450,7 +1490,7 @@ export default async function ({ addon, console, msg }) {
               const resultsEl = document.getElementById('saAnalyzeResults');
               if (!resultsEl) return;
 
-              exportBtn.textContent = msg('block-count/astra-exporting', '⏳ 导出中...');
+              exportBtn.textContent = msg('astra-exporting', '⏳ 导出中...');
               exportBtn.disabled = true;
 
               try {
@@ -1468,7 +1508,7 @@ export default async function ({ addon, console, msg }) {
                 const canvas = await window.html2canvas(resultsEl, {
                   scale: 2,
                   useCORS: true,
-                  backgroundColor: (document.body.classList.contains('dark') || document.body.classList.contains('tw-dark')) ? '#23252b' : '#ffffff',
+                  backgroundColor: (window.__saIsDark ? '#23252b' : '#ffffff'),
                   logging: false
                 });
 
@@ -1484,9 +1524,9 @@ export default async function ({ addon, console, msg }) {
                 }, 'image/png');
               } catch (err) {
                 console.error('导出图片失败:', err);
-                alert(msg('block-count/astra-export-failed', '导出图片失败：') + err.message);
+                alert(msg('astra-export-failed', '导出图片失败：') + err.message);
               } finally {
-                exportBtn.textContent = msg('block-count/astra-export-image', '📸 导出结果为图片');
+                exportBtn.textContent = msg('astra-export-image', '📸 导出结果为图片');
                 exportBtn.disabled = false;
               }
             });

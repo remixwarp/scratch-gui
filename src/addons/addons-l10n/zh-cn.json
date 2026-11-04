@@ -789,5 +789,18 @@
     "block-count/astra-loading": "加载中...",
     "block-count/astra-export-image": "📸 导出结果为图片",
     "block-count/astra-exporting": "⏳ 导出中...",
-    "block-count/astra-export-failed": "导出图片失败："
+    "block-count/astra-export-failed": "导出图片失败：",
+    "block-count/category-events": "事件",
+    "block-count/category-video": "视频",
+    "block-count/category-other": "其他",
+    "block-count/drscratch-abstraction": "抽象和问题分解",
+    "block-count/drscratch-parallelism": "并行性",
+    "block-count/drscratch-logic": "逻辑思维",
+    "block-count/drscratch-synchronization": "同步",
+    "block-count/drscratch-flow-control": "流程控制",
+    "block-count/drscratch-interactivity": "用户交互",
+    "block-count/drscratch-data-representation": "数据表示",
+    "block-count/mathlogic-operator-complexity": "运算复杂度",
+    "block-count/mathlogic-logic-depth": "逻辑深度",
+    "block-count/mathlogic-data-volume": "数据量"
 }

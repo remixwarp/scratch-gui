@@ -781,5 +781,18 @@
     "block-count/astra-loading": "载之……",
     "block-count/astra-export-image": "📸 出图为片",
     "block-count/astra-exporting": "⏳ 出图中……",
-    "block-count/astra-export-failed": "出图败："
+    "block-count/astra-export-failed": "出图败：",
+    "block-count/category-events": "事",
+    "block-count/category-video": "像",
+    "block-count/category-other": "他",
+    "block-count/drscratch-abstraction": "抽象",
+    "block-count/drscratch-parallelism": "并行",
+    "block-count/drscratch-logic": "思辨",
+    "block-count/drscratch-synchronization": "同步",
+    "block-count/drscratch-flow-control": "流程",
+    "block-count/drscratch-interactivity": "交互",
+    "block-count/drscratch-data-representation": "数之表",
+    "block-count/mathlogic-operator-complexity": "算之繁",
+    "block-count/mathlogic-logic-depth": "思之深",
+    "block-count/mathlogic-data-volume": "数之量"
 }
