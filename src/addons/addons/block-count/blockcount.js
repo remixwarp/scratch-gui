@@ -1259,6 +1259,16 @@ export default async function ({ addon, console, msg }) {
         .sa-block-count-window-content .sa-analyze-score-bar { background: #ddd !important; }
         .sa-dark .sa-block-count-window-content .sa-analyze-score-bar,
         .sa-dark .sa-block-count-window-content .sa-analyze-score-bar { background: #444 !important; }
+        /* 深色：标题与大文字改为明亮色，确保明显（置于末尾，覆盖上面的灰色） */
+        .sa-dark .sa-block-count-window-content h2,
+        .sa-dark .sa-block-count-window-content h3,
+        .sa-dark .sa-block-count-window-content h4 { color: #ffffff !important; }
+        .sa-dark .sa-block-count-window-content .sa-analyze-score-label,
+        .sa-dark .sa-block-count-window-content .sa-analyze-score-value,
+        .sa-dark .sa-block-count-window-content .sa-analyze-stat-label,
+        .sa-dark .sa-block-count-window-content .sa-analyze-stat-value,
+        .sa-dark .sa-block-count-window-content .sa-analyze-extension-name,
+        .sa-dark .sa-block-count-window-content .sa-analyze-extension-count { color: #f0f0f0 !important; }
       `;
       content.appendChild(darkStyle);
 
