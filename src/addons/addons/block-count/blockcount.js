@@ -1,6 +1,4 @@
 import WindowManager from '../../window-system/window-manager.js';
-import {mountProjectAnalyzer} from '../simple-project-analyzer/embedded.js';
-
 
 export default async function ({ addon, console, msg }) {
   const vm = addon.tab.traps.vm;
@@ -186,7 +184,6 @@ export default async function ({ addon, console, msg }) {
     
     let languageChangeListener;
     let currentMode = 'original';
-    let spaAnalyzer = null;
     
     // 加载Chart.js库
     async function loadChartJS() {
@@ -713,6 +710,7 @@ export default async function ({ addon, console, msg }) {
       if (!canvas) return;
       
       const ctx = canvas.getContext('2d');
+      try { window.Chart.defaults.color = (document.body.classList.contains('dark') || document.body.classList.contains('tw-dark')) ? '#e6e6e6' : '#333'; } catch (e) {}
       
       // 定义标准类别的固定顺序
       const standardOrder = [
@@ -832,6 +830,7 @@ export default async function ({ addon, console, msg }) {
       if (!canvas) return;
       
       const ctx = canvas.getContext('2d');
+      try { window.Chart.defaults.color = (document.body.classList.contains('dark') || document.body.classList.contains('tw-dark')) ? '#e6e6e6' : '#333'; } catch (e) {}
       
       const labels = Object.keys(scores);
       const data = Object.values(scores);
@@ -841,17 +840,17 @@ export default async function ({ addon, console, msg }) {
       document.getElementById('saDrScratchTotalScore').textContent = totalScore;
       
       // 计算等级
-      let level = '初级';
+      let level = msg('block-count/astra-level-primary', '初级');
       if (totalScore >= 18) {
-        level = '专家级';
+        level = msg('block-count/astra-level-expert', '专家级');
       } else if (totalScore >= 14) {
-        level = '高级';
+        level = msg('block-count/astra-level-advanced', '高级');
       } else if (totalScore >= 10) {
-        level = '中级';
+        level = msg('block-count/astra-level-intermediate', '中级');
       } else if (totalScore >= 6) {
-        level = '发展中';
+        level = msg('block-count/astra-level-developing', '发展中');
       }
-      document.getElementById('saDrScratchScoreLevel').textContent = `评估等级：${level}`;
+      document.getElementById('saDrScratchScoreLevel').textContent = msg('block-count/astra-eval-level', '评估等级：') + level;
       
       // 更新评分详情
       const detailsHTML = labels.map(label => `
@@ -880,7 +879,7 @@ export default async function ({ addon, console, msg }) {
         data: {
           labels: labels,
           datasets: [{
-            label: '计算思维评分',
+            label: msg('block-count/astra-computational-thinking', '计算思维评分'),
             data: data,
             backgroundColor: 'rgba(77, 151, 255, 0.2)',
             borderColor: '#4d97ff',
@@ -918,6 +917,7 @@ export default async function ({ addon, console, msg }) {
       if (!canvas) return;
       
       const ctx = canvas.getContext('2d');
+      try { window.Chart.defaults.color = (document.body.classList.contains('dark') || document.body.classList.contains('tw-dark')) ? '#e6e6e6' : '#333'; } catch (e) {}
       
       const labels = Object.keys(scores);
       const data = Object.values(scores);
@@ -927,15 +927,15 @@ export default async function ({ addon, console, msg }) {
       document.getElementById('saMathTotalScore').textContent = totalScore;
       
       // 计算等级
-      let level = '初级';
+      let level = msg('block-count/astra-level-primary', '初级');
       if (totalScore >= 20) {
-        level = '高级';
+        level = msg('block-count/astra-level-advanced', '高级');
       } else if (totalScore >= 10) {
-        level = '中级';
+        level = msg('block-count/astra-level-intermediate', '中级');
       } else if (totalScore >= 5) {
-        level = '发展中';
+        level = msg('block-count/astra-level-developing', '发展中');
       }
-      document.getElementById('saMathScoreLevel').textContent = `评估等级：${level}`;
+      document.getElementById('saMathScoreLevel').textContent = msg('block-count/astra-eval-level', '评估等级：') + level;
       
       // 更新评分详情
       const detailsHTML = labels.map(label => `
@@ -965,7 +965,7 @@ export default async function ({ addon, console, msg }) {
         data: {
           labels: labels,
           datasets: [{
-            label: '相对强度',
+            label: msg('block-count/astra-relative-strength', '相对强度'),
             data: normalizedData,
             backgroundColor: 'rgba(230, 81, 0, 0.2)',
             borderColor: '#E65100',
@@ -1011,7 +1011,7 @@ export default async function ({ addon, console, msg }) {
       const extensionList = document.getElementById('saExtensionList');
       
       if (extensions.length === 0) {
-        extensionList.innerHTML = '<p>未使用扩展</p>';
+        extensionList.innerHTML = '<p>' + msg('block-count/astra-no-extensions', '未使用扩展') + '</p>';
         return;
       }
       
@@ -1024,7 +1024,7 @@ export default async function ({ addon, console, msg }) {
             <div class="sa-analyze-extension-color" style="width: 12px; height: 12px; border-radius: 50%; background-color: ${color};"></div>
             <div style="flex: 1;">
               <div class="sa-analyze-extension-name" style="font-weight: 500; margin-bottom: 2px;">${extension.name}</div>
-              <div class="sa-analyze-extension-count" style="font-size: 12px; color: var(--ui-black-transparent, #999);">${extension.blocks.length} 个积木</div>
+              <div class="sa-analyze-extension-count" style="font-size: 12px; color: var(--ui-black-transparent, #999);">${extension.blocks.length} ${msg('block-count/astra-blocks-unit','个积木')}</div>
             </div>
           </div>
         `;
@@ -1043,39 +1043,39 @@ export default async function ({ addon, console, msg }) {
       statsGrid.innerHTML = `
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.totalBlocks}</div>
-          <div class="sa-analyze-stat-label">总代码块数</div>
+          <div class="sa-analyze-stat-label">${msg('block-count/astra-total-code-blocks','总代码块数')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.effectiveBlocks}</div>
-          <div class="sa-analyze-stat-label">有效积木</div>
+          <div class="sa-analyze-stat-label">${msg('block-count/astra-effective-blocks','有效积木')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.functionDefinitions}</div>
-          <div class="sa-analyze-stat-label">函数定义</div>
+          <div class="sa-analyze-stat-label">${msg('block-count/astra-function-defs','函数定义')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.sprites}</div>
-          <div class="sa-analyze-stat-label">角色</div>
+          <div class="sa-analyze-stat-label">${msg('block-count/astra-sprites','角色')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.costumeCount}</div>
-          <div class="sa-analyze-stat-label">造型</div>
+          <div class="sa-analyze-stat-label">${msg('block-count/astra-costumes','造型')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.soundCount}</div>
-          <div class="sa-analyze-stat-label">声音</div>
+          <div class="sa-analyze-stat-label">${msg('block-count/astra-sounds','声音')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.variableCount}</div>
-          <div class="sa-analyze-stat-label">变量</div>
+          <div class="sa-analyze-stat-label">${msg('block-count/astra-variables','变量')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.listCount}</div>
-          <div class="sa-analyze-stat-label">列表</div>
+          <div class="sa-analyze-stat-label">${msg('block-count/astra-lists','列表')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.extensions.length}</div>
-          <div class="sa-analyze-stat-label">扩展</div>
+          <div class="sa-analyze-stat-label">${msg('block-count/astra-extensions','扩展')}</div>
         </div>
       `;
       
@@ -1107,10 +1107,6 @@ export default async function ({ addon, console, msg }) {
     
     // Create a function to update the window content
     const updateWindowContent = () => {
-      if (currentMode !== 'astra' && spaAnalyzer) {
-        spaAnalyzer.unmount();
-        spaAnalyzer = null;
-      }
       const content = document.createElement('div');
       content.className = 'sa-block-count-window-content';
       content.style.cssText = `
@@ -1191,6 +1187,41 @@ export default async function ({ addon, console, msg }) {
         }
       `;
       content.appendChild(style);
+      // Astra 积木分析 - 深色模式适配
+      const darkStyle = document.createElement('style');
+      darkStyle.textContent = `
+        .sa-block-count-window-content { color: #333; }
+        .sa-block-count-window-content h2,
+        .sa-block-count-window-content h3,
+        .sa-block-count-window-content h4 { color: #333 !important; }
+        .sa-block-count-window-content .sa-analyze-loading p { color: #666 !important; }
+        /* 图表容器：浅色用浅底深字，深色用深底浅字 */
+        .sa-block-count-window-content div[style*="ui-secondary"] { background: #f5f5f5 !important; }
+        .sa-block-count-window-content div[style*="ui-modal-foreground"] { color: #333 !important; }
+        body.dark .sa-block-count-window-content,
+        body.tw-dark .sa-block-count-window-content { color: #e6e6e6 !important; }
+        body.dark .sa-block-count-window-content h2,
+        body.dark .sa-block-count-window-content h3,
+        body.dark .sa-block-count-window-content h4,
+        body.tw-dark .sa-block-count-window-content h2,
+        body.tw-dark .sa-block-count-window-content h3,
+        body.tw-dark .sa-block-count-window-content h4 { color: #e6e6e6 !important; }
+        body.dark .sa-block-count-window-content .sa-analyze-loading p,
+        body.tw-dark .sa-block-count-window-content .sa-analyze-loading p { color: #aaa !important; }
+        body.dark .sa-block-count-window-content div[style*="ui-secondary"],
+        body.tw-dark .sa-block-count-window-content div[style*="ui-secondary"] { background: #23252b !important; }
+        body.dark .sa-block-count-window-content div[style*="ui-modal-foreground"],
+        body.tw-dark .sa-block-count-window-content div[style*="ui-modal-foreground"] { color: #e6e6e6 !important; }
+        /* 扩展项/进度条硬编码深色，深浅皆可读 */
+        .sa-block-count-window-content .sa-analyze-extension-item { background: rgba(255,255,255,0.08) !important; }
+        body.dark .sa-block-count-window-content .sa-analyze-extension-item,
+        body.tw-dark .sa-block-count-window-content .sa-analyze-extension-item { background: #2c3e50 !important; }
+        .sa-block-count-window-content .sa-analyze-score-bar { background: #ddd !important; }
+        body.dark .sa-block-count-window-content .sa-analyze-score-bar,
+        body.tw-dark .sa-block-count-window-content .sa-analyze-score-bar { background: #444 !important; }
+      `;
+      content.appendChild(darkStyle);
+
       
       // Add button area
       const buttonContainer = document.createElement('div');
@@ -1203,7 +1234,7 @@ export default async function ({ addon, console, msg }) {
       `;
       
       const originalButton = document.createElement('button');
-      originalButton.textContent = '原版积木分析';
+      originalButton.textContent = msg('block-count/astra-original-mode', '原版积木分析');
       originalButton.style.cssText = `
         padding: 8px 16px;
         border: 1px solid var(--ui-black-transparent, #ccc);
@@ -1217,7 +1248,7 @@ export default async function ({ addon, console, msg }) {
       originalButton.addEventListener('click', () => switchMode('original'));
       
       const astraButton = document.createElement('button');
-      astraButton.textContent = 'AstraEditor积木分析';
+      astraButton.textContent = msg('block-count/astra-astra-mode', 'AstraEditor积木分析');
       astraButton.style.cssText = `
         padding: 8px 16px;
         border: 1px solid var(--ui-black-transparent, #ccc);
@@ -1229,7 +1260,7 @@ export default async function ({ addon, console, msg }) {
         font-weight: 500;
       `;
       astraButton.addEventListener('click', () => switchMode('astra'));
-
+      
       buttonContainer.appendChild(originalButton);
       buttonContainer.appendChild(astraButton);
       content.appendChild(buttonContainer);
@@ -1288,14 +1319,181 @@ export default async function ({ addon, console, msg }) {
           </div>
         `;
       } else {
-        // AstraEditor 项目分析已整体替换为 bilup 的 SPA 简易作品分析器
-        contentContainer.style.padding = '0';
-        if (spaAnalyzer) {
-          spaAnalyzer.unmount();
-        }
-        spaAnalyzer = mountProjectAnalyzer(contentContainer, {vm, addon});
-      }
+        contentContainer.innerHTML = `
+          <div style="margin-bottom: 20px;">
+            <h2 style="margin-bottom: 10px;">${msg('block-count/astra-project-analysis','项目分析')}</h2>
+            <div style="width: 100%; height: 1px; background: var(--ui-black-transparent, #e0e0e0);"></div>
+          </div>
+          
+          <div class="sa-analyze-loading" id="saAnalyzeLoading">
+            <div style="display: flex; flex-direction: column; align-items: center; padding: 40px;">
+              <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+              <p style="color: #666;">${msg('block-count/astra-analyzing','分析中...')}</p>
+            </div>
+          </div>
+          <div class="sa-analyze-results" id="saAnalyzeResults" style="display: none;">
+            <!-- 项目统计部分 -->
+            <div style="margin-bottom: 30px;">
+              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('block-count/astra-project-stats','项目统计')}</h3>
+              <div class="sa-analyze-stats-grid" id="saStatsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px;">
+                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
+                  <div style="font-size: 12px;">${msg('block-count/astra-total-code-blocks','总代码块数')}</div>
+                </div>
+                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
+                  <div style="font-size: 12px;">${msg('block-count/astra-effective-blocks','有效积木')}</div>
+                </div>
+                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
+                  <div style="font-size: 12px;">${msg('block-count/astra-function-defs','函数定义')}</div>
+                </div>
+                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
+                  <div style="font-size: 12px;">${msg('block-count/astra-sprites','角色')}</div>
+                </div>
+                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
+                  <div style="font-size: 12px;">${msg('block-count/astra-costumes','造型')}</div>
+                </div>
+                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
+                  <div style="font-size: 12px;">${msg('block-count/astra-sounds','声音')}</div>
+                </div>
+                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
+                  <div style="font-size: 12px;">${msg('block-count/astra-variables','变量')}</div>
+                </div>
+                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
+                  <div style="font-size: 12px;">${msg('block-count/astra-lists','列表')}</div>
+                </div>
+                <div style="background: #0fbd8c; padding: 15px; border-radius: 8px; text-align: center; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">-</div>
+                  <div style="font-size: 12px;">${msg('block-count/astra-extensions','扩展')}</div>
+                </div>
+              </div>
+            </div>
 
+            <!-- 代码类型分布 -->
+            <div style="margin-bottom: 30px;">
+              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('block-count/astra-block-distribution','积木分布')}</h3>
+              <div style="background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; height: 300px;">
+                <canvas id="saCodeTypeChart" width="400" height="200"></canvas>
+              </div>
+            </div>
+
+            <!-- Dr.Scratch评分系统 -->
+            <div style="margin-bottom: 30px;">
+              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('block-count/astra-dr-scratch-score','Dr.Scratch评分')}</h3>
+              <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; height: 350px;">
+                  <canvas id="saDrScratchChart" width="400" height="300"></canvas>
+                </div>
+                <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px;">
+                  <div id="saDrScratchDetails" style="color: var(--ui-modal-foreground, white);">
+                    <div style="margin-bottom: 20px;">
+                      <h4 style="margin-bottom: 10px;">${msg('block-count/astra-total-score','总分：')}<span id="saDrScratchTotalScore">0</span> / 21</h4>
+                      <div id="saDrScratchScoreLevel" style="color: var(--ui-black-transparent, #999);">${msg('block-count/astra-eval-level-calc','评估等级：计算中...')}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 数学逻辑评估 -->
+            <div style="margin-bottom: 30px;">
+              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('block-count/astra-math-logic','数学逻辑评估')}</h3>
+              <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; height: 350px;">
+                  <canvas id="saMathLogicChart" width="400" height="300"></canvas>
+                </div>
+                <div style="flex: 1; min-width: 300px; background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px;">
+                  <div id="saMathLogicDetails" style="color: var(--ui-modal-foreground, white);">
+                    <div style="margin-bottom: 20px;">
+                      <h4 style="margin-bottom: 10px;">${msg('block-count/astra-math-total-score','数学总分：')}<span id="saMathTotalScore">0</span> ${msg('block-count/astra-blocks-unit','个积木')}</h4>
+                      <div id="saMathScoreLevel" style="color: var(--ui-black-transparent, #999);">${msg('block-count/astra-eval-level-calc','评估等级：计算中...')}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 使用的扩展 -->
+            <div style="margin-bottom: 20px;">
+              <h3 style="margin-bottom: 15px; color: var(--ui-modal-foreground, #333);">${msg('block-count/astra-used-extensions','使用的扩展')}</h3>
+              <div id="saExtensionList" style="background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; color: var(--ui-modal-foreground, white);">
+                <p>${msg('block-count/astra-loading','加载中...')}</p>
+              </div>
+            </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--ui-black-transparent, #e0e0e0);">
+              <button id="saExportImageBtn" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: transform 0.2s, box-shadow 0.2s;">
+                ${msg('block-count/astra-export-image','📸 导出结果为图片')}
+              </button>
+            </div>
+          </div>
+        `;
+        
+        // 异步分析项目
+        setTimeout(async () => {
+          console.log('开始分析项目...');
+          const analysis = await analyzeProject();
+          console.log('分析完成:', analysis);
+          await updateAstraAnalysisResults(analysis);
+          console.log('结果更新完成');
+
+          // 绑定导出图片按钮事件
+          const exportBtn = document.getElementById('saExportImageBtn');
+          if (exportBtn) {
+            exportBtn.addEventListener('click', async () => {
+              const resultsEl = document.getElementById('saAnalyzeResults');
+              if (!resultsEl) return;
+
+              exportBtn.textContent = msg('block-count/astra-exporting', '⏳ 导出中...');
+              exportBtn.disabled = true;
+
+              try {
+                // 动态加载 html2canvas
+                if (!window.html2canvas) {
+                  await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                  });
+                }
+
+                const canvas = await window.html2canvas(resultsEl, {
+                  scale: 2,
+                  useCORS: true,
+                  backgroundColor: (document.body.classList.contains('dark') || document.body.classList.contains('tw-dark')) ? '#23252b' : '#ffffff',
+                  logging: false
+                });
+
+                canvas.toBlob(blob => {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `astra-analysis-${Date.now()}.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }, 'image/png');
+              } catch (err) {
+                console.error('导出图片失败:', err);
+                alert(msg('block-count/astra-export-failed', '导出图片失败：') + err.message);
+              } finally {
+                exportBtn.textContent = msg('block-count/astra-export-image', '📸 导出结果为图片');
+                exportBtn.disabled = false;
+              }
+            });
+          }
+        }, 100);
+      }
+      
       content.appendChild(contentContainer);
       complexityWindow.setContent(content);
     };
@@ -1320,9 +1518,7 @@ export default async function ({ addon, console, msg }) {
         if (currentMode === 'original') {
           metrics = getProjectComplexity();
         }
-        if (currentMode !== 'astra') {
-          updateWindowContent();
-        }
+        updateWindowContent();
       }, 1000);
     };
     vm.on("PROJECT_CHANGED", projectChangeListener);
