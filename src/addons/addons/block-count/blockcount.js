@@ -278,19 +278,19 @@ export default async function ({ addon, console, msg }) {
     
     // 获取积木类型
     const getBlockCategory = (opcode, extensionNameMap = {}) => {
-      if (opcode.startsWith('motion_')) return msg('block-count/category-motion', '运动');
-      if (opcode.startsWith('looks_')) return msg('block-count/category-looks', '外观');
-      if (opcode.startsWith('sound_')) return msg('block-count/category-sound', '声音');
-      if (opcode.startsWith('event_')) return msg('block-count/category-events', '事件');
-      if (opcode.startsWith('control_')) return msg('block-count/category-control', '控制');
-      if (opcode.startsWith('sensing_')) return msg('block-count/category-sensing', '侦测');
-      if (opcode.startsWith('operator_')) return msg('block-count/category-operators', '运算');
-      if (opcode.startsWith('data_')) return msg('block-count/category-data', '数据');
-      if (opcode.startsWith('video_')) return msg('block-count/category-video', '视频');
+      if (opcode.startsWith('motion_')) return msg('category-motion', '运动');
+      if (opcode.startsWith('looks_')) return msg('category-looks', '外观');
+      if (opcode.startsWith('sound_')) return msg('category-sound', '声音');
+      if (opcode.startsWith('event_')) return msg('category-events', '事件');
+      if (opcode.startsWith('control_')) return msg('category-control', '控制');
+      if (opcode.startsWith('sensing_')) return msg('category-sensing', '侦测');
+      if (opcode.startsWith('operator_')) return msg('category-operators', '运算');
+      if (opcode.startsWith('data_')) return msg('category-data', '数据');
+      if (opcode.startsWith('video_')) return msg('category-video', '视频');
       
       // 自定义函数和参数
-      if (opcode.startsWith('procedures_')) return msg('block-count/category-procedures', '自定义函数');
-      if (opcode.startsWith('argument_')) return msg('block-count/category-procedures', '自定义函数');
+      if (opcode.startsWith('procedures_')) return msg('category-procedures', '自定义函数');
+      if (opcode.startsWith('argument_')) return msg('category-procedures', '自定义函数');
       
       // 扩展积木处理
       if (!isStandardBlock(opcode)) {
@@ -301,7 +301,7 @@ export default async function ({ addon, console, msg }) {
         return getExtensionNameFromId(extensionId);
       }
       
-      return msg('block-count/category-other', '其他');
+      return msg('category-other', '其他');
     };
     
     // 分析扩展
@@ -544,13 +544,13 @@ export default async function ({ addon, console, msg }) {
       const hasClones = controlBlockTypes.has('control_create_clone_of') || controlBlockTypes.has('control_start_as_clone');
       
       if (hasMultipleSprites && hasMultipleScripts) {
-        scores[msg('block-count/drscratch-abstraction', '抽象和问题分解')] = 1;
+        scores[msg('drscratch-abstraction', '抽象和问题分解')] = 1;
       }
       if (hasCustomBlocks) {
-        scores[msg('block-count/drscratch-abstraction', '抽象和问题分解')] = 2;
+        scores[msg('drscratch-abstraction', '抽象和问题分解')] = 2;
       }
       if (hasClones) {
-        scores[msg('block-count/drscratch-abstraction', '抽象和问题分解')] = 3;
+        scores[msg('drscratch-abstraction', '抽象和问题分解')] = 3;
       }
 
       // 2. 并行性
@@ -563,13 +563,13 @@ export default async function ({ addon, console, msg }) {
       const hasBackdropEvents = eventBlockTypes.has('event_whenbackdropswitchesto');
       
       if (hasGreenFlag && eventBlockTypes.size > 1) {
-        scores[msg('block-count/drscratch-parallelism', '并行性')] = 1;
+        scores[msg('drscratch-parallelism', '并行性')] = 1;
       }
       if ((hasKeyEvents || hasClickEvents) && (eventBlockTypes.size > 2)) {
-        scores[msg('block-count/drscratch-parallelism', '并行性')] = 2;
+        scores[msg('drscratch-parallelism', '并行性')] = 2;
       }
       if (hasMessageEvents || hasCloneEvents || hasSensorEvents || hasBackdropEvents) {
-        scores[msg('block-count/drscratch-parallelism', '并行性')] = 3;
+        scores[msg('drscratch-parallelism', '并行性')] = 3;
       }
 
       // 3. 逻辑思维
@@ -580,13 +580,13 @@ export default async function ({ addon, console, msg }) {
                          operatorBlockTypes.has('operator_not');
       
       if (hasIf) {
-        scores[msg('block-count/drscratch-logic', '逻辑思维')] = 1;
+        scores[msg('drscratch-logic', '逻辑思维')] = 1;
       }
       if (hasIfElse) {
-        scores[msg('block-count/drscratch-logic', '逻辑思维')] = 2;
+        scores[msg('drscratch-logic', '逻辑思维')] = 2;
       }
       if (hasLogicOps) {
-        scores[msg('block-count/drscratch-logic', '逻辑思维')] = 3;
+        scores[msg('drscratch-logic', '逻辑思维')] = 3;
       }
 
       // 4. 同步
@@ -601,13 +601,13 @@ export default async function ({ addon, console, msg }) {
       const hasBroadcastAndWait = eventBlockTypes.has('event_broadcastandwait');
       
       if (hasWait) {
-        scores[msg('block-count/drscratch-synchronization', '同步')] = 1;
+        scores[msg('drscratch-synchronization', '同步')] = 1;
       }
       if (hasBroadcast || hasReceiveMessage || hasStopAll || hasStopThis || hasStopOther) {
-        scores[msg('block-count/drscratch-synchronization', '同步')] = 2;
+        scores[msg('drscratch-synchronization', '同步')] = 2;
       }
       if (hasWaitUntil || hasBackdropChange || hasBroadcastAndWait) {
-        scores[msg('block-count/drscratch-synchronization', '同步')] = 3;
+        scores[msg('drscratch-synchronization', '同步')] = 3;
       }
 
       // 5. 流程控制
@@ -616,13 +616,13 @@ export default async function ({ addon, console, msg }) {
       const hasRepeatUntil = controlBlockTypes.has('control_repeat_until');
       
       if (hasSequence) {
-        scores[msg('block-count/drscratch-flow-control', '流程控制')] = 1;
+        scores[msg('drscratch-flow-control', '流程控制')] = 1;
       }
       if (hasRepeat) {
-        scores[msg('block-count/drscratch-flow-control', '流程控制')] = 2;
+        scores[msg('drscratch-flow-control', '流程控制')] = 2;
       }
       if (hasRepeatUntil) {
-        scores[msg('block-count/drscratch-flow-control', '流程控制')] = 3;
+        scores[msg('drscratch-flow-control', '流程控制')] = 3;
       }
 
       // 6. 用户交互
@@ -640,13 +640,13 @@ export default async function ({ addon, console, msg }) {
                                  blockTypes.has('sound_changevolumeby');
       
       if (hasGreenFlagEvent) {
-        scores[msg('block-count/drscratch-interactivity', '用户交互')] = 1;
+        scores[msg('drscratch-interactivity', '用户交互')] = 1;
       }
       if (hasKeyPressedEvent || hasSpriteClickedEvent || hasAskWait || hasMouseBlocks) {
-        scores[msg('block-count/drscratch-interactivity', '用户交互')] = 2;
+        scores[msg('drscratch-interactivity', '用户交互')] = 2;
       }
       if (hasSensorGreater || hasVideo || hasAudioInteraction) {
-        scores[msg('block-count/drscratch-interactivity', '用户交互')] = 3;
+        scores[msg('drscratch-interactivity', '用户交互')] = 3;
       }
 
       // 7. 数据表示
@@ -655,13 +655,13 @@ export default async function ({ addon, console, msg }) {
       const hasListOperations = listNames.size > 0 && Array.from(dataBlockTypes).some(type => type.includes('list'));
       
       if (hasSpriteModifiers) {
-        scores[msg('block-count/drscratch-data-representation', '数据表示')] = 1;
+        scores[msg('drscratch-data-representation', '数据表示')] = 1;
       }
       if (hasVariableOperations) {
-        scores[msg('block-count/drscratch-data-representation', '数据表示')] = 2;
+        scores[msg('drscratch-data-representation', '数据表示')] = 2;
       }
       if (hasListOperations) {
-        scores[msg('block-count/drscratch-data-representation', '数据表示')] = 3;
+        scores[msg('drscratch-data-representation', '数据表示')] = 3;
       }
 
       return scores;
@@ -696,9 +696,9 @@ export default async function ({ addon, console, msg }) {
       });
 
       const scores = {
-        [msg('block-count/mathlogic-operator-complexity', '运算复杂度')]: operatorCount,
-        [msg('block-count/mathlogic-logic-depth', '逻辑深度')]: controlCount,
-        [msg('block-count/mathlogic-data-volume', '数据量')]: dataCount
+        [msg('mathlogic-operator-complexity', '运算复杂度')]: operatorCount,
+        [msg('mathlogic-logic-depth', '逻辑深度')]: controlCount,
+        [msg('mathlogic-data-volume', '数据量')]: dataCount
       };
 
       return scores;
@@ -714,7 +714,7 @@ export default async function ({ addon, console, msg }) {
       
       // 定义标准类别的固定顺序
       const standardOrder = [
-        msg('block-count/category-motion', '运动'), msg('block-count/category-looks', '外观'), msg('block-count/category-sound', '声音'), msg('block-count/category-events', '事件'), msg('block-count/category-control', '控制'), msg('block-count/category-sensing', '侦测'), msg('block-count/category-operators', '运算'), msg('block-count/category-data', '数据'), msg('block-count/category-procedures', '自定义函数')
+        msg('category-motion', '运动'), msg('category-looks', '外观'), msg('category-sound', '声音'), msg('category-events', '事件'), msg('category-control', '控制'), msg('category-sensing', '侦测'), msg('category-operators', '运算'), msg('category-data', '数据'), msg('category-procedures', '自定义函数')
       ];
       
       // 分离标准和扩展类别
@@ -750,15 +750,15 @@ export default async function ({ addon, console, msg }) {
       
       // 定义每个类别的颜色
       const categoryColors = {
-        [msg('block-count/category-motion', '运动')]: '#4C97FF',
-        [msg('block-count/category-looks', '外观')]: '#9966FF',
-        [msg('block-count/category-sound', '声音')]: '#CF63CF',
-        [msg('block-count/category-events', '事件')]: '#FFBF00',
-        [msg('block-count/category-control', '控制')]: '#FFAB19',
-        [msg('block-count/category-sensing', '侦测')]: '#5CB1D6',
-        [msg('block-count/category-operators', '运算')]: '#59C059',
-        [msg('block-count/category-data', '数据')]: '#FF8C1A',
-        [msg('block-count/category-procedures', '自定义函数')]: '#FF6680'
+        [msg('category-motion', '运动')]: '#4C97FF',
+        [msg('category-looks', '外观')]: '#9966FF',
+        [msg('category-sound', '声音')]: '#CF63CF',
+        [msg('category-events', '事件')]: '#FFBF00',
+        [msg('category-control', '控制')]: '#FFAB19',
+        [msg('category-sensing', '侦测')]: '#5CB1D6',
+        [msg('category-operators', '运算')]: '#59C059',
+        [msg('category-data', '数据')]: '#FF8C1A',
+        [msg('category-procedures', '自定义函数')]: '#FF6680'
       };
       
       // 为扩展生成默认颜色
@@ -1273,44 +1273,48 @@ export default async function ({ addon, console, msg }) {
       content.appendChild(darkStyle);
 
       
-      // Add button area
+      // 顶部两个分析切换按钮：样式对齐「扩展编辑器」窗口顶部两个 tab
       const buttonContainer = document.createElement('div');
       buttonContainer.style.cssText = `
         display: flex;
-        gap: 10px;
-        padding: 15px 20px 0;
-        border-bottom: 1px solid var(--ui-black-transparent, #e0e0e0);
-        padding-bottom: 15px;
+        border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12));
+        background: var(--ui-secondary, #f5f5f5);
+        padding: 0;
+        margin: 0;
       `;
-      
-      const originalButton = document.createElement('button');
-      originalButton.textContent = msg('astra-original-mode', '原版积木分析');
-      originalButton.style.cssText = `
-        padding: 8px 16px;
-        border: 1px solid var(--ui-black-transparent, #ccc);
-        border-radius: 4px;
-        background: ${currentMode === 'original' ? 'var(--looks-secondary, #0fbd8c)' : 'var(--ui-secondary, #f8f9fa)'};
-        color: ${currentMode === 'original' ? 'white' : 'var(--ui-modal-foreground, #000)'};
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 500;
-      `;
-      originalButton.addEventListener('click', () => switchMode('original'));
-      
-      const astraButton = document.createElement('button');
-      astraButton.textContent = msg('astra-astra-mode', 'AstraEditor积木分析');
-      astraButton.style.cssText = `
-        padding: 8px 16px;
-        border: 1px solid var(--ui-black-transparent, #ccc);
-        border-radius: 4px;
-        background: ${currentMode === 'astra' ? 'var(--looks-secondary, #0fbd8c)' : 'var(--ui-secondary, #f8f9fa)'};
-        color: ${currentMode === 'astra' ? 'white' : 'var(--ui-modal-foreground, #000)'};
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 500;
-      `;
-      astraButton.addEventListener('click', () => switchMode('astra'));
-      
+
+      const createAnalysisTab = (mode, label) => {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        btn.style.cssText = `
+          flex: 1;
+          padding: 12px;
+          border: none;
+          background: ${currentMode === mode ? 'var(--ui-modal-background, #ffffff)' : 'var(--ui-secondary, #f5f5f5)'};
+          border-bottom: ${currentMode === mode ? '3px solid var(--looks-secondary, #0066cc)' : '1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12))'};
+          color: var(--ui-modal-foreground, var(--text-primary, #1f2937));
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          transition: background-color 0.2s;
+        `;
+        btn.onmouseover = () => {
+          if (currentMode !== mode) {
+            btn.style.background = 'var(--looks-transparent, rgba(0, 102, 204, 0.12))';
+          }
+        };
+        btn.onmouseout = () => {
+          if (currentMode !== mode) {
+            btn.style.background = 'var(--ui-secondary, #f5f5f5)';
+          }
+        };
+        btn.onclick = () => switchMode(mode);
+        return btn;
+      };
+
+      const originalButton = createAnalysisTab('original', msg('astra-original-mode', '原版积木分析'));
+      const astraButton = createAnalysisTab('astra', msg('astra-astra-mode', 'AstraEditor积木分析'));
+
       buttonContainer.appendChild(originalButton);
       buttonContainer.appendChild(astraButton);
       content.appendChild(buttonContainer);
