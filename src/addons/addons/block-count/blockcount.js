@@ -1505,8 +1505,8 @@ export default async function ({ addon, console, msg }) {
               const resultsEl = document.getElementById('saAnalyzeResults');
               if (!resultsEl) return;
 
-              exportBtn.textContent = msg('astra-exporting', '⏳ 导出中...');
               exportBtn.disabled = true;
+              exportBtn.style.opacity = '0.6';
 
               try {
                 // 动态加载 html2canvas
@@ -1541,8 +1541,8 @@ export default async function ({ addon, console, msg }) {
                 console.error('导出图片失败:', err);
                 alert(msg('astra-export-failed', '导出图片失败：') + err.message);
               } finally {
-                exportBtn.textContent = msg('astra-export-image', '📸 导出结果为图片');
                 exportBtn.disabled = false;
+                exportBtn.style.opacity = '1';
               }
             });
           }
