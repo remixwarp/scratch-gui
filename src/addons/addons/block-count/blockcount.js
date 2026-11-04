@@ -1375,6 +1375,12 @@ export default async function ({ addon, console, msg }) {
       } else {
         contentContainer.innerHTML = `
           <div style="margin-bottom: 20px;">
+            <button id="saExportImageBtn" style="width: 100%; padding: 12px; background: var(--looks-secondary, #0066cc); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: opacity 0.2s, filter 0.2s;">
+              ${msg('astra-export-image','📸 导出结果为图片')}
+            </button>
+          </div>
+
+          <div style="margin-bottom: 20px;">
             <h2 style="margin-bottom: 10px;">${msg('astra-project-analysis','项目分析')}</h2>
             <div style="width: 100%; height: 1px; background: var(--ui-black-transparent, #e0e0e0);"></div>
           </div>
@@ -1479,12 +1485,6 @@ export default async function ({ addon, console, msg }) {
               <div id="saExtensionList" style="background: var(--ui-secondary, #1a1a1a); padding: 20px; border-radius: 8px; color: var(--ui-modal-foreground, white);">
                 <p>${msg('astra-loading','加载中...')}</p>
               </div>
-            </div>
-
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--ui-black-transparent, #e0e0e0);">
-              <button id="saExportImageBtn" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: transform 0.2s, box-shadow 0.2s;">
-                ${msg('astra-export-image','📸 导出结果为图片')}
-              </button>
             </div>
           </div>
         `;
