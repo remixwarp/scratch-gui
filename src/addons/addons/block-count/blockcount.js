@@ -1558,7 +1558,9 @@ export default async function ({ addon, console, msg }) {
     
     // Add language change listener
     languageChangeListener = (e) => {
-      if (e.action && e.action.type === 'scratch-gui/locales/SELECT_LOCALE') {
+      const nextLocale = e.detail && e.detail.next && e.detail.next.locales && e.detail.next.locales.locale;
+      const prevLocale = e.detail && e.detail.prev && e.detail.prev.locales && e.detail.prev.locales.locale;
+      if (nextLocale && nextLocale !== prevLocale) {
         updateWindowContent();
       }
     };
@@ -1652,7 +1654,9 @@ export default async function ({ addon, console, msg }) {
         
         // Add language change listener
         addon.tab.redux.addEventListener('statechanged', (e) => {
-          if (e.action && e.action.type === 'scratch-gui/locales/SELECT_LOCALE') {
+          const nextLocale = e.detail && e.detail.next && e.detail.next.locales && e.detail.next.locales.locale;
+          const prevLocale = e.detail && e.detail.prev && e.detail.prev.locales && e.detail.prev.locales.locale;
+          if (nextLocale && nextLocale !== prevLocale) {
             updateDisplay();
           }
         });
