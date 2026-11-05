@@ -11,9 +11,6 @@ import Input from '../forms/input.jsx';
 
 const BufferedInput = BufferedInputHOC(Input);
 
-// MistWarp 上游默认协作服务器，作为本项目的备用选项
-const BACKUP_COLLAB_HOST = 'collab.mistium.com';
-
 import {Handshake as CollaborationIcon, User, Crown, UserMinus, Copy, AlertTriangle, PenLine, Settings, X} from 'lucide-react';
 
 import showAlert from '../../addons/window-system/alert';
@@ -35,7 +32,7 @@ class CollaborationModal extends Component {
             showJoinRequest: false,
             showSettings: false,
             peerConfig: {
-                host: 'collab.bilup.org',
+                host: '',
                 port: 443,
                 key: 'bilup',
                 path: '/',
@@ -298,32 +295,6 @@ class CollaborationModal extends Component {
             }
         }));
     }
-
-    handleCopyBackupHost = () => {
-        const text = BACKUP_COLLAB_HOST;
-        const copy = () => {
-            this.setState({copiedTip: true});
-            setTimeout(() => this.setState({copiedTip: false}), 2000);
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(copy).catch(() => {
-                // 退化方案
-                const ta = document.createElement('textarea');
-                ta.value = text;
-                document.body.appendChild(ta);
-                ta.select();
-                try {
-                    document.execCommand('copy');
-                    copy();
-                } catch (e) {
-                    // ignore
-                }
-                document.body.removeChild(ta);
-            });
-        } else {
-            copy();
-        }
-    };
 
     handlePortChange (port) {
         const portNum = parseInt(port, 10);
@@ -1326,38 +1297,6 @@ class CollaborationModal extends Component {
                             value={this.state.peerConfig.host}
                             onSubmit={this.handleHostChange}
                         />
-                    </div>
-
-                    <div className={styles.backupHint}>
-                        <span className={styles.backupHintLabel}>
-                            <FormattedMessage
-                                defaultMessage="Backup option (MistWarp collaboration server):"
-                                description="Hint label for backup collaboration server"
-                                id="gui.collaboration.backupHostHint"
-                            />
-                        </span>
-                        <button
-                            type="button"
-                            className={styles.backupHostValue}
-                            onClick={this.handleCopyBackupHost}
-                            title={this.props.intl.formatMessage({
-                                defaultMessage: 'Click to copy',
-                                description: 'Tooltip for copying backup host',
-                                id: 'gui.collaboration.copyTooltip'
-                            })}
-                        >
-                            <Copy size={14} />
-                            {BACKUP_COLLAB_HOST}
-                        </button>
-                        {this.state.copiedTip ? (
-                            <span className={styles.copiedTip}>
-                                <FormattedMessage
-                                    defaultMessage="Copied!"
-                                    description="Copied confirmation text"
-                                    id="gui.collaboration.copied"
-                                />
-                            </span>
-                        ) : null}
                     </div>
 
                     <div className={styles.inputGroup}>
