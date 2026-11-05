@@ -470,14 +470,17 @@ export default async function ({ addon, console, msg }) {
     
     // 计算Dr.Scratch评分
     const calculateDrScratchScores = (projectData) => {
+      // 关键修复：初始化键必须与下方赋值键保持「同一来源」（都用 msg() 计算），
+      // 否则在英文状态下 init 的中文键不会被 msg 英文键覆盖，导致标签出现
+      // 「7 个中文 0 值 + 7 个英文实际分」共 14 项的双重标签 bug。
       const scores = {
-        '抽象和问题分解': 0,
-        '并行性': 0,
-        '逻辑思维': 0,
-        '同步': 0,
-        '流程控制': 0,
-        '用户交互': 0,
-        '数据表示': 0
+        [msg('drscratch-abstraction', '抽象和问题分解')]: 0,
+        [msg('drscratch-parallelism', '并行性')]: 0,
+        [msg('drscratch-logic', '逻辑思维')]: 0,
+        [msg('drscratch-synchronization', '同步')]: 0,
+        [msg('drscratch-flow-control', '流程控制')]: 0,
+        [msg('drscratch-interactivity', '用户交互')]: 0,
+        [msg('drscratch-data-representation', '数据表示')]: 0
       };
 
       const targets = projectData.targets || [];
