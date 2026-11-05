@@ -1319,12 +1319,14 @@ class DefaultVariableSetting extends React.Component {
                     <FormattedMessage {...messages.defaultvariablehelp} />
                 }
                 secondary={
-                    <div className={styles.customSpriteSecondary}>
+                    <div>
                         {enabled && (
                             <React.Fragment>
-                                <div className={styles.customSpriteHint}>
+                                {/* 提示改为纯文本（复用 .detail），移出 customSpriteSecondary 盒子，与其它高级设置一致 */}
+                                <div className={styles.detail}>
                                     <FormattedMessage {...messages.defaultvariablehint} />
                                 </div>
+                                <div className={styles.customSpriteSecondary}>
                                 <button
                                     className={classNames(styles.button, styles.defaultVariableAdd)}
                                     onClick={this.handleAdd}
@@ -1359,6 +1361,7 @@ class DefaultVariableSetting extends React.Component {
                                 ))}
                             </React.Fragment>
                         )}
+                        </div>
                     </div>
                 }
             />
