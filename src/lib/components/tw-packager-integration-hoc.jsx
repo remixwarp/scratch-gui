@@ -9,6 +9,14 @@ import windowManager from '../../addons/window-system/window-manager';
 const PACKAGER_URL = 'https://packager.02engine.org';
 const PACKAGER_ORIGIN = PACKAGER_URL;
 
+// 打包器备选项：第一个沿用当前内嵌打包器（支持 import_from 导入当前作品），
+// 其余为外部打包器页面。标题按需求分别为 02Engine / zx34 / wangba。
+const PACKAGER_TABS = [
+    {id: '02Engine', label: '02Engine', url: null},
+    {id: 'zx34', label: 'zx34', url: 'https://rw-sc-packager.pages.dev/'},
+    {id: 'wangba', label: 'wangba', url: 'https://wb-packer-yesshape.pages.dev/'}
+];
+
 let packagerWindow = null;
 
 const PackagerIntegrationHOC = function (WrappedComponent) {
@@ -54,15 +62,88 @@ const PackagerIntegrationHOC = function (WrappedComponent) {
             const container = packagerWindow.getContentElement();
             container.style.padding = '0';
             container.style.overflow = 'hidden';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+
+            // 贴顶部的备选项按钮栏 —— 复用扩展编辑器的 tab 按钮样式
+            const tabBar = document.createElement('div');
+            tabBar.style.cssText = `
+                display: flex;
+                flex-shrink: 0;
+                border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12));
+                background: var(--ui-secondary, #f5f5f5);
+                padding: 0;
+                margin: 0;
+            `;
+
+            const contentArea = document.createElement('div');
+            contentArea.style.cssText = `
+                flex: 1;
+                min-height: 0;
+                overflow: hidden;
+            `;
 
             const iframe = document.createElement('iframe');
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.border = 'none';
-            iframe.style.borderRadius = '0 0 8px 8px';
-            iframe.src = `${PACKAGER_URL}/?import_from=${location.origin}`;
+            iframe.style.cssText = `
+                width: 100%;
+                height: 100%;
+                border: none;
+                border-radius: 0 0 8px 8px;
+                background: var(--ui-modal-background, #ffffff);
+            `;
+            contentArea.appendChild(iframe);
+            container.appendChild(tabBar);
+            container.appendChild(contentArea);
 
-            container.appendChild(iframe);
+            let currentTab = PACKAGER_TABS[0].id;
+            const buttons = {};
+            const tabUrl = tab => tab.url || `${PACKAGER_URL}/?import_from=${location.origin}`;
+
+            const styleTab = (tab, btn) => {
+                const active = currentTab === tab.id;
+                btn.className = active ? 'active' : '';
+                btn.style.cssText = `
+                    flex: 1;
+                    padding: 12px;
+                    border: none;
+                    background: ${active ?
+        'var(--ui-modal-background, #ffffff)' :
+        'var(--ui-secondary, #f5f5f5)'};
+                    border-bottom: ${active ?
+        '3px solid var(--looks-secondary, #0066cc)' :
+        '1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.12))'};
+                    color: var(--ui-modal-foreground, var(--text-primary, #1f2937));
+                    cursor: pointer;
+                    font-size: 14px;
+                    transition: background-color 0.2s;
+                `;
+            };
+
+            const selectTab = tab => {
+                currentTab = tab.id;
+                PACKAGER_TABS.forEach(t => styleTab(t, buttons[t.id]));
+                iframe.src = tabUrl(tab);
+            };
+
+            PACKAGER_TABS.forEach(tab => {
+                const btn = document.createElement('button');
+                btn.textContent = tab.label;
+                btn.onmouseover = () => {
+                    if (currentTab !== tab.id) {
+                        btn.style.background = 'var(--looks-transparent, rgba(0, 102, 204, 0.12))';
+                    }
+                };
+                btn.onmouseout = () => {
+                    if (currentTab !== tab.id) {
+                        btn.style.background = 'var(--ui-secondary, #f5f5f5)';
+                    }
+                };
+                btn.onclick = () => selectTab(tab);
+                buttons[tab.id] = btn;
+                tabBar.appendChild(btn);
+            });
+
+            selectTab(PACKAGER_TABS[0]);
             packagerWindow.show();
         }
         handleMessage(e) {

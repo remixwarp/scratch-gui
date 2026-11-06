@@ -353,13 +353,6 @@ const Footer = () => (
                     </a>
                 </div>
                 <div className={styles.footerSection}>
-                    <a href="https://packager.02engine.org/">
-                        <FormattedMessage
-                            defaultMessage="02Engine Packager"
-                            description="Link in footer to 02Engine packager service"
-                            id="tw.footer.packager"
-                        />
-                    </a>
                     <a href="https://remixwarp.pages.dev/convert" target="_blank" rel="noopener noreferrer">
                         <FormattedMessage
                             defaultMessage="兼容性转换"
