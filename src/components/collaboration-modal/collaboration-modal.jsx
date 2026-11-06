@@ -16,6 +16,7 @@ import {Handshake as CollaborationIcon, User, Crown, UserMinus, Copy, AlertTrian
 import showAlert from '../../addons/window-system/alert';
 import NotificationSystem from '../../lib/notification-manager.js';
 import CollaborationService from '../../lib/collaboration/index.js';
+import {readUserPeerConfig, saveUserPeerConfig} from '../../lib/collaboration/transport.js';
 
 import styles from './collaboration-modal.css';
 
@@ -265,6 +266,17 @@ class CollaborationModal extends Component {
     }
 
     handleShowSettings () {
+        // Prefer the settings saved by this modal (URL ?collab= / localStorage).
+        // The legacy global service is only a fallback, because it is mounted
+        // inconsistently between development and production builds.
+        const saved = readUserPeerConfig();
+        if (saved) {
+            this.setState(prevState => ({
+                showSettings: true,
+                peerConfig: {...prevState.peerConfig, ...saved}
+            }));
+            return;
+        }
         if (typeof window !== 'undefined' && window.CollaborationService) {
             try {
                 const service = window.CollaborationService.getInstance();
@@ -334,48 +346,46 @@ class CollaborationModal extends Component {
     }
 
     handleSaveConfig () {
-        if (typeof window !== 'undefined' && window.CollaborationService) {
+        const {host, port, key, path, secure} = this.state.peerConfig;
+        const peerConfig = {
+            host,
+            port,
+            key: key === undefined ? '' : key,
+            path,
+            secure
+        };
+
+        // Persist unconditionally: the Transport reads ?collab= / localStorage
+        // when it connects. Saving must not depend on window.CollaborationService,
+        // which differs between development and production builds.
+        saveUserPeerConfig(peerConfig);
+
+        // Also push the config into both service instances and drop any live
+        // connection so the next room uses the new broker.
+        const modules = [CollaborationService];
+        if (typeof window !== 'undefined' && window.CollaborationService &&
+            window.CollaborationService !== CollaborationService) {
+            modules.push(window.CollaborationService);
+        }
+        for (const module of modules) {
             try {
-                const service = window.CollaborationService.getInstance();
+                const service = module.getInstance();
                 if (service && service.updatePeerConfig) {
-                    service.updatePeerConfig(this.state.peerConfig);
-                    
-                    // Update URL collab parameter
-                    const {host, port, key, path, secure} = this.state.peerConfig;
-                    const peerConfig = {
-                        host,
-                        port,
-                        key: key === undefined ? '' : key,
-                        path,
-                        secure
-                    };
-                    const collabConfig = {peer: peerConfig};
-                    const encoded = encodeURIComponent(JSON.stringify(collabConfig));
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('collab', encoded);
-                    window.history.replaceState(null, null, url.toString());
-                    
-                    if (service.isConnected) {
-                        service.disconnect();
-                    }
-                    
-                    showAlert(this.props.intl, this.props.intl.formatMessage({
-                        defaultMessage: 'Configuration saved successfully!',
-                        description: 'Alert message when configuration is saved',
-                        id: 'gui.collaboration.configSaved'
-                    }));
-                    this.setState({showSettings: false});
-                    return;
+                    service.updatePeerConfig(peerConfig);
+                }
+                if (service && service.isConnected) {
+                    service.disconnect();
                 }
             } catch (error) {
-                console.error('Failed to save configuration:', error);
-                showAlert(this.props.intl, this.props.intl.formatMessage({
-                    defaultMessage: 'Failed to save configuration',
-                    description: 'Alert message when configuration save fails',
-                    id: 'gui.collaboration.configSaveFailed'
-                }));
+                console.warn('[Collab] Could not apply peer config:', error);
             }
         }
+
+        showAlert(this.props.intl, this.props.intl.formatMessage({
+            defaultMessage: 'Configuration saved successfully!',
+            description: 'Alert message when configuration is saved',
+            id: 'gui.collaboration.configSaved'
+        }));
         this.setState({showSettings: false});
     }
 

@@ -25,6 +25,77 @@ const DEFAULT_PEER_CONFIG = {
     debug: 1
 };
 
+const PEER_CONFIG_STORAGE_KEY = 'tw.collaboration.peerConfig';
+const PEER_CONFIG_KEYS = ['host', 'port', 'key', 'path', 'secure'];
+
+/**
+ * Read the broker settings saved by the collaboration settings modal.
+ * The URL ?collab= parameter wins (so a shared room link can carry its own
+ * broker); localStorage is the durable fallback. Only the five connection
+ * fields are returned — the ICE/STUN/debug defaults stay in
+ * DEFAULT_PEER_CONFIG and are merged by the Transport constructor.
+ */
+const readUserPeerConfig = () => {
+    if (typeof window === 'undefined') return null;
+    let parsed = null;
+    try {
+        const raw = new URLSearchParams(window.location.search).get('collab');
+        if (raw) {
+            try {
+                parsed = JSON.parse(raw);
+            } catch (error) {
+                // Older builds stored an extra encodeURIComponent() layer.
+                try {
+                    parsed = JSON.parse(decodeURIComponent(raw));
+                } catch (error2) {
+                    parsed = null;
+                }
+            }
+        }
+    } catch (error) {
+        parsed = null;
+    }
+    if (!parsed || typeof parsed !== 'object') {
+        try {
+            const saved = window.localStorage.getItem(PEER_CONFIG_STORAGE_KEY);
+            if (saved) parsed = JSON.parse(saved);
+        } catch (error) {
+            parsed = null;
+        }
+    }
+    const source = (parsed && parsed.peer && typeof parsed.peer === 'object') ? parsed.peer : parsed;
+    if (!source || typeof source !== 'object') return null;
+    const config = {};
+    PEER_CONFIG_KEYS.forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(source, key) && source[key] !== undefined) {
+            config[key] = source[key];
+        }
+    });
+    // An empty host means "not configured", so keep using the default broker.
+    if (!config.host) return null;
+    return config;
+};
+
+/** Persist broker settings so every newly created Transport picks them up. */
+const saveUserPeerConfig = config => {
+    if (typeof window === 'undefined') return;
+    const peerConfig = {};
+    PEER_CONFIG_KEYS.forEach(key => {
+        if (config && Object.prototype.hasOwnProperty.call(config, key)) {
+            peerConfig[key] = config[key];
+        }
+    });
+    if (peerConfig.key === undefined) peerConfig.key = '';
+    try {
+        window.localStorage.setItem(PEER_CONFIG_STORAGE_KEY, JSON.stringify(peerConfig));
+        const url = new URL(window.location.href);
+        url.searchParams.set('collab', JSON.stringify({peer: peerConfig}));
+        window.history.replaceState(null, null, url.toString());
+    } catch (error) {
+        // Storage or history may be restricted; one of the two is enough.
+    }
+};
+
 const HEARTBEAT_INTERVAL_MS = 10 * 1000;
 const DEAD_PEER_TIMEOUT_MS = 30 * 1000;
 const DIAL_TIMEOUT_MS = 15 * 1000;
@@ -65,7 +136,14 @@ const generateClientPeerId = roomId => {
 class Transport extends Emitter {
     constructor (options = {}) {
         super();
-        this._peerConfig = options.peerConfig || DEFAULT_PEER_CONFIG;
+        // Merge user broker settings over the defaults so ICE/STUN servers
+        // and debug options are never lost when only host/port/key/path/secure
+        // are supplied by the settings modal.
+        this._peerConfig = Object.assign(
+            {},
+            DEFAULT_PEER_CONFIG,
+            options.peerConfig || readUserPeerConfig() || {}
+        );
         this._createPeer = options.createPeer || ((id, config) => new Peer(id, config));
         this._heartbeatIntervalMs = options.heartbeatIntervalMs || HEARTBEAT_INTERVAL_MS;
         this._deadPeerTimeoutMs = options.deadPeerTimeoutMs || DEAD_PEER_TIMEOUT_MS;
@@ -456,5 +534,7 @@ export {
     generateHostPeerId,
     generateClientPeerId,
     HEARTBEAT_INTERVAL_MS,
-    DEAD_PEER_TIMEOUT_MS
+    DEAD_PEER_TIMEOUT_MS,
+    readUserPeerConfig,
+    saveUserPeerConfig
 };
