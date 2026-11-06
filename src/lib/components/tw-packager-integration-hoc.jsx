@@ -9,13 +9,34 @@ import windowManager from '../../addons/window-system/window-manager';
 const PACKAGER_URL = 'https://packager.02engine.org';
 const PACKAGER_ORIGIN = PACKAGER_URL;
 
-// 打包器备选项：第一个沿用当前内嵌打包器（支持 import_from 导入当前作品），
-// 其余为外部打包器页面。标题按需求分别为 02Engine / zx34 / wangba。
+// 打包器备选项：三者均为 TurboWarp Packager(p4 协议)页面。
+// 通过 import_from 让打包器向编辑器发起 ready-for-import 握手，
+// 编辑器再把当前作品 saveProjectSb3() 后回传 finish-import 完成自动导入。
+// 标题按需求分别为 02Engine / zx34 / wangba。
 const PACKAGER_TABS = [
     {id: '02Engine', label: '02Engine', url: null},
     {id: 'zx34', label: 'zx34', url: 'https://rw-sc-packager.pages.dev/'},
     {id: 'wangba', label: 'wangba', url: 'https://wb-packer-yesshape.pages.dev/'}
 ];
+
+// 每个备选项页面的 origin，用于校验 postMessage 消息来源。
+const getTabOrigin = tab => {
+    try {
+        return new URL(tab.url || PACKAGER_URL).origin;
+    } catch (err) {
+        return PACKAGER_ORIGIN;
+    }
+};
+
+const PACKAGER_ORIGINS = PACKAGER_TABS.map(getTabOrigin);
+
+// 所有备选项都必须带 import_from：缺了这个参数打包器不会发起 p4 导入握手，
+// 编辑器内的当前作品也就无法自动导入到内嵌打包器。
+const getTabUrl = tab => {
+    const base = tab.url || `${PACKAGER_URL}/`;
+    const separator = base.indexOf('?') === -1 ? '?' : '&';
+    return `${base}${separator}import_from=${location.origin}`;
+};
 
 let packagerWindow = null;
 
@@ -97,7 +118,6 @@ const PackagerIntegrationHOC = function (WrappedComponent) {
 
             let currentTab = PACKAGER_TABS[0].id;
             const buttons = {};
-            const tabUrl = tab => tab.url || `${PACKAGER_URL}/?import_from=${location.origin}`;
 
             const styleTab = (tab, btn) => {
                 const active = currentTab === tab.id;
@@ -122,7 +142,7 @@ const PackagerIntegrationHOC = function (WrappedComponent) {
             const selectTab = tab => {
                 currentTab = tab.id;
                 PACKAGER_TABS.forEach(t => styleTab(t, buttons[t.id]));
-                iframe.src = tabUrl(tab);
+                iframe.src = getTabUrl(tab);
             };
 
             PACKAGER_TABS.forEach(tab => {
@@ -147,7 +167,8 @@ const PackagerIntegrationHOC = function (WrappedComponent) {
             packagerWindow.show();
         }
         handleMessage(e) {
-            if (e.origin !== PACKAGER_ORIGIN) {
+            // 三个备选项的域都允许，否则新嵌入的打包器发来的握手会被丢弃。
+            if (PACKAGER_ORIGINS.indexOf(e.origin) === -1) {
                 return;
             }
 
@@ -155,8 +176,8 @@ const PackagerIntegrationHOC = function (WrappedComponent) {
                 return;
             }
 
-            const packagerData = e.data.p4;
-            if (packagerData.type !== 'ready-for-import') {
+            const packagerData = e.data && e.data.p4;
+            if (!packagerData || packagerData.type !== 'ready-for-import') {
                 return;
             }
 
