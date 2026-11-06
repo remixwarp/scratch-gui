@@ -1359,9 +1359,9 @@ class DefaultVariableSetting extends React.Component {
                                         </button>
                                     </div>
                                 ))}
+                                </div>
                             </React.Fragment>
                         )}
-                        </div>
                     </div>
                 }
             />
