@@ -16,13 +16,23 @@ import {Handshake as CollaborationIcon, User, Crown, UserMinus, Copy, AlertTrian
 import showAlert from '../../addons/window-system/alert';
 import NotificationSystem from '../../lib/notification-manager.js';
 import CollaborationService from '../../lib/collaboration/index.js';
-import {readUserPeerConfig, saveUserPeerConfig} from '../../lib/collaboration/transport.js';
+import {DEFAULT_PEER_CONFIG, readUserPeerConfig, saveUserPeerConfig} from '../../lib/collaboration/transport.js';
 
 import styles from './collaboration-modal.css';
 
-/* 首选（默认）服务器 = MistWarp 的 PeerServer；备选 = 用户自建的 Worker。 */
-const PRIMARY_COLLAB_HOST = 'collab_warp.mistium.com';
+/* 首选（默认）服务器直接取上游 transport.js 的 DEFAULT_PEER_CONFIG.host，
+   设置面板与连接引擎共用同一份地址，不再单独硬编码一份字面量；
+   备选 = 用户自建的 Worker。 */
 const BACKUP_COLLAB_HOST = 'rw-collab.rewp.de5.net';
+
+/** Host 输入框的默认项 = 上游（Bilup）协作设置里用的那份默认配置。 */
+const defaultPeerConfig = () => ({
+    host: DEFAULT_PEER_CONFIG.host,
+    port: DEFAULT_PEER_CONFIG.port,
+    key: '',
+    path: DEFAULT_PEER_CONFIG.path,
+    secure: DEFAULT_PEER_CONFIG.secure
+});
 
 class CollaborationModal extends Component {
     constructor (props) {
@@ -36,13 +46,7 @@ class CollaborationModal extends Component {
             pendingRequests: [],
             showJoinRequest: false,
             showSettings: false,
-            peerConfig: {
-                host: PRIMARY_COLLAB_HOST,
-                port: 443,
-                key: '',
-                path: '/',
-                secure: true
-            },
+            peerConfig: defaultPeerConfig(),
             copiedTip: false
         };
 
@@ -273,33 +277,16 @@ class CollaborationModal extends Component {
     }
 
     handleShowSettings () {
-        // Prefer the settings saved by this modal (URL ?collab= / localStorage).
-        // The legacy global service is only a fallback, because it is mounted
-        // inconsistently between development and production builds.
+        // The host field always falls back to the upstream broker defined in
+        // transport.js (DEFAULT_PEER_CONFIG). Only a configuration explicitly
+        // saved in this build can override it. The legacy global service is
+        // deliberately not consulted here: its in-memory peerConfig can hold
+        // a retired broker and would hide the upstream default in the input.
         const saved = readUserPeerConfig();
-        if (saved) {
-            this.setState(prevState => ({
-                showSettings: true,
-                peerConfig: {...prevState.peerConfig, ...saved}
-            }));
-            return;
-        }
-        if (typeof window !== 'undefined' && window.CollaborationService) {
-            try {
-                const service = window.CollaborationService.getInstance();
-                if (service && service.getPeerConfig) {
-                    const config = service.getPeerConfig();
-                    this.setState({
-                        showSettings: true,
-                        peerConfig: config
-                    });
-                    return;
-                }
-            } catch (error) {
-                console.warn('Could not get peer config:', error);
-            }
-        }
-        this.setState({showSettings: true});
+        this.setState({
+            showSettings: true,
+            peerConfig: {...defaultPeerConfig(), ...(saved || {})}
+        });
     }
 
     handleCloseSettings () {

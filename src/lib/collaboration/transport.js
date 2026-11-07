@@ -27,6 +27,30 @@ const DEFAULT_PEER_CONFIG = {
 
 const PEER_CONFIG_STORAGE_KEY = 'tw.collaboration.peerConfig';
 const PEER_CONFIG_KEYS = ['host', 'port', 'key', 'path', 'secure'];
+// Bump this when the default broker changes. Configurations saved by older
+// builds have no version tag; they are discarded once so the settings input
+// and new Transports fall back to the upstream DEFAULT_PEER_CONFIG.host
+// instead of silently keeping an obsolete / self-hosted broker.
+const PEER_CONFIG_VERSION = 2;
+
+/** Remove broker settings written by older builds (localStorage + ?collab=). */
+const clearLegacyPeerConfig = () => {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.removeItem(PEER_CONFIG_STORAGE_KEY);
+    } catch (error) {
+        // Storage may be unavailable; the URL cleanup below still applies.
+    }
+    try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('collab')) {
+            url.searchParams.delete('collab');
+            window.history.replaceState(null, null, url.toString());
+        }
+    } catch (error) {
+        // History API may be unavailable; nothing else to do.
+    }
+};
 
 /**
  * Read the broker settings saved by the collaboration settings modal.
@@ -65,6 +89,13 @@ const readUserPeerConfig = () => {
     }
     const source = (parsed && parsed.peer && typeof parsed.peer === 'object') ? parsed.peer : parsed;
     if (!source || typeof source !== 'object') return null;
+    // Configs persisted before the upstream-default fix carry no version tag.
+    // Drop them once: they are exactly what hides the upstream host in the
+    // settings input and keeps connections pinned to a retired broker.
+    if (parsed.v !== PEER_CONFIG_VERSION) {
+        clearLegacyPeerConfig();
+        return null;
+    }
     const config = {};
     PEER_CONFIG_KEYS.forEach(key => {
         if (Object.prototype.hasOwnProperty.call(source, key) && source[key] !== undefined) {
@@ -86,10 +117,14 @@ const saveUserPeerConfig = config => {
         }
     });
     if (peerConfig.key === undefined) peerConfig.key = '';
+    // Tag the entry with the current schema version. readUserPeerConfig()
+    // ignores untagged (legacy) entries so a stale broker can never shadow
+    // the upstream DEFAULT_PEER_CONFIG.host in the settings input.
+    const envelope = {peer: peerConfig, v: PEER_CONFIG_VERSION};
     try {
-        window.localStorage.setItem(PEER_CONFIG_STORAGE_KEY, JSON.stringify(peerConfig));
+        window.localStorage.setItem(PEER_CONFIG_STORAGE_KEY, JSON.stringify(envelope));
         const url = new URL(window.location.href);
-        url.searchParams.set('collab', JSON.stringify({peer: peerConfig}));
+        url.searchParams.set('collab', JSON.stringify(envelope));
         window.history.replaceState(null, null, url.toString());
     } catch (error) {
         // Storage or history may be restricted; one of the two is enough.
