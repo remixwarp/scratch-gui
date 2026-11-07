@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
-import {defineMessages, injectIntl} from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl} from 'react-intl';
 import bindAll from 'lodash.bindall';
 import {
     ChevronDown,
@@ -268,6 +268,49 @@ const messages = defineMessages({
         id: 'mw.superRefactor.createDefault.hcmlName',
         defaultMessage: '新建中文网页',
         description: 'Default file name for a new HCML file'
+    },
+    // 新建文件弹窗里两个动作的标题与标签
+    createTypeImportTitle: {
+        id: 'mw.superRefactor.createType.importTitle',
+        defaultMessage: '导入文件',
+        description: 'Title of the import file action in the new file dialog'
+    },
+    createTypeBlankTitle: {
+        id: 'mw.superRefactor.createType.blankTitle',
+        defaultMessage: '新建空白文件',
+        description: 'Title of the blank file action in the new file dialog'
+    },
+    createActionImportTag: {
+        id: 'mw.superRefactor.createType.importTag',
+        defaultMessage: '本地文件',
+        description: 'Small tag shown next to the import file action'
+    },
+    createActionBlankTag: {
+        id: 'mw.superRefactor.createType.blankTag',
+        defaultMessage: '自定义后缀',
+        description: 'Small tag shown next to the blank file action'
+    },
+    // HCML 预览的状态提示
+    hcmlConverting: {
+        id: 'mw.superRefactor.preview.hcmlConverting',
+        defaultMessage: 'HCML 转换中…',
+        description: 'Loading hint while the HCML preview is being converted'
+    },
+    hcmlConvertFailed: {
+        id: 'mw.superRefactor.preview.hcmlConvertFailed',
+        defaultMessage: 'HCML 转换失败：{error}',
+        description: 'Error hint shown when the HCML convert API fails'
+    },
+    // 新建空白文件的命名
+    fileNamePlaceholder: {
+        id: 'mw.superRefactor.createType.fileNamePlaceholder',
+        defaultMessage: '输入文件名，如 demo.svg',
+        description: 'Placeholder of the full file name input for a blank file'
+    },
+    untitledFileName: {
+        id: 'mw.superRefactor.createType.untitledFileName',
+        defaultMessage: '未命名',
+        description: 'Base name used for a newly created blank file'
     },
     // 应用 / 下载的提示消息
     readOnlyShard: {
@@ -745,7 +788,7 @@ class HcmlPreview extends React.Component {
         if (this.state.loading) {
             return (
                 <div style={{...frameStyle, color: colors.textSecondary, fontSize: '13px'}}>
-                    HCML 转换中…
+                    <FormattedMessage {...messages.hcmlConverting} />
                 </div>
             );
         }
@@ -758,7 +801,10 @@ class HcmlPreview extends React.Component {
                     fontFamily: 'monospace',
                     whiteSpace: 'pre-wrap'
                 }}>
-                    {`HCML 转换失败：${this.state.error}`}
+                    <FormattedMessage
+                        {...messages.hcmlConvertFailed}
+                        values={{error: this.state.error}}
+                    />
                 </div>
             );
         }
@@ -776,8 +822,18 @@ class HcmlPreview extends React.Component {
 
 // 新建文件弹窗最前面的两个动作
 const CREATE_ACTIONS = [
-    {id: 'import', label: '导入文件', desc: messages.createTypeImportDesc},
-    {id: 'blank', label: '新建空白文件', desc: messages.createTypeBlankDesc}
+    {
+        id: 'import',
+        label: messages.createTypeImportTitle,
+        tag: messages.createActionImportTag,
+        desc: messages.createTypeImportDesc
+    },
+    {
+        id: 'blank',
+        label: messages.createTypeBlankTitle,
+        tag: messages.createActionBlankTag,
+        desc: messages.createTypeBlankDesc
+    }
 ];
 
 // 「+」新建菜单的文件类型
@@ -1516,10 +1572,11 @@ class SuperRefactorModalContainer extends React.Component {
         files.forEach(file => {
             usedNames[file.name] = true;
         });
-        let name = `${dir}未命名`;
+        const untitled = this.t(messages.untitledFileName);
+        let name = `${dir}${untitled}`;
         let seq = 2;
         while (usedNames[name]) {
-            name = `${dir}未命名${seq}`;
+            name = `${dir}${untitled}${seq}`;
             seq++;
         }
         const newFile = {
@@ -1829,7 +1886,7 @@ class SuperRefactorModalContainer extends React.Component {
                 <input
                     autoFocus
                     value={this.state.renameValue}
-                    placeholder={wholeName ? '输入文件名，如 demo.svg' : ''}
+                    placeholder={wholeName ? this.t(messages.fileNamePlaceholder) : ''}
                     onClick={e => e.stopPropagation()}
                     onChange={this.handleRenameValueChange}
                     onBlur={this.commitRename}
@@ -4229,9 +4286,9 @@ class SuperRefactorModalContainer extends React.Component {
                                             }}
                                         >
                                             <span style={{display: 'flex', alignItems: 'baseline', gap: '6px'}}>
-                                                <span style={{fontSize: '14px', fontWeight: 'bold'}}>{item.label}</span>
+                                                <span style={{fontSize: '14px', fontWeight: 'bold'}}>{this.t(item.label)}</span>
                                                 <span style={{fontSize: '11px', color: '#4d97ff'}}>
-                                                    {item.id === 'import' ? '本地文件' : '自定义后缀'}
+                                                    {this.t(item.tag)}
                                                 </span>
                                             </span>
                                             <span style={{
