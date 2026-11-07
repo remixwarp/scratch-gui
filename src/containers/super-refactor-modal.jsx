@@ -209,6 +209,31 @@ const messages = defineMessages({
         defaultMessage: '流程图描述文件，支持代码编辑与图形预览',
         description: 'Description of the RFD option in the new file dialog'
     },
+    createTypeImportDesc: {
+        id: 'mw.superRefactor.createType.importDesc',
+        defaultMessage: '从本机选择文件，直接导入到当前目录',
+        description: 'Description of the import file option in the new file dialog'
+    },
+    createTypeBlankDesc: {
+        id: 'mw.superRefactor.createType.blankDesc',
+        defaultMessage: '创建一个空文件，输入名称时按扩展名自动启用对应预览',
+        description: 'Description of the blank file option in the new file dialog'
+    },
+    createTypeHtmlDesc: {
+        id: 'mw.superRefactor.createType.htmlDesc',
+        defaultMessage: '标准网页文件，支持代码编辑与页面预览',
+        description: 'Description of the HTML option in the new file dialog'
+    },
+    createTypeHcmlDesc: {
+        id: 'mw.superRefactor.createType.hcmlDesc',
+        defaultMessage: '中文标签网页（HyperChinese Markup Language），预览通过 HCML 服务转换',
+        description: 'Description of the HCML option in the new file dialog'
+    },
+    extPreviewAvailable: {
+        id: 'mw.superRefactor.createType.extPreviewAvailable',
+        defaultMessage: '.{ext} 可预览',
+        description: 'Hint shown while naming a blank file when its extension supports preview'
+    },
     createDefaultSvgName: {
         id: 'mw.superRefactor.createDefault.svgName',
         defaultMessage: '新建图形',
@@ -233,6 +258,16 @@ const messages = defineMessages({
         id: 'mw.superRefactor.createDefault.mdContent',
         defaultMessage: '# 新文档\n\n在这里编写 Markdown 内容。\n',
         description: 'Default content of a new Markdown file'
+    },
+    createDefaultHtmlName: {
+        id: 'mw.superRefactor.createDefault.htmlName',
+        defaultMessage: '新建网页',
+        description: 'Default file name for a new HTML file'
+    },
+    createDefaultHcmlName: {
+        id: 'mw.superRefactor.createDefault.hcmlName',
+        defaultMessage: '新建中文网页',
+        description: 'Default file name for a new HCML file'
     },
     // 应用 / 下载的提示消息
     readOnlyShard: {
@@ -605,12 +640,154 @@ const RJ_STANDARD_PREFIXES = ['tables/', 'targets/', 'blocks/', 'assets/'];
 const isStandardRJPath = path => path === 'manifest.json' ||
     RJ_STANDARD_PREFIXES.some(prefix => path.startsWith(prefix));
 
-// 「+」新建菜单的四种文件类型
+// 「默认可操作后缀」：新建空白文件或导入文件时，取文件名最后一个点后面的
+// 后缀来匹配。命中即用对应类型渲染，其中支持预览的类型会自动出现预览按钮。
+const SUPPORTED_EXTS = {
+    svg: 'svg', json: 'json', md: 'md', rjf: 'rfd', rfd: 'rfd',
+    html: 'html', htm: 'html', hcml: 'hcml',
+    png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', bmp: 'image', webp: 'image',
+    wav: 'sound', mp3: 'sound', ogg: 'sound', m4a: 'sound',
+    txt: 'text', css: 'text', js: 'text', jsx: 'text', ts: 'text', tsx: 'text',
+    xml: 'text', csv: 'text', yml: 'text', yaml: 'text', py: 'text', c: 'text',
+    cpp: 'text', h: 'text', java: 'text', sh: 'text', ini: 'text', conf: 'text', log: 'text'
+};
+
+// 其中有「代码 / 预览」切换的类型（.rfd 有自己的三模式按钮，不在此列）
+const PREVIEWABLE_EXTS = {
+    svg: 'svg', md: 'md', html: 'html', htm: 'html', hcml: 'hcml'
+};
+
+const HCML_CONVERT_API = 'https://hcml-api.rewp.de5.net/convert';
+
+const extOfFileName = name => {
+    const base = String(name || '').split('/').pop();
+    const idx = base.lastIndexOf('.');
+    return idx > 0 && idx < base.length - 1 ? base.substring(idx + 1).toLowerCase() : '';
+};
+
+const fileTypeOfName = name => SUPPORTED_EXTS[extOfFileName(name)] || 'text';
+
+const previewKindOfName = name => PREVIEWABLE_EXTS[extOfFileName(name)] || null;
+
+// HTML 预览：直接把源码交给 iframe 渲染，sandbox 保证脚本不能访问父页面
+const HtmlPreview = ({source, colors}) => (
+    <iframe
+        title="HTML preview"
+        srcDoc={source || ''}
+        sandbox="allow-scripts allow-popups"
+        style={{
+            flex: 1,
+            minHeight: 0,
+            width: '100%',
+            border: `1px solid ${colors.border}`,
+            borderRadius: '0 0 4px 4px',
+            background: '#ffffff'
+        }}
+        frameBorder="0"
+    />
+);
+
+// HCML 预览：把中文标签源码 POST 给转换服务，拿到标准 HTML 后再渲染
+class HcmlPreview extends React.Component {
+    constructor (props) {
+        super(props);
+        this.state = {html: '', error: '', loading: true};
+        this._cancelled = false;
+    }
+
+    componentDidMount () {
+        this.convert(this.props.source);
+    }
+
+    componentDidUpdate (prevProps) {
+        if (prevProps.source !== this.props.source) this.convert(this.props.source);
+    }
+
+    componentWillUnmount () {
+        this._cancelled = true;
+    }
+
+    convert (source) {
+        this._cancelled = false;
+        this.setState({html: '', error: '', loading: true});
+        fetch(HCML_CONVERT_API, {
+            method: 'POST',
+            headers: {'Content-Type': 'text/plain;charset=utf-8'},
+            body: source || ''
+        })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.text();
+            })
+            .then(html => {
+                if (!this._cancelled) this.setState({html, error: '', loading: false});
+            })
+            .catch(error => {
+                if (!this._cancelled) this.setState({html: '', error: error.message, loading: false});
+            });
+    }
+
+    render () {
+        const {colors} = this.props;
+        const frameStyle = {
+            flex: 1,
+            minHeight: 0,
+            width: '100%',
+            border: `1px solid ${colors.border}`,
+            borderRadius: '0 0 4px 4px',
+            background: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            boxSizing: 'border-box'
+        };
+        if (this.state.loading) {
+            return (
+                <div style={{...frameStyle, color: colors.textSecondary, fontSize: '13px'}}>
+                    HCML 转换中…
+                </div>
+            );
+        }
+        if (this.state.error) {
+            return (
+                <div style={{
+                    ...frameStyle,
+                    color: '#e5534b',
+                    fontSize: '12px',
+                    fontFamily: 'monospace',
+                    whiteSpace: 'pre-wrap'
+                }}>
+                    {`HCML 转换失败：${this.state.error}`}
+                </div>
+            );
+        }
+        return (
+            <iframe
+                title="HCML preview"
+                srcDoc={this.state.html}
+                sandbox="allow-scripts allow-popups"
+                style={{...frameStyle, padding: 0, display: 'block'}}
+                frameBorder="0"
+            />
+        );
+    }
+}
+
+// 新建文件弹窗最前面的两个动作
+const CREATE_ACTIONS = [
+    {id: 'import', label: '导入文件', desc: messages.createTypeImportDesc},
+    {id: 'blank', label: '新建空白文件', desc: messages.createTypeBlankDesc}
+];
+
+// 「+」新建菜单的文件类型
 const CREATE_FILE_TYPES = [
     {ext: 'svg', label: 'SVG', desc: messages.createTypeSvgDesc},
     {ext: 'json', label: 'JSON', desc: messages.createTypeJsonDesc},
     {ext: 'md', label: 'Markdown', desc: messages.createTypeMdDesc},
-    {ext: 'rjf', label: 'Remix Jit Flowchart', desc: messages.createTypeRfdDesc}
+    {ext: 'rjf', label: 'Remix Jit Flowchart', desc: messages.createTypeRfdDesc},
+    {ext: 'html', label: 'HTML', desc: messages.createTypeHtmlDesc},
+    {ext: 'hcml', label: 'HCML', desc: messages.createTypeHcmlDesc}
 ];
 
 const CREATE_FILE_DEFAULTS = {
@@ -631,6 +808,34 @@ const CREATE_FILE_DEFAULTS = {
     rjf: {
         prefix: messages.createDefaultRfdName,
         content: RFD_DEFAULT_TEXT
+    },
+    html: {
+        prefix: messages.createDefaultHtmlName,
+        content: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>新网页</title>
+</head>
+<body>
+    <h1>你好，世界！</h1>
+    <p>在这里编写 HTML，点击「显示预览」查看页面效果。</p>
+</body>
+</html>
+`
+    },
+    hcml: {
+        prefix: messages.createDefaultHcmlName,
+        content: `<超文本标记语言文档>
+  <头部>
+    <标题>新网页</标题>
+  </头部>
+  <主体>
+    <一级标题>你好，世界！</一级标题>
+    <段落>在这里用中文标签编写网页，预览时会通过 HCML 服务转换成 HTML。</段落>
+  </主体>
+</超文本标记语言文档>
+`
     }
 };
 
@@ -756,6 +961,9 @@ class SuperRefactorModalContainer extends React.Component {
             'handleRenameValueChange',
             'handleRenameKeyDown',
             'commitRename',
+            'handleCreateAction',
+            'createBlankFile',
+            'handleImportFiles',
             'openFileContextMenu',
             'closeFileContextMenu',
             'renderFileLabel',
@@ -801,6 +1009,7 @@ class SuperRefactorModalContainer extends React.Component {
             createMenuVisible: false,
             renamingFileId: null,
             renameValue: '',
+            renameWholeName: false, // 输入框接受完整文件名（含扩展名）
             fileContextMenu: null, // {x, y, fileId}
             modalWidth: Math.min(1100, window.innerWidth - 60),
             modalHeight: Math.min(700, window.innerHeight - 80)
@@ -808,6 +1017,7 @@ class SuperRefactorModalContainer extends React.Component {
         
         this.monacoIframeRef = React.createRef();
         this.modalRootRef = React.createRef();
+        this.importFileInputRef = React.createRef();
         this._monacoReadySource = null;
     }
 
@@ -1289,6 +1499,125 @@ class SuperRefactorModalContainer extends React.Component {
         this.setState({createMenuVisible: false});
     }
 
+    // 新建文件弹窗最前面的两个动作
+    handleCreateAction (action) {
+        if (action === 'import') {
+            if (this.importFileInputRef.current) this.importFileInputRef.current.click();
+            return;
+        }
+        if (action === 'blank') this.createBlankFile();
+    }
+
+    // 创建一个没有名称的空文件，随后输入框等待用户输入完整文件名
+    createBlankFile () {
+        const files = this.state.files;
+        const dir = this.getCurrentDirectory();
+        const usedNames = {};
+        files.forEach(file => {
+            usedNames[file.name] = true;
+        });
+        let name = `${dir}未命名`;
+        let seq = 2;
+        while (usedNames[name]) {
+            name = `${dir}未命名${seq}`;
+            seq++;
+        }
+        const newFile = {
+            id: `extra:${name}:${Date.now()}`,
+            name,
+            type: 'text',
+            content: '',
+            size: 0,
+            custom: true
+        };
+        const nextFiles = files.concat(newFile).map(file => Object.assign({}, file, {
+            selected: file.id === newFile.id
+        }));
+        this.setState({
+            files: nextFiles,
+            filteredFiles: nextFiles,
+            searchQuery: '',
+            currentFile: nextFiles.findIndex(file => file.id === newFile.id),
+            content: '',
+            rfdPending: null,
+            createMenuVisible: false,
+            renamingFileId: newFile.id,
+            renameValue: '',
+            renameWholeName: true,
+            viewMode: 'code'
+        }, () => {
+            this.saveExtraFiles();
+        });
+    }
+
+    // 导入本机文件到当前目录（与新建文件一样按作品存到本地，刷新后仍在）
+    handleImportFiles (e) {
+        const input = e.target;
+        const list = Array.from(input.files || []);
+        input.value = ''; // 允许重复选择同一个文件
+        if (!list.length) return;
+
+        const dir = this.getCurrentDirectory();
+        const usedNames = {};
+        this.state.files.forEach(file => {
+            usedNames[file.name] = true;
+        });
+        const uniqueName = fileName => {
+            const dot = fileName.lastIndexOf('.');
+            const stem = dot > 0 ? fileName.substring(0, dot) : fileName;
+            const suffix = dot > 0 ? fileName.substring(dot) : '';
+            let candidate = fileName;
+            let seq = 2;
+            while (usedNames[`${dir}${candidate}`]) {
+                candidate = `${stem}-${seq}${suffix}`;
+                seq++;
+            }
+            usedNames[`${dir}${candidate}`] = true;
+            return candidate;
+        };
+        const readOne = file => new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ''));
+            reader.onerror = () => resolve('');
+            if (fileTypeOfName(file.name) === 'image') reader.readAsDataURL(file);
+            else reader.readAsText(file);
+        });
+
+        Promise.all(list.map(file => {
+            const safeName = file.name.replace(/[\\/]/g, '_');
+            const name = `${dir}${uniqueName(safeName)}`;
+            return readOne(file).then(content => ({
+                id: `extra:${name}:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`,
+                name,
+                type: fileTypeOfName(name),
+                content,
+                size: content.length,
+                custom: true
+            }));
+        })).then(imported => {
+            const firstId = imported[0].id;
+            const nextFiles = this.state.files.concat(imported).map(file => Object.assign({}, file, {
+                selected: file.id === firstId
+            }));
+            const firstIndex = nextFiles.findIndex(file => file.id === firstId);
+            this.setState({
+                files: nextFiles,
+                filteredFiles: nextFiles,
+                searchQuery: '',
+                currentFile: firstIndex,
+                content: nextFiles[firstIndex] ? nextFiles[firstIndex].content : '',
+                createMenuVisible: false,
+                renamingFileId: null,
+                renameValue: '',
+                renameWholeName: false,
+                viewMode: 'code'
+            }, () => {
+                this.saveExtraFiles();
+                if (this.state.useMonacoEditor && this.state.monacoIframeReady) this.sendMonacoInit();
+            });
+        });
+    }
+
     // 按类型在当前目录下创建文件，随后文件名变成输入框等待用户命名
     handleCreateFileOfType (ext) {
         const defaults = CREATE_FILE_DEFAULTS[ext];
@@ -1333,7 +1662,9 @@ class SuperRefactorModalContainer extends React.Component {
             rfdPending: null,
             createMenuVisible: false,
             renamingFileId: newFile.id,
-            renameValue: prefix
+            renameValue: prefix,
+            renameWholeName: false,
+            viewMode: 'code'
         }, () => {
             this.saveExtraFiles();
             if (this.state.useMonacoEditor && this.state.monacoIframeReady) this.sendMonacoInit();
@@ -1360,7 +1691,7 @@ class SuperRefactorModalContainer extends React.Component {
             this.commitRename();
         } else if (e.key === 'Escape') {
             e.preventDefault();
-            this.setState({renamingFileId: null, renameValue: ''});
+            this.setState({renamingFileId: null, renameValue: '', renameWholeName: false});
         }
     }
 
@@ -1375,6 +1706,52 @@ class SuperRefactorModalContainer extends React.Component {
         }
 
         const file = files[index];
+
+        // 新建空白文件：输入框里是完整文件名（含扩展名）。提交时取最后一个
+        // 点后面的后缀与默认可操作后缀比对，命中即用对应类型渲染，并自动
+        // 出现该类型的预览按钮。
+        if (this.state.renameWholeName) {
+            const wholeName = renameValue.replace(/[\\/]/g, '').trim();
+            const {dir: targetDir} = splitFileName(file.name);
+            if (!wholeName) {
+                // 未输入名称则保留占位文件，之后仍可再次重命名
+                this.setState({renamingFileId: null, renameValue: '', renameWholeName: false});
+                return;
+            }
+            const usedNames = {};
+            files.forEach(item => {
+                if (item.id !== file.id) usedNames[item.name] = true;
+            });
+            const dot = wholeName.lastIndexOf('.');
+            const stem = dot > 0 ? wholeName.substring(0, dot) : wholeName;
+            const suffix = dot > 0 ? wholeName.substring(dot) : '';
+            let name = `${targetDir}${wholeName}`;
+            let seq = 2;
+            while (usedNames[name]) {
+                name = `${targetDir}${stem}-${seq}${suffix}`;
+                seq++;
+            }
+            const nextFiles = files.map(item => (item.id === file.id
+                ? Object.assign({}, item, {
+                    name,
+                    type: fileTypeOfName(name),
+                    originalName: item.originalName || item.name
+                })
+                : item));
+            this.setState({
+                files: nextFiles,
+                filteredFiles: this.filterFiles(nextFiles, this.state.searchQuery),
+                renamingFileId: null,
+                renameValue: '',
+                renameWholeName: false,
+                viewMode: 'code'
+            }, () => {
+                if (file.custom) this.saveExtraFiles();
+                if (this.state.useMonacoEditor && this.state.monacoIframeReady) this.sendMonacoInit();
+            });
+            return;
+        }
+
         const {dir, base} = splitFileName(file.name);
         const dotIndex = base.lastIndexOf('.');
         const ext = dotIndex > 0 ? base.substring(dotIndex + 1) : '';
@@ -1440,8 +1817,10 @@ class SuperRefactorModalContainer extends React.Component {
             );
         }
 
+        const wholeName = this.state.renameWholeName;
         const dotIndex = base.lastIndexOf('.');
-        const ext = dotIndex > 0 ? base.substring(dotIndex) : '';
+        const ext = wholeName ? '' : (dotIndex > 0 ? base.substring(dotIndex) : '');
+        const typedExt = wholeName ? extOfFileName(this.state.renameValue) : '';
         return (
             <span style={{display: 'inline-flex', alignItems: 'center', gap: '2px', minWidth: 0}}>
                 {showPath && dir && (
@@ -1450,13 +1829,14 @@ class SuperRefactorModalContainer extends React.Component {
                 <input
                     autoFocus
                     value={this.state.renameValue}
+                    placeholder={wholeName ? '输入文件名，如 demo.svg' : ''}
                     onClick={e => e.stopPropagation()}
                     onChange={this.handleRenameValueChange}
                     onBlur={this.commitRename}
                     onKeyDown={this.handleRenameKeyDown}
                     onFocus={e => e.target.select()}
                     style={{
-                        width: '110px',
+                        width: wholeName ? '150px' : '110px',
                         minWidth: 0,
                         padding: '1px 4px',
                         fontFamily: 'monospace',
@@ -1468,7 +1848,14 @@ class SuperRefactorModalContainer extends React.Component {
                         outline: 'none'
                     }}
                 />
-                <span style={{flexShrink: 0, fontSize: '11px', color: colors.textSecondary}}>{ext}</span>
+                {!wholeName && (
+                    <span style={{flexShrink: 0, fontSize: '11px', color: colors.textSecondary}}>{ext}</span>
+                )}
+                {wholeName && PREVIEWABLE_EXTS[typedExt] && (
+                    <span style={{flexShrink: 0, fontSize: '11px', color: '#4d97ff'}}>
+                        {this.t(messages.extPreviewAvailable, {ext: typedExt})}
+                    </span>
+                )}
             </span>
         );
     }
@@ -1696,7 +2083,7 @@ class SuperRefactorModalContainer extends React.Component {
             else if (currentFileObj.name.endsWith('.js') || currentFileObj.name.endsWith('.jsx')) language = 'javascript';
             else if (currentFileObj.name.endsWith('.ts') || currentFileObj.name.endsWith('.tsx')) language = 'typescript';
             else if (currentFileObj.name.endsWith('.css')) language = 'css';
-            else if (currentFileObj.name.endsWith('.html')) language = 'html';
+            else if (/\.(html|htm|hcml|xml)$/i.test(currentFileObj.name)) language = 'html';
         }
         const isDarkTheme = this.props.theme && typeof this.props.theme.isDark === 'function' ? this.props.theme.isDark() : false;
 
@@ -3059,23 +3446,28 @@ class SuperRefactorModalContainer extends React.Component {
             editorBg: isDarkTheme ? '#1e1e1e' : '#ffffff'
         };
 
-        // 是否可以编辑
+        // 是否可以编辑（新建/导入的自定义文件按后缀处理，未知后缀当普通文本）
         const canEdit = currentFileType === 'json' || currentFileType === 'svg' ||
-            currentFileType === 'rjf' || currentFileType === 'rfd' || currentFileType === 'md';
+            currentFileType === 'rjf' || currentFileType === 'rfd' || currentFileType === 'md' ||
+            currentFileType === 'html' || currentFileType === 'hcml' ||
+            (!!currentFileObj && !!currentFileObj.custom &&
+                currentFileType !== 'image' && currentFileType !== 'sound');
         // 是否可以应用（.rj 的 JSON 分片可写回压缩包后重新载入；新建的本地文件写入作品压缩包）
         const canApply = (!!currentFileObj && !!currentFileObj.custom) ||
             currentOriginalName === 'project.json' ||
             (currentFileType === 'svg' && !!currentFileObj &&
                 (!!currentFileObj.costume || (currentFileObj.readOnly && hasCurrentRJ()))) ||
             (hasCurrentRJ() && currentFileType === 'json');
+        // 取文件名最后一个点后的后缀，与默认可操作后缀匹配，确定预览类型
+        const previewKind = previewKindOfName(currentFileName) || PREVIEWABLE_EXTS[currentFileType] || null;
         // 是否是SVG文件
-        const isSvg = currentFileType === 'svg';
+        const isSvg = currentFileType === 'svg' || /\.svg$/i.test(currentFileName);
         // 是否是 Markdown 文件
         const isMd = currentFileType === 'md' || /\.md$/i.test(currentFileName);
         // 是否是 .rfd 流程图描述文件
         const isRfd = currentFileType === 'rjf' || currentFileType === 'rfd' || isRjfFileName(currentFileName);
-        // 是否显示切换按钮
-        const showToggleButton = isSvg || isMd;
+        // 是否显示「代码 / 预览」切换按钮（.rfd 有自己的三模式按钮）
+        const showToggleButton = !!previewKind && !isRfd;
 
         // 底部按钮区样式（内联样式，避免 CSS Modules 作用域影响）
         const footerStyle = {
@@ -3347,6 +3739,8 @@ class SuperRefactorModalContainer extends React.Component {
                                              currentFileObj.type === 'svg' ? 'SVG' :
                                              currentFileObj.type === 'rjf' || currentFileObj.type === 'rfd' ? 'RJF' :
                                              currentFileObj.type === 'md' ? 'MD' :
+                                             currentFileObj.type === 'html' ? 'HTML' :
+                                             currentFileObj.type === 'hcml' ? 'HCML' :
                                              currentFileObj.type === 'image' ? this.t(messages.typeImage) : 
                                              currentFileObj.type === 'sound' ? this.t(messages.typeSound) :
                                              this.t(messages.typeFile)}
@@ -3557,6 +3951,24 @@ class SuperRefactorModalContainer extends React.Component {
                                             )}
                                         </div>
                                     </div>
+                                )
+                            ) : (previewKind === 'html' || previewKind === 'hcml') ? (
+                                viewMode === 'code' ? (
+                                    <div style={{
+                                        flex: 1,
+                                        minHeight: 0,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        border: `1px solid ${colors.border}`,
+                                        borderRadius: '0 0 4px 4px',
+                                        overflow: 'hidden'
+                                    }}>
+                                        {this.renderTextEditorPane(colors, `monaco-${previewKind}`)}
+                                    </div>
+                                ) : previewKind === 'hcml' ? (
+                                    <HcmlPreview source={content} colors={colors} />
+                                ) : (
+                                    <HtmlPreview source={content} colors={colors} />
                                 )
                             ) : canEdit ? (
                                 this.state.useMonacoEditor ? (
@@ -3791,7 +4203,46 @@ class SuperRefactorModalContainer extends React.Component {
                                         dir: this.getCurrentDirectory() || this.t(messages.rootDirectory)
                                     })}
                                 </div>
+                                <input
+                                    ref={this.importFileInputRef}
+                                    type="file"
+                                    multiple
+                                    style={{display: 'none'}}
+                                    onChange={this.handleImportFiles}
+                                />
                                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                                    {CREATE_ACTIONS.map(item => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => this.handleCreateAction(item.id)}
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '6px',
+                                                padding: '12px',
+                                                textAlign: 'left',
+                                                background: colors.buttonBg,
+                                                color: colors.text,
+                                                border: `1px solid ${colors.border}`,
+                                                borderRadius: '6px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <span style={{display: 'flex', alignItems: 'baseline', gap: '6px'}}>
+                                                <span style={{fontSize: '14px', fontWeight: 'bold'}}>{item.label}</span>
+                                                <span style={{fontSize: '11px', color: '#4d97ff'}}>
+                                                    {item.id === 'import' ? '本地文件' : '自定义后缀'}
+                                                </span>
+                                            </span>
+                                            <span style={{
+                                                fontSize: '11px',
+                                                color: colors.textSecondary,
+                                                lineHeight: 1.5
+                                            }}>
+                                                {this.t(item.desc)}
+                                            </span>
+                                        </button>
+                                    ))}
                                     {CREATE_FILE_TYPES.map(item => (
                                         <button
                                             key={item.ext}
