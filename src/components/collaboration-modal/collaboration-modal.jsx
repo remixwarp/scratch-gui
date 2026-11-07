@@ -33,9 +33,9 @@ class CollaborationModal extends Component {
             showJoinRequest: false,
             showSettings: false,
             peerConfig: {
-                host: '',
+                host: 'collab_warp.mistium.com',
                 port: 443,
-                key: 'bilup',
+                key: '',
                 path: '/',
                 secure: true
             },
@@ -1307,6 +1307,16 @@ class CollaborationModal extends Component {
                             value={this.state.peerConfig.host}
                             onSubmit={this.handleHostChange}
                         />
+                    </div>
+                    <div className={styles.backupHint}>
+                        <span className={styles.backupHintLabel}>
+                            <FormattedMessage
+                                defaultMessage="备选方案（MistWarp 协作服务器）：{host}"
+                                description="Small hint below the default host input showing a backup PeerJS broker"
+                                id="gui.collaboration.backupOption"
+                                values={{host: 'collab.mistium.com'}}
+                            />
+                        </span>
                     </div>
 
                     <div className={styles.inputGroup}>
