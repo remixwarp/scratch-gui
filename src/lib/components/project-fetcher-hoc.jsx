@@ -27,6 +27,7 @@ import {openInvalidProjectModal} from '../../reducers/modals.js';
 import log from '../utils/log.js';
 import storage from '../persistence/storage.js';
 
+import JSZip from '@turbowarp/jszip';
 import VM from 'scratch-vm';
 import {fetchProjectMeta} from './tw-project-meta-fetcher-hoc.jsx';
 
@@ -158,6 +159,108 @@ const fetchProjectBuffer = async projectUrl => {
     throw lastError || new Error('Could not fetch project');
 };
 
+/* Some third-party project hosts build sb3 files with PHP's json_encode, which
+ * serializes an empty associative array as [] instead of {}. The sb3 schema
+ * requires objects for targets[].blocks / variables / lists / broadcasts /
+ * comments and for every block's inputs / fields / mutation, so scratch-parser
+ * rejects the whole project with "Could not parse as a valid SB2 or SB3
+ * project.". Its @turbowarp/sb3fix fallback cannot help either, because that
+ * throws as soon as target.blocks is not an object. Repair those fields in the
+ * fetched archive before the VM ever sees it, so ?project_url= imports of such
+ * projects load normally.
+ */
+const SB3_TARGET_OBJECT_FIELDS = ['variables', 'lists', 'broadcasts', 'blocks', 'comments'];
+const SB3_BLOCK_OBJECT_FIELDS = ['inputs', 'fields', 'mutation'];
+
+const isEmptyArray = value => Array.isArray(value) && value.length === 0;
+
+// Returns true when at least one field was repaired. Only empty arrays are
+// touched; a non-empty array is left alone so we never destroy real data.
+const normalizeEmptyObjectFields = project => {
+    let changed = false;
+    if (!project || !Array.isArray(project.targets)) return false;
+    const fixObjectFields = (object, fields) => {
+        if (!object || typeof object !== 'object' || Array.isArray(object)) return;
+        for (const field of fields) {
+            if (isEmptyArray(object[field])) {
+                object[field] = {};
+                changed = true;
+            }
+        }
+    };
+    for (const target of project.targets) {
+        fixObjectFields(target, SB3_TARGET_OBJECT_FIELDS);
+        const blocks = target && target.blocks;
+        if (blocks && typeof blocks === 'object' && !Array.isArray(blocks)) {
+            for (const blockId of Object.keys(blocks)) {
+                fixObjectFields(blocks[blockId], SB3_BLOCK_OBJECT_FIELDS);
+            }
+        }
+    }
+    // costumes / sounds / monitors / extensions legitimately stay arrays.
+    return changed;
+};
+
+const isZipBuffer = buffer => {
+    if (!buffer || typeof buffer.byteLength !== 'number' || buffer.byteLength < 4) return false;
+    const head = new Uint8Array(buffer.slice(0, 4));
+    return head[0] === 0x50 && head[1] === 0x4b && head[2] === 0x03 && head[3] === 0x04;
+};
+
+/**
+ * Normalize non-standard sb3 data fetched from an external URL. The original
+ * buffer is returned untouched when no repair is needed (or when the data
+ * cannot be parsed), so valid projects never pay the cost of repacking and a
+ * failure here can never break a project that would otherwise load.
+ * @param {ArrayBuffer} buffer project data
+ * @returns {Promise<ArrayBuffer>} repaired or original project data
+ */
+const normalizeProjectBuffer = async buffer => {
+    if (!buffer || typeof buffer.byteLength !== 'number') return buffer;
+
+    // Plain project.json (no zip container) is repaired in place too.
+    if (!isZipBuffer(buffer)) {
+        try {
+            const head = new Uint8Array(buffer.slice(0, Math.min(buffer.byteLength, 64)));
+            const first = head.find(byte => byte !== 0x20 && byte !== 0x09 && byte !== 0x0a && byte !== 0x0d);
+            if (first !== 0x7B) { // '{'
+                return buffer;
+            }
+            const project = JSON.parse(new TextDecoder().decode(buffer));
+            if (!normalizeEmptyObjectFields(project)) return buffer;
+            return new TextEncoder().encode(JSON.stringify(project)).buffer;
+        } catch (e) {
+            return buffer;
+        }
+    }
+
+    let zip;
+    try {
+        zip = await JSZip.loadAsync(buffer);
+    } catch (e) {
+        return buffer;
+    }
+    const projectFile = zip.file('project.json');
+    if (!projectFile) return buffer;
+    let project;
+    try {
+        project = JSON.parse(await projectFile.async('string'));
+    } catch (e) {
+        return buffer;
+    }
+    if (!normalizeEmptyObjectFields(project)) return buffer;
+    zip.file('project.json', JSON.stringify(project));
+    try {
+        return await zip.generateAsync({
+            type: 'arraybuffer',
+            compression: 'DEFLATE',
+            compressionOptions: {level: 1}
+        });
+    } catch (e) {
+        return buffer;
+    }
+};
+
 /* Higher Order Component to provide behavior for loading projects by id. If
  * there's no id, the default project is loaded.
  * @param {React.Component} WrappedComponent component to receive projectData prop
@@ -238,7 +341,11 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 ) {
                     projectUrl = `https://${projectUrl}`;
                 }
+                // Third-party sb3 exporters sometimes emit [] where the sb3
+                // schema wants {}. Repair the archive before handing it to the
+                // VM, otherwise the whole project is rejected by scratch-parser.
                 assetPromise = fetchProjectBuffer(projectUrl)
+                    .then(normalizeProjectBuffer)
                     .then(buffer => ({data: buffer}));
             } else if (projectId === '0') {
                 // Default project is bundled; no network request needed.
