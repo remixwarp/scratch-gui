@@ -304,6 +304,8 @@
     box-shadow: 0 0 0 2px $looks-transparent;
 }
 
+/* 备选提示：颜色跟随应用注入的主题变量，而不是系统的 prefers-color-scheme。
+   应用主题是独立的，系统为浅色时应用也可能切到暗色主题。 */
 .backupHint {
     display: flex;
     align-items: center;
@@ -311,79 +313,40 @@
     gap: 0.5rem;
     margin: -0.25rem 0 0.75rem;
     font-size: 0.75rem;
-    color: $ui-secondary;
+    color: var(--ui-modal-foreground, var(--text-primary, #575e75));
 }
 
 .backupHintLabel {
     opacity: 0.85;
 }
 
-.backupHostValue {
+.copyBackupButton {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.15rem 0.5rem;
-    border: 1px dashed $ui-black-transparent;
-    border-radius: 0.375rem;
+    justify-content: center;
+    padding: 0.2rem;
+    border: none;
+    border-radius: 0.25rem;
     background: transparent;
-    color: $looks-secondary;
-    font-size: 0.75rem;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    color: var(--ui-modal-foreground, var(--text-primary, #575e75));
+    opacity: 0.7;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition: opacity 0.15s ease, background 0.15s ease;
 }
 
-.backupHostValue:hover {
-    background: $looks-transparent;
-    border-color: $looks-secondary;
+.copyBackupButton:hover {
+    opacity: 1;
+    background: var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
+}
+
+.copyBackupButton:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
 }
 
 .copiedTip {
     color: #3fb950;
     font-size: 0.7rem;
-}
-
-/* 深色模式适配：半透明黑边框/灰字在深色背景上看不清，改用半透明白与亮色 */
-@media (prefers-color-scheme: dark) {
-    .backupHint {
-        color: rgba(255, 255, 255, 0.7);
-    }
-
-    .backupHostValue {
-        border-color: rgba(255, 255, 255, 0.3);
-        color: #6cb6ff;
-    }
-
-    .backupHostValue:hover {
-        background: rgba(108, 182, 255, 0.12);
-        border-color: #6cb6ff;
-    }
-
-    .copiedTip {
-        color: #56d364;
-    }
-}
-
-.dark .backupHint,
-.dark-theme .backupHint {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.dark .backupHostValue,
-.dark-theme .backupHostValue {
-    border-color: rgba(255, 255, 255, 0.3);
-    color: #6cb6ff;
-}
-
-.dark .backupHostValue:hover,
-.dark-theme .backupHostValue:hover {
-    background: rgba(108, 182, 255, 0.12);
-    border-color: #6cb6ff;
-}
-
-.dark .copiedTip,
-.dark-theme .copiedTip {
-    color: #56d364;
 }
 
 .buttonGroup {

@@ -20,6 +20,10 @@ import {readUserPeerConfig, saveUserPeerConfig} from '../../lib/collaboration/tr
 
 import styles from './collaboration-modal.css';
 
+/* 首选（默认）服务器 = MistWarp 的 PeerServer；备选 = 用户自建的 Worker。 */
+const PRIMARY_COLLAB_HOST = 'collab_warp.mistium.com';
+const BACKUP_COLLAB_HOST = 'rw-collab.rewp.de5.net';
+
 class CollaborationModal extends Component {
     constructor (props) {
         super(props);
@@ -33,7 +37,7 @@ class CollaborationModal extends Component {
             showJoinRequest: false,
             showSettings: false,
             peerConfig: {
-                host: 'collab_warp.mistium.com',
+                host: PRIMARY_COLLAB_HOST,
                 port: 443,
                 key: '',
                 path: '/',
@@ -78,6 +82,8 @@ class CollaborationModal extends Component {
         this.handlePathChange = this.handlePathChange.bind(this);
         this.handleSecureChange = this.handleSecureChange.bind(this);
         this.handleSaveConfig = this.handleSaveConfig.bind(this);
+        this.handleCopyBackupHost = this.handleCopyBackupHost.bind(this);
+        this._copiedTipTimer = null;
     }
 
     componentDidMount () {
@@ -220,6 +226,7 @@ class CollaborationModal extends Component {
     }
 
     componentWillUnmount () {
+        if (this._copiedTipTimer) clearTimeout(this._copiedTipTimer);
         if (CollaborationService) {
             try {
                 const service = CollaborationService.getInstance();
@@ -481,6 +488,27 @@ class CollaborationModal extends Component {
                 });
         } else {
             this.fallbackCopyToClipboard(roomUrl);
+        }
+    }
+
+    handleCopyBackupHost () {
+        const markCopied = () => {
+            this.setState({copiedTip: true});
+            if (this._copiedTipTimer) clearTimeout(this._copiedTipTimer);
+            this._copiedTipTimer = setTimeout(() => {
+                this.setState({copiedTip: false});
+            }, 2000);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(BACKUP_COLLAB_HOST)
+                .then(markCopied)
+                .catch(() => {
+                    this.fallbackCopyToClipboard(BACKUP_COLLAB_HOST);
+                    markCopied();
+                });
+        } else {
+            this.fallbackCopyToClipboard(BACKUP_COLLAB_HOST);
+            markCopied();
         }
     }
 
@@ -1311,12 +1339,32 @@ class CollaborationModal extends Component {
                     <div className={styles.backupHint}>
                         <span className={styles.backupHintLabel}>
                             <FormattedMessage
-                                defaultMessage="备选方案（MistWarp 协作服务器）：{host}"
-                                description="Small hint below the default host input showing a backup PeerJS broker"
+                                defaultMessage="备选方案（自建服务器）：{host}"
+                                description="Small hint below the default host input showing the self-hosted backup PeerJS broker"
                                 id="gui.collaboration.backupOption"
-                                values={{host: 'collab.mistium.com'}}
+                                values={{host: BACKUP_COLLAB_HOST}}
                             />
                         </span>
+                        <button
+                            className={styles.copyBackupButton}
+                            onClick={this.handleCopyBackupHost}
+                            title={this.props.intl.formatMessage({
+                                defaultMessage: '复制备选服务器地址',
+                                description: 'Tooltip for copying the backup broker host',
+                                id: 'gui.collaboration.copyBackupHost'
+                            })}
+                        >
+                            <Copy size={14} />
+                        </button>
+                        {this.state.copiedTip && (
+                            <span className={styles.copiedTip}>
+                                <FormattedMessage
+                                    defaultMessage="已复制"
+                                    description="Tip shown after the backup broker host is copied"
+                                    id="gui.collaboration.backupHostCopiedTip"
+                                />
+                            </span>
+                        )}
                     </div>
 
                     <div className={styles.inputGroup}>
