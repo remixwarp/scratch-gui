@@ -29,7 +29,7 @@ const makeT = table => (key, fallback) => {
     const locale = getLocale();
     if (Object.prototype.hasOwnProperty.call(entry, locale)) return entry[locale];
     if (locale.startsWith('zh-geng') && entry.geng) return entry.geng;
-    if (locale.startsWith('zh')) return entry['zh-cn'] !== undefined ? entry['zh-cn'] : fallback;
+    if (locale.startsWith('zh')) return entry['zh-cn'] !== undefined ? entry['zh-cn'] : (entry.en !== undefined ? entry.en : fallback);
     if (entry.en !== undefined) return entry.en;
     return fallback;
 };

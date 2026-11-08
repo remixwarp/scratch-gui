@@ -166,7 +166,7 @@ const rwckT = makeT({
     rwck125: {en: 'Followed tag #${name}', 'zh-cn': '已关注标签 #${first.name}', geng: '关注了标签 #${name}', wenyan: '已随标 #${name}'},
     rwck126: {en: 'Toggled follow on ${name}', 'zh-cn': '已切换对 ${name} 的关注', geng: '切换了关注 ${name}', wenyan: '更其随 ${name}'},
     rwck127: {en: 'Set ${name}', 'zh-cn': '已设置 ${cloudVarName}', geng: '设好啦 ${name}', wenyan: '已置 ${name}'},
-    rwck128: {en: 'Probe done, took ${ms} ms', 'zh-cn': '探测完成，耗时 ${this._communityLatencyMs} ms', geng: '探测完啦，用了 ${ms} ms', wenyan: '探毕，历 ${ms} 毫秒'},
+    rwck128: {en: 'Probe done, took {ms} ms', 'zh-cn': '探测完成，耗时 {ms} ms', geng: '探测完啦，用了 {ms} ms', wenyan: '探毕，历 {ms} 毫秒'},
     rwck129: {en: 'Bookmark status: ${json}', 'zh-cn': '收藏状态：${JSON.stringify(r)}', geng: '收藏状态：${json}', wenyan: '藏之状：${json}'},
     rwck130: {en: 'Registration #${id}', 'zh-cn': '登记 #${g.id}', geng: '登记 #${id}', wenyan: '登 #${id}'},
     rwck131: {en: 'Registration ${cert} verified', 'zh-cn': '登记号 ${cert} 校验完成', geng: '登记号 ${cert} 校验好啦', wenyan: '登 ${cert} 验毕'},
@@ -301,39 +301,39 @@ const rwckT = makeT({
     rwck260: {en: 'Notifications', 'zh-cn': '通知', geng: '通知', wenyan: '告'},
     rwck261: {en: 'Project name', 'zh-cn': '项目名', geng: '项目名', wenyan: '卷名'},
     rwck262: {en: 'Set variable', 'zh-cn': '设置变量', geng: '设置变量', wenyan: '置变数'},
-    rwck400: {"en": "By uploading you agree that others may download your work.\nAfter publishing to the CTSpace community, CTSpace cannot absolutely guarantee your work won't be downloaded or adapted by others.\nPlease confirm your work complies with the platform community guidelines before publishing.", "geng": "上传啦就代表你默许别人下你的作品哦～\n发到创客次元后，本社区也无法绝对保证没人下走或二改。\n发布前请确认内容符合社区公约嗷。", "wenyan": "既上传，则许人下载矣。\n既布于创客次元，彼亦难保无人取下或改之。\n布前请审其合于公约。"},
-    rwck401: {"en": "Click \"OK\" to indicate you have read and agree to the above terms.\n(This reminder shows at most once per window / per day.)", "geng": "点“确定”就代表你已经看完并同意上面这些条条啦～\n（同一窗口 / 同一天内就只提醒这么一回）", "wenyan": "点“确定”者，视作已读而许之。\n（同窗／同日，仅一示之）"},
-    rwck402: {"en": "Re-probing…", "geng": "重新探测中…", "wenyan": "复探中"},
-    rwck403: {"en": "Failed to auto-fetch captcha: {msg}. Click the refresh button on the right to retry.", "geng": "自动拉验证码翻车啦：{msg}。点右边刷新钮再试试捏～", "wenyan": "自动取验失败：{msg}。请点右涮钮重试。"},
-    rwck404: {"en": "Fill in account / password / captcha", "geng": "账号 / 密码 / 验证码 都要填嗷", "wenyan": "账号、密码、验码皆须填"},
-    rwck405: {"en": "Published! Work #{id}, play link https://forum.ctspace.xyz/g/{slug}", "geng": "发布成功！作品编号 {id}，试玩短链 https://forum.ctspace.xyz/g/{slug}", "wenyan": "布成！编号 {id}，试玩 https://forum.ctspace.xyz/g/{slug}"},
-    rwck406: {"en": "Fill in title and content", "geng": "标题和内容都要填嗷", "wenyan": "题与文皆须填"},
-    rwck407: {"en": "Posted! Thread #{seq}", "geng": "发帖成功！帖子 #{seq}", "wenyan": "帖成！第 {seq} 帖"},
-    rwck408: {"en": "Probing…", "geng": "探测中…", "wenyan": "探中"},
-    rwck409: {"en": "Connected, latency {ms} ms", "geng": "连通，耗时 {ms} ms", "wenyan": "通，迟 {ms} 毫"},
-    rwck410: {"en": "Online now: {n}", "geng": "当前在线 {n} 人", "wenyan": "今在线 {n} 人"},
-    rwck411: {"en": "Where do you want to log in? You can enter account & password directly in the editor;", "geng": "想在哪儿登录？在编辑器里直接填账号密码也行嗷；", "wenyan": "欲于何處登？在編內直填賬密亦可；"},
-    rwck412: {"en": "or jump to the forum web login (which carries the matching entry parameters).", "geng": "也可以跳去论坛网页登录（会带好对应的入口参数捏）。", "wenyan": "或往論壇網頁登（自带其入口參）。"},
-    rwck413: {"en": "First-time use: register on the official site (email verification required). Login goes through a graphical captcha + a frontend-computed PoW proof-of-work.", "geng": "首次用请先去官网注册账号（要验邮箱嗷）。登录会先过图形验证码 + 前端自动算的 PoW 工作量证明。", "wenyan": "初用宜先於官網註冊（須驗郵）。登時先過圖驗，加以前端自算之 PoW 證。"},
-    rwck414: {"en": "Selected: {name}", "geng": "已选：{name}", "wenyan": "已选：{name}"},
-    rwck415: {"en": "Both discussion ID and reply content are required", "geng": "讨论 ID 和回复内容都要填嗷", "wenyan": "议 ID 与回复皆须填"},
-    rwck416: {"en": "Both title and code are required", "geng": "标题和代码都要填嗷", "wenyan": "题与码皆须填"},
-    rwck417: {"en": "Used {n} /", "geng": "已用 {n} /", "wenyan": "用 {n} /"},
-    rwck418: {"en": "After upload it can be referenced as an attachment (resources/{id})", "geng": "上传后可作为附件引用（resources/{id}）", "wenyan": "上传后可作附引（resources/{id}）"},
-    rwck419: {"en": "Enter a target ID", "geng": "请填目标 ID 嗷", "wenyan": "须填标的 ID"},
-    rwck420: {"en": "Like toggled", "geng": "已切换点赞状态捏", "wenyan": "赞态已易"},
-    rwck421: {"en": "Checked in for {n} consecutive days", "geng": "连续签到 {n} 天", "wenyan": "连签 {n} 日"},
-    rwck422: {"en": "(checked in today)", "geng": "（今天已签到）", "wenyan": "（今日已签）"},
-    rwck423: {"en": "Please log in first", "geng": "请先登录嗷", "wenyan": "请先登"},
-    rwck424: {"en": "Error: {msg}", "geng": "错误：{msg}", "wenyan": "误：{msg}"},
-    rwck425: {"en": "Applying…", "geng": "正在应用…", "wenyan": "施中"},
-    rwck426: {"en": "Saved. Most interfaces take effect immediately;\nrefresh the page to fully switch (incl. BASE_URL).", "geng": "已保存。大部分接口会立即生效；\n如需完全切换（含 BASE_URL），请刷新页面。", "wenyan": "已存。多口即效；\n欲全切（含 BASE_URL）请涮页。"},
-    rwck427: {"en": ", the editor forwards all requests through the official CORS proxy by default.", "geng": "，编辑器已默认通过官方 CORS 代理转发所有请求。", "wenyan": "，編輯器默以官 CORS 代理轉諸請。"},
-    rwck428: {"en": "Usually keep the default; if a Tab keeps loading / erroring,", "geng": "一般保持默认即可，遇到某 Tab 一直 loading / 报错时，", "wenyan": "常守默认；若某页久载或报错，"},
-    rwck429: {"en": "switch the \"CORS proxy prefix\" below back to the official address or your own proxy.", "geng": "再把下方「CORS 代理前缀」换回官方地址或填你自己的代理。", "wenyan": "下方「CORS 代理前缀」改回官址或自代理。"},
-    rwck430: {"en": "Usually keep the default; switch to your own cors-anywhere instance only when cross-origin issues occur.", "geng": "。一般保持默认即可，遇到跨域时再换成你自己部署的 cors-anywhere 实例。", "wenyan": "。常守默认，遇跨域方易为己部署之 cors-anywhere。"},
-    rwck431: {"en": "Applying…", "geng": "应用中…", "wenyan": "施中"},
-    rwck432: {"en": "CTSpace Upload Notice", "geng": "创客次元上传须知", "wenyan": "创客次元上传之告"}
+    rwck400: {"en": "By uploading you agree that others may download your work.\nAfter publishing to the CTSpace community, CTSpace cannot absolutely guarantee your work won't be downloaded or adapted by others.\nPlease confirm your work complies with the platform community guidelines before publishing.", 'zh-cn': "上传即表示你同意他人下载你的作品。\\n发布到创客次元后，社区也无法绝对保证作品不被他人下载或改编。\\n发布前请确认作品内容符合平台社区公约。", "geng": "上传啦就代表你默许别人下你的作品哦～\n发到创客次元后，本社区也无法绝对保证没人下走或二改。\n发布前请确认内容符合社区公约嗷。", "wenyan": "既上传，则许人下载矣。\n既布于创客次元，彼亦难保无人取下或改之。\n布前请审其合于公约。"},
+    rwck401: {"en": "Click \"OK\" to indicate you have read and agree to the above terms.\n(This reminder shows at most once per window / per day.)", 'zh-cn': "点“确定”表示你已阅读并同意以上条款。\\n（同一窗口 / 同一天内最多提醒一次。）", "geng": "点“确定”就代表你已经看完并同意上面这些条条啦～\n（同一窗口 / 同一天内就只提醒这么一回）", "wenyan": "点“确定”者，视作已读而许之。\n（同窗／同日，仅一示之）"},
+    rwck402: {"en": "Re-probing…", 'zh-cn': "正在重新探测…", "geng": "重新探测中…", "wenyan": "复探中"},
+    rwck403: {"en": "Failed to auto-fetch captcha: {msg}. Click the refresh button on the right to retry.", 'zh-cn': "自动获取验证码失败：{msg}。请点右侧刷新按钮重试。", "geng": "自动拉验证码翻车啦：{msg}。点右边刷新钮再试试捏～", "wenyan": "自动取验失败：{msg}。请点右涮钮重试。"},
+    rwck404: {"en": "Fill in account / password / captcha", 'zh-cn': "请填完整账号 / 密码 / 验证码", "geng": "账号 / 密码 / 验证码 都要填嗷", "wenyan": "账号、密码、验码皆须填"},
+    rwck405: {"en": "Published! Work #{id}, play link https://forum.ctspace.xyz/g/{slug}", 'zh-cn': "发布成功！作品编号 {id}，试玩短链 https://forum.ctspace.xyz/g/{slug}", "geng": "发布成功！作品编号 {id}，试玩短链 https://forum.ctspace.xyz/g/{slug}", "wenyan": "布成！编号 {id}，试玩 https://forum.ctspace.xyz/g/{slug}"},
+    rwck406: {"en": "Fill in title and content", 'zh-cn': "标题和内容都要填", "geng": "标题和内容都要填嗷", "wenyan": "题与文皆须填"},
+    rwck407: {"en": "Posted! Thread #{seq}", 'zh-cn': "发帖成功！帖子 #{seq}", "geng": "发帖成功！帖子 #{seq}", "wenyan": "帖成！第 {seq} 帖"},
+    rwck408: {"en": "Probing…", 'zh-cn': "探测中…", "geng": "探测中…", "wenyan": "探中"},
+    rwck409: {"en": "Connected, latency {ms} ms", 'zh-cn': "连通，耗时 {ms} ms", "geng": "连通，耗时 {ms} ms", "wenyan": "通，迟 {ms} 毫"},
+    rwck410: {"en": "Online now: {n}", 'zh-cn': "当前在线 {n} 人", "geng": "当前在线 {n} 人", "wenyan": "今在线 {n} 人"},
+    rwck411: {"en": "Where do you want to log in? You can enter account & password directly in the editor;", 'zh-cn': "想在哪里登录？可以直接在编辑器内填写账号密码；", "geng": "想在哪儿登录？在编辑器里直接填账号密码也行嗷；", "wenyan": "欲于何處登？在編內直填賬密亦可；"},
+    rwck412: {"en": "or jump to the forum web login (which carries the matching entry parameters).", 'zh-cn': "也可以跳转到论坛网页登录（会带上对应的入口参数）。", "geng": "也可以跳去论坛网页登录（会带好对应的入口参数捏）。", "wenyan": "或往論壇網頁登（自带其入口參）。"},
+    rwck413: {"en": "First-time use: register on the official site (email verification required). Login goes through a graphical captcha + a frontend-computed PoW proof-of-work.", 'zh-cn': "首次使用请先到官网注册账号（需要邮箱验证）。登录需通过图形验证码 + 前端计算的 PoW 工作量证明。", "geng": "首次用请先去官网注册账号（要验邮箱嗷）。登录会先过图形验证码 + 前端自动算的 PoW 工作量证明。", "wenyan": "初用宜先於官網註冊（須驗郵）。登時先過圖驗，加以前端自算之 PoW 證。"},
+    rwck414: {"en": "Selected: {name}", 'zh-cn': "已选：{name}", "geng": "已选：{name}", "wenyan": "已选：{name}"},
+    rwck415: {"en": "Both discussion ID and reply content are required", 'zh-cn': "讨论 ID 和回复内容都要填", "geng": "讨论 ID 和回复内容都要填嗷", "wenyan": "议 ID 与回复皆须填"},
+    rwck416: {"en": "Both title and code are required", 'zh-cn': "标题和代码都要填", "geng": "标题和代码都要填嗷", "wenyan": "题与码皆须填"},
+    rwck417: {"en": "Used {n} /", 'zh-cn': "已用 {n} /", "geng": "已用 {n} /", "wenyan": "用 {n} /"},
+    rwck418: {"en": "After upload it can be referenced as an attachment (resources/{id})", 'zh-cn': "上传后可作为附件引用（resources/{id}）", "geng": "上传后可作为附件引用（resources/{id}）", "wenyan": "上传后可作附引（resources/{id}）"},
+    rwck419: {"en": "Enter a target ID", 'zh-cn': "请填目标 ID", "geng": "请填目标 ID 嗷", "wenyan": "须填标的 ID"},
+    rwck420: {"en": "Like toggled", 'zh-cn': "已切换点赞状态", "geng": "已切换点赞状态捏", "wenyan": "赞态已易"},
+    rwck421: {"en": "Checked in for {n} consecutive days", 'zh-cn': "连续签到 {n} 天", "geng": "连续签到 {n} 天", "wenyan": "连签 {n} 日"},
+    rwck422: {"en": "(checked in today)", 'zh-cn': "（今天已签到）", "geng": "（今天已签到）", "wenyan": "（今日已签）"},
+    rwck423: {"en": "Please log in first", 'zh-cn': "请先登录", "geng": "请先登录嗷", "wenyan": "请先登"},
+    rwck424: {"en": "Error: {msg}", 'zh-cn': "错误：{msg}", "geng": "错误：{msg}", "wenyan": "误：{msg}"},
+    rwck425: {"en": "Applying…", 'zh-cn': "正在应用…", "geng": "正在应用…", "wenyan": "施中"},
+    rwck426: {"en": "Saved. Most interfaces take effect immediately;\nrefresh the page to fully switch (incl. BASE_URL).", 'zh-cn': "已保存。大部分接口会立即生效；\\n如需完全切换（含 BASE_URL），请刷新页面。", "geng": "已保存。大部分接口会立即生效；\n如需完全切换（含 BASE_URL），请刷新页面。", "wenyan": "已存。多口即效；\n欲全切（含 BASE_URL）请涮页。"},
+    rwck427: {"en": ", the editor forwards all requests through the official CORS proxy by default.", 'zh-cn': "，编辑器默认通过官方 CORS 代理转发所有请求。", "geng": "，编辑器已默认通过官方 CORS 代理转发所有请求。", "wenyan": "，編輯器默以官 CORS 代理轉諸請。"},
+    rwck428: {"en": "Usually keep the default; if a Tab keeps loading / erroring,", 'zh-cn': "一般保持默认即可；若某个标签页一直加载 / 报错，", "geng": "一般保持默认即可，遇到某 Tab 一直 loading / 报错时，", "wenyan": "常守默认；若某页久载或报错，"},
+    rwck429: {"en": "switch the \"CORS proxy prefix\" below back to the official address or your own proxy.", 'zh-cn': "再把下方「CORS 代理前缀」改回官方地址或填你自己的代理。", "geng": "再把下方「CORS 代理前缀」换回官方地址或填你自己的代理。", "wenyan": "下方「CORS 代理前缀」改回官址或自代理。"},
+    rwck430: {"en": "Usually keep the default; switch to your own cors-anywhere instance only when cross-origin issues occur.", 'zh-cn': "。一般保持默认即可，遇到跨域问题时再换成你自己部署的 cors-anywhere 实例。", "geng": "。一般保持默认即可，遇到跨域时再换成你自己部署的 cors-anywhere 实例。", "wenyan": "。常守默认，遇跨域方易为己部署之 cors-anywhere。"},
+    rwck431: {"en": "Applying…", 'zh-cn': "应用中…", "geng": "应用中…", "wenyan": "施中"},
+    rwck432: {"en": "CTSpace Upload Notice", 'zh-cn': "创客次元上传须知", "geng": "创客次元上传须知", "wenyan": "创客次元上传之告"}
 });
 
 
@@ -621,6 +621,7 @@ class RwckPublishPanel extends Component {
             notifyBusy: false,
             notifyErr: '',
             checkin: null,
+            checkinErr: '',
 
             // ---- 搜索 ----
             searchQ: '',
@@ -757,7 +758,7 @@ ${rwckT('rwck401')}`);
         this._communityLatencyMs = Date.now() - t0;
         this.setState({
             probeBusy: false,
-            probeMsg: this.state.statsErr ? rwckT('rwck58') : rwckT('rwck128')
+            probeMsg: this.state.statsErr ? rwckT('rwck58') : rwckT('rwck128').replace('{ms}', this._communityLatencyMs)
         });
     }
 
@@ -2297,8 +2298,10 @@ ${rwckT('rwck401')}`);
     async _loadCheckin () {
         try {
             const s = await rwck.checkin.status();
-            this.setState({checkin: s});
-        } catch (_) { /* 未登录时忽略 */ }
+            this.setState({checkin: s, checkinErr: ''});
+        } catch (e) {
+            this.setState({checkinErr: this._friendlyError(e)});
+        }
     }
 
     async _doCheckin () {
@@ -2322,11 +2325,13 @@ ${rwckT('rwck401')}`);
                             <Star size={14} strokeWidth={2.2} /> {rwckT('rwck243')}
                         </button>
                     </div>
-                    {this.state.checkin && (
+                    {this.state.checkin ? (
                         <div style={S.hint}>
                             {rwckT('rwck421').replace('{n}', this.state.checkin.streak ?? this.state.checkin.days ?? 0)}
                             {this.state.checkin.checkedToday ? rwckT('rwck422') : ''}
                         </div>
+                    ) : (
+                        <div style={S.hint}>{this.state.checkinErr || rwckT('rwck205')}</div>
                     )}
                 </div>
                 <div style={S.row}>
@@ -2345,6 +2350,9 @@ ${rwckT('rwck401')}`);
                 </div>
                 {errBar(S, this.state.notifyErr)}
                 {this.state.notifyBusy && <div style={S.ok}>{rwckT('rwck164')}</div>}
+                {!this.state.notifyBusy && !this.state.notifyErr && this.state.notifyList.length === 0 && (
+                    <div style={S.hint}>{rwckT('rwck205')}</div>
+                )}
                 {this.state.notifyList.map((n, i) => (
                     <div key={n.id || i} style={S.listItem}>
                         <Bell size={13} strokeWidth={2.2} style={{color: n.read ? C.textSubtle : C.accent}} />
