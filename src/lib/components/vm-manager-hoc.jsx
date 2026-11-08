@@ -57,14 +57,26 @@ const vmManagerHOC = function (WrappedComponent) {
                 this.props.vm.initialized = true;
                 this.props.vm.setLocale(this.props.locale, this.props.messages);
             }
-            // 不再立即启动 VM 运行时：项目还未加载，此时启动线程/sequencer
-            // 毫无意义。将 start() 推迟到 loadProject() 成功后执行。
+            // 与 TurboWarp 一致：编辑器模式下始终保证 VM 运行时（frameLoop）在运行。
+            // scratch-vm 的 frameLoop 会按 30fps 每帧调用 renderer.draw()，这是舞台
+            // 能自动刷新的唯一来源。加载作品时各链路会调用 vm.quit() 停掉帧循环，
+            // 之后由 componentDidUpdate 在 RUNTIME_STOPPED 后自动恢复。
+            if (!this.props.isPlayerOnly && !this.props.isStarted) {
+                this.props.vm.start();
+            }
         }
         componentDidUpdate (prevProps) {
             // 加载项目：不再等待字体加载完成。项目数据加载到 VM 只需要 JSON 解析，
             // 字体仅在 blocks 渲染时才需要，无需串行等待。
             if (this.props.isLoadingWithId && !prevProps.isLoadingWithId) {
                 this.loadProject();
+            }
+            // 与 TurboWarp 一致：VM 一停就立刻拉回来。quit() 会 emit
+            // RUNTIME_STOPPED -> started=false -> 触发这里。否则帧循环会永久停摆，
+            // 舞台停在最后一次 draw 的画面，之后任何数据变化都不会重绘（只有点
+            // 绿旗重新启动 VM 才会刷新）。
+            if (!this.props.isPlayerOnly && !this.props.isStarted) {
+                this.props.vm.start();
             }
         }
 
@@ -89,33 +101,25 @@ const vmManagerHOC = function (WrappedComponent) {
                         return;
                     }
 
-                    // 立即发送加载完成信号（不包 setTimeout），尽快把 UI 从 Loading 切换到显示
+                    // 立即发送加载完成信号，尽快把 UI 从 Loading 切换到显示
                     this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
 
-                    // 项目加载完成后才启动 VM: 避免加载完成前调度空序列
-                    if (!this.props.isPlayerOnly && !this.props.isStarted) {
-                        this.props.vm.start();
-                    }
+                    // VM 的启动不再依赖这里的 props 快照（quit() 之后 isStarted
+                    // 可能仍是旧值），统一由 componentDidMount / componentDidUpdate
+                    // 保证，见上方两处 tw 同款逻辑。
+                    const onSetProjectUnchanged = this.props.onSetProjectUnchanged;
+                    const renderer = this.props.vm.renderer;
 
-                    // 合并异步回调：原来有 2 个独立的 setTimeout(0)，
-                    // 每个都会单独推迟到下一次事件循环，累计延迟用户可感知的
-                    // 加载时间。统一用一个 microtask + 一个可选 requestAnimationFrame
-                    Promise.resolve().then(() => {
-                        if (this._loadingPromise !== promise) return;
-                        this.props.onSetProjectUnchanged();
-                        // If the vm is not running, call draw on the renderer manually
-                        // This draws the state of the loaded project with no blocks running
-                        // which closely matches the 2.0 behavior, except for monitors–
-                        // 2.0 runs monitors and shows updates (e.g. timer monitor)
-                        // before the VM starts running other hat blocks.
-                        if (!this.props.isStarted && this.props.vm.renderer) {
-                            // 皮肤加载通常为异步，但 requestAnimationFrame 比 setTimeout
-                            // 更精准地在下一次重绘前执行，避免额外的帧等待
-                            if (typeof requestAnimationFrame !== 'undefined') {
-                                requestAnimationFrame(() => this.props.vm.renderer.draw());
-                            } else {
-                                this.props.vm.renderer.draw();
-                            }
+                    // 与 TurboWarp 一致：皮肤加载可能是异步的，把「标记未修改」和
+                    // 「补画一帧」都推迟到下一个事件循环。此前用一个 microtask 包裹
+                    // 并再次判断 this._loadingPromise，但该字段在同步代码末尾已被置
+                    // 为 null，guard 永远失败 —— 补画一帧根本没有执行，这也是加载后
+                    // 舞台空白的直接原因之一。此后 frameLoop 会以 30fps 持续重绘，
+                    // 即使这一帧画早了，后续帧也会把舞台补上。
+                    setTimeout(() => {
+                        onSetProjectUnchanged();
+                        if (renderer && typeof renderer.draw === 'function') {
+                            renderer.draw();
                         }
                     });
                     this._loadingPromise = null;

@@ -994,6 +994,7 @@ class SuperRefactorModalContainer extends React.Component {
             'selectFile',
             'handleRefresh',
             'applyChanges',
+            'refreshStage',
             'downloadProject',
             'saveBlobAs',
             'getProjectFiles',
@@ -2446,6 +2447,25 @@ class SuperRefactorModalContainer extends React.Component {
         });
     }
 
+    // 主动刷新舞台：超级重构直接改 VM 数据，不经过 vm-manager-hoc 的
+    // loadProject，历史上只能等 frameLoop 的下一帧；一旦帧循环被 quit()
+    // 停掉就永远不重绘，只能点绿旗。这里显式请求一次重绘，保证立即生效。
+    refreshStage () {
+        const vm = this.props.vm;
+        if (!vm) return;
+        if (vm.runtime && typeof vm.runtime.requestRedraw === 'function') {
+            vm.runtime.requestRedraw();
+        }
+        // 皮肤加载可能是异步的：先画一帧，再在下一个事件循环补一帧。
+        const draw = () => {
+            if (vm.renderer && typeof vm.renderer.draw === 'function') {
+                vm.renderer.draw();
+            }
+        };
+        draw();
+        setTimeout(draw);
+    }
+
     // 应用修改到VM
     applyChanges () {
         const {files, currentFile} = this.state;
@@ -2478,6 +2498,7 @@ class SuperRefactorModalContainer extends React.Component {
                 
                 if (this.props.vm) {
                     this.props.vm.loadProject(newData).then(() => {
+                        this.refreshStage();
                         this.setState({ message: this.t(messages.projectUpdated) });
                         setTimeout(() => this.setState({ message: '' }), 3000);
                     }).catch(err => {
@@ -2548,12 +2569,13 @@ class SuperRefactorModalContainer extends React.Component {
                                     this.props.vm.editingTarget = originalEditingTarget;
                                 }
 
-                                // 刷新舞台
+                                // 刷新舞台：refreshSvg 只重建 skin，还要主动画一帧
                                 if (typeof this.props.vm.refreshSvg === 'function') {
                                     this.props.vm.refreshSvg(costumeIndex);
                                 } else if (target.renderer && typeof target.renderer.updateDrawable === 'function') {
                                     target.renderer.updateDrawable();
                                 }
+                                this.refreshStage();
 
                                 this.setState({ message: this.t(messages.svgUpdated) });
                                 setTimeout(() => this.setState({ message: '' }), 3000);
@@ -2592,6 +2614,7 @@ class SuperRefactorModalContainer extends React.Component {
 
             const {loadRJIntoVMProgressive} = await import('../lib/rj/rj-lazy-loader.js');
             await loadRJIntoVMProgressive(this.props.vm, buffer, {});
+            this.refreshStage();
 
             this.setState({message: this.t(messages.shardApplied)});
             setTimeout(() => this.setState({message: ''}), 3000);
