@@ -33,6 +33,21 @@ export const OFFICIAL_BASE   = 'https://forum.ctspace.xyz/api';
 // 详见 https://github.com/remixwarp/cors-anywhere 。
 export const CORS_ANYWHERE  = 'https://cors-api.rewp.de5.net';
 
+/**
+ * 运行时读取代理前缀。设置窗口把用户改的值写到
+ * `window.__RWCK_CORS_ANYWHERE__` 与 `localStorage['rwck:cors-anywhere']`；
+ * 每次构造请求时重新读取，让「确认修改 / 恢复默认」即时生效，无需刷新页面。
+ */
+function getCorsAnywhere() {
+    const fromWindow = _isBrowser && window.__RWCK_CORS_ANYWHERE__;
+    if (fromWindow) return String(fromWindow).replace(/\/$/, '');
+    try {
+        const fromStorage = localStorage.getItem('rwck:cors-anywhere');
+        if (fromStorage) return String(fromStorage).replace(/\/$/, '');
+    } catch (_) { /* localStorage 不可用时忽略 */ }
+    return CORS_ANYWHERE;
+}
+
 /** 构造经 cors-anywhere 代理的完整目标 URL。
  *  比如 `_proxyUrl('https://forum.ctspace.xyz/api/stats/public')`
  *  → `https://cors-api.rewp.de5.net/?url=https%3A%2F%2Fforum.ctspace.xyz%2Fapi%2Fstats%2Fpublic`
@@ -47,15 +62,26 @@ export function _proxyUrl(targetFullUrl, force /*?: boolean*/) {
 
     // 直连开关：用户强制直连 / 已有代理前缀就不再包
     if (force === false) return targetFullUrl;
-    if (targetFullUrl.startsWith(CORS_ANYWHERE)) return targetFullUrl;
+    const proxy = getCorsAnywhere();
+    if (targetFullUrl.startsWith(proxy)) return targetFullUrl;
     if (_isBrowser && window.__RWCK_DIRECT_API__) return targetFullUrl;
 
-    return CORS_ANYWHERE + '/?url=' + encodeURIComponent(targetFullUrl);
+    return proxy + '/?url=' + encodeURIComponent(targetFullUrl);
 }
 
 export const BASE_URL    = CORS_ANYWHERE + '/?url=' + encodeURIComponent(OFFICIAL_BASE);
-export const IS_PROXY    = true;  // 始终经由 cors-anywhere 转发
+export const IS_PROXY    = true;  // 默认经由 cors-anywhere 转发（可由直连开关关闭）
 export const IS_BROWSER  = _isBrowser;
+
+/**
+ * 把 API 相对路径拼成完整请求 URL。
+ * 必须把「base + path」整体做 encodeURIComponent 再交给代理：若只编码 base
+ * 而把 path 直接拼在后面，path 中 `&` 之后的查询参数会被代理当成自己的
+ * query 参数而丢失，分页 / 排序 / 搜索等多参数接口就拿不到完整参数。
+ */
+function apiUrl(path) {
+    return _proxyUrl(OFFICIAL_BASE + path);
+}
 
 const LS_TOKEN = 'rwck:token';
 const LS_USER  = 'rwck:user';
@@ -123,7 +149,7 @@ function _qs(obj) {
 
 /** 统一 fetch：JSON 请求体 + JSON 响应解析 + 错误归一化。 */
 async function _fetch(path, options = {}) {
-    const url = BASE_URL + path;
+    const url = apiUrl(path);
     const headers = Object.assign(
         {'Accept': 'application/json'},
         authHeaders(),
@@ -216,7 +242,7 @@ function _normalizeCaptcha(raw) {
 
 /** 表单文件上传（multipart/form-data，绕开 JSON 序列化）。 */
 async function _uploadForm(path, file, filename) {
-    const url = BASE_URL + path;
+    const url = apiUrl(path);
     const fd = new FormData();
     const realName = filename || (file && file.name) || 'upload.bin';
     fd.append('file', file, realName);
@@ -275,6 +301,7 @@ const rwck = {
     BASE_URL,
     IS_BROWSER,
     OFFICIAL_BASE, UPSTREAM_ORIGIN,
+    getCorsAnywhere,
 
     /** 鉴权状态快照。 */
     authState() { return {token: getToken(), user: getUser()}; },
@@ -287,6 +314,7 @@ const rwck = {
 
     // ===== 1. 人机验证 + 认证 =====
     auth: {
+        /** 图形验证码为 6 位大写字母数字（以线上实际为准；文档旧版写 4 位）。 */
         async getCaptcha() {
             const raw = await _fetch('/captcha');
             return _normalizeCaptcha(raw);

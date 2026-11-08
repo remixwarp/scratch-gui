@@ -1416,10 +1416,11 @@ ${rwckT('rwck401')}`);
                          ) : rwckT('rwck87')}
                     </div>
 
+                    {/* 验证码为 6 位大写字母数字（文档旧版误写 4 位） */}
                     <input style={{...S.input, maxWidth:150}} value={this.state.captchaAnswer}
                            onChange={e=>this.setState({captchaAnswer:e.target.value})}
                            placeholder={hasImage ? rwckT('rwck115') : rwckT('rwck24')}
-                           maxLength={8} disabled={!hasImage} />
+                           maxLength={6} disabled={!hasImage} />
 
                     <button style={cls(S.btn, S.btnGhost, this.state.captchaLoading && S.btnDisabled)}
                             onClick={()=>this._refreshCaptcha()}
@@ -2749,7 +2750,7 @@ class RwckSettingsPanel extends Component {
         super(props);
         const saved = (typeof localStorage !== 'undefined') && localStorage.getItem('rwck:cors-anywhere');
         this.state = {
-            proxyInput: saved || (props && props.getApiClient && props.getApiClient().CORS_ANYWHERE)
+            proxyInput: saved || (props && props.getApiClient && props.getApiClient().getCorsAnywhere())
                 || 'https://cors-api.rewp.de5.net',
             applyBusy: false, applyMsg: ''
         };
@@ -2892,7 +2893,7 @@ class RwckSettingsPanel extends Component {
                         {rwckT('rwck188')} <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>https://cors-api.rewp.de5.net</code>
                         {rwckT('rwck254')} <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>?url=https://forum.ctspace.xyz/api/xxx</code>{rwckT('rwck138')}
                         <code style={{background:'#f1f5f9', padding:'0 4px', borderRadius:3, fontFamily:'monospace'}}>
-                            {(this.props.getApiClient && this.props.getApiClient().CORS_ANYWHERE)
+                            {(this.props.getApiClient && this.props.getApiClient().getCorsAnywhere())
                                 || 'https://cors-api.rewp.de5.net'}
                         </code>
                         {rwckT('rwck430')}
