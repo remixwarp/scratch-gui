@@ -11,17 +11,18 @@ const CLOUD_HASH_KEY = 'tw:cloud-restore-point-hash';
 // GitHub 直接 API 配置（网络还原点）
 const GITHUB_REPO_OWNER = 'RemixWarp-rw';
 const GITHUB_REPO_NAME = 'rw-owr';
-const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}`;
+// 写转发服务（rw-bot-token Worker）：token 由服务端持有并注入，前端不出现 PAT。
+// 部署后把 Worker 地址填入 FORWARD_BASE（形如 https://rw-bot-token.<账号>.workers.dev）。
+const FORWARD_BASE = 'https://bot-api.rewp.de5.net';
+const GITHUB_API_BASE = `${FORWARD_BASE}/api/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}`;
 const GH_PROXY_PREFIX = 'https://gh-proxy.org/';
 const getProxiedRawUrl = filePath =>
     `${GH_PROXY_PREFIX}https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${filePath}`;
-const GITHUB_TOKEN = ['ghp_fLBsu', 'milohGrz7H7m', 'f0ZAcdnMkV', 'wlO1928J6'].join('');
 
 const githubApiRequest = async (path, options = {}) => {
     const response = await fetch(`${GITHUB_API_BASE}${path}`, {
         ...options,
         headers: {
-            'Authorization': `token ${GITHUB_TOKEN}`,
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json',
             ...options.headers
@@ -948,10 +949,6 @@ const copyCloudRestorePointLink = async (id, filename) => {
         throw new Error(`Failed to copy link: ${error.message}`);
     }
 };
-
-// Public accessor used by other features (e.g. Gandi compatibility
-// conversion) so the token stays defined in exactly one place.
-export const getNetworkRestoreToken = () => GITHUB_TOKEN;
 
 export default {
     TYPE_AUTOMATIC,

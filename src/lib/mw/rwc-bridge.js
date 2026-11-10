@@ -17,9 +17,9 @@ const GH_PROXY_PREFIX = 'https://gh-proxy.org/';
 // surfacing there, and they rarely fail.
 const RWC_REPO_OWNER = 'remixwarp';
 const RWC_REPO_NAME = 'rwc';
-const RWC_API_BASE = `https://api.github.com/repos/${RWC_REPO_OWNER}/${RWC_REPO_NAME}`;
-const RWC_GITHUB_TOKEN =
-    ['ghp_fLBsu', 'milohGrz7H7m', 'f0ZAcdnMkV', 'wlO1928J6'].join('');
+// 写转发服务（rw-bot-token Worker）：token 由服务端持有并注入，前端不出现 PAT。
+const FORWARD_BASE = 'https://bot-api.rewp.de5.net';
+const RWC_API_BASE = `${FORWARD_BASE}/api/${RWC_REPO_OWNER}/${RWC_REPO_NAME}`;
 
 let bridgeInitialized = false;
 let plazaWindow = null;
@@ -280,7 +280,6 @@ function sendToPlaza(message) {
 async function forwardGithubRequest(path) {
     const res = await fetch(`${RWC_API_BASE}${path}`, {
         headers: {
-            'Authorization': `token ${RWC_GITHUB_TOKEN}`,
             'Accept': 'application/vnd.github.v3+json'
         }
     });
@@ -435,8 +434,7 @@ function handleMessage(e) {
             const fetchOpts = {
                 method: method,
                 headers: {
-                    'Authorization': `token ${RWC_GITHUB_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json'
+                            'Accept': 'application/vnd.github.v3+json'
                 }
             };
             if (body) {
