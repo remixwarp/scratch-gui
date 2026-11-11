@@ -79,7 +79,7 @@ const CACHE_EPOCH = 'gleba4';
 const base = {
     // 持久化 webpack 编译缓存，显著加速重复构建（CI/远端构建时缓存命中可省数分钟）。
     // 放在项目根而非 node_modules 内，避免 npm ci 清空 node_modules 时缓存一并丢失。
-    cache: {
+    cache: process.env.CF_LOW_MEMORY ? false : {
         type: 'filesystem',
         cacheDirectory: path.resolve(__dirname, '.webpack-cache'),
         buildDependencies: {
@@ -251,7 +251,7 @@ const base = {
         }, {
             test: /\.(jsx?|tsx?|mjs)$/,
             use: [
-                'thread-loader',
+                ...(process.env.CF_LOW_MEMORY ? [] : ['thread-loader']),
                 {
                     loader: 'babel-loader',
                     options: {
@@ -545,6 +545,8 @@ module.exports = [
             minimize: process.env.NODE_ENV === 'production',
             minimizer: process.env.NODE_ENV === 'production' ? [
                 new (require('terser-webpack-plugin').default || require('terser-webpack-plugin'))({
+                    // 低内存构建时关闭并行 minify，避免多进程叠加内存被 OOM 杀死。
+                    parallel: process.env.CF_LOW_MEMORY ? false : true,
                     terserOptions: {
                         compress: {
                             drop_console: true,

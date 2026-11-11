@@ -6,6 +6,7 @@ import {connect} from 'react-redux';
 
 import {setProjectUnchanged} from '../../reducers/project-changed.js';
 import {
+    LoadingState,
     LoadingStates,
     getIsCreatingNew,
     getIsFetchingWithId,
