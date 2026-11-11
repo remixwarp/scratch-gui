@@ -155,6 +155,7 @@
     "debugger/thread": "Thread {id}",
     "debugger/unknown-sprite": "(unknown sprite)",
     "debugger/unpause": "Resume",
+    "mini-map/no-blocks": "No blocks",
     "pause/pause": "Pause",
     "pause/play": "Resume",
     "clones/clones": "clones: {cloneCount}",

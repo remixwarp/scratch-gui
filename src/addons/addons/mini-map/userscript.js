@@ -8,7 +8,9 @@ import WindowManager from '../../window-system/window-manager.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-export default async function ({addon}) {
+export default async function ({addon, msg}) {
+    // 界面文案走 addon 的多语言 msg()；运行环境没注入 msg 时回退中文
+    const t = typeof msg === 'function' ? msg : () => '暂无积木';
     let enabled = true;
     try {
         enabled = addon.settings.get('enable_minimap') !== false;
@@ -65,13 +67,70 @@ export default async function ({addon}) {
     let emptySince = 0;
 
     const getMainWorkspace = () => {
-        if (workspace) return workspace;
+        // 打开/切换作品后，Blockly 的主工作区可能换成新实例。这里每次都取最新的，
+        // 避免一直沿用 addon 启动时那个旧（可能为空）的工作区而始终显示「暂无积木」。
         try {
-            if (Blockly) workspace = Blockly.getMainWorkspace();
+            if (!Blockly && addon.tab && addon.tab.traps &&
+                typeof addon.tab.traps.getBlockly === 'function') {
+                const b = addon.tab.traps.getBlockly();
+                if (b && typeof b.then === 'function') {
+                    b.then(real => {
+                        if (real) Blockly = real;
+                    }).catch(() => {});
+                } else if (b && typeof b.getMainWorkspace === 'function') {
+                    Blockly = b;
+                }
+            }
+            if (Blockly && typeof Blockly.getMainWorkspace === 'function') {
+                const current = Blockly.getMainWorkspace();
+                if (current) {
+                    workspace = current;
+                    return current;
+                }
+            }
         } catch (e) {
             // ignore
         }
         return workspace;
+    };
+
+    // 实时监测当前积木：数量 > 0 或内容变化时立刻重新加载小地图界面
+    let lastBlockCount = 0;
+    let lastBlockKey = '';
+    const readBlocksState = () => {
+        const ws = getMainWorkspace();
+        if (!ws || typeof ws.getAllBlocks !== 'function') return {count: 0, key: ''};
+        try {
+            const all = ws.getAllBlocks(false) || [];
+            let count = 0;
+            let sig = '';
+            for (const block of all) {
+                if (!block) continue;
+                if (block.workspace && block.workspace.isFlyout) continue;
+                if (typeof block.isShadow === 'function' && block.isShadow()) continue;
+                count++;
+                // 指纹里带上 id / 类型 / 位置，增删改与拖动都能被检测到；
+                // 只取前 300 个，避免大工程每轮轮询拼接过长的字符串
+                if (count <= 300) {
+                    let x = 0;
+                    let y = 0;
+                    try {
+                        const p = typeof block.getRelativeToSurfaceXY === 'function' ?
+                            block.getRelativeToSurfaceXY() : null;
+                        if (p) {
+                            x = p.x;
+                            y = p.y;
+                        }
+                    } catch (e) {
+                        // ignore
+                    }
+                    sig += `${block.id || ''}:${block.type || ''}:${x},${y};`;
+                }
+            }
+            return {count, key: `${count}|${sig}`};
+        } catch (e) {
+            return {count: 0, key: ''};
+        }
     };
 
     // 获取当前视口在 workspace 坐标系的位置
@@ -127,7 +186,6 @@ export default async function ({addon}) {
                 if (typeof block.isShadow === 'function' && block.isShadow()) continue;
 
                 const root = typeof block.getSvgRoot === 'function' ? block.getSvgRoot() : null;
-                if (!root) continue;
                 const pos = block.getRelativeToSurfaceXY();
                 if (!pos) continue;
 
@@ -137,16 +195,18 @@ export default async function ({addon}) {
                 let height = 0;
                 let offsetX = 0;
                 let offsetY = 0;
-                try {
-                    const bbox = root.getBBox();
-                    if (bbox && bbox.width > 0 && bbox.height > 0) {
-                        width = bbox.width;
-                        height = bbox.height;
-                        offsetX = bbox.x;
-                        offsetY = bbox.y;
+                if (root) {
+                    try {
+                        const bbox = root.getBBox();
+                        if (bbox && bbox.width > 0 && bbox.height > 0) {
+                            width = bbox.width;
+                            height = bbox.height;
+                            offsetX = bbox.x;
+                            offsetY = bbox.y;
+                        }
+                    } catch (e) {
+                        // ignore
                     }
-                } catch (e) {
-                    // ignore
                 }
                 if (!(width > 0) || !(height > 0)) {
                     try {
@@ -161,8 +221,24 @@ export default async function ({addon}) {
                 }
                 if (!(width > 0) || !(height > 0)) continue;
 
-                const clone = root.cloneNode(true);
-                clone.removeAttribute('id');
+                // 刚打开作品时积木往往还没渲染出 SVG 节点：先用占位矩形把位置画出来，
+                // 之后 SVG 渲染完成会自动被下一轮换回真实形状
+                let clone;
+                if (root) {
+                    clone = root.cloneNode(true);
+                    clone.removeAttribute('id');
+                } else {
+                    clone = document.createElementNS(SVG_NS, 'rect');
+                    clone.setAttribute('x', String(pos.x));
+                    clone.setAttribute('y', String(pos.y));
+                    clone.setAttribute('width', String(width));
+                    clone.setAttribute('height', String(height));
+                    clone.setAttribute('fill', '#4d97ff');
+                    clone.setAttribute('fill-opacity', '0.55');
+                    clone.setAttribute('rx', '3');
+                    offsetX = 0;
+                    offsetY = 0;
+                }
                 fragment.appendChild(clone);
                 drawn++;
 
@@ -270,7 +346,8 @@ export default async function ({addon}) {
             buildSnapshot();
         }
         updateViewportRect();
-        if (emptyEl) emptyEl.style.display = snapshot ? 'none' : 'flex';
+        // 只要当前工作区里有积木，就不显示「暂无积木」（界面会继续重建直到画出来）
+        if (emptyEl) emptyEl.style.display = (snapshot || lastBlockCount > 0) ? 'none' : 'flex';
     };
 
     // 节流绘制
@@ -392,7 +469,9 @@ export default async function ({addon}) {
         if (!ws || changeListenerWorkspace === ws) return;
         try {
             ws.addChangeListener(() => {
+                // 积木增删改 / 移动 -> 立即重新加载界面
                 cacheDirty = true;
+                lastDrawKey = '';
                 scheduleDraw();
             });
             // 滚轮平移/缩放时视野框立即跟随
@@ -580,7 +659,7 @@ export default async function ({addon}) {
 
         emptyEl = document.createElement('div');
         emptyEl.className = 'rw-minimap-empty';
-        emptyEl.textContent = '暂无积木';
+        emptyEl.textContent = t('no-blocks');
         emptyEl.style.cssText = [
             'position: absolute',
             'left: 0',
@@ -624,19 +703,70 @@ export default async function ({addon}) {
     // 初始化窗口
     createUI();
 
+    // 窗口刚建好就立刻检测一次：addon 常在编辑器初始化前启动，
+    // 此时打开的作品还没挂到工作区上，必须主动补一次重建
+    setTimeout(() => {
+        const state = readBlocksState();
+        lastBlockCount = state.count;
+        if (state.count > 0) {
+            cacheDirty = true;
+            lastDrawKey = '';
+            emptySince = 0;
+            lastBuildTime = 0;
+        }
+        scheduleDraw();
+    }, 50);
+
     // 定时刷新：工作区/窗口尺寸/视野变化都会在这里补一次绘制，
     // 空闲时 draw() 会自行提前返回，不产生重绘
     setInterval(() => {
         if (!isWindowAlive()) return;
         attachWorkspaceListener();
+
+        // 切换语言后同步空状态文案
+        if (emptyEl) {
+            const label = t('no-blocks');
+            if (emptyEl.textContent !== label) emptyEl.textContent = label;
+        }
+
+        // 实时监测积木：> 0 时保证界面已加载，数量/内容变化时立刻重新加载
+        const state = readBlocksState();
+        const changed = state.key !== lastBlockKey;
+        lastBlockCount = state.count;
+        if (changed) lastBlockKey = state.key;
+        if (state.count > 0 && (changed || !snapshot || cacheDirty)) {
+            cacheDirty = true;
+            lastDrawKey = '';
+            emptySince = 0;
+            lastBuildTime = 0; // 绕过 250ms 重建节流，立即重画
+        } else if (state.count === 0 && changed) {
+            cacheDirty = true;
+            lastDrawKey = '';
+            emptySince = 0;
+            lastBuildTime = 0;
+        }
         scheduleDraw();
     }, 300);
 
     // 重新显示时强制刷新一次，避免窗口隐藏期间工作区变化却没重建
     const forceRefresh = () => {
+        const state = readBlocksState();
+        lastBlockCount = state.count;
+        lastBlockKey = '';
         cacheDirty = true;
         lastDrawKey = '';
+        emptySince = 0;
+        lastBuildTime = 0; // 绕过重建节流，打开/显示窗口立即加载
         scheduleDraw();
+        // 窗口刚显示时布局可能尚未完成（getBoundingClientRect 为 0），补两帧确保画出
+        for (const delay of [120, 400]) {
+            setTimeout(() => {
+                cacheDirty = true;
+                lastDrawKey = '';
+                lastBuildTime = 0;
+                scheduleDraw();
+            }, delay);
+        }
     };
 
     // 暴露全局 API：toggle 显示/隐藏

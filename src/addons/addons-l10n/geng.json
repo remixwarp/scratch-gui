@@ -112,6 +112,7 @@
     "debugger/thread": "线程 {id}",
     "debugger/unknown-sprite": "（未知崽崽（角色））",
     "debugger/unpause": "继续",
+    "mini-map/no-blocks": "暂无积木（一块也没有）",
     "pause/pause": "暂停",
     "pause/play": "继续",
     "clones/clones": "分身（克隆）体数量:{cloneCount}",

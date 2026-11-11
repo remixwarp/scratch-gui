@@ -35,6 +35,8 @@ import {
     renderRfdSvg
 } from '../lib/super-refactor-rfd.js';
 import './super-refactor-modal.css';
+// HCML 本地映射表：不依赖网络服务，直接在浏览器内完成中文标签 -> HTML 的转换
+import {hcmlToHtml, TAG_MAP, ATTR_MAP} from '../lib/hcml/hcml-convert.js';
 
 // 超级重构窗口的界面文案（走 react-intl，便于翻译）
 const messages = defineMessages({
@@ -300,6 +302,23 @@ const messages = defineMessages({
         id: 'mw.superRefactor.preview.hcmlConvertFailed',
         defaultMessage: 'HCML 转换失败：{error}',
         description: 'Error hint shown when the HCML convert API fails'
+    },
+    // HCML 映射表来源切换（网络映射表 / 本地映射表）
+    hcmlMapNetwork: {
+        id: 'mw.superRefactor.hcmlMap.network',
+        defaultMessage: '网络映射表',
+        description: 'Label on the HCML map-mode button when using the remote convert API'
+    },
+    hcmlMapLocal: {
+        id: 'mw.superRefactor.hcmlMap.local',
+        defaultMessage: '本地映射表',
+        description: 'Label on the HCML map-mode button when using the built-in local map'
+    },
+    hcmlMapModeTitle: {
+        id: 'mw.superRefactor.hcmlMap.title',
+        // eslint-disable-next-line max-len
+        defaultMessage: '映射表的转换：当前{current}，点击切换为{next}。本地映射表内置 {tags} 个标签、{attrs} 个属性，不联网即可转换',
+        description: 'Tooltip of the HCML map-mode toggle button'
     },
     // 新建空白文件的命名
     fileNamePlaceholder: {
@@ -701,6 +720,9 @@ const PREVIEWABLE_EXTS = {
 };
 
 const HCML_CONVERT_API = 'https://hcml-api.rewp.de5.net/convert';
+// 内置本地映射表规模（显示在按钮 title 里，便于确认映射表已随客户端打包）
+const HCML_TAG_COUNT = Object.keys(TAG_MAP).length;
+const HCML_ATTR_COUNT = Object.keys(ATTR_MAP).length;
 
 const extOfFileName = name => {
     const base = String(name || '').split('/').pop();
@@ -739,24 +761,42 @@ class HcmlPreview extends React.Component {
     }
 
     componentDidMount () {
-        this.convert(this.props.source);
+        this.convert(this.props.source, this.props.mapMode);
     }
 
     componentDidUpdate (prevProps) {
-        if (prevProps.source !== this.props.source) this.convert(this.props.source);
+        // 源码变化或映射表模式切换都要重新转换，保证预览与当前状态一致
+        if (prevProps.source !== this.props.source || prevProps.mapMode !== this.props.mapMode) {
+            this.convert(this.props.source, this.props.mapMode);
+        }
     }
 
     componentWillUnmount () {
         this._cancelled = true;
     }
 
-    convert (source) {
+    convert (source, mapMode) {
         this._cancelled = false;
         this.setState({html: '', error: '', loading: true});
+        const text = source || '';
+
+        // 本地映射表：完全在浏览器内转换，不走网络，链路不依赖外部服务
+        if (mapMode === 'local') {
+            try {
+                // 空源码也给一份最小可渲染 HTML，保证 iframe 链路始终完整
+                const html = hcmlToHtml(text) ||
+                    '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body></body></html>';
+                if (!this._cancelled) this.setState({html, error: '', loading: false});
+            } catch (error) {
+                if (!this._cancelled) this.setState({html: '', error: error.message, loading: false});
+            }
+            return;
+        }
+
         fetch(HCML_CONVERT_API, {
             method: 'POST',
             headers: {'Content-Type': 'text/plain;charset=utf-8'},
-            body: source || ''
+            body: text
         })
             .then(response => {
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -999,6 +1039,7 @@ class SuperRefactorModalContainer extends React.Component {
             'saveBlobAs',
             'getProjectFiles',
             'toggleViewMode',
+            'toggleHcmlMapMode',
             'handleEditorScroll',
             'handleEditorKeyDown',
             'handleMonacoMessage',
@@ -1047,6 +1088,8 @@ class SuperRefactorModalContainer extends React.Component {
             searchQuery: '',
             filteredFiles: [],
             viewMode: 'code', // code or preview for SVG
+            // HCML 预览使用的映射表：network = 网络转换服务 / local = 内置本地映射表
+            hcmlMapMode: 'network',
             wordWrap: true, // 自动换行
             // 文件面板显示方式：tree = 新版树状结构，list = 旧版平铺列表
             fileViewMode: savedSettings.fileViewMode === 'list' ? 'list' : 'tree',
@@ -2748,6 +2791,13 @@ class SuperRefactorModalContainer extends React.Component {
         }));
     }
 
+    // 切换 HCML 预览使用的映射表：网络转换服务 <-> 内置本地映射表
+    toggleHcmlMapMode () {
+        this.setState(prevState => ({
+            hcmlMapMode: prevState.hcmlMapMode === 'network' ? 'local' : 'network'
+        }));
+    }
+
     // -----------------------------------------------------------------------
     // 文件树（.rj / .sb3 的文件名本身就是用 / 分隔的路径）
     // -----------------------------------------------------------------------
@@ -3499,7 +3549,8 @@ class SuperRefactorModalContainer extends React.Component {
 
     render () {
         const {visible, theme} = this.props;
-        const {files, currentFile, content, message, searchQuery, filteredFiles, viewMode, wordWrap, fileViewMode} = this.state;
+        const {files, currentFile, content, message, searchQuery, filteredFiles, viewMode, wordWrap,
+            fileViewMode, hcmlMapMode} = this.state;
         const currentFileObj = files[currentFile];
         const currentFileName = currentFileObj ? currentFileObj.name : '';
         // 重命名后仍按原始路径判断是否可以应用
@@ -3827,6 +3878,32 @@ class SuperRefactorModalContainer extends React.Component {
                                             {currentFileObj.size ? ` (${Math.round(currentFileObj.size / 1024)} KB)` : ''}
                                         </span>
                                     )}
+                                    {previewKind === 'hcml' && (
+                                        <button
+                                            onClick={this.toggleHcmlMapMode}
+                                            title={this.t(messages.hcmlMapModeTitle, {
+                                                current: hcmlMapMode === 'local' ?
+                                                    this.t(messages.hcmlMapLocal) : this.t(messages.hcmlMapNetwork),
+                                                next: hcmlMapMode === 'local' ?
+                                                    this.t(messages.hcmlMapNetwork) : this.t(messages.hcmlMapLocal),
+                                                tags: HCML_TAG_COUNT,
+                                                attrs: HCML_ATTR_COUNT
+                                            })}
+                                            style={{
+                                                padding: '4px 8px',
+                                                background: hcmlMapMode === 'local' ? '#4d97ff' : colors.buttonBg,
+                                                color: hcmlMapMode === 'local' ? 'white' : colors.text,
+                                                border: `1px solid ${colors.border}`,
+                                                borderRadius: '3px',
+                                                cursor: 'pointer',
+                                                fontSize: '10px',
+                                                fontWeight: hcmlMapMode === 'local' ? 'bold' : 'normal'
+                                            }}
+                                        >
+                                            {hcmlMapMode === 'local' ?
+                                                this.t(messages.hcmlMapLocal) : this.t(messages.hcmlMapNetwork)}
+                                        </button>
+                                    )}
                                     {isRfd ? (
                                         <div style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
                                             {[
@@ -4046,7 +4123,11 @@ class SuperRefactorModalContainer extends React.Component {
                                         {this.renderTextEditorPane(colors, `monaco-${previewKind}`)}
                                     </div>
                                 ) : previewKind === 'hcml' ? (
-                                    <HcmlPreview source={content} colors={colors} />
+                                    <HcmlPreview
+                                        source={content}
+                                        colors={colors}
+                                        mapMode={hcmlMapMode}
+                                    />
                                 ) : (
                                     <HtmlPreview source={content} colors={colors} />
                                 )

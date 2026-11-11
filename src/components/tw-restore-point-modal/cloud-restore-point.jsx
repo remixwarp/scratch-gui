@@ -2,17 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {FormattedDate, FormattedTime, FormattedRelative} from 'react-intl';
 import styles from './restore-point-modal.css';
-import {Trash, Link, ExternalLink, Edit} from 'lucide-react';
+import {Link, ExternalLink, Edit} from 'lucide-react';
 
 const relativeTimeSupported = () => typeof Intl !== 'undefined' && typeof Intl.RelativeTimeFormat !== 'undefined';
 
 const CloudRestorePoint = props => {
     const createdDate = new Date(props.created * 1000);
-
-    const handleClickDelete = e => {
-        e.stopPropagation();
-        props.onClickDelete(props.id, props.filename);
-    };
 
     const handleClickCopyLink = e => {
         e.stopPropagation();
@@ -90,13 +85,6 @@ const CloudRestorePoint = props => {
                     <Link size={16} />
                 </button>
 
-                <button
-                    className={styles.cloudRestorePointButton}
-                    onClick={handleClickDelete}
-                    title="Delete"
-                >
-                    <Trash size={16} />
-                </button>
             </div>
         </div>
     );
@@ -109,7 +97,6 @@ CloudRestorePoint.propTypes = {
     filename: PropTypes.string,
     hash: PropTypes.string,
     downloadUrl: PropTypes.string,
-    onClickDelete: PropTypes.func.isRequired,
     onClickCopyLink: PropTypes.func.isRequired,
     onClickOpenInEditor: PropTypes.func.isRequired
 };

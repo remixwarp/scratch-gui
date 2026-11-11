@@ -7,7 +7,7 @@ import {formatBytes} from '../../lib/utils/bytes';
 import RestorePointAPI from '../../lib/api/restore-points';
 import log from '../../lib/utils/log';
 
-import {Download, Trash} from 'lucide-react';
+import {Download} from 'lucide-react';
 
 // Browser support is not perfect yet
 const relativeTimeSupported = () => typeof Intl !== 'undefined' && typeof Intl.RelativeTimeFormat !== 'undefined';
@@ -16,7 +16,6 @@ class RestorePoint extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
-            'handleClickDelete',
             'handleClickExport',
             'handleClickLoad'
         ]);
@@ -64,11 +63,6 @@ class RestorePoint extends React.Component {
             size += assetSize;
         }
         return size;
-    }
-
-    handleClickDelete (e) {
-        e.stopPropagation();
-        this.props.onClickDelete(this.props.id);
     }
 
     handleClickExport (e) {
@@ -145,13 +139,6 @@ class RestorePoint extends React.Component {
                         <Download />
                     </button>
 
-                    <button
-                        className={styles.restorePointButton}
-                        onClick={this.handleClickDelete}
-                        disabled={this.props.isExporting}
-                    >
-                        <Trash />
-                    </button>
                 </div>
             </div>
         );
@@ -166,7 +153,6 @@ RestorePoint.propTypes = {
     thumbnailSize: PropTypes.number.isRequired,
     assets: PropTypes.shape({}).isRequired, // Record<string, number>
     isExporting: PropTypes.bool.isRequired,
-    onClickDelete: PropTypes.func.isRequired,
     onClickExport: PropTypes.func.isRequired,
     onClickLoad: PropTypes.func.isRequired
 };
