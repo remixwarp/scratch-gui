@@ -25,6 +25,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const BUILD_DIR = path.join(ROOT, 'build');
 const OUT_FILE = path.join(ROOT, 'RemixWarp-Single.html');
+const BARE_OUT_FILE = path.join(ROOT, 'RemixWarp-Editor.html');
 
 const PAGES = [
     {id: 'editor', file: 'editor.html', label: '编辑器'},
@@ -306,6 +307,7 @@ const SHELL_TEMPLATE = `<!DOCTYPE html>
     white-space: nowrap;
   }
   #rw-stage { position: absolute; inset: 48px 0 0 0; background: var(--rw-bg); }
+  .rw-bare #rw-stage { inset: 0; }
   #rw-frame {
     display: block;
     width: 100%;
@@ -363,7 +365,7 @@ const SHELL_TEMPLATE = `<!DOCTYPE html>
   }
 </style>
 </head>
-<body>
+<body class="__BODY_CLASS__">
 <header id="rw-bar">
   <div id="rw-brand">RemixWarp<small>单文件版</small></div>
   <nav id="rw-tabs" role="tablist"></nav>
@@ -383,6 +385,7 @@ const SHELL_TEMPLATE = `<!DOCTYPE html>
   var ASSETS = JSON.parse(document.getElementById('rw-assets').textContent);
   var PAGES = JSON.parse(document.getElementById('rw-pages').textContent);
   var TABS = __TABS_JSON__;
+  var BARE = __RW_BARE__;
   var ASSET_COUNT = __ASSET_COUNT__;
   var RAW_BYTES = __RAW_BYTES__;
   var BUILD_COMMIT = '__BUILD_COMMIT__';
@@ -902,8 +905,10 @@ const SHELL_TEMPLATE = `<!DOCTYPE html>
     return (Math.round(value * 10) / 10) + ' ' + units[index];
   }
 
-  metaEl.textContent = 'develop · ' + BUILD_COMMIT.slice(0, 7) +
-    ' · ' + ASSET_COUNT + ' 个内联资源 · ' + humanSize(RAW_BYTES);
+  if (metaEl) {
+    metaEl.textContent = 'develop · ' + BUILD_COMMIT.slice(0, 7) +
+      ' · ' + ASSET_COUNT + ' 个内联资源 · ' + humanSize(RAW_BYTES);
+  }
 
   function showToast(message) {
     toast.textContent = message;
@@ -918,9 +923,11 @@ const SHELL_TEMPLATE = `<!DOCTYPE html>
     if (!PAGES[id]) id = 'editor';
     if (current === id && document.getElementById('rw-frame')) return;
     current = id;
-    Array.prototype.forEach.call(tabsEl.children, function (button) {
-      button.setAttribute('aria-selected', button.getAttribute('data-tab') === id ? 'true' : 'false');
-    });
+    if (tabsEl) {
+      Array.prototype.forEach.call(tabsEl.children, function (button) {
+        button.setAttribute('aria-selected', button.getAttribute('data-tab') === id ? 'true' : 'false');
+      });
+    }
 
     Array.prototype.slice.call(stage.querySelectorAll('iframe')).forEach(function (frame) {
       frame.parentNode.removeChild(frame);
@@ -952,9 +959,10 @@ const SHELL_TEMPLATE = `<!DOCTYPE html>
     activate.timer = setTimeout(function () { loading.hidden = true; }, 15000);
   }
 
-  window.__SWITCH__ = activate;
+  // 裸编辑器版本不提供任何切换控件，站内跳转也不再切换页面。
+  window.__SWITCH__ = BARE ? function () {} : activate;
 
-  TABS.forEach(function (item) {
+  if (tabsEl) TABS.forEach(function (item) {
     var button = document.createElement('button');
     button.className = 'rw-tab';
     button.type = 'button';
@@ -991,39 +999,117 @@ function gitCommit() {
     }
 }
 
+// build/ 被清理时，直接从已生成的单文件里复用内联资源，避免重新构建。
+function loadExistingSingle() {
+    if (!fs.existsSync(OUT_FILE)) return null;
+    const html = fs.readFileSync(OUT_FILE, 'utf8');
+    const grab = id => {
+        const match = new RegExp(`<script type="application/json" id="${id}">([\\s\\S]*?)</script>`).exec(html);
+        return match ? JSON.parse(match[1]) : null;
+    };
+    const entries = grab('rw-assets');
+    const pages = grab('rw-pages');
+    if (!entries || !pages) return null;
+
+    const faviconMatch = /<link rel="icon" href="(data:[^"]*)"/.exec(html);
+    const commitMatch = /var BUILD_COMMIT = '([^']+)'/.exec(html);
+    let rawBytes = 0;
+    let packedBytes = 0;
+    let gzCount = 0;
+    let rawCount = 0;
+    for (const [flag, base64] of Object.values(entries)) {
+        const compressed = Buffer.from(base64, 'base64');
+        packedBytes += compressed.length;
+        if (flag === 1) {
+            gzCount++;
+            rawBytes += zlib.gunzipSync(compressed).length;
+        } else {
+            rawCount++;
+            rawBytes += compressed.length;
+        }
+    }
+    return {
+        entries,
+        pages,
+        rawBytes,
+        packedBytes,
+        gzCount,
+        rawCount,
+        skipped: 0,
+        faviconUri: faviconMatch ? faviconMatch[1] : '',
+        commit: commitMatch ? commitMatch[1] : gitCommit()
+    };
+}
+
 function main() {
-    const {files, skipped} = collectFiles();
-    const pages = readPages(files);
+    let entries;
+    let pages;
+    let rawBytes;
+    let packedBytes;
+    let gzCount;
+    let rawCount;
+    let skipped;
+    let faviconUri;
+    let commit;
 
-    // 入口 HTML 以页面形式内联，不再重复放进资源表。
-    const pageFiles = new Set(PAGES.map(page => page.file));
-    const assetFiles = new Map([...files].filter(([rel]) => !pageFiles.has(rel)));
+    if (fs.existsSync(BUILD_DIR)) {
+        const collected = collectFiles();
+        skipped = collected.skipped;
+        pages = readPages(collected.files);
 
-    const {entries, rawBytes, packedBytes, gzCount, rawCount} = buildPayload(assetFiles);
+        // 入口 HTML 以页面形式内联，不再重复放进资源表。
+        const pageFiles = new Set(PAGES.map(page => page.file));
+        const assetFiles = new Map([...collected.files].filter(([rel]) => !pageFiles.has(rel)));
+        ({entries, rawBytes, packedBytes, gzCount, rawCount} = buildPayload(assetFiles));
 
-    const faviconFile = path.join(BUILD_DIR, 'favicon.ico');
-    const faviconUri = fs.existsSync(faviconFile)
-        ? `data:image/x-icon;base64,${fs.readFileSync(faviconFile).toString('base64')}`
-        : '';
+        const faviconFile = path.join(BUILD_DIR, 'favicon.ico');
+        faviconUri = fs.existsSync(faviconFile)
+            ? `data:image/x-icon;base64,${fs.readFileSync(faviconFile).toString('base64')}`
+            : '';
+        commit = gitCommit();
+    } else {
+        const existing = loadExistingSingle();
+        if (!existing) {
+            console.error('[single-html] build/ 不存在，且无法从 RemixWarp-Single.html 复用资源；请先执行 npm run cf-build');
+            process.exit(1);
+        }
+        ({entries, pages, rawBytes, packedBytes, gzCount, rawCount, skipped, faviconUri, commit} = existing);
+        console.log('[single-html] build/ 不存在，复用 RemixWarp-Single.html 中的内联资源');
+    }
 
     const tabs = PAGES.map(page => ({id: page.id, file: page.file, label: page.label}));
-    const shell = SHELL_TEMPLATE
-        .split('__FAVICON_URI__').join(faviconUri)
-        .split('__ASSETS_JSON__').join(safeJson(entries))
-        .split('__PAGES_JSON__').join(safeJson(pages))
-        .split('__TABS_JSON__').join(JSON.stringify(tabs))
-        .split('__ASSET_COUNT__').join(String(Object.keys(entries).length))
-        .split('__RAW_BYTES__').join(String(rawBytes))
-        .split('__MIME_JSON__').join(JSON.stringify(MIME))
-        .split('__BUILD_COMMIT__').join(gitCommit());
+
+    const render = bare => {
+        let html = SHELL_TEMPLATE
+            .split('__FAVICON_URI__').join(faviconUri)
+            .split('__ASSETS_JSON__').join(safeJson(entries))
+            .split('__PAGES_JSON__').join(safeJson(pages))
+            .split('__TABS_JSON__').join(JSON.stringify(tabs))
+            .split('__BODY_CLASS__').join(bare ? 'rw-bare' : '')
+            .split('__RW_BARE__').join(bare ? 'true' : 'false')
+            .split('__ASSET_COUNT__').join(String(Object.keys(entries).length))
+            .split('__RAW_BYTES__').join(String(rawBytes))
+            .split('__MIME_JSON__').join(JSON.stringify(MIME))
+            .split('__BUILD_COMMIT__').join(commit);
+        if (bare) {
+            // 裸编辑器版本：移除顶部外壳与标签栏，只保留全屏编辑器。
+            html = html.replace(/<header id="rw-bar">[\s\S]*?<\/header>\s*/, '');
+        }
+        return html;
+    };
+
+    const shell = render(false);
+    const bare = render(true);
 
     fs.writeFileSync(OUT_FILE, shell);
+    fs.writeFileSync(BARE_OUT_FILE, bare);
 
     console.log('[single-html] 完成: ' + path.relative(ROOT, OUT_FILE));
+    console.log('[single-html] 完成: ' + path.relative(ROOT, BARE_OUT_FILE));
     console.log(`[single-html] 资源 ${Object.keys(entries).length} 个（gzip ${gzCount} / 原始 ${rawCount}）`);
     console.log(`[single-html] 原始 ${(rawBytes / 1024 / 1024).toFixed(1)} MB -> 负载 ${(packedBytes / 1024 / 1024).toFixed(1)} MB`);
     console.log('[single-html] 忽略预压缩副本 ' + skipped + ' 个 (.gz/.br)');
-    console.log(`[single-html] 输出大小 ${(fs.statSync(OUT_FILE).size / 1024 / 1024).toFixed(1)} MB`);
+    console.log(`[single-html] 输出大小 ${(fs.statSync(OUT_FILE).size / 1024 / 1024).toFixed(1)} MB / 裸编辑器 ${(fs.statSync(BARE_OUT_FILE).size / 1024 / 1024).toFixed(1)} MB`);
 }
 
 main();

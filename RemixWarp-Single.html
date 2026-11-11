@@ -78,6 +78,7 @@
     white-space: nowrap;
   }
   #rw-stage { position: absolute; inset: 48px 0 0 0; background: var(--rw-bg); }
+  .rw-bare #rw-stage { inset: 0; }
   #rw-frame {
     display: block;
     width: 100%;
@@ -135,7 +136,7 @@
   }
 </style>
 </head>
-<body>
+<body class="">
 <header id="rw-bar">
   <div id="rw-brand">RemixWarp<small>单文件版</small></div>
   <nav id="rw-tabs" role="tablist"></nav>
@@ -155,8 +156,9 @@
   var ASSETS = JSON.parse(document.getElementById('rw-assets').textContent);
   var PAGES = JSON.parse(document.getElementById('rw-pages').textContent);
   var TABS = [{"id":"editor","file":"editor.html","label":"编辑器"},{"id":"player","file":"index.html","label":"首页"},{"id":"fullscreen","file":"fullscreen.html","label":"全屏播放"},{"id":"embed","file":"embed.html","label":"嵌入"},{"id":"addons","file":"addons.html","label":"附加设置"},{"id":"credits","file":"credits.html","label":"致谢"}];
+  var BARE = false;
   var ASSET_COUNT = 718;
-  var RAW_BYTES = 64846393;
+  var RAW_BYTES = 69437549;
   var BUILD_COMMIT = '39a9c18f9c167c76fb342049a6a73afaa873714e';
 
   var MIME = {".js":"text/javascript;charset=utf-8",".mjs":"text/javascript;charset=utf-8",".css":"text/css;charset=utf-8",".html":"text/html;charset=utf-8",".htm":"text/html;charset=utf-8",".json":"application/json;charset=utf-8",".webmanifest":"application/manifest+json;charset=utf-8",".svg":"image/svg+xml",".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".gif":"image/gif",".webp":"image/webp",".ico":"image/x-icon",".woff":"font/woff",".woff2":"font/woff2",".ttf":"font/ttf",".otf":"font/otf",".eot":"application/vnd.ms-fontobject",".mp3":"audio/mpeg",".wav":"audio/wav",".ogg":"audio/ogg",".mp4":"video/mp4",".webm":"video/webm",".wasm":"application/wasm",".txt":"text/plain;charset=utf-8",".xml":"application/xml;charset=utf-8",".hex":"text/plain;charset=utf-8",".md":"text/markdown;charset=utf-8",".map":"application/json;charset=utf-8"};
@@ -674,8 +676,10 @@
     return (Math.round(value * 10) / 10) + ' ' + units[index];
   }
 
-  metaEl.textContent = 'develop · ' + BUILD_COMMIT.slice(0, 7) +
-    ' · ' + ASSET_COUNT + ' 个内联资源 · ' + humanSize(RAW_BYTES);
+  if (metaEl) {
+    metaEl.textContent = 'develop · ' + BUILD_COMMIT.slice(0, 7) +
+      ' · ' + ASSET_COUNT + ' 个内联资源 · ' + humanSize(RAW_BYTES);
+  }
 
   function showToast(message) {
     toast.textContent = message;
@@ -690,9 +694,11 @@
     if (!PAGES[id]) id = 'editor';
     if (current === id && document.getElementById('rw-frame')) return;
     current = id;
-    Array.prototype.forEach.call(tabsEl.children, function (button) {
-      button.setAttribute('aria-selected', button.getAttribute('data-tab') === id ? 'true' : 'false');
-    });
+    if (tabsEl) {
+      Array.prototype.forEach.call(tabsEl.children, function (button) {
+        button.setAttribute('aria-selected', button.getAttribute('data-tab') === id ? 'true' : 'false');
+      });
+    }
 
     Array.prototype.slice.call(stage.querySelectorAll('iframe')).forEach(function (frame) {
       frame.parentNode.removeChild(frame);
@@ -724,9 +730,10 @@
     activate.timer = setTimeout(function () { loading.hidden = true; }, 15000);
   }
 
-  window.__SWITCH__ = activate;
+  // 裸编辑器版本不提供任何切换控件，站内跳转也不再切换页面。
+  window.__SWITCH__ = BARE ? function () {} : activate;
 
-  TABS.forEach(function (item) {
+  if (tabsEl) TABS.forEach(function (item) {
     var button = document.createElement('button');
     button.className = 'rw-tab';
     button.type = 'button';
