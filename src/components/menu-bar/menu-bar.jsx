@@ -3758,23 +3758,6 @@ class MenuBar extends React.Component {
                                             </MenuItem>
                                         </MenuSection>
                                     )}
-                                    <MenuSection className={styles.menuSection}>
-                                        <MenuItem onClick={this.props.onClickCollaboration}>
-                                            <Handshake size={20} />
-                                            <FormattedMessage
-                                                defaultMessage="Live Collaboration"
-                                                description="Menu bar item for live collaboration"
-                                                id="tw.menuBar.collaboration"
-                                            />
-                                        </MenuItem>
-                                        <MenuItem onClick={this.props.onClickTutorial}>
-                                            <BookOpen size={20} />
-                                            <FormattedMessage
-                                                id="tw.menuBar.videoTutorial"
-                                                defaultMessage="Video Tutorial"
-                                            />
-                                        </MenuItem>
-                                    </MenuSection>
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.handleClickRestorePoints}
@@ -4190,6 +4173,33 @@ class MenuBar extends React.Component {
                                 open={this.props.toolsMenuOpen}
                                 place={this.props.isRtl ? 'left' : 'right'}
                             >
+                                <MenuSection className={styles.menuSection}>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onClickCollaboration();
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <Handshake size={20} />
+                                        <FormattedMessage
+                                            defaultMessage="Live Collaboration"
+                                            description="Menu bar item for live collaboration"
+                                            id="tw.menuBar.collaboration"
+                                        />
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => {
+                                            this.props.onClickTutorial();
+                                            this.props.onRequestCloseTools();
+                                        }}
+                                    >
+                                        <BookOpen size={20} />
+                                        <FormattedMessage
+                                            id="tw.menuBar.videoTutorial"
+                                            defaultMessage="Video Tutorial"
+                                        />
+                                    </MenuItem>
+                                </MenuSection>
                                 <MenuSection>
                                     <MenuItem
                                         onClick={() => {

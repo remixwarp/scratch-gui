@@ -19,11 +19,12 @@ export default async function ({addon}) {
         return;
     }
 
-    let mapWidth = 140;
-    let mapHeight = 120;
+    // 默认大小改为设置项允许的最小值（width min 80 / height min 60）
+    let mapWidth = 80;
+    let mapHeight = 60;
     try {
-        mapWidth = Math.max(80, Math.min(300, parseInt(addon.settings.get('width'), 10) || 140));
-        mapHeight = Math.max(60, Math.min(240, parseInt(addon.settings.get('height'), 10) || 120));
+        mapWidth = Math.max(80, Math.min(300, parseInt(addon.settings.get('width'), 10) || 80));
+        mapHeight = Math.max(60, Math.min(240, parseInt(addon.settings.get('height'), 10) || 60));
     } catch (e) {
         // ignore
     }
@@ -57,9 +58,8 @@ export default async function ({addon}) {
     let changeListenerWorkspace = null;
 
     // 小地图缩放：1 = 内容刚好铺满窗口；小于 1 时展示更大范围
-    let viewZoom = 0.7;
-    const MIN_ZOOM = 0.25;
-    const MAX_ZOOM = 3;
+    // 加减按钮不设放大/缩小上下限；默认值取原缩小限制能到的最小值 0.25
+    let viewZoom = 0.25;
     let viewBoxState = null;
     let rafPending = false;
     let emptySince = 0;
@@ -318,16 +318,33 @@ export default async function ({addon}) {
         const targetViewLeft = wx - vp.w / 2;
         const targetViewTop = wy - vp.h / 2;
 
+        // scratch-blocks 的 Scrollbar/ScrollbarPair.set() 参数是「相对内容左上角
+        // 的滚动量」（见 workspace_svg.js: scrollbar.set(-x - contentLeft, -y - contentTop)），
+        // 直接传 viewLeft/viewTop 绝对坐标会让垂直方向被 constrainHandle_ 夹到 0，
+        // 表现为拖动时视野框只能左右移动、上下不动。
+        let originX = 0;
+        let originY = 0;
         try {
-            if (ws.scrollbar) {
-                if (ws.scrollbar.hScroll && ws.scrollbar.vScroll) {
-                    ws.scrollbar.hScroll.set(targetViewLeft);
-                    ws.scrollbar.vScroll.set(targetViewTop);
-                } else if (typeof ws.scrollbar.set === 'function') {
-                    ws.scrollbar.set(targetViewLeft, targetViewTop);
-                }
-            } else if (ws.scrollbar_ && ws.scrollbar_.set) {
-                ws.scrollbar_.set(targetViewLeft, targetViewTop);
+            const metrics = typeof ws.getMetrics === 'function' ? ws.getMetrics() : null;
+            if (metrics) {
+                if (Number.isFinite(metrics.contentLeft)) originX = metrics.contentLeft;
+                if (Number.isFinite(metrics.contentTop)) originY = metrics.contentTop;
+            }
+        } catch (e) {
+            // ignore
+        }
+        const scrollX = targetViewLeft - originX;
+        const scrollY = targetViewTop - originY;
+
+        try {
+            if (ws.scrollbar && typeof ws.scrollbar.set === 'function') {
+                // 成对 API 一次设置两个轴，避免分别 set 时后一次 setMetrics 覆盖前一轴
+                ws.scrollbar.set(scrollX, scrollY);
+            } else if (ws.scrollbar && ws.scrollbar.hScroll && ws.scrollbar.vScroll) {
+                ws.scrollbar.hScroll.set(scrollX);
+                ws.scrollbar.vScroll.set(scrollY);
+            } else if (ws.scrollbar_ && typeof ws.scrollbar_.set === 'function') {
+                ws.scrollbar_.set(scrollX, scrollY);
             }
         } catch (e) {
             try {
@@ -422,7 +439,9 @@ export default async function ({addon}) {
 
     // 缩放小地图：只改变 viewBox，不重建积木快照
     const zoomBy = factor => {
-        viewZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, viewZoom * factor));
+        // 不设放大/缩小限制，只防止数值溢出/非法值破坏 SVG viewBox
+        viewZoom *= factor;
+        if (!Number.isFinite(viewZoom) || viewZoom <= 0) viewZoom = 1;
         applyViewBox();
         lastDrawKey = '';
         scheduleDraw();
