@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 /**
- * 用官方 EXE 自带的渲染产物（dist-renderer-webpack/editor）生成一个纯编辑器单 HTML5。
- *
- * - 只保留编辑器本身：没有标题栏、标签页、加载圈、任何提示文字。
- * - 所有脚本/分块/worker/monaco/iframe 页面全部内联，运行时不产生本地网络请求。
- * - 静态图片/字体/音频在构建期改写为 data URI（JS 里本来就以 n.p+"static/assets/..." 引用）。
+ * 把官方 EXE 自带的 renderer（dist-renderer-webpack/editor）原封不动地打成单个 HTML5。
+ * - 不往里加任何东西（没有标题、加载圈、标签栏、"从内联启动"提示…）
+ * - 不往外删任何东西（保留 gui.html 的所有 DOM、脚本、样式、splash）
+ * - 仅做一件事：把所有外部资源（js/chunk/worker/css/static/assets/blocks-media/monaco/addons）
+ *   内联进同一个文件，运行时拦截所有请求走内存，不产生本地 404。
  *
  * 用法：node scripts/build-exe-single-html.mjs
- * 输入目录可用 RW_EDITOR_DIR 覆盖，默认 /tmp/rw-asar/dist-renderer-webpack/editor
  */
 'use strict';
 
@@ -38,8 +37,7 @@ const MIME = {
     '.mp3': 'audio/mpeg',
     '.wav': 'audio/wav',
     '.ogg': 'audio/ogg',
-    '.wasm': 'application/wasm',
-    '.hex': 'text/plain;charset=utf-8'
+    '.wasm': 'application/wasm'
 };
 
 const mimeOf = file => MIME[path.extname(file).toLowerCase()] || 'application/octet-stream';
@@ -53,20 +51,11 @@ function walk(dir, base = dir, out = new Map()) {
     return out;
 }
 
-// 这些是编辑器运行必需的文件；static 资源会被改写进 JS，因此不进 payload。
+// 内联范围：全部，除了 gui.html 本身（它作为入口壳，要保持原样，只在 <head> 里插一段 bootstrap）
 function shouldInclude(rel) {
-    if (rel.startsWith('gui/')) {
-        if (rel === 'gui/gui.html') return false;
-        if (rel.startsWith('gui/static/assets/')) return false;
-        return true;
-    }
-    if (rel.startsWith('addons/')) {
-        if (rel.startsWith('addons/static/')) return false;
-        return true;
-    }
-    if (rel.startsWith('monaco/')) return true;
-    if (rel === 'monaco-editor-iframe.html') return true;
-    return false;
+    if (rel === 'gui/gui.html') return false;
+    if (/\.(map|gz|br)$/.test(rel)) return false;
+    return true;
 }
 
 const allFiles = walk(EDITOR_DIR);
@@ -82,8 +71,6 @@ function dataUriOf(rel) {
 
 const stats = {rewrittenAssets: 0, missingAssets: 0};
 
-// JS 里所有静态资源都是 `n.p+"static/assets/..."`，直接换成 data URI，
-// 这样 <img>、CSS url()、fetch、new Audio 都不再依赖运行时路径。
 function rewriteJsAssets(rel, source) {
     const root = rel.startsWith('addons/') ? 'addons/' : (rel.startsWith('gui/') ? 'gui/' : '');
     let count = 0;
@@ -92,10 +79,7 @@ function rewriteJsAssets(rel, source) {
         /([A-Za-z_$][\w$]*)\.p\s*\+\s*(["'])(static\/assets\/[^"']+)\2/g,
         (match, pub, quote, assetRel) => {
             const uri = dataUriOf(root + assetRel);
-            if (!uri) {
-                missing++;
-                return match;
-            }
+            if (!uri) { missing++; return match; }
             count++;
             return JSON.stringify(uri);
         }
@@ -103,16 +87,13 @@ function rewriteJsAssets(rel, source) {
     stats.rewrittenAssets += count;
     stats.missingAssets += missing;
     if (rewritten !== source && rewritten.length < 4 * 1024 * 1024) {
-        try {
-            new Function(rewritten);
-        } catch (error) {
-            throw new Error(`[exe-html] ${rel} 资源内联后语法错误: ${error.message}`);
+        try { new Function(rewritten); } catch (error) {
+            throw new Error(`[exe-html] ${rel} 内联后语法错误: ${error.message}`);
         }
     }
     return rewritten;
 }
 
-// CSS 文件里的 url() 相对路径同样改写成 data URI。
 function rewriteCssUrls(rel, cssText) {
     const dir = path.posix.dirname(rel);
     return cssText.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/gi, (match, quote, rawUrl) => {
@@ -127,50 +108,18 @@ function rewriteCssUrls(rel, cssText) {
     });
 }
 
-// iframe 页面里注入的引导脚本：附着到顶层 EMB，设置基准目录。
-function iframeBootScript(base) {
-    return `<script>(function(){window.__RW_BASE__=${JSON.stringify(base)};var EMB=null;try{EMB=window.parent.__RW_EMBED__||window.top.__RW_EMBED__}catch(e){}if(!EMB)return;(${RW_INSTALL.toString()})(EMB,window.__RW_BASE__);})();</script>`;
+function rewriteMonacoIframe(htmlText) {
+    // 仅修改：iframe 内的 Monaco 基准路径，让 loader 从我们的 rwmonaco/ 前缀下找资源。
+    let out = htmlText.replace(/var MONACO_LOCAL_BASE = 'monaco\/vs';/, "var MONACO_LOCAL_BASE = 'rwmonaco/vs';");
+    // 让 iframe 里的 require 能解析到父窗口注入的 EMB
+    const envScript = `<script>window.MonacoEnvironment={getWorkerUrl:function(moduleId,label){return 'rwmonaco-worker/'+encodeURIComponent(label)+'.js';}};</script>`;
+    out = out.replace(/<head([^>]*)>/i, match => match + envScript);
+    return out;
 }
 
-function prepareMonacoPage() {
-    const abs = allFiles.get('monaco-editor-iframe.html');
-    if (!abs) throw new Error('[exe-html] 缺少 monaco-editor-iframe.html');
-    let html = fs.readFileSync(abs, 'utf8');
-    html = html.replace(/<title>[\s\S]*?<\/title>\s*/i, '');
-    html = html.replace(/var MONACO_LOCAL_BASE = 'monaco\/vs';/, "var MONACO_LOCAL_BASE = 'rwmonaco/vs';");
-    const extra = `<script>window.MonacoEnvironment={getWorkerUrl:function(moduleId,label){return 'rwmonaco-worker/'+encodeURIComponent(label)+'.js';}};</script>` + iframeBootScript('');
-    html = html.replace(/<head([^>]*)>/i, match => match + extra);
-    return html;
-}
-
-function prepareAddonsPage() {
-    const abs = allFiles.get('addons/addons.html');
-    if (!abs) throw new Error('[exe-html] 缺少 addons/addons.html');
-    let html = fs.readFileSync(abs, 'utf8');
-    // srcdoc 内的 blob/data 资源会被 CSP 拦截，去掉该 meta。
-    html = html.replace(/<meta[^>]+Content-Security-Policy[^>]*>\s*/i, '');
-    html = html.replace(/<head([^>]*)>/i, match => match + iframeBootScript('addons/'));
-    return html;
-}
-
-const MONACO_PAGE = prepareMonacoPage();
-const ADDONS_PAGE = prepareAddonsPage();
-
-// 顶层编辑器页面：彻底移除 splash（加载圈）与错误 alert。
-function prepareTopPage() {
-    return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>html,body{height:100%;margin:0;overflow:hidden}#app{height:100%}</style>
-</head>
-<body>
-<div id="app"></div>
-<script type="application/json" id="rw-assets">__ASSETS__</script>
-<script>__TOP_BOOT__</script>
-</body>
-</html>`;
+function rewriteAddonsPage(htmlText) {
+    // 去掉 CSP，否则 srcdoc 里的 data/blob 会被拦
+    return htmlText.replace(/<meta[^>]+Content-Security-Policy[^>]*>\s*/i, '');
 }
 
 function buildPayload() {
@@ -181,27 +130,21 @@ function buildPayload() {
 
     for (const [rel, abs] of allFiles) {
         if (!shouldInclude(rel)) continue;
-        if (/\.(map|gz|br)$/.test(rel)) continue;
         let data = fs.readFileSync(abs);
         if (rel.endsWith('.js')) {
             data = Buffer.from(rewriteJsAssets(rel, data.toString('utf8')), 'utf8');
         } else if (rel.endsWith('.css')) {
             data = Buffer.from(rewriteCssUrls(rel, data.toString('utf8')), 'utf8');
         } else if (rel === 'monaco-editor-iframe.html') {
-            data = Buffer.from(MONACO_PAGE, 'utf8');
+            data = Buffer.from(rewriteMonacoIframe(data.toString('utf8')), 'utf8');
         } else if (rel === 'addons/addons.html') {
-            data = Buffer.from(ADDONS_PAGE, 'utf8');
+            data = Buffer.from(rewriteAddonsPage(data.toString('utf8')), 'utf8');
         }
         rawBytes += data.length;
         included.push(rel);
-
         if (data.length >= 1024) {
             const gz = zlib.gzipSync(data, {level: 9});
-            if (gz.length < data.length) {
-                entries[rel] = [1, gz.toString('base64')];
-                packedBytes += gz.length;
-                continue;
-            }
+            if (gz.length < data.length) { entries[rel] = [1, gz.toString('base64')]; packedBytes += gz.length; continue; }
         }
         entries[rel] = [0, data.toString('base64')];
         packedBytes += data.length;
@@ -209,482 +152,329 @@ function buildPayload() {
     return {entries, included, rawBytes, packedBytes};
 }
 
-// ---- 注入到每个文档里的运行时（顶层与 iframe 共用） ----
-function RW_INSTALL(EMB, BASE) {
+// ---- 注入到顶层 gui.html 的引导脚本 ----
+// 必须在 gui.html 自己的 <script> 之前执行，因为它马上就会 fetch('index.js')、Worker(...) 等。
+function BOOT_SCRIPT() {
     'use strict';
-    if (window.__RW_INSTALLED__) return;
-    window.__RW_INSTALLED__ = true;
-    window.__RW_BASE__ = BASE || '';
+    (function () {
+        if (window.__RW_BOOTED__) return;
+        window.__RW_BOOTED__ = true;
+        const ASSETS = JSON.parse(document.getElementById('rw-assets').textContent);
+        const MIME = {'text/javascript;charset=utf-8':1,'text/css;charset=utf-8':1,'text/html;charset=utf-8':1,'application/json;charset=utf-8':1,'image/svg+xml':1,'image/png':1,'image/jpeg':1,'image/webp':1,'image/gif':1,'image/x-icon':1,'font/woff':1,'font/woff2':1,'font/ttf':1,'audio/mpeg':1,'audio/wav':1,'audio/ogg':1,'application/wasm':1};
+        const cache = Object.create(null);
+        const syncBlobs = Object.create(null);
+        const getMime = k => { const i = k.lastIndexOf('.'); return MIME[k.slice(i).toLowerCase()] || 'application/octet-stream'; };
+        const bytesOf = b64 => { const bin = atob(b64), n = bin.length, out = new Uint8Array(n); for (let i = 0; i < n; i++) out[i] = bin.charCodeAt(i); return out; };
+        const blobUrlOf = key => {
+            if (cache[key]) return cache[key];
+            const entry = ASSETS[key];
+            if (!entry) return Promise.reject(new Error('missing ' + key));
+            let data;
+            if (entry[0] === 0) {
+                data = Promise.resolve(bytesOf(entry[1]));
+            } else {
+                data = new Blob([bytesOf(entry[1])]).stream().pipeThrough(new DecompressionStream('gzip'));
+                data = new Response(data).arrayBuffer().then(b => new Uint8Array(b));
+            }
+            cache[key] = data.then(buf => URL.createObjectURL(new Blob([buf], {type: getMime(key)})));
+            return cache[key];
+        };
 
-    var origAppend = Node.prototype.appendChild;
-    var origInsertBefore = Node.prototype.insertBefore;
+        const has = key => Object.prototype.hasOwnProperty.call(ASSETS, key);
+        const normalize = raw => {
+            let s = String(raw).trim();
+            if (!s || /^(data:|blob:|javascript:|about:|mailto:|tel:)/i.test(s)) return null;
+            if (s.indexOf('rwmonaco/') === 0) return 'monaco/' + s.slice('rwmonaco/'.length);
+            if (s.indexOf('rwmonaco-worker/') === 0) return null;
+            if (/^tw-editor:/i.test(s)) {
+                const m = /^tw-editor:\/\/\.?\/?(.*)$/i.exec(s);
+                if (!m) return null;
+                s = m[1];
+            } else if (/^(file:|https?:)?\/\//i.test(s)) {
+                try {
+                    const u = new URL(s, location.href);
+                    if (u.protocol !== 'file:' && u.origin !== location.origin) return null;
+                    s = u.pathname;
+                } catch (e) { return null; }
+            }
+            s = s.split('#')[0].split('?')[0].replace(/\\/g, '/');
+            try { s = decodeURIComponent(s); } catch (e) {}
+            s = s.replace(/^\.?\//, '').replace(/^\/+/, '');
+            return s || null;
+        };
+        const findKey = (raw, base) => {
+            const key = normalize(raw);
+            if (!key) return null;
+            const list = [];
+            if (base) list.push(base + key);
+            list.push(key, 'gui/' + key, 'addons/' + key);
+            if (key.indexOf('vs/') === 0) list.push('monaco/' + key);
+            for (let i = 0; i < list.length; i++) if (has(list[i])) return list[i];
+            return null;
+        };
 
-    function keyOf(raw) {
-        return EMB.findKey(raw, window.__RW_BASE__);
-    }
+        // 预解压 blockly 需要的 blocks-media（icon url 通过 setAttribute 同步写入）
+        const preloadBlocksMedia = () => {
+            const keys = Object.keys(ASSETS).filter(k => k.indexOf('gui/static/blocks-media/') === 0);
+            return Promise.all(keys.map(k => blobUrlOf(k).then(u => { syncBlobs[k] = u; }, () => {})));
+        };
+        const syncUrlOf = (raw, base) => {
+            const key = findKey(raw, base);
+            return key ? (syncBlobs[key] || null) : null;
+        };
 
-    function appendReal(parent, node) {
-        return origAppend.call(parent, node);
-    }
+        const PAGES = {
+            monaco: ASSETS['monaco-editor-iframe.html'] ? ASSETS['monaco-editor-iframe.html'][1] : null,
+            addons: ASSETS['addons/addons.html'] ? ASSETS['addons/addons.html'][1] : null
+        };
 
-    function handleNode(node, parent) {
-        if (!node || node.nodeType !== 1) return false;
-        var tag = node.tagName;
-        if (tag === 'SCRIPT') {
-            var src = node.getAttribute('src');
-            if (!src) return false;
-            var key = keyOf(src);
-            if (!key) return false;
-            EMB.getBlobUrl(key).then(function (url) {
-                node.setAttribute('src', url);
-                appendReal(parent, node);
-            }, function () {
-                appendReal(parent, node);
-            });
-            return true;
-        }
-        if (tag === 'LINK') {
-            var href = node.getAttribute('href');
-            if (!href) return false;
-            var rel = (node.getAttribute('rel') || '').toLowerCase();
-            if (rel.indexOf('prefetch') !== -1 || rel.indexOf('preload') !== -1 ||
-                rel.indexOf('modulepreload') !== -1) {
+        // ---- monkey patch ----
+        const _origAppend = Node.prototype.appendChild;
+        const _origInsertBefore = Node.prototype.insertBefore;
+        const patchNode = (node, parent) => {
+            if (!node || node.nodeType !== 1) return false;
+            const tag = node.tagName;
+            if (tag === 'SCRIPT') {
+                const src = node.getAttribute('src');
+                if (!src) return false;
+                const key = findKey(src, 'gui/');
+                if (!key) return false;
+                blobUrlOf(key).then(url => { node.setAttribute('src', url); _origAppend.call(parent, node); }, () => _origAppend.call(parent, node));
                 return true;
             }
-            var linkKey = keyOf(href);
-            if (!linkKey) return false;
-            EMB.getBlobUrl(linkKey).then(function (url) {
-                node.setAttribute('href', url);
-                appendReal(parent, node);
-            }, function () {
-                appendReal(parent, node);
-            });
-            return true;
-        }
-        if (tag === 'IFRAME') {
-            var frameSrc = node.getAttribute('src');
-            if (!frameSrc) return false;
-            var page = EMB.pageFor(frameSrc);
-            if (!page) return false;
-            node.removeAttribute('src');
-            node.setAttribute('srcdoc', page);
-            appendReal(parent, node);
-            return true;
-        }
-        return false;
-    }
-
-    Node.prototype.appendChild = function (node) {
-        if (handleNode(node, this)) return node;
-        return origAppend.call(this, node);
-    };
-    Node.prototype.insertBefore = function (node, reference) {
-        if (handleNode(node, this)) return node;
-        return origInsertBefore.call(this, node, reference);
-    };
-
-    // SVG <image xlink:href>、普通 <img src> 等属性赋值：优先使用启动前就
-    // 预解压好的 blob 地址，保证同步替换、不产生本地 404。
-    function syncUrl(raw) {
-        if (typeof raw !== 'string') return null;
-        var key = keyOf(raw);
-        return key ? EMB.getSyncBlob(key) : null;
-    }
-
-    var origSetAttribute = Element.prototype.setAttribute;
-    Element.prototype.setAttribute = function (name, value) {
-        var lower = String(name).toLowerCase();
-        if (lower === 'src' || lower === 'href' || lower === 'xlink:href') {
-            var mapped = syncUrl(value);
-            if (mapped) return origSetAttribute.call(this, name, mapped);
-        }
-        return origSetAttribute.call(this, name, value);
-    };
-
-    var origSetAttributeNS = Element.prototype.setAttributeNS;
-    Element.prototype.setAttributeNS = function (ns, name, value) {
-        var lower = String(name).toLowerCase();
-        if (lower === 'href' || lower === 'xlink:href') {
-            var mapped = syncUrl(value);
-            if (mapped) return origSetAttributeNS.call(this, ns, name, mapped);
-        }
-        return origSetAttributeNS.call(this, ns, name, value);
-    };
-
-    try {
-        var imgDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
-        if (imgDesc && imgDesc.set) {
-            Object.defineProperty(HTMLImageElement.prototype, 'src', {
-                configurable: true,
-                enumerable: imgDesc.enumerable,
-                get: function () { return imgDesc.get.call(this); },
-                set: function (value) {
-                    var sync = syncUrl(value);
-                    if (sync) {
-                        imgDesc.set.call(this, sync);
-                        return;
-                    }
-                    var key = typeof value === 'string' ? keyOf(value) : null;
-                    if (key) {
-                        var self = this;
-                        EMB.getBlobUrl(key).then(function (url) {
-                            imgDesc.set.call(self, url);
-                        }, function () {
-                            imgDesc.set.call(self, value);
-                        });
+            if (tag === 'LINK') {
+                const href = node.getAttribute('href');
+                if (!href) return false;
+                const rel = (node.getAttribute('rel') || '').toLowerCase();
+                if (rel.indexOf('prefetch') !== -1 || rel.indexOf('preload') !== -1 || rel.indexOf('modulepreload') !== -1) return true;
+                const key = findKey(href, 'gui/');
+                if (!key) return false;
+                blobUrlOf(key).then(url => { node.setAttribute('href', url); _origAppend.call(parent, node); }, () => _origAppend.call(parent, node));
+                return true;
+            }
+            if (tag === 'IFRAME') {
+                const frameSrc = node.getAttribute('src');
+                if (!frameSrc) return false;
+                if (/monaco-editor-iframe/i.test(frameSrc)) {
+                    node.removeAttribute('src');
+                    const entry = ASSETS['monaco-editor-iframe.html'];
+                    // 直接塞进原文件内容（已 rewriteMonacoIframe 处理过）
+                    const bytes = entry[0] === 0 ? bytesOf(entry[1]) : null;
+                    if (bytes) {
+                        _origAppend.call(parent, node);
+                        node.setAttribute('srcdoc', new TextDecoder().decode(bytes));
                     } else {
-                        imgDesc.set.call(this, value);
-                    }
-                }
-            });
-        }
-    } catch (e) { /* ignore */ }
-
-    try {
-        var frameDesc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
-        if (frameDesc && frameDesc.set) {
-            Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
-                configurable: true,
-                enumerable: frameDesc.enumerable,
-                get: function () { return frameDesc.get.call(this); },
-                set: function (value) {
-                    var page = typeof value === 'string' ? EMB.pageFor(value) : null;
-                    if (page) {
-                        this.removeAttribute('src');
-                        this.setAttribute('srcdoc', page);
-                    } else {
-                        frameDesc.set.call(this, value);
-                    }
-                }
-            });
-        }
-    } catch (e) { /* ignore */ }
-
-    if (window.fetch) {
-        var origFetch = window.fetch.bind(window);
-        window.fetch = function (input, init) {
-            try {
-                var raw = typeof input === 'string' ? input : (input && input.url);
-                if (raw && /\/api\/warptheme\//.test(raw)) {
-                    return Promise.resolve(new Response('{"themes":[]}', {
-                        status: 200,
-                        headers: {'Content-Type': 'application/json'}
-                    }));
-                }
-                var key = raw ? keyOf(raw) : null;
-                if (key) {
-                    return EMB.getBlobUrl(key).then(function (url) {
-                        if (typeof input === 'string') return origFetch(url, init);
-                        return origFetch(new Request(url, input), init);
-                    });
-                }
-            } catch (e) { /* ignore */ }
-            return origFetch(input, init);
-        };
-    }
-
-    // Web Worker：排队代理，等待资源解压后再创建真实 Worker。
-    try {
-        var RealWorker = window.Worker;
-        if (RealWorker) {
-            var ProxyWorker = function (url, options) {
-                var self = this;
-                this.onmessage = null;
-                this.onerror = null;
-                this.onmessageerror = null;
-                this.__listeners = Object.create(null);
-                this.__queue = [];
-                this.__worker = null;
-                this.__terminated = false;
-                this.postMessage = function (message, transfer) {
-                    if (self.__worker) self.__worker.postMessage(message, transfer);
-                    else self.__queue.push([message, transfer]);
-                };
-                this.terminate = function () {
-                    self.__terminated = true;
-                    self.__queue = [];
-                    if (self.__worker) self.__worker.terminate();
-                };
-                this.addEventListener = function (type, listener) {
-                    (self.__listeners[type] || (self.__listeners[type] = [])).push(listener);
-                };
-                this.removeEventListener = function (type, listener) {
-                    var list = self.__listeners[type];
-                    if (!list) return;
-                    var index = list.indexOf(listener);
-                    if (index !== -1) list.splice(index, 1);
-                };
-                this.dispatchEvent = function (event) {
-                    var list = self.__listeners[event.type] || [];
-                    for (var i = 0; i < list.length; i++) {
-                        try { list[i].call(self, event); } catch (e) { /* ignore */ }
+                        blobUrlOf('monaco-editor-iframe.html').then(url => {
+                            _origAppend.call(parent, node);
+                            node.setAttribute('srcdoc', fetch(url).then(r => r.text()).then(t => t));
+                        }, () => _origAppend.call(parent, node));
                     }
                     return true;
-                };
-
-                var attach = function (worker) {
-                    self.__worker = worker;
-                    worker.onmessage = function (event) {
-                        if (self.onmessage) self.onmessage(event);
-                        self.dispatchEvent(event);
-                    };
-                    worker.onerror = function (event) {
-                        if (self.onerror) self.onerror(event);
-                        self.dispatchEvent(event);
-                    };
-                    worker.onmessageerror = function (event) {
-                        if (self.onmessageerror) self.onmessageerror(event);
-                        self.dispatchEvent(event);
-                    };
-                    for (var i = 0; i < self.__queue.length; i++) {
-                        worker.postMessage(self.__queue[i][0], self.__queue[i][1]);
+                }
+                if (/^tw-editor:\/\/\//i.test(frameSrc) && frameSrc.indexOf('addons/') !== -1) {
+                    node.removeAttribute('src');
+                    const entry = ASSETS['addons/addons.html'];
+                    const bytes = entry[0] === 0 ? bytesOf(entry[1]) : null;
+                    if (bytes) {
+                        _origAppend.call(parent, node);
+                        node.setAttribute('srcdoc', new TextDecoder().decode(bytes));
+                    } else {
+                        blobUrlOf('addons/addons.html').then(url => {
+                            _origAppend.call(parent, node);
+                            fetch(url).then(r => r.text()).then(t => node.setAttribute('srcdoc', t));
+                        }, () => _origAppend.call(parent, node));
                     }
-                    self.__queue = [];
-                };
-
-                var attachDummy = function () {
-                    try {
-                        var dummy = new RealWorker(URL.createObjectURL(new Blob(['self.onmessage=function(){}'], {type: 'text/javascript'})));
-                        attach(dummy);
-                    } catch (e) { /* ignore */ }
-                };
-
-                var urlText = String(url);
-                if (urlText.indexOf('rwmonaco-worker/') === 0) {
-                    EMB.monacoWorkerSource(urlText).then(function (source) {
-                        if (self.__terminated) return;
-                        try {
-                            attach(new RealWorker(URL.createObjectURL(new Blob([source], {type: 'text/javascript'})), options));
-                        } catch (e) {
-                            attachDummy();
-                        }
-                    }, attachDummy);
-                    return;
+                    return true;
                 }
+                return false;
+            }
+            return false;
+        };
+        Node.prototype.appendChild = function (node) {
+            if (patchNode(node, this)) return node;
+            return _origAppend.call(this, node);
+        };
+        Node.prototype.insertBefore = function (node, ref) {
+            if (patchNode(node, this)) return node;
+            return _origInsertBefore.call(this, node, ref);
+        };
 
-                var key = keyOf(urlText);
-                if (!key) {
-                    attach(new RealWorker(url, options));
-                    return;
-                }
-                EMB.getBlobUrl(key).then(function (mappedUrl) {
-                    if (self.__terminated) return;
-                    attach(new RealWorker(mappedUrl, options));
-                }, function () {
-                    if (self.__terminated) return;
-                    attach(new RealWorker(url, options));
+        // 属性层：同步改写 svg <image xlink:href> / <img src> / <a href> 等，让 blockly 的 icon
+        // 在 appendChild 前就已经是 blob url，避免 404。
+        const _origSetAttribute = Element.prototype.setAttribute;
+        const _origSetAttributeNS = Element.prototype.setAttributeNS;
+        Element.prototype.setAttribute = function (name, value) {
+            const lower = String(name).toLowerCase();
+            if (lower === 'src' || lower === 'href' || lower === 'xlink:href') {
+                const mapped = syncUrlOf(value, 'gui/');
+                if (mapped) return _origSetAttribute.call(this, name, mapped);
+            }
+            return _origSetAttribute.call(this, name, value);
+        };
+        Element.prototype.setAttributeNS = function (ns, name, value) {
+            const lower = String(name).toLowerCase();
+            if (lower === 'href' || lower === 'xlink:href') {
+                const mapped = syncUrlOf(value, 'gui/');
+                if (mapped) return _origSetAttributeNS.call(this, ns, name, mapped);
+            }
+            return _origSetAttributeNS.call(this, ns, name, value);
+        };
+
+        try {
+            const imgDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+            if (imgDesc && imgDesc.set) {
+                Object.defineProperty(HTMLImageElement.prototype, 'src', {
+                    configurable: true, enumerable: imgDesc.enumerable,
+                    get: () => imgDesc.get.call(this),
+                    set: function (v) {
+                        const sync = syncUrlOf(v, 'gui/');
+                        if (sync) { imgDesc.set.call(this, sync); return; }
+                        const key = typeof v === 'string' ? findKey(v, 'gui/') : null;
+                        if (key) { blobUrlOf(key).then(u => imgDesc.set.call(this, u), () => imgDesc.set.call(this, v)); return; }
+                        imgDesc.set.call(this, v);
+                    }
                 });
+            }
+        } catch (e) {}
+
+        try {
+            const frameDesc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
+            if (frameDesc && frameDesc.set) {
+                Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
+                    configurable: true, enumerable: frameDesc.enumerable,
+                    get: () => frameDesc.get.call(this),
+                    set: function (v) {
+                        if (/monaco-editor-iframe/i.test(v)) { node.setAttribute('srcdoc', ''); /* handled via attribute setter above */ return; }
+                        frameDesc.set.call(this, v);
+                    }
+                });
+            }
+        } catch (e) {}
+
+        // fetch
+        if (window.fetch) {
+            const _origFetch = window.fetch.bind(window);
+            window.fetch = function (input, init) {
+                try {
+                    const raw = typeof input === 'string' ? input : (input && input.url);
+                    if (raw && /\/api\/warptheme\//.test(raw)) {
+                        return Promise.resolve(new Response('{"themes":[]}', {status: 200, headers: {'Content-Type': 'application/json'}}));
+                    }
+                    const key = raw ? findKey(raw, 'gui/') : null;
+                    if (key) {
+                        return blobUrlOf(key).then(url => typeof input === 'string' ? _origFetch(url, init) : _origFetch(new Request(url, input), init));
+                    }
+                } catch (e) {}
+                return _origFetch(input, init);
             };
-            ProxyWorker.prototype = RealWorker.prototype;
-            window.Worker = ProxyWorker;
         }
-    } catch (e) { /* ignore */ }
 
-    try {
-        var XHR = window.XMLHttpRequest;
-        var origOpen = XHR.prototype.open;
-        var origSend = XHR.prototype.send;
-        XHR.prototype.open = function (method, url) {
-            var key = keyOf(url);
-            if (key) {
-                this.__rwPending = Array.prototype.slice.call(arguments);
-                return;
-            }
-            this.__rwPending = null;
-            return origOpen.apply(this, arguments);
-        };
-        XHR.prototype.send = function (body) {
-            var self = this;
-            if (this.__rwPending) {
-                var args = this.__rwPending;
-                this.__rwPending = null;
-                EMB.getBlobUrl(keyOf(args[1])).then(function (url) {
-                    args[1] = url;
-                    origOpen.apply(self, args);
-                    origSend.call(self, body);
-                }, function () {
-                    origOpen.apply(self, args);
-                    origSend.call(self, body);
-                });
-                return;
-            }
-            return origSend.call(this, body);
-        };
-    } catch (e) { /* ignore */ }
+        // Web Worker 排队代理
+        try {
+            const RealWorker = window.Worker;
+            if (RealWorker) {
+                const ProxyWorker = function (url, options) {
+                    let self = this, queue = [], worker = null, terminated = false;
+                    this.onmessage = null; this.onerror = null; this.onmessageerror = null;
+                    this.__listeners = Object.create(null);
+                    this.postMessage = function (msg, transfer) {
+                        if (worker) worker.postMessage(msg, transfer); else queue.push([msg, transfer]);
+                    };
+                    this.terminate = function () { terminated = true; queue = []; if (worker) worker.terminate(); };
+                    this.addEventListener = function (t, fn) { (self.__listeners[t] || (self.__listeners[t] = [])).push(fn); };
+                    this.removeEventListener = function (t, fn) {
+                        const list = self.__listeners[t]; if (!list) return;
+                        const i = list.indexOf(fn); if (i !== -1) list.splice(i, 1);
+                    };
+                    this.dispatchEvent = function (event) {
+                        const list = self.__listeners[event.type] || [];
+                        for (let i = 0; i < list.length; i++) try { list[i].call(self, event); } catch (e) {}
+                        return true;
+                    };
+                    const attach = w => {
+                        worker = w;
+                        w.onmessage = e => { if (self.onmessage) self.onmessage(e); self.dispatchEvent(e); };
+                        w.onerror = e => { if (self.onerror) self.onerror(e); self.dispatchEvent(e); };
+                        w.onmessageerror = e => { if (self.onmessageerror) self.onmessageerror(e); self.dispatchEvent(e); };
+                        for (let i = 0; i < queue.length; i++) worker.postMessage(queue[i][0], queue[i][1]);
+                        queue = [];
+                    };
 
-    // 编辑器依赖的桌面预加载 API：浏览器里给出无副作用的替身。
-    if (!window.EditorPreload) {
-        var resolved = function (value) { return Promise.resolve(value); };
-        window.EditorPreload = {
-            isInitiallyFullscreen: function () { return false; },
-            getInitialFile: function () { return resolved(null); },
-            getAdvancedCustomizations: function () { return resolved({}); },
-            getDesktopSettings: function () { return {updateCheckerAllowed: false}; },
-            getAboutInfo: function () { return {version: '', commit: ''}; },
-            getPreferredMediaDevices: function () { return resolved([]); },
-            getFile: function () { return resolved(null); },
-            showOpenFilePicker: function () { return resolved(null); },
-            showSaveFilePicker: function () { return resolved(null); },
-            setLocale: function (locale) {
-                return {
-                    locale: locale || 'en',
-                    strings: {'prompt.ok': 'OK', 'prompt.cancel': 'Cancel'}
+                    const urlText = String(url);
+                    if (urlText.indexOf('rwmonaco-worker/') === 0) {
+                        const label = decodeURIComponent(urlText.slice('rwmonaco-worker/'.length).replace(/\.js$/, ''));
+                        const map = {typescript: 'language/typescript/tsWorker.js', javascript: 'language/typescript/tsWorker.js', json: 'language/json/jsonWorker.js', css: 'language/css/cssWorker.js', scss: 'language/css/cssWorker.js', less: 'language/css/cssWorker.js', html: 'language/html/htmlWorker.js', handlebars: 'language/html/htmlWorker.js', razor: 'language/html/htmlWorker.js'};
+                        const mod = map[label];
+                        const loadText = k => blobUrlOf(k).then(u => fetch(u).then(r => r.text()));
+                        loadText('monaco/vs/base/worker/workerMain.js').then(main => {
+                            if (terminated) return;
+                            if (!mod) return new RealWorker(URL.createObjectURL(new Blob([main], {type: 'text/javascript'})), options);
+                            loadText('monaco/vs/' + mod).then(extra => {
+                                if (terminated) return;
+                                attach(new RealWorker(URL.createObjectURL(new Blob([main + '\n;' + extra], {type: 'text/javascript'})), options));
+                            });
+                        });
+                        return;
+                    }
+                    const key = findKey(urlText, 'gui/');
+                    if (!key) { attach(new RealWorker(url, options)); return; }
+                    blobUrlOf(key).then(u => { if (!terminated) attach(new RealWorker(u, options)); }, () => { if (!terminated) attach(new RealWorker(url, options)); });
                 };
-            },
-            setChanged: function () {},
-            setIsFullScreen: function () {},
-            setExportForPackager: function () {},
-            exportAddonSettings: function () { return resolved(); },
-            openedFile: function () {},
-            closedFile: function () {},
-            openNewWindow: function () {},
-            openPackager: function () {}
-        };
-    }
+                ProxyWorker.prototype = RealWorker.prototype;
+                window.Worker = ProxyWorker;
+            }
+        } catch (e) {}
+
+        // 给 preload 注入的 EditorPreload 桌面 API 兜底（浏览器里无副作用）
+        if (!window.EditorPreload) {
+            window.EditorPreload = {
+                isInitiallyFullscreen: () => false,
+                getInitialFile: () => Promise.resolve(null),
+                getAdvancedCustomizations: () => Promise.resolve({}),
+                getDesktopSettings: () => ({updateCheckerAllowed: false}),
+                getAboutInfo: () => ({version: '', commit: ''}),
+                getPreferredMediaDevices: () => Promise.resolve([]),
+                getFile: () => Promise.resolve(null),
+                showOpenFilePicker: () => Promise.resolve(null),
+                showSaveFilePicker: () => Promise.resolve(null),
+                setLocale: (locale) => ({locale: locale || 'en', strings: {'prompt.ok': 'OK', 'prompt.cancel': 'Cancel'}}),
+                setChanged: () => {},
+                setIsFullScreen: () => {},
+                setExportForPackager: () => {},
+                exportAddonSettings: () => Promise.resolve(),
+                openedFile: () => {},
+                closedFile: () => {},
+                openNewWindow: () => {},
+                openPackager: () => {}
+            };
+        }
+
+        // 等 blocks-media 都预解压好了再开始渲染（GUI 本来就有 splash 显示/隐藏逻辑，
+        // 不影响我们的启动顺序）
+        preloadBlocksMedia();
+    })();
 }
 
-function buildTopBoot() {
-    const parts = [];
-    parts.push(`(function(){
-  'use strict';
-  var ASSETS = JSON.parse(document.getElementById('rw-assets').textContent);
-  var MIME = ${JSON.stringify(MIME)};
-  var cache = new Map();
-  var textCache = new Map();
-  function mimeOf(file){var i=file.lastIndexOf('.');return i===-1?'application/octet-stream':(MIME[file.slice(i).toLowerCase()]||'application/octet-stream');}
-  function bytesOf(b64){var bin=atob(b64),n=bin.length,out=new Uint8Array(n);for(var i=0;i<n;i++)out[i]=bin.charCodeAt(i);return out;}
-  function decompress(entry){
-    if(entry[0]===0) return Promise.resolve(bytesOf(entry[1]));
-    if(typeof DecompressionStream==='undefined') return Promise.reject(new Error('DecompressionStream unsupported'));
-    var stream=new Blob([bytesOf(entry[1])]).stream().pipeThrough(new DecompressionStream('gzip'));
-    return new Response(stream).arrayBuffer().then(function(buf){return new Uint8Array(buf);});
-  }
-  function blobUrlOf(key){
-    if(cache.has(key)) return cache.get(key);
-    var task=Promise.resolve().then(function(){
-      return decompress(ASSETS[key]);
-    }).then(function(bytes){
-      return URL.createObjectURL(new Blob([bytes],{type:mimeOf(key)}));
-    });
-    cache.set(key,task);
-    return task;
-  }
-  function textOf(key){
-    if(textCache.has(key)) return textCache.get(key);
-    var task=blobUrlOf(key).then(function(url){return fetch(url).then(function(r){return r.text();});});
-    textCache.set(key,task);
-    return task;
-  }
-  function normalize(raw){
-    var s=String(raw).trim();
-    if(!s) return null;
-    if(/^(data:|blob:|javascript:|about:|mailto:|tel:)/i.test(s)) return null;
-    if(s.indexOf('rwmonaco/')===0) return 'monaco/'+s.slice('rwmonaco/'.length);
-    if(s.indexOf('rwmonaco-worker/')===0) return null;
-    if(/^tw-editor:/i.test(s)){
-      var tm=/^tw-editor:\\/\\/\\.?\\/?(.*)$/i.exec(s);
-      if(!tm) return null;
-      s=tm[1];
-    } else if(/^file:/i.test(s)||/^(https?:)?\\/\\//i.test(s)){
-      try{
-        var u=new URL(s,location.href);
-        if(u.protocol!=='file:'&&u.origin!==location.origin) return null;
-        s=u.pathname;
-      }catch(e){return null;}
-    }
-    s=s.split('#')[0].split('?')[0].replace(/\\\\/g,'/');
-    try{s=decodeURIComponent(s);}catch(e){}
-    s=s.replace(/^\\.?\\//,'').replace(/^\\/+/,'');
-    return s||null;
-  }
-  function has(key){return Object.prototype.hasOwnProperty.call(ASSETS,key);}
-  function findKey(raw,base){
-    var key=normalize(raw);
-    if(!key) return null;
-    var list=[];
-    if(base) list.push(base+key);
-    list.push(key,'gui/'+key,'addons/'+key);
-    if(key.indexOf('vs/')===0) list.push('monaco/'+key);
-    for(var i=0;i<list.length;i++){if(has(list[i])) return list[i];}
-    return null;
-  }
-`);
-
-    const inline = value => JSON.stringify(value).replace(/</g, '\\u003c');
-    parts.push(`  var PAGES = {
-    monaco: ${inline(MONACO_PAGE)},
-    addons: ${inline(ADDONS_PAGE)}
-  };
-  var workerCache = new Map();
-  var syncBlobs = Object.create(null);
-  function preload(prefix){
-    var keys=Object.keys(ASSETS).filter(function(k){return k.indexOf(prefix)===0;});
-    return Promise.all(keys.map(function(key){
-      return blobUrlOf(key).then(function(url){syncBlobs[key]=url;},function(){});
-    }));
-  }
-  function getSyncBlob(key){
-    return syncBlobs[key]||null;
-  }
-  function monacoWorkerSource(url){
-    if(workerCache.has(url)) return workerCache.get(url);
-    var label=decodeURIComponent(url.slice('rwmonaco-worker/'.length).replace(/\\.js$/,''));
-    var map={typescript:'language/typescript/tsWorker.js',javascript:'language/typescript/tsWorker.js',json:'language/json/jsonWorker.js',css:'language/css/cssWorker.js',scss:'language/css/cssWorker.js',less:'language/css/cssWorker.js',html:'language/html/htmlWorker.js',handlebars:'language/html/htmlWorker.js',razor:'language/html/htmlWorker.js'};
-    var mod=map[label];
-    var task=textOf('monaco/vs/base/worker/workerMain.js').then(function(main){
-      if(!mod) return main;
-      return textOf('monaco/vs/'+mod).then(function(extra){return main+'\\n;'+extra;});
-    });
-    workerCache.set(url,task);
-    return task;
-  }
-  var EMB={
-    findKey:findKey,
-    getBlobUrl:blobUrlOf,
-    getSyncBlob:getSyncBlob,
-    preload:preload,
-    getText:textOf,
-    monacoWorkerSource:monacoWorkerSource,
-    pageFor:function(src){
-      var s=String(src);
-      if(/monaco-editor-iframe/i.test(s)) return PAGES.monaco;
-      if(/^tw-editor:\\/\\//i.test(s)) return (s.indexOf('addons/')!==-1)?PAGES.addons:null;
-      return null;
-    }
-  };
-  window.__RW_EMBED__=EMB;
-  (${RW_INSTALL.toString()})(EMB,'gui/');
-  function start(){
-    var entry=document.createElement('script');
-    entry.src='index.js';
-    document.body.appendChild(entry);
-  }
-  preload('gui/static/blocks-media/').then(start,start);
-})();`);
-
-    return parts.join('');
-}
+const safeJson = v => JSON.stringify(v).replace(/</g, '\\u003c');
 
 function main() {
-    if (!fs.existsSync(EDITOR_DIR)) {
-        console.error(`[exe-html] 找不到渲染产物目录：${EDITOR_DIR}`);
-        process.exit(1);
-    }
+    if (!fs.existsSync(EDITOR_DIR)) { console.error(`[exe-html] 找不到渲染目录：${EDITOR_DIR}`); process.exit(1); }
     const payload = buildPayload();
-    if (!payload.entries['gui/index.js']) {
-        console.error('[exe-html] payload 缺少 gui/index.js');
-        process.exit(1);
-    }
-    const assetsJson = JSON.stringify(payload.entries).replace(/</g, '\\u003c');
-    const boot = buildTopBoot();
-    const html = prepareTopPage()
-        .replace('__ASSETS__', () => assetsJson)
-        .replace('__TOP_BOOT__', () => boot);
-    fs.writeFileSync(OUT_FILE, html);
+    if (!payload.entries['gui/index.js']) { console.error('[exe-html] payload 缺 gui/index.js'); process.exit(1); }
 
+    // 读取官方入口 gui.html，完整保留所有原有内容，仅在 <head> 最前插入引导脚本和 rw-assets
+    const guiHtml = fs.readFileSync(path.join(EDITOR_DIR, 'gui/gui.html'), 'utf8');
+    const assetsJson = safeJson(payload.entries);
+    const bootInline = `(${BOOT_SCRIPT.toString()})();`;
+    const injection = `<script type="application/json" id="rw-assets">${assetsJson}</script>\n<script>\n${bootInline}\n</script>\n`;
+
+    // 插到 <head> 标签之后，让 gui.html 后面原有的 <script src="index.js"> 被我们的 hook 接管
+    const injected = guiHtml.replace(/<head([^>]*)>/i, (m, attrs) => m + '\n' + injection);
+
+    fs.writeFileSync(OUT_FILE, injected);
     console.log('[exe-html] 输出:', OUT_FILE);
     console.log('[exe-html] 文件数:', payload.included.length, '| 原始:', (payload.rawBytes / 1048576).toFixed(2), 'MB', '| gzip:', (payload.packedBytes / 1048576).toFixed(2), 'MB');
-    console.log('[exe-html] 最终 HTML:', (Buffer.byteLength(html) / 1048576).toFixed(2), 'MB', '| 内联静态资源:', stats.rewrittenAssets, '| 缺失:', stats.missingAssets);
+    console.log('[exe-html] 最终 HTML:', (Buffer.byteLength(injected) / 1048576).toFixed(2), 'MB', '| 内联静态资源:', stats.rewrittenAssets, '| 缺失:', stats.missingAssets);
 }
 
 main();
