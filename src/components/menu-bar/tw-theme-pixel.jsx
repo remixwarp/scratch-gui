@@ -4,6 +4,8 @@ import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import classNames from 'classnames';
 import {PixelUtils, customThemeManager} from '../../lib/themes/custom-themes';
 import {PIXEL_ENCODING_FULL, PIXEL_ENCODING_SEGMENTS} from '../../lib/themes/pixel-encoding.js';
+import {reflowPixelDataToWidth} from '../../lib/themes/pixel-width-calibration.js';
+import {openWidthCalibrationWindow} from './tw-pixel-width-calibration.jsx';
 import {applyTheme} from '../../lib/themes/themePersistance';
 import {setTheme} from '../../reducers/theme';
 import WindowManager from '../../addons/window-system/window-manager';
@@ -55,6 +57,9 @@ const PixelEditorApp = injectIntl(props => {
                             pixelData: PixelUtils.decodePixelData(theme.accent.pixelData),
                             encodingFormat: theme.accent.pixelEncoding ||
                                 (Array.isArray(theme.accent.pixelData) ? PIXEL_ENCODING_FULL : PIXEL_ENCODING_SEGMENTS),
+                            // 灵活编码（图片放在中间）的主题：导入后按当前面板宽度自适应
+                            needsReflow: theme.accent.pixelEncoding === PIXEL_ENCODING_SEGMENTS ||
+                                !Array.isArray(theme.accent.pixelData),
                             primaryColor: theme.accent.primaryColor ||
                                 theme.accent.guiColors?.['motion-primary'] ||
                                 '#ff6b6b'
@@ -91,6 +96,14 @@ const PixelEditorApp = injectIntl(props => {
     const [pixelSize, setPixelSize] = React.useState(props.initialPixelSize || 10);
     const [isPreviewActive, setIsPreviewActive] = React.useState(false);
     const [gridSize, setGridSize] = React.useState({width: 900, height: 24});
+
+    // 导入「灵活编码」主题后，按创建面板当前宽度自适应左右填充与图片位置（居中/偏左/偏右同理）。
+    // 用户一旦手动绘制 / 插入图片 / 清空画布，就停止自动重排，避免覆盖编辑结果。
+    const autoLayoutRef = React.useRef(!!importedData?.needsReflow);
+    React.useEffect(() => {
+        if (!autoLayoutRef.current) return;
+        setPixelData(prev => reflowPixelDataToWidth(prev, gridSize.width));
+    }, [gridSize.width]);
     const [isDrawing, setIsDrawing] = React.useState(false);
     const [scrollOffset, setScrollOffset] = React.useState({x: 0, y: 0});
     const [showImagePreview, setShowImagePreview] = React.useState(false);
@@ -214,6 +227,7 @@ const PixelEditorApp = injectIntl(props => {
             }
         }
 
+        autoLayoutRef.current = false;
         setPixelData(newPixelData);
         setShowImagePreview(false);
         setPreviewImage(null);
@@ -224,6 +238,7 @@ const PixelEditorApp = injectIntl(props => {
 
     const handlePixelClick = (e, x, y) => {
         e.stopPropagation();
+        autoLayoutRef.current = false;
         const newPixelData = JSON.parse(JSON.stringify(pixelData));
         newPixelData[y][x] = currentColor;
         setPixelData(newPixelData);
@@ -248,16 +263,21 @@ const PixelEditorApp = injectIntl(props => {
     }, []);
 
     const handleClear = React.useCallback(() => {
+        autoLayoutRef.current = false;
         const newPixelData = Array(gridSize.height).fill().map(() => Array(gridSize.width).fill(backgroundColor));
         setPixelData(newPixelData);
         setHasClearedCanvas(true);
     }, [gridSize, backgroundColor]);
 
     const handleResizeGrid = React.useCallback((width, height) => {
-        const newWidth = Math.max(2, Math.min(1000, width));
+        // 上限放宽到 10000，保证「手动配置宽度」校准出的数值能原样填回
+        const newWidth = Math.max(2, Math.min(10000, width));
         const newHeight = Math.max(2, Math.min(50, height));
         setGridSize({width: newWidth, height: newHeight});
-        
+
+        // 自动布局模式下由自适应 effect 统一按新宽度重排，避免补白格污染填充色
+        if (autoLayoutRef.current) return;
+
         // Resize pixel data
         const newPixelData = Array(newHeight).fill().map((_, y) => {
             return Array(newWidth).fill().map((_, x) => {
@@ -672,11 +692,29 @@ const PixelEditorApp = injectIntl(props => {
                             <input
                                 type="number"
                                 min="2"
-                                max="30"
+                                max="10000"
                                 value={gridSize.width}
                                 onChange={e => handleResizeGrid(parseInt(e.target.value), gridSize.height)}
                                 className={styles.gradientInput}
                             />
+                        </div>
+                        <div className={styles.formField}>
+                            <button
+                                type="button"
+                                className={styles.paletteBtn}
+                                onClick={() => openWidthCalibrationWindow({
+                                    intl,
+                                    onApplyWidth: w => handleResizeGrid(w, gridSize.height),
+                                    onPreviewCalibration: props.onCalibrationPreview,
+                                    onRestoreTheme: props.onCalibrationRestore
+                                })}
+                            >
+                                <FormattedMessage
+                                    defaultMessage="手动配置宽度"
+                                    description="Open the manual width calibration window"
+                                    id="tw.customThemes.pixelCreator.widthCalib.openButton"
+                                />
+                            </button>
                         </div>
                         <div className={styles.formField}>
                             <label>
@@ -1021,6 +1059,8 @@ PixelEditorApp.propTypes = {
     onCancel: PropTypes.func,
     onCreate: PropTypes.func,
     onPreview: PropTypes.func,
+    onCalibrationPreview: PropTypes.func,
+    onCalibrationRestore: PropTypes.func,
     intl: intlShape.isRequired
 };
 

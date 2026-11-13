@@ -968,7 +968,8 @@ class CustomThemeMenu extends React.Component {
             showGradientEditor: false,
             showPixelEditor: false,
             editingThemeUuid: null,
-            originalThemeBeforePreview: null
+            originalThemeBeforePreview: null,
+            calibrationOriginalTheme: null
         };
 
         this.fileInputRef = React.createRef();
@@ -1106,6 +1107,8 @@ class CustomThemeMenu extends React.Component {
                                             }
                                         });
                                 },
+                                onCalibrationPreview: pixelData => this.applyCalibrationTheme(pixelData),
+                                onCalibrationRestore: () => this.restoreCalibrationTheme(),
                                 onCancel: () => {
                                     if (this.pixelEditorWindow) this.pixelEditorWindow.close();
                                 }
@@ -1502,6 +1505,8 @@ class CustomThemeMenu extends React.Component {
                                             }
                                         });
                                 },
+                                onCalibrationPreview: pixelData => this.applyCalibrationTheme(pixelData),
+                                onCalibrationRestore: () => this.restoreCalibrationTheme(),
                                 onCancel: () => {
                                     const {originalThemeBeforePreview} = this.state;
                                     if (originalThemeBeforePreview && this._mounted) {
@@ -1944,6 +1949,35 @@ class CustomThemeMenu extends React.Component {
 
         this.props.onChangeTheme(previewTheme);
         return true;
+    };
+
+    // 「手动配置宽度」校准窗口：把校准标尺直接应用为当前主题，
+    // 让用户能在真实菜单栏上观察深色块中心的白色竖线；关闭窗口时恢复原主题。
+    applyCalibrationTheme = pixelData => {
+        if (!this.state.calibrationOriginalTheme) {
+            this.safeSetState({calibrationOriginalTheme: this.props.theme});
+        }
+        const currentTheme = this.props.theme;
+        const pixelAccent = PixelUtils.createPixelAccent(pixelData, '#000000');
+        const calibrationTheme = new CustomTheme(
+            '__width_calibration__',
+            '',
+            pixelAccent,
+            currentTheme.gui || 'light',
+            currentTheme.blocks || 'three',
+            currentTheme.menuBarAlign || 'left',
+            currentTheme.wallpaper,
+            currentTheme.fonts
+        );
+        this.props.onChangeTheme(calibrationTheme);
+    };
+
+    restoreCalibrationTheme = () => {
+        const {calibrationOriginalTheme} = this.state;
+        if (calibrationOriginalTheme) {
+            this.props.onChangeTheme(calibrationOriginalTheme);
+            this.safeSetState({calibrationOriginalTheme: null});
+        }
     };
 
     handleExportThemes = async () => {
