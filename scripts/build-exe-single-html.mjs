@@ -184,6 +184,14 @@ function BOOT_SCRIPT() {
         const normalize = raw => {
             let s = String(raw).trim();
             if (!s || /^(data:|blob:|javascript:|about:|mailto:|tel:)/i.test(s)) return null;
+            // Android WebView / 微信 / 原生 App 打开本地文件时用 content:// 协议，
+            // 它不支持在文档 URL 上拼相对路径。直接剥到最后一段文件名，让 findKey
+            // 能通过 gui/<name>、<name> 等候选命中。
+            if (/^content:/i.test(s)) {
+                const clean = s.split('#')[0].split('?')[0];
+                const last = clean.replace(/\\/g, '/').split('/').filter(Boolean).pop();
+                return last || null;
+            }
             if (s.indexOf('rwmonaco/') === 0) return 'monaco/' + s.slice('rwmonaco/'.length);
             if (s.indexOf('rwmonaco-worker/') === 0) return null;
             if (/^tw-editor:/i.test(s)) {
