@@ -247,7 +247,7 @@ class UnconnectedCustomThemesPage extends React.Component {
                 this.downloadJSON({
                     version: '2.0',
                     timestamp: Date.now(),
-                    themes: [theme.export()],
+                    themes: [theme.export({encodePixelData: true})],
                     platform: 'MistWarp'
                 }, `${theme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-theme.json`);
             }

@@ -4,6 +4,13 @@
  */
 
 import {Theme, GUI_MAP} from './index.js';
+import {
+    encodePixelData as encodePixelThemeData,
+    decodePixelData as decodePixelThemeData,
+    isSegmentsEncoded,
+    getPixelEncoding,
+    PIXEL_ENCODING_FULL
+} from './pixel-encoding.js';
 
 const CUSTOM_THEMES_STORAGE_KEY = 'tw:custom-themes';
 const MAX_CUSTOM_THEMES = 50; // Reasonable limit to prevent storage issues
@@ -323,6 +330,26 @@ class GradientUtils {
  */
 class PixelUtils {
     /**
+     * 按指定格式编码像素数据（导出 JSON 文件时使用）。
+     * 内部渲染 / 预览 / localStorage 始终使用完整二维数组。
+     * @param {Array} pixelData 二维数组
+     * @param {string} encoding 'full' | 'segments'
+     * @returns {Array|object}
+     */
+    static encodePixelData(pixelData, encoding = PIXEL_ENCODING_FULL) {
+        return encodePixelThemeData(pixelData, encoding);
+    }
+
+    /**
+     * 把任意格式（旧二维数组 / 新分段编码）解码成完整二维数组。
+     * @param {Array|object} data
+     * @returns {Array}
+     */
+    static decodePixelData(data) {
+        return decodePixelThemeData(data);
+    }
+
+    /**
      * Create a CSS background image from pixel data
      * @param {Array} pixelData - 2D array of pixel colors
      * @param {number} pixelSize - Size of each pixel in pixels
@@ -377,7 +404,8 @@ class PixelUtils {
                 checkboxActiveBorder: GradientUtils.darkenColor(primaryColor, 10)
             },
             pixelData: pixelData,
-            pixelSize: pixelSize
+            pixelSize: pixelSize,
+            encoding: options.encoding || PIXEL_ENCODING_FULL
         };
     }
 
@@ -663,7 +691,7 @@ class CustomTheme extends Theme {
      * Export theme to JSON format
      * @returns {object} Theme data
      */
-    export () {
+    export (options = {}) {
         let accentExport = null;
         
         // Check if it's a pixel theme
@@ -679,6 +707,13 @@ class CustomTheme extends Theme {
                 guiColors: this.customAccent.guiColors,
                 blockColors: this.customAccent.blockColors
             };
+            // 导出到 JSON 文件时按主题记录的编码格式压缩像素数据；
+            // localStorage 持久化调用 export() 不带参数，仍写入完整二维数组。
+            if (options.encodePixelData) {
+                const encoding = getPixelEncoding(null, this.customAccent.encoding);
+                accentExport.pixelData = encodePixelThemeData(pixelData, encoding);
+                accentExport.pixelEncoding = encoding;
+            }
         } else {
             // Otherwise export as gradient
             accentExport = this._exportGradient();
@@ -869,14 +904,18 @@ class CustomTheme extends Theme {
             accentToUse = {
                 guiColors: GradientUtils.generateAccentColors('#ff6b6b')
             };
-        } else if (accentToUse && typeof accentToUse === 'object' && accentToUse.pixelData && Array.isArray(accentToUse.pixelData)) {
-            // 像素主题：直接读取 pixelData 二维数组
-            const pixelData = accentToUse.pixelData;
+        } else if (accentToUse && typeof accentToUse === 'object' &&
+            (Array.isArray(accentToUse.pixelData) || isSegmentsEncoded(accentToUse.pixelData))) {
+            // 像素主题：兼容「逐个记录」二维数组与「灵活记录」两种导出格式，
+            // 统一解码成完整二维数组后再生成 accent（内部始终用二维数组）。
+            const rawPixelData = accentToUse.pixelData;
+            const pixelData = decodePixelThemeData(rawPixelData);
+            const encoding = getPixelEncoding(rawPixelData, accentToUse.pixelEncoding);
             const primaryColor = accentToUse.primaryColor ||
                 (accentToUse.guiColors && accentToUse.guiColors['motion-primary']) ||
                 '#ff6b6b';
             const pixelSize = accentToUse.pixelSize || 2;
-            accentToUse = PixelUtils.createPixelAccent(pixelData, primaryColor, {pixelSize});
+            accentToUse = PixelUtils.createPixelAccent(pixelData, primaryColor, {pixelSize, encoding});
         } else if (accentToUse && typeof accentToUse === 'object' && Array.isArray(accentToUse.colors)) {
             // 普通渐变主题
             const colors = accentToUse.colors;
@@ -1286,7 +1325,9 @@ class CustomThemeManager {
      * @returns {object} all your custom themes
      */
     exportAllThemes () {
-        const themes = this.getAllThemes().map(theme => theme.export());
+        // 文件导出按各主题记录的编码格式压缩像素数据；
+        // theme.export() 无参数时仍返回二维数组，localStorage 持久化不受影响。
+        const themes = this.getAllThemes().map(theme => theme.export({encodePixelData: true}));
         return {
             version: '2.0',
             platform: 'Bilup',

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import classNames from 'classnames';
 import {PixelUtils, customThemeManager} from '../../lib/themes/custom-themes';
+import {PIXEL_ENCODING_FULL, PIXEL_ENCODING_SEGMENTS} from '../../lib/themes/pixel-encoding.js';
 import {applyTheme} from '../../lib/themes/themePersistance';
 import {setTheme} from '../../reducers/theme';
 import WindowManager from '../../addons/window-system/window-manager';
@@ -47,11 +48,13 @@ const PixelEditorApp = injectIntl(props => {
                 const parsed = JSON.parse(storedData);
                 if (parsed.theme && parsed.source === 'bilme') {
                     const theme = parsed.theme;
-                    if (theme.accent && theme.accent.pixelData && Array.isArray(theme.accent.pixelData)) {
+                    if (theme.accent && theme.accent.pixelData) {
                         return {
                             name: theme.name || '',
                             description: theme.description || '',
-                            pixelData: theme.accent.pixelData,
+                            pixelData: PixelUtils.decodePixelData(theme.accent.pixelData),
+                            encodingFormat: theme.accent.pixelEncoding ||
+                                (Array.isArray(theme.accent.pixelData) ? PIXEL_ENCODING_FULL : PIXEL_ENCODING_SEGMENTS),
                             primaryColor: theme.accent.primaryColor ||
                                 theme.accent.guiColors?.['motion-primary'] ||
                                 '#ff6b6b'
@@ -97,6 +100,10 @@ const PixelEditorApp = injectIntl(props => {
     const [selectedPosition, setSelectedPosition] = React.useState('left');
     const [hasClearedCanvas, setHasClearedCanvas] = React.useState(false);
     const [showExportDialog, setShowExportDialog] = React.useState(false);
+    // 导出 JSON 时像素数据的编码格式：逐个记录 / 灵活记录
+    const [encodingFormat, setEncodingFormat] = React.useState(
+        importedData?.encodingFormat || PIXEL_ENCODING_SEGMENTS
+    );
 
     // 添加滚动事件监听器
     React.useEffect(() => {
@@ -291,7 +298,7 @@ const PixelEditorApp = injectIntl(props => {
     const handleKeyDown = React.useCallback(e => {
         if (e.key === 'Escape' && props.onCancel) props.onCancel();
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && props.onCreate) {
-            props.onCreate(name, description, pixelData, primaryColor);
+            props.onCreate(name, description, pixelData, primaryColor, encodingFormat);
         }
     }, [name, description, pixelData, primaryColor, props.onCancel, props.onCreate]);
 
@@ -392,8 +399,9 @@ const PixelEditorApp = injectIntl(props => {
                                 onMouseLeave={e => e.currentTarget.style.borderColor = '#e0e0e0'}
                                 onClick={() => {
                                     setShowExportDialog(false);
-                                    // 导出为JSON
-                                    const pixelAccent = PixelUtils.createPixelAccent(pixelData, primaryColor, {pixelSize: 2});
+                                    // 导出为JSON：按「网格设置」里选择的编码格式写像素数据
+                                    const pixelAccent = PixelUtils.createPixelAccent(pixelData, primaryColor,
+                                        {pixelSize: 2, encoding: encodingFormat});
                                     const themeData = {
                                         uuid: `custom-theme-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                                         createdAt: new Date().toISOString(),
@@ -401,7 +409,8 @@ const PixelEditorApp = injectIntl(props => {
                                         description,
                                         author: 'User',
                                         accent: {
-                                            pixelData: pixelData,
+                                            pixelData: PixelUtils.encodePixelData(pixelData, encodingFormat),
+                                            pixelEncoding: encodingFormat,
                                             pixelSize: 2,
                                             primaryColor: primaryColor,
                                             guiColors: pixelAccent.guiColors,
@@ -685,6 +694,39 @@ const PixelEditorApp = injectIntl(props => {
                                 className={styles.gradientInput}
                             />
                         </div>
+                        <div className={styles.formField}>
+                            <label>
+                                <FormattedMessage
+                                    defaultMessage="用途：编码格式"
+                                    description="Label of the pixel data encoding format dropdown in grid settings"
+                                    id="tw.customThemes.pixelCreator.encodingPurpose"
+                                />
+                            </label>
+                            <select
+                                value={encodingFormat}
+                                onChange={e => setEncodingFormat(e.target.value)}
+                                className={styles.gradientInput}
+                                aria-label={intl.formatMessage({
+                                    defaultMessage: '用途：编码格式',
+                                    id: 'tw.customThemes.pixelCreator.encodingPurpose'
+                                })}
+                            >
+                                <option value={PIXEL_ENCODING_FULL}>
+                                    {intl.formatMessage({
+                                        defaultMessage: '逐个记录',
+                                        description: 'Per-cell pixel encoding option',
+                                        id: 'tw.customThemes.pixelCreator.encodingFull'
+                                    })}
+                                </option>
+                                <option value={PIXEL_ENCODING_SEGMENTS}>
+                                    {intl.formatMessage({
+                                        defaultMessage: '灵活记录',
+                                        description: 'Flexible pixel encoding option',
+                                        id: 'tw.customThemes.pixelCreator.encodingSegments'
+                                    })}
+                                </option>
+                            </select>
+                        </div>
 
                     </div>
                 </div>
@@ -956,7 +998,7 @@ const PixelEditorApp = injectIntl(props => {
                 <button
                     className={classNames(styles.footerBtn, styles.footerBtnPrimary)}
                     onClick={() => {
-                        if (props.onCreate) props.onCreate(name, description, pixelData, primaryColor);
+                        if (props.onCreate) props.onCreate(name, description, pixelData, primaryColor, encodingFormat);
                     }}
                     disabled={!name.trim()}
                 >

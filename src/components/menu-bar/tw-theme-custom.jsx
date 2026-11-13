@@ -1098,8 +1098,8 @@ class CustomThemeMenu extends React.Component {
                             React.createElement(PixelEditorApp, {
                                 initialName: this.state.createName,
                                 initialDescription: this.state.createDescription,
-                                onCreate: (name, description, pixelData, primaryColor) => {
-                                    this.handleCreatePixelTheme(name, description, pixelData, primaryColor)
+                                onCreate: (name, description, pixelData, primaryColor, encoding) => {
+                                    this.handleCreatePixelTheme(name, description, pixelData, primaryColor, encoding)
                                         .then(success => {
                                             if (this.pixelEditorWindow && success) {
                                                 this.pixelEditorWindow.close();
@@ -1494,8 +1494,8 @@ class CustomThemeMenu extends React.Component {
                                         primaryColor
                                     );
                                 },
-                                onCreate: (name, description, pixelData, primaryColor) => {
-                                    this.handleCreatePixelTheme(name, description, pixelData, primaryColor)
+                                onCreate: (name, description, pixelData, primaryColor, encoding) => {
+                                    this.handleCreatePixelTheme(name, description, pixelData, primaryColor, encoding)
                                         .then(success => {
                                             if (this.pixelEditorWindow && success) {
                                                 this.pixelEditorWindow.close();
@@ -1629,7 +1629,7 @@ class CustomThemeMenu extends React.Component {
         }
     };
 
-    handleCreatePixelTheme = async (name, description, pixelData, primaryColor) => {
+    handleCreatePixelTheme = async (name, description, pixelData, primaryColor, encoding) => {
         const createName = typeof name === 'string' ? name : (this.state.createName || '');
         const createDescription = typeof description === 'string' ? description : (this.state.createDescription || '');
         const theme = this.props.theme;
@@ -1649,7 +1649,7 @@ class CustomThemeMenu extends React.Component {
                 createDescription.trim(),
                 pixelData,
                 primaryColor,
-                {},
+                {encoding: encoding || undefined},
                 theme
             );
 
@@ -1990,7 +1990,7 @@ class CustomThemeMenu extends React.Component {
                 const exportData = {
                     version: '2.0',
                     timestamp: Date.now(),
-                    themes: [theme.export()],
+                    themes: [theme.export({encodePixelData: true})],
                     platform: 'Bilup'
                 };
                 const blob = new Blob([JSON.stringify(exportData, null, 2)], {
