@@ -1,0 +1,469 @@
+2026-11-13T13:36:24.827208Z	Cloning repository...
+2026-11-13T13:36:28.792976Z	From https://github.com/remixwarp/scratch-gui
+2026-11-13T13:36:28.793422Z	 * branch            0529bca786b221af8cd7e0d5408e8cedb4badeeb -> FETCH_HEAD
+2026-11-13T13:36:28.793549Z	
+2026-11-13T13:36:29.629969Z	HEAD is now at 0529bca Add manual width calibration window and width-adaptive flexible pixel themes
+2026-11-13T13:36:29.630264Z	
+2026-11-13T13:36:29.7075Z	
+2026-11-13T13:36:29.707963Z	Using v2 root directory strategy
+2026-11-13T13:36:29.728946Z	Success: Finished cloning repository files
+2026-11-13T13:36:31.847444Z	Checking for configuration in a Wrangler configuration file (BETA)
+2026-11-13T13:36:31.847885Z	
+2026-11-13T13:36:32.018716Z	No Wrangler configuration file found. Continuing.
+2026-11-13T13:36:32.880686Z	Updating bun to main
+2026-11-13T13:36:32.881073Z	Already on 'main'
+2026-11-13T13:36:32.881252Z	Your branch is up to date with 'origin/main'.
+2026-11-13T13:36:41.12852Z	Detected the following tools from environment: nodejs@18.20.8, bun@1.3.13
+2026-11-13T13:36:41.128945Z	Installing nodejs 18.20.8
+2026-11-13T13:36:41.97007Z	Trying to update node-build... ok
+2026-11-13T13:36:42.061629Z	To follow progress, use 'tail -f /tmp/node-build.20261113133642.922.log' or pass --verbose
+2026-11-13T13:36:42.131433Z	Downloading node-v18.20.8-linux-x64.tar.gz...
+2026-11-13T13:36:42.213299Z	-> https://nodejs.org/dist/v18.20.8/node-v18.20.8-linux-x64.tar.gz
+2026-11-13T13:36:44.477824Z	
+2026-11-13T13:36:44.47819Z	WARNING: node-v18.20.8-linux-x64 is past its end of life and is now unsupported.
+2026-11-13T13:36:44.47831Z	It no longer receives bug fixes or security updates.
+2026-11-13T13:36:44.478398Z	
+2026-11-13T13:36:44.47847Z	Installing node-v18.20.8-linux-x64...
+2026-11-13T13:36:45.035595Z	Installed node-v18.20.8-linux-x64 to /opt/buildhome/.asdf/installs/nodejs/18.20.8
+2026-11-13T13:36:45.03607Z	
+2026-11-13T13:36:45.711444Z	Installing bun 1.3.13
+2026-11-13T13:36:45.77835Z	Downloading Bun v1.3.13...
+2026-11-13T13:36:46.535039Z	Archive:  /tmp/asdf-bun.kzmK/bun.zip
+2026-11-13T13:36:47.385342Z	  inflating: /opt/buildhome/.asdf/downloads/bun/1.3.13/bun  
+2026-11-13T13:36:47.474185Z	Installing Bun v1.3.13...
+2026-11-13T13:36:47.706824Z	Bun v1.3.13 is installed successfully!
+2026-11-13T13:36:47.899025Z	Executing user command: npm run cf-build
+2026-11-13T13:36:48.292454Z	
+2026-11-13T13:36:48.292802Z	> scratch-gui@3.2.52 cf-build
+2026-11-13T13:36:48.292927Z	> node -e "process.exit(require('fs').existsSync('node_modules')?0:1)" && echo "[cf-build] node_modules present, skip install" || (bun install --no-verify) ; bun run build
+2026-11-13T13:36:48.293025Z	
+2026-11-13T13:36:48.467218Z	bun install v1.3.13 (bf2e2cec)
+2026-11-13T13:36:48.47145Z	Resolving dependencies
+2026-11-13T13:36:54.148251Z	Resolved, downloaded and extracted [6318]
+2026-11-13T13:36:54.148577Z	warn: incorrect peer dependency "react-responsive@5.0.0"
+2026-11-13T13:36:57.086481Z	Saved lockfile
+2026-11-13T13:36:57.087873Z	
+2026-11-13T13:36:57.090184Z	$ node scripts/patch-shader-manager.mjs && node scripts/polyround-i18n/postinstall-inject.mjs
+2026-11-13T13:36:57.210396Z	[patch-shader-manager] Patched raw-loader: ESM -> CJS output
+2026-11-13T13:36:57.239856Z	[patch-shader-manager] Patched ShaderManager.js: removed inline raw-loader! prefix
+2026-11-13T13:36:57.446677Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-paint/containers/poly-round-mode.jsx -> node_modules/scratch-paint/src/containers/poly-round-mode.jsx
+2026-11-13T13:36:57.461679Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/en.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/en.json
+2026-11-13T13:36:57.462313Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/zh-cn.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/zh-cn.json
+2026-11-13T13:36:57.462791Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/geng.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/geng.json
+2026-11-13T13:36:57.463067Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/gdzx.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/gdzx.json
+2026-11-13T13:36:57.463221Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/wenyan.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/wenyan.json
+2026-11-13T13:36:57.464367Z	[polyround-i18n] injected scripts/polyround-i18n/scratch-l10n/editor/paint-editor/wyw.json -> node_modules/@remixwarp/scratch-l10n/editor/paint-editor/wyw.json
+2026-11-13T13:36:57.464498Z	[polyround-i18n] injected scripts/scratch-translate-extension-languages.json -> node_modules/scratch-translate-extension-languages/languages.json
+2026-11-13T13:36:57.469907Z	[polyround-i18n] merged 426 polyRound keys into paint-editor-msgs.js
+2026-11-13T13:36:57.470362Z	[polyround-i18n] done: ok=8 skip=0 fail=0
+2026-11-13T13:36:57.476988Z	$ node scripts/prepublish.mjs
+2026-11-13T13:36:58.313347Z	[prepublish] microbit hex already present, skipping download
+2026-11-13T13:36:58.313792Z	[PenguinMod] Fetching gallery…
+2026-11-13T13:36:58.545288Z	[PenguinMod] Wrote static/penguinmod/extensions.js
+2026-11-13T13:36:58.545694Z	Prepublish script complete
+2026-11-13T13:36:58.551508Z	
+2026-11-13T13:36:58.551783Z	+ @babel/cli@7.14.8 (v8.1.0 available)
+2026-11-13T13:36:58.551865Z	+ @babel/core@7.14.8 (v8.1.2 available)
+2026-11-13T13:36:58.551929Z	+ @babel/eslint-parser@7.29.13 (v8.1.2 available)
+2026-11-13T13:36:58.551971Z	+ @babel/plugin-proposal-object-rest-spread@7.14.7 (v7.20.7 available)
+2026-11-13T13:36:58.552017Z	+ @babel/plugin-syntax-dynamic-import@7.2.0 (v7.8.3 available)
+2026-11-13T13:36:58.552091Z	+ @babel/plugin-transform-async-to-generator@7.14.5 (v8.0.1 available)
+2026-11-13T13:36:58.552207Z	+ @babel/plugin-transform-class-static-block@7.29.14 (v8.1.2 available)
+2026-11-13T13:36:58.552331Z	+ @babel/preset-env@7.14.8 (v8.0.7 available)
+2026-11-13T13:36:58.552418Z	+ @babel/preset-react@7.29.7 (v8.0.1 available)
+2026-11-13T13:36:58.552508Z	+ @babel/preset-typescript@7.29.7 (v8.0.7 available)
+2026-11-13T13:36:58.552587Z	+ acorn@8.19.0
+2026-11-13T13:36:58.552686Z	+ acorn-jsx@5.3.2
+2026-11-13T13:36:58.552761Z	+ babel-core@7.0.0-bridge.0
+2026-11-13T13:36:58.552831Z	+ babel-eslint@10.1.0
+2026-11-13T13:36:58.552876Z	+ babel-loader@8.3.0 (v10.1.1 available)
+2026-11-13T13:36:58.552913Z	+ concurrently@8.2.2 (v10.0.7 available)
+2026-11-13T13:36:58.552974Z	+ cors@2.8.6
+2026-11-13T13:36:58.553052Z	+ dotenv@16.6.1 (v18.0.10 available)
+2026-11-13T13:36:58.553111Z	+ enzyme@3.10.0 (v3.11.0 available)
+2026-11-13T13:36:58.553169Z	+ enzyme-adapter-react-16@1.15.7 (v1.15.8 available)
+2026-11-13T13:36:58.553232Z	+ eslint@8.55.0 (v10.14.0 available)
+2026-11-13T13:36:58.553307Z	+ eslint-config-scratch@9.0.3 (v15.0.10 available)
+2026-11-13T13:36:58.553363Z	+ eslint-import-resolver-webpack@0.11.1 (v0.13.11 available)
+2026-11-13T13:36:58.553416Z	+ eslint-plugin-import@2.29.1 (v2.32.0 available)
+2026-11-13T13:36:58.553469Z	+ eslint-plugin-jest@22.17.0 (v29.17.0 available)
+2026-11-13T13:36:58.553536Z	+ eslint-plugin-react@7.33.2 (v7.37.5 available)
+2026-11-13T13:36:58.553591Z	+ exports-loader@0.7.0 (v5.0.0 available)
+2026-11-13T13:36:58.553644Z	+ express@4.22.3 (v5.3.0 available)
+2026-11-13T13:36:58.553691Z	+ file-loader@6.2.0
+2026-11-13T13:36:58.553746Z	+ gh-pages@3.2.3 (v6.3.0 available)
+2026-11-13T13:36:58.553797Z	+ html-webpack-plugin@4.5.2 (v5.6.8 available)
+2026-11-13T13:36:58.553847Z	+ imports-loader@0.8.0 (v5.0.0 available)
+2026-11-13T13:36:58.553897Z	+ jest@21.2.1 (v30.5.2 available)
+2026-11-13T13:36:58.553943Z	+ jest-junit@7.0.0 (v17.0.0 available)
+2026-11-13T13:36:58.553995Z	+ less@4.4.2 (v4.9.1 available)
+2026-11-13T13:36:58.554047Z	+ less-loader@7.3.0 (v13.1.0 available)
+2026-11-13T13:36:58.554106Z	+ mkdirp@1.0.3 (v3.0.1 available)
+2026-11-13T13:36:58.554166Z	+ raf@3.4.1
+2026-11-13T13:36:58.554225Z	+ react-test-renderer@16.14.0 (v19.3.1 available)
+2026-11-13T13:36:58.554301Z	+ redux-mock-store@1.5.3 (v1.5.5 available)
+2026-11-13T13:36:58.554354Z	+ rimraf@2.7.1 (v6.1.4 available)
+2026-11-13T13:36:58.5544Z	+ selenium-webdriver@3.6.0 (v4.52.0 available)
+2026-11-13T13:36:58.554454Z	+ thread-loader@2.1.3 (v4.0.4 available)
+2026-11-13T13:36:58.554521Z	+ uglifyjs-webpack-plugin@1.3.0 (v2.2.0 available)
+2026-11-13T13:36:58.554589Z	+ url-loader@4.1.1
+2026-11-13T13:36:58.554649Z	+ web-audio-test-api@0.5.2
+2026-11-13T13:36:58.554715Z	+ webpack@4.47.0 (v5.112.2 available)
+2026-11-13T13:36:58.554778Z	+ webpack-cli@3.3.12 (v7.3.1 available)
+2026-11-13T13:36:58.554839Z	+ webpack-dev-server@3.11.2 (v6.1.0 available)
+2026-11-13T13:36:58.554899Z	+ yauzl@2.10.0 (v3.4.0 available)
+2026-11-13T13:36:58.554953Z	+ @isomorphic-git/lightning-fs@4.9.0 (v4.10.5 available)
+2026-11-13T13:36:58.555009Z	+ @microbit/microbit-universal-hex@0.2.2 (v0.3.1 available)
+2026-11-13T13:36:58.55507Z	+ @mixmark-io/domino@2.2.0
+2026-11-13T13:36:58.555139Z	+ @remixwarp/scratch-blocks@https://github.com/remixwarp/scratch-blocks/archive/a8c84d6d4a60d01de720aed7e9f1cfe1eeb2d566.tar.gz
+2026-11-13T13:36:58.555204Z	+ @remixwarp/scratch-l10n@https://github.com/remixwarp/scratch-l10n/archive/5aea3b583050e1ee3fff2758b86e75bffd65a030.tar.gz
+2026-11-13T13:36:58.555256Z	+ @turbowarp/jszip@3.12.0
+2026-11-13T13:36:58.555336Z	+ @turbowarp/nanolog@1.0.1
+2026-11-13T13:36:58.555399Z	+ @turbowarp/scratch-storage@2.0.0
+2026-11-13T13:36:58.555462Z	+ @turbowarp/scratch-svg-renderer@1.1.0
+2026-11-13T13:36:58.555526Z	+ @turbowarp/startaudiocontext@1.0.0
+2026-11-13T13:36:58.555565Z	+ arraybuffer-loader@1.0.8
+2026-11-13T13:36:58.555608Z	+ autoprefixer@9.8.8 (v10.6.2 available)
+2026-11-13T13:36:58.555644Z	+ balance-text@3.3.1
+2026-11-13T13:36:58.555686Z	+ base64-loader@1.0.0
+2026-11-13T13:36:58.555721Z	+ bowser@1.9.4 (v2.15.0 available)
+2026-11-13T13:36:58.555756Z	+ caniuse-lite@1.0.30001826
+2026-11-13T13:36:58.555793Z	+ classnames@2.2.6 (v2.5.1 available)
+2026-11-13T13:36:58.555831Z	+ computed-style-to-inline-style@3.0.0 (v4.0.0 available)
+2026-11-13T13:36:58.555866Z	+ cookie@0.5.0 (v2.0.2 available)
+2026-11-13T13:36:58.555901Z	+ copy-webpack-plugin@6.4.1 (v14.0.0 available)
+2026-11-13T13:36:58.555936Z	+ core-js@3.51.0
+2026-11-13T13:36:58.55597Z	+ cross-fetch@4.1.0
+2026-11-13T13:36:58.556005Z	+ css-loader@1.0.1 (v7.1.5 available)
+2026-11-13T13:36:58.556041Z	+ dapjs@2.3.0
+2026-11-13T13:36:58.556076Z	+ es6-object-assign@1.1.0
+2026-11-13T13:36:58.556131Z	+ fractch@0.7.8 (v0.10.3 available)
+2026-11-13T13:36:58.556172Z	+ get-float-time-domain-data@0.1.0
+2026-11-13T13:36:58.556246Z	+ get-user-media-promise@1.1.4
+2026-11-13T13:36:58.556349Z	+ immutable@3.8.2 (v5.2.1 available)
+2026-11-13T13:36:58.556416Z	+ intl@1.2.5
+2026-11-13T13:36:58.556472Z	+ intl-messageformat@2.2.0 (v12.1.5 available)
+2026-11-13T13:36:58.55652Z	+ isomorphic-git@1.44.13
+2026-11-13T13:36:58.556563Z	+ js-base64@2.4.9 (v3.9.6 available)
+2026-11-13T13:36:58.55661Z	+ jsoneditor@10.4.2 (v10.4.3 available)
+2026-11-13T13:36:58.556658Z	+ just-bash@3.6.0
+2026-11-13T13:36:58.556711Z	+ keymirror@0.1.1
+2026-11-13T13:36:58.55677Z	+ lodash.bindall@4.4.0
+2026-11-13T13:36:58.556835Z	+ lodash.debounce@4.0.8
+2026-11-13T13:36:58.556905Z	+ lodash.defaultsdeep@4.6.1
+2026-11-13T13:36:58.556948Z	+ lodash.omit@4.5.0 (v4.18.0 available)
+2026-11-13T13:36:58.556981Z	+ lodash.throttle@4.0.1 (v4.1.1 available)
+2026-11-13T13:36:58.557017Z	+ lucide-react@0.562.0 (v1.72.0 available)
+2026-11-13T13:36:58.557058Z	+ mammoth@1.13.0
+2026-11-13T13:36:58.557125Z	+ monaco-editor@0.52.2 (v0.57.0 available)
+2026-11-13T13:36:58.557194Z	+ nanoid@5.1.16 (v6.0.2 available)
+2026-11-13T13:36:58.557237Z	+ omggif@1.0.9 (v1.0.10 available)
+2026-11-13T13:36:58.557296Z	+ papaparse@5.3.0 (v5.7.1 available)
+2026-11-13T13:36:58.557363Z	+ peerjs@1.3.0 (v1.5.5 available)
+2026-11-13T13:36:58.557436Z	+ postcss-import@12.0.1 (v17.0.1 available)
+2026-11-13T13:36:58.557504Z	+ postcss-loader@3.0.0 (v8.2.1 available)
+2026-11-13T13:36:58.557558Z	+ postcss-simple-vars@5.0.2 (v7.0.1 available)
+2026-11-13T13:36:58.557602Z	+ prop-types@15.8.1
+2026-11-13T13:36:58.557637Z	+ query-string@5.1.1 (v10.0.0 available)
+2026-11-13T13:36:58.557673Z	+ raw-loader@3.1.0 (v4.0.2 available)
+2026-11-13T13:36:58.557705Z	+ react@16.14.0 (v19.3.1 available)
+2026-11-13T13:36:58.55774Z	+ react-contextmenu@2.9.4 (v2.14.0 available)
+2026-11-13T13:36:58.557775Z	+ react-dom@16.14.0 (v19.3.1 available)
+2026-11-13T13:36:58.557809Z	+ react-draggable@3.0.5 (v4.7.2 available)
+2026-11-13T13:36:58.55784Z	+ react-ga@2.5.3 (v3.3.1 available)
+2026-11-13T13:36:58.557876Z	+ react-intl@2.9.0 (v12.1.7 available)
+2026-11-13T13:36:58.557935Z	+ react-markdown@6.0.3 (v10.1.0 available)
+2026-11-13T13:36:58.557973Z	+ react-modal@3.9.1 (v3.16.3 available)
+2026-11-13T13:36:58.558012Z	+ react-popover@0.5.10
+2026-11-13T13:36:58.558066Z	+ react-redux@5.0.7 (v9.3.1 available)
+2026-11-13T13:36:58.558107Z	+ react-responsive@5.0.0 (v10.0.1 available)
+2026-11-13T13:36:58.558154Z	+ react-router@6.30.6 (v8.5.1 available)
+2026-11-13T13:36:58.558197Z	+ react-router-dom@6.30.6 (v7.18.5 available)
+2026-11-13T13:36:58.558231Z	+ react-string-replace@0.4.4 (v2.0.1 available)
+2026-11-13T13:36:58.558298Z	+ react-style-proptype@3.2.2
+2026-11-13T13:36:58.558359Z	+ react-tabs@2.3.0 (v6.1.1 available)
+2026-11-13T13:36:58.558419Z	+ react-tooltip@3.8.0 (v6.0.12 available)
+2026-11-13T13:36:58.558481Z	+ react-virtualized@9.20.1 (v10.0.1 available)
+2026-11-13T13:36:58.558547Z	+ redux@3.7.2 (v5.0.1 available)
+2026-11-13T13:36:58.558606Z	+ redux-throttle@0.1.1
+2026-11-13T13:36:58.558669Z	+ remark-gfm@1.0.0 (v4.0.1 available)
+2026-11-13T13:36:58.558714Z	+ scratch-audio@github:remixwarp/scratch-audio#2a71878
+2026-11-13T13:36:58.558759Z	+ scratch-paint@github:remixwarp/scratch-paint#bc74cdd
+2026-11-13T13:36:58.558808Z	+ scratch-render@github:remixwarp/scratch-render#f8ccb6c
+2026-11-13T13:36:58.558867Z	+ scratch-vm@github:remixwarp/scratch-vm#41ced88
+2026-11-13T13:36:58.558929Z	+ style-loader@0.23.1 (v4.0.0 available)
+2026-11-13T13:36:58.558976Z	+ text-encoding@0.7.0
+2026-11-13T13:36:58.55901Z	+ to-style@1.3.3
+2026-11-13T13:36:58.559042Z	+ turndown@7.2.5
+2026-11-13T13:36:58.559089Z	+ wav-encoder@1.3.0
+2026-11-13T13:36:58.559133Z	+ xhr@2.5.0 (v2.6.0 available)
+2026-11-13T13:36:58.559174Z	+ xlsx@0.18.5
+2026-11-13T13:36:58.559221Z	
+2026-11-13T13:36:58.559295Z	1720 packages installed [10.09s]
+2026-11-13T13:36:58.559347Z	
+2026-11-13T13:36:58.55939Z	Blocked 6 postinstalls. Run `bun pm untrusted` for details.
+2026-11-13T13:36:58.747424Z	$ rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist && NODE_ENV=production webpack --colors --bail && node scripts/build-compression.js && node scripts/package-cf-functions.mjs
+2026-11-13T13:37:09.464913Z	[BABEL] Note: The code generator has deoptimised the styling of /opt/buildhome/repo/node_modules/isomorphic-git/index.js as it exceeds the max of 500KB.
+2026-11-13T13:37:23.551312Z	(node:2103) DeprecationWarning: Tapable.apply is deprecated. Call apply on the plugin directly instead
+2026-11-13T13:37:23.560996Z	(Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-13T13:39:35.543722Z	Hash: [1m73712df0deb5de5e1e96aa9ec5b18a488467c0cd[39m[22m
+2026-11-13T13:39:35.544937Z	Version: webpack [1m4.47.0[39m[22m
+2026-11-13T13:39:35.545146Z	Child
+2026-11-13T13:39:35.54526Z	    Hash: [1m73712df0deb5de5e1e96[39m[22m
+2026-11-13T13:39:35.54534Z	    Time: [1m154600[39m[22mms
+2026-11-13T13:39:35.545469Z	    Built at: 11/13/2026 [1m1:39:35 PM[39m[22m
+2026-11-13T13:39:35.545589Z	     719 assets
+2026-11-13T13:39:35.545708Z	    Entrypoint [1meditor[39m[22m = [1m[32mjs/gleba4/runtime.b3c55a7d662c12d4e486.js[39m[22m [1m[32mjs/gleba4/react-vendor.15c1ba3d8a55d9f91606.js[39m[22m [1m[32mjs/gleba4/scratch-engine.14b1700df81992545420.js[39m[22m [1m[32mjs/gleba4/scratch-paint.8520c4d0ee40977e495b.js[39m[22m [1m[32mjs/gleba4/git-libs.02fd034ffaa11508c8c0.js[39m[22m [1m[32mjs/gleba4/vendors.c27d350e88ce1b344022.js[39m[22m [1m[32mjs/gleba4/common.d988ee6dfef0eafc193f.js[39m[22m [1m[32mjs/gleba4/editor.92d281897c981b7c1317.js[39m[22m
+2026-11-13T13:39:35.545854Z	    Entrypoint [1mplayer[39m[22m = [1m[32mjs/gleba4/runtime.b3c55a7d662c12d4e486.js[39m[22m [1m[32mjs/gleba4/react-vendor.15c1ba3d8a55d9f91606.js[39m[22m [1m[32mjs/gleba4/scratch-engine.14b1700df81992545420.js[39m[22m [1m[32mjs/gleba4/scratch-paint.8520c4d0ee40977e495b.js[39m[22m [1m[32mjs/gleba4/git-libs.02fd034ffaa11508c8c0.js[39m[22m [1m[32mjs/gleba4/vendors.c27d350e88ce1b344022.js[39m[22m [1m[32mjs/gleba4/common.d988ee6dfef0eafc193f.js[39m[22m [1m[32mjs/gleba4/player.ef194d853a9f2df905fe.js[39m[22m
+2026-11-13T13:39:35.545963Z	    Entrypoint [1mfullscreen[39m[22m = [1m[32mjs/gleba4/runtime.b3c55a7d662c12d4e486.js[39m[22m [1m[32mjs/gleba4/react-vendor.15c1ba3d8a55d9f91606.js[39m[22m [1m[32mjs/gleba4/scratch-engine.14b1700df81992545420.js[39m[22m [1m[32mjs/gleba4/scratch-paint.8520c4d0ee40977e495b.js[39m[22m [1m[32mjs/gleba4/git-libs.02fd034ffaa11508c8c0.js[39m[22m [1m[32mjs/gleba4/vendors.c27d350e88ce1b344022.js[39m[22m [1m[32mjs/gleba4/common.d988ee6dfef0eafc193f.js[39m[22m [1m[32mjs/gleba4/fullscreen.825cc502291efb9c1be1.js[39m[22m
+2026-11-13T13:39:35.546056Z	    Entrypoint [1membed[39m[22m = [1m[32mjs/gleba4/runtime.b3c55a7d662c12d4e486.js[39m[22m [1m[32mjs/gleba4/react-vendor.15c1ba3d8a55d9f91606.js[39m[22m [1m[32mjs/gleba4/scratch-engine.14b1700df81992545420.js[39m[22m [1m[32mjs/gleba4/scratch-paint.8520c4d0ee40977e495b.js[39m[22m [1m[32mjs/gleba4/git-libs.02fd034ffaa11508c8c0.js[39m[22m [1m[32mjs/gleba4/vendors.c27d350e88ce1b344022.js[39m[22m [1m[32mjs/gleba4/common.d988ee6dfef0eafc193f.js[39m[22m [1m[32mjs/gleba4/embed.fa20e089ccaafe250d2b.js[39m[22m
+2026-11-13T13:39:35.546153Z	    Entrypoint [1maddon-settings[39m[22m = [1m[32mjs/gleba4/runtime.b3c55a7d662c12d4e486.js[39m[22m [1m[32mjs/gleba4/react-vendor.15c1ba3d8a55d9f91606.js[39m[22m [1m[32mjs/gleba4/vendors.c27d350e88ce1b344022.js[39m[22m [1m[32mjs/gleba4/common.d988ee6dfef0eafc193f.js[39m[22m [1m[32mjs/gleba4/addon-settings.74806d6387cfb43b7b20.js[39m[22m
+2026-11-13T13:39:35.546256Z	    Entrypoint [1mcredits[39m[22m = [1m[32mjs/gleba4/runtime.b3c55a7d662c12d4e486.js[39m[22m [1m[32mjs/gleba4/react-vendor.15c1ba3d8a55d9f91606.js[39m[22m [1m[32mjs/gleba4/vendors.c27d350e88ce1b344022.js[39m[22m [1m[32mjs/gleba4/common.d988ee6dfef0eafc193f.js[39m[22m [1m[32mjs/gleba4/credits.a41116215298ef4fd419.js[39m[22m
+2026-11-13T13:39:35.546344Z	    [+1nf] [1m./src/playground/fullscreen.jsx[39m[22m 864 bytes {[1m[33m111[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.546448Z	    [+i/r] [1m./src/lib/constants/brand.js[39m[22m 330 bytes {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.546525Z	    [1Swj] [1m./src/playground/render-gui.jsx + 303 modules[39m[22m 2.05 MiB {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.546587Z	        | [1m./src/playground/render-gui.jsx[39m[22m 769 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.546632Z	        | [1m./src/containers/gui.jsx[39m[22m 15.9 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.546769Z	        | [1m./src/lib/collaboration-service.js[39m[22m 42.3 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.547101Z	        | [1m./src/containers/tw-theme-manager-hoc.jsx[39m[22m 3.43 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.547198Z	        | [1m./src/lib/fractch-live/index.js[39m[22m 5.63 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.547288Z	        | [1m./src/lib/mw/smart-save.js[39m[22m 1.89 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.547381Z	        | [1m./src/lib/mw/rwc-bridge.js[39m[22m 41.9 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.547464Z	        | [1m./src/lib/collaboration/event-serialization.js[39m[22m 8.54 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.54755Z	        | [1m./src/lib/collaboration/block-events.js[39m[22m 23.9 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.547629Z	        | [1m./src/lib/collaboration/cursor-sync.js[39m[22m 14.4 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.547734Z	        | [1m./src/lib/collaboration/ui-manager.js[39m[22m 5 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.548234Z	        | [1m./src/lib/collaboration/connection-manager.js[39m[22m 5.36 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.548407Z	        | [1m./src/lib/collaboration/asset-events.js[39m[22m 28.7 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.548491Z	        | [1m./src/lib/collaboration/sync-manager.js[39m[22m 16 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.548555Z	        | [1m./src/lib/collaboration/target-id-utils.js[39m[22m 693 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.548619Z	        |     + 289 hidden modules
+2026-11-13T13:39:35.548686Z	    [5BeT] [1m./src/playground/editor.jsx[39m[22m 822 bytes {[1m[33m109[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.54876Z	    [CvcH] [1m./src/playground/app-target.js[39m[22m 2.12 KiB {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.548822Z	    [DQhk] [1m./src/playground/render-interface.jsx + 14 modules[39m[22m 64.2 KiB {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.548881Z	        | [1m./src/playground/render-interface.jsx[39m[22m 23.5 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.548935Z	        | [1m./src/lib/api/fix-history.js[39m[22m 413 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.548976Z	        | [1m./src/containers/tw-cloud-variable-badge.jsx[39m[22m 1.26 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549014Z	        | [1m./src/playground/load-service-worker.js[39m[22m 619 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549051Z	        | [1m./src/community/prefetch-editor.js[39m[22m 2.39 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549089Z	        | [1m./node_modules/file-loader/dist/cjs.js?name=sw.js!./src/playground/service-worker.js[39m[22m 49 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549124Z	        |     + 9 hidden modules
+2026-11-13T13:39:35.549163Z	    [E90f] [1m./src/addons/entry.js[39m[22m 105 bytes {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549233Z	    [Goaa] [1m./src/lib/themes/themePersistance.js[39m[22m 7.81 KiB {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549299Z	    [LPSY] [1m./src/playground/import-first.js[39m[22m 89 bytes {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549382Z	    [Pvs0] [1m./src/playground/credits/credits.jsx + 1 modules[39m[22m 12.2 KiB {[1m[33m108[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549431Z	        | [1m./src/playground/credits/credits.jsx[39m[22m 9.77 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549474Z	        | [1m./src/playground/credits/users.js[39m[22m 2.42 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549516Z	    [Sahu] [1m./src/playground/credits/credits.css[39m[22m 1.28 KiB {[1m[33m108[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549575Z	    [UXOo] [1m./src/playground/player.jsx[39m[22m 845 bytes {[1m[33m117[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549642Z	    [bKyA] [1m./src/playground/embed.jsx + 1 modules[39m[22m 4.61 KiB {[1m[33m110[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549703Z	        | [1m./src/playground/embed.jsx[39m[22m 1.51 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549756Z	        |     + 1 hidden module
+2026-11-13T13:39:35.549814Z	    [bTFF] [1m./src/playground/addon-settings.jsx + 3 modules[39m[22m 79.3 KiB {[1m[33m106[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.549873Z	        | [1m./src/playground/addon-settings.jsx[39m[22m 1.03 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.54993Z	        | [1m./src/addons/settings/settings.jsx[39m[22m 75.6 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.54999Z	        | [1m./src/addons/settings/search.js[39m[22m 2.27 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.550039Z	        | [1m./src/addons/generated/l10n-settings-entries.js[39m[22m 295 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.550098Z	    [fvjX] [1m./node_modules/redux/es/index.js + 6 modules[39m[22m 20.6 KiB {[1m[33m1[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.550152Z	        |    7 modules
+2026-11-13T13:39:35.55021Z	        + 5440 hidden modules
+2026-11-13T13:39:35.550258Z	    
+2026-11-13T13:39:35.550316Z	    [1m[33mWARNING in ./src/lib/gandi-pusher.js 25:16-38
+2026-11-13T13:39:35.550388Z	    "export 'getNetworkRestoreToken' was not found in './api/restore-points'
+2026-11-13T13:39:35.550446Z	     @ ./src/components/menu-bar/menu-bar.jsx
+2026-11-13T13:39:35.550494Z	     @ ./src/playground/render-interface.jsx
+2026-11-13T13:39:35.550727Z	     @ ./src/playground/editor.jsx[39m[22m
+2026-11-13T13:39:35.550811Z	    
+2026-11-13T13:39:35.550883Z	    [1m[31mERROR in ./src/components/menu-bar/tw-pixel-width-calibration.jsx
+2026-11-13T13:39:35.550952Z	    Module build failed (from ./node_modules/thread-loader/dist/cjs.js):
+2026-11-13T13:39:35.551018Z	    Thread Loader (Worker 2)
+2026-11-13T13:39:35.551081Z	    /opt/buildhome/repo/src/components/menu-bar/tw-pixel-width-calibration.jsx: [React Intl] Messages must be statically evaluate-able for extraction.
+2026-11-13T13:39:35.55112Z	    [0m [90m 55 |[39m                 [33m<[39m[33mFormattedMessage[39m
+2026-11-13T13:39:35.55116Z	     [90m 56 |[39m                     defaultMessage[33m=[39m{[33mSTEP_DEFAULTS[39m[i [33m-[39m [35m1[39m]}
+2026-11-13T13:39:35.551196Z	    [31m[1m>[22m[39m[90m 57 |[39m                     id[33m=[39m{[33mSTEP_IDS[39m[i [33m-[39m [35m1[39m]}
+2026-11-13T13:39:35.551233Z	     [90m    |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+2026-11-13T13:39:35.551308Z	     [90m 58 |[39m                 [33m/[39m[33m>[39m
+2026-11-13T13:39:35.551405Z	     [90m 59 |[39m             [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+2026-11-13T13:39:35.551472Z	     [90m 60 |[39m         ))}[0m
+2026-11-13T13:39:35.551524Z	        at PoolWorker.fromErrorObj (/opt/buildhome/repo/node_modules/thread-loader/dist/WorkerPool.js:262:12)
+2026-11-13T13:39:35.551567Z	        at /opt/buildhome/repo/node_modules/thread-loader/dist/WorkerPool.js:204:29
+2026-11-13T13:39:35.5516Z	        at mapSeries (/opt/buildhome/repo/node_modules/neo-async/async.js:3625:14)
+2026-11-13T13:39:35.551634Z	        at PoolWorker.onWorkerMessage (/opt/buildhome/repo/node_modules/thread-loader/dist/WorkerPool.js:170:35)
+2026-11-13T13:39:35.551667Z	        at File.buildCodeFrameError (/opt/buildhome/repo/node_modules/@babel/core/lib/transformation/file/file.js:244:12)
+2026-11-13T13:39:35.551708Z	        at NodePath.buildCodeFrameError (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/index.js:117:21)
+2026-11-13T13:39:35.551743Z	        at evaluatePath (/opt/buildhome/repo/node_modules/babel-plugin-react-intl/dist/index.js:58:16)
+2026-11-13T13:39:35.551776Z	        at getMessageDescriptorValue (/opt/buildhome/repo/node_modules/babel-plugin-react-intl/dist/index.js:74:27)
+2026-11-13T13:39:35.551808Z	        at evaluateMessageDescriptor (/opt/buildhome/repo/node_modules/babel-plugin-react-intl/dist/index.js:96:14)
+2026-11-13T13:39:35.551849Z	        at PluginPass.JSXOpeningElement (/opt/buildhome/repo/node_modules/babel-plugin-react-intl/dist/index.js:255:44)
+2026-11-13T13:39:35.55189Z	        at newFn (/opt/buildhome/repo/node_modules/@babel/traverse/lib/visitors.js:168:14)
+2026-11-13T13:39:35.551923Z	        at NodePath._call (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:50:20)
+2026-11-13T13:39:35.551968Z	        at NodePath.call (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:40:18)
+2026-11-13T13:39:35.552004Z	        at NodePath.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:87:31)
+2026-11-13T13:39:35.552036Z	     @ ./src/components/menu-bar/tw-theme-pixel.jsx 8:0-78 714:19-45
+2026-11-13T13:39:35.552068Z	     @ ./src/components/menu-bar/tw-theme-custom.jsx
+2026-11-13T13:39:35.552247Z	     @ ./src/components/menu-bar/settings-menu.jsx
+2026-11-13T13:39:35.552372Z	     @ ./src/components/menu-bar/menu-bar.jsx
+2026-11-13T13:39:35.552468Z	     @ ./src/playground/render-interface.jsx
+2026-11-13T13:39:35.552569Z	     @ ./src/playground/editor.jsx[39m[22m
+2026-11-13T13:39:35.552771Z	    Child [1mHtmlWebpackCompiler[39m[22m:
+2026-11-13T13:39:35.552868Z	         3 assets
+2026-11-13T13:39:35.552938Z	        Entrypoint [1mHtmlWebpackPlugin_0[39m[22m = [1m[32m__child-HtmlWebpackPlugin_0[39m[22m
+2026-11-13T13:39:35.553011Z	        Entrypoint [1mHtmlWebpackPlugin_1[39m[22m = [1m[32m__child-HtmlWebpackPlugin_1[39m[22m
+2026-11-13T13:39:35.553055Z	        Entrypoint [1mHtmlWebpackPlugin_2[39m[22m = [1m[32m__child-HtmlWebpackPlugin_2[39m[22m
+2026-11-13T13:39:35.553093Z	        [0Fug] [1m./node_modules/html-webpack-plugin/lib/loader.js!./src/playground/index.ejs[39m[22m 8.04 KiB {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.553136Z	        [M+bc] [1m./node_modules/html-webpack-plugin/lib/loader.js!./src/playground/embed.ejs[39m[22m 2.56 KiB {[1m[33m1[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.553174Z	        [lZIW] [1m./node_modules/html-webpack-plugin/lib/loader.js!./src/playground/simple.ejs[39m[22m 5.65 KiB {[1m[33m2[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.55321Z	    Child [1mextension worker[39m[22m:
+2026-11-13T13:39:35.55326Z	         1 asset
+2026-11-13T13:39:35.5533Z	        Entrypoint [1mextension worker[39m[22m = [1m[32mjs/gleba4/extension worker.49b8270ef7047d2da332.js[39m[22m
+2026-11-13T13:39:35.553351Z	        [yLpj] [1m(webpack)/buildin/global.js[39m[22m 472 bytes {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.553451Z	            + 25 hidden modules
+2026-11-13T13:39:35.553515Z	    Child [1mworker[39m[22m:
+2026-11-13T13:39:35.55357Z	         2 assets
+2026-11-13T13:39:35.553632Z	        Entrypoint [1mmain[39m[22m = [1m[32m55aa5ee4839a8d7be2eb.worker.js[39m[22m
+2026-11-13T13:39:35.553685Z	        [KheX] [1m./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib??ref--5-1!./src/lib/rj/rj-deserialize.worker.js + 3 modules[39m[22m 21.6 KiB {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.55373Z	            | [1m./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib??ref--5-1!./src/lib/rj/rj-deserialize.worker.js[39m[22m 4 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.553771Z	            | [1m./src/lib/rj/rj-assemble.js[39m[22m 9.69 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.553805Z	            | [1m./src/lib/rj/constants.js[39m[22m 3.6 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.553847Z	            | [1m./src/lib/rj/rj-shared.js[39m[22m 4.28 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.553904Z	        [yLpj] [1m(webpack)/buildin/global.js[39m[22m 472 bytes {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.553949Z	            + 8 hidden modules
+2026-11-13T13:39:35.554009Z	    Child [1mworker[39m[22m:
+2026-11-13T13:39:35.554067Z	         1 asset
+2026-11-13T13:39:35.554109Z	        Entrypoint [1mmain[39m[22m = [1m[32mjs/extension-worker/extension-worker.e60c8a253114c9fe5f3d.js[39m[22m
+2026-11-13T13:39:35.554147Z	        [yLpj] [1m(webpack)/buildin/global.js[39m[22m 472 bytes {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.554195Z	            + 23 hidden modules
+2026-11-13T13:39:35.554243Z	Child
+2026-11-13T13:39:35.554289Z	    Hash: [1maa9ec5b18a488467c0cd[39m[22m
+2026-11-13T13:39:35.55434Z	    Time: [1m140146[39m[22mms
+2026-11-13T13:39:35.554413Z	    Built at: 11/13/2026 [1m1:39:20 PM[39m[22m
+2026-11-13T13:39:35.554463Z	     374 assets
+2026-11-13T13:39:35.554513Z	    Entrypoint [1mscratch-gui[39m[22m = [1m[32mjs/gleba4/scratch-gui.5abd499860807cb1141e.js[39m[22m
+2026-11-13T13:39:35.554567Z	       [0] [1mexternal "react"[39m[22m 42 bytes {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.554623Z	       [2] [1m./node_modules/react-intl/lib/index.es.js + 1 modules[39m[22m 56.6 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.554673Z	           |    2 modules
+2026-11-13T13:39:35.554726Z	       [7] [1m./node_modules/react-redux/es/index.js + 14 modules[39m[22m 37.4 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.554784Z	           |    15 modules
+2026-11-13T13:39:35.554853Z	      [13] [1m./src/reducers/modals.js[39m[22m 18.4 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.554918Z	      [19] [1m./src/lib/constants/layout-constants.js[39m[22m 1.35 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.554978Z	      [24] [1m./src/reducers/menus.js[39m[22m 9.95 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555041Z	      [26] [1m./src/reducers/project-state.js[39m[22m 17.9 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.55511Z	      [37] [1m./src/lib/persistence/storage.js + 2 modules[39m[22m 13.2 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555178Z	           | [1m./src/lib/persistence/storage.js[39m[22m 2.97 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555221Z	           | [1m./src/lib/default-project/index.js[39m[22m 5.16 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555262Z	           | [1m./src/lib/default-project/project-data.js[39m[22m 5.01 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555316Z	      [43] [1m./src/reducers/alerts.js[39m[22m 6.73 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555405Z	     [118] [1m./src/reducers/mode.js[39m[22m 1.05 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555474Z	     [166] [1m./src/reducers/locales.js + 2 modules[39m[22m 37.2 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555539Z	           | [1m./src/reducers/locales.js[39m[22m 5.17 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.55562Z	           | [1m./src/lib/tw-translations/index.js[39m[22m 807 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555683Z	           |     + 1 hidden module
+2026-11-13T13:39:35.555736Z	     [226] [1m./src/reducers/gui.js + 2 modules[39m[22m 9.09 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555787Z	           | [1m./src/reducers/gui.js[39m[22m 7.55 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555846Z	           | [1m./src/reducers/vm.js[39m[22m 757 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555908Z	           | [1m./src/reducers/toast.js[39m[22m 604 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.555964Z	     [505] [1m./node_modules/scratch-paint/src/index.js + 240 modules[39m[22m 888 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.556014Z	           |    241 modules
+2026-11-13T13:39:35.55607Z	    [1664] [1m./src/lib/webview-bridge.js[39m[22m 7.88 KiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.556322Z	    [1665] [1m./src/index.js + 412 modules[39m[22m 2.15 MiB {[1m[33m5[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.556495Z	           | [1m./src/index.js[39m[22m 925 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.556628Z	           | [1m./src/containers/gui.jsx[39m[22m 15.9 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.556735Z	           | [1m./src/lib/connected-intl-provider.jsx[39m[22m 1.81 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.55682Z	           | [1m./src/containers/tw-theme-manager-hoc.jsx[39m[22m 3.43 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.556901Z	           | [1m./src/lib/fractch-live/index.js[39m[22m 5.63 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.556974Z	           | [1m./src/lib/mw/smart-save.js[39m[22m 1.89 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.557042Z	           | [1m./src/lib/mw/rwc-bridge.js[39m[22m 41.9 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.557111Z	           | [1m./src/lib/utils/data-uri-to-blob.js[39m[22m 689 bytes[1m[32m [built][39m[22m
+2026-11-13T13:39:35.557183Z	           | [1m./src/lib/utils/save-project-to-server.js[39m[22m 2.35 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.557252Z	           | [1m./src/lib/api/extension-gui.js[39m[22m 1.74 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.557315Z	           | [1m./src/lib/api/cloud-provider.js[39m[22m 8.37 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.557401Z	           | [1m./src/lib/mw-panels-store.js[39m[22m 3.74 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.557472Z	           | [1m./src/containers/costume-tab.jsx[39m[22m 14.3 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.557536Z	           | [1m./src/containers/sound-library.jsx[39m[22m 8.67 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.5576Z	           | [1m./src/containers/sound-tab.jsx[39m[22m 10.4 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.557659Z	           |     + 398 hidden modules
+2026-11-13T13:39:35.557718Z	        + 5016 hidden modules
+2026-11-13T13:39:35.557778Z	    
+2026-11-13T13:39:35.557841Z	    [1m[33mWARNING in ./src/lib/gandi-pusher.js 25:16-38
+2026-11-13T13:39:35.557902Z	    "export 'getNetworkRestoreToken' was not found in './api/restore-points'
+2026-11-13T13:39:35.557962Z	     @ ./src/components/menu-bar/menu-bar.jsx
+2026-11-13T13:39:35.558022Z	     @ ./src/components/gui/gui.jsx
+2026-11-13T13:39:35.55808Z	     @ ./src/containers/gui.jsx
+2026-11-13T13:39:35.558139Z	     @ ./src/index.js[39m[22m
+2026-11-13T13:39:35.558192Z	    
+2026-11-13T13:39:35.558253Z	    [1m[31mERROR in ./src/components/menu-bar/tw-pixel-width-calibration.jsx
+2026-11-13T13:39:35.558318Z	    Module build failed (from ./node_modules/babel-loader/lib/index.js):
+2026-11-13T13:39:35.558397Z	    SyntaxError: /opt/buildhome/repo/src/components/menu-bar/tw-pixel-width-calibration.jsx: [React Intl] Messages must be statically evaluate-able for extraction.
+2026-11-13T13:39:35.558468Z	    [0m [90m 55 |[39m                 [33m<[39m[33mFormattedMessage[39m
+2026-11-13T13:39:35.558534Z	     [90m 56 |[39m                     defaultMessage[33m=[39m{[33mSTEP_DEFAULTS[39m[i [33m-[39m [35m1[39m]}
+2026-11-13T13:39:35.558598Z	    [31m[1m>[22m[39m[90m 57 |[39m                     id[33m=[39m{[33mSTEP_IDS[39m[i [33m-[39m [35m1[39m]}
+2026-11-13T13:39:35.558663Z	     [90m    |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+2026-11-13T13:39:35.558745Z	     [90m 58 |[39m                 [33m/[39m[33m>[39m
+2026-11-13T13:39:35.558834Z	     [90m 59 |[39m             [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+2026-11-13T13:39:35.558893Z	     [90m 60 |[39m         ))}[0m
+2026-11-13T13:39:35.55894Z	        at File.buildCodeFrameError (/opt/buildhome/repo/node_modules/@babel/core/lib/transformation/file/file.js:244:12)
+2026-11-13T13:39:35.55899Z	        at NodePath.buildCodeFrameError (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/index.js:117:21)
+2026-11-13T13:39:35.559035Z	        at evaluatePath (/opt/buildhome/repo/node_modules/babel-plugin-react-intl/dist/index.js:58:16)
+2026-11-13T13:39:35.559112Z	        at getMessageDescriptorValue (/opt/buildhome/repo/node_modules/babel-plugin-react-intl/dist/index.js:74:27)
+2026-11-13T13:39:35.559178Z	        at evaluateMessageDescriptor (/opt/buildhome/repo/node_modules/babel-plugin-react-intl/dist/index.js:96:14)
+2026-11-13T13:39:35.559245Z	        at PluginPass.JSXOpeningElement (/opt/buildhome/repo/node_modules/babel-plugin-react-intl/dist/index.js:255:44)
+2026-11-13T13:39:35.559306Z	        at newFn (/opt/buildhome/repo/node_modules/@babel/traverse/lib/visitors.js:168:14)
+2026-11-13T13:39:35.559388Z	        at NodePath._call (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:50:20)
+2026-11-13T13:39:35.559459Z	        at NodePath.call (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:40:18)
+2026-11-13T13:39:35.559529Z	        at NodePath.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:87:31)
+2026-11-13T13:39:35.559594Z	        at TraversalContext.visitQueue (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:96:16)
+2026-11-13T13:39:35.559659Z	        at TraversalContext.visitSingle (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:72:19)
+2026-11-13T13:39:35.559724Z	        at TraversalContext.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:119:19)
+2026-11-13T13:39:35.559781Z	        at traverseNode (/opt/buildhome/repo/node_modules/@babel/traverse/lib/traverse-node.js:130:17)
+2026-11-13T13:39:35.559838Z	        at NodePath.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:93:52)
+2026-11-13T13:39:35.559919Z	        at TraversalContext.visitQueue (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:96:16)
+2026-11-13T13:39:35.559992Z	        at TraversalContext.visitMultiple (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:68:17)
+2026-11-13T13:39:35.560059Z	        at TraversalContext.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:117:19)
+2026-11-13T13:39:35.560298Z	        at traverseNode (/opt/buildhome/repo/node_modules/@babel/traverse/lib/traverse-node.js:130:17)
+2026-11-13T13:39:35.560496Z	        at NodePath.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:93:52)
+2026-11-13T13:39:35.560652Z	        at TraversalContext.visitQueue (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:96:16)
+2026-11-13T13:39:35.560799Z	        at TraversalContext.visitSingle (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:72:19)
+2026-11-13T13:39:35.560948Z	        at TraversalContext.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:119:19)
+2026-11-13T13:39:35.561043Z	        at traverseNode (/opt/buildhome/repo/node_modules/@babel/traverse/lib/traverse-node.js:130:17)
+2026-11-13T13:39:35.561122Z	        at NodePath.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:93:52)
+2026-11-13T13:39:35.561187Z	        at TraversalContext.visitQueue (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:96:16)
+2026-11-13T13:39:35.561235Z	        at TraversalContext.visitMultiple (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:68:17)
+2026-11-13T13:39:35.561281Z	        at TraversalContext.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:117:19)
+2026-11-13T13:39:35.561319Z	        at traverseNode (/opt/buildhome/repo/node_modules/@babel/traverse/lib/traverse-node.js:130:17)
+2026-11-13T13:39:35.561364Z	        at NodePath.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:93:52)
+2026-11-13T13:39:35.561422Z	        at TraversalContext.visitQueue (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:96:16)
+2026-11-13T13:39:35.56149Z	        at TraversalContext.visitSingle (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:72:19)
+2026-11-13T13:39:35.561546Z	        at TraversalContext.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:119:19)
+2026-11-13T13:39:35.561602Z	        at traverseNode (/opt/buildhome/repo/node_modules/@babel/traverse/lib/traverse-node.js:130:17)
+2026-11-13T13:39:35.561656Z	        at NodePath.visit (/opt/buildhome/repo/node_modules/@babel/traverse/lib/path/context.js:93:52)
+2026-11-13T13:39:35.561843Z	        at TraversalContext.visitQueue (/opt/buildhome/repo/node_modules/@babel/traverse/lib/context.js:96:16)
+2026-11-13T13:39:35.561934Z	     @ ./src/components/menu-bar/tw-theme-pixel.jsx 8:0-78 714:19-45
+2026-11-13T13:39:35.562002Z	     @ ./src/components/menu-bar/tw-theme-custom.jsx
+2026-11-13T13:39:35.562066Z	     @ ./src/components/menu-bar/settings-menu.jsx
+2026-11-13T13:39:35.562131Z	     @ ./src/components/menu-bar/menu-bar.jsx
+2026-11-13T13:39:35.562192Z	     @ ./src/components/gui/gui.jsx
+2026-11-13T13:39:35.562258Z	     @ ./src/containers/gui.jsx
+2026-11-13T13:39:35.562323Z	     @ ./src/index.js[39m[22m
+2026-11-13T13:39:35.562411Z	    Child [1mextension worker[39m[22m:
+2026-11-13T13:39:35.562483Z	         1 asset
+2026-11-13T13:39:35.562545Z	        Entrypoint [1mextension worker[39m[22m = [1m[32mjs/gleba4/extension worker.17df14844478f083dc5b.js[39m[22m
+2026-11-13T13:39:35.562617Z	        [1] [1m(webpack)/buildin/global.js[39m[22m 472 bytes {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.562683Z	            + 25 hidden modules
+2026-11-13T13:39:35.562744Z	    Child [1mworker[39m[22m:
+2026-11-13T13:39:35.562811Z	         1 asset
+2026-11-13T13:39:35.562874Z	        Entrypoint [1mmain[39m[22m = [1m[32mjs/extension-worker/extension-worker.69c65c0f7b75004e4ba8.js[39m[22m
+2026-11-13T13:39:35.562939Z	        [8] [1m(webpack)/buildin/global.js[39m[22m 472 bytes {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.563Z	            + 23 hidden modules
+2026-11-13T13:39:35.563055Z	    Child [1mworker[39m[22m:
+2026-11-13T13:39:35.563117Z	         2 assets
+2026-11-13T13:39:35.563271Z	        Entrypoint [1mmain[39m[22m = [1m[32mb52cdaacee10478ac6a6.worker.js[39m[22m
+2026-11-13T13:39:35.563435Z	        [0] [1m(webpack)/buildin/global.js[39m[22m 472 bytes {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.563523Z	        [9] [1m./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib??ref--5-1!./src/lib/rj/rj-deserialize.worker.js + 3 modules[39m[22m 21.6 KiB {[1m[33m0[39m[22m}[1m[32m [built][39m[22m
+2026-11-13T13:39:35.563593Z	            | [1m./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib??ref--5-1!./src/lib/rj/rj-deserialize.worker.js[39m[22m 4 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.563658Z	            | [1m./src/lib/rj/rj-assemble.js[39m[22m 9.69 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.563746Z	            | [1m./src/lib/rj/constants.js[39m[22m 3.6 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.563812Z	            | [1m./src/lib/rj/rj-shared.js[39m[22m 4.28 KiB[1m[32m [built][39m[22m
+2026-11-13T13:39:35.563875Z	            + 8 hidden modules
+2026-11-13T13:39:35.795088Z	Failed: Error while executing user command. Exited with error code: 2
+2026-11-13T13:39:35.804542Z	Failed: build command exited with code: 1
+2026-11-13T13:39:36.709924Z	Failed: error occurred while running build command

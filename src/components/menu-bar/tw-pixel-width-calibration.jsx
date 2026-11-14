@@ -10,14 +10,6 @@ import {
 } from '../../lib/themes/pixel-width-calibration.js';
 import styles from './settings-menu.css';
 
-/* 所有 message id 均为完整字面量，确保 l10n 提取与运行期查找可靠 */
-const STEP_IDS = [
-    'tw.customThemes.pixelCreator.widthCalib.step1',
-    'tw.customThemes.pixelCreator.widthCalib.step2',
-    'tw.customThemes.pixelCreator.widthCalib.step3'
-];
-const STEP_DEFAULTS = ['1. 大致中心', '2. 微调设置', '3. 完成配置校准'];
-
 const STEP_SIZE_MESSAGES = {
     1: {defaultMessage: '1 位', description: 'Step size option: 1 column', id: 'tw.customThemes.pixelCreator.widthCalib.stepSize1'},
     3: {defaultMessage: '3 位', description: 'Step size option: 3 columns', id: 'tw.customThemes.pixelCreator.widthCalib.stepSize3'},
@@ -35,29 +27,39 @@ const ARROW_MESSAGES = {
     right: {defaultMessage: '向右箭头', description: 'Right arrow aria label', id: 'tw.customThemes.pixelCreator.widthCalib.arrowRight'}
 };
 
-/** 三步进度条 */
+/** 单步样式 */
+const stepCellStyle = (step, index) => ({
+    flex: 1,
+    textAlign: 'center',
+    fontSize: '12px',
+    padding: '6px 4px',
+    borderRadius: '4px',
+    background: step === index ? '#4c97ff' : (step > index ? '#d6e6ff' : '#f0f0f0'),
+    color: step === index ? '#fff' : '#555',
+    fontWeight: step === index ? 'bold' : 'normal'
+});
+
+/** 三步进度条：每个 FormattedMessage 必须使用字面量以通过 babel-plugin-react-intl 静态提取 */
 const StepProgress = ({step}) => (
     <div style={{display: 'flex', gap: '8px', marginTop: '20px', borderTop: '1px solid #e0e0e0', paddingTop: '12px'}}>
-        {[1, 2, 3].map(i => (
-            <div
-                key={i}
-                style={{
-                    flex: 1,
-                    textAlign: 'center',
-                    fontSize: '12px',
-                    padding: '6px 4px',
-                    borderRadius: '4px',
-                    background: step === i ? '#4c97ff' : (step > i ? '#d6e6ff' : '#f0f0f0'),
-                    color: step === i ? '#fff' : '#555',
-                    fontWeight: step === i ? 'bold' : 'normal'
-                }}
-            >
-                <FormattedMessage
-                    defaultMessage={STEP_DEFAULTS[i - 1]}
-                    id={STEP_IDS[i - 1]}
-                />
-            </div>
-        ))}
+        <div style={stepCellStyle(step, 1)}>
+            <FormattedMessage
+                defaultMessage="1. 大致中心"
+                id="tw.customThemes.pixelCreator.widthCalib.step1"
+            />
+        </div>
+        <div style={stepCellStyle(step, 2)}>
+            <FormattedMessage
+                defaultMessage="2. 微调设置"
+                id="tw.customThemes.pixelCreator.widthCalib.step2"
+            />
+        </div>
+        <div style={stepCellStyle(step, 3)}>
+            <FormattedMessage
+                defaultMessage="3. 完成配置校准"
+                id="tw.customThemes.pixelCreator.widthCalib.step3"
+            />
+        </div>
     </div>
 );
 
