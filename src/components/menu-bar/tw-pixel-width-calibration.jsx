@@ -298,6 +298,7 @@ const WidthCalibrationApp = injectIntl(props => {
                         <p style={{fontSize: '12px', color: '#777', textAlign: 'center', margin: 0}}>
                             <FormattedMessage
                                 defaultMessage="当前全部列数：{width}"
+                                description="Current total column count"
                                 id="tw.customThemes.pixelCreator.widthCalib.currentWidth"
                                 values={{width}}
                             />
@@ -321,6 +322,7 @@ const WidthCalibrationApp = injectIntl(props => {
                         <p style={{fontSize: '12px', color: '#777', margin: 0}}>
                             <FormattedMessage
                                 defaultMessage="当前全部列数：{width}"
+                                description="Current total column count"
                                 id="tw.customThemes.pixelCreator.widthCalib.currentWidth"
                                 values={{width}}
                             />
