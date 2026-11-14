@@ -22,48 +22,6 @@ const COPY_MESSAGES = {
     copied: {defaultMessage: '已复制', description: 'Copied confirmation', id: 'tw.customThemes.pixelCreator.widthCalib.copied'}
 };
 
-/**
- * 窗口内标尺预览：调用方未提供主题预览回调时（设置页 / 警告框入口），
- * 直接在窗口里按比例画出校准标尺，保证三步校准仍能肉眼观察中心位置。
- * 只渲染连续颜色段（最多 5 段），不改动 GUI 主题，也不依赖外部回调。
- */
-const RulerPreview = ({width}) => {
-    const row = buildCalibrationPixelData(width)[0] || [];
-    const segments = [];
-    for (const color of row) {
-        const last = segments[segments.length - 1];
-        if (last && last.color === color) {
-            last.count += 1;
-        } else {
-            segments.push({color, count: 1});
-        }
-    }
-    return (
-        <div
-            style={{
-                display: 'flex',
-                width: '100%',
-                height: '32px',
-                margin: '0 0 14px',
-                border: '1px solid rgba(128, 128, 128, 0.4)',
-                borderRadius: '4px',
-                overflow: 'hidden'
-            }}
-        >
-            {segments.map((segment, index) => (
-                <div
-                    key={index}
-                    style={{flex: segment.count, background: segment.color || 'transparent'}}
-                />
-            ))}
-        </div>
-    );
-};
-
-RulerPreview.propTypes = {
-    width: PropTypes.number
-};
-
 const ARROW_MESSAGES = {
     left: {defaultMessage: '向左箭头', description: 'Left arrow aria label', id: 'tw.customThemes.pixelCreator.widthCalib.arrowLeft'},
     right: {defaultMessage: '向右箭头', description: 'Right arrow aria label', id: 'tw.customThemes.pixelCreator.widthCalib.arrowRight'}
@@ -370,9 +328,6 @@ const WidthCalibrationApp = injectIntl(props => {
                             />
                         </p>
                     </div>
-                )}
-                {typeof onPreviewCalibration !== 'function' && (step === 1 || step === 2) && (
-                    <RulerPreview width={width} />
                 )}
             </div>
 

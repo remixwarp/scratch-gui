@@ -110,6 +110,12 @@ const PixelEditorApp = injectIntl(props => {
         return {width: preview.width, height: preview.height};
     });
 
+    // 灵活编码的预览位置：左侧 / 中间 / 右侧
+    // 必须在下面 useEffect 之前声明：依赖数组会读取它，否则触发 TDZ 报错导致整个面板渲染失败。
+    const [previewPosition, setPreviewPosition] = React.useState(
+        importedData?.previewPosition || PIXEL_POSITION_CENTER
+    );
+
     // 导入「灵活编码」主题后，按创建面板当前宽度自适应左右填充与图片位置（居中/偏左/偏右同理）。
     // 用户一旦手动绘制 / 插入图片 / 清空画布，就停止自动重排，避免覆盖编辑结果。
     const autoLayoutRef = React.useRef(!!importedData?.needsReflow);
@@ -129,10 +135,6 @@ const PixelEditorApp = injectIntl(props => {
     // 导出 JSON 时像素数据的编码格式：逐个记录 / 灵活记录
     const [encodingFormat, setEncodingFormat] = React.useState(
         importedData?.encodingFormat || PIXEL_ENCODING_SEGMENTS
-    );
-    // 灵活编码的预览位置：左侧 / 中间 / 右侧
-    const [previewPosition, setPreviewPosition] = React.useState(
-        importedData?.previewPosition || PIXEL_POSITION_CENTER
     );
 
     // 添加滚动事件监听器

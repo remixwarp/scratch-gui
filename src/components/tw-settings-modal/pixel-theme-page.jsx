@@ -134,29 +134,38 @@ class PixelThemePage extends React.Component {
                             values={{reference}}
                         />
                     </p>
-                    <button
-                        type="button"
-                        className={styles.button}
-                        onClick={this.handleUseReference}
-                        style={{marginRight: '8px'}}
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '10px',
+                            marginTop: '10px',
+                            marginBottom: '4px'
+                        }}
                     >
-                        <FormattedMessage
-                            defaultMessage="使用参考值"
-                            description="Apply the unstable reference value as preview width"
-                            id="tw.settingsModal.pixelTheme.useReference"
-                        />
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.button}
-                        onClick={this.handleManualWidth}
-                    >
-                        <FormattedMessage
-                            defaultMessage="手动设置宽度"
-                            description="Open the manual width calibration window from settings"
-                            id="tw.settingsModal.pixelTheme.manualWidth"
-                        />
-                    </button>
+                        <button
+                            type="button"
+                            className={styles.button}
+                            onClick={this.handleUseReference}
+                        >
+                            <FormattedMessage
+                                defaultMessage="使用参考值"
+                                description="Apply the unstable reference value as preview width"
+                                id="tw.settingsModal.pixelTheme.useReference"
+                            />
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.button}
+                            onClick={this.handleManualWidth}
+                        >
+                            <FormattedMessage
+                                defaultMessage="手动设置宽度"
+                                description="Open the manual width calibration window from settings"
+                                id="tw.settingsModal.pixelTheme.manualWidth"
+                            />
+                        </button>
+                    </div>
 
                     <p className={styles.detail} style={{marginTop: '16px'}}>
                         {configured ? (
