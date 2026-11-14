@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 
 import Box from '../box/box.jsx';
@@ -12,6 +12,7 @@ import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import {openWarpThemeModal, closeSettingsModal} from '../../reducers/modals.js';
 import showAlert from '../../addons/window-system/alert';
+import {maybeWarnPixelTheme} from '../menu-bar/tw-pixel-width-warning.jsx';
 import GradientBuilder from './gradient-builder.jsx';
 
 import styles from './settings-modal.css';
@@ -276,6 +277,8 @@ class UnconnectedCustomThemesPage extends React.Component {
                         {pixelSize: 2}
                     );
                     await showAlert(`图片 "${file.name}" 已成功导入为像素主题 "${themeName}"`);
+                    const createdThemes = customThemeManager.getAllThemes();
+                    maybeWarnPixelTheme(createdThemes[createdThemes.length - 1], this.props.intl);
                 } catch (error) {
                     await showAlert(`Failed to import image: ${error.message}`);
                 }
@@ -298,6 +301,8 @@ class UnconnectedCustomThemesPage extends React.Component {
                         message += `Errors: ${results.errors.length}\n${results.errors.join('\n')}`;
                     }
                     await showAlert(message);
+                    const importedThemes = customThemeManager.getAllThemes();
+                    maybeWarnPixelTheme(importedThemes[importedThemes.length - 1], this.props.intl);
                 } catch (error) {
                     await showAlert(`Failed to import themes: ${error.message}`);
                 }
@@ -558,10 +563,11 @@ const PageHeaderCustomThemes = () => (
 UnconnectedCustomThemesPage.propTypes = {
     theme: PropTypes.instanceOf(Theme),
     onChangeTheme: PropTypes.func,
-    onOpenWarpThemeMarketplace: PropTypes.func
+    onOpenWarpThemeMarketplace: PropTypes.func,
+    intl: intlShape.isRequired
 };
 
-export default connect(
+export default injectIntl(connect(
     state => ({
         theme: state.scratchGui.theme.theme
     }),
@@ -575,4 +581,4 @@ export default connect(
             dispatch(openWarpThemeModal());
         }
     })
-)(UnconnectedCustomThemesPage);
+)(UnconnectedCustomThemesPage));

@@ -3,8 +3,14 @@ import PropTypes from 'prop-types';
 import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import classNames from 'classnames';
 import {PixelUtils, customThemeManager} from '../../lib/themes/custom-themes';
-import {PIXEL_ENCODING_FULL, PIXEL_ENCODING_SEGMENTS} from '../../lib/themes/pixel-encoding.js';
+import {
+    PIXEL_ENCODING_FULL, PIXEL_ENCODING_SEGMENTS,
+    PIXEL_POSITION_LEFT, PIXEL_POSITION_CENTER, PIXEL_POSITION_RIGHT
+} from '../../lib/themes/pixel-encoding.js';
 import {reflowPixelDataToWidth} from '../../lib/themes/pixel-width-calibration.js';
+import {
+    getPixelPreviewSettings, setPixelPreviewSettings
+} from '../../lib/themes/pixel-preview-settings.js';
 import {openWidthCalibrationWindow} from './tw-pixel-width-calibration.jsx';
 import {applyTheme} from '../../lib/themes/themePersistance';
 import {setTheme} from '../../reducers/theme';
@@ -57,6 +63,9 @@ const PixelEditorApp = injectIntl(props => {
                             pixelData: PixelUtils.decodePixelData(theme.accent.pixelData),
                             encodingFormat: theme.accent.pixelEncoding ||
                                 (Array.isArray(theme.accent.pixelData) ? PIXEL_ENCODING_FULL : PIXEL_ENCODING_SEGMENTS),
+                            previewPosition: theme.accent.pixelPosition ||
+                                (theme.accent.pixelData && theme.accent.pixelData.position) ||
+                                PIXEL_POSITION_CENTER,
                             // 灵活编码（图片放在中间）的主题：导入后按当前面板宽度自适应
                             needsReflow: theme.accent.pixelEncoding === PIXEL_ENCODING_SEGMENTS ||
                                 !Array.isArray(theme.accent.pixelData),
@@ -79,11 +88,12 @@ const PixelEditorApp = injectIntl(props => {
     const [name, setName] = React.useState(importedData?.name || props.initialName || '');
     const [description, setDescription] = React.useState(importedData?.description || props.initialDescription || '');
     const [pixelData, setPixelData] = React.useState(importedData?.pixelData || props.initialPixelData || (() => {
-        // 初始化像素数据为背景色
+        // 初始画布尺寸跟随「设置 → 主题 → 像素主题」里的当前设备预览宽高
+        const preview = getPixelPreviewSettings();
         const data = [];
-        for (let y = 0; y < 24; y++) {
+        for (let y = 0; y < preview.height; y++) {
             const row = [];
-            for (let x = 0; x < 900; x++) {
+            for (let x = 0; x < preview.width; x++) {
                 row.push('#75c1c4');
             }
             data.push(row);
@@ -95,15 +105,18 @@ const PixelEditorApp = injectIntl(props => {
     const [backgroundColor, setBackgroundColor] = React.useState('#75c1c4');
     const [pixelSize, setPixelSize] = React.useState(props.initialPixelSize || 10);
     const [isPreviewActive, setIsPreviewActive] = React.useState(false);
-    const [gridSize, setGridSize] = React.useState({width: 900, height: 24});
+    const [gridSize, setGridSize] = React.useState(() => {
+        const preview = getPixelPreviewSettings();
+        return {width: preview.width, height: preview.height};
+    });
 
     // 导入「灵活编码」主题后，按创建面板当前宽度自适应左右填充与图片位置（居中/偏左/偏右同理）。
     // 用户一旦手动绘制 / 插入图片 / 清空画布，就停止自动重排，避免覆盖编辑结果。
     const autoLayoutRef = React.useRef(!!importedData?.needsReflow);
     React.useEffect(() => {
         if (!autoLayoutRef.current) return;
-        setPixelData(prev => reflowPixelDataToWidth(prev, gridSize.width));
-    }, [gridSize.width]);
+        setPixelData(prev => reflowPixelDataToWidth(prev, gridSize.width, previewPosition));
+    }, [gridSize.width, previewPosition]);
     const [isDrawing, setIsDrawing] = React.useState(false);
     const [scrollOffset, setScrollOffset] = React.useState({x: 0, y: 0});
     const [showImagePreview, setShowImagePreview] = React.useState(false);
@@ -116,6 +129,10 @@ const PixelEditorApp = injectIntl(props => {
     // 导出 JSON 时像素数据的编码格式：逐个记录 / 灵活记录
     const [encodingFormat, setEncodingFormat] = React.useState(
         importedData?.encodingFormat || PIXEL_ENCODING_SEGMENTS
+    );
+    // 灵活编码的预览位置：左侧 / 中间 / 右侧
+    const [previewPosition, setPreviewPosition] = React.useState(
+        importedData?.previewPosition || PIXEL_POSITION_CENTER
     );
 
     // 添加滚动事件监听器
@@ -318,9 +335,9 @@ const PixelEditorApp = injectIntl(props => {
     const handleKeyDown = React.useCallback(e => {
         if (e.key === 'Escape' && props.onCancel) props.onCancel();
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && props.onCreate) {
-            props.onCreate(name, description, pixelData, primaryColor, encodingFormat);
+            props.onCreate(name, description, pixelData, primaryColor, encodingFormat, previewPosition);
         }
-    }, [name, description, pixelData, primaryColor, props.onCancel, props.onCreate]);
+    }, [name, description, pixelData, primaryColor, previewPosition, props.onCancel, props.onCreate]);
 
     React.useEffect(() => {
         document.addEventListener('keydown', handleKeyDown);
@@ -421,7 +438,7 @@ const PixelEditorApp = injectIntl(props => {
                                     setShowExportDialog(false);
                                     // 导出为JSON：按「网格设置」里选择的编码格式写像素数据
                                     const pixelAccent = PixelUtils.createPixelAccent(pixelData, primaryColor,
-                                        {pixelSize: 2, encoding: encodingFormat});
+                                        {pixelSize: 2, encoding: encodingFormat, position: previewPosition});
                                     const themeData = {
                                         uuid: `custom-theme-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                                         createdAt: new Date().toISOString(),
@@ -429,8 +446,10 @@ const PixelEditorApp = injectIntl(props => {
                                         description,
                                         author: 'User',
                                         accent: {
-                                            pixelData: PixelUtils.encodePixelData(pixelData, encodingFormat),
+                                            pixelData: PixelUtils.encodePixelData(pixelData, encodingFormat,
+                                                {position: previewPosition}),
                                             pixelEncoding: encodingFormat,
+                                            pixelPosition: previewPosition,
                                             pixelSize: 2,
                                             primaryColor: primaryColor,
                                             guiColors: pixelAccent.guiColors,
@@ -697,6 +716,15 @@ const PixelEditorApp = injectIntl(props => {
                                 onChange={e => handleResizeGrid(parseInt(e.target.value), gridSize.height)}
                                 className={styles.gradientInput}
                             />
+                            {encodingFormat === PIXEL_ENCODING_SEGMENTS && (
+                                <p style={{fontSize: '11px', color: '#999', margin: '4px 0 0'}}>
+                                    <FormattedMessage
+                                        defaultMessage="灵活编码模式下，该宽度仅用于当前设备的预览。"
+                                        description="Hint under grid width when flexible encoding is selected"
+                                        id="tw.customThemes.pixelCreator.flexibleWidthHint"
+                                    />
+                                </p>
+                            )}
                         </div>
                         <div className={styles.formField}>
                             <button
@@ -704,7 +732,11 @@ const PixelEditorApp = injectIntl(props => {
                                 className={styles.paletteBtn}
                                 onClick={() => openWidthCalibrationWindow({
                                     intl,
-                                    onApplyWidth: w => handleResizeGrid(w, gridSize.height),
+                                    onApplyWidth: w => {
+                                        handleResizeGrid(w, gridSize.height);
+                                        // 最终值同时写入「设置 → 主题 → 像素主题」并标记为已配置
+                                        setPixelPreviewSettings({width: w, configured: true});
+                                    },
                                     onPreviewCalibration: props.onCalibrationPreview,
                                     onRestoreTheme: props.onCalibrationRestore
                                 })}
@@ -761,6 +793,46 @@ const PixelEditorApp = injectIntl(props => {
                                         defaultMessage: '灵活记录',
                                         description: 'Flexible pixel encoding option',
                                         id: 'tw.customThemes.pixelCreator.encodingSegments'
+                                    })}
+                                </option>
+                            </select>
+                        </div>
+                        <div className={styles.formField}>
+                            <label>
+                                <FormattedMessage
+                                    defaultMessage="预览时的位置"
+                                    description="Label of the preview position selector in grid settings"
+                                    id="tw.customThemes.pixelCreator.previewPosition"
+                                />
+                            </label>
+                            <select
+                                value={previewPosition}
+                                onChange={e => setPreviewPosition(e.target.value)}
+                                className={styles.gradientInput}
+                                aria-label={intl.formatMessage({
+                                    defaultMessage: '预览时的位置',
+                                    id: 'tw.customThemes.pixelCreator.previewPosition'
+                                })}
+                            >
+                                <option value={PIXEL_POSITION_LEFT}>
+                                    {intl.formatMessage({
+                                        defaultMessage: '左侧',
+                                        description: 'Preview position: left',
+                                        id: 'tw.customThemes.pixelCreator.previewPositionLeft'
+                                    })}
+                                </option>
+                                <option value={PIXEL_POSITION_CENTER}>
+                                    {intl.formatMessage({
+                                        defaultMessage: '中间',
+                                        description: 'Preview position: center',
+                                        id: 'tw.customThemes.pixelCreator.previewPositionCenter'
+                                    })}
+                                </option>
+                                <option value={PIXEL_POSITION_RIGHT}>
+                                    {intl.formatMessage({
+                                        defaultMessage: '右侧',
+                                        description: 'Preview position: right',
+                                        id: 'tw.customThemes.pixelCreator.previewPositionRight'
                                     })}
                                 </option>
                             </select>
@@ -1036,7 +1108,7 @@ const PixelEditorApp = injectIntl(props => {
                 <button
                     className={classNames(styles.footerBtn, styles.footerBtnPrimary)}
                     onClick={() => {
-                        if (props.onCreate) props.onCreate(name, description, pixelData, primaryColor, encodingFormat);
+                        if (props.onCreate) props.onCreate(name, description, pixelData, primaryColor, encodingFormat, previewPosition);
                     }}
                     disabled={!name.trim()}
                 >

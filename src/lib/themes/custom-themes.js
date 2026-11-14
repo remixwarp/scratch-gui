@@ -9,8 +9,11 @@ import {
     decodePixelData as decodePixelThemeData,
     isSegmentsEncoded,
     getPixelEncoding,
-    PIXEL_ENCODING_FULL
+    PIXEL_ENCODING_FULL,
+    PIXEL_POSITION_CENTER,
+    PIXEL_POSITIONS
 } from './pixel-encoding.js';
+import {decodePixelDataForPreview} from './pixel-preview-settings.js';
 
 const CUSTOM_THEMES_STORAGE_KEY = 'tw:custom-themes';
 const MAX_CUSTOM_THEMES = 50; // Reasonable limit to prevent storage issues
@@ -336,8 +339,8 @@ class PixelUtils {
      * @param {string} encoding 'full' | 'segments'
      * @returns {Array|object}
      */
-    static encodePixelData(pixelData, encoding = PIXEL_ENCODING_FULL) {
-        return encodePixelThemeData(pixelData, encoding);
+    static encodePixelData(pixelData, encoding = PIXEL_ENCODING_FULL, options = {}) {
+        return encodePixelThemeData(pixelData, encoding, options);
     }
 
     /**
@@ -345,8 +348,8 @@ class PixelUtils {
      * @param {Array|object} data
      * @returns {Array}
      */
-    static decodePixelData(data) {
-        return decodePixelThemeData(data);
+    static decodePixelData(data, options = {}) {
+        return decodePixelThemeData(data, options);
     }
 
     /**
@@ -405,7 +408,10 @@ class PixelUtils {
             },
             pixelData: pixelData,
             pixelSize: pixelSize,
-            encoding: options.encoding || PIXEL_ENCODING_FULL
+            encoding: options.encoding || PIXEL_ENCODING_FULL,
+            // 灵活编码的预览位置（左侧 / 中间 / 右侧）
+            position: PIXEL_POSITIONS.includes(options.position) ?
+                options.position : PIXEL_POSITION_CENTER
         };
     }
 
@@ -711,8 +717,11 @@ class CustomTheme extends Theme {
             // localStorage 持久化调用 export() 不带参数，仍写入完整二维数组。
             if (options.encodePixelData) {
                 const encoding = getPixelEncoding(null, this.customAccent.encoding);
-                accentExport.pixelData = encodePixelThemeData(pixelData, encoding);
+                const position = PIXEL_POSITIONS.includes(this.customAccent.position) ?
+                    this.customAccent.position : PIXEL_POSITION_CENTER;
+                accentExport.pixelData = encodePixelThemeData(pixelData, encoding, {position});
                 accentExport.pixelEncoding = encoding;
+                accentExport.pixelPosition = position;
             }
         } else {
             // Otherwise export as gradient
@@ -909,13 +918,19 @@ class CustomTheme extends Theme {
             // 像素主题：兼容「逐个记录」二维数组与「灵活记录」两种导出格式，
             // 统一解码成完整二维数组后再生成 accent（内部始终用二维数组）。
             const rawPixelData = accentToUse.pixelData;
-            const pixelData = decodePixelThemeData(rawPixelData);
+            // 灵活编码主题按当前设备预览宽度 / 位置自适应；逐个记录不受影响
+            const pixelData = decodePixelDataForPreview(rawPixelData);
             const encoding = getPixelEncoding(rawPixelData, accentToUse.pixelEncoding);
+            const rawPosition = accentToUse.pixelPosition ||
+                (rawPixelData && rawPixelData.position);
+            const position = PIXEL_POSITIONS.includes(rawPosition) ?
+                rawPosition : PIXEL_POSITION_CENTER;
             const primaryColor = accentToUse.primaryColor ||
                 (accentToUse.guiColors && accentToUse.guiColors['motion-primary']) ||
                 '#ff6b6b';
             const pixelSize = accentToUse.pixelSize || 2;
-            accentToUse = PixelUtils.createPixelAccent(pixelData, primaryColor, {pixelSize, encoding});
+            accentToUse = PixelUtils.createPixelAccent(pixelData, primaryColor,
+                {pixelSize, encoding, position});
         } else if (accentToUse && typeof accentToUse === 'object' && Array.isArray(accentToUse.colors)) {
             // 普通渐变主题
             const colors = accentToUse.colors;

@@ -31,12 +31,40 @@
  *     展开时逐列还原，完全无损。
  *   - 只有最后一段可以省略列数；中间的 solid 段一律显式记录列数。
  *   - w / h 只是画布尺寸两个整数，替代旧二维数组里隐含的行列长度。
+ *
+ * 灵活记录的结构（v3，按「预览位置」记录，选中预览位置后启用）：
+ *   {
+ *     encoding: 'segments', v: 3,
+ *     w: 900, h: 24,                 // 导出时的画布尺寸
+ *     position: 'left'|'center'|'right',
+ *     fill: '#75c1c4',               // 相同颜色列（外侧填充）的颜色
+ *     padding: ['right'],            // 相同颜色列出现在哪一个部分
+ *     content: [                     // 「不同颜色的列」构成的图案（含图案内部间隔）
+ *       ['p', [col, col, ...]],
+ *       ['s', '#75c1c4', 60]         // 图案中间的相同颜色列：必须写列数
+ *     ],
+ *     pad: 388                       // 仅 position='center'：左右单侧填充列数
+ *   }
+ *   - 预览位置：左侧 → 图案移到最左、右侧补相同颜色列；右侧 → 左侧补；
+ *     中间 → 左右两侧同时补相同颜色列。
+ *   - 填充列数 = 当前预览宽度 − 图案宽度；中间位置再除以 2 四舍五入。
+ *   - 只要相同颜色列不在中间（左侧 / 右侧单侧填充），都不写列数；
+ *     中间的相同颜色列（图案内部间隔、以及居中时左右两侧）必须写列数。
+ *   - v2 / full / 早期三段式对象仍可正常解码，保证旧主题兼容。
  */
 
 export const PIXEL_ENCODING_FULL = 'full';
 export const PIXEL_ENCODING_SEGMENTS = 'segments';
 
+export const PIXEL_POSITION_LEFT = 'left';
+export const PIXEL_POSITION_CENTER = 'center';
+export const PIXEL_POSITION_RIGHT = 'right';
+export const PIXEL_POSITIONS = [
+    PIXEL_POSITION_LEFT, PIXEL_POSITION_CENTER, PIXEL_POSITION_RIGHT
+];
+
 const SEGMENTS_VERSION = 2;
+const SEGMENTS_VERSION_V3 = 3;
 
 /** 判断一个值是否可以作为像素颜色（颜色字符串或透明占位 null） */
 const isPixelColor = value => value === null || typeof value === 'string';
@@ -46,16 +74,22 @@ const toCount = value => {
     return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
 };
 
+const isSegmentsObject = data => !!data && !Array.isArray(data) &&
+    typeof data === 'object' && data.encoding === PIXEL_ENCODING_SEGMENTS;
+
 /** 是否为 v2「灵活记录」对象 */
-const isV2 = data => !!data && !Array.isArray(data) && typeof data === 'object' &&
-    data.encoding === PIXEL_ENCODING_SEGMENTS && Array.isArray(data.segs);
+const isV2 = data => isSegmentsObject(data) && data.v !== SEGMENTS_VERSION_V3 &&
+    Array.isArray(data.segs);
+
+/** 是否为 v3「按预览位置」对象 */
+const isV3 = data => isSegmentsObject(data) && data.v === SEGMENTS_VERSION_V3 &&
+    Array.isArray(data.content);
 
 /** 是否为早期实验性的三段式对象（未正式发布，仍兼容以便读取旧草稿） */
-const isLegacyRows = data => !!data && !Array.isArray(data) && typeof data === 'object' &&
-    data.encoding === PIXEL_ENCODING_SEGMENTS && Array.isArray(data.rows);
+const isLegacyRows = data => isSegmentsObject(data) && Array.isArray(data.rows);
 
 /** 判断数据是否为「灵活记录」编码对象（而非逐个记录的二维数组） */
-export const isSegmentsEncoded = data => isV2(data) || isLegacyRows(data);
+export const isSegmentsEncoded = data => isV2(data) || isV3(data) || isLegacyRows(data);
 
 /** 取第 x 列（长度 h 的数组），行缺失时补 null */
 const columnAt = (pixelData, x, h) => {
@@ -78,18 +112,119 @@ const isSolidColumn = col => {
 };
 
 /**
+ * 把完整二维数组按「预览位置」编码成 v3 灵活记录对象。
+ * 只读取最终画布的像素列，不依赖导入了几张图片等元信息。
+ * @param {Array<Array<string|null>>} pixelData 完整二维数组
+ * @param {object} options {position: 'left'|'center'|'right'}
+ * @returns {object} v3 编码对象
+ */
+const encodeV3 = (pixelData, options) => {
+    const position = PIXEL_POSITIONS.includes(options.position) ?
+        options.position : PIXEL_POSITION_CENTER;
+    const h = pixelData.length;
+    let w = 0;
+    for (const row of pixelData) {
+        if (Array.isArray(row) && row.length > w) w = row.length;
+    }
+
+    const columns = [];
+    const solidFlags = [];
+    for (let x = 0; x < w; x++) {
+        const col = columnAt(pixelData, x, h);
+        columns.push(col);
+        solidFlags.push(isSolidColumn(col));
+    }
+
+    // 图案 = 第一个到最后一个「不同颜色的列」；外侧整列同色都是相同颜色列
+    let first = -1;
+    let last = -1;
+    for (let x = 0; x < w; x++) {
+        if (!solidFlags[x]) {
+            if (first < 0) first = x;
+            last = x + 1;
+        }
+    }
+
+    // 整张画布都是相同颜色列：没有图案，保留一个显式列数的纯色段
+    if (first < 0) {
+        const color = columns.length ? columns[0][0] : null;
+        return {
+            encoding: PIXEL_ENCODING_SEGMENTS,
+            v: SEGMENTS_VERSION_V3,
+            w,
+            h,
+            position,
+            fill: isPixelColor(color) ? color : null,
+            padding: [PIXEL_POSITION_LEFT, PIXEL_POSITION_RIGHT],
+            content: [['s', isPixelColor(color) ? color : null, w]]
+        };
+    }
+
+    // undefined 表示这一侧没有相同颜色列；null 是合法的「透明格」颜色，
+    // 两者不能混用，否则会把填充色误写成透明。
+    const fillLeft = first > 0 ? columns[first - 1][0] : undefined;
+    const fillRight = last < w ? columns[last][0] : undefined;
+    const fill = fillLeft !== undefined ? fillLeft :
+        (fillRight !== undefined ? fillRight : null);
+    const padding = [];
+    if (first > 0) padding.push(PIXEL_POSITION_LEFT);
+    if (last < w) padding.push(PIXEL_POSITION_RIGHT);
+
+    // 图案内部：整列同色（含多图片之间的间隔列）显式写列数；
+    // 不同颜色的列逐格记录。图案段的最后一段若是纯色也必须写列数，
+    // 因为它不是整张画布的尾部，宽度不能靠 w 推断。
+    const content = [];
+    for (let x = first; x < last; x++) {
+        const lastSeg = content[content.length - 1];
+        if (solidFlags[x]) {
+            const color = isPixelColor(columns[x][0]) ? columns[x][0] : null;
+            if (lastSeg && lastSeg[0] === 's' && lastSeg[1] === color) {
+                lastSeg[2] += 1;
+            } else {
+                content.push(['s', color, 1]);
+            }
+        } else if (lastSeg && lastSeg[0] === 'p') {
+            lastSeg[1].push(columns[x]);
+        } else {
+            content.push(['p', [columns[x]]]);
+        }
+    }
+
+    const contentWidth = last - first;
+    const padCount = Math.max(0, w - contentWidth);
+    const result = {
+        encoding: PIXEL_ENCODING_SEGMENTS,
+        v: SEGMENTS_VERSION_V3,
+        w,
+        h,
+        position,
+        fill,
+        padding,
+        content
+    };
+    // 「中间」位置左右两侧都有相同颜色列，必须写上单侧列数；
+    // 左侧 / 右侧只有单侧填充，不写列数（解码时按本机预览宽度自动推算）。
+    if (position === PIXEL_POSITION_CENTER) result.pad = Math.round(padCount / 2);
+    return result;
+};
+
+/**
  * 把完整二维数组编码成指定格式。
  * @param {Array<Array<string|null>>} pixelData 完整二维数组 [行][列]
  * @param {string} encoding 'full' | 'segments'
+ * @param {object} [options] 传入 position 时启用 v3「按预览位置」编码
  * @returns {Array|object} 编码结果；full 时原样返回二维数组
  */
-export const encodePixelData = (pixelData, encoding = PIXEL_ENCODING_FULL) => {
+export const encodePixelData = (pixelData, encoding = PIXEL_ENCODING_FULL, options = {}) => {
     if (!Array.isArray(pixelData)) {
         // 已经是编码对象或非法数据，原样返回，由调用方处理
         return pixelData;
     }
     if (encoding !== PIXEL_ENCODING_SEGMENTS) {
         return pixelData;
+    }
+    if (options && PIXEL_POSITIONS.includes(options.position)) {
+        return encodeV3(pixelData, options);
     }
 
     const h = pixelData.length;
@@ -134,6 +269,58 @@ export const encodePixelData = (pixelData, encoding = PIXEL_ENCODING_FULL) => {
     };
 };
 
+/** 把 v3「按预览位置」对象还原成完整二维数组 */
+const decodeV3 = (data, options = {}) => {
+    const h = Number.isFinite(data.h) && data.h > 0 ? Math.floor(data.h) : 0;
+    const targetHeight = Math.max(1, Math.floor(Number(options.height) || h || 1));
+    const W = Math.max(2, Math.floor(Number(options.width) || data.w || 2));
+    const rawPosition = options.position || data.position;
+    const position = PIXEL_POSITIONS.includes(rawPosition) ? rawPosition : PIXEL_POSITION_CENTER;
+
+    // 展开图案（不同颜色的列 + 图案内部的相同颜色间隔列）
+    const content = [];
+    for (const seg of data.content) {
+        if (!Array.isArray(seg)) continue;
+        if (seg[0] === 's') {
+            const color = isPixelColor(seg[1]) ? seg[1] : null;
+            const n = Number.isFinite(seg[2]) ? Math.max(0, Math.floor(seg[2])) : 0;
+            for (let i = 0; i < n; i++) content.push(Array.from({length: h}, () => color));
+        } else if (seg[0] === 'p' && Array.isArray(seg[1])) {
+            for (const col of seg[1]) {
+                const cells = Array.isArray(col) ? col : [];
+                content.push(Array.from({length: h}, (_, y) =>
+                    (isPixelColor(cells[y]) ? cells[y] : null)));
+            }
+        }
+    }
+
+    const fill = isPixelColor(data.fill) ? data.fill : null;
+    const cw = content.length;
+    const padTotal = Math.max(0, W - cw);
+    let leftPad = 0;
+    if (position === PIXEL_POSITION_RIGHT) {
+        leftPad = padTotal;
+    } else if (position === PIXEL_POSITION_CENTER) {
+        // 有本机预览宽度时按「宽度 − 图案宽度」除以 2 四舍五入；
+        // 纯 JSON 往返（未给宽度）时用文件里写下的单侧列数还原。
+        leftPad = options.width ? Math.round(padTotal / 2) :
+            Math.round(Number.isFinite(data.pad) ? data.pad : padTotal / 2);
+    }
+    leftPad = Math.max(0, Math.min(padTotal, leftPad));
+    const rightPad = padTotal - leftPad;
+
+    const grid = [];
+    for (let y = 0; y < targetHeight; y++) {
+        const row = [];
+        for (let i = 0; i < leftPad; i++) row.push(fill);
+        for (const col of content) row.push(y < h ? col[y] : null);
+        for (let i = 0; i < rightPad; i++) row.push(fill);
+        // 图案比目标宽度还宽时安全截断
+        grid.push(row.length > W ? row.slice(0, W) : row);
+    }
+    return grid;
+};
+
 /** 解码早期实验性三段式对象 */
 const decodeLegacyRows = data => data.rows.map(row => {
     if (!row || typeof row !== 'object') return [];
@@ -152,11 +339,12 @@ const decodeLegacyRows = data => data.rows.map(row => {
  * @param {Array|object} data 导出的 pixelData
  * @returns {Array|*} 解码后的二维数组；无法识别时原样返回
  */
-export const decodePixelData = data => {
+export const decodePixelData = (data, options = {}) => {
     // 逐个记录：本身就是二维数组
     if (Array.isArray(data)) return data;
 
     if (isLegacyRows(data)) return decodeLegacyRows(data);
+    if (isV3(data)) return decodeV3(data, options);
     if (!isV2(data)) return data;
 
     const h = Number.isFinite(data.h) && data.h > 0 ? Math.floor(data.h) : 0;

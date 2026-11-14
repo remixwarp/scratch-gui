@@ -13,6 +13,7 @@ import {applyTheme} from '../../lib/themes/themePersistance.js';
 
 import ChevronDown from './ChevronDown.jsx';
 import PixelEditorApp from './tw-theme-pixel.jsx';
+import {maybeWarnPixelTheme} from './tw-pixel-width-warning.jsx';
 import styles from './settings-menu.css';
 
 import {Check, Palette, CirclePlus, Download, FolderInput, Edit, Trash, Palette as PaletteIcon} from 'lucide-react';
@@ -1099,8 +1100,8 @@ class CustomThemeMenu extends React.Component {
                             React.createElement(PixelEditorApp, {
                                 initialName: this.state.createName,
                                 initialDescription: this.state.createDescription,
-                                onCreate: (name, description, pixelData, primaryColor, encoding) => {
-                                    this.handleCreatePixelTheme(name, description, pixelData, primaryColor, encoding)
+                                onCreate: (name, description, pixelData, primaryColor, encoding, position) => {
+                                    this.handleCreatePixelTheme(name, description, pixelData, primaryColor, encoding, position)
                                         .then(success => {
                                             if (this.pixelEditorWindow && success) {
                                                 this.pixelEditorWindow.close();
@@ -1497,8 +1498,8 @@ class CustomThemeMenu extends React.Component {
                                         primaryColor
                                     );
                                 },
-                                onCreate: (name, description, pixelData, primaryColor, encoding) => {
-                                    this.handleCreatePixelTheme(name, description, pixelData, primaryColor, encoding)
+                                onCreate: (name, description, pixelData, primaryColor, encoding, position) => {
+                                    this.handleCreatePixelTheme(name, description, pixelData, primaryColor, encoding, position)
                                         .then(success => {
                                             if (this.pixelEditorWindow && success) {
                                                 this.pixelEditorWindow.close();
@@ -1634,7 +1635,7 @@ class CustomThemeMenu extends React.Component {
         }
     };
 
-    handleCreatePixelTheme = async (name, description, pixelData, primaryColor, encoding) => {
+    handleCreatePixelTheme = async (name, description, pixelData, primaryColor, encoding, position) => {
         const createName = typeof name === 'string' ? name : (this.state.createName || '');
         const createDescription = typeof description === 'string' ? description : (this.state.createDescription || '');
         const theme = this.props.theme;
@@ -1654,7 +1655,7 @@ class CustomThemeMenu extends React.Component {
                 createDescription.trim(),
                 pixelData,
                 primaryColor,
-                {encoding: encoding || undefined},
+                {encoding: encoding || undefined, position: position || undefined},
                 theme
             );
 
@@ -1666,6 +1667,7 @@ class CustomThemeMenu extends React.Component {
             });
 
             this.props.onChangeTheme(customTheme);
+            maybeWarnPixelTheme(customTheme, this.props.intl);
             return true;
         } catch (error) {
             await showAlert(this.props.intl.formatMessage({
@@ -1914,6 +1916,7 @@ class CustomThemeMenu extends React.Component {
         this.safeSetState({originalThemeBeforePreview: currentTheme});
 
         this.props.onChangeTheme(previewTheme);
+        maybeWarnPixelTheme(previewTheme, this.props.intl);
         return true;
     };
 
@@ -1948,6 +1951,7 @@ class CustomThemeMenu extends React.Component {
         this.safeSetState({originalThemeBeforePreview: currentTheme});
 
         this.props.onChangeTheme(previewTheme);
+        maybeWarnPixelTheme(previewTheme, this.props.intl);
         return true;
     };
 
@@ -2078,6 +2082,7 @@ class CustomThemeMenu extends React.Component {
                     const latestTheme = updatedThemes[updatedThemes.length - 1];
                     if (latestTheme) {
                         this.props.onChangeTheme(latestTheme);
+                        maybeWarnPixelTheme(latestTheme, this.props.intl);
                     }
 
                     this.safeSetState({
@@ -2144,6 +2149,7 @@ class CustomThemeMenu extends React.Component {
                         const latestTheme = updatedThemes[updatedThemes.length - 1];
                         if (latestTheme) {
                             this.props.onChangeTheme(latestTheme);
+                            maybeWarnPixelTheme(latestTheme, this.props.intl);
                         }
                     }
                     
@@ -2374,7 +2380,10 @@ class CustomThemeMenu extends React.Component {
                             className={classNames(styles.customThemeItem, {
                                 [styles.selected]: theme instanceof CustomTheme && theme.uuid === customTheme.uuid
                             })}
-                            onClick={() => this.props.onChangeTheme(customTheme)}
+                            onClick={() => {
+                                this.props.onChangeTheme(customTheme);
+                                maybeWarnPixelTheme(customTheme, this.props.intl);
+                            }}
                         >
                             <div className={styles.option}>
                                 <Check

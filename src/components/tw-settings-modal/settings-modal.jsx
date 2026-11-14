@@ -31,6 +31,7 @@ import {
 import StylePreview from './style-preview.jsx';
 import FrostedGlassPage from './frosted-glass-page.jsx';
 import LoadingScreenPage from './loading-screen-page.jsx';
+import PixelThemePage from './pixel-theme-page.jsx';
 import SettingsStore from '../../addons/settings-store-singleton.js';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 import ActivityBarLayoutSetting from './activity-bar-layout.jsx';
@@ -3154,6 +3155,8 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <EditorPage {...handlers} />;
     case 'styles':
         return <StylesPage {...handlers} />;
+    case 'pixelTheme':
+        return <PixelThemePage {...handlers} />;
     case 'menuBar':
         return <MenuBarPage {...handlers} />;
     case 'activityBar':
@@ -3232,6 +3235,7 @@ const SETTINGS_SEARCH_INDEX = [
     {label: '标签外观', keywords: '标签外观 tab looks 样式', category: 'styles'},
     {label: '窗口样式', keywords: '窗口样式 window style 风格', category: 'styles'},
     {label: '自定义主题', keywords: '自定义主题 custom theme 颜色 配色', category: 'styles'},
+    {label: '像素主题预览', keywords: '像素主题 预览 宽度 高度 pixel theme 预览宽度', category: 'pixelTheme'},
     // 菜单栏
     {label: '菜单栏布局', keywords: '菜单栏布局 menu bar layout 位置', category: 'menuBar'},
     // 活动栏
@@ -3454,6 +3458,17 @@ class SettingsModalComponent extends React.Component {
                         label: intl.formatMessage({id: 'mw.settings.statusBar', defaultMessage: '状态栏'}),
                         icon: PanelBottom
                     }] : [])
+                ]
+            },
+            {
+                id: 'theme',
+                label: intl.formatMessage({id: 'mw.settings.groupTheme', defaultMessage: '主题'}),
+                items: [
+                    {
+                        id: 'pixelTheme',
+                        label: intl.formatMessage({id: 'mw.settings.pixelTheme', defaultMessage: '像素主题'}),
+                        icon: Palette
+                    }
                 ]
             },
             {

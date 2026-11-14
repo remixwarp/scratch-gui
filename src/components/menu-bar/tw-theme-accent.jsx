@@ -16,6 +16,7 @@ import {applyTheme} from '../../lib/themes/themePersistance.js';
 import styles from './settings-menu.css';
 
 import {openCustomTheme} from '../../reducers/modals.js';
+import {maybeWarnPixelTheme} from './tw-pixel-width-warning.jsx';
 
 import {closeEditMenu} from '../../reducers/menus.js';
 
@@ -258,7 +259,7 @@ const AccentThemeMenu = ({
             ))}
             <SectionHeader sectionKey="pixel" isZh={isZh} />
             {PIXEL_PRESETS.map(preset => (
-                <MenuItem key={preset.id} onClick={() => onApplyPixelTheme(preset.data, theme.gui)}>
+                <MenuItem key={preset.id} onClick={() => onApplyPixelTheme(preset.data, theme.gui, intl)}>
                     <div className={styles.option}>
                         <Check className={classNames(styles.check, {[styles.selected]: false})} />
                         <ColorIcon id={preset.id} />
@@ -311,7 +312,7 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
         dispatch(closeSettingsMenu());
         applyTheme(theme);
     },
-    onApplyPixelTheme: (data, savedGui) => {
+    onApplyPixelTheme: (data, savedGui, intl) => {
         const themeData = data.themes[0];
         const customTheme = CustomTheme.import(themeData);
         // 恢复切换前的 GUI 主题模式（如深色/浅色/午夜等）
@@ -319,6 +320,7 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
         dispatch(setTheme(restoredTheme));
         dispatch(closeSettingsMenu());
         applyTheme(restoredTheme);
+        maybeWarnPixelTheme(restoredTheme, intl);
     },
     onOpen: () => dispatch(openAccentMenu()),
     onClickCustomThemeModal: () => {

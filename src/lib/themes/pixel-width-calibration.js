@@ -176,10 +176,11 @@ export const findContentBlock = pixelData => {
  * 按目标宽度自适应重排画布：自动重算左右填充列数，并让内容块按原水平比例
  * 落到相应位置（居中 / 偏左 / 偏右都保持原相对位置）。幂等：同宽度重排结果不变。
  * @param {Array<Array<string|null>>} pixelData 完整二维数组
- * @param {number} targetWidth 目标列数（即创建面板里的宽度）
+ * @param {number} targetWidth 目标列数（即当前设备预览宽度）
+ * @param {string} [position] 预览位置 'left'|'center'|'right'；不传时保持原相对比例
  * @returns {Array<Array<string|null>>} 重排后的完整二维数组
  */
-export const reflowPixelDataToWidth = (pixelData, targetWidth) => {
+export const reflowPixelDataToWidth = (pixelData, targetWidth, position = null) => {
     const info = findContentBlock(pixelData);
     if (!info) return pixelData;
     const {h, w: w0, first, last, fillColor, tailColor} = info;
@@ -201,14 +202,29 @@ export const reflowPixelDataToWidth = (pixelData, targetWidth) => {
             Array.from({length: W}, (_, x) => cellAt(pixelData, y, first + x)));
     }
 
-    const newStart = clampInt(centerRatio * W - blockWidth / 2, 0, W - blockWidth);
+    // 指定预览位置时，按位置把图案贴到左侧 / 居中 / 右侧；
+    // 两侧都用「相同颜色列」填充（与 v3 灵活编码一致）。
+    // 不传位置时保留旧行为：按图案原来的水平比例落位。
+    let newStart;
+    if (position === 'left') {
+        newStart = 0;
+    } else if (position === 'right') {
+        newStart = W - blockWidth;
+    } else if (position === 'center') {
+        newStart = clampInt((W - blockWidth) / 2, 0, W - blockWidth);
+    } else {
+        newStart = clampInt(centerRatio * W - blockWidth / 2, 0, W - blockWidth);
+    }
     const rightCount = W - newStart - blockWidth;
+    const hasPosition = position === 'left' || position === 'center' || position === 'right';
+    const leftColor = hasPosition ? fillColor : fillColor;
+    const rightColor = hasPosition ? fillColor : tailColor;
 
     return Array.from({length: h}, (_, y) => {
         const row = [];
-        for (let i = 0; i < newStart; i++) row.push(fillColor);
+        for (let i = 0; i < newStart; i++) row.push(leftColor);
         for (let x = first; x < last; x++) row.push(cellAt(pixelData, y, x));
-        for (let i = 0; i < rightCount; i++) row.push(tailColor);
+        for (let i = 0; i < rightCount; i++) row.push(rightColor);
         return row;
     });
 };
