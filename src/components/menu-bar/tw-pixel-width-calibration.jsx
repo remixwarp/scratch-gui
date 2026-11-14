@@ -205,8 +205,8 @@ const WidthCalibrationApp = injectIntl(props => {
                         </div>
                         <p style={{fontSize: '12px', color: '#777', margin: '0 0 4px'}}>
                             <FormattedMessage
-                                defaultMessage="屏幕 {width}×{height}，归一化比例 {ratio}"
-                                description="Screen size and normalized ratio used for the reference"
+                                defaultMessage="屏幕 {width}×{height}，实际比例 {ratio}"
+                                description="Screen size and the real unnormalized aspect ratio used for the reference"
                                 id="tw.customThemes.pixelCreator.widthCalib.ratioInfo"
                                 values={{width: reference.screenWidth, height: reference.screenHeight, ratio: reference.ratioText}}
                             />

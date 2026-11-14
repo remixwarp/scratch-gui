@@ -1,11 +1,17 @@
 /**
  * 像素主题「手动配置宽度」相关的纯计算工具。
  *
- * 1) computeScreenWidthReference：把屏幕宽高换算成屏幕比例，再代入用户给定的
- *    不稳定参考值公式 F(m,n) = 490 + 410 × [(m−n) − 11] / (6 − 11)。
- *    其中 m:n 为屏幕长边比与短边比（归一化后的常见比例表示），
- *    11 是荣耀20青春版的比例差值（20−9），6 是联想 ThinkBook 16 的比例差值（16−10）。
- *    代入手机比例得 490，代入电脑比例得 900。
+ * 1) computeScreenWidthReference：直接采用屏幕真实宽高比，不做常见比例归一化。
+ *    用户给定公式 F(m,n) = 490 + 410 × [(m−n) − 11] / (6 − 11)，
+ *    其中 11 = 20 − 9（荣耀20青春版 20:9），6 = 16 − 10（ThinkBook 16 16:10）。
+ *    把公式里的差值 d = m − n 视为真实宽高比 r 的连续线性函数，用两个锚点定标：
+ *      r₁ = 20/9  → d = 11 → F = 490
+ *      r₂ = 16/10 → d = 6  → F = 900
+ *      d(r) = 11 + (6 − 11) × (r − r₁) / (r₂ − r₁)
+ *    代回原公式即 F(r) = 490 + 410 × (r₁ − r) / (r₁ − r₂)。
+ *    因此每台设备的真实比例都会得到连续且互不相同的参考值
+ *    （如 2340×1080 → 527、2160×1080 → 636、1024×768 → 1076），
+ *    不再被压成 490 / 818 / 900 等少数几个固定值。
  *
  * 2) buildCalibrationPixelData：生成校准标尺的像素画布。标尺为 24 列深色块
  *    （11 深 + 2 白竖线 + 11 深），左右用背景色填充，默认宽度 500。
@@ -28,20 +34,24 @@ export const CALIBRATION = {
 };
 
 /**
- * 常见屏幕比例表（长边:短边）。屏幕像素比先就近匹配到这里，再整数归一化成 m:n。
- * 19.5:9 归入 20:9，对应荣耀20青春版这类「营销上叫 20:9」的屏幕。
+ * 用户给定公式的两个真实比例锚点（长边/短边），以及对应的差值与参考值。
+ * 这两个锚点精确保留原公式 20:9 → 490、16:10 → 900，其余比例按真实宽高连续插值。
  */
-const COMMON_RATIOS = [
-    [21, 9], [20, 9], [19.5, 9], [19, 9], [18, 9],
-    [16, 10], [16, 9], [3, 2], [5, 3], [4, 3], [5, 4], [1, 1]
-];
+export const REFERENCE_ANCHORS = {
+    phoneRatio: 20 / 9,
+    laptopRatio: 16 / 10,
+    phoneDifference: 11,
+    laptopDifference: 6,
+    phoneValue: 490,
+    laptopValue: 900
+};
 
 const clampInt = (value, min, max) => Math.max(min, Math.min(max, Math.round(value)));
 
 /**
- * 计算不稳定参考值。
+ * 计算不稳定参考值：直接采用屏幕真实宽高比连续换算，不再就近匹配常见比例。
  * @param {object} [screenLike] 可选的屏幕尺寸来源，便于测试；缺省读 window.screen / window.inner*
- * @returns {{value:number, m:number, n:number, d:number, ratioText:string,
+ * @returns {{value:number, ratio:number, d:number, ratioText:string,
  *            screenWidth:number, screenHeight:number}}
  */
 export const computeScreenWidthReference = (screenLike = null) => {
@@ -62,31 +72,23 @@ export const computeScreenWidthReference = (screenLike = null) => {
 
     const long = Math.max(sw, sh);
     const short = Math.min(sw, sh);
+    // 真实宽高比（长边/短边）：保留小数，不做常见比例就近匹配与整数归一化
     const ratio = long / short;
 
-    // 就近匹配常见比例，再整数归一化（19.5 → 20）
-    let best = COMMON_RATIOS[0];
-    let bestDiff = Infinity;
-    for (const candidate of COMMON_RATIOS) {
-        const diff = Math.abs(ratio - candidate[0] / candidate[1]);
-        if (diff < bestDiff) {
-            bestDiff = diff;
-            best = candidate;
-        }
-    }
-    const m = Math.round(best[0]);
-    const n = Math.round(best[1]);
-    const d = m - n;
-
-    // F(m,n) = 490 + 410 × [(m−n) − 11] / (6 − 11)，即 490 + 82 × (11 − d)
-    const value = Math.max(2, Math.round(490 + 410 * (d - 11) / (6 - 11)));
+    const A = REFERENCE_ANCHORS;
+    // 把真实比例连续映射成公式里的差值 d：r₁ → 11，r₂ → 6
+    const d = A.phoneDifference +
+        (A.laptopDifference - A.phoneDifference) * (ratio - A.phoneRatio) / (A.laptopRatio - A.phoneRatio);
+    // 原公式 F(m,n) = 490 + 410 × [(m−n) − 11] / (6 − 11)
+    const value = Math.max(2, Math.round(A.phoneValue +
+        (A.laptopValue - A.phoneValue) * (d - A.phoneDifference) / (A.laptopDifference - A.phoneDifference)));
 
     return {
         value,
-        m,
-        n,
+        ratio,
         d,
-        ratioText: `${m}:${n}`,
+        // 显示真实比例本身，而不是归一化后的整数比
+        ratioText: `${ratio.toFixed(3)}:1`,
         screenWidth: sw,
         screenHeight: sh
     };
