@@ -20,20 +20,33 @@ import {maybeWarnPixelTheme} from './tw-pixel-width-warning.jsx';
 
 import {closeEditMenu} from '../../reducers/menus.js';
 
-import mcThemeLeft from '../../lib/themes/pixel-presets/MC风格主题_←_pixel_theme.json';
+import startThemeRight from '../../lib/themes/pixel-presets/start_→_pixel_theme.json';
+import startThemeCenter from '../../lib/themes/pixel-presets/start_⊙_pixel_theme.json';
+import surgeThemeRight from '../../lib/themes/pixel-presets/surge_→_pixel_theme.json';
+import surgeThemeCenter from '../../lib/themes/pixel-presets/surge_⊙_pixel_theme.json';
+import ckcyThemeRight from '../../lib/themes/pixel-presets/ckcy_→_pixel_theme.json';
+import ckcyThemeCenter from '../../lib/themes/pixel-presets/ckcy_⊙_pixel_theme.json';
+import cysoThemeRight from '../../lib/themes/pixel-presets/cyso_→_pixel_theme.json';
+import cysoThemeCenter from '../../lib/themes/pixel-presets/cyso_⊙_pixel_theme.json';
 
-import cysoThemeLeft from '../../lib/themes/pixel-presets/cyso_←_pixel_theme.json';
-import cysoThemeN from '../../lib/themes/pixel-presets/cyso_n_pixel_theme.json';
-
-import startThemeN from '../../lib/themes/pixel-presets/start_n_pixel_theme.json';
-import startThemeLeft from '../../lib/themes/pixel-presets/start_left_pixel_theme.json';
+// 像素主题预设：名称取文件内的像素主体名称，预览色取文件内写的主题色主要颜色。
+// 按前缀（start / surge / ckcy / cyso）与方向（→ / ⊙）分组排列，形成整齐的 4×2 网格。
+const makePixelPreset = (id, data) => ({
+    id,
+    name: data.themes[0].name,
+    color: data.themes[0].accent.primaryColor,
+    data
+});
 
 const PIXEL_PRESETS = [
-    {id: 'pixel-mc-left', name: mcThemeLeft.themes[0].name, data: mcThemeLeft},
-    {id: 'pixel-cyso-left', name: cysoThemeLeft.themes[0].name, data: cysoThemeLeft},
-    {id: 'pixel-cyso-n', name: cysoThemeN.themes[0].name, data: cysoThemeN},
-    {id: 'pixel-start-n', name: startThemeN.themes[0].name, data: startThemeN},
-    {id: 'pixel-start-left', name: startThemeLeft.themes[0].name, data: startThemeLeft}
+    makePixelPreset('pixel-start-right', startThemeRight),
+    makePixelPreset('pixel-start-center', startThemeCenter),
+    makePixelPreset('pixel-surge-right', surgeThemeRight),
+    makePixelPreset('pixel-surge-center', surgeThemeCenter),
+    makePixelPreset('pixel-ckcy-right', ckcyThemeRight),
+    makePixelPreset('pixel-ckcy-center', ckcyThemeCenter),
+    makePixelPreset('pixel-cyso-right', cysoThemeRight),
+    makePixelPreset('pixel-cyso-center', cysoThemeCenter)
 ];
 
 const SECTION_MESSAGES = defineMessages({
@@ -106,19 +119,13 @@ const ColorIcon = props => {
     const accentId = props.id || 'pale blue';
     const accent = ACCENT_MAP[accentId] && ACCENT_MAP[accentId].accent;
 
-    if (accentId && accentId.startsWith('pixel-')) {
-        let pixelIconColor = '#3c8527';
-        if (accentId.startsWith('pixel-cyso-')) {
-            pixelIconColor = '#4e8dc1';
-        } else if (accentId.startsWith('pixel-start-')) {
-            // Start 系列是黑白像素风格，缩略色块用纯黑
-            pixelIconColor = '#000000';
-        }
+    // 像素主题预设：直接使用文件内写的主题色主要颜色作为预览色块
+    if (props.color) {
         return (
             <div
                 className={styles.accentIconOuter}
                 style={{
-                    backgroundColor: pixelIconColor,
+                    backgroundColor: props.color,
                     backgroundImage: 'none'
                 }}
             />
@@ -172,7 +179,8 @@ const ColorIcon = props => {
 };
 
 ColorIcon.propTypes = {
-    id: PropTypes.string
+    id: PropTypes.string,
+    color: PropTypes.string
 };
 
 const AccentMenuItem = props => (
@@ -258,15 +266,20 @@ const AccentThemeMenu = ({
                 />
             ))}
             <SectionHeader sectionKey="pixel" isZh={isZh} />
-            {PIXEL_PRESETS.map(preset => (
-                <MenuItem key={preset.id} onClick={() => onApplyPixelTheme(preset.data, theme.gui, intl)}>
-                    <div className={styles.option}>
-                        <Check className={classNames(styles.check, {[styles.selected]: false})} />
-                        <ColorIcon id={preset.id} />
-                        <span>{preset.name}</span>
-                    </div>
-                </MenuItem>
-            ))}
+            <li className={styles.pixelPresetSection}>
+                <div className={styles.pixelPresetGrid}>
+                    {PIXEL_PRESETS.map(preset => (
+                        <div
+                            key={preset.id}
+                            className={styles.pixelPresetItem}
+                            onClick={() => onApplyPixelTheme(preset.data, theme.gui, intl)}
+                        >
+                            <ColorIcon id={preset.id} color={preset.color} />
+                            <span className={styles.pixelPresetName}>{preset.name}</span>
+                        </div>
+                    ))}
+                </div>
+            </li>
             <MenuItem className={styles.pixelPresetDisclaimerItem}>
                 <div className={styles.pixelPresetDisclaimer}>
                     {isZh ? (
