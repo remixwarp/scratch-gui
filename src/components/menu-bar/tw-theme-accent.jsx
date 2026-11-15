@@ -30,7 +30,8 @@ import cysoThemeRight from '../../lib/themes/pixel-presets/cyso_→_pixel_theme.
 import cysoThemeCenter from '../../lib/themes/pixel-presets/cyso_⊙_pixel_theme.json';
 
 // 像素主题预设：名称取文件内的像素主体名称，预览色取文件内写的主题色主要颜色。
-// 按前缀（start / surge / ckcy / cyso）与方向（→ / ⊙）分组排列，形成整齐的 4×2 网格。
+// 与纯色主题一样作为普通网格单元紧凑平铺；按前缀（start / surge / ckcy / cyso）
+// 与方向（→ / ⊙）分组排列。
 const makePixelPreset = (id, data) => ({
     id,
     name: data.themes[0].name,
@@ -266,20 +267,15 @@ const AccentThemeMenu = ({
                 />
             ))}
             <SectionHeader sectionKey="pixel" isZh={isZh} />
-            <li className={styles.pixelPresetSection}>
-                <div className={styles.pixelPresetGrid}>
-                    {PIXEL_PRESETS.map(preset => (
-                        <div
-                            key={preset.id}
-                            className={styles.pixelPresetItem}
-                            onClick={() => onApplyPixelTheme(preset.data, theme.gui, intl)}
-                        >
-                            <ColorIcon id={preset.id} color={preset.color} />
-                            <span className={styles.pixelPresetName}>{preset.name}</span>
-                        </div>
-                    ))}
-                </div>
-            </li>
+            {PIXEL_PRESETS.map(preset => (
+                <MenuItem key={preset.id} onClick={() => onApplyPixelTheme(preset.data, theme.gui, intl)}>
+                    <div className={styles.option}>
+                        <Check className={classNames(styles.check, {[styles.selected]: false})} />
+                        <ColorIcon id={preset.id} color={preset.color} />
+                        <span>{preset.name}</span>
+                    </div>
+                </MenuItem>
+            ))}
             <MenuItem className={styles.pixelPresetDisclaimerItem}>
                 <div className={styles.pixelPresetDisclaimer}>
                     {isZh ? (
