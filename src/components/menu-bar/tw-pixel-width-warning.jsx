@@ -1,4 +1,5 @@
 import WindowManager from '../../addons/window-system/window-manager';
+import {openSettingsModal} from '../../reducers/modals';
 import {
     shouldWarnPixelTheme,
     setPixelPreviewSettings
@@ -14,13 +15,51 @@ export const openPixelWidthCalibrationForSettings = intl => openWidthCalibration
     onApplyWidth: width => setPixelPreviewSettings({width, configured: true})
 });
 
+/**
+ * 从主题里读取「主题色的主要颜色」，用于宽度警告框确认按钮的背景色。
+ * 兼容 CustomTheme 实例（customAccent）与导出的普通主题对象（accent）：
+ * 像素主题的 customAccent 不单独保留 primaryColor 字段，主色落在
+ * guiColors['motion-primary'] / blockColors.checkboxActiveBackground 上。
+ */
+const getThemePrimaryColor = theme => {
+    if (!theme || typeof theme !== 'object') return null;
+    for (const accent of [theme.customAccent, theme.accent]) {
+        if (!accent || typeof accent !== 'object') continue;
+        const color = accent.primaryColor ||
+            (accent.guiColors && accent.guiColors['motion-primary']) ||
+            (accent.blockColors && accent.blockColors.checkboxActiveBackground);
+        if (typeof color === 'string' && color) return color;
+    }
+    return null;
+};
+
+/**
+ * 打开设置窗口，并自动切换到「主题 → 像素主题」页。
+ * 不再直接弹出「手动配置宽度」校准窗口；宽度仍可在该页里手动配置。
+ * 用 app-state-hoc 暴露的 window.ReduxStore 派发，与仓库其它命令式窗口一致。
+ */
+export const openPixelThemeSettings = () => {
+    // 一次性标记：设置窗口 constructor 会读取并清除；
+    // 若窗口已经打开（constructor 不会重跑），则靠下面的事件切换 tab。
+    window.__twSettingsInitialView = 'pixelTheme';
+    try {
+        window.dispatchEvent(new CustomEvent('tw:settings-view', {detail: 'pixelTheme'}));
+    } catch (e) {
+        // ignore
+    }
+    const store = window.ReduxStore;
+    if (store && typeof store.dispatch === 'function') {
+        store.dispatch(openSettingsModal());
+    }
+};
+
 let warningWindow = null;
 
 /**
  * 弹出「请手动配置宽度」警告框。
  * 复用还原点「网络还原点」上方警告框的浅红底 / 红字 / 左边框样式。
  */
-export const showPixelWidthWarning = ({intl, onConfigure}) => {
+export const showPixelWidthWarning = ({intl, onConfigure, primaryColor}) => {
     if (warningWindow) {
         try {
             warningWindow.show().bringToFront();
@@ -98,6 +137,9 @@ export const showPixelWidthWarning = ({intl, onConfigure}) => {
     configureBtn.innerText = messages.configure;
     configureBtn.style.cssText = 'padding:8px 14px;border-radius:8px;border:none;' +
         'background:var(--ui-primary, #4C97FF);color:white;cursor:pointer;font-weight:600;font-family:inherit;';
+    // 确认按钮背景直接取主题色的主要颜色；取不到时保留上面的默认主色兜底。
+    // 用 style.background 赋值（而非拼进 cssText），避免主题色字符串破坏整条样式。
+    if (primaryColor) configureBtn.style.background = primaryColor;
     configureBtn.addEventListener('click', () => {
         win.close();
         if (typeof onConfigure === 'function') onConfigure();
@@ -119,7 +161,8 @@ export const maybeWarnPixelTheme = (theme, intl) => {
     if (!intl || !shouldWarnPixelTheme(theme)) return false;
     showPixelWidthWarning({
         intl,
-        onConfigure: () => openPixelWidthCalibrationForSettings(intl)
+        primaryColor: getThemePrimaryColor(theme),
+        onConfigure: openPixelThemeSettings
     });
     return true;
 };

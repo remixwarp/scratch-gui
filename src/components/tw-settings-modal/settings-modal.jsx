@@ -3278,8 +3278,13 @@ class SettingsModalComponent extends React.Component {
             'handleSearchChange', 'handleSearchResultClick', 'handleSearchClear',
             'handleSearchButtonClick', 'handleSearchInputRef']);
 
+        // 应用灵活编码像素主题且宽度未配置时，警告框会请求直接打开本窗口并
+        // 切到「像素主题」tab。该标记是一次性的，读到这里后立即清除。
+        const pendingView = window.__twSettingsInitialView;
+        if (pendingView) delete window.__twSettingsInitialView;
+
         this.state = {
-            currentView: 'general',
+            currentView: pendingView || 'general',
             collapsedGroups: {},
             searchQuery: ''
         };
@@ -3291,11 +3296,23 @@ class SettingsModalComponent extends React.Component {
         // 监听 ae-settings-changed 并强制重渲染，使各开关的 value 实时同步。
         this._onAeSettingsChanged = () => this.forceUpdate();
         window.addEventListener('ae-settings-changed', this._onAeSettingsChanged);
+
+        // 设置窗口已经打开时 constructor 不会重跑，改由警告框发出的事件切换 tab。
+        this._onSettingsView = e => {
+            if (e && e.detail) {
+                delete window.__twSettingsInitialView;
+                this.setState({currentView: e.detail, searchQuery: ''});
+            }
+        };
+        window.addEventListener('tw:settings-view', this._onSettingsView);
     }
 
     componentWillUnmount () {
         if (this._onAeSettingsChanged) {
             window.removeEventListener('ae-settings-changed', this._onAeSettingsChanged);
+        }
+        if (this._onSettingsView) {
+            window.removeEventListener('tw:settings-view', this._onSettingsView);
         }
     }
 
