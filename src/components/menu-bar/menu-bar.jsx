@@ -4913,7 +4913,7 @@ const mapStateToProps = (state, ownProps) => {
         mode1990: isTimeTravel1990(state),
         mode2020: isTimeTravel2020(state),
         modeNow: isTimeTravelNow(state),
-        superRefactor: localStorage.getItem('mw:super-refactor') === 'true'
+        superRefactor: localStorage.getItem('mw:super-refactor') !== 'false'
     };
 };
 

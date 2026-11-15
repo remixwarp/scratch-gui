@@ -52,7 +52,7 @@ class UsernameModal extends React.Component {
             showFPSCounter: localStorage.getItem('mw:show-fps-counter') === 'true',
             viewCompiledMode: localStorage.getItem('mw:view-compiled-mode') === 'true',
             storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true',
-            superRefactor: localStorage.getItem('mw:super-refactor') === 'true',
+            superRefactor: localStorage.getItem('mw:super-refactor') !== 'false',
             multiWorkspaces: localStorage.getItem('mw:multi-workspaces') === 'true',
             hatBlockCommentReminder: localStorage.getItem('mw:hat-block-comment-reminder') !== 'false',
             hatReminderCheckInterval: parseInt(localStorage.getItem('mw:hat-reminder-check-interval'), 10) || 500,
