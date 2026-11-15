@@ -10,6 +10,7 @@ import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {ACCENT_MAP, Theme} from '../../lib/themes/index.js';
 import {ACCENTS} from '../../lib/themes/accents';
 import {CustomTheme} from '../../lib/themes/custom-themes.js';
+import {inferPixelPositionFromName} from '../../lib/themes/pixel-encoding.js';
 import {openAccentMenu, accentMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
@@ -306,7 +307,12 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     },
     onApplyPixelTheme: (data, savedGui, intl) => {
         const themeData = data.themes[0];
-        const customTheme = CustomTheme.import(themeData);
+        // 预设名称里带方向标记（→ / ⊙ / ←）时以名称为准决定预览位置。
+        // 这样以后导出的主题只要按约定命名，放进预设区就能直接正确贴边 / 居中，
+        // 不必逐个修正文件数据（文件内的 position 有时与名称不一致）。
+        const inferredPosition = inferPixelPositionFromName(themeData.name);
+        const customTheme = CustomTheme.import(themeData,
+            inferredPosition ? {position: inferredPosition} : {});
         // 恢复切换前的 GUI 主题模式（如深色/浅色/午夜等）
         const restoredTheme = savedGui ? customTheme.set('gui', savedGui) : customTheme;
         dispatch(setTheme(restoredTheme));

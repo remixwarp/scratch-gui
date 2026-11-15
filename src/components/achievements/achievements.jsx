@@ -274,6 +274,32 @@ const Achievements = ({intl}) => {
     const onOpenAchievements = () => window.dispatchEvent(new Event('rw-achievements-open'));
     const onCloseModal = () => setIsOpen(false);
 
+    // 直接关闭欢迎窗口 = 使用全部默认配置：不显示教程、PC 端、Scratch 布局。
+    // 不调用 applyLayout（它会强制刷新页面），避免打断刚打开的编辑器；
+    // 这些值本来就是编辑器的初始默认状态，显式写回即可保证一致。
+    const applyWelcomeDefaults = () => {
+        // 不显示教程 / 成就：TurboWarp Expert 默认经验
+        selectAchievementExperience('tw-veteran');
+        setExperience('tw-veteran');
+        setEnabled(false);
+        // PC 端：标准桌面布局
+        AESettings.set('EnableMobileLayout', false);
+        AESettings.set('EnableMobileTouchDrag', false);
+        // Scratch 布局（与高级设置「选择布局」的默认值一致，但不强制刷新）
+        try {
+            localStorage.setItem('mw:multi-workspaces', 'false');
+            AESettings.set('EnableStatusBar', false);
+            AESettings.set('EnableVSCodeLayout', false);
+            window.dispatchEvent(new CustomEvent('mw-settings-changed', {
+                detail: {key: 'multi-workspaces', value: false}
+            }));
+            window.dispatchEvent(new Event('ae-settings-changed'));
+        } catch (e) {
+            // ignore
+        }
+    };
+    const onCloseWelcome = () => applyWelcomeDefaults();
+
     const visibleAchievements = selectedCategory === ALL_CATEGORIES ?
         ACHIEVEMENTS :
         ACHIEVEMENTS.filter(achievement => achievement.type === selectedCategory);
@@ -317,169 +343,171 @@ const Achievements = ({intl}) => {
 
     return (
         <div className={styles.root}>
-            {!experience && !deviceStep && !isFullscreenPage && (
-                <div className={styles.backdrop}>
-                    <section
-                        aria-label={intl.formatMessage(messages.welcomeTitle)}
-                        className={styles.choicePanel}
+            {!experience && !isFullscreenPage && (
+                <Modal
+                    id="welcomeModal"
+                    contentLabel={intl.formatMessage(messages.welcomeTitle)}
+                    visible={!experience && !isFullscreenPage}
+                    onRequestClose={onCloseWelcome}
+                    width={520}
+                    height={430}
+                    minWidth={360}
+                    minHeight={320}
+                >
+                    <div
+                        aria-label={intl.formatMessage(layoutStep ? messages.selectLayoutTitle :
+                            (deviceStep ? messages.selectDeviceTitle : messages.welcomeTitle))}
+                        className={styles.welcomeContent}
                     >
-                        <button
-                            type="button"
-                            className={styles.importConfigLink}
-                            onClick={handleImportConfig}
-                        >
-                            {intl.formatMessage(messages.importConfig)}
-                        </button>
-                        <h2>{intl.formatMessage(messages.welcomeTitle)}</h2>
-                        <p>{intl.formatMessage(messages.welcomeSubtitle)}</p>
-                        <div className={styles.choiceActions}>
-                            <button
-                                onClick={onChooseNewbie}
-                                type="button"
-                                className={styles.choiceButton}
-                            >
-                                <div className={styles.choiceButtonContent}>
-                                    <div className={styles.choiceButtonText}>
-                                        <strong>
-                                            {intl.formatMessage(messages.scratchBeginner)}
-                                        </strong>
-                                        <small>
-                                            {intl.formatMessage(messages.scratchBeginnerDesc)}
-                                        </small>
-                                    </div>
-                                    <ArrowRightIcon />
+                        {layoutStep ? (
+                            <>
+                                <button
+                                    className={styles.backButton}
+                                    onClick={goBackToDevice}
+                                    type="button"
+                                >
+                                    {'← '}
+                                    {intl.formatMessage(messages.goBack)}
+                                </button>
+                                <h2>{intl.formatMessage(messages.selectLayoutTitle)}</h2>
+                                <p>{intl.formatMessage(messages.selectLayoutSubtitle)}</p>
+                                <div className={styles.choiceActions}>
+                                    <button
+                                        onClick={onChooseVSCode}
+                                        type="button"
+                                        className={styles.choiceButton}
+                                    >
+                                        <div className={styles.choiceButtonContent}>
+                                            <div className={styles.choiceButtonText}>
+                                                <strong>
+                                                    {intl.formatMessage(messages.vscodeLayout)}
+                                                </strong>
+                                                <small>
+                                                    {intl.formatMessage(messages.vscodeLayoutDesc)}
+                                                </small>
+                                            </div>
+                                            <ArrowRightIcon />
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={onChooseScratch}
+                                        type="button"
+                                        className={styles.choiceButton}
+                                    >
+                                        <div className={styles.choiceButtonContent}>
+                                            <div className={styles.choiceButtonText}>
+                                                <strong>
+                                                    {intl.formatMessage(messages.scratchLayout)}
+                                                </strong>
+                                                <small>
+                                                    {intl.formatMessage(messages.scratchLayoutDesc)}
+                                                </small>
+                                            </div>
+                                            <ArrowRightIcon />
+                                        </div>
+                                    </button>
                                 </div>
-                            </button>
-                            <button
-                                onClick={onChooseVeteran}
-                                type="button"
-                                className={styles.choiceButton}
-                            >
-                                <div className={styles.choiceButtonContent}>
-                                    <div className={styles.choiceButtonText}>
-                                        <strong>
-                                            {intl.formatMessage(messages.turboWarpExpert)}
-                                        </strong>
-                                        <small>
-                                            {intl.formatMessage(messages.turboWarpExpertDesc)}
-                                        </small>
-                                    </div>
-                                    <ArrowRightIcon />
+                            </>
+                        ) : deviceStep ? (
+                            <>
+                                <button
+                                    className={styles.backButton}
+                                    onClick={goBackToExperience}
+                                    type="button"
+                                >
+                                    {'← '}
+                                    {intl.formatMessage(messages.goBack)}
+                                </button>
+                                <h2>{intl.formatMessage(messages.selectDeviceTitle)}</h2>
+                                <p>{intl.formatMessage(messages.selectDeviceSubtitle)}</p>
+                                <div className={styles.choiceActions}>
+                                    <button
+                                        onClick={onChooseMobile}
+                                        type="button"
+                                        className={styles.choiceButton}
+                                    >
+                                        <div className={styles.choiceButtonContent}>
+                                            <div className={styles.choiceButtonText}>
+                                                <strong>
+                                                    {intl.formatMessage(messages.mobileDevice)}
+                                                </strong>
+                                                <small>
+                                                    {intl.formatMessage(messages.mobileDeviceDesc)}
+                                                </small>
+                                            </div>
+                                            <ArrowRightIcon />
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={onChoosePc}
+                                        type="button"
+                                        className={styles.choiceButton}
+                                    >
+                                        <div className={styles.choiceButtonContent}>
+                                            <div className={styles.choiceButtonText}>
+                                                <strong>
+                                                    {intl.formatMessage(messages.pcDevice)}
+                                                </strong>
+                                                <small>
+                                                    {intl.formatMessage(messages.pcDeviceDesc)}
+                                                </small>
+                                            </div>
+                                            <ArrowRightIcon />
+                                        </div>
+                                    </button>
                                 </div>
-                            </button>
-                        </div>
-                    </section>
-                </div>
-            )}
-            {!experience && deviceStep && !isFullscreenPage && (
-                <div className={styles.backdrop}>
-                    <section
-                        aria-label={intl.formatMessage(messages.selectDeviceTitle)}
-                        className={styles.choicePanel}
-                    >
-                        <button
-                            className={styles.backButton}
-                            onClick={goBackToExperience}
-                            type="button"
-                        >
-                            {'← '}
-                            {intl.formatMessage(messages.goBack)}
-                        </button>
-                        <h2>{intl.formatMessage(messages.selectDeviceTitle)}</h2>
-                        <p>{intl.formatMessage(messages.selectDeviceSubtitle)}</p>
-                        <div className={styles.choiceActions}>
-                            <button
-                                onClick={onChooseMobile}
-                                type="button"
-                                className={styles.choiceButton}
-                            >
-                                <div className={styles.choiceButtonContent}>
-                                    <div className={styles.choiceButtonText}>
-                                        <strong>
-                                            {intl.formatMessage(messages.mobileDevice)}
-                                        </strong>
-                                        <small>
-                                            {intl.formatMessage(messages.mobileDeviceDesc)}
-                                        </small>
-                                    </div>
-                                    <ArrowRightIcon />
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    type="button"
+                                    className={styles.importConfigLink}
+                                    onClick={handleImportConfig}
+                                >
+                                    {intl.formatMessage(messages.importConfig)}
+                                </button>
+                                <h2>{intl.formatMessage(messages.welcomeTitle)}</h2>
+                                <p>{intl.formatMessage(messages.welcomeSubtitle)}</p>
+                                <div className={styles.choiceActions}>
+                                    <button
+                                        onClick={onChooseNewbie}
+                                        type="button"
+                                        className={styles.choiceButton}
+                                    >
+                                        <div className={styles.choiceButtonContent}>
+                                            <div className={styles.choiceButtonText}>
+                                                <strong>
+                                                    {intl.formatMessage(messages.scratchBeginner)}
+                                                </strong>
+                                                <small>
+                                                    {intl.formatMessage(messages.scratchBeginnerDesc)}
+                                                </small>
+                                            </div>
+                                            <ArrowRightIcon />
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={onChooseVeteran}
+                                        type="button"
+                                        className={styles.choiceButton}
+                                    >
+                                        <div className={styles.choiceButtonContent}>
+                                            <div className={styles.choiceButtonText}>
+                                                <strong>
+                                                    {intl.formatMessage(messages.turboWarpExpert)}
+                                                </strong>
+                                                <small>
+                                                    {intl.formatMessage(messages.turboWarpExpertDesc)}
+                                                </small>
+                                            </div>
+                                            <ArrowRightIcon />
+                                        </div>
+                                    </button>
                                 </div>
-                            </button>
-                            <button
-                                onClick={onChoosePc}
-                                type="button"
-                                className={styles.choiceButton}
-                            >
-                                <div className={styles.choiceButtonContent}>
-                                    <div className={styles.choiceButtonText}>
-                                        <strong>
-                                            {intl.formatMessage(messages.pcDevice)}
-                                        </strong>
-                                        <small>
-                                            {intl.formatMessage(messages.pcDeviceDesc)}
-                                        </small>
-                                    </div>
-                                    <ArrowRightIcon />
-                                </div>
-                            </button>
-                        </div>
-                    </section>
-                </div>
-            )}
-            {!experience && layoutStep && !isFullscreenPage && (
-                <div className={styles.backdrop}>
-                    <section
-                        aria-label={intl.formatMessage(messages.selectLayoutTitle)}
-                        className={styles.choicePanel}
-                    >
-                        <button
-                            className={styles.backButton}
-                            onClick={goBackToDevice}
-                            type="button"
-                        >
-                            {'← '}
-                            {intl.formatMessage(messages.goBack)}
-                        </button>
-                        <h2>{intl.formatMessage(messages.selectLayoutTitle)}</h2>
-                        <p>{intl.formatMessage(messages.selectLayoutSubtitle)}</p>
-                        <div className={styles.choiceActions}>
-                            <button
-                                onClick={onChooseVSCode}
-                                type="button"
-                                className={styles.choiceButton}
-                            >
-                                <div className={styles.choiceButtonContent}>
-                                    <div className={styles.choiceButtonText}>
-                                        <strong>
-                                            {intl.formatMessage(messages.vscodeLayout)}
-                                        </strong>
-                                        <small>
-                                            {intl.formatMessage(messages.vscodeLayoutDesc)}
-                                        </small>
-                                    </div>
-                                    <ArrowRightIcon />
-                                </div>
-                            </button>
-                            <button
-                                onClick={onChooseScratch}
-                                type="button"
-                                className={styles.choiceButton}
-                            >
-                                <div className={styles.choiceButtonContent}>
-                                    <div className={styles.choiceButtonText}>
-                                        <strong>
-                                            {intl.formatMessage(messages.scratchLayout)}
-                                        </strong>
-                                        <small>
-                                            {intl.formatMessage(messages.scratchLayoutDesc)}
-                                        </small>
-                                    </div>
-                                    <ArrowRightIcon />
-                                </div>
-                            </button>
-                        </div>
-                    </section>
-                </div>
+                            </>
+                        )}
+                    </div>
+                </Modal>
             )}
             {enabled && notice && (
                 <button

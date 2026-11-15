@@ -897,7 +897,7 @@ class CustomTheme extends Theme {
      * @param {object} data the inputted custom theme data
      * @returns {CustomTheme} the finished custom theme object
      */
-    static import (data) {
+    static import (data, options = {}) {
         if (!data || typeof data !== 'object') {
             throw new Error('Invalid theme data');
         }
@@ -918,10 +918,15 @@ class CustomTheme extends Theme {
             // 像素主题：兼容「逐个记录」二维数组与「灵活记录」两种导出格式，
             // 统一解码成完整二维数组后再生成 accent（内部始终用二维数组）。
             const rawPixelData = accentToUse.pixelData;
-            // 灵活编码主题按当前设备预览宽度 / 位置自适应；逐个记录不受影响
-            const pixelData = decodePixelDataForPreview(rawPixelData);
+            // 灵活编码主题按当前设备预览宽度 / 位置自适应；逐个记录不受影响。
+            // options.position 由调用方显式给出时优先（例如按主题名称推断的方向），
+            // 保证解码出的二维数组与记录到 customAccent.position 的元数据一致，
+            // 这样再次导出时方向不会丢失。
+            const overridePosition = options.position || null;
+            const pixelData = decodePixelDataForPreview(rawPixelData,
+                overridePosition ? {position: overridePosition} : {});
             const encoding = getPixelEncoding(rawPixelData, accentToUse.pixelEncoding);
-            const rawPosition = accentToUse.pixelPosition ||
+            const rawPosition = overridePosition || accentToUse.pixelPosition ||
                 (rawPixelData && rawPixelData.position);
             const position = PIXEL_POSITIONS.includes(rawPosition) ?
                 rawPosition : PIXEL_POSITION_CENTER;

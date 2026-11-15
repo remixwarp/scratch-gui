@@ -148,13 +148,20 @@ export const shouldWarnPixelTheme = theme =>
  * @param {Array|object} data 主题文件里的 pixelData
  * @returns {Array} 完整二维数组
  */
-export const decodePixelDataForPreview = data => {
+export const decodePixelDataForPreview = (data, options = {}) => {
+    // 调用方可显式指定位置（例如按主题名称推断出的方向）。未指定时完全沿用
+    // 原有行为，避免影响其它调用链路。
+    const overridePosition = PIXEL_POSITIONS.includes(options.position) ? options.position : null;
     if (!isSegmentsEncoded(data)) return decodePixelData(data);
     const {width, height, position} = getPixelPreviewSettings();
     // v3 文件本身带位置信息：只按当前设备宽度 / 高度自适应，位置交给
     // decodeV3 读取 data.position 还原，不用设备预览位置覆盖。
-    if (data.v === 3) return decodePixelData(data, {width, height});
+    // 仅当调用方显式给出 overridePosition 时才覆盖（用于按名称还原方向）。
+    if (data.v === 3) {
+        return decodePixelData(data, overridePosition ?
+            {width, height, position: overridePosition} : {width, height});
+    }
     // 旧版 v2 / 三段式对象：先解码，再按当前预览宽度与位置自适应重排
     const decoded = decodePixelData(data);
-    return reflowPixelDataToWidth(decoded, width, position);
+    return reflowPixelDataToWidth(decoded, width, overridePosition || position);
 };

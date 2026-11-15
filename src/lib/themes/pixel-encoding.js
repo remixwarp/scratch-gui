@@ -63,6 +63,21 @@ export const PIXEL_POSITIONS = [
     PIXEL_POSITION_LEFT, PIXEL_POSITION_CENTER, PIXEL_POSITION_RIGHT
 ];
 
+/**
+ * 从像素主题名称里读取方向标记。
+ * 约定：导出主题时把方向写进名称 —— 「→」贴右、「←」贴左、「⊙」居中。
+ * 名称是用户可见且能稳定携带的元数据；文件内的 position 字段有时与实际方向
+ * 不一致（例如导出时没有显式选择预览位置），以名称为准可一劳永逸地还原方向，
+ * 不必逐个修正主题文件。无法识别时返回 null，调用方回退文件自带的 position。
+ */
+export const inferPixelPositionFromName = name => {
+    if (typeof name !== 'string' || !name) return null;
+    if (name.indexOf('←') !== -1 || name.indexOf('<-') !== -1) return PIXEL_POSITION_LEFT;
+    if (name.indexOf('→') !== -1 || name.indexOf('->') !== -1) return PIXEL_POSITION_RIGHT;
+    if (name.indexOf('⊙') !== -1) return PIXEL_POSITION_CENTER;
+    return null;
+};
+
 const SEGMENTS_VERSION = 2;
 const SEGMENTS_VERSION_V3 = 3;
 

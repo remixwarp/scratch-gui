@@ -74,6 +74,22 @@
     margin-top: .2rem;
 }
 
+/* 欢迎引导：内容放进编辑器已有的自由窗口里，不再渲染全屏蒙版遮罩。 */
+.welcome-content {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    padding: 1.5rem;
+    position: relative;
+}
+
+.welcome-content h2,
+.welcome-content p {
+    margin-top: 0;
+}
+
 .backdrop {
     align-items: center;
     background: $ui-modal-overlay;
