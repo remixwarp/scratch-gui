@@ -72,24 +72,19 @@ export const showPixelWidthWarning = ({intl, onConfigure, primaryColor}) => {
     // 全部 id 使用完整字面量，确保 react-intl 静态提取与运行期查找可靠
     const messages = {
         title: intl.formatMessage({
-            defaultMessage: '需要配置预览宽度',
-            description: 'Title of the pixel preview width warning window',
+            defaultMessage: '主题已经应用',
+            description: 'Title of the notice shown after a flexible pixel theme is applied',
             id: 'tw.pixelWidthWarning.title'
         }),
         message: intl.formatMessage({
-            defaultMessage: '检测到已应用灵活编码的像素主题，但预览宽度仍是默认值。请手动配置宽度，否则图案可能无法正确显示。',
-            description: 'Warning text shown when a flexible pixel theme is applied with default width',
+            defaultMessage: '主题已经应用，如果遇到效果不佳等情况，请点击下方去配置按钮进行配置。',
+            description: 'Notice shown when a flexible pixel theme is applied with the reference width as default',
             id: 'tw.pixelWidthWarning.message'
         }),
         configure: intl.formatMessage({
-            defaultMessage: '去手动配置宽度',
-            description: 'Button that opens the manual width calibration window',
+            defaultMessage: '去配置',
+            description: 'Button that opens the pixel theme settings page',
             id: 'tw.pixelWidthWarning.configure'
-        }),
-        later: intl.formatMessage({
-            defaultMessage: '稍后再说',
-            description: 'Button to dismiss the pixel preview width warning',
-            id: 'tw.pixelWidthWarning.later'
         })
     };
     const win = WindowManager.createWindow({
@@ -104,6 +99,8 @@ export const showPixelWidthWarning = ({intl, onConfigure, primaryColor}) => {
         minimizable: false,
         modal: true,
         alwaysOnTop: true,
+        // 去掉「稍后再说」后仍保留关闭按钮 / Esc，用户可随时关掉这个提示。
+        closable: true,
         className: 'tw-pixel-width-warning-window',
         onClose: () => {
             warningWindow = null;
@@ -125,18 +122,11 @@ export const showPixelWidthWarning = ({intl, onConfigure, primaryColor}) => {
     const controls = document.createElement('div');
     controls.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:auto;';
 
-    const laterBtn = document.createElement('button');
-    laterBtn.type = 'button';
-    laterBtn.innerText = messages.later;
-    laterBtn.style.cssText = 'padding:8px 14px;border-radius:8px;border:1px solid #ccc;' +
-        'background:transparent;color:inherit;cursor:pointer;font-family:inherit;';
-    laterBtn.addEventListener('click', () => win.close());
-
     const configureBtn = document.createElement('button');
     configureBtn.type = 'button';
     configureBtn.innerText = messages.configure;
     configureBtn.style.cssText = 'padding:8px 14px;border-radius:8px;border:none;' +
-        'background:var(--ui-primary, #4C97FF);color:white;cursor:pointer;font-weight:600;font-family:inherit;';
+        'background:var(--motion-primary, var(--ui-primary, #4C97FF));color:white;cursor:pointer;font-weight:600;font-family:inherit;';
     // 确认按钮背景直接取主题色的主要颜色；取不到时保留上面的默认主色兜底。
     // 用 style.background 赋值（而非拼进 cssText），避免主题色字符串破坏整条样式。
     if (primaryColor) configureBtn.style.background = primaryColor;
@@ -145,7 +135,6 @@ export const showPixelWidthWarning = ({intl, onConfigure, primaryColor}) => {
         if (typeof onConfigure === 'function') onConfigure();
     });
 
-    controls.appendChild(laterBtn);
     controls.appendChild(configureBtn);
     content.appendChild(controls);
 

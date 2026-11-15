@@ -45,12 +45,15 @@
 }
 
 .okButton {
-    background-color: var(--ui-primary, #4d97ff);
+    /* 确定按钮直接读取当前主题色的主要颜色：--motion-primary 由主题系统写入，
+       自定义主题下就是 primaryColor；取不到时回退界面主色。 */
+    background-color: var(--motion-primary, var(--ui-primary, #4d97ff));
     color: white;
 }
 
 .okButton:hover {
-    background-color: var(--ui-primary-hover, #3b85ff);
+    background-color: var(--motion-primary, var(--ui-primary-hover, #3b85ff));
+    filter: brightness(0.92);
 }
 
 .okButton:active {
@@ -59,7 +62,7 @@
 
 .okButton:focus,
 .cancelButton:focus {
-    outline: 2px solid var(--ui-primary, #4d97ff);
+    outline: 2px solid var(--motion-primary, var(--ui-primary, #4d97ff));
     outline-offset: 2px;
 }
 

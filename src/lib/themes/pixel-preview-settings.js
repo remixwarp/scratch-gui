@@ -9,7 +9,7 @@
  * 存储于 localStorage，键为 tw:pixelPreviewSettings：
  *   {width, height, position, configured}
  *   configured 表示用户是否手动配置过宽度；默认 false 时，应用灵活编码主题
- *   会弹出「请手动配置宽度」的警告框。
+ *   会弹出「主题已经应用」的提示框（宽度已默认采用当前设备的参考值）。
  */
 import {
     decodePixelData,
@@ -20,7 +20,7 @@ import {
     PIXEL_POSITION_RIGHT,
     PIXEL_POSITIONS
 } from './pixel-encoding.js';
-import {reflowPixelDataToWidth} from './pixel-width-calibration.js';
+import {reflowPixelDataToWidth, computeScreenWidthReference} from './pixel-width-calibration.js';
 
 export {
     PIXEL_POSITION_LEFT,
@@ -31,15 +31,33 @@ export {
 
 const STORAGE_KEY = 'tw:pixelPreviewSettings';
 
+/** 参考值不可用（如屏幕信息缺失）时的极端兜底宽度。 */
 export const PIXEL_PREVIEW_DEFAULT_WIDTH = 900;
 export const PIXEL_PREVIEW_DEFAULT_HEIGHT = 24;
 
-export const PIXEL_PREVIEW_DEFAULTS = {
-    width: PIXEL_PREVIEW_DEFAULT_WIDTH,
+/**
+ * 编辑器刚启动、没有任何配置时，默认预览宽度直接采用当前设备的参考值，
+ * 不再固定为 900：灵活编码主题一应用就能按屏幕真实比例正常显示。
+ * 每次读取都按当前 window.screen 计算，屏幕变化后自动跟随；不依赖 clampInt，
+ * 因此声明顺序安全（本模块此前曾因 TDZ 出过问题）。
+ */
+export const getDefaultPixelPreviewWidth = () => {
+    try {
+        const value = computeScreenWidthReference().value;
+        return Math.max(2, Math.min(10000, Math.round(value)));
+    } catch (e) {
+        return PIXEL_PREVIEW_DEFAULT_WIDTH;
+    }
+};
+
+const defaultSettings = () => ({
+    width: getDefaultPixelPreviewWidth(),
     height: PIXEL_PREVIEW_DEFAULT_HEIGHT,
     position: PIXEL_POSITION_CENTER,
     configured: false
-};
+});
+
+export const PIXEL_PREVIEW_DEFAULTS = defaultSettings();
 
 const clampInt = (value, min, max, fallback) => {
     const n = Number(value);
@@ -47,7 +65,7 @@ const clampInt = (value, min, max, fallback) => {
 };
 
 const sanitize = raw => ({
-    width: clampInt(raw.width, 2, 10000, PIXEL_PREVIEW_DEFAULT_WIDTH),
+    width: clampInt(raw.width, 2, 10000, getDefaultPixelPreviewWidth()),
     height: clampInt(raw.height, 2, 50, PIXEL_PREVIEW_DEFAULT_HEIGHT),
     position: PIXEL_POSITIONS.includes(raw.position) ? raw.position : PIXEL_POSITION_CENTER,
     configured: !!raw.configured
@@ -59,10 +77,10 @@ const listeners = new Set();
 export const getPixelPreviewSettings = () => {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return {...PIXEL_PREVIEW_DEFAULTS};
+        if (!raw) return defaultSettings();
         return sanitize(JSON.parse(raw) || {});
     } catch (e) {
-        return {...PIXEL_PREVIEW_DEFAULTS};
+        return defaultSettings();
     }
 };
 

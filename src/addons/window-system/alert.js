@@ -65,8 +65,10 @@ const showAlert = (intl, message, options = {}) => new Promise(resolve => {
     const okBtn = document.createElement('button');
     okBtn.innerText = options.okLabel || intl.formatMessage({id: 'tw.alertOk', defaultMessage: 'OK'});
     okBtn.className = 'mw-alert-ok-btn';
+    // 确定按钮读取当前主题色的主要颜色（--motion-primary，自定义主题下为 primaryColor）；
+    // 取不到时回退界面主色。与 simple-dialog 的 .okButton 保持一致。
     okBtn.style.cssText = 'padding:8px 14px;border-radius:8px;border:none;' +
-        'background:var(--ui-primary, #4C97FF);color:white;cursor:pointer;font-weight:600;';
+        'background:var(--motion-primary, var(--ui-primary, #4C97FF));color:white;cursor:pointer;font-weight:600;';
 
     okBtn.addEventListener('click', () => {
         try {
