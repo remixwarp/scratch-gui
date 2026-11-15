@@ -17,6 +17,8 @@ import BlockCounterToggle from '../block-counter/block-counter-toggle.jsx';
 
 import largeStageIcon from '!../../lib/tw-recolor/build!./icon--large-stage.svg';
 import smallStageIcon from '!../../lib/tw-recolor/build!./icon--small-stage.svg';
+import fullStageIcon from '!../../lib/tw-recolor/build!./icon--full-stage.svg';
+import hideStageIcon from '!../../lib/tw-recolor/build!./icon--hide-stage.svg';
 import settingsIcon from './icon--settings.svg';
 
 import {
@@ -43,10 +45,10 @@ const messages = defineMessages({
         description: 'Button to change stage size to small',
         id: 'gui.stageHeader.stageSizeSmall'
     },
-    initialStageSizeMessage: {
-        defaultMessage: 'Switch to initial stage size',
-        description: 'Button to change stage size to initial size',
-        id: 'gui.stageHeader.stageSizeInitial'
+    hideStageMessage: {
+        defaultMessage: 'Hide the stage',
+        description: 'Button to hide the stage entirely',
+        id: 'gui.stageHeader.stageHidden'
     },
     fullStageSizeMessage: {
         defaultMessage: 'Switch to full stage',
@@ -104,6 +106,7 @@ const StageHeaderComponent = function (props) {
         onSetStageLarge,
     onSetStageSmall,
     onSetStageFull,
+    onSetStageHidden,
     onOpenSettings,
         isEmbedded,
         stageContainerWidth,
@@ -249,7 +252,7 @@ const StageHeaderComponent = function (props) {
             >
                 <Box
                     className={styles.stageMenuWrapper}
-                    style={{width: stageDimensions.width}}
+                    style={{width: isEmbedded ? '100%' : stageDimensions.width}}
                 >
                     <Controls vm={vm} />
                     <div
@@ -271,15 +274,31 @@ const StageHeaderComponent = function (props) {
                     <ToggleButtons
                         buttons={[
                             {
+                                handleClick: onSetStageHidden,
+                                icon: hideStageIcon,
+                                iconClassName: styles.stageButtonIcon,
+                                isSelected: stageSizeMode === STAGE_SIZE_MODES.hidden,
+                                title: props.intl.formatMessage(messages.hideStageMessage)
+                            },
+                            {
                                 handleClick: onSetStageSmall,
                                 icon: smallStageIcon,
                                 iconClassName: styles.stageButtonIcon,
                                 isSelected: stageSizeMode === STAGE_SIZE_MODES.small,
                                 title: props.intl.formatMessage(messages.smallStageSizeMessage)
                             },
+                            ...(showFixedLargeSize ? [
+                                {
+                                    handleClick: onSetStageLarge,
+                                    icon: largeStageIcon,
+                                    iconClassName: styles.stageButtonIcon,
+                                    isSelected: stageSizeMode === STAGE_SIZE_MODES.large,
+                                    title: props.intl.formatMessage(messages.largeStageSizeMessage)
+                                }
+                            ] : []),
                             {
                                 handleClick: onSetStageFull,
-                                icon: largeStageIcon,
+                                icon: showFixedLargeSize ? fullStageIcon : largeStageIcon,
                                 iconClassName: styles.stageButtonIcon,
                                 isSelected: stageSizeMode === STAGE_SIZE_MODES.full,
                                 title: props.intl.formatMessage(messages.fullStageSizeMessage)
@@ -291,8 +310,13 @@ const StageHeaderComponent = function (props) {
         header = (
             <Box
                 className={styles.stageHeaderWrapper}
-                // + 2 px because the stage will have 2 pixels of border around it
-                style={{minWidth: `${stageDimensions.width + 2}px`}}
+                // stageContainerWidth 已包含舞台 2px 边框（面板内容区宽度）；
+                // 而 stageDimensions.width 是舞台内容宽度，需 +2 才是含边框总宽。
+                style={{
+                    minWidth: stageSizeMode === STAGE_SIZE_MODES.hidden ?
+                        'auto' :
+                        `${(useContainerWidth ? stageContainerWidth : stageDimensions.width + 2)}px`
+                }}
             >
                 <Box className={styles.stageMenuWrapper}>
                     <Controls
@@ -396,6 +420,7 @@ StageHeaderComponent.propTypes = {
     onSetStageLarge: PropTypes.func.isRequired,
     onSetStageSmall: PropTypes.func.isRequired,
     onSetStageFull: PropTypes.func.isRequired,
+    onSetStageHidden: PropTypes.func,
     onOpenSettings: PropTypes.func.isRequired,
     isEmbedded: PropTypes.bool.isRequired,
     stageContainerWidth: PropTypes.number,

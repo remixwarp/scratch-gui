@@ -23,6 +23,7 @@ const StageComponent = props => {
         isPlayerOnly,
         isRtl,
         stageContainerWidth,
+        stageMaxHeight,
         colorInfo,
         micIndicator,
         question,
@@ -37,7 +38,8 @@ const StageComponent = props => {
     const isResizablePanel = !isFullScreen && typeof stageContainerWidth === 'number';
     const stageDimensions = getStageDimensions(
         stageSize, customStageSize, isFullScreen,
-        isResizablePanel ? stageContainerWidth : null
+        isResizablePanel ? stageContainerWidth : null,
+        isFullScreen ? null : stageMaxHeight
     );
 
     return (
@@ -151,6 +153,7 @@ StageComponent.propTypes = {
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
     stageContainerWidth: PropTypes.number,
+    stageMaxHeight: PropTypes.number,
     micIndicator: PropTypes.bool,
     onDeactivateColorPicker: PropTypes.func,
     onDoubleClick: PropTypes.func,

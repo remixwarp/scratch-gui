@@ -44,11 +44,19 @@ class StageHeader extends React.Component {
         }
     }
     checkInvalidStageSizeMode () {
-        // No need to check for invalid stage size mode anymore
+        // Switch from "large" to "full" when the large option isn't even displayed in the interface
+        if (this.props.stageSizeMode === STAGE_SIZE_MODES.large && !this.showFixedLargeSize()) {
+            this.props.onSetStageFull();
+        }
     }
     showFixedLargeSize () {
-        // Always return false since we're not using fixed width mode anymore
-        return false;
+        // Fixed width "large" mode should only be available when it would be smaller than the constrained
+        // full stage, otherwise there are some sizes where switching to the smaller size would make it
+        // larger instead of smaller.
+        const constrainedScale = STAGE_DISPLAY_SCALE_METADATA[STAGE_DISPLAY_SIZES.constrained].scale;
+        const constrainedWidth = this.props.customStageSize.width * constrainedScale;
+        const largeWidth = STAGE_DISPLAY_SCALE_METADATA[STAGE_DISPLAY_SIZES.large].width;
+        return constrainedWidth > largeWidth;
     }
     render () {
         const {
@@ -76,6 +84,7 @@ StageHeader.propTypes = {
     isPlayerOnly: PropTypes.bool,
     onSetStageUnFullScreen: PropTypes.func.isRequired,
     onSetStageFull: PropTypes.func.isRequired,
+    onSetStageHidden: PropTypes.func.isRequired,
     onOpenSettings: PropTypes.func.isRequired,
     // tw: replace showBranding
     isEmbedded: PropTypes.bool.isRequired,
@@ -99,8 +108,8 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
     onSetStageLarge: () => dispatch(setStageSize(STAGE_SIZE_MODES.large)),
     onSetStageSmall: () => dispatch(setStageSize(STAGE_SIZE_MODES.small)),
-    onSetStageInitial: () => dispatch(setStageSize(STAGE_SIZE_MODES.initial)),
     onSetStageFull: () => dispatch(setStageSize(STAGE_SIZE_MODES.full)),
+    onSetStageHidden: () => dispatch(setStageSize(STAGE_SIZE_MODES.hidden)),
     onSetStageFullScreen: () => dispatch(setFullScreen(true)),
     onSetStageUnFullScreen: () => dispatch(setFullScreen(false)),
     onOpenSettings: () => dispatch(openSettingsModal()),

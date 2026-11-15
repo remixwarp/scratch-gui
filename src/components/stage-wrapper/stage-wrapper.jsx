@@ -74,8 +74,10 @@ const StageWrapperComponent = function (props) {
         isFullScreen,
         isRtl,
         isRendererSupported,
+        isStageHidden,
         loading,
         stageContainerWidth,
+        stageMaxHeight,
         stageSize,
         vm,
         stageDetached
@@ -208,21 +210,24 @@ const StageWrapperComponent = function (props) {
                     vm={vm}
                 />
             </Box>
-            <Box className={styles.stageCanvasWrapper}>
-                {stageDetached ? (
-                    <div className={styles.stageDetachedPlaceholder}>
-                        <span>{props.intl.formatMessage(messages.detachedHint)}</span>
-                    </div>
-                ) : (
-                    isRendererSupported ?
-                        <Stage
-                            stageContainerWidth={stageContainerWidth}
-                            stageSize={stageSize}
-                            vm={vm}
-                        /> :
-                        null
-                )}
-            </Box>
+            {isStageHidden ? null : (
+                <Box className={styles.stageCanvasWrapper}>
+                    {stageDetached ? (
+                        <div className={styles.stageDetachedPlaceholder}>
+                            <span>{props.intl.formatMessage(messages.detachedHint)}</span>
+                        </div>
+                    ) : (
+                        isRendererSupported ?
+                            <Stage
+                                stageContainerWidth={stageContainerWidth}
+                                stageMaxHeight={stageMaxHeight}
+                                stageSize={stageSize}
+                                vm={vm}
+                            /> :
+                            null
+                    )}
+                </Box>
+            )}
             {loading ? (
                 <Loader isFullScreen={isFullScreen} />
             ) : null}
@@ -236,7 +241,9 @@ StageWrapperComponent.propTypes = {
     isRendererSupported: PropTypes.bool.isRequired,
     isRtl: PropTypes.bool.isRequired,
     loading: PropTypes.bool,
+    isStageHidden: PropTypes.bool,
     stageContainerWidth: PropTypes.number,
+    stageMaxHeight: PropTypes.number,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,
     vm: PropTypes.instanceOf(VM).isRequired,
     stageDetached: PropTypes.bool,

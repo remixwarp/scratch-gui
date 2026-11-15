@@ -333,7 +333,6 @@ const getFullscreenBackgroundColor = () => {
 const fullscreenBackgroundColor = getFullscreenBackgroundColor();
 
 const AUTO_SMALL_STAGE_INNER_WIDTH = Math.round(FIXED_WIDTH);
-const AUTO_RESTORE_STAGE_INNER_WIDTH = Math.round(FIXED_WIDTH * 0.875);
 const MIN_EDITOR_PANE_WIDTH = 598;
 const MIN_TARGET_PANE_HEIGHT = 180;
 // 面板隐藏的拖拽容差。值越大，面板在隐藏前可缩得越小。
@@ -346,10 +345,10 @@ const MIN_STAGE_PANEL_WIDTH = (FIXED_WIDTH * 0.5) + 18;
 
 /**
  * 默认（large）模式下舞台在编辑器内的显示宽度。
- * 舞台原生分辨率始终为 480×360，这里只是把显示面板放大一点，
+ * 与 bilup 一致：large 是固定宽度显示模式，宽度取舞台原生宽度。
  * 舞台会按容器宽度等比缩放，不会改变作品里的舞台尺寸。
  */
-const DEFAULT_LARGE_STAGE_WIDTH = Math.round(FIXED_WIDTH * 3.0);
+const DEFAULT_LARGE_STAGE_WIDTH = FIXED_WIDTH;
 
 // VS Code 布局下，活动栏（约 41px）占用在积木区内部；
 // 这里大幅减少「积木区」保留宽度，让舞台面板可以更大（舞台左移并放大，挤压积木区）。
@@ -1027,9 +1026,6 @@ const GUIComponent = props => {
     const prevStageSizeModeRef = useRef(null);
     const lastSyncedWidthRef = useRef(null);
     const skipNextMeasureRef = useRef(false);
-    const lastNonSmallStageSizeModeRef = useRef(STAGE_SIZE_MODES.large);
-    const autoSmallStageRequestedRef = useRef(false);
-    const autoSmallStageActiveRef = useRef(false);
     const [stagePanelWidth, setStagePanelWidth] = useState(null);
     const [stageContainerWidth, setStageContainerWidth] = useState(null);
     const [isNarrowLayout, setIsNarrowLayout] = useState(false);
@@ -1286,44 +1282,18 @@ const GUIComponent = props => {
         );
         const isSmall = stageContainerWidth < smallThreshold;
 
-        if (isSmall && props.stageSizeMode !== STAGE_SIZE_MODES.small && props.stageSizeMode !== STAGE_SIZE_MODES.full) {
-            syncingModeRef.current = true;
-            props.onSetStageSize(STAGE_SIZE_MODES.small);
+        if (isSmall && props.stageSizeMode !== STAGE_SIZE_MODES.small) {
+            // 拖拽调整大小模式下不要自动降级到 small 固定宽度：保持当前
+            // stageSizeMode（通常是 full/large），让 getStageDimensions 的
+            // fit-scale 按 stageContainerWidth 平滑缩放舞台。否则舞台只在
+            // 240/480 两个离散值间跳变，出现「面板动了但舞台不跟着缩放」。
+            // 下方的 small -> full 恢复分支必须保留：面板拖宽后要能恢复。
+            return;
         } else if (!isSmall && props.stageSizeMode === STAGE_SIZE_MODES.small) {
             syncingModeRef.current = true;
             props.onSetStageSize(STAGE_SIZE_MODES.full);
         }
     }, [stageContainerWidth, props.isFullScreen, props.onSetStageSize, props.stageSizeMode, props.customStageSize, enableStageResize]);
-
-    useEffect(() => {
-        if (props.isFullScreen) return;
-        if (typeof stageContainerWidth !== 'number') return;
-
-        if (props.stageSizeMode !== STAGE_SIZE_MODES.small) {
-            lastNonSmallStageSizeModeRef.current = props.stageSizeMode;
-        }
-
-        if (stageContainerWidth < AUTO_SMALL_STAGE_INNER_WIDTH) {
-            if (props.stageSizeMode !== STAGE_SIZE_MODES.small && props.stageSizeMode !== STAGE_SIZE_MODES.full) {
-                if (autoSmallStageRequestedRef.current) return;
-                autoSmallStageRequestedRef.current = true;
-                autoSmallStageActiveRef.current = true;
-                if (typeof props.onSetStageSize === 'function') {
-                    props.onSetStageSize(STAGE_SIZE_MODES.small);
-                }
-            }
-        } else {
-            autoSmallStageRequestedRef.current = false;
-
-            if (autoSmallStageActiveRef.current &&
-                props.stageSizeMode === STAGE_SIZE_MODES.small &&
-                stageContainerWidth >= AUTO_RESTORE_STAGE_INNER_WIDTH &&
-                typeof props.onSetStageSize === 'function') {
-                autoSmallStageActiveRef.current = false;
-                props.onSetStageSize(lastNonSmallStageSizeModeRef.current);
-            }
-        }
-    }, [stageContainerWidth, props.isFullScreen, props.onSetStageSize, props.stageSizeMode]);
 
     useEffect(() => {
         measureStageContainerWidth();
@@ -1794,22 +1764,42 @@ const GUIComponent = props => {
         vm
     ]);
 
-    const minDimensions = useMemo(() => ({
-        minWidth: typeof stagePanelWidth === 'number' ?
-            (vscodeLayout ? MIN_EDITOR_PANE_WIDTH_VSCODE : MIN_EDITOR_PANE_WIDTH) +
-                stagePanelWidth + 6 + 16 :
-            1024 + Math.max(0, customStageSize.width - 480),
-        minHeight: 640 + Math.max(0, customStageSize.height - 360)
-    }), [vscodeLayout, customStageSize.width, customStageSize.height, stagePanelWidth]);
+    const minDimensions = useMemo(() => {
+        if (isNarrowLayout) {
+            return {minWidth: 0, minHeight: 0};
+        }
+        const minHeight = 640 + Math.max(0, customStageSize.height - 360);
+        if (isStageHidden) {
+            return {
+                minWidth: (vscodeLayout ? MIN_EDITOR_PANE_WIDTH_VSCODE : MIN_EDITOR_PANE_WIDTH) + 16,
+                minHeight
+            };
+        }
+        return {
+            minWidth: typeof stagePanelWidth === 'number' ?
+                (vscodeLayout ? MIN_EDITOR_PANE_WIDTH_VSCODE : MIN_EDITOR_PANE_WIDTH) +
+                    stagePanelWidth + 6 + 16 :
+                1024 + Math.max(0, customStageSize.width - 480),
+            minHeight
+        };
+    }, [vscodeLayout, customStageSize.width, customStageSize.height, stagePanelWidth, isStageHidden, isNarrowLayout]);
 
     const stagePanelStyle = useMemo(() => {
+        if (isStageHidden) {
+            return {
+                width: 'auto',
+                flexBasis: 'auto',
+                flexGrow: 0,
+                flexShrink: 0
+            };
+        }
         if (!stagePanelWidth) return null;
         return {
             width: `${stagePanelWidth}px`,
             flexBasis: `${stagePanelWidth}px`,
             flexShrink: 0
         };
-    }, [stagePanelWidth]);
+    }, [stagePanelWidth, isStageHidden]);
 
     // 活动栏工具按钮定义（顺序/显示由高级设置中的活动栏配置控制）
     const handlePanelToggle = panel => {
@@ -1946,7 +1936,10 @@ const GUIComponent = props => {
         }));
 
     return (<MediaQuery minWidth={unconstrainedWidth}>{isUnconstrained => {
-        const stageSize = resolveStageSize(stageSizeMode, isUnconstrained);
+        const stageSize = resolveStageSize(
+            stageSizeMode === STAGE_SIZE_MODES.hidden ? STAGE_SIZE_MODES.small : stageSizeMode,
+            isUnconstrained
+        );
 
         // 当拖拽缩放面板时，stageSize 保持 large/full 不变（避免舞台离散跳变），
         // 但角色选择区的 SpriteInfo 需要使用简略布局来防止控件溢出。
@@ -2351,7 +2344,9 @@ const GUIComponent = props => {
                         />
 
                         <Box
-                            className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}
+                            className={classNames(styles.stageAndTargetWrapper, styles[stageSize], {
+                                [styles.stageHidden]: isStageHidden
+                            })}
                             ref={stageAndTargetWrapperRef}
                             style={enableStageResize ? stagePanelStyle : undefined}
                         >
@@ -2359,19 +2354,25 @@ const GUIComponent = props => {
                                 isFullScreen={isFullScreen}
                                 isRendererSupported={isRendererSupported()}
                                 isRtl={isRtl}
+                                isStageHidden={isStageHidden}
                                 stageSize={stageSize}
                                 stageContainerWidth={
                                     typeof stageContainerWidth === 'number' ? stageContainerWidth : null
                                 }
+                                stageMaxHeight={
+                                    typeof stageCanvasMaxHeight === 'number' ? stageCanvasMaxHeight : null
+                                }
                                 stageDetached={props.isStageDetached}
                                 vm={vm}
                             />
-                            <Box className={styles.targetWrapper}>
-                                <TargetPane
-                                    stageSize={spriteLayoutSize}
-                                    vm={vm}
-                                />
-                            </Box>
+                            {isStageHidden ? null : (
+                                <Box className={styles.targetWrapper}>
+                                    <TargetPane
+                                        stageSize={spriteLayoutSize}
+                                        vm={vm}
+                                    />
+                                </Box>
+                            )}
                         </Box>
                     </Box>
                 </Box>
@@ -2504,6 +2505,7 @@ GUIComponent.propTypes = {
     showSaveFilePicker: PropTypes.func,
     soundsTabVisible: PropTypes.bool,
     stageSizeMode: PropTypes.oneOf(Object.keys(STAGE_SIZE_MODES)),
+    stageSizeRequestId: PropTypes.number,
     targetIsStage: PropTypes.bool,
     telemetryModalVisible: PropTypes.bool,
     theme: PropTypes.instanceOf(Theme),
@@ -2568,6 +2570,7 @@ const mapStateToProps = state => ({
     isFullScreen: state.scratchGui.mode.isFullScreen || state.scratchGui.mode.isEmbedded,
     blocksId: state.scratchGui.timeTravel.year.toString(),
     stageSizeMode: state.scratchGui.stageSize.stageSize,
+    stageSizeRequestId: state.scratchGui.stageSize.requestId,
     theme: state.scratchGui.theme.theme,
     locale: state.locales.locale,
     onboardingVisible: state.scratchGui.onboarding.visible,

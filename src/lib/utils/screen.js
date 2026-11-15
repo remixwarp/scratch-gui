@@ -4,8 +4,6 @@ import {
     STAGE_DISPLAY_SIZES,
     FIXED_WIDTH
 } from '../constants/layout-constants';
-import {defaultStageSize} from '../../reducers/custom-stage-size';
-
 const maxScaleParam = typeof URLSearchParams !== 'undefined' && new URLSearchParams(location.search).get('scale');
 
 /**
@@ -36,9 +34,6 @@ import getMenuBarHeight from './menu-bar-height';
  * @return {STAGE_DISPLAY_SIZES} - the stage size enum value we should use in this situation.
  */
 const resolveStageSize = (stageSizeMode, isUnconstrained) => {
-    if (stageSizeMode === STAGE_SIZE_MODES.initial) {
-        return STAGE_DISPLAY_SIZES.initial;
-    }
     if (stageSizeMode === STAGE_SIZE_MODES.full && !isUnconstrained) {
         return STAGE_DISPLAY_SIZES.constrained;
     }
@@ -54,14 +49,9 @@ const resolveStageSize = (stageSizeMode, isUnconstrained) => {
  * @return {StageDimensions} - an object describing the dimensions of the stage.
  */
 const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageContainerWidth, stageMaxHeight) => {
-    // 当舞台模式为 initial（宽屏按钮）时，始终使用默认舞台尺寸 480x360
-    // 忽略用户可能设置的自定义舞台尺寸
-    const isInitialMode = stageSize === STAGE_DISPLAY_SIZES.initial;
-    const baseStageSize = isInitialMode ? defaultStageSize : customStageSize;
-
     const stageDimensions = {
-        heightDefault: baseStageSize.height,
-        widthDefault: baseStageSize.width,
+        heightDefault: customStageSize.height,
+        widthDefault: customStageSize.width,
         height: 0,
         width: 0,
         scale: 0
@@ -74,14 +64,14 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageConta
             menuBarHeight -
             STAGE_DIMENSION_DEFAULTS.fullScreenSpacingBorderAdjustment;
 
-        stageDimensions.width = stageDimensions.height * (baseStageSize.width / baseStageSize.height);
+        stageDimensions.width = stageDimensions.height * (customStageSize.width / customStageSize.height);
 
         const maxWidth = maxScaleParam ? (
-            Math.min(window.innerWidth, maxScaleParam * baseStageSize.width)
+            Math.min(window.innerWidth, maxScaleParam * customStageSize.width)
         ) : window.innerWidth;
         if (stageDimensions.width > maxWidth) {
             stageDimensions.width = maxWidth;
-            stageDimensions.height = stageDimensions.width * (baseStageSize.height / baseStageSize.width);
+            stageDimensions.height = stageDimensions.width * (customStageSize.height / customStageSize.width);
         }
 
         stageDimensions.scale = stageDimensions.width / stageDimensions.widthDefault;
@@ -104,7 +94,7 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageConta
         typeof stageContainerWidth === 'number' &&
         Number.isFinite(stageContainerWidth) &&
         stageContainerWidth > 0 &&
-        stageSize !== STAGE_DISPLAY_SIZES.initial) {
+        stageDimensions.width > 0) {
         const availableContentWidth = Math.max(0, stageContainerWidth - 2);
         // 双向缩放：舞台始终填满面板内容区（拖拽调整大小模式）。
         // 之前仅当非固定宽度模式（!metadata.width）才缩放，导致 large 模式

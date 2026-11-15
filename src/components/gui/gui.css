@@ -767,6 +767,11 @@
     flex-basis: 0;
 }
 
+.stage-and-target-wrapper.stage-hidden {
+    padding-left: 0.1rem;
+    padding-right: 0.1rem;
+}
+
 .target-wrapper {
     display: flex;
     flex-grow: 1;
@@ -938,4 +943,47 @@ $fade-out-distance: 15px;
     height: 100%;
     /* overridden by JS; this will be used if the browser can't understand that color */
     background-color: white;
+}
+@media only screen and (max-width: 900px) {
+    .stage-and-target-wrapper.stage-hidden {
+        width: auto;
+        min-width: 0;
+        flex-basis: auto;
+        flex-grow: 0;
+        flex-shrink: 1;
+        padding-inline: 0.1rem !important;
+    }
+}
+
+/*
+    Short viewports (phones in landscape, small windows): there isn't enough
+    vertical space for the stage and the sprite selector at their normal sizes.
+    Give the sprite selector a compact fixed-height strip at the bottom and let
+    the stage canvas fill (and scale to fit) the remaining space.
+*/
+@media only screen and (max-height: 480px) {
+    .stage-and-target-wrapper {
+        overflow: hidden;
+    }
+
+    .target-wrapper {
+        flex-grow: 0;
+        flex-basis: auto;
+    }
+
+    [class*="stage-wrapper_offset-controls_"] {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    [class*="stage-wrapper_offset-controls_"] [class*="stage-wrapper_stage-canvas-wrapper_"] {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 }
