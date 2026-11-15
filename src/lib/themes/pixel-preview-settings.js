@@ -120,16 +120,22 @@ export const shouldWarnPixelTheme = theme =>
     isFlexiblePixelTheme(theme) && !isPixelWidthConfigured();
 
 /**
- * 按当前设备的预览设置解码像素数据（灵活编码主题自适应宽度 / 位置）。
- * 非灵活编码（二维数组 / 旧分段对象）走原解码逻辑，不受影响。
+ * 解码像素数据。
+ * - 灵活编码 v3 主题：宽度 / 高度按当前设备预览设置自适应，但图案位置以
+ *   文件里记录的 position 为准（贴左 / 居中 / 贴右）。不能把设备的预览位置
+ *   传给 decodePixelData —— decodeV3 会优先用 options.position 覆盖
+ *   data.position，导致靠右 / 靠左主题都被居中，看起来和居中主题一模一样。
+ * - 旧版 v2 / 三段式对象：先解码，再按当前设备预览宽度与位置自适应重排。
+ * - 非灵活编码（二维数组）：走原解码逻辑，不受影响。
  * @param {Array|object} data 主题文件里的 pixelData
  * @returns {Array} 完整二维数组
  */
 export const decodePixelDataForPreview = data => {
     if (!isSegmentsEncoded(data)) return decodePixelData(data);
     const {width, height, position} = getPixelPreviewSettings();
-    // v3 文件本身带位置信息，直接按当前设备宽度 / 高度 / 位置解码
-    if (data.v === 3) return decodePixelData(data, {width, height, position});
+    // v3 文件本身带位置信息：只按当前设备宽度 / 高度自适应，位置交给
+    // decodeV3 读取 data.position 还原，不用设备预览位置覆盖。
+    if (data.v === 3) return decodePixelData(data, {width, height});
     // 旧版 v2 / 三段式对象：先解码，再按当前预览宽度与位置自适应重排
     const decoded = decodePixelData(data);
     return reflowPixelDataToWidth(decoded, width, position);
