@@ -276,23 +276,6 @@ const AccentThemeMenu = ({
                     </div>
                 </MenuItem>
             ))}
-            <MenuItem className={styles.pixelPresetDisclaimerItem}>
-                <div className={styles.pixelPresetDisclaimer}>
-                    {isZh ? (
-                        <>
-                            非MINECRAFT官方产品。未经Mojang AB或Microsoft批准，
-                            <br />
-                            也不与Mojang AB或Microsoft关联。
-                        </>
-                    ) : (
-                        <>
-                            Not an official MINECRAFT product. Not approved by or
-                            <br />
-                            associated with MOJANG or MICROSOFT.
-                        </>
-                    )}
-                </div>
-            </MenuItem>
         </Submenu>
     </MenuItem>
     );
