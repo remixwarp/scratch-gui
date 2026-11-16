@@ -96,6 +96,12 @@ const IN_PAGE_WINDOW_IDS = new Set([
 
 const canUseNativeWindows = () => {
     try {
+        // 安卓壳（WebView）与桌面 Electron 一样无法可靠地使用原生弹窗：
+        // 弹窗只能显示成一个没有编辑器样式的独立窗口，与桌面端窗口观感不一致。
+        // 统一退回到应用内的自由窗口，保证各平台外观/交互一致。
+        if (window.__REMIXWARP_ANDROID__) {
+            return false;
+        }
         return typeof window !== 'undefined' &&
             typeof window.EditorPreload !== 'undefined' &&
             // In the desktop app (Electron), window.open() is intercepted and denied
