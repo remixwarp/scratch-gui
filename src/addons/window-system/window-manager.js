@@ -59,9 +59,17 @@ const css = `
 
 `;
 
-const style = document.createElement('style');
-style.textContent = css;
-document.head.appendChild(style);
+if (typeof document !== 'undefined' && document.head) {
+    try {
+        const style = document.createElement('style');
+        style.textContent = css;
+        document.head.appendChild(style);
+    } catch (e) {
+        // 某些 WebView / 非浏览器环境 document 可能还未完全就绪
+        // 忽略即可——样式缺失只影响视觉，不影响功能
+        console.warn('[window-manager] 注入默认样式失败:', e && e.message);
+    }
+}
 
 const WINDOW_Z_INDEX_BASE = 9700;
 const WINDOW_Z_INDEX_MAX = 9799;
@@ -86,21 +94,51 @@ const IN_PAGE_WINDOW_IDS = new Set([
     'rw-minimap-window'
 ]);
 
-const canUseNativeWindows = () =>
-    typeof window !== 'undefined' &&
-    typeof window.EditorPreload !== 'undefined' &&
-    // In the desktop app (Electron), window.open() is intercepted and denied
-    // by the main process, so native popup windows can never be shown.
-    // Render windows inside the editor window instead of spawning new ones.
-    !navigator.userAgent.includes('Electron');
+const canUseNativeWindows = () => {
+    try {
+        return typeof window !== 'undefined' &&
+            typeof window.EditorPreload !== 'undefined' &&
+            // In the desktop app (Electron), window.open() is intercepted and denied
+            // by the main process, so native popup windows can never be shown.
+            // Render windows inside the editor window instead of spawning new ones.
+            !navigator.userAgent.includes('Electron');
+    } catch (e) {
+        // navigator / userAgent 在部分 WebView 环境可能被屏蔽
+        return false;
+    }
+};
 
 window.addEventListener('pagehide', () => {
     for (const win of activeWindows.values()) {
         if (win.closePopup) {
-            win.closePopup();
+            try {
+                win.closePopup();
+            } catch (e) {
+                // 清理阶段不应当再抛出任何异常
+            }
         }
     }
 });
+
+/** 读取视口尺寸，Android WebView 冷启动阶段 innerWidth/Height 可能返回 0。
+ *  这里给一个下限兜底，避免坐标计算产生 NaN / 负数导致窗口渲染位置完全错乱。 */
+const getViewportSize = () => ({
+    width: Math.max(1, window.innerWidth || 0),
+    height: Math.max(1, window.innerHeight || 0)
+});
+
+const getScreenSize = () => {
+    try {
+        const availWidth = (window.screen && (window.screen.availWidth || window.screen.width)) || 320;
+        const availHeight = (window.screen && (window.screen.availHeight || window.screen.height)) || 568;
+        return {
+            width: Math.max(1, availWidth),
+            height: Math.max(1, availHeight)
+        };
+    } catch (e) {
+        return {width: 320, height: 568};
+    }
+};
 
 const copyStylesInto = doc => {
     for (const node of document.querySelectorAll('head style, head link[rel="stylesheet"], body style')) {
@@ -577,10 +615,11 @@ class AddonWindow {
         
         // Allow window to move mostly off-screen but keep 50px visible
         const minVisiblePixels = 50;
+        const vp = getViewportSize();
         const minX = -(this.width - minVisiblePixels);
-        const maxX = window.innerWidth - minVisiblePixels;
+        const maxX = vp.width - minVisiblePixels;
         const minY = 0;
-        const maxY = window.innerHeight - minVisiblePixels;
+        const maxY = vp.height - minVisiblePixels;
         
         this.x = Math.max(minX, Math.min(newX, maxX));
         this.y = Math.max(minY, Math.min(newY, maxY));
@@ -935,10 +974,11 @@ class AddonWindow {
         // 窗口如果被摆到视口之外，拉回可见区域，避免只看得到内容看不到标题栏
         if (!this.isMaximized) {
             const rect = this.element.getBoundingClientRect();
+            const vp = getViewportSize();
             if (rect.width > 0 && rect.height > 0 &&
-                (rect.top < 0 || rect.left < 0 || rect.bottom > window.innerHeight + 1)) {
-                this.x = Math.max(0, Math.min(this.x, Math.max(0, window.innerWidth - rect.width)));
-                this.y = Math.max(0, Math.min(this.y, Math.max(0, window.innerHeight - rect.height)));
+                (rect.top < 0 || rect.left < 0 || rect.bottom > vp.height + 1)) {
+                this.x = Math.max(0, Math.min(this.x, Math.max(0, vp.width - rect.width)));
+                this.y = Math.max(0, Math.min(this.y, Math.max(0, vp.height - rect.height)));
                 this.element.style.left = `${this.x}px`;
                 this.element.style.top = `${this.y}px`;
             }
@@ -1236,7 +1276,8 @@ class AddonWindow {
                 this.height = saved.height;
                 if (WindowManager.getAnimationsEnabled()) {
                     // Visual start is the fullscreen rect, target is the saved rect.
-                    const from = {x: 0, y: 0, width: window.innerWidth, height: window.innerHeight};
+                    const vp = getViewportSize();
+                    const from = {x: 0, y: 0, width: vp.width, height: vp.height};
                     const to = {x: saved.x, y: saved.y, width: saved.width, height: saved.height};
                     this.element.style.left = `${saved.x}px`;
                     this.element.style.top = `${saved.y}px`;
@@ -1290,15 +1331,16 @@ class AddonWindow {
         this.element.style.maxHeight = 'none';
         this.element.style.margin = '0';
 
+        const vp = getViewportSize();
         if (WindowManager.getAnimationsEnabled()) {
             // Visual start is the saved rect, target is fullscreen.
             const from = {x: this.x, y: this.y, width: this.width, height: this.height};
-            const to = {x: 0, y: 0, width: window.innerWidth, height: window.innerHeight};
+            const to = {x: 0, y: 0, width: vp.width, height: vp.height};
             this.isMaximized = true;
             this.x = 0;
             this.y = 0;
-            this.width = window.innerWidth;
-            this.height = window.innerHeight;
+            this.width = vp.width;
+            this.height = vp.height;
             this.element.style.left = '0px';
             this.element.style.top = '0px';
             this.element.style.width = '100vw';
@@ -1309,8 +1351,8 @@ class AddonWindow {
             this.isMaximized = true;
             this.x = 0;
             this.y = 0;
-            this.width = window.innerWidth;
-            this.height = window.innerHeight;
+            this.width = vp.width;
+            this.height = vp.height;
             this.element.style.left = '0px';
             this.element.style.top = '0px';
             this.element.style.width = '100vw';
@@ -1355,8 +1397,9 @@ class AddonWindow {
     }
     
     center () {
-        this.x = Math.max(0, (window.innerWidth - this.width) / 2);
-        this.y = Math.max(0, (window.innerHeight - this.height) / 2);
+        const vp = getViewportSize();
+        this.x = Math.max(0, (vp.width - this.width) / 2);
+        this.y = Math.max(0, (vp.height - this.height) / 2);
         this.element.style.left = `${this.x}px`;
         this.element.style.top = `${this.y}px`;
         return this;
@@ -1460,11 +1503,12 @@ class NativeAddonWindow {
         let left;
         let top;
         if (this.centerOnShow) {
-            left = Math.round((window.screen.availWidth - width) / 2);
-            top = Math.round((window.screen.availHeight - height) / 2);
+            const scr = getScreenSize();
+            left = Math.round((scr.width - width) / 2);
+            top = Math.round((scr.height - height) / 2);
         } else {
-            left = Math.round(window.screenX + this.x);
-            top = Math.round(window.screenY + this.y);
+            left = Math.round((window.screenX || 0) + this.x);
+            top = Math.round((window.screenY || 0) + this.y);
         }
 
         const features = [
@@ -1621,9 +1665,10 @@ class NativeAddonWindow {
 
     center () {
         if (this.popup && !this.popup.closed) {
+            const scr = getScreenSize();
             this.popup.moveTo(
-                Math.round((window.screen.availWidth - this.popup.outerWidth) / 2),
-                Math.round((window.screen.availHeight - this.popup.outerHeight) / 2)
+                Math.round((scr.width - this.popup.outerWidth) / 2),
+                Math.round((scr.height - this.popup.outerHeight) / 2)
             );
         } else {
             this.centerOnShow = true;
@@ -1635,10 +1680,11 @@ class NativeAddonWindow {
         this.x = x;
         this.y = y;
         if (this.popup && !this.popup.closed) {
-            const chromeHeight = window.outerHeight - window.innerHeight;
+            const vp = getViewportSize();
+            const chromeHeight = Math.max(0, (window.outerHeight || vp.height) - vp.height);
             this.popup.moveTo(
-                Math.round(window.screenX + x),
-                Math.round(window.screenY + chromeHeight + y)
+                Math.round((window.screenX || 0) + x),
+                Math.round((window.screenY || 0) + chromeHeight + y)
             );
         }
         return this;
