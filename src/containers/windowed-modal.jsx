@@ -206,8 +206,10 @@ class WindowedModal extends React.Component {
         // 且不是随机飘在左上角。移动端尤其需要：props.width 通常是
         // 600-900px，而手机视口可能只有 375px。
         const padding = 24;
-        const maxW = window.innerWidth - padding;
-        const maxH = window.innerHeight - padding;
+        // WebView / 页面刚加载时 innerWidth/innerHeight 可能还是 0，直接相减会得到
+        // 负数尺寸，窗口会退化成一条没有标题栏的长条。给一个兜底下限。
+        const maxW = Math.max(280, window.innerWidth - padding);
+        const maxH = Math.max(240, window.innerHeight - padding);
         if (fullScreen) {
             width = Math.min(1200, maxW);
             height = Math.min(800, maxH);

@@ -237,6 +237,8 @@ class AddonWindow {
             align-items: center;
             justify-content: space-between;
             min-height: 44px;
+            flex: 0 0 auto;
+            z-index: 3;
             box-sizing: border-box;
             position: relative;
             overflow: hidden;
@@ -264,8 +266,9 @@ class AddonWindow {
             display: flex;
             gap: 6px;
             align-items: center;
+            flex: 0 0 auto;
             z-index: 1;
-            overflow: hidden;
+            overflow: visible;
         `;
         
         // Control buttons
@@ -379,6 +382,7 @@ class AddonWindow {
             cursor: pointer;
             width: 28px;
             height: 28px;
+            flex: 0 0 auto;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -386,6 +390,9 @@ class AddonWindow {
             font-size: 0;
             margin: 0;
             padding: 0;
+            opacity: 1;
+            visibility: visible;
+            color: var(--text-primary, #575e75);
         `;
         
         button.addEventListener('pointerdown', e => {
@@ -908,6 +915,34 @@ class AddonWindow {
         // Always ensure the element is displayed immediately
         this.element.style.display = 'flex';
         this.element.style.pointerEvents = 'auto';
+
+        // 标题栏和三个控制按钮必须始终可见：部分主题 / 小屏样式会把它们
+        // 压成 0 高或被内容区盖住，这里在每次显示时强制恢复。
+        if (this.headerElement) {
+            this.headerElement.style.display = 'flex';
+            this.headerElement.style.flex = '0 0 auto';
+            this.headerElement.style.visibility = 'visible';
+            this.headerElement.style.opacity = '1';
+        }
+        const controlsElement = this.element.querySelector('.addon-window-controls');
+        if (controlsElement) {
+            controlsElement.style.display = 'flex';
+            controlsElement.style.overflow = 'visible';
+            controlsElement.style.visibility = 'visible';
+            controlsElement.style.opacity = '1';
+        }
+
+        // 窗口如果被摆到视口之外，拉回可见区域，避免只看得到内容看不到标题栏
+        if (!this.isMaximized) {
+            const rect = this.element.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0 &&
+                (rect.top < 0 || rect.left < 0 || rect.bottom > window.innerHeight + 1)) {
+                this.x = Math.max(0, Math.min(this.x, Math.max(0, window.innerWidth - rect.width)));
+                this.y = Math.max(0, Math.min(this.y, Math.max(0, window.innerHeight - rect.height)));
+                this.element.style.left = `${this.x}px`;
+                this.element.style.top = `${this.y}px`;
+            }
+        }
 
         // A show() while the window is maximized can happen after the
         // maximize/restore animation was interrupted (its _animTimer was
