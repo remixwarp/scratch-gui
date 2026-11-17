@@ -48,9 +48,17 @@ export const openPixelThemeSettings = () => {
         // ignore
     }
     const store = window.ReduxStore;
-    if (store && typeof store.dispatch === 'function') {
-        store.dispatch(openSettingsModal());
-    }
+    if (!store || typeof store.dispatch !== 'function') return;
+    store.dispatch(openSettingsModal());
+    // 设置窗口是 React.lazy 加载的，可能稍后才挂载；补发一次事件，
+    // 保证窗口挂载完成后也能切到「主题 → 像素主题」页。
+    setTimeout(() => {
+        try {
+            window.dispatchEvent(new CustomEvent('tw:settings-view', {detail: 'pixelTheme'}));
+        } catch (e) {
+            // ignore
+        }
+    }, 120);
 };
 
 let warningWindow = null;

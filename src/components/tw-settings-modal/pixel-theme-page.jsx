@@ -4,9 +4,12 @@ import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {
     getPixelPreviewSettings,
     setPixelPreviewSettings,
-    subscribePixelPreviewSettings
+    subscribePixelPreviewSettings,
+    PIXEL_ORIENTATION_LANDSCAPE,
+    PIXEL_ORIENTATION_PORTRAIT
 } from '../../lib/themes/pixel-preview-settings.js';
 import {computeScreenWidthReference} from '../../lib/themes/pixel-width-calibration.js';
+import {previewCalibrationTheme, restoreCalibrationTheme} from '../../lib/themes/pixel-calibration-preview.js';
 import {openWidthCalibrationWindow} from '../menu-bar/tw-pixel-width-calibration.jsx';
 import styles from './settings-modal.css';
 
@@ -14,22 +17,52 @@ import styles from './settings-modal.css';
  * 「设置 → 主题 → 像素主题」页面。
  * 这里的宽度 / 高度是当前设备预览灵活编码像素主题时使用的画布尺寸，
  * 与主题文件里保存的 w / h 互不干扰。
+ *
+ * 方向（横屏 / 竖屏）只影响「不稳定参考值」：横屏时左右是短边，分辨率里较小的
+ * 那个排在前面（d = m − n 为负）；竖屏时上下是短边，较大的那个排在前面。
+ * 这样同一个屏幕在两种方向下会得到不同参考宽度，不会出现形状对、观感不对的情况。
  */
+
+const ORIENTATION_MESSAGES = {
+    [PIXEL_ORIENTATION_LANDSCAPE]: {
+        defaultMessage: '横屏（左右为短边）',
+        description: 'Landscape orientation option: the left and right sides are the short ones',
+        id: 'tw.settingsModal.pixelTheme.orientationLandscape'
+    },
+    [PIXEL_ORIENTATION_PORTRAIT]: {
+        defaultMessage: '竖屏（上下为短边）',
+        description: 'Portrait orientation option: the top and bottom sides are the short ones',
+        id: 'tw.settingsModal.pixelTheme.orientationPortrait'
+    }
+};
+
+const ORIENTATION_ORDER = [PIXEL_ORIENTATION_LANDSCAPE, PIXEL_ORIENTATION_PORTRAIT];
+
+const computeReference = orientation => computeScreenWidthReference(null, {orientation}).value;
+
 class PixelThemePage extends React.Component {
     constructor (props) {
         super(props);
+        const settings = getPixelPreviewSettings();
         this.state = {
-            ...getPixelPreviewSettings(),
-            reference: computeScreenWidthReference().value
+            ...settings,
+            reference: computeReference(settings.orientation)
         };
+        this.unsubscribe = null;
     }
 
     componentDidMount () {
-        this.unsubscribe = subscribePixelPreviewSettings(settings => this.setState({...settings}));
+        this.unsubscribe = subscribePixelPreviewSettings(settings => this.setState({
+            ...settings,
+            reference: computeReference(settings.orientation)
+        }));
     }
 
     componentWillUnmount () {
         if (this.unsubscribe) this.unsubscribe();
+        this.unsubscribe = null;
+        // 离开设置页时不要把校准标尺留在编辑器上
+        restoreCalibrationTheme();
     }
 
     handleWidthChange = e => {
@@ -44,6 +77,17 @@ class PixelThemePage extends React.Component {
         setPixelPreviewSettings({height: Math.min(50, Math.round(n))});
     };
 
+    handleOrientationChange = e => {
+        const orientation = e.target.value === PIXEL_ORIENTATION_LANDSCAPE ?
+            PIXEL_ORIENTATION_LANDSCAPE : PIXEL_ORIENTATION_PORTRAIT;
+        const next = setPixelPreviewSettings({orientation});
+        // 宽度还是默认值（从未手动配置）时，让它继续跟随参考值
+        if (!next.configured) {
+            setPixelPreviewSettings({width: computeReference(orientation)});
+        }
+        this.setState({reference: computeReference(orientation)});
+    };
+
     handleUseReference = () => {
         setPixelPreviewSettings({width: this.state.reference, configured: true});
     };
@@ -52,12 +96,16 @@ class PixelThemePage extends React.Component {
         openWidthCalibrationWindow({
             intl: this.props.intl,
             // 校准窗口最终值回填到本设置，并标记为已配置
-            onApplyWidth: width => setPixelPreviewSettings({width, configured: true})
+            onApplyWidth: width => setPixelPreviewSettings({width, configured: true}),
+            // 与「创建像素主题」窗口里的手动配置保持一致：校准过程中把深色块标尺
+            // 直接画到编辑器菜单栏上，关闭窗口时恢复原主题。
+            onPreviewCalibration: pixelData => previewCalibrationTheme(pixelData),
+            onRestoreTheme: () => restoreCalibrationTheme()
         });
     };
 
     render () {
-        const {width, height, configured, reference} = this.state;
+        const {width, height, configured, reference, orientation} = this.state;
         const inputStyle = {
             width: '140px',
             padding: '6px 10px',
@@ -125,6 +173,39 @@ class PixelThemePage extends React.Component {
                             id: 'tw.settingsModal.pixelTheme.height'
                         })}
                     />
+
+                    <label className={styles.label} style={{display: 'block', marginTop: '12px'}}>
+                        <FormattedMessage
+                            defaultMessage="屏幕方向"
+                            description="Label of the landscape/portrait selector for the pixel theme reference"
+                            id="tw.settingsModal.pixelTheme.orientation"
+                        />
+                    </label>
+                    <select
+                        className={styles.select}
+                        value={orientation}
+                        onChange={this.handleOrientationChange}
+                        aria-label={this.props.intl.formatMessage({
+                            defaultMessage: '屏幕方向',
+                            id: 'tw.settingsModal.pixelTheme.orientation'
+                        })}
+                    >
+                        {ORIENTATION_ORDER.map(value => (
+                            <option
+                                key={value}
+                                value={value}
+                            >
+                                {this.props.intl.formatMessage(ORIENTATION_MESSAGES[value])}
+                            </option>
+                        ))}
+                    </select>
+                    <p className={styles.detail} style={{marginTop: '6px'}}>
+                        <FormattedMessage
+                            defaultMessage="横屏：左右为短边、上下为长边；竖屏：上下为短边、左右为长边。方向只改变参考值，画布高度不变。"
+                            description="Hint explaining what the orientation option changes"
+                            id="tw.settingsModal.pixelTheme.orientationHint"
+                        />
+                    </p>
 
                     <p className={styles.detail} style={{marginTop: '16px'}}>
                         <FormattedMessage

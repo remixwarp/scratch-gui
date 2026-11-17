@@ -7,7 +7,8 @@
  * 与导出文件里的 w / h 互不干扰。
  *
  * 存储于 localStorage，键为 tw:pixelPreviewSettings：
- *   {width, height, position, configured}
+ *   {width, height, position, orientation, configured}
+ *   orientation 为参考值计算用的方向（landscape 横屏 / portrait 竖屏）
  *   configured 表示用户是否手动配置过宽度；默认 false 时，应用灵活编码主题
  *   会弹出「主题已经应用」的提示框（宽度已默认采用当前设备的参考值）。
  */
@@ -20,13 +21,22 @@ import {
     PIXEL_POSITION_RIGHT,
     PIXEL_POSITIONS
 } from './pixel-encoding.js';
-import {reflowPixelDataToWidth, computeScreenWidthReference} from './pixel-width-calibration.js';
+import {
+    reflowPixelDataToWidth,
+    computeScreenWidthReference,
+    PIXEL_ORIENTATION_LANDSCAPE,
+    PIXEL_ORIENTATION_PORTRAIT,
+    PIXEL_ORIENTATIONS
+} from './pixel-width-calibration.js';
 
 export {
     PIXEL_POSITION_LEFT,
     PIXEL_POSITION_CENTER,
     PIXEL_POSITION_RIGHT,
-    PIXEL_POSITIONS
+    PIXEL_POSITIONS,
+    PIXEL_ORIENTATION_LANDSCAPE,
+    PIXEL_ORIENTATION_PORTRAIT,
+    PIXEL_ORIENTATIONS
 };
 
 const STORAGE_KEY = 'tw:pixelPreviewSettings';
@@ -54,6 +64,8 @@ const defaultSettings = () => ({
     width: getDefaultPixelPreviewWidth(),
     height: PIXEL_PREVIEW_DEFAULT_HEIGHT,
     position: PIXEL_POSITION_CENTER,
+    // 默认竖屏：与既有参考值算法一致，老用户升级后数值不变
+    orientation: PIXEL_ORIENTATION_PORTRAIT,
     configured: false
 });
 
@@ -68,6 +80,7 @@ const sanitize = raw => ({
     width: clampInt(raw.width, 2, 10000, getDefaultPixelPreviewWidth()),
     height: clampInt(raw.height, 2, 50, PIXEL_PREVIEW_DEFAULT_HEIGHT),
     position: PIXEL_POSITIONS.includes(raw.position) ? raw.position : PIXEL_POSITION_CENTER,
+    orientation: PIXEL_ORIENTATIONS.includes(raw.orientation) ? raw.orientation : PIXEL_ORIENTATION_PORTRAIT,
     configured: !!raw.configured
 });
 
@@ -109,6 +122,7 @@ export const isPixelWidthConfigured = () => getPixelPreviewSettings().configured
 export const getPixelPreviewWidth = () => getPixelPreviewSettings().width;
 export const getPixelPreviewHeight = () => getPixelPreviewSettings().height;
 export const getPixelPreviewPosition = () => getPixelPreviewSettings().position;
+export const getPixelPreviewOrientation = () => getPixelPreviewSettings().orientation;
 
 /** 订阅设置变化，返回取消订阅函数 */
 export const subscribePixelPreviewSettings = cb => {

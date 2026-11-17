@@ -8,6 +8,7 @@ import {
     buildCalibrationPixelData,
     CALIBRATION
 } from '../../lib/themes/pixel-width-calibration.js';
+import {getPixelPreviewOrientation} from '../../lib/themes/pixel-preview-settings.js';
 import styles from './settings-menu.css';
 
 const STEP_SIZE_MESSAGES = {
@@ -79,7 +80,10 @@ const WidthCalibrationApp = injectIntl(props => {
     const [width, setWidth] = React.useState(CALIBRATION.initialWidth);
     const [stepSize, setStepSize] = React.useState(1);
     const [copied, setCopied] = React.useState(false);
-    const reference = React.useMemo(() => computeScreenWidthReference(), []);
+    // 参考值跟随设置页选择的方向（横屏 / 竖屏），保证这里与设置页显示同一个数
+    const reference = React.useMemo(() => computeScreenWidthReference(null, {
+        orientation: getPixelPreviewOrientation()
+    }), []);
 
     const previewRef = React.useRef(onPreviewCalibration);
     previewRef.current = onPreviewCalibration;
