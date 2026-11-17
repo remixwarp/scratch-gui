@@ -4,6 +4,7 @@ import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import Modal from '../../containers/windowed-modal.jsx';
 import {AESettings} from '../../lib/settings.js';
 import settingsStore from '../../addons/settings-store-singleton.js';
+import {CONFIG_FILE_ACCEPT, parseConfigBuffer} from '../../lib/mw/config-file.js';
 import {applyLayout} from '../tw-settings-modal/settings-modal.jsx';
 import {
     ACHIEVEMENTS,
@@ -614,20 +615,15 @@ Achievements.propTypes = {
 const handleImportConfig = async () => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.rwc';
+    input.accept = CONFIG_FILE_ACCEPT;
     input.onchange = async (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
         try {
-            const {default: JSZip} = await import('@turbowarp/jszip');
             const reader = new FileReader();
             reader.onload = async (event) => {
                 try {
-                    const zip = new JSZip();
-                    const content = await zip.loadAsync(event.target.result);
-                    const settingsFile = content.file('settings.json');
-                    if (!settingsFile) throw new Error('设置文件不存在或格式错误');
-                    const settingsData = JSON.parse(await settingsFile.async('text'));
+                    const settingsData = await parseConfigBuffer(event.target.result);
                     if (!confirm('确定要导入配置吗？这将覆盖您当前的设置。')) return;
                     // 导入插件设置
                     if (settingsData.addonSettings) {

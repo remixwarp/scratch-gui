@@ -50,6 +50,7 @@ const configPlazaMessages = defineMessages({
         id: 'mw.menuBar.configPlaza'
     }
 });
+import {CONFIG_FILE_ACCEPT, parseConfigBuffer} from '../../lib/mw/config-file.js';
 import openMaterialPlazaWindow from '../../lib/mw/open-material-plaza-window.js';
 import openRwckPublishWindow from '../../lib/mw/open-rwck-publish-window.jsx';
 import {
@@ -3053,7 +3054,7 @@ class MenuBar extends React.Component {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `remixwarp-cfgmig-${Date.now().toString(36)}.rwc`;
+            a.download = `remixwarp-cfgmig-${Date.now().toString(36)}.rjc`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -3076,7 +3077,7 @@ class MenuBar extends React.Component {
         // 创建文件输入元素
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.rwc';
+        input.accept = CONFIG_FILE_ACCEPT;
         input.onchange = async (e) => {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
@@ -3084,28 +3085,13 @@ class MenuBar extends React.Component {
             try {
                 console.log('开始导入设置文件:', file.name);
                 
-                // 动态导入JSZip
-                const { default: JSZip } = await import('@turbowarp/jszip');
-                console.log('JSZip库加载完成');
-                
-                // 读取文件
+                // 读取文件（.rjc 为主，兼容旧版 .rwc 与纯 JSON 配置）
                 const reader = new FileReader();
                 reader.onload = async (event) => {
                     try {
-                        console.log('文件读取完成，开始解析压缩包');
-                        
-                        // 解析压缩包
-                        const zip = new JSZip();
-                        const content = await zip.loadAsync(event.target.result);
-                        console.log('压缩包解析完成，文件列表:', Object.keys(content.files));
+                        console.log('文件读取完成，开始解析配置文件');
 
-                        // 读取设置文件
-                        const settingsFile = content.file('settings.json');
-                        if (!settingsFile) {
-                            throw new Error('设置文件不存在');
-                        }
-
-                        const settingsData = JSON.parse(await settingsFile.async('text'));
+                        const settingsData = await parseConfigBuffer(event.target.result);
                         console.log('设置文件解析完成，版本:', settingsData.version);
 
                         // 确认覆盖现有设置
@@ -3213,6 +3199,8 @@ class MenuBar extends React.Component {
                             errorMessage += '：JSON 格式错误';
                         } else if (error.message.includes('loadAsync')) {
                             errorMessage += '：压缩文件格式错误';
+                        } else if (error.message.includes('不是有效的配置文件')) {
+                            errorMessage += '：文件格式不正确，请选择 .rjc 或 .rwc 配置文件';
                         } else {
                             errorMessage += '：' + error.message;
                         }
