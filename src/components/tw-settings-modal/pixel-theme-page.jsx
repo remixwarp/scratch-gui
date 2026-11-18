@@ -10,6 +10,7 @@ import {
 } from '../../lib/themes/pixel-preview-settings.js';
 import {computeScreenWidthReference} from '../../lib/themes/pixel-width-calibration.js';
 import {previewCalibrationTheme, restoreCalibrationTheme} from '../../lib/themes/pixel-calibration-preview.js';
+import {refreshCurrentPixelTheme} from '../../lib/themes/pixel-theme-refresh.js';
 import {openWidthCalibrationWindow} from '../menu-bar/tw-pixel-width-calibration.jsx';
 import styles from './settings-modal.css';
 
@@ -83,19 +84,27 @@ class PixelThemePage extends React.Component {
         // 宽度还是默认值（从未手动配置）时，让它继续跟随参考值
         if (!next.configured) {
             setPixelPreviewSettings({width: computeReference(orientation).value});
+            // 参考宽度变了，正在使用的像素主题要按新宽度重画
+            refreshCurrentPixelTheme();
         }
         this.setState({reference: computeReference(orientation)});
     };
 
     handleUseReference = () => {
         setPixelPreviewSettings({width: this.state.reference.value, configured: true});
+        // 宽度变了，已应用的像素主题要按新宽度重画，否则菜单栏还是旧图案
+        refreshCurrentPixelTheme();
     };
 
     handleManualWidth = () => {
         openWidthCalibrationWindow({
             intl: this.props.intl,
-            // 校准窗口最终值回填到本设置，并标记为已配置
-            onApplyWidth: width => setPixelPreviewSettings({width, configured: true}),
+            // 校准窗口最终值回填到本设置，并标记为已配置；
+            // 宽度变了要立即重画当前像素主题（此刻仍在标尺预览中，会一并更新恢复基线）
+            onApplyWidth: width => {
+                setPixelPreviewSettings({width, configured: true});
+                refreshCurrentPixelTheme();
+            },
             // 与「创建像素主题」窗口里的手动配置保持一致：校准过程中把深色块标尺
             // 直接画到编辑器菜单栏上，关闭窗口时恢复原主题。
             onPreviewCalibration: pixelData => previewCalibrationTheme(pixelData),

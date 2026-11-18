@@ -261,10 +261,20 @@ export const reflowPixelDataToWidth = (pixelData, targetWidth, position = null) 
     const {h, w: w0, first, last, fillColor, tailColor} = info;
     const W = Math.max(2, Math.round(Number(targetWidth) || w0));
 
-    // 没有内容块（整张都是纯色列）：只做裁切 / 补齐，不重排
+    // 没有内容块（整张都是纯色列）：不重排，只按预览位置裁剪 / 补齐。
+    // 像「11 深 + 2 白 + 11 深」这类整列同色的标尺图案，每一列都算纯色列，
+    // 若一律从第 0 列开始裁，贴右 / 居中的图案会被整块裁掉，所以按位置取窗口。
     if (first < 0) {
+        let start = 0;
+        if (W < w0) {
+            if (position === 'right') start = w0 - W;
+            else if (position === 'center') start = Math.floor((w0 - W) / 2);
+        }
         return Array.from({length: h}, (_, y) =>
-            Array.from({length: W}, (_, x) => x < w0 ? cellAt(pixelData, y, x) : fillColor));
+            Array.from({length: W}, (_, x) => {
+                const sx = start + x;
+                return sx < w0 ? cellAt(pixelData, y, sx) : fillColor;
+            }));
     }
 
     const blockWidth = last - first;

@@ -58,6 +58,17 @@ export const previewCalibrationTheme = pixelData => {
     }
 };
 
+/**
+ * 更新校准预览的「原主题」基线。
+ * 校准过程中如果用户已经把宽度定下来并刷新了主题，关闭窗口时应恢复刷新后的
+ * 主题，而不是校准开始前那个旧宽度的实例。
+ * @param {object} theme 新的基线主题
+ */
+export const updateCalibrationOriginalTheme = theme => {
+    if (!previewing || !theme) return;
+    originalTheme = theme;
+};
+
 /** 结束预览并恢复校准前的主题（幂等）。 */
 export const restoreCalibrationTheme = () => {
     if (!previewing) return;
