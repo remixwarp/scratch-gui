@@ -18,20 +18,19 @@ import styles from './settings-modal.css';
  * 这里的宽度 / 高度是当前设备预览灵活编码像素主题时使用的画布尺寸，
  * 与主题文件里保存的 w / h 互不干扰。
  *
- * 方向（横屏 / 竖屏）只影响「不稳定参考值」：横屏时左右是短边，分辨率里较小的
- * 那个排在前面（d = m − n 为负）；竖屏时上下是短边，较大的那个排在前面。
- * 这样同一个屏幕在两种方向下会得到不同参考宽度，不会出现形状对、观感不对的情况。
+ * 方向（横屏 / 竖屏）只表示「短边在哪一侧」：横屏的短边是左右、竖屏的短边是上下。
+ * 参考值只由真实长边/短边比例决定，横竖屏切换后数值应当相近。
  */
 
-const ORIENTATION_MESSAGES = {
+const ORIENTATION_LABELS = {
     [PIXEL_ORIENTATION_LANDSCAPE]: {
-        defaultMessage: '横屏（左右为短边）',
-        description: 'Landscape orientation option: the left and right sides are the short ones',
+        defaultMessage: '横屏',
+        description: 'Label of the landscape orientation option',
         id: 'tw.settingsModal.pixelTheme.orientationLandscape'
     },
     [PIXEL_ORIENTATION_PORTRAIT]: {
-        defaultMessage: '竖屏（上下为短边）',
-        description: 'Portrait orientation option: the top and bottom sides are the short ones',
+        defaultMessage: '竖屏',
+        description: 'Label of the portrait orientation option',
         id: 'tw.settingsModal.pixelTheme.orientationPortrait'
     }
 };
@@ -181,27 +180,53 @@ class PixelThemePage extends React.Component {
                             id="tw.settingsModal.pixelTheme.orientation"
                         />
                     </label>
-                    <select
-                        className={styles.select}
-                        value={orientation}
-                        onChange={this.handleOrientationChange}
+                    <div
+                        style={{
+                            display: 'flex',
+                            gap: '8px',
+                            marginTop: '4px'
+                        }}
+                        role="radiogroup"
                         aria-label={this.props.intl.formatMessage({
                             defaultMessage: '屏幕方向',
                             id: 'tw.settingsModal.pixelTheme.orientation'
                         })}
                     >
-                        {ORIENTATION_ORDER.map(value => (
-                            <option
-                                key={value}
-                                value={value}
-                            >
-                                {this.props.intl.formatMessage(ORIENTATION_MESSAGES[value])}
-                            </option>
-                        ))}
-                    </select>
+                        {ORIENTATION_ORDER.map(value => {
+                            const selected = orientation === value;
+                            return (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={selected}
+                                    onClick={() => this.handleOrientationChange({target: {value}})}
+                                    style={{
+                                        flex: '1 1 0',
+                                        minWidth: '140px',
+                                        padding: '10px 14px',
+                                        borderRadius: '8px',
+                                        border: selected ?
+                                            '2px solid #4c97ff' :
+                                            '1px solid rgba(128, 128, 128, 0.5)',
+                                        background: selected ?
+                                            'rgba(76, 151, 255, 0.12)' :
+                                            'transparent',
+                                        color: 'inherit',
+                                        fontFamily: 'inherit',
+                                        fontSize: '14px',
+                                        cursor: 'pointer',
+                                        transition: 'background 120ms ease, border-color 120ms ease'
+                                    }}
+                                >
+                                    {this.props.intl.formatMessage(ORIENTATION_LABELS[value])}
+                                </button>
+                            );
+                        })}
+                    </div>
                     <p className={styles.detail} style={{marginTop: '6px'}}>
                         <FormattedMessage
-                            defaultMessage="横屏：左右为短边、上下为长边；竖屏：上下为短边、左右为长边。方向只改变参考值，画布高度不变。"
+                            defaultMessage="横屏：左右为短边、上下为长边；竖屏：上下为短边、左右为长边。方向只改变参考值的参考语义，画布高度不变。"
                             description="Hint explaining what the orientation option changes"
                             id="tw.settingsModal.pixelTheme.orientationHint"
                         />

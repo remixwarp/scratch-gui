@@ -48,9 +48,11 @@ export const REFERENCE_ANCHORS = {
 
 /**
  * 预览方向（设置页里可切换）：
- * - landscape 横屏：左右为短边、上下为长边 → 分辨率中较小的那个排在前面，d = m − n 为负；
- * - portrait 竖屏：上下为短边、左右为长边 → 较大的那个排在前面，d 为正。
- * 方向只决定公式里 m、n 的前后顺序（即参考宽度），不改变预览画布的行数。
+ * - landscape 横屏：左右为短边、上下为长边；
+ * - portrait 竖屏：上下为短边、左右为长边。
+ * 方向只作为「短边在哪一侧」的提示标签，不再参与参考值的计算。
+ * 参考值完全由长边/短边的真实比例决定，因此横竖屏切换后得到的数值应当相近，
+ * 不会再出现横屏 2000+、竖屏 500 的差异。
  */
 export const PIXEL_ORIENTATION_LANDSCAPE = 'landscape';
 export const PIXEL_ORIENTATION_PORTRAIT = 'portrait';
@@ -60,9 +62,11 @@ const clampInt = (value, min, max) => Math.max(min, Math.min(max, Math.round(val
 
 /**
  * 计算不稳定参考值：直接采用屏幕真实宽高比连续换算，不再就近匹配常见比例。
+ * 参考值只跟「长边 / 短边」的真实比例有关，与横竖屏方向无关；
+ * 方向选择只作为「短边在哪一侧」的提示，不会影响最终数值。
  * @param {object} [screenLike] 可选的屏幕尺寸来源，便于测试；缺省读 window.screen / window.inner*
  * @returns {{value:number, ratio:number, d:number, ratioText:string,
- *            screenWidth:number, screenHeight:number}}
+ *            screenWidth:number, screenHeight:number, orientation:string}}
  */
 export const computeScreenWidthReference = (screenLike = null, options = {}) => {
     const orientation = options.orientation === PIXEL_ORIENTATION_LANDSCAPE ?
@@ -88,13 +92,10 @@ export const computeScreenWidthReference = (screenLike = null, options = {}) => 
     const ratio = long / short;
 
     const A = REFERENCE_ANCHORS;
-    // 竖屏（上下为短边、左右为长边）：m = 长边、n = 短边，把真实比例连续映射成 d：r₁ → 11，r₂ → 6
-    const portraitD = A.phoneDifference +
+    // 把真实比例连续映射成 d：r₁ → 11，r₂ → 6
+    // d 始终为正（长边 - 短边），与横竖屏无关，保证公式 F(m,n) 稳定在合理区间
+    const d = A.phoneDifference +
         (A.laptopDifference - A.phoneDifference) * (ratio - A.phoneRatio) / (A.laptopRatio - A.phoneRatio);
-    // 横屏（左右为短边、上下为长边）：分辨率里较小的那个放到前面（m = 短边、n = 长边），
-    // 即把 m、n 前后对调，d = m − n 取反。这样同一个屏幕在两种方向下参考值不同，
-    // 不会出现「形状对了但横向拉伸观感不同」的问题。
-    const d = orientation === PIXEL_ORIENTATION_LANDSCAPE ? -portraitD : portraitD;
     // 原公式 F(m,n) = 490 + 410 × [(m−n) − 11] / (6 − 11)
     const value = Math.max(2, Math.round(A.phoneValue +
         (A.laptopValue - A.phoneValue) * (d - A.phoneDifference) / (A.laptopDifference - A.phoneDifference)));
@@ -104,9 +105,7 @@ export const computeScreenWidthReference = (screenLike = null, options = {}) => 
         ratio,
         d,
         orientation,
-        // 显示真实比例本身，而不是归一化后的整数比；横屏时长边在后
-        ratioText: orientation === PIXEL_ORIENTATION_LANDSCAPE ?
-            `1:${ratio.toFixed(3)}` : `${ratio.toFixed(3)}:1`,
+        ratioText: `${ratio.toFixed(3)}:1`,
         screenWidth: sw,
         screenHeight: sh
     };
