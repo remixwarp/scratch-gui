@@ -19,7 +19,7 @@ import styles from './settings-modal.css';
  * 与主题文件里保存的 w / h 互不干扰。
  *
  * 方向（横屏 / 竖屏）只表示「短边在哪一侧」：横屏的短边是左右、竖屏的短边是上下。
- * 参考值只由真实长边/短边比例决定，横竖屏切换后数值应当相近。
+ * 参考值按最简比例计算，横竖屏用两种互为止数的算法，结果接近但不会完全相同。
  */
 
 const ORIENTATION_LABELS = {
@@ -37,7 +37,7 @@ const ORIENTATION_LABELS = {
 
 const ORIENTATION_ORDER = [PIXEL_ORIENTATION_LANDSCAPE, PIXEL_ORIENTATION_PORTRAIT];
 
-const computeReference = orientation => computeScreenWidthReference(null, {orientation}).value;
+const computeReference = orientation => computeScreenWidthReference(null, {orientation});
 
 class PixelThemePage extends React.Component {
     constructor (props) {
@@ -82,13 +82,13 @@ class PixelThemePage extends React.Component {
         const next = setPixelPreviewSettings({orientation});
         // 宽度还是默认值（从未手动配置）时，让它继续跟随参考值
         if (!next.configured) {
-            setPixelPreviewSettings({width: computeReference(orientation)});
+            setPixelPreviewSettings({width: computeReference(orientation).value});
         }
         this.setState({reference: computeReference(orientation)});
     };
 
     handleUseReference = () => {
-        setPixelPreviewSettings({width: this.state.reference, configured: true});
+        setPixelPreviewSettings({width: this.state.reference.value, configured: true});
     };
 
     handleManualWidth = () => {
@@ -226,7 +226,7 @@ class PixelThemePage extends React.Component {
                     </div>
                     <p className={styles.detail} style={{marginTop: '6px'}}>
                         <FormattedMessage
-                            defaultMessage="横屏：左右为短边、上下为长边；竖屏：上下为短边、左右为长边。方向只改变参考值的参考语义，画布高度不变。"
+                            defaultMessage="横屏：左右为短边、上下为长边，按短:长计算；竖屏：上下为短边、左右为长边，按长:短计算。两种算法结果接近，只差几个像素。"
                             description="Hint explaining what the orientation option changes"
                             id="tw.settingsModal.pixelTheme.orientationHint"
                         />
@@ -234,10 +234,10 @@ class PixelThemePage extends React.Component {
 
                     <p className={styles.detail} style={{marginTop: '16px'}}>
                         <FormattedMessage
-                            defaultMessage="不稳定参考值：{reference}"
-                            description="Unstable screen-ratio reference value shown in pixel theme settings"
+                            defaultMessage="不稳定参考值：{reference}（最简比例 {ratio}）"
+                            description="Unstable screen-ratio reference value and its simplified ratio"
                             id="tw.settingsModal.pixelTheme.reference"
-                            values={{reference}}
+                            values={{reference: reference.value, ratio: reference.ratioText}}
                         />
                     </p>
                     <div

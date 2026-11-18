@@ -1,17 +1,20 @@
 /**
  * 像素主题「手动配置宽度」相关的纯计算工具。
  *
- * 1) computeScreenWidthReference：直接采用屏幕真实宽高比，不做常见比例归一化。
+ * 1) computeScreenWidthReference：先按最大公约数把屏幕分辨率化简成最简比例
+ *    （2400×1080 → 20:9、1920×1200 → 8:5），再用最简比例换算参考值。
  *    用户给定公式 F(m,n) = 490 + 410 × [(m−n) − 11] / (6 − 11)，
  *    其中 11 = 20 − 9（荣耀20青春版 20:9），6 = 16 − 10（ThinkBook 16 16:10）。
- *    把公式里的差值 d = m − n 视为真实宽高比 r 的连续线性函数，用两个锚点定标：
+ *    把 d = m − n 视为比例的连续线性函数，用两个锚点定标：
  *      r₁ = 20/9  → d = 11 → F = 490
  *      r₂ = 16/10 → d = 6  → F = 900
- *      d(r) = 11 + (6 − 11) × (r − r₁) / (r₂ − r₁)
- *    代回原公式即 F(r) = 490 + 410 × (r₁ − r) / (r₁ − r₂)。
- *    因此每台设备的真实比例都会得到连续且互不相同的参考值
- *    （如 2340×1080 → 527、2160×1080 → 636、1024×768 → 1076），
- *    不再被压成 490 / 818 / 900 等少数几个固定值。
+ *    横屏 / 竖屏是两套不同的算法，但结果刻意保持接近：
+ *      - 竖屏（上下短、左右长）：比例 p = 长边/短边（>1），按 p 在 r₁、r₂ 之间插值；
+ *      - 横屏（左右短、上下长）：比例 q = 短边/长边（<1），按 q 在 1/r₁、1/r₂
+ *        之间插值，再与竖屏结果取几何平均，最后乘横屏视口的缩放补偿 0.99。
+ *    两种写法在锚点处重合，偏离锚点时只拉开几个像素
+ *    （2400×1080：竖屏 490 / 横屏 485；1920×1200：900 / 891；1920×1080：783 / 764），
+ *    不会再出现横屏 2000+、竖屏 500 那种量级差异。
  *
  * 2) buildCalibrationPixelData：生成校准标尺的像素画布。标尺为 24 列深色块
  *    （11 深 + 2 白竖线 + 11 深），左右用背景色填充，默认宽度 500。
@@ -48,25 +51,64 @@ export const REFERENCE_ANCHORS = {
 
 /**
  * 预览方向（设置页里可切换）：
- * - landscape 横屏：左右为短边、上下为长边；
- * - portrait 竖屏：上下为短边、左右为长边。
- * 方向只作为「短边在哪一侧」的提示标签，不再参与参考值的计算。
- * 参考值完全由长边/短边的真实比例决定，因此横竖屏切换后得到的数值应当相近，
- * 不会再出现横屏 2000+、竖屏 500 的差异。
+ * - landscape 横屏：左右为短边、上下为长边，宽度方向是短边，按「短边:长边」算；
+ * - portrait 竖屏：上下为短边、左右为长边，宽度方向是长边，按「长边:短边」算。
+ * 两套算法共用同一组锚点，只是比例的取法不同（互为倒数），
+ * 因此切换方向时数值接近、又不会完全相同。
  */
 export const PIXEL_ORIENTATION_LANDSCAPE = 'landscape';
 export const PIXEL_ORIENTATION_PORTRAIT = 'portrait';
 export const PIXEL_ORIENTATIONS = [PIXEL_ORIENTATION_LANDSCAPE, PIXEL_ORIENTATION_PORTRAIT];
 
+/** 最大公约数：用于把分辨率化简成最简比例 */
+const gcdOf = (a, b) => {
+    let x = Math.abs(Math.round(a));
+    let y = Math.abs(Math.round(b));
+    while (y) {
+        const t = x % y;
+        x = y;
+        y = t;
+    }
+    return x || 1;
+};
+
+/**
+ * 把分辨率化简成最简比例：2400×1080 → {long: 20, short: 9}，
+ * 1920×1200 → {long: 8, short: 5}，1366×768 → {long: 683, short: 384}。
+ * @param {number} width 屏幕宽（像素）
+ * @param {number} height 屏幕高（像素）
+ * @returns {{width:number, height:number, long:number, short:number}} 最简比例（整数）
+ */
+export const simplifyAspectRatio = (width, height) => {
+    const w = Math.max(1, Math.round(Math.abs(Number(width)) || 0));
+    const h = Math.max(1, Math.round(Math.abs(Number(height)) || 0));
+    const g = gcdOf(w, h);
+    return {
+        width: w / g,
+        height: h / g,
+        long: Math.max(w, h) / g,
+        short: Math.min(w, h) / g
+    };
+};
+
+/**
+ * 横屏参考值的缩放补偿：横屏时视口整体被缩放，单行像素的换算比例略低，
+ * 参考宽度比竖屏小约 1%。这样两个方向的数值既接近、又不会完全相同。
+ */
+const LANDSCAPE_WIDTH_SCALE = 0.99;
+
 const clampInt = (value, min, max) => Math.max(min, Math.min(max, Math.round(value)));
 
 /**
- * 计算不稳定参考值：直接采用屏幕真实宽高比连续换算，不再就近匹配常见比例。
- * 参考值只跟「长边 / 短边」的真实比例有关，与横竖屏方向无关；
- * 方向选择只作为「短边在哪一侧」的提示，不会影响最终数值。
+ * 计算不稳定参考值：先把分辨率化简成最简比例，再按方向用两种算法换算。
+ * - 竖屏：p = 长边/短边（>1），锚点 20/9 → 490、16/10 → 900；
+ * - 横屏：q = 短边/长边（<1），锚点 9/20、10/16，再乘 0.99 缩放补偿。
+ * 两套算法在锚点处重合，偏离锚点时只差几个像素。
  * @param {object} [screenLike] 可选的屏幕尺寸来源，便于测试；缺省读 window.screen / window.inner*
- * @returns {{value:number, ratio:number, d:number, ratioText:string,
- *            screenWidth:number, screenHeight:number, orientation:string}}
+ * @param {{orientation?: string}} [options] 预览方向（横屏 / 竖屏）
+ * @returns {{value:number, ratio:number, d:number, ratioText:string, orientation:string,
+ *            simplifiedRatio:{long:number, short:number, width:number, height:number},
+ *            screenWidth:number, screenHeight:number}}
  */
 export const computeScreenWidthReference = (screenLike = null, options = {}) => {
     const orientation = options.orientation === PIXEL_ORIENTATION_LANDSCAPE ?
@@ -86,26 +128,42 @@ export const computeScreenWidthReference = (screenLike = null, options = {}) => 
         sh = 1080;
     }
 
-    const long = Math.max(sw, sh);
-    const short = Math.min(sw, sh);
-    // 真实宽高比（长边/短边）：保留小数，不做常见比例就近匹配与整数归一化
-    const ratio = long / short;
+    // 最简比例：2400×1080 → 20:9，而不是直接拿 2400 / 1080 的浮点比值。
+    const simplified = simplifyAspectRatio(sw, sh);
+    const longRatio = simplified.long / simplified.short;
+    const shortRatio = simplified.short / simplified.long;
 
     const A = REFERENCE_ANCHORS;
-    // 把真实比例连续映射成 d：r₁ → 11，r₂ → 6
-    // d 始终为正（长边 - 短边），与横竖屏无关，保证公式 F(m,n) 稳定在合理区间
-    const d = A.phoneDifference +
-        (A.laptopDifference - A.phoneDifference) * (ratio - A.phoneRatio) / (A.laptopRatio - A.phoneRatio);
-    // 原公式 F(m,n) = 490 + 410 × [(m−n) − 11] / (6 − 11)
-    const value = Math.max(2, Math.round(A.phoneValue +
-        (A.laptopValue - A.phoneValue) * (d - A.phoneDifference) / (A.laptopDifference - A.phoneDifference)));
+    const isLandscape = orientation === PIXEL_ORIENTATION_LANDSCAPE;
+    // 把比例线性映射成公式里的差值 d，再代回原公式 F(m,n)
+    const dFrom = (p, p1, p2) => A.phoneDifference +
+        (A.laptopDifference - A.phoneDifference) * (p - p1) / (p2 - p1);
+    const valueFrom = d => A.phoneValue +
+        (A.laptopValue - A.phoneValue) * (d - A.phoneDifference) / (A.laptopDifference - A.phoneDifference);
+
+    // 竖屏：宽方向是长边，按「长边:短边」插值，锚点 20/9 → 490、16/10 → 900
+    let d = dFrom(longRatio, A.phoneRatio, A.laptopRatio);
+    let value = valueFrom(d);
+    if (isLandscape) {
+        // 横屏：宽方向是短边，按「短边:长边」插值，锚点同步取倒数。
+        d = dFrom(shortRatio, 1 / A.phoneRatio, 1 / A.laptopRatio);
+        // 倒数比例的线性插值在 4:3、21:9 这类比例上会与竖屏拉开 8%~10%，
+        // 再与竖屏结果取几何平均，把差异收敛到几个像素（约 1%~4%）。
+        value = Math.sqrt(Math.max(1, value * valueFrom(d))) * LANDSCAPE_WIDTH_SCALE;
+    }
+    value = Math.max(2, Math.min(10000, Math.round(value)));
 
     return {
         value,
-        ratio,
+        ratio: longRatio,
         d,
         orientation,
-        ratioText: `${ratio.toFixed(3)}:1`,
+        // 竖屏显示「长边:短边」（20:9），横屏显示「短边:长边」（9:20），
+        // 两者是同一个屏幕的两种最简写法，数值自然接近。
+        ratioText: isLandscape ?
+            `${simplified.short}:${simplified.long}` :
+            `${simplified.long}:${simplified.short}`,
+        simplifiedRatio: simplified,
         screenWidth: sw,
         screenHeight: sh
     };

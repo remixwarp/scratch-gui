@@ -209,15 +209,15 @@ const WidthCalibrationApp = injectIntl(props => {
                         </div>
                         <p style={{fontSize: '12px', color: '#777', margin: '0 0 4px'}}>
                             <FormattedMessage
-                                defaultMessage="屏幕 {width}×{height}，实际比例 {ratio}"
-                                description="Screen size and the real unnormalized aspect ratio used for the reference"
+                                defaultMessage="屏幕 {width}×{height}，最简比例 {ratio}"
+                                description="Screen size and the simplified aspect ratio used for the reference"
                                 id="tw.customThemes.pixelCreator.widthCalib.ratioInfo"
                                 values={{width: reference.screenWidth, height: reference.screenHeight, ratio: reference.ratioText}}
                             />
                         </p>
                         <p style={{fontSize: '11px', color: '#999', margin: '0'}}>
                             <FormattedMessage
-                                defaultMessage="公式：F(m,n)=490+410×[(m−n)−11]/(6−11)，手机 20:9 得 490，电脑 16:10 得 900"
+                                defaultMessage="公式：F(m,n)=490+410×[(m−n)−11]/(6−11)，手机 20:9 得 490，电脑 16:10 得 900；横屏再乘 0.99 缩放补偿"
                                 description="Formula note for the reference value"
                                 id="tw.customThemes.pixelCreator.widthCalib.formulaNote"
                             />
