@@ -5,7 +5,7 @@ const Loading = () => {
     const [displayText, setDisplayText] = useState('');
 
     useEffect(() => {
-        const fullText = '["ˍ"*/';
+        const fullText = "['‐'⟨";
         let index = 0;
         
         const typeInterval = setInterval(() => {

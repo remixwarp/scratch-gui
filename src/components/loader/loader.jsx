@@ -63,7 +63,7 @@ const randomMessages = [
     'Also try AstraEditor!'
 ];
 
-const TYPE_STRING = '["ˍ"*/';
+const TYPE_STRING = "['‐'⟨";
 
 class LoaderComponent extends React.Component {
     constructor (props) {
