@@ -725,6 +725,7 @@ class CollaborationContainer extends Component {
 }
 
 CollaborationContainer.propTypes = {
+    dispatch: PropTypes.func,
     isVisible: PropTypes.bool.isRequired,
     isConnected: PropTypes.bool.isRequired,
     roomId: PropTypes.string,
@@ -760,6 +761,9 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
+    // 显式暴露 dispatch：函数式 mapDispatchToProps 不会自动注入 dispatch 到 props，
+    // 而 PointerE 的 URL 引导（OAuth 回调 / ?pe / ?peroom）需要它来打开协作 modal。
+    dispatch,
     onRequestClose: () => dispatch(closeCollaborationModal()),
     onSetConnected: connected => dispatch(setCollaborationConnected(connected)),
     onSetUsers: users => dispatch(setCollaborationUsers(users)),
