@@ -8,6 +8,7 @@ import CollaborationModal from '../components/collaboration-modal/collaboration-
 import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
 import {unlockAchievement} from '../lib/achievements.js';
+import bootstrapPointere from '../lib/pointere/pointere-bootstrap.js';
 
 const messages = defineMessages({
     chatPlaceholder: {
@@ -83,6 +84,9 @@ class CollaborationContainer extends Component {
     }
 
     componentDidMount () {
+        // PointerE URL 自动引导（OAuth 回调 / ?pe / ?peroom），只消费一次
+        if (this.props.dispatch) bootstrapPointere(this.props.dispatch).catch(() => {});
+
         // Initialize collaboration service with VM
         if (this.props.vm) {
             this.collaborationService.init(this.props.vm);

@@ -20,10 +20,10 @@ import {DEFAULT_PEER_CONFIG, readUserPeerConfig, saveUserPeerConfig} from '../..
 
 import styles from './collaboration-modal.css';
 
+import {OPEN_REQUEST_EVENT, consumePending} from '../../lib/pointere/pointere-bootstrap.js';
 import PointereCollabTab from '../pointere/pointere-collab-tab.jsx';
 import openPointereWindow from '../../lib/mw/open-pointere-window.jsx';
 import openPointereSettingsWindow from '../../lib/mw/open-pointere-settings-window.jsx';
-import {getPointereAddonState, subscribePointereAddon} from '../../lib/pointere/pointere-addon.js';
 
 /* 首选（默认）服务器直接取上游 transport.js 的 DEFAULT_PEER_CONFIG.host，
    设置面板与连接引擎共用同一份地址，不再单独硬编码一份字面量。 */
@@ -50,8 +50,7 @@ class CollaborationModal extends Component {
             showJoinRequest: false,
             showSettings: false,
             peerConfig: defaultPeerConfig(),
-            activeTab: 'collab',
-            pointereAddon: getPointereAddonState()
+            activeTab: 'collab'
         };
 
         this.autoJoinAttempted = new Set();
@@ -93,9 +92,15 @@ class CollaborationModal extends Component {
     }
 
     componentDidMount () {
-        this.unsubscribePointere = subscribePointereAddon(next => {
-            this.setState({pointereAddon: next});
-        });
+        // PointerE 自动引导：消费待办请求，切到 PointerE tab
+        this.handlePointereOpenRequest = () => {
+            const req = consumePending();
+            if (req && req.tab === 'pointere') {
+                this.setState({activeTab: 'pointere', pointereAutoRoom: req.room || ''});
+            }
+        };
+        window.addEventListener(OPEN_REQUEST_EVENT, this.handlePointereOpenRequest);
+        this.handlePointereOpenRequest();
         console.log('[COLLAB MODAL] ComponentDidMount - props:', {
             roomId: this.props.roomId,
             isConnected: this.props.isConnected,
@@ -235,9 +240,9 @@ class CollaborationModal extends Component {
     }
 
     componentWillUnmount () {
-        if (this.unsubscribePointere) {
-            this.unsubscribePointere();
-            this.unsubscribePointere = null;
+        if (this.handlePointereOpenRequest) {
+            window.removeEventListener(OPEN_REQUEST_EVENT, this.handlePointereOpenRequest);
+            this.handlePointereOpenRequest = null;
         }
         if (CollaborationService) {
             try {
@@ -1418,6 +1423,7 @@ class CollaborationModal extends Component {
         return (
             <PointereCollabTab
                 locale={locale}
+                autoRoom={this.state.pointereAutoRoom || ''}
                 onOpenAccount={tab => openPointereWindow({tab: tab || 'account'})}
                 onOpenSettings={section => openPointereSettingsWindow(section || 'collab')}
             />

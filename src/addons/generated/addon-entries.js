@@ -119,5 +119,4 @@ export default {
   "bilup-sample": () => import(/* webpackChunkName: "addon-entry-bilup-sample" */ "../addons/bilup-sample/_runtime_entry.js"),
   "merge-operators": () => import(/* webpackChunkName: "addon-entry-merge-operators" */ "../addons/merge-operators/_runtime_entry.js"),
   "rwck-community": () => import(/* webpackChunkName: "addon-entry-rwck-community" */ "../addons/rwck-community/_runtime_entry.js"),
-  "pointere": () => import(/* webpackChunkName: "addon-entry-pointere" */ "../addons/pointere/_runtime_entry.js"),
 };

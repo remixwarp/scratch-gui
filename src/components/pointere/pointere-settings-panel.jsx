@@ -6,7 +6,6 @@ import {
     saveConfig,
     resetConfig
 } from '../../lib/pointere/config.js';
-import {getPointereAddonState, notifyChange as notifyAddonChange} from '../../lib/pointere/pointere-addon.js';
 
 /**
  * PointerE 设置面板。section='account' 为账号（登录）设置，
@@ -27,10 +26,7 @@ const L = {
         reset: '恢复默认',
         saved: '已保存',
         accountHint: '登录相关设置：修改后请重新登录以生效。',
-        collabHint: '协作相关设置：修改后请重新加入房间以生效。',
-        accountButton: '编辑菜单显示「PointerE 账号」',
-        collabTab: '协作窗口显示 PointerE 标签页',
-        addonHint: '这两个开关与插件设置里的开关相同，改动即时生效。'
+        collabHint: '协作相关设置：修改后请重新加入房间以生效。'
     },
     en: {
         accountTitle: 'PointerE Account Settings',
@@ -46,10 +42,7 @@ const L = {
         reset: 'Reset',
         saved: 'Saved',
         accountHint: 'Sign-in settings: sign in again for changes to take effect.',
-        collabHint: 'Collaboration settings: rejoin the room for changes to take effect.',
-        accountButton: 'Show "PointerE Account" in Edit menu',
-        collabTab: 'Show PointerE tab in collaboration window',
-        addonHint: 'These are the same switches as in addon settings; changes apply immediately.'
+        collabHint: 'Collaboration settings: rejoin the room for changes to take effect.'
     }
 };
 
@@ -69,11 +62,8 @@ class PointereSettingsPanel extends Component {
     constructor (props) {
         super(props);
         const config = getConfig();
-        const addon = getPointereAddonState();
         this.state = {
             config: Object.assign({}, config),
-            accountButton: addon.accountButton,
-            collabTab: addon.collabTab,
             message: ''
         };
         this.locale = props.locale || (props.intl && props.intl.locale) || 'zh-cn';
@@ -99,19 +89,6 @@ class PointereSettingsPanel extends Component {
 
     handleSave = () => {
         saveConfig(this.state.config);
-        try {
-            const raw = localStorage.getItem('tw:addons');
-            const parsed = raw ? JSON.parse(raw) : {};
-            const prev = (parsed.pointere && typeof parsed.pointere === 'object') ? parsed.pointere : {};
-            parsed.pointere = Object.assign({}, prev, {
-                accountButton: this.state.accountButton,
-                collabTab: this.state.collabTab
-            });
-            localStorage.setItem('tw:addons', JSON.stringify(parsed));
-        } catch (e) {
-            // ignore
-        }
-        notifyAddonChange();
         this.setState({message: this.t.saved});
         if (this.props.onSaved) this.props.onSaved(getConfig());
     };
@@ -141,17 +118,6 @@ class PointereSettingsPanel extends Component {
                         }))}
                     />
                 </div>
-                <div style={{
-                    borderTop: '1px solid var(--ui-black-transparent, rgba(0,0,0,.12))',
-                    paddingTop: 14, marginTop: 16
-                }}>
-                    <label style={{...label, display: 'flex', alignItems: 'center', gap: 8}}>
-                        <input type="checkbox" checked={this.state.accountButton}
-                            onChange={e => this.setState({accountButton: e.target.checked})} />
-                        {t.accountButton}
-                    </label>
-                    <div style={{fontSize: 11, opacity: .6, marginTop: 6}}>{t.addonHint}</div>
-                </div>
             </div>
         );
     }
@@ -161,17 +127,6 @@ class PointereSettingsPanel extends Component {
             <div>
                 {this.field('wsUrl', t.ws)}
                 {this.field('defaultRoom', t.room, {maxLength: 12})}
-                <div style={{
-                    borderTop: '1px solid var(--ui-black-transparent, rgba(0,0,0,.12))',
-                    paddingTop: 14, marginTop: 16
-                }}>
-                    <label style={{...label, display: 'flex', alignItems: 'center', gap: 8}}>
-                        <input type="checkbox" checked={this.state.collabTab}
-                            onChange={e => this.setState({collabTab: e.target.checked})} />
-                        {t.collabTab}
-                    </label>
-                    <div style={{fontSize: 11, opacity: .6, marginTop: 6}}>{t.addonHint}</div>
-                </div>
             </div>
         );
     }
