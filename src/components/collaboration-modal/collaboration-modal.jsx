@@ -1419,7 +1419,7 @@ class CollaborationModal extends Component {
             <PointereCollabTab
                 locale={locale}
                 onOpenAccount={tab => openPointereWindow({tab: tab || 'account'})}
-                onOpenSettings={() => openPointereSettingsWindow()}
+                onOpenSettings={section => openPointereSettingsWindow(section || 'collab')}
             />
         );
     }

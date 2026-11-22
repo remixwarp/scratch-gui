@@ -5,6 +5,7 @@ import {AUTH_CHANGED, getAuthState} from '../../lib/pointere/auth.js';
 import {getConfig, isValidRoomCode, generateRoomCode} from '../../lib/pointere/config.js';
 import {getInstance as getCollab} from '../../lib/pointere/collab.js';
 import PointerEOpsBridge from '../../lib/pointere/ops-bridge.js';
+import PointereIconButton from './pointere-icon-button.jsx';
 
 const T = {
     'zh-cn': {
@@ -110,9 +111,13 @@ class PointereCollabTab extends Component {
                 <button style={S.btn(true)} onClick={() => this.props.onOpenAccount && this.props.onOpenAccount('account')}>
                     {this.t.loginButton}
                 </button>
-                <button style={S.btn(false)} onClick={() => this.props.onOpenSettings && this.props.onOpenSettings()}>
-                    {this.t.settings}
-                </button>
+                <div style={{display: 'flex', alignItems: 'center', gap: 8, marginTop: 4}}>
+                    <span style={S.hint}>{this.t.settings}</span>
+                    <PointereIconButton
+                        title={this.t.settings}
+                        onClick={() => this.props.onOpenSettings && this.props.onOpenSettings('collab')}
+                    />
+                </div>
             </div>
         );
     }
@@ -124,9 +129,15 @@ class PointereCollabTab extends Component {
             <div>
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14}}>
                     <div style={{fontSize: 16, fontWeight: 600}}>PointerE</div>
-                    <div style={status.connected ? {fontSize: 12, color: '#2f9e44'} : S.hint}>
-                        {status.connected ? `● ${t.connected} · ${this.state.room}` :
-                            (status.joining ? t.connecting : t.offline)}
+                    <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+                        <div style={status.connected ? {fontSize: 12, color: '#2f9e44'} : S.hint}>
+                            {status.connected ? `● ${t.connected} · ${this.state.room}` :
+                                (status.joining ? t.connecting : t.offline)}
+                        </div>
+                        <PointereIconButton
+                            title={t.settings}
+                            onClick={() => this.props.onOpenSettings && this.props.onOpenSettings('collab')}
+                        />
                     </div>
                 </div>
                 {error ? <div style={S.err}>{error}</div> : null}
@@ -149,10 +160,6 @@ class PointereCollabTab extends Component {
                         <button style={S.btn(false)}
                             onClick={() => this.props.onOpenAccount && this.props.onOpenAccount('room')}>
                             {t.openAccount}
-                        </button>
-                        <button style={S.btn(false)}
-                            onClick={() => this.props.onOpenSettings && this.props.onOpenSettings()}>
-                            {t.settings}
                         </button>
                         <button style={S.btn(false)} disabled={!status.connected}
                             onClick={() => this.collab.requestState()}>{t.requestState}</button>

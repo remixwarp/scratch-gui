@@ -11,6 +11,7 @@ import {
 import {getConfig, isValidRoomCode, generateRoomCode} from '../../lib/pointere/config.js';
 import {getInstance as getCollab} from '../../lib/pointere/collab.js';
 import PointerEOpsBridge from '../../lib/pointere/ops-bridge.js';
+import PointereIconButton from './pointere-icon-button.jsx';
 
 const T = {
     en: {
@@ -209,9 +210,6 @@ class PointerePanel extends Component {
                         </div>
                         <div style={S.row}>
                             <button style={S.btn(true)} onClick={() => this.switchTab('room')}>{this.t.room}</button>
-                            <button style={S.btn(false)} onClick={() => this.props.onOpenSettings && this.props.onOpenSettings()}>
-                                {this.t.settings}
-                            </button>
                             <button style={S.btn(false)} onClick={this.handleLogout}>{this.t.logout}</button>
                         </div>
                     </div>
@@ -222,9 +220,6 @@ class PointerePanel extends Component {
                         {error ? <div style={S.err}>{error}</div> : null}
                         <div style={{...S.row, justifyContent: 'center'}}>
                             <button style={S.btn(true)} onClick={this.handleLogin}>{this.t.login}</button>
-                            <button style={S.btn(false)} onClick={() => this.props.onOpenSettings && this.props.onOpenSettings()}>
-                                {this.t.settings}
-                            </button>
                         </div>
                     </div>
                 )}
@@ -273,10 +268,6 @@ class PointerePanel extends Component {
                             onClick={this.handleLeave}>{this.t.leave}</button>
                         <button style={S.btn(false)}
                             onClick={() => this.setState({room: generateRoomCode()})}>↻</button>
-                        <button style={S.btn(false)}
-                            onClick={() => this.props.onOpenSettings && this.props.onOpenSettings()}>
-                            {this.t.settings}
-                        </button>
                     </div>
                 </div>
 
@@ -344,6 +335,12 @@ class PointerePanel extends Component {
                             {this.t[id]}
                         </button>
                     ))}
+                    <div style={{display: 'flex', alignItems: 'center', padding: '0 8px', flex: '0 0 auto'}}>
+                        <PointereIconButton
+                            title={this.t.settings}
+                            onClick={() => this.props.onOpenSettings && this.props.onOpenSettings('account')}
+                        />
+                    </div>
                 </div>
                 <div style={S.body}>{content}</div>
             </div>

@@ -8,21 +8,47 @@ import {
 } from '../../lib/pointere/config.js';
 import {getPointereAddonState, notifyChange as notifyAddonChange} from '../../lib/pointere/pointere-addon.js';
 
+/**
+ * PointerE 设置面板。section='account' 为账号（登录）设置，
+ * section='collab' 为协作设置。两者字段与标题各自独立。
+ */
 const L = {
     'zh-cn': {
-        title: 'PointerE 设置', http: 'API 接口地址', ws: '协作 WebSocket 地址',
-        client: 'OAuth client_id', redirect: '回调地址（留空 = 当前页面）', scope: '授权范围',
-        room: '默认房间码', skew: '令牌提前刷新（毫秒）', save: '保存', reset: '恢复默认',
-        saved: '已保存', hint: '修改后请重新登录 / 重新加入房间以生效。',
-        accountButton: '编辑菜单显示「PointerE 账号」', collabTab: '协作窗口显示 PointerE 标签页',
+        accountTitle: 'PointerE 账号设置',
+        collabTitle: 'PointerE 协作设置',
+        http: 'API 接口地址',
+        ws: '协作 WebSocket 地址',
+        client: 'OAuth client_id',
+        redirect: '回调地址（留空 = 当前页面）',
+        scope: '授权范围',
+        room: '默认房间码',
+        skew: '令牌提前刷新（毫秒）',
+        save: '保存',
+        reset: '恢复默认',
+        saved: '已保存',
+        accountHint: '登录相关设置：修改后请重新登录以生效。',
+        collabHint: '协作相关设置：修改后请重新加入房间以生效。',
+        accountButton: '编辑菜单显示「PointerE 账号」',
+        collabTab: '协作窗口显示 PointerE 标签页',
         addonHint: '这两个开关与插件设置里的开关相同，改动即时生效。'
     },
     en: {
-        title: 'PointerE Settings', http: 'API base URL', ws: 'Collaboration WebSocket URL',
-        client: 'OAuth client_id', redirect: 'Redirect URI (blank = current page)', scope: 'Scope',
-        room: 'Default room code', skew: 'Token refresh skew (ms)', save: 'Save', reset: 'Reset',
-        saved: 'Saved', hint: 'Sign in again / rejoin the room for changes to take effect.',
-        accountButton: 'Show "PointerE Account" in Edit menu', collabTab: 'Show PointerE tab in collaboration window',
+        accountTitle: 'PointerE Account Settings',
+        collabTitle: 'PointerE Collaboration Settings',
+        http: 'API base URL',
+        ws: 'Collaboration WebSocket URL',
+        client: 'OAuth client_id',
+        redirect: 'Redirect URI (blank = current page)',
+        scope: 'Scope',
+        room: 'Default room code',
+        skew: 'Token refresh skew (ms)',
+        save: 'Save',
+        reset: 'Reset',
+        saved: 'Saved',
+        accountHint: 'Sign-in settings: sign in again for changes to take effect.',
+        collabHint: 'Collaboration settings: rejoin the room for changes to take effect.',
+        accountButton: 'Show "PointerE Account" in Edit menu',
+        collabTab: 'Show PointerE tab in collaboration window',
         addonHint: 'These are the same switches as in addon settings; changes apply immediately.'
     }
 };
@@ -51,6 +77,7 @@ class PointereSettingsPanel extends Component {
             message: ''
         };
         this.locale = props.locale || (props.intl && props.intl.locale) || 'zh-cn';
+        this.section = props.section === 'collab' ? 'collab' : 'account';
     }
 
     field (key, text, extra = {}) {
@@ -93,25 +120,13 @@ class PointereSettingsPanel extends Component {
         this.setState({config: Object.assign({}, resetConfig()), message: this.t.saved});
     };
 
-    render () {
-        const t = (L[this.locale] || L['zh-cn']);
-        this.t = t;
+    renderAccountFields (t) {
         return (
-            <div style={{
-                height: '100%', overflowY: 'auto', padding: '20px 24px',
-                background: 'var(--ui-modal-background, #fff)',
-                color: 'var(--ui-modal-foreground, var(--text-primary, #1f2937))',
-                fontFamily: '"Helvetica Neue", Helvetica, Arial, "Microsoft YaHei", sans-serif'
-            }}>
-                <div style={{fontSize: 18, fontWeight: 600, marginBottom: 6}}>{t.title}</div>
-                <div style={{fontSize: 12, opacity: .7, marginBottom: 18}}>{t.hint}</div>
-
+            <div>
                 {this.field('httpBase', t.http)}
-                {this.field('wsUrl', t.ws)}
                 {this.field('clientId', t.client)}
                 {this.field('redirectUri', t.redirect)}
                 {this.field('scope', t.scope)}
-                {this.field('defaultRoom', t.room, {maxLength: 12})}
                 <div style={{marginBottom: 12}}>
                     <label style={label}>{t.skew}</label>
                     <input
@@ -126,7 +141,6 @@ class PointereSettingsPanel extends Component {
                         }))}
                     />
                 </div>
-
                 <div style={{
                     borderTop: '1px solid var(--ui-black-transparent, rgba(0,0,0,.12))',
                     paddingTop: 14, marginTop: 16
@@ -136,6 +150,21 @@ class PointereSettingsPanel extends Component {
                             onChange={e => this.setState({accountButton: e.target.checked})} />
                         {t.accountButton}
                     </label>
+                    <div style={{fontSize: 11, opacity: .6, marginTop: 6}}>{t.addonHint}</div>
+                </div>
+            </div>
+        );
+    }
+
+    renderCollabFields (t) {
+        return (
+            <div>
+                {this.field('wsUrl', t.ws)}
+                {this.field('defaultRoom', t.room, {maxLength: 12})}
+                <div style={{
+                    borderTop: '1px solid var(--ui-black-transparent, rgba(0,0,0,.12))',
+                    paddingTop: 14, marginTop: 16
+                }}>
                     <label style={{...label, display: 'flex', alignItems: 'center', gap: 8}}>
                         <input type="checkbox" checked={this.state.collabTab}
                             onChange={e => this.setState({collabTab: e.target.checked})} />
@@ -143,6 +172,29 @@ class PointereSettingsPanel extends Component {
                     </label>
                     <div style={{fontSize: 11, opacity: .6, marginTop: 6}}>{t.addonHint}</div>
                 </div>
+            </div>
+        );
+    }
+
+    render () {
+        const t = (L[this.locale] || L['zh-cn']);
+        this.t = t;
+        const isCollab = this.section === 'collab';
+        return (
+            <div style={{
+                height: '100%', overflowY: 'auto', padding: '20px 24px',
+                background: 'var(--ui-modal-background, #fff)',
+                color: 'var(--ui-modal-foreground, var(--text-primary, #1f2937))',
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, "Microsoft YaHei", sans-serif'
+            }}>
+                <div style={{fontSize: 18, fontWeight: 600, marginBottom: 6}}>
+                    {isCollab ? t.collabTitle : t.accountTitle}
+                </div>
+                <div style={{fontSize: 12, opacity: .7, marginBottom: 18}}>
+                    {isCollab ? t.collabHint : t.accountHint}
+                </div>
+
+                {isCollab ? this.renderCollabFields(t) : this.renderAccountFields(t)}
 
                 <div style={{display: 'flex', gap: 10, marginTop: 20, alignItems: 'center'}}>
                     <button style={btn(true)} onClick={this.handleSave}>{t.save}</button>
@@ -155,6 +207,7 @@ class PointereSettingsPanel extends Component {
 }
 
 PointereSettingsPanel.propTypes = {
+    section: PropTypes.string,
     locale: PropTypes.string,
     intl: PropTypes.object,
     onSaved: PropTypes.func

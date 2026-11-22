@@ -11,8 +11,8 @@ export const DEFAULT_CONFIG = {
     // 官方文档给出的默认节点
     httpBase: 'https://vable.ctspace.xyz',
     wsUrl: 'wss://vable.ctspace.xyz',
-    // 在 PointerE 注册 OAuth 应用后填写
-    clientId: '',
+    // 在 PointerE 注册 OAuth 应用后填写（已预填官方下发的 client_id）
+    clientId: 'pe_7e9dd13327d5ff6d2a38c700',
     // 留空 = 当前页面地址（回调参数走 ?code=&state=，无需新增路由）
     redirectUri: '',
     scope: 'account:read collab:join',
@@ -41,6 +41,8 @@ export const getConfig = () => {
     } catch (e) {
         // localStorage 不可用时用默认值
     }
+    // client_id 已内置官方下发的默认值：旧缓存里的空值不应覆盖它
+    if (!result.clientId) result.clientId = DEFAULT_CONFIG.clientId;
     return result;
 };
 

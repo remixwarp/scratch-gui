@@ -65,7 +65,7 @@ const openPointereWindow = (opts = {}) => {
         <PointerePanel
             initialTab={opts.tab || null}
             locale={getLocale()}
-            onOpenSettings={() => openPointereSettingsWindow()}
+            onOpenSettings={section => openPointereSettingsWindow(section || 'account')}
             onTabChange={tab => { openWin._pointereTab = tab; }}
             _onRef={ref => { openWin._pointerePanelRef = ref; }}
         />,
