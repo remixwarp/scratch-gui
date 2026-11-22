@@ -53,6 +53,13 @@ const configPlazaMessages = defineMessages({
 import {CONFIG_FILE_ACCEPT, parseConfigBuffer} from '../../lib/mw/config-file.js';
 import openMaterialPlazaWindow from '../../lib/mw/open-material-plaza-window.js';
 import openRwckPublishWindow from '../../lib/mw/open-rwck-publish-window.jsx';
+import openPointereWindow from '../../lib/mw/open-pointere-window.jsx';
+import {
+    getPointereAddonState as getPointereState,
+    subscribePointereAddon as subscribePointere,
+    shouldShowAccountButton as shouldShowPointereAccount
+} from '../../lib/pointere/pointere-addon.js';
+import {handleCallback as handlePointereCallback} from '../../lib/pointere/auth.js';
 import {
     getRwckCommunityAddonState,
     shouldShowFileMenuPublishItem,
@@ -346,7 +353,8 @@ class MenuBar extends React.Component {
             canUndo: true,
             canRedo: true,
             variousToolsOpen: false,
-            rwckCommunity: getRwckCommunityAddonState()
+            rwckCommunity: getRwckCommunityAddonState(),
+            pointere: getPointereState()
         };
         this.unsubscribeRwckCommunity = null;
         this.workspaceBookmarksProjectListener = null;
@@ -462,12 +470,24 @@ class MenuBar extends React.Component {
             }
         } catch (_) {}
 
+        // PointerE 插件：编辑菜单账号按钮实时跟随插件开关
+        this.unsubscribePointere = subscribePointere(next => {
+            this.setState({pointere: next});
+        });
+
+        // OAuth 回跳（?code=&state=）在页面入口消费一次，无参数时立即返回
+        handlePointereCallback().catch(() => {});
+
         // 创客次元社区插件：跟随插件开关/复选框实时显示或收起两个入口
         this.unsubscribeRwckCommunity = subscribeRwckCommunityAddon((next, previous) => {
             this.setState({rwckCommunity: next});
         });
     }
     componentWillUnmount () {
+        if (this.unsubscribePointere) {
+            this.unsubscribePointere();
+            this.unsubscribePointere = null;
+        }
         document.removeEventListener('keydown', this.handleKeyPress);
 
         if (this.menuLayoutObserver) {
@@ -2480,6 +2500,10 @@ class MenuBar extends React.Component {
         openRwckPublishWindow();
         this.props.onRequestCloseFile();
     };
+    handleClickPointereAccount = () => {
+        openPointereWindow({tab: 'account'});
+        this.props.onRequestCloseEdit();
+    };
     handleClickSeeCommunity (waitForUpdate) {
         if (this.props.shouldSaveBeforeTransition()) {
             this.props.autoUpdateProject(); // save before transitioning to project page
@@ -3900,6 +3924,18 @@ class MenuBar extends React.Component {
                                 open={this.props.editMenuOpen}
                                 place={this.props.isRtl ? 'left' : 'right'}
                             >
+                                {shouldShowPointereAccount() && (
+                                    <MenuSection>
+                                        <MenuItem onClick={this.handleClickPointereAccount}>
+                                            <UserPen size={20} />
+                                            <FormattedMessage
+                                                defaultMessage="PointerE Account"
+                                                description="Menu bar item that opens the PointerE account window"
+                                                id="tw.menuBar.pointereAccount"
+                                            />
+                                        </MenuItem>
+                                    </MenuSection>
+                                )}
                                 <MenuSection>
                                     {this.props.isPlayerOnly ? null : (
                                         <DeletionRestorer>{(handleRestore, {restorable, deletedItem}) => (

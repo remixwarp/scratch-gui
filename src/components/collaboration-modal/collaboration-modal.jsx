@@ -20,6 +20,11 @@ import {DEFAULT_PEER_CONFIG, readUserPeerConfig, saveUserPeerConfig} from '../..
 
 import styles from './collaboration-modal.css';
 
+import PointereCollabTab from '../pointere/pointere-collab-tab.jsx';
+import openPointereWindow from '../../lib/mw/open-pointere-window.jsx';
+import openPointereSettingsWindow from '../../lib/mw/open-pointere-settings-window.jsx';
+import {getPointereAddonState, subscribePointereAddon} from '../../lib/pointere/pointere-addon.js';
+
 /* 首选（默认）服务器直接取上游 transport.js 的 DEFAULT_PEER_CONFIG.host，
    设置面板与连接引擎共用同一份地址，不再单独硬编码一份字面量。 */
 
@@ -44,7 +49,9 @@ class CollaborationModal extends Component {
             pendingRequests: [],
             showJoinRequest: false,
             showSettings: false,
-            peerConfig: defaultPeerConfig()
+            peerConfig: defaultPeerConfig(),
+            activeTab: 'collab',
+            pointereAddon: getPointereAddonState()
         };
 
         this.autoJoinAttempted = new Set();
@@ -86,6 +93,9 @@ class CollaborationModal extends Component {
     }
 
     componentDidMount () {
+        this.unsubscribePointere = subscribePointereAddon(next => {
+            this.setState({pointereAddon: next});
+        });
         console.log('[COLLAB MODAL] ComponentDidMount - props:', {
             roomId: this.props.roomId,
             isConnected: this.props.isConnected,
@@ -225,6 +235,10 @@ class CollaborationModal extends Component {
     }
 
     componentWillUnmount () {
+        if (this.unsubscribePointere) {
+            this.unsubscribePointere();
+            this.unsubscribePointere = null;
+        }
         if (CollaborationService) {
             try {
                 const service = CollaborationService.getInstance();
@@ -1399,7 +1413,19 @@ class CollaborationModal extends Component {
         );
     }
 
+    renderPointereTab () {
+        const locale = (this.props.intl && this.props.intl.locale) || 'zh-cn';
+        return (
+            <PointereCollabTab
+                locale={locale}
+                onOpenAccount={tab => openPointereWindow({tab: tab || 'account'})}
+                onOpenSettings={() => openPointereSettingsWindow()}
+            />
+        );
+    }
+
     render () {
+        const activeTab = this.state.activeTab || 'collab';
         let content;
         if (this.state.showSettings) {
             content = this.renderSettingsStep();
@@ -1437,9 +1463,29 @@ class CollaborationModal extends Component {
                 height={720}
                 resizable
             >
-                <Box className={styles.body}>
-                    {content}
-                </Box>
+                <div className={styles.modalWithTabs}>
+                    <div className={styles.pointereTabBar}>
+                        <button
+                            className={activeTab === 'collab' ? styles.pointereTabActive : styles.pointereTab}
+                        onClick={() => this.setState({activeTab: 'collab'})}
+                    >
+                        <FormattedMessage
+                            id="gui.collaboration.title"
+                            defaultMessage="Live Collaboration"
+                            description="Title for collaboration modal"
+                        />
+                    </button>
+                    <button
+                        className={activeTab === 'pointere' ? styles.pointereTabActive : styles.pointereTab}
+                        onClick={() => this.setState({activeTab: 'pointere'})}
+                    >
+                        PointerE
+                    </button>
+                </div>
+                    <Box className={styles.body}>
+                        {activeTab === 'pointere' ? this.renderPointereTab() : content}
+                    </Box>
+                </div>
             </Modal>
         );
     }

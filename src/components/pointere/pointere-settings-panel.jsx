@@ -1,0 +1,163 @@
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
+
+import {
+    getConfig,
+    saveConfig,
+    resetConfig
+} from '../../lib/pointere/config.js';
+import {getPointereAddonState, notifyChange as notifyAddonChange} from '../../lib/pointere/pointere-addon.js';
+
+const L = {
+    'zh-cn': {
+        title: 'PointerE 设置', http: 'API 接口地址', ws: '协作 WebSocket 地址',
+        client: 'OAuth client_id', redirect: '回调地址（留空 = 当前页面）', scope: '授权范围',
+        room: '默认房间码', skew: '令牌提前刷新（毫秒）', save: '保存', reset: '恢复默认',
+        saved: '已保存', hint: '修改后请重新登录 / 重新加入房间以生效。',
+        accountButton: '编辑菜单显示「PointerE 账号」', collabTab: '协作窗口显示 PointerE 标签页',
+        addonHint: '这两个开关与插件设置里的开关相同，改动即时生效。'
+    },
+    en: {
+        title: 'PointerE Settings', http: 'API base URL', ws: 'Collaboration WebSocket URL',
+        client: 'OAuth client_id', redirect: 'Redirect URI (blank = current page)', scope: 'Scope',
+        room: 'Default room code', skew: 'Token refresh skew (ms)', save: 'Save', reset: 'Reset',
+        saved: 'Saved', hint: 'Sign in again / rejoin the room for changes to take effect.',
+        accountButton: 'Show "PointerE Account" in Edit menu', collabTab: 'Show PointerE tab in collaboration window',
+        addonHint: 'These are the same switches as in addon settings; changes apply immediately.'
+    }
+};
+
+const input = {
+    width: '100%', boxSizing: 'border-box', padding: '9px 10px', borderRadius: 6,
+    border: '1px solid var(--ui-black-transparent, rgba(0,0,0,.2))',
+    background: 'var(--ui-modal-background, #fff)', color: 'inherit', fontFamily: 'inherit',
+    fontSize: 13
+};
+const label = {display: 'block', fontSize: 12, opacity: .75, marginBottom: 4};
+const btn = primary => ({padding: '8px 14px', borderRadius: 7, cursor: 'pointer', fontSize: 13,
+    border: primary ? 'none' : '1px solid var(--ui-black-transparent, rgba(0,0,0,.2))',
+    background: primary ? 'var(--looks-secondary, #4c97ff)' : 'transparent',
+    color: primary ? '#fff' : 'inherit'});
+
+class PointereSettingsPanel extends Component {
+    constructor (props) {
+        super(props);
+        const config = getConfig();
+        const addon = getPointereAddonState();
+        this.state = {
+            config: Object.assign({}, config),
+            accountButton: addon.accountButton,
+            collabTab: addon.collabTab,
+            message: ''
+        };
+        this.locale = props.locale || (props.intl && props.intl.locale) || 'zh-cn';
+    }
+
+    field (key, text, extra = {}) {
+        return (
+            <div style={{marginBottom: 12}}>
+                <label style={label}>{text}</label>
+                <input
+                    style={input}
+                    value={this.state.config[key]}
+                    onChange={e => this.setState(prev => ({
+                        config: Object.assign({}, prev.config, {[key]: e.target.value}),
+                        message: ''
+                    }))}
+                    {...extra}
+                />
+            </div>
+        );
+    }
+
+    handleSave = () => {
+        saveConfig(this.state.config);
+        try {
+            const raw = localStorage.getItem('tw:addons');
+            const parsed = raw ? JSON.parse(raw) : {};
+            const prev = (parsed.pointere && typeof parsed.pointere === 'object') ? parsed.pointere : {};
+            parsed.pointere = Object.assign({}, prev, {
+                accountButton: this.state.accountButton,
+                collabTab: this.state.collabTab
+            });
+            localStorage.setItem('tw:addons', JSON.stringify(parsed));
+        } catch (e) {
+            // ignore
+        }
+        notifyAddonChange();
+        this.setState({message: this.t.saved});
+        if (this.props.onSaved) this.props.onSaved(getConfig());
+    };
+
+    handleReset = () => {
+        this.setState({config: Object.assign({}, resetConfig()), message: this.t.saved});
+    };
+
+    render () {
+        const t = (L[this.locale] || L['zh-cn']);
+        this.t = t;
+        return (
+            <div style={{
+                height: '100%', overflowY: 'auto', padding: '20px 24px',
+                background: 'var(--ui-modal-background, #fff)',
+                color: 'var(--ui-modal-foreground, var(--text-primary, #1f2937))',
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, "Microsoft YaHei", sans-serif'
+            }}>
+                <div style={{fontSize: 18, fontWeight: 600, marginBottom: 6}}>{t.title}</div>
+                <div style={{fontSize: 12, opacity: .7, marginBottom: 18}}>{t.hint}</div>
+
+                {this.field('httpBase', t.http)}
+                {this.field('wsUrl', t.ws)}
+                {this.field('clientId', t.client)}
+                {this.field('redirectUri', t.redirect)}
+                {this.field('scope', t.scope)}
+                {this.field('defaultRoom', t.room, {maxLength: 12})}
+                <div style={{marginBottom: 12}}>
+                    <label style={label}>{t.skew}</label>
+                    <input
+                        style={input}
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={this.state.config.refreshSkewMs}
+                        onChange={e => this.setState(prev => ({
+                            config: Object.assign({}, prev.config, {refreshSkewMs: Number(e.target.value) || 0}),
+                            message: ''
+                        }))}
+                    />
+                </div>
+
+                <div style={{
+                    borderTop: '1px solid var(--ui-black-transparent, rgba(0,0,0,.12))',
+                    paddingTop: 14, marginTop: 16
+                }}>
+                    <label style={{...label, display: 'flex', alignItems: 'center', gap: 8}}>
+                        <input type="checkbox" checked={this.state.accountButton}
+                            onChange={e => this.setState({accountButton: e.target.checked})} />
+                        {t.accountButton}
+                    </label>
+                    <label style={{...label, display: 'flex', alignItems: 'center', gap: 8}}>
+                        <input type="checkbox" checked={this.state.collabTab}
+                            onChange={e => this.setState({collabTab: e.target.checked})} />
+                        {t.collabTab}
+                    </label>
+                    <div style={{fontSize: 11, opacity: .6, marginTop: 6}}>{t.addonHint}</div>
+                </div>
+
+                <div style={{display: 'flex', gap: 10, marginTop: 20, alignItems: 'center'}}>
+                    <button style={btn(true)} onClick={this.handleSave}>{t.save}</button>
+                    <button style={btn(false)} onClick={this.handleReset}>{t.reset}</button>
+                    {this.state.message ? <span style={{fontSize: 12, color: '#2f9e44'}}>{this.state.message}</span> : null}
+                </div>
+            </div>
+        );
+    }
+}
+
+PointereSettingsPanel.propTypes = {
+    locale: PropTypes.string,
+    intl: PropTypes.object,
+    onSaved: PropTypes.func
+};
+
+export default PointereSettingsPanel;
