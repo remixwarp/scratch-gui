@@ -34,6 +34,7 @@ import deleteIcon from '!../../lib/tw-recolor/build!./icon--delete.svg';
 import copyIcon from '!../../lib/tw-recolor/build!./icon--copy.svg';
 import pasteIcon from '!../../lib/tw-recolor/build!./icon--paste.svg';
 import copyToNewIcon from '!../../lib/tw-recolor/build!./icon--copy-to-new.svg';
+import AudioStudioButton from './audio-studio-button.jsx';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -354,6 +355,7 @@ const SoundEditor = props => (
                     title={<FormattedMessage {...messages.echo} />}
                     onClick={props.onEcho}
                 />
+                <AudioStudioButton />
             </div>
         </div>
         <div className={styles.infoRow}>
