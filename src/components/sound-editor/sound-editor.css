@@ -6,6 +6,9 @@
     flex-direction: column;
     flex-grow: 1;
     padding: calc(2 * $space);
+    /* RemixWarp: anchor for the embedded Audio Studio iframe (only covers this panel,
+       so the stage on the right stays visible). */
+    position: relative;
 }
 
 .row {

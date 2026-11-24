@@ -1,58 +1,43 @@
 @import "../../css/colors.css";
 
-.studioButton {
-    flex-basis: 60px;
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: $text-primary;
+/* 常驻编辑器选择下拉框（行内控件，放在声音效果控制行，不遮挡文字） */
+.studioSelect {
+    flex-basis: 74px;
+    align-self: center;
+    max-width: 74px;
+    padding: 4px 2px;
     font-size: 0.625rem;
-    user-select: none;
-    padding: 0.25rem 0;
-    border: 0;
+    line-height: 1;
+    color: $text-primary;
     background: transparent;
+    border: 1px solid rgba(127, 127, 127, .5);
+    border-radius: 4px;
     cursor: pointer;
+    user-select: none;
+    outline: none;
 }
-.studioButton:hover {
+.studioSelect:hover {
     color: #ec956e;
+    border-color: #ec956e;
 }
-.studioGlyph {
-    font-size: 1.25rem;
-    line-height: 1.25rem;
-    margin-bottom: -0.375rem;
+.studioSelect option {
+    color: #20242a;
+    background: #ffffff;
 }
 
-.overlay {
-    position: fixed;
+/* 嵌入式编辑器：相对 sound-editor 的 .editor-container 定位，
+   只覆盖左侧声音面板（右侧舞台保持可见），不遮挡宿主控件行。 */
+.embed {
+    position: absolute;
     inset: 0;
-    z-index: 100000;
+    z-index: 40;
     background: #1a1c1f;
+    border-radius: 4px;
+    overflow: hidden;
 }
 .frame {
     width: 100%;
     height: 100%;
     border: 0;
     display: block;
-}
-.closeButton {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    z-index: 100001;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    font-size: 12px;
-    line-height: 1;
-    border-radius: 14px;
-    border: 1px solid #ec956e;
-    background: #ec956e;
-    color: #232323;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, .35);
-    cursor: pointer;
-}
-.closeButton:hover {
-    filter: brightness(1.08);
 }
