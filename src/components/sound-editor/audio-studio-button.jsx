@@ -5,17 +5,56 @@ import studioHtml from 'scratch-audio/src/studio';
 import styles from './audio-studio-button.css';
 
 /**
+ * Convert an ArrayBuffer to base64 without overflowing the call stack on big files.
+ */
+function arrayBufferToBase64 (ab) {
+    try {
+        var bytes = new Uint8Array(ab);
+        var binary = '';
+        var chunk = 0x8000;
+        for (var i = 0; i < bytes.length; i += chunk) {
+            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        }
+        return btoa(binary);
+    } catch (e) {
+        return '';
+    }
+}
+
+/**
+ * Inject the current Scratch sound as a seed directly into the Studio srcDoc.
+ * The Studio script reads window.__RW_SEED_WAV__ synchronously at startup, so
+ * the sound is guaranteed to be loaded regardless of postMessage timing or
+ * whether a child editor reached "ready" before the WAV arrived.
+ */
+function buildSeededDoc (wav) {
+    if (!wav) return studioHtml;
+    try {
+        var b64 = wav instanceof ArrayBuffer || ArrayBuffer.isView(wav)
+            ? arrayBufferToBase64(wav instanceof ArrayBuffer ? wav : wav.buffer.slice(wav.byteOffset, wav.byteOffset + wav.byteLength))
+            : '';
+        if (!b64) return studioHtml;
+        var seed = '<script>window.__RW_SEED_WAV__=' + JSON.stringify(b64) + ';<\/script>';
+        // Place the seed before the first <script> so the Studio bridge sees it.
+        return studioHtml.replace('<script>', seed + '<script>');
+    } catch (e) {
+        return studioHtml;
+    }
+}
+
+/**
  * 声音效果控制行里的「编辑器选择」下拉框（Scratch / Pulsegrid / Sonora）。
  * - 常驻显示：无论 Scratch 原生还是外部编辑器，都能随时切换（行内控件，不遮挡文字）
  * - 选 Scratch：关闭嵌入式编辑器，回到 Scratch 原生波形编辑
  * - 选 Pulsegrid / Sonora：在左侧声音面板内嵌显示对应编辑器（不遮挡右侧舞台）
- * - 打开时把当前 Scratch 声音以 WAV 注入编辑器；编辑后回传 WAV 写回 Scratch（双向同步）
+ * - 打开时把当前 Scratch 声音以「内联种子」写进 Studio srcDoc，启动即加载（不依赖 postMessage 时序）
+ * - 编辑后回传 WAV 写回 Scratch（双向同步）；Scratch 原生编辑后广播刷新 Studio
  * - Studio 内下拉框选 Scratch 会回传 studio:close，这里同步复位
  */
 class AudioStudioButton extends React.Component {
     constructor (props) {
         super(props);
-        this.state = {mode: 'scratch'};
+        this.state = {mode: 'scratch', seededDoc: null};
         this.handleModeChange = this.handleModeChange.bind(this);
         this.handleMessage = this.handleMessage.bind(this);
         this.pushCurrentSound = this.pushCurrentSound.bind(this);
@@ -49,12 +88,15 @@ class AudioStudioButton extends React.Component {
         if (!d || typeof d !== 'object') return;
         if (!this.frameRef || event.source !== this.frameRef.contentWindow) return;
         if (d.type === 'studio:close') {
-            this.setState({mode: 'scratch'});
+            this.setState({mode: 'scratch', seededDoc: null});
         } else if (d.type === 'studio:ready') {
+            // Seed is already embedded in the srcDoc; still push once to cover
+            // the case where the user edited Scratch sound before Studio finished loading.
             this.pushCurrentSound();
             this.postToStudio({type: 'studio:mode', mode: this.state.mode});
         } else if (d.type === 'studio:mode') {
             if (['scratch', 'pulsegrid', 'sonora'].indexOf(d.mode) >= 0) {
+                // Internal dropdown changed; keep srcDoc stable so the embedded seed stays valid.
                 this.setState({mode: d.mode});
             }
         } else if (d.type === 'studio:wav-update') {
@@ -85,17 +127,29 @@ class AudioStudioButton extends React.Component {
 
     handleModeChange (event) {
         const mode = event.target.value;
-        this.setState({mode}, () => {
-            if (mode !== 'scratch') {
-                this.pushCurrentSound();
+        if (mode === 'scratch') {
+            this.setState({mode: 'scratch', seededDoc: null});
+            return;
+        }
+        // Build the seeded srcDoc from the CURRENT Scratch sound before mounting
+        // the iframe, so the very first script run has the audio available.
+        const apply = wav => {
+            this.setState({mode, seededDoc: buildSeededDoc(wav)}, () => {
                 this.postToStudio({type: 'studio:mode', mode});
-            }
-        });
+            });
+        };
+        const promise = this.props.getStudioWav ? this.props.getStudioWav() : null;
+        if (promise && typeof promise.then === 'function') {
+            promise.then(apply).catch(() => apply(null));
+        } else {
+            apply(null);
+        }
     }
 
     render () {
         const mode = this.state.mode;
         const embedded = mode !== 'scratch';
+        const doc = this.state.seededDoc || studioHtml;
         return (
             <React.Fragment>
                 <select
@@ -117,9 +171,8 @@ class AudioStudioButton extends React.Component {
                             }}
                             className={styles.frame}
                             title="Audio Studio"
-                            srcDoc={studioHtml}
+                            srcDoc={doc}
                             onLoad={() => {
-                                this.pushCurrentSound();
                                 this.postToStudio({type: 'studio:mode', mode});
                             }}
                         />
