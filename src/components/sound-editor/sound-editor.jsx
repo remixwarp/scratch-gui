@@ -355,7 +355,10 @@ const SoundEditor = props => (
                     title={<FormattedMessage {...messages.echo} />}
                     onClick={props.onEcho}
                 />
-                <AudioStudioButton />
+                <AudioStudioButton
+                    getStudioWav={props.getStudioWav}
+                    applyStudioWav={props.applyStudioWav}
+                />
             </div>
         </div>
         <div className={styles.infoRow}>
@@ -409,6 +412,8 @@ SoundEditor.propTypes = {
     size: PropTypes.number.isRequired,
     sampleRate: PropTypes.number.isRequired,
     canPaste: PropTypes.bool.isRequired,
+    getStudioWav: PropTypes.func,
+    applyStudioWav: PropTypes.func,
     canRedo: PropTypes.bool.isRequired,
     canUndo: PropTypes.bool.isRequired,
     chunkLevels: PropTypes.arrayOf(PropTypes.number).isRequired,

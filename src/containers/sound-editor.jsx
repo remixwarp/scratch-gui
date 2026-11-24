@@ -45,7 +45,9 @@ class SoundEditor extends React.Component {
             'handleKeyPress',
             'handleContainerClick',
             'setRef',
-            'resampleBufferToRate'
+            'resampleBufferToRate',
+            'getStudioWav',
+            'applyStudioWav'
         ]);
         this.state = {
             copyBuffer: null,
@@ -168,6 +170,49 @@ class SoundEditor extends React.Component {
                 log.error(`Encountered error while trying to encode sound update: ${e.message}`);
                 return false; // Edit was not applied
             });
+    }
+    // RemixWarp Audio Studio: export the current sound as a WAV ArrayBuffer so an
+    // external editor can be seeded with exactly the audio shown here.
+    getStudioWav () {
+        try {
+            const buffer = this.audioBufferPlayer.buffer;
+            if (!buffer) return Promise.resolve(null);
+            const channelData = [];
+            for (let i = 0; i < Math.min(2, buffer.numberOfChannels); i++) {
+                channelData.push(buffer.getChannelData(i));
+            }
+            return WavEncoder.encode({
+                sampleRate: buffer.sampleRate,
+                channelData
+            }).then(wav => wav.slice ? wav.slice(0) : wav).catch(() => null);
+        } catch (e) {
+            return Promise.resolve(null);
+        }
+    }
+    // RemixWarp Audio Studio: replace the current sound with audio edited in an
+    // external editor. `wav` is a WAV ArrayBuffer produced by that editor.
+    applyStudioWav (wav) {
+        if (!(wav instanceof ArrayBuffer) || wav.byteLength < 44) return Promise.resolve(false);
+        const bytes = new Uint8Array(wav);
+        try {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            const ctx = new Ctx();
+            return Promise.resolve(ctx.decodeAudioData(wav.slice(0))).then(audioBuffer => {
+                const channels = [];
+                for (let i = 0; i < Math.min(2, audioBuffer.numberOfChannels); i++) {
+                    channels.push(audioBuffer.getChannelData(i));
+                }
+                this.resetState(channels[0], audioBuffer.sampleRate);
+                this.props.vm.updateSoundBuffer(this.props.soundIndex, audioBuffer, bytes);
+                try { ctx.close(); } catch (e) {}
+                return true;
+            }).catch(() => {
+                try { ctx.close(); } catch (e) {}
+                return false;
+            });
+        } catch (e) {
+            return Promise.resolve(false);
+        }
     }
     handlePlay () {
         this.audioBufferPlayer.stop();
@@ -469,6 +514,8 @@ class SoundEditor extends React.Component {
                 onReverse={this.effectFactory(effectTypes.REVERSE)}
                 onRobot={this.effectFactory(effectTypes.ROBOT)}
                 onSetTrim={this.handleUpdateTrim}
+                getStudioWav={this.getStudioWav}
+                applyStudioWav={this.applyStudioWav}
                 onSlower={this.effectFactory(effectTypes.SLOWER)}
                 onSofter={this.effectFactory(effectTypes.SOFTER)}
                 onStop={this.handleStopPlaying}
