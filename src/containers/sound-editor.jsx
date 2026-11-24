@@ -519,6 +519,7 @@ class SoundEditor extends React.Component {
                 onSetTrim={this.handleUpdateTrim}
                 getStudioWav={this.getStudioWav}
                 applyStudioWav={this.applyStudioWav}
+                soundKey={this.props.soundId}
                 onSlower={this.effectFactory(effectTypes.SLOWER)}
                 onSofter={this.effectFactory(effectTypes.SOFTER)}
                 onStop={this.handleStopPlaying}

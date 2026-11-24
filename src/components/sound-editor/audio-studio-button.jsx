@@ -1,8 +1,42 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import studioHtml from 'scratch-audio/src/studio';
 import styles from './audio-studio-button.css';
+
+const messages = defineMessages({
+    selectEditor: {
+        id: 'gui.soundEditor.studio.selectEditor',
+        defaultMessage: 'Edit the current sound in Scratch, Pulsegrid or Sonora',
+        description: 'Tooltip on the audio editor selector dropdown'
+    },
+    editorAriaLabel: {
+        id: 'gui.soundEditor.studio.editorAriaLabel',
+        defaultMessage: 'Audio editor',
+        description: 'aria-label on the audio editor selector'
+    },
+    scratch: {
+        id: 'gui.soundEditor.studio.scratch',
+        defaultMessage: 'Scratch',
+        description: 'Label for the built-in Scratch audio editor'
+    },
+    pulsegrid: {
+        id: 'gui.soundEditor.studio.pulsegrid',
+        defaultMessage: 'Pulsegrid',
+        description: 'Label for the Pulsegrid audio editor'
+    },
+    sonora: {
+        id: 'gui.soundEditor.studio.sonora',
+        defaultMessage: 'Sonora',
+        description: 'Label for the Sonora audio editor'
+    },
+    studioIframeTitle: {
+        id: 'gui.soundEditor.studio.iframeTitle',
+        defaultMessage: 'Audio Studio',
+        description: 'title attribute of the embedded audio studio iframe'
+    }
+});
 
 /**
  * Convert an ArrayBuffer to base64 without overflowing the call stack on big files.
@@ -66,6 +100,29 @@ class AudioStudioButton extends React.Component {
         // Scratch 原生声音被编辑（效果/裁剪等）时，把最新 WAV 推给已打开的 Studio，
         // 实现 Scratch -> Studio 方向实时同步。Studio 自己回写时由 _applying 抑制回环。
         window.addEventListener('rw:sound-updated', this.pushCurrentSound);
+    }
+
+    componentDidUpdate (prevProps, prevState) {
+        // 切换声音卡片时父组件不会重建 AudioStudioButton，iframe 还保留旧声音。
+        // 如果 Studio 已经打开且声音标识变了，用新声音重新 build srcDoc 挂载 iframe。
+        const currKey = this.props.soundKey || '';
+        const prevKey = prevProps.soundKey || '';
+        if (currKey !== prevKey && this.state.mode !== 'scratch') {
+            const apply = wav => {
+                this.setState({
+                    mode: this.state.mode,
+                    seededDoc: buildSeededDoc(wav)
+                });
+                // srcDoc 变了 iframe 会重新 onLoad；再 push 一次作为兜底。
+                setTimeout(() => this.pushCurrentSound(), 50);
+            };
+            const promise = this.props.getStudioWav ? this.props.getStudioWav() : null;
+            if (promise && typeof promise.then === 'function') {
+                promise.then(apply).catch(() => apply(null));
+            } else {
+                apply(null);
+            }
+        }
     }
 
     componentWillUnmount () {
@@ -150,18 +207,19 @@ class AudioStudioButton extends React.Component {
         const mode = this.state.mode;
         const embedded = mode !== 'scratch';
         const doc = this.state.seededDoc || studioHtml;
+        const intl = this.props.intl;
         return (
             <React.Fragment>
                 <select
                     className={styles.studioSelect}
                     value={mode}
-                    title="Edit the current sound in Scratch, Pulsegrid or Sonora"
-                    aria-label="Audio editor"
+                    title={intl.formatMessage(messages.selectEditor)}
+                    aria-label={intl.formatMessage(messages.editorAriaLabel)}
                     onChange={this.handleModeChange}
                 >
-                    <option value="scratch">Scratch</option>
-                    <option value="pulsegrid">Pulsegrid</option>
-                    <option value="sonora">Sonora</option>
+                    <option value="scratch">{intl.formatMessage(messages.scratch)}</option>
+                    <option value="pulsegrid">{intl.formatMessage(messages.pulsegrid)}</option>
+                    <option value="sonora">{intl.formatMessage(messages.sonora)}</option>
                 </select>
                 {embedded ? (
                     <div className={styles.embed}>
@@ -170,7 +228,7 @@ class AudioStudioButton extends React.Component {
                                 this.frameRef = ref;
                             }}
                             className={styles.frame}
-                            title="Audio Studio"
+                            title={intl.formatMessage(messages.studioIframeTitle)}
                             srcDoc={doc}
                             onLoad={() => {
                                 this.postToStudio({type: 'studio:mode', mode});
@@ -185,7 +243,9 @@ class AudioStudioButton extends React.Component {
 
 AudioStudioButton.propTypes = {
     getStudioWav: PropTypes.func,
-    applyStudioWav: PropTypes.func
+    applyStudioWav: PropTypes.func,
+    soundKey: PropTypes.string,
+    intl: intlShape
 };
 
-export default AudioStudioButton;
+export default injectIntl(AudioStudioButton);
