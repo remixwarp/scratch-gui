@@ -162,6 +162,9 @@ class SoundEditor extends React.Component {
                         this.props.soundIndex,
                         this.audioBufferPlayer.buffer,
                         new Uint8Array(wavBuffer));
+                    // RemixWarp Audio Studio two-way sync: notify an open embedded
+                    // Studio that the Scratch-native sound changed so it can re-seed.
+                    try { window.dispatchEvent(new CustomEvent('rw:sound-updated')); } catch (e) {}
                     return true; // Edit was successful
                 })
             )

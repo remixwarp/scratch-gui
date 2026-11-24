@@ -24,10 +24,14 @@ class AudioStudioButton extends React.Component {
 
     componentDidMount () {
         window.addEventListener('message', this.handleMessage);
+        // Scratch 原生声音被编辑（效果/裁剪等）时，把最新 WAV 推给已打开的 Studio，
+        // 实现 Scratch -> Studio 方向实时同步。Studio 自己回写时由 _applying 抑制回环。
+        window.addEventListener('rw:sound-updated', this.pushCurrentSound);
     }
 
     componentWillUnmount () {
         window.removeEventListener('message', this.handleMessage);
+        window.removeEventListener('rw:sound-updated', this.pushCurrentSound);
     }
 
     postToStudio (msg) {
@@ -55,12 +59,20 @@ class AudioStudioButton extends React.Component {
             }
         } else if (d.type === 'studio:wav-update') {
             if (d.wav && this.props.applyStudioWav) {
-                this.props.applyStudioWav(d.wav);
+                // 标记「正在应用 Studio 回写」，避免 submitNewSamples 发出的
+                // rw:sound-updated 事件把同一份音频再推回 Studio 形成回环。
+                this._applying = true;
+                const result = this.props.applyStudioWav(d.wav);
+                Promise.resolve(result).then(() => {
+                    setTimeout(() => { this._applying = false; }, 0);
+                }).catch(() => { this._applying = false; });
             }
         }
     }
 
     pushCurrentSound () {
+        // 仅在嵌入式 Studio 打开、且不是正在应用其回写时推送
+        if (this._applying || this.state.mode === 'scratch') return;
         if (!this.props.getStudioWav) return;
         const promise = this.props.getStudioWav();
         if (!promise || typeof promise.then !== 'function') return;
