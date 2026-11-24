@@ -950,6 +950,19 @@ const copyCloudRestorePointLink = async (id, filename) => {
     }
 };
 
+/**
+ * Return the user's saved GitHub token, or null if none is stored.
+ * Shared with src/lib/gandi-pusher.js for pushing custom extensions.
+ */
+const GIT_TOKEN_KEY = 'mw:git-token';
+export const getNetworkRestoreToken = () => {
+    try {
+        return localStorage.getItem(GIT_TOKEN_KEY) || null;
+    } catch (e) {
+        return null;
+    }
+};
+
 export default {
     TYPE_AUTOMATIC,
     TYPE_MANUAL,
