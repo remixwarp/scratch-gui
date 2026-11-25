@@ -214,6 +214,7 @@ const base = {
             'scratch-blocks$': path.resolve(__dirname, 'node_modules/@remixwarp/scratch-blocks/shim/vertical.js'),
             'scratch-render$': path.resolve(__dirname, 'node_modules/scratch-render/src/index.js'),
             'scratch-audio$': path.resolve(__dirname, 'node_modules/scratch-audio/src/index.js'),
+            'scratch-audio/src/studio$': path.resolve(__dirname, 'src/lib/vendor/scratch-audio-studio.js'),
             'scratch-paint$': path.resolve(__dirname, 'node_modules/scratch-paint/src/index.js'),
             // scratch-paint's rounded-polygon tool shows a floating vertex editor
             // using this GUI window system. The package does not exist on its own

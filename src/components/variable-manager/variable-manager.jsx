@@ -471,12 +471,34 @@ const ListEditor = ({intl, maxLength, onChange, onConfirm, record}) => {
     const [page, setPage] = useState(0);
     const [error, setError] = useState('');
     const editing = useRef(false);
+    const lastRecordId = useRef(record.id);
 
     useEffect(() => {
+        // Always reset when switching to a different record.
+        if (record.id !== lastRecordId.current) {
+            lastRecordId.current = record.id;
+            editing.current = false;
+            setItems(Array.isArray(record.value) ? record.value.map(String) : []);
+            setPage(0);
+            setError('');
+            return;
+        }
+        // While the user is actively editing an input, don't reset — otherwise
+        // parent refresh() calls triggered by our own onChange(next) propagate
+        // record.value back into this effect, clobbering items and bouncing the
+        // pagination back to page 0 mid-interaction.
         if (editing.current) return;
-        setItems(Array.isArray(record.value) ? record.value.map(String) : []);
-        setPage(0);
-        setError('');
+        // Distinguish an external update (another sprite changed the list, etc.)
+        // from one that we ourselves just committed: only sync when record.value
+        // does not match the items we already hold locally.
+        const incoming = Array.isArray(record.value) ? record.value.map(String) : [];
+        const same = incoming.length === items.length &&
+            incoming.every((v, i) => String(v) === String(items[i]));
+        if (!same) {
+            setItems(incoming);
+            setPage(0);
+            setError('');
+        }
     }, [record.id, record.value]);
 
     const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
