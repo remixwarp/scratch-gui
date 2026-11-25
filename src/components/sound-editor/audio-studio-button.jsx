@@ -88,7 +88,7 @@ function buildSeededDoc (wav) {
 class AudioStudioButton extends React.Component {
     constructor (props) {
         super(props);
-        this.state = {mode: 'scratch', seededDoc: null};
+        this.state = {mode: 'scratch', seededDoc: null, docVersion: 0, keySound: props.soundKey || ''};
         this.handleModeChange = this.handleModeChange.bind(this);
         this.handleMessage = this.handleMessage.bind(this);
         this.pushCurrentSound = this.pushCurrentSound.bind(this);
@@ -103,19 +103,26 @@ class AudioStudioButton extends React.Component {
     }
 
     componentDidUpdate (prevProps, prevState) {
-        // 切换声音卡片时父组件不会重建 AudioStudioButton，iframe 还保留旧声音。
-        // 如果 Studio 已经打开且声音标识变了，用新声音重新 build srcDoc 挂载 iframe。
+        // 切换声音卡片：Scratch 一次只编辑一条声音，切换后编辑器必须换成新卡片的声音，
+        // 并且之前加载的那条要消失（不能累积）。父组件不会重建本组件，iframe 会残留旧声音。
+        // 做法：用当前卡片声音重新构造 srcDoc，并递增 docVersion 作为 iframe 的 key，
+        // 强制 React 卸载旧 iframe、挂载全新 Studio 实例 —— 旧音频随之彻底清除。
         const currKey = this.props.soundKey || '';
         const prevKey = prevProps.soundKey || '';
-        if (currKey !== prevKey && this.state.mode !== 'scratch') {
+        if (currKey !== prevKey) {
+            if (this.state.mode === 'scratch') {
+                // 编辑器没打开，只记录新 key，下次打开时用当前声音。
+                this.setState({keySound: currKey});
+                return;
+            }
             const apply = wav => {
-                this.setState({
-                    mode: this.state.mode,
-                    seededDoc: buildSeededDoc(wav)
-                });
-                // srcDoc 变了 iframe 会重新 onLoad；再 push 一次作为兜底。
-                setTimeout(() => this.pushCurrentSound(), 50);
+                this.setState(prev => ({
+                    keySound: currKey,
+                    seededDoc: buildSeededDoc(wav),
+                    docVersion: prev.docVersion + 1
+                }));
             };
+            // getStudioWav 此时已指向新选中的卡片，取它的音频作为新 seed。
             const promise = this.props.getStudioWav ? this.props.getStudioWav() : null;
             if (promise && typeof promise.then === 'function') {
                 promise.then(apply).catch(() => apply(null));
@@ -190,8 +197,15 @@ class AudioStudioButton extends React.Component {
         }
         // Build the seeded srcDoc from the CURRENT Scratch sound before mounting
         // the iframe, so the very first script run has the audio available.
+        // Increment docVersion so every "enter" mounts a brand-new Studio instance
+        // carrying only the current sound card's audio (previous one is gone).
         const apply = wav => {
-            this.setState({mode, seededDoc: buildSeededDoc(wav)}, () => {
+            this.setState(prev => ({
+                mode,
+                keySound: this.props.soundKey || '',
+                seededDoc: buildSeededDoc(wav),
+                docVersion: prev.docVersion + 1
+            }), () => {
                 this.postToStudio({type: 'studio:mode', mode});
             });
         };
@@ -224,6 +238,7 @@ class AudioStudioButton extends React.Component {
                 {embedded ? (
                     <div className={styles.embed}>
                         <iframe
+                            key={this.state.docVersion}
                             ref={ref => {
                                 this.frameRef = ref;
                             }}

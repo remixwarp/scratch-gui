@@ -358,6 +358,7 @@ const SoundEditor = props => (
                 <AudioStudioButton
                     getStudioWav={props.getStudioWav}
                     applyStudioWav={props.applyStudioWav}
+                    soundKey={props.soundKey}
                 />
             </div>
         </div>
@@ -414,6 +415,7 @@ SoundEditor.propTypes = {
     canPaste: PropTypes.bool.isRequired,
     getStudioWav: PropTypes.func,
     applyStudioWav: PropTypes.func,
+    soundKey: PropTypes.string,
     canRedo: PropTypes.bool.isRequired,
     canUndo: PropTypes.bool.isRequired,
     chunkLevels: PropTypes.arrayOf(PropTypes.number).isRequired,
