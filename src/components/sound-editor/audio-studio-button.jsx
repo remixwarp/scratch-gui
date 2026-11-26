@@ -56,20 +56,45 @@ function arrayBufferToBase64 (ab) {
 }
 
 /**
- * Inject the current Scratch sound as a seed directly into the Studio srcDoc.
- * The Studio script reads window.__RW_SEED_WAV__ synchronously at startup, so
- * the sound is guaranteed to be loaded regardless of postMessage timing or
- * whether a child editor reached "ready" before the WAV arrived.
+ * Pick the host UI's current locale (Scratch-level). Returns 'zh' when the
+ * host is showing Chinese, otherwise 'en'. Uses the same storage key as the
+ * outer `selectLocale` action + <html lang> as a secondary signal — keeps the
+ * Audio Studio editors in sync with what the user selected in Scratch's
+ * language menu even if the iframe's own `rw_i18n_lang` localStorage differs.
+ */
+function hostLangKey () {
+    try {
+        var stored = localStorage.getItem('tw:language') || localStorage.getItem('currentLocale') || '';
+        var htmlLang = (typeof document !== 'undefined' && document.documentElement &&
+            document.documentElement.lang) || '';
+        var raw = stored || htmlLang;
+        var base = (raw || 'en').split('-')[0].toLowerCase();
+        if (base === 'zh') return 'zh';
+        return 'en';
+    } catch (e) {
+        return 'en';
+    }
+}
+
+/**
+ * Inject the current Scratch sound + language as seeds directly into the Studio
+ * srcDoc. The Studio script reads window.__RW_SEED_WAV__ / __RW_SEED_LANG__
+ * synchronously at startup so both values are available on the very first
+ * script run — no dependence on postMessage timing.
  */
 function buildSeededDoc (wav) {
-    if (!wav) return studioHtml;
     try {
-        var b64 = wav instanceof ArrayBuffer || ArrayBuffer.isView(wav)
-            ? arrayBufferToBase64(wav instanceof ArrayBuffer ? wav : wav.buffer.slice(wav.byteOffset, wav.byteOffset + wav.byteLength))
-            : '';
-        if (!b64) return studioHtml;
-        var seed = '<script>window.__RW_SEED_WAV__=' + JSON.stringify(b64) + ';<\/script>';
-        // Place the seed before the first <script> so the Studio bridge sees it.
+        var scripts = [];
+        var lang = hostLangKey();
+        scripts.push('window.__RW_SEED_LANG__=' + JSON.stringify(lang) + ';');
+        if (wav) {
+            var b64 = wav instanceof ArrayBuffer || ArrayBuffer.isView(wav)
+                ? arrayBufferToBase64(wav instanceof ArrayBuffer ? wav : wav.buffer.slice(wav.byteOffset, wav.byteOffset + wav.byteLength))
+                : '';
+            if (b64) scripts.push('window.__RW_SEED_WAV__=' + JSON.stringify(b64) + ';');
+        }
+        if (!scripts.length) return studioHtml;
+        var seed = '<script>' + scripts.join('') + '<\/script>';
         return studioHtml.replace('<script>', seed + '<script>');
     } catch (e) {
         return studioHtml;
