@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import studioHtml from 'scratch-audio/src/studio';
+import localizeHtml from '../../lib/vendor/studio-i18n-static';
 import styles from './audio-studio-button.css';
 
 const messages = defineMessages({
@@ -84,18 +85,20 @@ function hostLangKey () {
  */
 function buildSeededDoc (wav) {
     try {
-        var scripts = [];
         var lang = hostLangKey();
-        scripts.push('window.__RW_SEED_LANG__=' + JSON.stringify(lang) + ';');
+        // 宿主侧静态翻译：在 HTML 字符串进入 iframe 之前一次性替换为当前语言，
+        // DOM 第一帧即为目标语言，彻底不依赖 iframe 内运行时探测。
+        var doc = localizeHtml(studioHtml, lang);
+        var scripts = [];
         if (wav) {
             var b64 = wav instanceof ArrayBuffer || ArrayBuffer.isView(wav)
                 ? arrayBufferToBase64(wav instanceof ArrayBuffer ? wav : wav.buffer.slice(wav.byteOffset, wav.byteOffset + wav.byteLength))
                 : '';
             if (b64) scripts.push('window.__RW_SEED_WAV__=' + JSON.stringify(b64) + ';');
         }
-        if (!scripts.length) return studioHtml;
+        if (!scripts.length) return doc;
         var seed = '<script>' + scripts.join('') + '<\/script>';
-        return studioHtml.replace('<script>', seed + '<script>');
+        return doc.replace('<script>', seed + '<script>');
     } catch (e) {
         return studioHtml;
     }
@@ -114,6 +117,7 @@ class AudioStudioButton extends React.Component {
     constructor (props) {
         super(props);
         this.state = {mode: 'scratch', seededDoc: null, docVersion: 0, keySound: props.soundKey || ''};
+        this._docLang = hostLangKey();
         this.handleModeChange = this.handleModeChange.bind(this);
         this.handleMessage = this.handleMessage.bind(this);
         this.pushCurrentSound = this.pushCurrentSound.bind(this);
@@ -128,6 +132,26 @@ class AudioStudioButton extends React.Component {
     }
 
     componentDidUpdate (prevProps, prevState) {
+        // 宿主语言切换：Scratch 语言菜单会改变 tw:language 并重新渲染宿主树；
+        // 检测语言变化后用当前编辑器声音重建 srcDoc（静态翻译），让已打开的编辑器跟随。
+        const langNow = hostLangKey();
+        if (langNow !== this._docLang) {
+            this._docLang = langNow;
+            if (this.state.mode !== 'scratch') {
+                const applyLang = wav => {
+                    this.setState(prev => ({
+                        seededDoc: buildSeededDoc(wav),
+                        docVersion: prev.docVersion + 1
+                    }));
+                };
+                const langPromise = this.props.getStudioWav ? this.props.getStudioWav() : null;
+                if (langPromise && typeof langPromise.then === 'function') {
+                    langPromise.then(applyLang).catch(() => applyLang(null));
+                } else {
+                    applyLang(null);
+                }
+            }
+        }
         // 切换声音卡片：Scratch 一次只编辑一条声音，切换后编辑器必须换成新卡片的声音，
         // 并且之前加载的那条要消失（不能累积）。父组件不会重建本组件，iframe 会残留旧声音。
         // 做法：用当前卡片声音重新构造 srcDoc，并递增 docVersion 作为 iframe 的 key，
@@ -245,7 +269,7 @@ class AudioStudioButton extends React.Component {
     render () {
         const mode = this.state.mode;
         const embedded = mode !== 'scratch';
-        const doc = this.state.seededDoc || studioHtml;
+        const doc = this.state.seededDoc || localizeHtml(studioHtml, hostLangKey());
         const intl = this.props.intl;
         return (
             <React.Fragment>
