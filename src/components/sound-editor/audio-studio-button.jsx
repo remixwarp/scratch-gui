@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import studioHtml from 'scratch-audio/src/studio';
+import dictSeedScript from '../../lib/vendor/editor-i18n-dict';
 import styles from './audio-studio-button.css';
 
 const messages = defineMessages({
@@ -95,6 +96,10 @@ function buildSeededDoc (wav) {
             if (b64) scripts.push('window.__RW_SEED_WAV__=' + JSON.stringify(b64) + ';');
         }
         var seed = '<script>' + scripts.join('') + '<\/script>';
+        // 注入来自 scratch-l10n 的权威 UI 词典（1844 条），让编辑器运行时脚本
+        // 覆盖全部文案，而非内置的 241 条小表。
+        var dictSeed = dictSeedScript();
+        if (dictSeed) seed = dictSeed + seed;
         // 仅把种子插入第一个 <script> 之前——不改动编辑器任何结构。
         return studioHtml.replace('<script>', seed + '<script>');
     } catch (e) {
