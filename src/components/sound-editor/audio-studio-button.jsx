@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import studioHtml from 'scratch-audio/src/studio';
-import localizeHtml from '../../lib/vendor/studio-i18n-static';
 import styles from './audio-studio-button.css';
 
 const messages = defineMessages({
@@ -85,20 +84,19 @@ function hostLangKey () {
  */
 function buildSeededDoc (wav) {
     try {
-        var lang = hostLangKey();
-        // 宿主侧静态翻译：在 HTML 字符串进入 iframe 之前一次性替换为当前语言，
-        // DOM 第一帧即为目标语言，彻底不依赖 iframe 内运行时探测。
-        var doc = localizeHtml(studioHtml, lang);
         var scripts = [];
+        // 宿主是当前语言的唯一权威：注入种子，编辑器内的 v3 i18n 脚本启动时读取，
+        // 并在 onLoad / 语言变化时再用 postMessage 推送一次，双保险。
+        scripts.push('window.__RW_SEED_LANG__=' + JSON.stringify(hostLangKey()) + ';');
         if (wav) {
             var b64 = wav instanceof ArrayBuffer || ArrayBuffer.isView(wav)
                 ? arrayBufferToBase64(wav instanceof ArrayBuffer ? wav : wav.buffer.slice(wav.byteOffset, wav.byteOffset + wav.byteLength))
                 : '';
             if (b64) scripts.push('window.__RW_SEED_WAV__=' + JSON.stringify(b64) + ';');
         }
-        if (!scripts.length) return doc;
         var seed = '<script>' + scripts.join('') + '<\/script>';
-        return doc.replace('<script>', seed + '<script>');
+        // 仅把种子插入第一个 <script> 之前——不改动编辑器任何结构。
+        return studioHtml.replace('<script>', seed + '<script>');
     } catch (e) {
         return studioHtml;
     }
@@ -143,6 +141,7 @@ class AudioStudioButton extends React.Component {
                         seededDoc: buildSeededDoc(wav),
                         docVersion: prev.docVersion + 1
                     }));
+                    this.postToStudio({type: 'studio:set-lang', lang: langNow});
                 };
                 const langPromise = this.props.getStudioWav ? this.props.getStudioWav() : null;
                 if (langPromise && typeof langPromise.then === 'function') {
@@ -207,6 +206,7 @@ class AudioStudioButton extends React.Component {
             // the case where the user edited Scratch sound before Studio finished loading.
             this.pushCurrentSound();
             this.postToStudio({type: 'studio:mode', mode: this.state.mode});
+                                this.postToStudio({type: 'studio:set-lang', lang: hostLangKey()});
         } else if (d.type === 'studio:mode') {
             if (['scratch', 'pulsegrid', 'sonora'].indexOf(d.mode) >= 0) {
                 // Internal dropdown changed; keep srcDoc stable so the embedded seed stays valid.
@@ -256,6 +256,7 @@ class AudioStudioButton extends React.Component {
                 docVersion: prev.docVersion + 1
             }), () => {
                 this.postToStudio({type: 'studio:mode', mode});
+                this.postToStudio({type: 'studio:set-lang', lang: hostLangKey()});
             });
         };
         const promise = this.props.getStudioWav ? this.props.getStudioWav() : null;
@@ -269,7 +270,7 @@ class AudioStudioButton extends React.Component {
     render () {
         const mode = this.state.mode;
         const embedded = mode !== 'scratch';
-        const doc = this.state.seededDoc || localizeHtml(studioHtml, hostLangKey());
+        const doc = this.state.seededDoc || studioHtml;
         const intl = this.props.intl;
         return (
             <React.Fragment>
@@ -296,6 +297,7 @@ class AudioStudioButton extends React.Component {
                             srcDoc={doc}
                             onLoad={() => {
                                 this.postToStudio({type: 'studio:mode', mode});
+                this.postToStudio({type: 'studio:set-lang', lang: hostLangKey()});
                             }}
                         />
                     </div>
