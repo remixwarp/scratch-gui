@@ -1,0 +1,50 @@
+2026-11-28T00:23:44.692652Z	Cloning repository...
+2026-11-28T00:23:47.364028Z	From https://github.com/remixwarp/scratch-gui
+2026-11-28T00:23:47.364308Z	 * branch            3bbb62e8061c078f31f65b6949afb0c6bc21fdcd -> FETCH_HEAD
+2026-11-28T00:23:47.364361Z	
+2026-11-28T00:23:47.991832Z	HEAD is now at 3bbb62e fix(gandi): push extensions through bot-api.rewp.de5.net forward-proxy instead of direct api.github.com
+2026-11-28T00:23:47.992148Z	
+2026-11-28T00:23:48.038983Z	
+2026-11-28T00:23:48.03937Z	Using v2 root directory strategy
+2026-11-28T00:23:48.052477Z	Success: Finished cloning repository files
+2026-11-28T00:23:49.236028Z	Checking for configuration in a Wrangler configuration file (BETA)
+2026-11-28T00:23:49.236494Z	
+2026-11-28T00:23:49.351023Z	No Wrangler configuration file found. Continuing.
+2026-11-28T00:23:50.113752Z	Updating bun to main
+2026-11-28T00:23:50.114144Z	Already on 'main'
+2026-11-28T00:23:50.11424Z	Your branch is up to date with 'origin/main'.
+2026-11-28T00:23:52.113664Z	Detected the following tools from environment: nodejs@18.20.8, bun@1.3.13
+2026-11-28T00:23:52.113945Z	Installing nodejs 18.20.8
+2026-11-28T00:23:53.843548Z	Trying to update node-build... ok
+2026-11-28T00:23:53.90161Z	To follow progress, use 'tail -f /tmp/node-build.20261128002353.923.log' or pass --verbose
+2026-11-28T00:23:53.940169Z	Downloading node-v18.20.8-linux-x64.tar.gz...
+2026-11-28T00:23:53.993288Z	-> https://nodejs.org/dist/v18.20.8/node-v18.20.8-linux-x64.tar.gz
+2026-11-28T00:23:57.259678Z	
+2026-11-28T00:23:57.26001Z	WARNING: node-v18.20.8-linux-x64 is past its end of life and is now unsupported.
+2026-11-28T00:23:57.260091Z	It no longer receives bug fixes or security updates.
+2026-11-28T00:23:57.26015Z	
+2026-11-28T00:23:57.260213Z	Installing node-v18.20.8-linux-x64...
+2026-11-28T00:23:57.663594Z	Installed node-v18.20.8-linux-x64 to /opt/buildhome/.asdf/installs/nodejs/18.20.8
+2026-11-28T00:23:57.663866Z	
+2026-11-28T00:23:58.184876Z	Installing bun 1.3.13
+2026-11-28T00:23:58.236464Z	Downloading Bun v1.3.13...
+2026-11-28T00:23:59.065744Z	Archive:  /tmp/asdf-bun.lxT4/bun.zip
+2026-11-28T00:23:59.818616Z	  inflating: /opt/buildhome/.asdf/downloads/bun/1.3.13/bun  
+2026-11-28T00:23:59.847604Z	Installing Bun v1.3.13...
+2026-11-28T00:23:59.986169Z	Bun v1.3.13 is installed successfully!
+2026-11-28T00:24:00.62962Z	Executing user command: npm run cf-build
+2026-11-28T00:24:00.922132Z	
+2026-11-28T00:24:00.922571Z	> scratch-gui@3.2.52 cf-build
+2026-11-28T00:24:00.922753Z	> node -e "process.exit(require('fs').existsSync('node_modules')?0:1)" && echo "[cf-build] node_modules present, skip install" || (bun install --no-verify) ; bun run build
+2026-11-28T00:24:00.922845Z	
+2026-11-28T00:24:01.051692Z	bun install v1.3.13 (bf2e2cec)
+2026-11-28T00:24:01.054761Z	Resolving dependencies
+2026-11-28T00:24:07.548148Z	Resolved, downloaded and extracted [6332]
+2026-11-28T00:24:07.548462Z	warn: incorrect peer dependency "react-responsive@5.0.0"
+2026-11-28T00:24:07.554611Z	error: @remixwarp/scratch-l10n@https://github.com/remixwarp/scratch-l10n/archive/63ba19500d8baf9e53147df7437e94b9c5bb3b54.tar.gz failed to resolve
+2026-11-28T00:24:07.686012Z	$ rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist && NODE_ENV=production webpack --colors --bail && node scripts/build-compression.js && node scripts/package-cf-functions.mjs
+2026-11-28T00:24:07.687564Z	/usr/bin/bash: line 1: rimraf: command not found
+2026-11-28T00:24:07.687743Z	error: script "build" exited with code 127
+2026-11-28T00:24:07.697619Z	Failed: Error while executing user command. Exited with error code: 127
+2026-11-28T00:24:07.703159Z	Failed: build command exited with code: 1
+2026-11-28T00:24:08.071933Z	Failed: error occurred while running build command
