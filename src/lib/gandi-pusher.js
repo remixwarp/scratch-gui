@@ -4,30 +4,31 @@
  * The "extension → GitHub → rw-gandi.pages.dev URL" step of the
  * RemixWarp → Gandi (.sb3) compatibility conversion workflow.
  *
- * Keeps its own GitHub push primitive that talks to the Gandi mirror repo
- * (remixwarp/gandi-ide-qwq) while reusing the network-restore-point token
- * already defined in lib/api/restore-points.js.
+ * Uses the same **network-restore-point forward-proxy** primitive as
+ * lib/api/restore-points.js — the Worker at FORWARD_BASE holds the
+ * GitHub token server-side so no PAT ever flows through the browser.
+ * Only the target repo differs (gandi-ide-qwq instead of rw-owr); the
+ * proxy base, request helper and error semantics are identical so the
+ * behaviour of pushExtension() stays byte-for-byte compatible for the
+ * editor file-menu flow and the single-file convert.html flow.
  */
 import {arrayBufferToBase64} from './utils/base64';
-import {getNetworkRestoreToken} from './api/restore-points';
 
 // Target repo for pushed custom extensions (Gandi).
 const GANDI_REPO_OWNER = 'remixwarp';
 const GANDI_REPO_NAME = 'gandi-ide-qwq';
 const GANDI_REPO_BRANCH = 'main';
-const GANDI_API_BASE =
-    `https://api.github.com/repos/${GANDI_REPO_OWNER}/${GANDI_REPO_NAME}`;
+
+// 写转发服务（rw-bot-token Worker）：token 由服务端持有并注入，前端不出现 PAT。
+// 与 lib/api/restore-points.js 完全同构，仅 repo path 不同。
+const FORWARD_BASE = 'https://bot-api.rewp.de5.net';
+const GANDI_API_BASE = `${FORWARD_BASE}/api/${GANDI_REPO_OWNER}/${GANDI_REPO_NAME}`;
 
 const request = async (path, options = {}) => {
-    const token = getNetworkRestoreToken();
-    if (!token) {
-        throw new Error('Gandi pusher: GitHub token is not available.');
-    }
     const res = await fetch(`${GANDI_API_BASE}${path}`, {
         ...options,
         headers: {
-            Authorization: `token ${token}`,
-            Accept: 'application/vnd.github.v3+json',
+            'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json',
             ...options.headers
         }
