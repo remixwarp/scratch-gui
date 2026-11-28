@@ -56,3 +56,4 @@ devserver*.log
 # （playwright.download.prss.microsoft.com 在 CF 环境 DNS 被墙），导致构建失败。
 # 只忽略旧的二进制锁文件 bun.lockb。
 bun.lockb
+.uploads/
