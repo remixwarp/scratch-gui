@@ -115,7 +115,7 @@
     "remark-gfm": "1.0.0",
     "scratch-audio": "github:remixwarp/scratch-audio#d5cc178e5f157f729b5e220cbf0bbb33fcbd10b5",
     "@remixwarp/scratch-blocks": "https://github.com/remixwarp/scratch-blocks/archive/a8c84d6d4a60d01de720aed7e9f1cfe1eeb2d566.tar.gz",
-    "scratch-paint": "github:remixwarp/scratch-paint#e8ad027637c7a7ea823695d388ea82e43beb65da",
+    "scratch-paint": "github:remixwarp/scratch-paint#6e32c6bbced2a90198214e154f430f989b6b8daf",
     "scratch-render": "github:remixwarp/scratch-render#develop",
     "scratch-vm": "github:remixwarp/scratch-vm#41ced887a98c56138ad158530066dcc610ea6ade",
     "style-loader": "^0.23.0",
